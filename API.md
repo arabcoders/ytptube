@@ -97,6 +97,10 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
     - [GET /api/system/configuration](#get-apisystemconfiguration)
     - [POST /api/system/terminal](#post-apisystemterminal)
+    - [GET /api/system/terminal/active](#get-apisystemterminalactive)
+    - [GET /api/system/terminal/{session\_id}](#get-apisystemterminalsession_id)
+    - [DELETE /api/system/terminal/{session\_id}](#delete-apisystemterminalsession_id)
+    - [GET /api/system/terminal/{session\_id}/stream](#get-apisystemterminalsession_idstream)
     - [POST /api/system/pause](#post-apisystempause)
     - [POST /api/system/resume](#post-apisystemresume)
     - [POST /api/system/shutdown](#post-apisystemshutdown)
@@ -2476,7 +2480,7 @@ or an error:
 ---
 
 ### POST /api/system/terminal
-**Purpose**: Stream yt-dlp CLI output via Server-Sent Events (SSE). Requires `YTP_CONSOLE_ENABLED=true`.
+**Purpose**: Start a yt-dlp terminal session. Requires `YTP_CONSOLE_ENABLED=true`.
 
 **Body**:
 ```json
@@ -2486,8 +2490,117 @@ or an error:
 ```
 
 **Response**:
+```json
+{
+  "session_id": "3a8c5f7e2d3b4a8f9c0d1e2f3a4b5c6d",
+  "command": "--help",
+  "status": "starting",
+  "created_at": 1713000000.0,
+  "started_at": 1713000000.0,
+  "finished_at": null,
+  "expires_at": null,
+  "exit_code": null,
+  "last_sequence": 0
+}
+```
+
+**Notes**:
+- Starts the command in an application-owned background task.
+- Only one active terminal session is allowed at a time.
+- The command continues running if the frontend disconnects or reloads.
+
+- `403 Forbidden` if console is disabled.
+- `400 Bad Request` if the request body is invalid.
+- `409 Conflict` if another terminal session is already active.
+
+---
+
+### GET /api/system/terminal/active
+**Purpose**: Return the currently active terminal session metadata, or `null` if no session is active.
+
+**Response**:
+```json
+null
+```
+or
+```json
+{
+  "session_id": "3a8c5f7e2d3b4a8f9c0d1e2f3a4b5c6d",
+  "command": "--help",
+  "status": "running",
+  "created_at": 1713000000.0,
+  "started_at": 1713000000.0,
+  "finished_at": null,
+  "expires_at": null,
+  "exit_code": null,
+  "last_sequence": 12
+}
+```
+
+- `403 Forbidden` if console is disabled.
+
+---
+
+### GET /api/system/terminal/{session_id}
+**Purpose**: Return metadata for a specific terminal session while it is active or still within the replay/drain window.
+
+**Response**:
+```json
+{
+  "session_id": "3a8c5f7e2d3b4a8f9c0d1e2f3a4b5c6d",
+  "command": "--help",
+  "status": "completed",
+  "created_at": 1713000000.0,
+  "started_at": 1713000000.0,
+  "finished_at": 1713000004.0,
+  "expires_at": 1713000034.0,
+  "exit_code": 0,
+  "last_sequence": 15
+}
+```
+
+- `403 Forbidden` if console is disabled.
+- `404 Not Found` if the session does not exist or has already expired.
+
+---
+
+### DELETE /api/system/terminal/{session_id}
+**Purpose**: Request cancellation for the active terminal session.
+
+**Response**:
+```json
+{
+  "message": "Terminal session cancellation requested.",
+  "session_id": "3a8c5f7e2d3b4a8f9c0d1e2f3a4b5c6d"
+}
+```
+
+**Notes**:
+- This only applies to the currently active session.
+- The client should stay attached to the stream to receive the final `close` event and refreshed terminal status.
+- Cancelled sessions finalize as `interrupted` and remain replayable until the drain window expires.
+
+- `403 Forbidden` if console is disabled.
+- `404 Not Found` if the session does not exist or has already expired.
+- `409 Conflict` if the session exists but is no longer active.
+
+---
+
+### GET /api/system/terminal/{session_id}/stream
+**Purpose**: Replay a terminal session transcript over SSE and tail live output when the session is still running.
+
+**Query Parameters**:
+- `since` (optional): Resume after the provided integer event id.
+
+**Headers**:
+- `Last-Event-ID` (optional): Resume after the provided integer event id.
+
+If both `since` and `Last-Event-ID` are present, the larger value is used.
+
+**Response**:
 - `Content-Type: text/event-stream`
-- Emits `output` events for stdout/stderr and a final `close` event when the process exits.
+- Replays transcript events with monotonic integer SSE `id` values.
+- Emits `output` events for stdout/stderr and a final `close` event when available.
 
 **Event Payloads**:
 ```json
@@ -2497,8 +2610,13 @@ or an error:
 { "exitcode": 0 }
 ```
 
+**Notes**:
+- Replay/restore works while the session is still running or until the finished session expires.
+- Finished sessions are removed lazily after the transcript drain window elapses.
+
 - `403 Forbidden` if console is disabled.
-- `400 Bad Request` if the request body is invalid.
+- `400 Bad Request` if the replay cursor is invalid.
+- `404 Not Found` if the session does not exist or has already expired.
 
 ---
 

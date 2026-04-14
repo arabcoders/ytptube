@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, Mock, patch
 
+from app.features.ytdlp.patches import patch_windows_popen_wait
 from app.features.ytdlp.utils import _DATA
 from app.features.ytdlp.ytdlp import YTDLP, _ArchiveProxy, ytdlp_options
 
@@ -144,6 +145,61 @@ class TestYTDLP:
         mock_super_init.assert_called_once_with(params=None, auto_init=True)
         assert isinstance(ytdlp.archive, _ArchiveProxy)
         assert not ytdlp.archive
+
+    @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
+    def test_init_patches_windows_popen_wait_once(self, mock_super_init) -> None:
+        mock_super_init.return_value = None
+
+        class FakePopen:
+            def wait(self, timeout=None):
+                return timeout
+
+        with patch("app.features.ytdlp.patches.sys.platform", "win32"):
+            with patch("yt_dlp.utils.Popen", FakePopen):
+                YTDLP(params={})
+
+        assert getattr(FakePopen, "_ytptube_wait_patched", False) is True
+
+    def test_windows_wait_patch_uses_polling_for_blocking_wait(self) -> None:
+        calls: list[float | None] = []
+
+        class FakePopen:
+            _ytptube_wait_patched = False
+
+            def wait(self, timeout=None):
+                calls.append(timeout)
+                if len(calls) < 3:
+                    raise TimeoutError
+                return 0
+
+        with patch("app.features.ytdlp.patches.sys.platform", "win32"):
+            with (
+                patch("yt_dlp.utils.Popen", FakePopen),
+                patch("app.features.ytdlp.patches.subprocess.TimeoutExpired", TimeoutError),
+            ):
+                patch_windows_popen_wait()
+                result = FakePopen().wait()
+
+        assert result == 0
+        assert calls == [0.1, 0.1, 0.1]
+
+    def test_windows_wait_patch_preserves_explicit_timeout(self) -> None:
+        calls: list[float | None] = []
+
+        class FakePopen:
+            _ytptube_wait_patched = False
+
+            def wait(self, timeout=None):
+                calls.append(timeout)
+                return 0
+
+        with patch("app.features.ytdlp.patches.sys.platform", "win32"):
+            with patch("yt_dlp.utils.Popen", FakePopen):
+                patch_windows_popen_wait()
+                result = FakePopen().wait(timeout=5)
+
+        assert result == 0
+        assert calls == [5]
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
     def test_delete_downloaded_files_skips_when_interrupted(self, mock_super_delete) -> None:

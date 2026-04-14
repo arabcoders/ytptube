@@ -5,6 +5,7 @@ from typing import Any
 import yt_dlp
 from yt_dlp.utils import make_archive_id
 
+from app.features.ytdlp.patches import apply_ytdlp_patches
 from app.library.cf_solver_handler import set_cf_handler
 
 
@@ -52,13 +53,15 @@ class YTDLP(yt_dlp.YoutubeDL):
     _registered = False
 
     def __init__(self, params=None, auto_init=True):
+        apply_ytdlp_patches()
+
         # Avoid yt-dlp preloading the archive file by stripping the param first
         orig_file = None
-        patched_params = None
+        patched_params: dict[str, Any] | None = None
         if params is not None:
             try:
                 orig_file: str | None = params.get("download_archive")
-                patched_params: dict = dict(params)
+                patched_params = dict(params)
                 if "download_archive" in patched_params:
                     patched_params.pop("download_archive", None)
             except Exception:

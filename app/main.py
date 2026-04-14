@@ -36,6 +36,7 @@ from app.library.httpx_client import close_shared_clients
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
+from app.library.TerminalSessionManager import TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker
 
 LOG = logging.getLogger("app")
@@ -118,6 +119,7 @@ class Main:
         BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
         Cache.get_instance().attach(self._app)
+        TerminalSessionManager.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
         self._http.attach(self._app)

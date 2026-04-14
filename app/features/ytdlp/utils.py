@@ -9,6 +9,7 @@ from email.utils import formatdate
 from pathlib import Path
 from typing import Any
 
+from app.features.ytdlp.patches import apply_ytdlp_patches
 from app.features.ytdlp.ytdlp import YTDLP
 from app.library.Utils import merge_dict, timed_lru_cache
 
@@ -143,52 +144,6 @@ class LogWrapper:
         self._log(logging.CRITICAL, msg, *args, **kwargs)
 
 
-def patch_metadataparser() -> None:
-    """
-    Patches yt_dlp MetadataParserPP action to handle subprocess pickling issues.
-    """
-    try:
-        from yt_dlp.postprocessor.metadataparser import MetadataParserPP
-        from yt_dlp.utils import Namespace
-    except Exception as exc:
-        LOG.warning(f"Unable to import yt_dlp metadata parser for patching: {exc!s}")
-        return
-
-    if getattr(MetadataParserPP.Actions, "_ytptube_patched", False):
-        return
-
-    class _ActionNS(Namespace):
-        _ACTIONS_STR: list[str] = []
-
-        @staticmethod
-        def _get_name(func) -> str | None:
-            if not callable(func):
-                return None
-
-            target = getattr(func, "__func__", func)
-            module_name = getattr(target, "__module__", None)
-            qual_name = getattr(target, "__qualname__", getattr(target, "__name__", None))
-
-            return f"{module_name}.{qual_name}" if module_name and qual_name else None
-
-        def __contains__(self, candidate: object) -> bool:
-            if candidate in self.__dict__.values():
-                return True
-
-            if func_name := _ActionNS._get_name(candidate):
-                if len(_ActionNS._ACTIONS_STR) < 1:
-                    _ActionNS._ACTIONS_STR.extend([_ActionNS._get_name(value) for value in self.__dict__.values()])
-
-                return func_name in _ActionNS._ACTIONS_STR
-
-            return False
-
-    actions_dict: dict[str, Any] = dict(MetadataParserPP.Actions.items_)
-    MetadataParserPP.Actions = _ActionNS(**actions_dict)
-    MetadataParserPP.Actions._ytptube_patched = True
-    LOG.debug("MetadataParserPP action namespace patch applied successfully.")
-
-
 def arg_converter(
     args: str,
     level: int | bool | None = None,
@@ -222,10 +177,7 @@ def arg_converter(
         finally:
             yt_dlp.options.create_parser = create_parser
 
-    try:
-        patch_metadataparser()
-    except Exception as exc:
-        LOG.debug("Metadata parser patch failed to apply: %s", exc)
+    apply_ytdlp_patches()
 
     default_opts = _default_opts([]).ydl_opts
 

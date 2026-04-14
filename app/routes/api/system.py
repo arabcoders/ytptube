@@ -1,11 +1,7 @@
 import asyncio
-import errno
 import logging
-import os
-import shlex
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -18,13 +14,9 @@ from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.router import route
+from app.library.TerminalSessionManager import TerminalSessionConflictError, TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker
 from app.library.Utils import list_folders
-
-if TYPE_CHECKING:
-    from asyncio import Task
-    from asyncio.events import AbstractEventLoop
-    from asyncio.subprocess import Process
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -231,14 +223,7 @@ async def check_updates(config: Config, encoder: Encoder, update_checker: Update
     )
 
 
-@route("POST", "api/system/terminal", "system.terminal")
-async def stream_terminal(request: Request, config: Config, encoder: Encoder) -> Response | web.StreamResponse:
-    if not config.console_enabled:
-        return web.json_response(
-            {"error": "Console feature is disabled."},
-            status=web.HTTPForbidden.status_code,
-        )
-
+async def _validate_terminal_command_request(request: Request) -> str | Response:
     if not request.can_read_body:
         return web.json_response(
             {"error": "Request body is required."},
@@ -259,136 +244,122 @@ async def stream_terminal(request: Request, config: Config, encoder: Encoder) ->
             status=web.HTTPBadRequest.status_code,
         )
 
-    response = web.StreamResponse(
-        status=web.HTTPOk.status_code,
-        headers={
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        },
-    )
-    await response.prepare(request)
+    return raw_command
 
-    async def emit_event(event: str, data: dict) -> None:
-        if request.transport is None or request.transport.is_closing():
-            return
-        payload: str = f"event: {event}\ndata: {encoder.encode(data)}\n\n"
-        await response.write(payload.encode("utf-8"))
 
-    returncode: int = -1
+@route("POST", "api/system/terminal", "system.terminal")
+async def create_terminal_session(
+    request: Request, config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
+) -> Response:
+    if not config.console_enabled:
+        return web.json_response(
+            {"error": "Console feature is disabled."},
+            status=web.HTTPForbidden.status_code,
+        )
+
+    raw_command = await _validate_terminal_command_request(request)
+    if isinstance(raw_command, Response):
+        return raw_command
+
     try:
-        LOG.info("Cli command from client. '%s'", raw_command)
-
-        args: list[str] = ["yt-dlp", *shlex.split(raw_command, posix=os.name != "nt")]
-        env_vars: dict[str, str] = os.environ.copy()
-        env_vars.update(
-            {
-                "PWD": config.download_path,
-                "FORCE_COLOR": "1",
-                "PYTHONUNBUFFERED": "1",
-            }
+        metadata = await terminal_manager.create_session(raw_command)
+    except TerminalSessionConflictError as exc:
+        return web.json_response(
+            {"error": str(exc)},
+            status=web.HTTPConflict.status_code,
         )
 
-        if "nt" != os.name:
-            env_vars.update(
-                {
-                    "TERM": "xterm-256color",
-                    "LANG": "en_US.UTF-8",
-                    "LC_ALL": "en_US.UTF-8",
-                    "SHELL": "/bin/bash",
-                }
-            )
+    return web.json_response(data=metadata, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
-        try:
-            import pty
 
-            master_fd, slave_fd = pty.openpty()
-            stdin_arg = asyncio.subprocess.DEVNULL
-            stdout_arg = stderr_arg = slave_fd
-            use_pty = True
-        except ImportError:
-            use_pty = False
-            master_fd = slave_fd = None
-            stdin_arg = asyncio.subprocess.DEVNULL
-            stdout_arg = asyncio.subprocess.PIPE
-            stderr_arg = asyncio.subprocess.STDOUT
-
-        creationflags = 0
-        if os.name == "nt":
-            import subprocess
-
-            creationflags = subprocess.CREATE_NO_WINDOW
-
-        proc: Process = await asyncio.create_subprocess_exec(
-            *args,
-            cwd=config.download_path,
-            stdin=stdin_arg,
-            stdout=stdout_arg,
-            stderr=stderr_arg,
-            env=env_vars,
-            creationflags=creationflags,
+@route("GET", "api/system/terminal/active", "system.terminal.active")
+async def get_active_terminal_session(
+    config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
+) -> Response:
+    if not config.console_enabled:
+        return web.json_response(
+            {"error": "Console feature is disabled."},
+            status=web.HTTPForbidden.status_code,
         )
 
-        if use_pty:
-            assert slave_fd is not None
-            try:
-                os.close(slave_fd)
-            except Exception as e:
-                LOG.error("Error closing PTY. '%s'.", str(e))
+    metadata = await terminal_manager.get_active_session()
+    return web.json_response(data=metadata, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
-        async def reader() -> None:
-            if use_pty is False:
-                assert proc.stdout is not None
-                async for raw_line in proc.stdout:
-                    line = raw_line.rstrip(b"\n")
-                    await emit_event("output", {"type": "stdout", "line": line.decode("utf-8", errors="replace")})
-                return
 
-            assert master_fd is not None
-            read_fd = master_fd
-            loop: AbstractEventLoop = asyncio.get_running_loop()
-            buffer: bytes = b""
-            while True:
-                try:
-                    chunk: bytes = await loop.run_in_executor(None, lambda: os.read(read_fd, 1024))
-                except OSError as e:
-                    if e.errno == errno.EIO:
-                        break
-                    raise
+@route("GET", "api/system/terminal/{session_id}", "system.terminal.session")
+async def get_terminal_session(
+    request: Request, config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
+) -> Response:
+    if not config.console_enabled:
+        return web.json_response(
+            {"error": "Console feature is disabled."},
+            status=web.HTTPForbidden.status_code,
+        )
 
-                if not chunk:
-                    if buffer:
-                        await emit_event(
-                            "output",
-                            {"type": "stdout", "line": buffer.decode("utf-8", errors="replace")},
-                        )
-                    break
+    session_id = request.match_info.get("session_id", "")
+    metadata = await terminal_manager.get_session(session_id)
+    if metadata is None:
+        return web.json_response(
+            {"error": "Terminal session not found."},
+            status=web.HTTPNotFound.status_code,
+        )
 
-                buffer += chunk
-                *lines, buffer = buffer.split(b"\n")
+    return web.json_response(data=metadata, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
-                for line in lines:
-                    await emit_event(
-                        "output",
-                        {"type": "stdout", "line": line.decode("utf-8", errors="replace")},
-                    )
-            if master_fd is None:
-                return
-            try:
-                os.close(master_fd)
-            except Exception as e:
-                LOG.error("Error closing PTY. '%s'.", str(e))
 
-        read_task: Task = asyncio.create_task(reader(), name="cli_reader")
+@route("DELETE", "api/system/terminal/{session_id}", "system.terminal.cancel")
+async def cancel_terminal_session(
+    request: Request, config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
+) -> Response:
+    if not config.console_enabled:
+        return web.json_response(
+            {"error": "Console feature is disabled."},
+            status=web.HTTPForbidden.status_code,
+        )
 
-        returncode = await proc.wait()
-        await read_task
-    except Exception as e:
-        LOG.error("CLI execute exception was thrown.")
-        LOG.exception(e)
-        await emit_event("output", {"type": "stderr", "line": str(e)})
-    finally:
-        await emit_event("close", {"exitcode": returncode})
-        await response.write_eof()
+    session_id = request.match_info.get("session_id", "")
+    try:
+        await terminal_manager.cancel_session(session_id)
+    except FileNotFoundError:
+        return web.json_response(
+            {"error": "Terminal session not found."},
+            status=web.HTTPNotFound.status_code,
+        )
+    except RuntimeError as exc:
+        return web.json_response(
+            {"error": str(exc)},
+            status=web.HTTPConflict.status_code,
+        )
 
-    return response
+    return web.json_response(
+        data={"message": "Terminal session cancellation requested.", "session_id": session_id},
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
+
+
+@route("GET", "api/system/terminal/{session_id}/stream", "system.terminal.stream")
+async def stream_terminal_session(
+    request: Request, config: Config, terminal_manager: TerminalSessionManager
+) -> Response | web.StreamResponse:
+    if not config.console_enabled:
+        return web.json_response(
+            {"error": "Console feature is disabled."},
+            status=web.HTTPForbidden.status_code,
+        )
+
+    session_id = request.match_info.get("session_id", "")
+    metadata = await terminal_manager.get_session(session_id)
+    if metadata is None:
+        return web.json_response(
+            {"error": "Terminal session not found."},
+            status=web.HTTPNotFound.status_code,
+        )
+
+    try:
+        return await terminal_manager.stream_session(session_id=session_id, request=request)
+    except ValueError as exc:
+        return web.json_response(
+            {"error": str(exc)},
+            status=web.HTTPBadRequest.status_code,
+        )

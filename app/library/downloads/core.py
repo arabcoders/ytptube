@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import _thread
 import asyncio
 import logging
 import os
@@ -217,7 +218,7 @@ class Download:
                     if "posix" == os.name:
                         os.kill(os.getpid(), signal.SIGINT)
                     else:
-                        signal.raise_signal(signal.SIGINT)
+                        _thread.interrupt_main()
 
                 threading.Thread(target=trigger_live_cancel, name=f"cancel-watch-{self.id}", daemon=True).start()
 

@@ -6,8 +6,28 @@
           <UIcon name="i-lucide-terminal" class="size-5 text-toned" />
           <span>Console</span>
 
-          <UBadge :color="isLoading ? 'info' : 'neutral'" variant="soft" size="sm">
-            {{ isLoading ? 'Streaming output' : 'Idle' }}
+          <UBadge :color="sessionStatusColor" variant="soft" size="sm">
+            <span class="inline-flex items-center gap-1.5">
+              <UIcon
+                :name="sessionStatusIcon"
+                class="size-3.5"
+                :class="sessionStatusSpinning ? 'animate-spin' : ''"
+              />
+              <span>{{ sessionStatusLabel }}</span>
+            </span>
+          </UBadge>
+
+          <UBadge v-if="hasActiveSession" color="neutral" variant="outline" size="sm">
+            Session {{ shortSessionId }}
+          </UBadge>
+
+          <UBadge
+            v-if="sessionExitCode !== null && !isLoading"
+            :color="exitCodeBadgeColor"
+            variant="outline"
+            size="sm"
+          >
+            Exit {{ sessionExitCode }}
           </UBadge>
 
           <UBadge v-if="commandHistory.length > 0" color="neutral" variant="outline" size="sm">
@@ -15,10 +35,21 @@
           </UBadge>
         </div>
 
-        <p class="text-sm text-toned">Run yt-dlp commands directly in a non-interactive session.</p>
+        <p class="text-sm text-toned">{{ sessionStatusDescription }}</p>
       </div>
 
       <div class="flex flex-wrap items-center justify-end gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-circle-help"
+          :disabled="isStartBlocked"
+          @click="() => void runHelp()"
+        >
+          Help
+        </UButton>
+
         <UButton
           color="neutral"
           variant="outline"
@@ -34,23 +65,29 @@
     <UPageCard variant="naked" :ui="pageCardUi">
       <template #body>
         <div class="space-y-4">
-          <div>
-            <div>
-              <div
-                ref="terminal_window"
-                class="terminal-host min-h-[55vh] max-h-[55vh] overflow-hidden rounded-xl scroll-none"
-              />
-            </div>
+          <div class="overflow-hidden rounded-xl border border-default bg-neutral-950/95 shadow-sm">
+            <div
+              ref="terminal_window"
+              class="terminal-host min-h-[55vh] max-h-[55vh] overflow-hidden"
+            />
           </div>
 
-          <div class="rounded-xl border border-default bg-default">
+          <div class="rounded-xl border border-default bg-default shadow-sm">
             <div
               class="flex flex-col gap-3 border-b border-default bg-muted/10 px-4 py-3 lg:flex-row lg:items-start lg:justify-between"
             >
-              <div class="min-w-0 space-y-1">
-                <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-                  <UIcon name="i-lucide-send" class="size-4 text-toned" />
-                  <span>Command</span>
+              <div class="min-w-0 flex-1 space-y-1">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div
+                    class="flex min-w-0 items-center gap-2 text-sm font-semibold text-highlighted"
+                  >
+                    <UIcon name="i-lucide-send" class="size-4 shrink-0 text-toned" />
+                    <span>Command</span>
+                  </div>
+
+                  <UBadge :color="inputModeColor" variant="soft" size="sm">
+                    {{ inputModeLabel }}
+                  </UBadge>
                 </div>
 
                 <p class="text-xs text-toned">
@@ -60,128 +97,228 @@
               </div>
             </div>
 
-            <div class="grid gap-3 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-              <div class="space-y-3">
-                <TextareaAutocomplete
-                  v-if="isMultiLineInput"
-                  ref="commandTextarea"
-                  v-model="command"
-                  :options="ytDlpOptions"
-                  :disabled="isLoading"
-                  placeholder="--help"
-                  :rows="5"
-                  @keydown="handleKeyDown"
-                />
+            <div class="space-y-3 px-4 py-4">
+              <UAlert
+                v-if="sessionError"
+                color="error"
+                variant="soft"
+                icon="i-lucide-triangle-alert"
+                :title="sessionErrorTitle"
+                :description="sessionError"
+              />
 
-                <InputAutocomplete
-                  v-else
-                  ref="commandInput"
-                  v-model="command"
-                  :options="ytDlpOptions"
-                  :disabled="isLoading"
-                  placeholder="--help"
-                  :multiple="true"
-                  :allowShortFlags="true"
-                  @keydown="handleKeyDown"
-                  @paste="handlePaste"
-                />
-              </div>
+              <UAlert
+                v-if="hasYtDlpPrefix"
+                color="warning"
+                variant="soft"
+                icon="i-lucide-triangle-alert"
+                title="Remove the yt-dlp prefix"
+              >
+                <template #description>
+                  <p class="text-sm text-default">
+                    Enter only the URLs and flags. This page already runs commands as
+                    <code>yt-dlp &lt;your command&gt;</code>.
+                  </p>
+                </template>
+              </UAlert>
 
-              <div class="flex flex-wrap items-center justify-end gap-2 xl:self-end">
-                <UPopover :content="{ side: 'top', align: 'end', sideOffset: 8 }">
+              <UAlert
+                v-if="sessionStatus === 'reconnecting'"
+                color="warning"
+                variant="soft"
+                icon="i-lucide-rotate-cw"
+                title="Reconnecting to the live stream"
+                description="The command is still tracked in the background and the page is trying to reattach automatically."
+              />
+
+              <UAlert
+                v-if="showExpiredAlert"
+                color="warning"
+                variant="soft"
+                icon="i-lucide-clock-3"
+                title="Session expired"
+                description="The saved transcript has aged out, but the last command was restored so you can run it again."
+              />
+
+              <UAlert
+                v-if="sessionStatus === 'interrupted'"
+                color="warning"
+                variant="soft"
+                icon="i-lucide-circle-off"
+                title="Session interrupted"
+                description="The last command did not finish cleanly. Inspect the transcript above or rerun the command below."
+              />
+
+              <UAlert
+                v-if="showNonZeroExitAlert"
+                color="warning"
+                variant="soft"
+                icon="i-lucide-badge-alert"
+                :title="`Command exited with code ${sessionExitCode}`"
+                description="The transcript is preserved so you can review the output or run the command again."
+              />
+
+              <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+                <div class="space-y-3">
+                  <TextareaAutocomplete
+                    v-if="isMultiLineInput"
+                    ref="commandTextarea"
+                    v-model="command"
+                    class="console-input"
+                    :options="ytDlpOptions"
+                    :disabled="isStartBlocked"
+                    :icon="commandInputIcon"
+                    :icon-class="commandInputIconClass"
+                    placeholder="--help"
+                    :rows="5"
+                    @keydown="handleKeyDown"
+                  />
+
+                  <InputAutocomplete
+                    v-else
+                    ref="commandInput"
+                    v-model="command"
+                    class="console-input"
+                    :options="ytDlpOptions"
+                    :disabled="isStartBlocked"
+                    :icon="commandInputIcon"
+                    :icon-class="commandInputIconClass"
+                    placeholder="--help"
+                    :multiple="true"
+                    :allowShortFlags="true"
+                    @keydown="handleKeyDown"
+                    @paste="handlePaste"
+                  />
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-2 xl:self-end">
+                  <UPopover :content="{ side: 'top', align: 'end', sideOffset: 8 }">
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      size="lg"
+                      icon="i-lucide-history"
+                      trailing-icon="i-lucide-chevron-up"
+                      class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                    >
+                      History
+                    </UButton>
+
+                    <template #content>
+                      <UCard
+                        class="w-[min(92vw,42rem)] border border-default/70 shadow-sm"
+                        :ui="historyCardUi"
+                      >
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div
+                            class="flex items-center gap-2 text-sm font-semibold text-highlighted"
+                          >
+                            <UIcon name="i-lucide-history" class="size-4 text-toned" />
+                            <span>Command history</span>
+                          </div>
+
+                          <UButton
+                            color="neutral"
+                            variant="outline"
+                            size="sm"
+                            icon="i-lucide-trash"
+                            :disabled="historyEntries.length < 1"
+                            @click="() => void clearHistory()"
+                          >
+                            Clear history
+                          </UButton>
+                        </div>
+
+                        <UAlert
+                          v-if="historyEntries.length < 1"
+                          color="info"
+                          variant="soft"
+                          icon="i-lucide-clock-3"
+                          title="Command history is empty"
+                        />
+
+                        <div
+                          v-else
+                          class="max-h-96 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+                        >
+                          <div class="w-full max-w-full overflow-auto overscroll-contain">
+                            <table class="min-w-155 w-full text-sm">
+                              <tbody class="divide-y divide-default">
+                                <tr
+                                  v-for="(cmd, index) in historyEntries"
+                                  :key="`${index}-${cmd}`"
+                                  class="hover:bg-muted/20"
+                                >
+                                  <td class="px-3 py-3 align-middle">
+                                    <button
+                                      type="button"
+                                      class="block w-full text-left font-mono text-xs text-default hover:text-highlighted"
+                                      @click="() => void loadCommand(cmd)"
+                                    >
+                                      {{ cmd.replace(/\n/g, ' ') }}
+                                    </button>
+                                  </td>
+
+                                  <td
+                                    class="w-12 px-3 py-3 text-center align-middle whitespace-nowrap"
+                                  >
+                                    <UButton
+                                      color="neutral"
+                                      variant="ghost"
+                                      size="xs"
+                                      icon="i-lucide-x"
+                                      square
+                                      @click="removeFromHistory(index)"
+                                    />
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </UCard>
+                    </template>
+                  </UPopover>
+
                   <UButton
+                    v-if="showCancelButton"
                     color="neutral"
                     variant="outline"
                     size="lg"
-                    icon="i-lucide-history"
-                    trailing-icon="i-lucide-chevron-up"
+                    icon="i-lucide-power"
+                    :loading="cancelPending"
                     class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                    @click="() => void cancelCommand()"
                   >
-                    History
+                    Close output
                   </UButton>
 
-                  <template #content>
-                    <UCard class="w-[min(92vw,42rem)]" :ui="{ body: 'space-y-3 p-4' }">
-                      <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-                          <UIcon name="i-lucide-history" class="size-4 text-toned" />
-                          <span>Command history</span>
-                        </div>
+                  <UButton
+                    v-else-if="canManualReconnect"
+                    color="neutral"
+                    variant="outline"
+                    size="lg"
+                    icon="i-lucide-rotate-cw"
+                    :loading="manualReconnectPending"
+                    class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                    @click="() => void reconnectSession()"
+                  >
+                    Reconnect
+                  </UButton>
 
-                        <UButton
-                          color="error"
-                          variant="outline"
-                          size="sm"
-                          icon="i-lucide-trash"
-                          :disabled="commandHistory.length < 1"
-                          @click="() => void clearHistory()"
-                        >
-                          Clear history
-                        </UButton>
-                      </div>
-
-                      <UAlert
-                        v-if="commandHistory.length < 1"
-                        color="info"
-                        variant="soft"
-                        icon="i-lucide-clock-3"
-                        title="Commands history is empty"
-                      />
-
-                      <div
-                        v-else
-                        class="max-h-96 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
-                      >
-                        <div class="w-full max-w-full overflow-auto overscroll-contain">
-                          <table class="min-w-155 w-full text-sm">
-                            <tbody class="divide-y divide-default">
-                              <tr
-                                v-for="(cmd, index) in commandHistory"
-                                :key="`${index}-${cmd}`"
-                                class="hover:bg-muted/20"
-                              >
-                                <td class="px-3 py-3 align-middle">
-                                  <button
-                                    type="button"
-                                    class="block w-full text-left font-mono text-xs text-default hover:text-highlighted"
-                                    @click="() => void loadCommand(cmd)"
-                                  >
-                                    {{ cmd.replace(/\n/g, ' ') }}
-                                  </button>
-                                </td>
-
-                                <td
-                                  class="w-12 px-3 py-3 text-center align-middle whitespace-nowrap"
-                                >
-                                  <UButton
-                                    color="error"
-                                    variant="ghost"
-                                    size="xs"
-                                    icon="i-lucide-x"
-                                    square
-                                    @click="removeFromHistory(index)"
-                                  />
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </UCard>
-                  </template>
-                </UPopover>
-
-                <UButton
-                  color="primary"
-                  size="lg"
-                  :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-send'"
-                  :loading="isLoading"
-                  :disabled="isLoading || !hasValidCommand"
-                  class="flex-1 justify-center sm:flex-none sm:min-w-36"
-                  @click="() => void runCommand()"
-                >
-                  Run command
-                </UButton>
+                  <UButton
+                    v-else
+                    color="primary"
+                    size="lg"
+                    :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-send'"
+                    :loading="isLoading"
+                    :disabled="!canStartCommand"
+                    class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                    @click="() => void runCommand()"
+                  >
+                    {{ runButtonLabel }}
+                  </UButton>
+                </div>
               </div>
             </div>
           </div>
@@ -191,35 +328,59 @@
   </main>
 </template>
 
+<style scoped>
+.console-input :deep(input),
+.console-input :deep(textarea) {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.terminal-host :deep(.xterm) {
+  padding: 0.75rem !important;
+}
+
+.terminal-host :deep(.xterm-viewport) {
+  background-color: transparent !important;
+}
+</style>
+
 <script setup lang="ts">
-import { fetchEventSource } from '@microsoft/fetch-event-source';
-import type { EventSourceMessage } from '@microsoft/fetch-event-source';
 import { useStorage } from '@vueuse/core';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { Terminal } from '@xterm/xterm';
 import InputAutocomplete from '~/components/InputAutocomplete.vue';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
+import { useConsoleSession } from '~/composables/useConsoleSession';
 import { useDialog } from '~/composables/useDialog';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
-import { disableOpacity, enableOpacity, parse_api_error, uri } from '~/utils';
+import { disableOpacity, enableOpacity } from '~/utils';
+
+useHead({ title: 'Console' });
+
+const MAX_HISTORY_ITEMS = 50;
+const ACTIVE_SESSION_STATUSES = ['starting', 'running', 'reconnecting'];
+
+let flushFrame: number | null = null;
+let fitFrame: number | null = null;
+let terminalResizeObserver: ResizeObserver | null = null;
+let didInitialRender = false;
+let renderedChunkCount = 0;
 
 const config = useConfigStore();
 const toast = useNotification();
 const dialog = useDialog();
+const consoleSession = useConsoleSession();
 
-const terminal = ref<Terminal>();
-const terminalFit = ref<FitAddon>();
+const terminal = ref<Terminal | null>(null);
+const terminalFit = ref<FitAddon | null>(null);
 const command = ref('');
+const manualReconnectPending = ref(false);
+const cancelPending = ref(false);
 const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window');
 const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null);
 const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null);
-const isLoading = ref(false);
 const storedCommand = useStorage<string>('console_command', '');
 const commandHistory = useStorage<string[]>('console_command_history', []);
-const sseController = ref<AbortController | null>(null);
-
-const MAX_HISTORY_ITEMS = 50;
 
 const pageCardUi = {
   root: 'w-full bg-transparent',
@@ -228,36 +389,240 @@ const pageCardUi = {
   body: 'w-full',
 };
 
+const historyCardUi = {
+  body: 'space-y-3 p-4',
+};
+
 const ytDlpOptions = computed<AutoCompleteOptions>(() =>
   config.ytdlp_options.flatMap((opt) =>
     opt.flags.map((flag) => ({ value: flag, description: opt.description || '' })),
   ),
 );
 
-const hasValidCommand = computed(() => Boolean(command.value && command.value.trim().length > 0));
+const bufferedTranscript = consoleSession.bufferedTranscript;
+const sessionStatus = computed(() => consoleSession.state.value.status);
+const sessionError = computed(() => consoleSession.state.value.error);
+const sessionExitCode = computed(() => consoleSession.state.value.exitCode);
+const hasActiveSession = computed(() => Boolean(consoleSession.state.value.sessionId));
+const shortSessionId = computed(() => consoleSession.state.value.sessionId?.slice(0, 8) ?? '');
+const displayCommand = computed(() => command.value.trim().replace(/^yt-dlp\b\s*/i, ''));
+const runnableCommand = computed(() => displayCommand.value.replace(/\n/g, ' ').trim());
+const hasValidCommand = computed(() => Boolean(runnableCommand.value));
+const hasYtDlpPrefix = computed(() => /^yt-dlp\b/i.test(command.value.trim()));
+const isLoading = computed(() => consoleSession.isLoading.value);
 const isMultiLineInput = computed(() => Boolean(command.value && command.value.includes('\n')));
+const historyEntries = computed(() => commandHistory.value);
+const canManualReconnect = computed(() => sessionStatus.value === 'reconnecting');
+const showCancelButton = computed(() =>
+  ['starting', 'running', 'reconnecting'].includes(sessionStatus.value),
+);
+const isStartBlocked = computed(() => isLoading.value);
+const canStartCommand = computed(() => !isStartBlocked.value && hasValidCommand.value);
+const showExpiredAlert = computed(
+  () => sessionStatus.value === 'expired' && Boolean(consoleSession.state.value.command),
+);
+const showNonZeroExitAlert = computed(
+  () =>
+    !isLoading.value && typeof sessionExitCode.value === 'number' && sessionExitCode.value !== 0,
+);
+const inputModeLabel = computed(() => (isMultiLineInput.value ? 'Multi-line' : 'Single-line'));
+const inputModeColor = computed(() => (isMultiLineInput.value ? 'info' : 'neutral'));
+const commandInputIcon = computed(() =>
+  isLoading.value ? 'i-lucide-loader-circle' : 'i-lucide-terminal',
+);
+const commandInputIconClass = computed(() => (isLoading.value ? 'animate-spin' : ''));
+const exitCodeBadgeColor = computed(() => {
+  return sessionExitCode.value === 0 ? 'success' : 'error';
+});
+const runButtonLabel = computed(() => {
+  if (runnableCommand.value === 'clear') {
+    return 'Clear output';
+  }
+
+  if (
+    consoleSession.state.value.command.trim() &&
+    consoleSession.state.value.command.trim() === displayCommand.value &&
+    ['finished', 'interrupted', 'expired', 'error'].includes(sessionStatus.value)
+  ) {
+    return 'Run again';
+  }
+
+  return 'Run command';
+});
+const sessionErrorTitle = computed(() => {
+  if (typeof sessionExitCode.value === 'number') {
+    return 'Command failed';
+  }
+
+  return hasActiveSession.value ? 'Command stream failed' : 'Command request failed';
+});
+const sessionStatusLabel = computed(() => {
+  switch (sessionStatus.value) {
+    case 'starting':
+      return 'Starting';
+
+    case 'running':
+      return 'Streaming';
+
+    case 'reconnecting':
+      return 'Reconnecting';
+
+    case 'finished':
+      return 'Finished';
+
+    case 'interrupted':
+      return 'Interrupted';
+
+    case 'expired':
+      return 'Expired';
+
+    case 'error':
+      return 'Failed';
+
+    default:
+      return 'Idle';
+  }
+});
+const sessionStatusColor = computed(() => {
+  switch (sessionStatus.value) {
+    case 'starting':
+    case 'running':
+      return 'info';
+
+    case 'reconnecting':
+    case 'interrupted':
+    case 'expired':
+      return 'warning';
+
+    case 'finished':
+      return 'success';
+
+    case 'error':
+      return 'error';
+
+    default:
+      return 'neutral';
+  }
+});
+const sessionStatusIcon = computed(() => {
+  switch (sessionStatus.value) {
+    case 'starting':
+    case 'running':
+    case 'reconnecting':
+      return 'i-lucide-loader-circle';
+
+    case 'finished':
+      return 'i-lucide-circle-check';
+
+    case 'interrupted':
+      return 'i-lucide-circle-off';
+
+    case 'expired':
+      return 'i-lucide-clock-3';
+
+    case 'error':
+      return 'i-lucide-triangle-alert';
+
+    default:
+      return 'i-lucide-circle-dot';
+  }
+});
+const sessionStatusSpinning = computed(() => ACTIVE_SESSION_STATUSES.includes(sessionStatus.value));
+const sessionStatusDescription = computed(() => {
+  switch (sessionStatus.value) {
+    case 'starting':
+    case 'running':
+      return 'The command keeps running even if you reload or navigate away.';
+
+    case 'reconnecting':
+      return 'The command is still tracked in the background while the page reconnects to the stream.';
+
+    case 'finished':
+      return typeof sessionExitCode.value === 'number' && sessionExitCode.value !== 0
+        ? `The last command finished with exit code ${sessionExitCode.value}.`
+        : 'The last command completed and its transcript is still available.';
+
+    case 'interrupted':
+      return 'The last command was interrupted before it completed.';
+
+    case 'expired':
+      return 'The transcript expired, but you can rerun the restored command below.';
+
+    case 'error':
+      return typeof sessionExitCode.value === 'number'
+        ? `The last command failed with exit code ${sessionExitCode.value}.`
+        : hasActiveSession.value
+          ? 'The live stream ran into a problem while the page was attached to the session.'
+          : 'The command request failed before a durable session could be restored.';
+
+    default:
+      return 'Run yt-dlp commands directly in a non-interactive session.';
+  }
+});
 
 watch(command, (value) => {
   storedCommand.value = value;
 });
 
 watch(
-  () => isLoading.value,
-  async (value) => {
-    if (value) {
+  () => sessionStatus.value,
+  async (value, oldValue) => {
+    const sessionCommand = consoleSession.state.value.command.trim();
+    if (sessionCommand && (!command.value.trim() || ['expired', 'interrupted'].includes(value))) {
+      command.value = sessionCommand;
+    }
+
+    if (
+      oldValue &&
+      oldValue !== value &&
+      ACTIVE_SESSION_STATUSES.includes(oldValue) &&
+      !ACTIVE_SESSION_STATUSES.includes(value)
+    ) {
+      await nextTick();
+      await focusInput();
+    }
+  },
+);
+
+watch(
+  () => sessionError.value,
+  (value, oldValue) => {
+    if (!value || value === oldValue) {
       return;
     }
 
-    if (command.value.trim()) {
-      addToHistory(command.value.trim());
+    toast.error(value);
+  },
+);
+
+watch(
+  () => bufferedTranscript.value.length,
+  (length, previousLength = 0) => {
+    if (!terminal.value) {
+      return;
     }
 
-    command.value = '';
-    await nextTick();
-    await focusInput();
+    if (!didInitialRender) {
+      restoreBufferedTerminalOutput();
+      return;
+    }
+
+    if (length < previousLength) {
+      restoreBufferedTerminalOutput();
+      return;
+    }
+
+    scheduleFlush();
   },
-  { immediate: true },
 );
+
+watch(isMultiLineInput, async (value, oldValue) => {
+  if (value === oldValue) {
+    return;
+  }
+
+  await focusInput();
+});
 
 watch(
   () => config.app.console_enabled,
@@ -271,13 +636,162 @@ watch(
   },
 );
 
-const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
-  const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-  const isTextarea = target.tagName === 'TEXTAREA';
+const getInputElement = (): HTMLInputElement | HTMLTextAreaElement | null => {
+  const element = isMultiLineInput.value
+    ? commandTextarea.value?.$el?.querySelector('textarea')
+    : commandInput.value?.$el?.querySelector('input');
 
-  if (event.key !== 'Enter') {
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    return element;
+  }
+
+  return null;
+};
+
+const focusInput = async (): Promise<void> => {
+  await nextTick();
+  getInputElement()?.focus();
+};
+
+const scheduleTerminalFit = (): void => {
+  if (!terminal.value || !terminalFit.value || fitFrame) {
     return;
   }
+
+  fitFrame = window.requestAnimationFrame(() => {
+    fitFrame = null;
+
+    if (!terminal.value || !terminalFit.value) {
+      return;
+    }
+
+    terminalFit.value.fit();
+  });
+};
+
+const bindTerminalResizeObserver = (): void => {
+  if (!terminal_window.value || typeof ResizeObserver === 'undefined') {
+    return;
+  }
+
+  terminalResizeObserver?.disconnect();
+  terminalResizeObserver = new ResizeObserver(() => {
+    scheduleTerminalFit();
+  });
+  terminalResizeObserver.observe(terminal_window.value);
+};
+
+const restoreBufferedTerminalOutput = (): void => {
+  if (!terminal.value) {
+    return;
+  }
+
+  terminal.value.clear();
+  renderedChunkCount = 0;
+
+  if (bufferedTranscript.value.length < 1) {
+    didInitialRender = true;
+    scheduleTerminalFit();
+    return;
+  }
+
+  terminal.value.write(bufferedTranscript.value.join(''));
+  renderedChunkCount = bufferedTranscript.value.length;
+  didInitialRender = true;
+  scheduleTerminalFit();
+
+  window.requestAnimationFrame(() => {
+    scheduleTerminalFit();
+  });
+};
+
+const flushTerminal = (): void => {
+  if (!terminal.value) {
+    return;
+  }
+
+  if (!didInitialRender) {
+    didInitialRender = true;
+  }
+
+  if (bufferedTranscript.value.length < renderedChunkCount) {
+    restoreBufferedTerminalOutput();
+    return;
+  }
+
+  if (bufferedTranscript.value.length === renderedChunkCount) {
+    return;
+  }
+
+  const chunk = bufferedTranscript.value.slice(renderedChunkCount).join('');
+  if (!chunk) {
+    return;
+  }
+
+  terminal.value.write(chunk);
+  renderedChunkCount = bufferedTranscript.value.length;
+};
+
+const scheduleFlush = (): void => {
+  if (flushFrame) {
+    return;
+  }
+
+  flushFrame = window.requestAnimationFrame(() => {
+    flushFrame = null;
+    flushTerminal();
+  });
+};
+
+const handleTerminalResize = (): void => {
+  scheduleTerminalFit();
+};
+
+const handlePageLeave = (): void => {
+  consoleSession.disconnect();
+};
+
+const ensureTerminal = async (): Promise<void> => {
+  if (terminal.value) {
+    return;
+  }
+
+  terminalFit.value = new FitAddon();
+  terminal.value = new Terminal({
+    fontSize: 14,
+    fontFamily: "'JetBrains Mono', monospace",
+    cursorBlink: false,
+    cursorStyle: 'underline',
+    convertEol: true,
+    disableStdin: true,
+    scrollback: 2000,
+    theme: {
+      background: '#09090b',
+      foreground: '#f4f4f5',
+      cursor: '#60a5fa',
+      selectionBackground: 'rgba(255, 255, 255, 0.18)',
+    },
+  });
+
+  terminal.value.loadAddon(terminalFit.value);
+
+  await nextTick();
+
+  if (terminal_window.value) {
+    terminal.value.open(terminal_window.value);
+  }
+
+  bindTerminalResizeObserver();
+  scheduleTerminalFit();
+};
+
+const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
+  if (event.defaultPrevented || event.isComposing || event.key !== 'Enter') {
+    return;
+  }
+
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  const isTextarea = target.tagName === 'TEXTAREA';
 
   if (((event.ctrlKey && isTextarea) || !isTextarea) && hasValidCommand.value) {
     event.preventDefault();
@@ -295,17 +809,19 @@ const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
 
     await nextTick();
 
-    if (commandTextarea.value) {
-      const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement;
-      if (textarea) {
-        textarea.setSelectionRange(cursorPos + 1, cursorPos + 1);
-        textarea.focus();
-      }
+    const textarea = commandTextarea.value?.$el?.querySelector('textarea');
+    if (textarea instanceof HTMLTextAreaElement) {
+      textarea.setSelectionRange(cursorPos + 1, cursorPos + 1);
+      textarea.focus();
     }
   }
 };
 
 const handlePaste = async (event: ClipboardEvent): Promise<void> => {
+  if (event.defaultPrevented) {
+    return;
+  }
+
   const pastedText = event.clipboardData?.getData('text') || '';
   if (!pastedText.includes('\n')) {
     return;
@@ -317,143 +833,26 @@ const handlePaste = async (event: ClipboardEvent): Promise<void> => {
   const start = target.selectionStart || currentValue.length;
   const end = target.selectionEnd || currentValue.length;
   command.value = currentValue.substring(0, start) + pastedText + currentValue.substring(end);
+
   await nextTick();
 
-  if (!commandTextarea.value) {
-    return;
-  }
-
-  const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement;
-  if (textarea) {
+  const textarea = commandTextarea.value?.$el?.querySelector('textarea');
+  if (textarea instanceof HTMLTextAreaElement) {
     const newPos = start + pastedText.length;
     textarea.setSelectionRange(newPos, newPos);
     textarea.focus();
   }
 };
 
-const handle_event = (): void => {
-  terminalFit.value?.fit();
-};
-
-const handleStreamMessage = (event: EventSourceMessage): void => {
-  if (!terminal.value) {
-    return;
-  }
-
-  let payload: { type?: string; line?: string; exitcode?: number } | null = null;
-  if (event.data) {
-    try {
-      payload = JSON.parse(event.data) as { type?: string; line?: string; exitcode?: number };
-    } catch {
-      payload = null;
-    }
-  }
-
-  if (event.event === 'output') {
-    terminal.value.writeln(payload?.line ?? '');
-    return;
-  }
-
-  if (event.event === 'close') {
-    isLoading.value = false;
-    sseController.value?.abort();
-  }
-};
-
-const startStream = async (cmd: string): Promise<void> => {
-  sseController.value?.abort();
-  const controller = new AbortController();
-  sseController.value = controller;
-  isLoading.value = true;
-
-  try {
-    await fetchEventSource(uri('/api/system/terminal'), {
-      method: 'POST',
-      body: JSON.stringify({ command: cmd }),
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-      },
-      credentials: 'same-origin',
-      signal: controller.signal,
-      onopen: async (response) => {
-        if (response.ok) {
-          return;
-        }
-
-        let message = response.statusText || 'Failed to start command stream.';
-
-        try {
-          message = await parse_api_error(response.clone().json());
-        } catch {
-          try {
-            const text = await response.text();
-            if (text) {
-              message = text;
-            }
-          } catch {
-            message = response.statusText || 'Failed to start command stream.';
-          }
-        }
-
-        throw new Error(message);
-      },
-      onmessage: handleStreamMessage,
-      onerror: (error) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        terminal.value?.writeln(`Error: ${error}`);
-        isLoading.value = false;
-      },
-    });
-  } catch (error) {
-    if (!controller.signal.aborted) {
-      terminal.value?.writeln(`Error: ${error}`);
-      isLoading.value = false;
-    }
-  } finally {
-    if (controller === sseController.value) {
-      sseController.value = null;
-    }
-  }
-};
-
-const ensureTerminal = async (): Promise<void> => {
-  if (terminal.value) {
-    return;
-  }
-
-  terminal.value = new Terminal({
-    fontSize: 14,
-    fontFamily: "'JetBrains Mono', monospace",
-    cursorBlink: false,
-    cursorStyle: 'underline',
-    cols: 108,
-    rows: 10,
-    disableStdin: true,
-    scrollback: 1000,
-    theme: {
-      background: '#09090b',
-      foreground: '#f4f4f5',
-    },
-  });
-
-  terminalFit.value = new FitAddon();
-  terminal.value.loadAddon(terminalFit.value);
-
-  await nextTick();
-
-  if (terminal_window.value) {
-    terminal.value.open(terminal_window.value);
-  }
-
-  terminalFit.value.fit();
+const addToHistory = (cmd: string): void => {
+  commandHistory.value = [cmd, ...commandHistory.value.filter((item) => item !== cmd)].slice(
+    0,
+    MAX_HISTORY_ITEMS,
+  );
 };
 
 const runCommand = async (): Promise<void> => {
-  if (!hasValidCommand.value) {
+  if (!canStartCommand.value) {
     return;
   }
 
@@ -463,57 +862,86 @@ const runCommand = async (): Promise<void> => {
     return;
   }
 
-  let cmd = command.value.trim().replace(/\n/g, ' ').trim();
-
-  if (cmd.startsWith('yt-dlp')) {
-    cmd = cmd.replace(/^yt-dlp/, '').trim();
+  if (displayCommand.value !== command.value.trim()) {
+    command.value = displayCommand.value;
     await nextTick();
-    if (cmd === '') {
-      return;
-    }
   }
 
-  await ensureTerminal();
-
-  if (cmd === 'clear') {
+  if (runnableCommand.value === 'clear') {
     await clearOutput(true);
     return;
   }
 
-  await startStream(cmd);
-  terminal.value?.writeln('user@YTPTube ~');
-  terminal.value?.writeln(`$ yt-dlp ${command.value}`);
-  storedCommand.value = '';
+  await ensureTerminal();
+
+  addToHistory(displayCommand.value);
+
+  const started = await consoleSession.startSession({
+    command: runnableCommand.value,
+    displayCommand: displayCommand.value,
+  });
+
+  if (started) {
+    storedCommand.value = '';
+  }
+};
+
+const runHelp = async (): Promise<void> => {
+  if (isStartBlocked.value) {
+    return;
+  }
+
+  command.value = '--help';
+  await nextTick();
+  await runCommand();
+};
+
+const reconnectSession = async (): Promise<void> => {
+  if (!canManualReconnect.value || manualReconnectPending.value) {
+    return;
+  }
+
+  manualReconnectPending.value = true;
+
+  try {
+    await consoleSession.restoreSession();
+    restoreBufferedTerminalOutput();
+  } finally {
+    manualReconnectPending.value = false;
+    await focusInput();
+  }
+};
+
+const cancelCommand = async (): Promise<void> => {
+  if (!showCancelButton.value || cancelPending.value) {
+    return;
+  }
+
+  cancelPending.value = true;
+
+  try {
+    const result = await consoleSession.cancelSession();
+    if (result.status === 'error' && result.message) {
+      toast.error(result.message);
+    }
+  } finally {
+    cancelPending.value = false;
+    await focusInput();
+  }
 };
 
 const clearOutput = async (withCommand: boolean = false): Promise<void> => {
+  consoleSession.clearTranscript();
   terminal.value?.clear();
+  renderedChunkCount = 0;
+  didInitialRender = true;
 
-  if (withCommand === true) {
+  if (withCommand) {
     command.value = '';
+    storedCommand.value = '';
   }
 
   await focusInput();
-};
-
-const focusInput = async (): Promise<void> => {
-  await nextTick();
-
-  let elm: HTMLInputElement | HTMLTextAreaElement | undefined;
-  if (isMultiLineInput.value) {
-    elm = commandTextarea.value?.$el?.querySelector('textarea') as HTMLTextAreaElement;
-  } else {
-    elm = commandInput.value?.$el?.querySelector('input') as HTMLInputElement;
-  }
-
-  elm?.focus();
-};
-
-const addToHistory = (cmd: string): void => {
-  commandHistory.value = [cmd, ...commandHistory.value.filter((h) => h !== cmd)].slice(
-    0,
-    MAX_HISTORY_ITEMS,
-  );
 };
 
 const loadCommand = async (cmd: string): Promise<void> => {
@@ -523,7 +951,7 @@ const loadCommand = async (cmd: string): Promise<void> => {
 };
 
 const clearHistory = async (): Promise<void> => {
-  if (commandHistory.value.length === 0) {
+  if (historyEntries.value.length < 1) {
     return;
   }
 
@@ -544,10 +972,6 @@ const removeFromHistory = (index: number): void => {
   commandHistory.value = commandHistory.value.filter((_, i) => i !== index);
 };
 
-watch(isMultiLineInput, async () => {
-  await focusInput();
-});
-
 onMounted(async () => {
   if (config.app.console_enabled !== true) {
     toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
@@ -555,13 +979,20 @@ onMounted(async () => {
     return;
   }
 
-  window.addEventListener('resize', handle_event);
+  window.addEventListener('resize', handleTerminalResize);
+  window.addEventListener('pagehide', handlePageLeave);
+  window.addEventListener('beforeunload', handlePageLeave);
   disableOpacity();
 
   await ensureTerminal();
+  await consoleSession.restoreSession();
+  restoreBufferedTerminalOutput();
 
-  if (storedCommand.value) {
+  if (storedCommand.value.trim()) {
     command.value = storedCommand.value;
+    await nextTick();
+  } else if (consoleSession.state.value.command.trim()) {
+    command.value = consoleSession.state.value.command;
     await nextTick();
   }
 
@@ -569,8 +1000,31 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  sseController.value?.abort();
-  window.removeEventListener('resize', handle_event);
+  consoleSession.disconnect();
+  window.removeEventListener('pagehide', handlePageLeave);
+  window.removeEventListener('beforeunload', handlePageLeave);
+  terminalResizeObserver?.disconnect();
+  terminalResizeObserver = null;
+
+  if (flushFrame) {
+    window.cancelAnimationFrame(flushFrame);
+    flushFrame = null;
+  }
+
+  if (fitFrame) {
+    window.cancelAnimationFrame(fitFrame);
+    fitFrame = null;
+  }
+
+  terminal.value?.dispose();
+  terminal.value = null;
+  terminalFit.value = null;
+  didInitialRender = false;
+  renderedChunkCount = 0;
+  manualReconnectPending.value = false;
+  cancelPending.value = false;
+
+  window.removeEventListener('resize', handleTerminalResize);
   enableOpacity();
 });
 </script>
