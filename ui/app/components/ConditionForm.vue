@@ -523,6 +523,7 @@ import { match_str } from '~/utils/ytdlp';
 
 const emitter = defineEmits<{
   (e: 'cancel'): void;
+  (e: 'dirty-change', dirty: boolean): void;
   (e: 'submit', payload: { reference: number | null | undefined; item: Condition }): void;
 }>();
 
@@ -557,6 +558,16 @@ const testData = ref<{
 const showOptions = ref(false);
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
 
+const dirtySource = computed(() => ({
+  reference: props.reference ?? null,
+  form: normalizeCondition(form),
+  importString: importString.value,
+  showImport: showImport.value,
+  newExtraKey: newExtraKey.value,
+  newExtraValue: newExtraValue.value,
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
+
 const fieldUi = {
   label: 'font-semibold text-default',
   container: 'space-y-2',
@@ -586,9 +597,19 @@ watch(
   () => props.item,
   (value) => {
     Object.assign(form, normalizeCondition(value));
+
+    importString.value = '';
+    newExtraKey.value = '';
+    newExtraValue.value = '';
+    nextTick(() => {
+      markClean();
+      emitter('dirty-change', false);
+    });
   },
   { deep: true },
 );
+
+watch(isDirty, (value: boolean) => emitter('dirty-change', value));
 
 watch(
   () => config.ytdlp_options,
@@ -855,4 +876,9 @@ const updateExtraValue = (key: string, rawValue: string): void => {
     [key]: rawValue.trim() ? parseValue(rawValue.trim()) : '',
   };
 };
+
+onMounted(() => {
+  markClean();
+  emitter('dirty-change', false);
+});
 </script>

@@ -424,7 +424,7 @@
       :description="editor.modalDescription.value"
       :dismissible="!editor.addInProgress.value"
       :ui="{ content: 'w-full sm:max-w-6xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && void editor.requestClose()"
+      @update:open="(open) => void editor.handleOpenChange(open)"
     >
       <template #body>
         <PresetForm
@@ -434,6 +434,7 @@
           :preset="editor.preset.value"
           :presets="presets"
           @cancel="() => void editor.requestClose()"
+          @dirty-change="(dirty) => (editor.dirty.value = dirty)"
           @submit="editor.submit"
         />
       </template>

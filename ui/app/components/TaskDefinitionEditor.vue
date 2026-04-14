@@ -622,6 +622,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'submit', payload: TaskDefinitionDocument): void;
   (e: 'cancel'): void;
+  (e: 'dirty-change', dirty: boolean): void;
   (e: 'import-existing', id: number): void;
 }>();
 
@@ -714,6 +715,16 @@ const existingDefinitionItems = computed(() => {
     value: item.id,
   }));
 });
+
+const dirtySource = computed(() => ({
+  mode: mode.value,
+  showImport: showImport.value,
+  importString: importString.value,
+  selectedExisting: selectedExisting.value,
+  jsonText: jsonText.value,
+  guiState: JSON.parse(JSON.stringify(guiState)),
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
 
 const resetGuiState = (state: GuiState): void => {
   guiState.name = state.name;
@@ -1034,6 +1045,10 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
       containerSelector: '',
       fields: [defaultField()],
     });
+    nextTick(() => {
+      markClean();
+      emit('dirty-change', false);
+    });
     return;
   }
 
@@ -1057,6 +1072,11 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
     mode.value = 'advanced';
     errorMessage.value = 'Failed to prepare definition for editing.';
   }
+
+  nextTick(() => {
+    markClean();
+    emit('dirty-change', false);
+  });
 };
 
 const importFromString = (): void => {
@@ -1094,6 +1114,8 @@ watch(
   (doc) => applyDocument(doc),
   { immediate: true },
 );
+
+watch(isDirty, (value: boolean) => emit('dirty-change', value));
 
 const switchMode = (next: EditorMode): void => {
   if (isBusy.value || next === mode.value) {

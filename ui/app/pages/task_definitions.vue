@@ -404,7 +404,7 @@
       :description="editorDescription"
       :dismissible="!editorLoading && !editorSubmitting"
       :ui="{ content: 'w-full sm:max-w-7xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && closeEditor()"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <TaskDefinitionEditor
@@ -414,7 +414,8 @@
           :loading="editorLoading"
           :submitting="editorSubmitting"
           @submit="submitDefinition"
-          @cancel="closeEditor"
+          @cancel="() => void requestCloseEditor()"
+          @dirty-change="(dirty) => (editorDirty = dirty)"
           @import-existing="importExistingDefinition"
         />
       </template>
@@ -491,6 +492,7 @@ const definitions = computed<TaskDefinitionSummary[]>(() => [...definitionsRef.v
 const { confirmDialog } = useDialog();
 
 const isEditorOpen = ref(false);
+const editorDirty = ref(false);
 const editorMode = ref<'create' | 'edit'>('create');
 const editorLoading = ref(false);
 const editorSubmitting = ref(false);
@@ -578,6 +580,24 @@ const showImportByDefault = computed(
   () => editorMode.value === 'create' && !hideImportByDefault.value,
 );
 
+const discardEditor = (): void => {
+  editorDirty.value = false;
+  workingDefinition.value = null;
+  workingId.value = null;
+  editorLoading.value = false;
+  editorSubmitting.value = false;
+  hideImportByDefault.value = false;
+};
+
+const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
+  useDirtyCloseGuard(isEditorOpen, {
+    dirty: editorDirty,
+    message: 'You have unsaved task definition changes. Do you want to discard them?',
+    onDiscard: async () => {
+      discardEditor();
+    },
+  });
+
 watch(showFilter, (value) => {
   if (!value) {
     query.value = '';
@@ -628,6 +648,7 @@ const toggleMasterSelection = (): void => {
 };
 
 const openCreate = (): void => {
+  editorDirty.value = false;
   editorMode.value = 'create';
   workingId.value = null;
   workingDefinition.value = cloneDocument(DEFAULT_DEFINITION);
@@ -638,6 +659,7 @@ const openCreate = (): void => {
 };
 
 const openEdit = async (summary: TaskDefinitionSummary): Promise<void> => {
+  editorDirty.value = false;
   editorMode.value = 'edit';
   workingId.value = summary.id;
   workingDefinition.value = null;
@@ -668,6 +690,7 @@ const importExistingDefinition = async (id: number): Promise<void> => {
     return;
   }
 
+  editorDirty.value = false;
   editorMode.value = 'create';
   workingId.value = null;
   workingDefinition.value = {
@@ -687,6 +710,7 @@ const closeEditor = (): void => {
     return;
   }
 
+  editorDirty.value = false;
   isEditorOpen.value = false;
   workingDefinition.value = null;
   workingId.value = null;

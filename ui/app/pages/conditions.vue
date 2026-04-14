@@ -459,7 +459,7 @@
       :description="modalDescription"
       :dismissible="!conditions.addInProgress.value"
       :ui="{ content: 'w-full sm:max-w-6xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && closeEditor()"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <ConditionForm
@@ -467,7 +467,8 @@
           :addInProgress="conditions.addInProgress.value"
           :reference="itemRef"
           :item="item as Condition"
-          @cancel="closeEditor()"
+          @cancel="() => void requestCloseEditor()"
+          @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
       </template>
@@ -504,6 +505,7 @@ const page = ref<number>(route.query.page ? parseInt(route.query.page as string,
 const item = ref<Partial<Condition>>({});
 const itemRef = ref<number | null | undefined>(null);
 const editorOpen = ref(false);
+const editorDirty = ref(false);
 const query = ref('');
 const showFilter = ref(false);
 const filterInput = ref<HTMLInputElement | null>(null);
@@ -554,6 +556,21 @@ const modalDescription = computed(
 const modalKey = computed(
   () => `${itemRef.value ?? 'new'}-${editorOpen.value ? 'open' : 'closed'}`,
 );
+
+const discardEditor = (): void => {
+  editorDirty.value = false;
+  item.value = {};
+  itemRef.value = null;
+};
+
+const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
+  useDirtyCloseGuard(editorOpen, {
+    dirty: editorDirty,
+    message: 'You have unsaved condition changes. Do you want to discard them?',
+    onDiscard: async () => {
+      discardEditor();
+    },
+  });
 
 watch(showFilter, (value) => {
   if (!value) {
@@ -614,6 +631,7 @@ const navigatePage = async (newPage: number): Promise<void> => {
 const resetEditor = (): void => {
   item.value = {};
   itemRef.value = null;
+  editorDirty.value = false;
 };
 
 const closeEditor = (): void => {
@@ -721,6 +739,7 @@ const updateItem = async ({
 };
 
 const editItem = (value: Condition): void => {
+  editorDirty.value = false;
   item.value = JSON.parse(JSON.stringify(value)) as Condition;
   itemRef.value = value.id;
   editorOpen.value = true;

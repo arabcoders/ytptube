@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 
 import type { Preset } from '~/types/presets';
+import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { cleanObject, prettyName } from '~/utils';
 
 type EditablePreset = Partial<Preset> & {
@@ -34,13 +35,30 @@ const sanitizePreset = (item: Preset | EditablePreset): Partial<Preset> => {
 
 export const usePresetEditor = () => {
   const presetsStore = usePresets();
-  const dialog = useDialog();
 
   const isOpen = ref(false);
   const reference = ref<number | null>(null);
   const preset = ref<Partial<Preset>>(makeEmptyPreset());
-  const initialSnapshot = ref('');
+  const dirty = ref(false);
   const sessionId = ref(0);
+
+  const discardEditor = (): void => {
+    dirty.value = false;
+    reference.value = null;
+    preset.value = makeEmptyPreset();
+  };
+
+  const {
+    isDirty,
+    requestClose: requestCloseGuard,
+    handleOpenChange,
+  } = useDirtyCloseGuard(isOpen, {
+    dirty,
+    message: 'You have unsaved preset changes. Do you want to discard them?',
+    onDiscard: async () => {
+      discardEditor();
+    },
+  });
 
   const modalTitle = computed(() => {
     return reference.value ? `Edit - ${prettyName(preset.value.name || '')}` : 'Add';
@@ -53,39 +71,27 @@ export const usePresetEditor = () => {
   const modalKey = computed(() => `${reference.value ?? 'create'}:${sessionId.value}`);
 
   const reset = (): void => {
-    reference.value = null;
-    preset.value = makeEmptyPreset();
-    initialSnapshot.value = '';
+    discardEditor();
   };
 
   const close = (): void => {
+    dirty.value = false;
     isOpen.value = false;
     reset();
   };
 
-  const snapshot = (item: Partial<Preset>): string =>
-    JSON.stringify(sanitizePreset(item as Preset));
-
-  const isDirty = computed(() => {
-    if (!isOpen.value) {
-      return false;
-    }
-
-    return snapshot(preset.value) !== initialSnapshot.value;
-  });
-
   const openCreate = (): void => {
     reset();
+    dirty.value = false;
     sessionId.value += 1;
-    initialSnapshot.value = snapshot(preset.value);
     isOpen.value = true;
   };
 
   const openEdit = (item: Preset | EditablePreset): void => {
+    dirty.value = false;
     reference.value = item.id ?? null;
     preset.value = sanitizePreset(item);
     sessionId.value += 1;
-    initialSnapshot.value = snapshot(preset.value);
     isOpen.value = true;
   };
 
@@ -94,22 +100,7 @@ export const usePresetEditor = () => {
       return;
     }
 
-    if (!isDirty.value) {
-      close();
-      return;
-    }
-
-    const { status } = await dialog.confirmDialog({
-      title: 'Discard changes?',
-      message: 'You have unsaved changes. Close the preset editor and discard them?',
-      confirmText: 'Discard',
-      cancelText: 'Keep editing',
-      confirmColor: 'warning',
-    });
-
-    if (status === true) {
-      close();
-    }
+    await requestCloseGuard();
   };
 
   const submit = async ({
@@ -144,10 +135,12 @@ export const usePresetEditor = () => {
     modalTitle,
     modalDescription,
     isDirty,
+    dirty,
     addInProgress: presetsStore.addInProgress,
     openCreate,
     openEdit,
     close,
+    handleOpenChange,
     requestClose,
     reset,
     submit,

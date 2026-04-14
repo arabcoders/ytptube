@@ -648,7 +648,7 @@
       :description="editorDescription"
       :dismissible="!addInProgress"
       :ui="{ content: 'w-full sm:max-w-7xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && closeEditor()"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <TaskForm
@@ -656,7 +656,8 @@
           :addInProgress="addInProgress"
           :reference="taskRef"
           :task="task as Task"
-          @cancel="closeEditor"
+          @cancel="() => void requestCloseEditor()"
+          @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
       </template>
@@ -729,6 +730,7 @@ const createEmptyTask = (): Partial<Task> => ({
 const task = ref<Partial<Task>>(createEmptyTask());
 const taskRef = ref<number | null>(null);
 const toggleForm = ref(false);
+const editorDirty = ref(false);
 const selectedElms = ref<number[]>([]);
 const massRun = ref(false);
 const massDelete = ref(false);
@@ -756,6 +758,21 @@ const editorDescription = computed(() => {
 });
 
 const formKey = computed(() => `${taskRef.value ?? 'new'}:${editorSessionId.value}`);
+
+const discardEditor = (): void => {
+  editorDirty.value = false;
+  task.value = createEmptyTask();
+  taskRef.value = null;
+};
+
+const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
+  useDirtyCloseGuard(toggleForm, {
+    dirty: editorDirty,
+    message: 'You have unsaved task changes. Do you want to discard them?',
+    onDiscard: async () => {
+      discardEditor();
+    },
+  });
 
 const filteredTasks = computed(() => {
   const normalizedQuery = query.value?.toLowerCase();
@@ -925,6 +942,7 @@ const reloadContent = async (fromMounted: boolean = false) => {
 const resetForm = (closeForm: boolean = false) => {
   task.value = createEmptyTask();
   taskRef.value = null;
+  editorDirty.value = false;
 
   if (closeForm) {
     toggleForm.value = false;
@@ -1068,6 +1086,7 @@ const updateItem = async ({
 };
 
 const editItem = (item: Task) => {
+  editorDirty.value = false;
   task.value = { ...item };
   taskRef.value = item.id ?? null;
   editorSessionId.value += 1;

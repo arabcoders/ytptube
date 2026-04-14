@@ -512,7 +512,7 @@
       :description="modalDescription"
       :dismissible="!addInProgress"
       :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && closeEditor()"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <NotificationForm
@@ -521,7 +521,8 @@
           :reference="targetRef"
           :item="target"
           :allowedEvents="allowedEvents"
-          @cancel="closeEditor()"
+          @cancel="() => void requestCloseEditor()"
+          @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
       </template>
@@ -562,6 +563,7 @@ const page = ref(1);
 const targetRef = ref<number | undefined>(undefined);
 const target = ref<notification>(defaultState());
 const editorOpen = ref(false);
+const editorDirty = ref(false);
 const sendingTest = ref(false);
 const query = ref('');
 const showFilter = ref(false);
@@ -582,6 +584,21 @@ const modalDescription = computed(
 const modalKey = computed(
   () => `${targetRef.value ?? 'new'}-${editorOpen.value ? 'open' : 'closed'}`,
 );
+
+const discardEditor = (): void => {
+  editorDirty.value = false;
+  target.value = defaultState();
+  targetRef.value = undefined;
+};
+
+const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
+  useDirtyCloseGuard(editorOpen, {
+    dirty: editorDirty,
+    message: 'You have unsaved notification changes. Do you want to discard them?',
+    onDiscard: async () => {
+      discardEditor();
+    },
+  });
 
 const filteredTargets = computed<notification[]>(() => {
   const normalizedQuery = query.value?.toLowerCase();
@@ -672,6 +689,7 @@ const navigatePage = async (newPage: number): Promise<void> => {
 const resetEditor = (): void => {
   target.value = defaultState();
   targetRef.value = undefined;
+  editorDirty.value = false;
 };
 
 const closeEditor = (): void => {
@@ -694,6 +712,7 @@ const toggleMasterSelection = (): void => {
 };
 
 const editItem = (item: notification): void => {
+  editorDirty.value = false;
   target.value = JSON.parse(JSON.stringify(item)) as notification;
   targetRef.value = item.id ?? undefined;
   editorOpen.value = true;

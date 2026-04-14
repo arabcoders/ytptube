@@ -359,6 +359,7 @@ import { normalizePresetName } from '~/utils';
 
 const emitter = defineEmits<{
   (event: 'cancel'): void;
+  (event: 'dirty-change', dirty: boolean): void;
   (event: 'submit', payload: { reference: number | null; preset: Preset }): void;
 }>();
 
@@ -420,6 +421,15 @@ const textareaUi = {
 
 const importPresetItems = computed(() => selectItems.value);
 
+const dirtySource = computed(() => ({
+  reference: props.reference ?? null,
+  form: JSON.parse(JSON.stringify(form)),
+  importString: importString.value,
+  selectedPreset: selectedPreset.value,
+  showImport: showImport.value,
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
+
 watch(
   () => props.preset,
   (value) => {
@@ -434,9 +444,18 @@ watch(
       priority: 0,
       ...JSON.parse(JSON.stringify(value || {})),
     });
+
+    importString.value = '';
+    selectedPreset.value = '';
+    nextTick(() => {
+      markClean();
+      emitter('dirty-change', false);
+    });
   },
   { deep: true },
 );
+
+watch(isDirty, (value: boolean) => emitter('dirty-change', value));
 
 watch(
   () => config.ytdlp_options,
@@ -625,4 +644,9 @@ const importExistingPreset = async (): Promise<void> => {
   await nextTick();
   selectedPreset.value = '';
 };
+
+onMounted(() => {
+  markClean();
+  emitter('dirty-change', false);
+});
 </script>

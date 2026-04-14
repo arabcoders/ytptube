@@ -513,6 +513,7 @@ const props = defineProps<{
 
 const emitter = defineEmits<{
   (e: 'cancel'): void;
+  (e: 'dirty-change', dirty: boolean): void;
   (
     e: 'submit',
     payload: { reference: number | null | undefined; task: Task | Task[]; archive_all?: boolean },
@@ -554,6 +555,15 @@ const CHANNEL_REGEX =
 const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i;
 
 const form = reactive<Task>(createDefaultTask(props.task));
+
+const dirtySource = computed(() => ({
+  reference: props.reference ?? null,
+  form: JSON.parse(JSON.stringify(form)),
+  import_string: import_string.value,
+  showImport: showImport.value,
+  archiveAllAfterAdd: archiveAllAfterAdd.value,
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -611,6 +621,13 @@ watch(
     if (!value?.preset) {
       form.preset = toRaw(config.app.default_preset);
     }
+
+    import_string.value = '';
+    archiveAllAfterAdd.value = false;
+    nextTick(() => {
+      markClean();
+      emitter('dirty-change', false);
+    });
   },
   { immediate: true, deep: true },
 );
@@ -636,6 +653,8 @@ watch(
     }
   },
 );
+
+watch(isDirty, (value: boolean) => emitter('dirty-change', value));
 
 const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
@@ -931,4 +950,9 @@ const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string
 
   return getPresetDefault(form.preset, type, ret);
 };
+
+onMounted(() => {
+  markClean();
+  emitter('dirty-change', false);
+});
 </script>
