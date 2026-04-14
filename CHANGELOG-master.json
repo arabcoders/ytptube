@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20260411-0eabc219",
-        "date": "2026-04-11T16:27:44+00:00",
+        "tag": "master-20260414-8729f030",
+        "date": "2026-04-14T14:32:17+00:00",
         "commits": [
+            {
+                "sha": "dbff4c67",
+                "message": "feat(console): make terminal window more durable and support reloading and stopping commands.",
+                "author": "arabcoders",
+                "date": "2026-04-13T23:19:35+00:00",
+                "full_sha": "dbff4c679893ab9128f060ef2c30497fe667857b"
+            },
+            {
+                "sha": "c70d5340",
+                "message": "feat: implement patch to make Windows Popen support stopping live stream",
+                "author": "arabcoders",
+                "date": "2026-04-11T20:31:48+00:00",
+                "full_sha": "c70d5340f13473f2b5ea986d14b87c764498af96"
+            },
+            {
+                "sha": "1786db46",
+                "message": "fix: native build could fail due to cache restore",
+                "author": "arabcoders",
+                "date": "2026-04-11T16:48:48+00:00",
+                "full_sha": "1786db46ccbd6d5ca2a26f1e36fb656b2dc18391"
+            },
             {
                 "sha": "890aae8a",
                 "message": "chore: external packages update",
@@ -4358,7 +4379,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "0eabc2197b3060be87d06c62361b013277c7da84"
+        "full_sha": "8729f030c7f44bb8a531388fcaf2523344c91bfb"
     },
     {
         "tag": "master-20250616-c07465a6",
