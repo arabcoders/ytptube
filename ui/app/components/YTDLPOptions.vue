@@ -121,7 +121,9 @@
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table class="min-w-180 w-full table-auto text-sm">
               <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-                <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+                <tr
+                  class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+                >
                   <th class="w-80 whitespace-nowrap">Flags</th>
                   <th>Description</th>
                 </tr>
@@ -130,7 +132,7 @@
                 <tr
                   v-for="opt in group.items"
                   :key="opt.flags.join('|')"
-                  class="align-top hover:bg-muted/20"
+                  class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
                 >
                   <td class="w-80 px-3 py-3 align-top">
                     <div class="flex items-start gap-2">
@@ -185,7 +187,9 @@
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
         <table class="min-w-215 w-full table-auto text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
               <th class="w-80 whitespace-nowrap">Flags</th>
               <th class="w-36 whitespace-nowrap">Group</th>
               <th>Description</th>
@@ -195,7 +199,7 @@
             <tr
               v-for="opt in visible"
               :key="opt.flags.join('|')"
-              class="align-top hover:bg-muted/20"
+              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
             >
               <td class="w-80 px-3 py-3 align-top">
                 <div class="flex items-start gap-2">

@@ -247,7 +247,7 @@
                                 <tr
                                   v-for="(cmd, index) in historyEntries"
                                   :key="`${index}-${cmd}`"
-                                  class="hover:bg-muted/20"
+                                  class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
                                 >
                                   <td class="px-3 py-3 align-middle">
                                     <button

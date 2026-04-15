@@ -367,7 +367,9 @@
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table class="min-w-215 table-fixed w-full text-sm">
               <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-                <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+                <tr
+                  class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+                >
                   <th class="w-40">
                     <span class="inline-flex items-center gap-1.5">
                       <UIcon name="i-lucide-key" class="size-3.5 text-toned" />
@@ -409,7 +411,7 @@
                 <tr
                   v-for="(field, index) in guiState.fields"
                   :key="`${index}-${field.key}`"
-                  class="align-top"
+                  class="align-top [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
                 >
                   <td class="px-3 py-3">
                     <UInput

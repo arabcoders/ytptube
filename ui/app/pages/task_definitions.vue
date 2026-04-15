@@ -37,7 +37,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span v-if="!isMobile">Filter</span>
+          <span>Filter</span>
         </UButton>
 
         <UButton
@@ -47,7 +47,7 @@
           icon="i-lucide-search"
           @click="inspect = true"
         >
-          <span v-if="!isMobile">Inspect</span>
+          <span>Inspect</span>
         </UButton>
 
         <UButton
@@ -57,7 +57,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span v-if="!isMobile">New Definition</span>
+          <span>New Definition</span>
         </UButton>
 
         <UButton
@@ -65,9 +65,10 @@
           variant="outline"
           size="sm"
           :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span v-if="!isMobile">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
         </UButton>
 
         <UButton
@@ -79,7 +80,7 @@
           :disabled="isLoading"
           @click="() => void reloadContent()"
         >
-          <span v-if="!isMobile">Reload</span>
+          <span>Reload</span>
         </UButton>
       </div>
     </div>
@@ -129,13 +130,15 @@
     </div>
 
     <div
-      v-if="display_style === 'list' && filteredDefinitions.length > 0"
+      v-if="contentStyle === 'list' && filteredDefinitions.length > 0"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-245 w-full text-sm">
+        <table class="min-w-255 w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
                   <UIcon
@@ -147,7 +150,7 @@
               <th class="w-full text-left">Definition</th>
               <th class="w-28 whitespace-nowrap">Priority</th>
               <th class="w-36 whitespace-nowrap">Updated</th>
-              <th class="w-44 whitespace-nowrap">Actions</th>
+              <th class="w-48 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -155,7 +158,7 @@
             <tr
               v-for="definition in filteredDefinitions"
               :key="definition.id"
-              class="hover:bg-muted/20"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
             >
               <td class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -198,7 +201,9 @@
                 </div>
               </td>
 
-              <td class="px-3 py-3 text-center align-middle">{{ definition.priority }}</td>
+              <td class="px-3 py-3 text-center align-middle">
+                {{ definition.priority }}
+              </td>
 
               <td class="px-3 py-3 text-center align-middle whitespace-nowrap">
                 <UTooltip :text="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')">
@@ -210,7 +215,7 @@
                 </UTooltip>
               </td>
 
-              <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
+              <td class="w-48 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     color="neutral"
@@ -219,7 +224,7 @@
                     icon="i-lucide-file-up"
                     @click="() => void exportDefinition(definition)"
                   >
-                    <span v-if="!isMobile">Export</span>
+                    <span class="hidden sm:inline">Export</span>
                   </UButton>
 
                   <UButton
@@ -229,7 +234,7 @@
                     icon="i-lucide-pencil"
                     @click="() => void openEdit(definition)"
                   >
-                    <span v-if="!isMobile">Edit</span>
+                    <span class="hidden sm:inline">Edit</span>
                   </UButton>
 
                   <UButton
@@ -239,7 +244,7 @@
                     icon="i-lucide-trash"
                     @click="() => void remove(definition)"
                   >
-                    <span v-if="!isMobile">Delete</span>
+                    <span class="hidden sm:inline">Delete</span>
                   </UButton>
                 </div>
               </td>
@@ -260,7 +265,11 @@
       >
         <UCard
           class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
-          :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+          :ui="{
+            header: 'p-4 pb-3',
+            body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
+            footer: 'border-t border-default px-4 py-4',
+          }"
         >
           <template #header>
             <div class="flex min-w-0 items-start justify-between gap-3">
@@ -287,7 +296,7 @@
                   square
                   @click="() => void exportDefinition(definition)"
                 >
-                  <span class="hidden sm:inline">Export Definition</span>
+                  <span>Export Definition</span>
                 </UButton>
 
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -340,27 +349,29 @@
             </button>
           </div>
 
-          <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-pencil"
-              class="w-full justify-center"
-              @click="() => void openEdit(definition)"
-            >
-              Edit
-            </UButton>
+          <template #footer>
+            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-pencil"
+                class="w-full justify-center"
+                @click="() => void openEdit(definition)"
+              >
+                Edit
+              </UButton>
 
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-trash"
-              class="w-full justify-center"
-              @click="() => void remove(definition)"
-            >
-              Delete
-            </UButton>
-          </div>
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                class="w-full justify-center"
+                @click="() => void remove(definition)"
+              >
+                Delete
+              </UButton>
+            </div>
+          </template>
         </UCard>
       </div>
     </div>
@@ -473,7 +484,6 @@ const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   },
 };
 
-const isMobile = useMediaQuery({ maxWidth: 1024 });
 const { toggleExpand, expandClass } = useExpandableMeta();
 
 const taskDefs = useTaskDefinitionsComposable();
@@ -500,6 +510,7 @@ const workingDefinition = ref<TaskDefinitionDocument | null>(null);
 const workingId = ref<number | null>(null);
 const inspect = ref(false);
 const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid');
+const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const query = ref('');
 const showFilter = ref(false);
@@ -541,6 +552,9 @@ const allSelected = computed(
 );
 
 const hasSelected = computed(() => selectedIds.value.length > 0);
+const contentStyle = computed<'list' | 'grid'>(() =>
+  isMobile.value ? 'grid' : display_style.value,
+);
 
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [

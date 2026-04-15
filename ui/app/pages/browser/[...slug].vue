@@ -60,7 +60,7 @@
           icon="i-lucide-filter"
           @click="toggleFilter"
         >
-          <span v-if="!isMobile">Filter</span>
+          <span>Filter</span>
         </UButton>
 
         <UButton
@@ -71,7 +71,7 @@
           icon="i-lucide-folder-plus"
           @click="() => void handleCreateDirectory()"
         >
-          <span v-if="!isMobile">New Folder</span>
+          <span>New Folder</span>
         </UButton>
 
         <UButton
@@ -79,9 +79,10 @@
           variant="outline"
           size="sm"
           :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span v-if="!isMobile">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
         </UButton>
 
         <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
@@ -92,7 +93,7 @@
             icon="i-lucide-arrow-up-down"
             trailing-icon="i-lucide-chevron-down"
           >
-            <span v-if="!isMobile">Sort</span>
+            <span>Sort</span>
           </UButton>
         </UDropdownMenu>
 
@@ -105,7 +106,7 @@
           :disabled="isLoading"
           @click="() => void reloadContent(browserPath)"
         >
-          <span v-if="!isMobile">Reload</span>
+          <span>Reload</span>
         </UButton>
       </div>
     </div>
@@ -119,9 +120,9 @@
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
+          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           :disabled="isLoading || filteredItems.length < 1"
-          @click="masterSelectAll = !masterSelectAll"
+          @click="toggleMasterSelection"
         >
           {{ masterSelectAll ? 'Unselect' : 'Select' }}
         </UButton>
@@ -130,27 +131,17 @@
           {{ selectedElms.length }}
         </UBadge>
 
-        <UButton
-          color="info"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-arrow-right-left"
-          :disabled="!hasSelected || isLoading"
-          @click="() => void handleMoveSelected()"
-        >
-          Move
-        </UButton>
-
-        <UButton
-          color="error"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-trash"
-          :disabled="!hasSelected || isLoading"
-          @click="() => void handleDeleteSelected()"
-        >
-          Delete
-        </UButton>
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-list"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            Actions
+          </UButton>
+        </UDropdownMenu>
       </div>
 
       <p class="text-sm text-toned">
@@ -167,14 +158,28 @@
     />
 
     <div
-      v-if="display_style === 'list' && hasItems"
+      v-if="contentStyle === 'list' && hasItems"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-345 w-full text-sm">
+        <table class="min-w-360 w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
-              <th v-if="controlEnabled" class="w-16">Select</th>
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
+              <th v-if="controlEnabled" class="w-16">
+                <button
+                  type="button"
+                  class="cursor-pointer"
+                  :aria-label="masterSelectAll ? 'Unselect all items' : 'Select all items'"
+                  @click="toggleMasterSelection"
+                >
+                  <UIcon
+                    :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+                    class="size-4"
+                  />
+                </button>
+              </th>
               <th :class="controlEnabled ? 'w-20' : 'w-24'">
                 #
                 <UIcon
@@ -207,12 +212,16 @@
                   class="ml-1 inline-flex size-3.5"
                 />
               </th>
-              <th v-if="controlEnabled" class="w-80 whitespace-nowrap">Actions</th>
+              <th v-if="controlEnabled" class="w-96 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-default">
-            <tr v-for="item in filteredItems" :key="item.path" class="hover:bg-muted/20">
+            <tr
+              v-for="item in filteredItems"
+              :key="item.path"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+            >
               <td v-if="controlEnabled" class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
@@ -245,19 +254,6 @@
                       </a>
                     </UTooltip>
                   </div>
-
-                  <UButton
-                    v-if="item.type === 'file'"
-                    color="info"
-                    variant="ghost"
-                    size="xs"
-                    icon="i-lucide-download"
-                    class="shrink-0"
-                    external
-                    :href="downloadHref(item)"
-                    :download="downloadName(item)"
-                    square
-                  />
                 </div>
               </td>
 
@@ -271,10 +267,23 @@
                 </UTooltip>
               </td>
 
-              <td v-if="controlEnabled" class="w-80 px-3 py-3 align-middle whitespace-nowrap">
+              <td v-if="controlEnabled" class="w-96 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
-                    color="warning"
+                    v-if="item.type === 'file'"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-download"
+                    class="shrink-0"
+                    external
+                    :href="downloadHref(item)"
+                    :download="downloadName(item)"
+                  >
+                    Download
+                  </UButton>
+                  <UButton
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-pencil"
@@ -284,7 +293,7 @@
                   </UButton>
 
                   <UButton
-                    color="info"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-arrow-right-left"
@@ -294,7 +303,7 @@
                   </UButton>
 
                   <UButton
-                    color="error"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-trash"
@@ -315,7 +324,11 @@
         v-for="item in filteredItems"
         :key="item.path"
         class="flex h-full flex-col border bg-default"
-        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+        :ui="{
+          header: 'p-4 pb-3',
+          body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
+          footer: 'border-t border-default px-4 py-4',
+        }"
       >
         <template #header>
           <div class="flex items-start justify-between gap-3">
@@ -340,18 +353,6 @@
             </div>
 
             <div class="flex shrink-0 items-center gap-1">
-              <UButton
-                v-if="item.type === 'file'"
-                color="info"
-                variant="ghost"
-                size="xs"
-                icon="i-lucide-download"
-                external
-                :href="downloadHref(item)"
-                :download="downloadName(item)"
-                square
-              />
-
               <label v-if="controlEnabled" class="inline-flex cursor-pointer items-center px-1">
                 <input
                   v-model="selectedElms"
@@ -386,40 +387,56 @@
           </div>
         </div>
 
-        <div v-if="controlEnabled" class="mt-auto flex flex-wrap gap-2 pt-1 *:min-w-32 *:flex-1">
-          <UButton
-            color="warning"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-pencil"
-            class="w-full justify-center"
-            @click="() => void handleAction('rename', item)"
-          >
-            Rename
-          </UButton>
+        <template v-if="controlEnabled" #footer>
+          <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
+            <UButton
+              v-if="item.type === 'file'"
+              color="neutral"
+              variant="outline"
+              size="xs"
+              icon="i-lucide-download"
+              external
+              :href="downloadHref(item)"
+              :download="downloadName(item)"
+              class="w-full justify-center"
+            >
+              Download
+            </UButton>
 
-          <UButton
-            color="info"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-arrow-right-left"
-            class="w-full justify-center"
-            @click="() => void handleAction('move', item)"
-          >
-            Move
-          </UButton>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-pencil"
+              class="w-full justify-center"
+              @click="() => void handleAction('rename', item)"
+            >
+              Rename
+            </UButton>
 
-          <UButton
-            color="error"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-trash"
-            class="w-full justify-center"
-            @click="() => void handleAction('delete', item)"
-          >
-            Delete
-          </UButton>
-        </div>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-arrow-right-left"
+              class="w-full justify-center"
+              @click="() => void handleAction('move', item)"
+            >
+              Move
+            </UButton>
+
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-trash"
+              class="w-full justify-center"
+              @click="() => void handleAction('delete', item)"
+            >
+              Delete
+            </UButton>
+          </div>
+        </template>
       </UCard>
     </div>
 
@@ -521,9 +538,9 @@ const toast = useNotification();
 const config = useConfigStore();
 const dialog = useDialog();
 const browser = useBrowser();
-const isMobile = useMediaQuery({ maxWidth: 1024 });
 
 const display_style = useStorage<string>('browser_display_style', 'list');
+const isMobile = useMediaQuery({ maxWidth: 639 });
 const show_filter = ref(false);
 const localSearch = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);
@@ -539,6 +556,9 @@ const sort_order = browser.sort_order;
 const filteredItems = browser.filteredItems;
 
 const controlEnabled = computed(() => Boolean(config.app.browser_control_enabled));
+const contentStyle = computed<'list' | 'grid'>(() =>
+  isMobile.value ? 'grid' : 'list' === display_style.value ? 'list' : 'grid',
+);
 const hasItems = computed(() => filteredItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const displayedItemPaths = computed(() => filteredItems.value.map((item) => item.path));
@@ -565,6 +585,25 @@ const sortGroups = computed<DropdownMenuItem[][]>(() => [
     color: sort_by.value === option.value ? 'primary' : 'neutral',
     onSelect: () => void handleChangeSort(option.value),
   })),
+]);
+
+const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Move Selected',
+      icon: 'i-lucide-arrow-right-left',
+      color: 'primary',
+      disabled: !hasSelected.value || isLoading.value,
+      onSelect: () => void handleMoveSelected(),
+    },
+    {
+      label: 'Delete Selected',
+      icon: 'i-lucide-trash',
+      color: 'error',
+      disabled: !hasSelected.value || isLoading.value,
+      onSelect: () => void handleDeleteSelected(),
+    },
+  ],
 ]);
 
 const initialPath = (() => {
@@ -915,6 +954,10 @@ const toggleFilter = async (): Promise<void> => {
 
 const toggleDisplayStyle = (): void => {
   display_style.value = display_style.value === 'list' ? 'grid' : 'list';
+};
+
+const toggleMasterSelection = (): void => {
+  masterSelectAll.value = !masterSelectAll.value;
 };
 
 const handleCreateDirectory = async (): Promise<void> => {

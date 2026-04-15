@@ -552,11 +552,33 @@ const navigationUi = (collapsed: boolean) => ({
   linkLabel: collapsed ? 'hidden' : 'truncate',
 });
 
+const navEntryPath = (item: NavEntry): string => (item.to ? item.to.split(/[?#]/)[0] || '/' : '');
+
+const isNavEntryActive = (item: NavEntry): boolean => {
+  if (item.id === 'downloads') {
+    return route.path === '/' && route.hash !== '#history';
+  }
+
+  if (item.id === 'history') {
+    return route.path === '/' && route.hash === '#history';
+  }
+
+  const path = navEntryPath(item);
+  if (!path) {
+    return false;
+  }
+
+  return path === '/'
+    ? route.path === '/'
+    : route.path === path || route.path.startsWith(`${path}/`);
+};
+
 const makeNavigationItem = (item: NavEntry): NavigationMenuItem => ({
   label: item.label,
   icon: item.icon,
   to: item.to,
   value: item.id,
+  active: isNavEntryActive(item),
 });
 
 const docsNavigationEntries = getDocsNavigationEntries();
@@ -565,9 +587,16 @@ const allNavItems = computed<NavEntry[]>(() => [
   {
     id: 'downloads',
     label: 'Downloads',
-    description: 'Queued and completed downloads list.',
+    description: 'Manage queued, active, and completed downloads in one workspace.',
     icon: 'i-lucide-download',
     to: '/',
+  },
+  {
+    id: 'history',
+    label: 'History',
+    description: 'Jump to the history section on the downloads page.',
+    icon: 'i-lucide-history',
+    to: '/#history',
   },
   {
     id: 'files',
@@ -674,11 +703,14 @@ const allNavItems = computed<NavEntry[]>(() => [
 ]);
 
 const pageTitle = computed(() => {
-  const path = route.path;
+  if (route.path === '/') {
+    return 'Downloads';
+  }
+
   const flat = allNavItems.value.flatMap((item) => [item, ...(item.children || [])]);
   const match = flat
-    .filter((item) => item.to && (item.to === '/' ? path === '/' : path.startsWith(item.to)))
-    .sort((left, right) => (right.to?.length || 0) - (left.to?.length || 0))[0];
+    .filter((item) => isNavEntryActive(item))
+    .sort((left, right) => navEntryPath(right).length - navEntryPath(left).length)[0];
   return match?.label || 'YTPTube';
 });
 
@@ -720,8 +752,8 @@ const sidebarSections = computed<Array<SidebarSection>>(() => {
       id: 'downloads',
       label: 'Downloads',
       items:
-        topLevelItems(['downloads', 'files']).length > 0
-          ? [topLevelItems(['downloads', 'files'])]
+        topLevelItems(['downloads', 'history', 'files']).length > 0
+          ? [topLevelItems(['downloads', 'history', 'files'])]
           : [],
     },
     {
@@ -732,10 +764,10 @@ const sidebarSections = computed<Array<SidebarSection>>(() => {
     {
       id: 'configuration',
       label: 'Configuration',
-      items: [
-        topLevelItems(['presets', 'custom-fields']),
-        topLevelItems(['conditions', 'notifications']),
-      ].filter((group) => group.length > 0),
+      items:
+        topLevelItems(['presets', 'custom-fields', 'conditions', 'notifications']).length > 0
+          ? [topLevelItems(['presets', 'custom-fields', 'conditions', 'notifications'])]
+          : [],
     },
     {
       id: 'tools',

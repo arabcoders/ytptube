@@ -38,7 +38,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span v-if="!isMobile">Filter</span>
+          <span>Filter</span>
         </UButton>
 
         <UButton
@@ -48,7 +48,7 @@
           icon="i-lucide-plus"
           @click="openCreateForm"
         >
-          <span v-if="!isMobile">New Task</span>
+          <span>New Task</span>
         </UButton>
 
         <UButton
@@ -56,9 +56,10 @@
           variant="outline"
           size="sm"
           :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span v-if="!isMobile">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
         </UButton>
 
         <UButton
@@ -71,7 +72,7 @@
           :disabled="isLoading"
           @click="() => void reloadContent()"
         >
-          <span v-if="!isMobile">Reload</span>
+          <span>Reload</span>
         </UButton>
       </div>
     </div>
@@ -112,13 +113,15 @@
     </div>
 
     <div
-      v-if="displayStyle === 'list' && filteredTasks.length > 0"
+      v-if="contentStyle === 'list' && filteredTasks.length > 0"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-190 table-fixed w-full text-sm">
+        <table class="min-w-210 table-fixed w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
                   <UIcon
@@ -128,13 +131,17 @@
                 </button>
               </th>
               <th class="w-full text-left">Task</th>
-              <th class="w-100 whitespace-nowrap">Timer</th>
-              <th class="w-44 whitespace-nowrap">Actions</th>
+              <th class="w-50 whitespace-nowrap">Timer</th>
+              <th class="w-75 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-default">
-            <tr v-for="item in filteredTasks" :key="item.id" class="align-top hover:bg-muted/20">
+            <tr
+              v-for="item in filteredTasks"
+              :key="item.id"
+              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+            >
               <td class="px-3 py-3 text-center align-top">
                 <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
@@ -224,9 +231,8 @@
                         class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                       >
                         <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                        Preset:
                         <span class="capitalize">
-                          {{ item.preset ?? config.app.default_preset }}
+                          Preset: {{ item.preset ?? config.app.default_preset }}
                         </span>
                       </span>
                     </div>
@@ -273,7 +279,7 @@
                 </div>
               </td>
 
-              <td class="w-44 px-3 py-3 align-top whitespace-nowrap">
+              <td class="w-56 px-3 py-3 align-top whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     color="neutral"
@@ -282,7 +288,7 @@
                     icon="i-lucide-pencil"
                     @click="editItem(item)"
                   >
-                    <span v-if="!isMobile">Edit</span>
+                    Edit
                   </UButton>
 
                   <UButton
@@ -292,7 +298,7 @@
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(item)"
                   >
-                    <span v-if="!isMobile">Delete</span>
+                    Delete
                   </UButton>
 
                   <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
@@ -303,7 +309,7 @@
                       icon="i-lucide-settings-2"
                       trailing-icon="i-lucide-chevron-down"
                     >
-                      <span v-if="!isMobile">Actions</span>
+                      Actions
                     </UButton>
                   </UDropdownMenu>
                 </div>
@@ -321,7 +327,11 @@
       <div v-for="item in filteredTasks" :key="item.id" class="min-w-0 w-full max-w-full">
         <UCard
           class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
-          :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+          :ui="{
+            header: 'p-4 pb-3',
+            body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
+            footer: 'border-t border-default px-4 py-4',
+          }"
         >
           <template #header>
             <div class="flex min-w-0 items-start justify-between gap-3">
@@ -377,7 +387,7 @@
                   square
                   @click="() => void exportItem(item)"
                 >
-                  <span class="hidden sm:inline">Export Task</span>
+                  <span>Export Task</span>
                 </UButton>
                 <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
@@ -392,10 +402,10 @@
           </template>
 
           <div class="space-y-2 text-sm text-default">
-            <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
+            <div class="grid grid-cols-2 gap-2 text-xs text-toned sm:flex sm:flex-wrap">
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
                 @click="() => void toggleFlag(item, 'enabled')"
               >
                 <UIcon
@@ -408,7 +418,7 @@
 
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
                 @click="() => void toggleFlag(item, 'auto_start')"
               >
                 <UIcon
@@ -421,7 +431,7 @@
 
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
                 @click="() => void toggleFlag(item, 'handler_enabled')"
               >
                 <UIcon
@@ -432,12 +442,18 @@
                 <span>Handler: {{ item.handler_enabled !== false ? 'On' : 'Off' }}</span>
               </button>
 
-              <span
-                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              <button
+                type="button"
+                class="flex min-w-0 w-full items-start gap-1 rounded-md border border-default px-2 py-1 text-left transition hover:border-primary hover:text-default sm:flex-1"
+                @click="toggleExpand(item.id, 'preset')"
               >
                 <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                <span>Preset: {{ item.preset ?? config.app.default_preset }}</span>
-              </span>
+                <span class="min-w-0 flex-1">
+                  <span :class="['min-w-0 capitalize', expandClass(item.id, 'preset')]">
+                    Preset: {{ item.preset ?? config.app.default_preset }}
+                  </span>
+                </span>
+              </button>
             </div>
 
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -541,39 +557,41 @@
             </div>
           </div>
 
-          <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-pencil"
-              class="w-full justify-center"
-              @click="editItem(item)"
-            >
-              Edit
-            </UButton>
-
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-trash"
-              class="w-full justify-center"
-              @click="() => void deleteItem(item)"
-            >
-              Delete
-            </UButton>
-
-            <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
+          <template #footer>
+            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
               <UButton
                 color="neutral"
                 variant="outline"
-                icon="i-lucide-settings-2"
-                trailing-icon="i-lucide-chevron-down"
+                icon="i-lucide-pencil"
                 class="w-full justify-center"
+                @click="editItem(item)"
               >
-                Actions
+                Edit
               </UButton>
-            </UDropdownMenu>
-          </div>
+
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                class="w-full justify-center"
+                @click="() => void deleteItem(item)"
+              >
+                Delete
+              </UButton>
+
+              <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-settings-2"
+                  trailing-icon="i-lucide-chevron-down"
+                  class="w-full justify-center"
+                >
+                  Actions
+                </UButton>
+              </UDropdownMenu>
+            </div>
+          </template>
         </UCard>
       </div>
     </div>
@@ -702,7 +720,7 @@ const { confirmDialog } = useDialog();
 const sessionCache = useSessionCache();
 const { toggleExpand, expandClass } = useExpandableMeta();
 const display_style = useStorage<'list' | 'grid' | 'cards'>('tasks_display_style', 'grid');
-const isMobile = useMediaQuery({ maxWidth: 1024 });
+const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const tasksComposable = useTasks();
 const {
@@ -743,6 +761,9 @@ const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_K
 
 const displayStyle = computed<'list' | 'grid'>(() =>
   display_style.value === 'list' ? 'list' : 'grid',
+);
+const contentStyle = computed<'list' | 'grid'>(() =>
+  isMobile.value ? 'grid' : displayStyle.value,
 );
 
 const editorSessionId = ref(0);

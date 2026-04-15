@@ -13,13 +13,16 @@
       </UButton>
     </div>
 
-    <div v-if="hasItems" class="flex flex-wrap items-center justify-between gap-3">
+    <div
+      v-if="hasItems"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+    >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
+          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
           {{ masterSelectAll ? 'Unselect' : 'Select' }}
@@ -44,17 +47,24 @@
     </div>
 
     <div
-      v-if="'list' === display_style && hasItems"
+      v-if="'list' === contentStyle && hasItems"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-190 table-fixed w-full text-sm">
+        <table class="min-w-210 table-fixed w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
               <th class="w-12">
-                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
+                <button
+                  type="button"
+                  class="cursor-pointer"
+                  :aria-label="masterSelectAll ? 'Unselect all items' : 'Select all items'"
+                  @click="toggleMasterSelection"
+                >
                   <UIcon
-                    :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
+                    :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
                     class="size-4"
                   />
                 </button>
@@ -63,13 +73,17 @@
               <th class="w-56">Progress</th>
               <th class="w-32 whitespace-nowrap">Status</th>
               <th class="w-36 whitespace-nowrap">Created</th>
-              <th class="w-44 whitespace-nowrap">Actions</th>
+              <th class="w-80 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-default">
-            <tr v-for="item in displayedItems" :key="item._id" class="align-top hover:bg-muted/20">
-              <td class="px-3 py-3 text-center align-top">
+            <tr
+              v-for="item in displayedItems"
+              :key="item._id"
+              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+            >
+              <td class="border-r border-default/60 px-3 py-3 text-center align-top">
                 <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
                     :id="`checkbox-${item._id}`"
@@ -81,7 +95,7 @@
                 </label>
               </td>
 
-              <td class="px-3 py-3 align-top">
+              <td class="border-r border-default/60 px-3 py-3 align-top">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0 flex-1">
                     <UTooltip :text="`[${item.preset}] - ${item.title}`">
@@ -153,7 +167,7 @@
                 </div>
               </td>
 
-              <td class="w-56 px-3 py-3 align-top">
+              <td class="w-56 border-r border-default/60 px-3 py-3 align-top">
                 <div
                   class="queue-progress queue-progress--compact w-56 rounded-md border border-default bg-muted/20"
                 >
@@ -180,7 +194,7 @@
                 </div>
               </td>
 
-              <td class="px-3 py-3 text-center align-top text-sm">
+              <td class="border-r border-default/60 px-3 py-3 text-center align-top text-sm">
                 <div class="inline-flex items-center gap-2 text-default whitespace-nowrap">
                   <span class="inline-flex items-center">
                     <UIcon
@@ -192,44 +206,47 @@
                 </div>
               </td>
 
-              <td class="px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap">
+              <td
+                class="border-r border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
+              >
                 <UTooltip :text="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
                   <span :data-datetime="item.datetime" v-rtime="item.datetime" />
                 </UTooltip>
               </td>
 
-              <td class="w-44 px-3 py-3 align-top whitespace-nowrap">
+              <td class="w-80 px-3 py-3 align-top whitespace-nowrap">
                 <div class="flex items-center justify-end gap-1">
                   <UButton
-                    color="warning"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-circle-off"
-                    square
-                    :title="item.is_live ? 'Stop Stream' : 'Cancel Download'"
-                    :aria-label="item.is_live ? 'Stop Stream' : 'Cancel Download'"
                     @click="() => void confirmCancel(item)"
-                  />
+                  >
+                    {{ item.is_live ? 'Stop Stream' : 'Cancel' }}
+                  </UButton>
 
                   <UButton
                     v-if="canStartItem(item)"
-                    color="success"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-circle-play"
-                    square
                     @click="() => void startItem(item)"
-                  />
+                  >
+                    Start
+                  </UButton>
 
                   <UButton
                     v-if="canPauseItem(item)"
-                    color="warning"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-pause"
-                    square
                     @click="() => void pauseItem(item)"
-                  />
+                  >
+                    Pause
+                  </UButton>
 
                   <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
                     <UButton
@@ -260,8 +277,12 @@
       >
         <UCard
           class="flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden border"
-          :class="queueCardClass(item)"
-          :ui="{ body: 'flex flex-1 flex-col gap-4 p-4', header: 'p-4 pb-3', root: 'bg-default' }"
+          :ui="{
+            body: 'flex flex-1 flex-col gap-4 p-4',
+            footer: 'border-t border-default px-4 py-4',
+            header: 'p-4 pb-3',
+            root: 'bg-default',
+          }"
         >
           <template #header>
             <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
@@ -387,87 +408,114 @@
           </div>
 
           <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
-            <div
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
+            <button
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'status')"
             >
-              <span class="inline-flex items-center gap-2">
+              <span class="inline-flex w-full items-center justify-center gap-2">
                 <UIcon
                   :name="setIcon(item)"
                   :class="[setIconColor(item), setIconAnimation(item), 'size-4 shrink-0']"
                 />
-                <span>{{ setStatus(item) }}</span>
+                <span :class="['min-w-0 text-center', expandClass(item._id, 'status')]">
+                  {{ setStatus(item) }}
+                </span>
               </span>
-            </div>
+            </button>
 
-            <div
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
+            <button
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'preset')"
             >
-              <UTooltip :text="`Preset: ${item.preset}`">
-                <span class="block min-w-0 truncate">{{ item.preset }}</span>
-              </UTooltip>
-            </div>
+              <span class="inline-flex w-full items-center justify-center gap-2">
+                <UIcon name="i-lucide-sliders-horizontal" class="size-4 shrink-0 text-toned" />
+                <span :class="['min-w-0 text-center', expandClass(item._id, 'preset')]">
+                  {{ item.preset }}
+                </span>
+              </span>
+            </button>
 
-            <div
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+            <button
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'datetime')"
             >
               <UTooltip :text="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
-                <span :data-datetime="item.datetime" v-rtime="item.datetime" />
+                <span class="inline-flex w-full items-center justify-center gap-2">
+                  <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
+                  <span
+                    :class="['min-w-0 text-center', expandClass(item._id, 'datetime')]"
+                    :data-datetime="item.datetime"
+                    v-rtime="item.datetime"
+                  />
+                </span>
               </UTooltip>
-            </div>
+            </button>
 
-            <div
+            <button
               v-if="item.downloaded_bytes"
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'size')"
             >
-              {{ formatBytes(item.downloaded_bytes) }}
-            </div>
+              <span class="inline-flex w-full items-center justify-center gap-2">
+                <UIcon name="i-lucide-hard-drive" class="size-4 shrink-0 text-toned" />
+                <span :class="['min-w-0 text-center', expandClass(item._id, 'size')]">
+                  {{ formatBytes(item.downloaded_bytes) }}
+                </span>
+              </span>
+            </button>
           </div>
 
-          <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
-            <UButton
-              color="warning"
-              variant="outline"
-              icon="i-lucide-circle-off"
-              class="w-full justify-center"
-              @click="() => void confirmCancel(item)"
-            >
-              {{ item.is_live ? 'Stop' : 'Cancel' }}
-            </UButton>
-
-            <UButton
-              v-if="canStartItem(item)"
-              color="success"
-              variant="outline"
-              icon="i-lucide-circle-play"
-              class="w-full justify-center"
-              @click="() => void startItem(item)"
-            >
-              Start
-            </UButton>
-
-            <UButton
-              v-if="canPauseItem(item)"
-              color="warning"
-              variant="outline"
-              icon="i-lucide-pause"
-              class="w-full justify-center"
-              @click="() => void pauseItem(item)"
-            >
-              Pause
-            </UButton>
-
-            <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
+          <template #footer>
+            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
               <UButton
                 color="neutral"
                 variant="outline"
-                icon="i-lucide-settings-2"
-                trailing-icon="i-lucide-chevron-down"
+                icon="i-lucide-circle-off"
                 class="w-full justify-center"
+                @click="() => void confirmCancel(item)"
               >
-                Actions
+                {{ item.is_live ? 'Stop Stream' : 'Cancel' }}
               </UButton>
-            </UDropdownMenu>
-          </div>
+
+              <UButton
+                v-if="canStartItem(item)"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-circle-play"
+                class="w-full justify-center"
+                @click="() => void startItem(item)"
+              >
+                Start
+              </UButton>
+
+              <UButton
+                v-if="canPauseItem(item)"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-pause"
+                class="w-full justify-center"
+                @click="() => void pauseItem(item)"
+              >
+                Pause
+              </UButton>
+
+              <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-settings-2"
+                  trailing-icon="i-lucide-chevron-down"
+                  class="w-full justify-center"
+                >
+                  Actions
+                </UButton>
+              </UDropdownMenu>
+            </div>
+          </template>
         </UCard>
       </LateLoader>
     </div>
@@ -540,6 +588,7 @@
 <script setup lang="ts">
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
+import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import type { StoreItem } from '~/types/store';
 import { useConfirm } from '~/composables/useConfirm';
 import { deepIncludes, getPath, getImage } from '~/utils';
@@ -560,9 +609,11 @@ const stateStore = useStateStore();
 const socket = useSocketStore();
 const box = useConfirm();
 const toast = useNotification();
+const { toggleExpand, expandClass } = useExpandableMeta();
 
 const hideThumbnail = useStorage<boolean>('hideThumbnailQueue', false);
 const display_style = useStorage<'grid' | 'list'>('display_style', 'grid');
+const isMobile = useMediaQuery({ maxWidth: 639 });
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
@@ -575,6 +626,10 @@ const isRefreshing = ref(false);
 const autoRefreshInterval = ref<NodeJS.Timeout | null>(null);
 const autoRefreshEnabled = useStorage<boolean>('queue_auto_refresh', true);
 const autoRefreshDelay = useStorage<number>('queue_auto_refresh_delay', 10000);
+
+const contentStyle = computed<'grid' | 'list'>(() =>
+  isMobile.value ? 'grid' : display_style.value,
+);
 
 const showThumbnails = computed(() => Boolean(props.thumbnails) && !hideThumbnail.value);
 
@@ -706,22 +761,6 @@ const getListImage = (item: StoreItem): string =>
 
 const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';
 
-const queueCardClass = (item: StoreItem): string => {
-  if ('postprocessing' === item.status) {
-    return 'border-info';
-  }
-
-  if (['downloading', 'started'].includes(item.status || '')) {
-    return 'border-success';
-  }
-
-  if (!item.auto_start || (null === item.status && true === config.paused)) {
-    return 'border-warning';
-  }
-
-  return 'border-default';
-};
-
 const canStartItem = (item: StoreItem): boolean => !item.auto_start && !item.status;
 
 const canPauseItem = (item: StoreItem): boolean => item.auto_start && !item.status;
@@ -739,7 +778,6 @@ const bulkActionGroups = computed(() => {
     groups[0]?.push({
       label: 'Start',
       icon: 'i-lucide-circle-play',
-      color: 'success',
       disabled: !hasSelected.value,
       onSelect: () => void startItems(),
     });
@@ -749,7 +787,6 @@ const bulkActionGroups = computed(() => {
     groups[0]?.push({
       label: 'Pause',
       icon: 'i-lucide-pause',
-      color: 'warning',
       disabled: !hasSelected.value,
       onSelect: () => void pauseSelected(),
     });
@@ -758,7 +795,6 @@ const bulkActionGroups = computed(() => {
   groups[0]?.push({
     label: selectedLiveOnly ? 'Stop' : 'Cancel',
     icon: 'i-lucide-circle-off',
-    color: 'warning',
     disabled: !hasSelected.value,
     onSelect: () => void cancelSelected(),
   });
@@ -774,7 +810,6 @@ const itemActionGroups = (item: StoreItem) => {
     primaryActions.push({
       label: 'Play video',
       icon: 'i-lucide-play',
-      color: 'error',
       onSelect: () => {
         embed_url.value = getEmbedable(item.url) as string;
       },
@@ -784,7 +819,6 @@ const itemActionGroups = (item: StoreItem) => {
   primaryActions.push({
     label: item.is_live ? 'Stop Stream' : 'Cancel Download',
     icon: 'i-lucide-circle-off',
-    color: 'warning',
     onSelect: () => void confirmCancel(item),
   });
 
@@ -792,7 +826,6 @@ const itemActionGroups = (item: StoreItem) => {
     primaryActions.push({
       label: 'Start Download',
       icon: 'i-lucide-circle-play',
-      color: 'success',
       onSelect: () => void startItem(item),
     });
   }
@@ -801,7 +834,6 @@ const itemActionGroups = (item: StoreItem) => {
     primaryActions.push({
       label: 'Pause Download',
       icon: 'i-lucide-pause',
-      color: 'warning',
       onSelect: () => void pauseItem(item),
     });
   }

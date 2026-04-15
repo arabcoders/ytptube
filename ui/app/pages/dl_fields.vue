@@ -37,7 +37,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span v-if="!isMobile">Filter</span>
+          <span>Filter</span>
         </UButton>
 
         <UButton
@@ -47,7 +47,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span v-if="!isMobile">New Field</span>
+          <span>New Field</span>
         </UButton>
 
         <UButton
@@ -56,9 +56,10 @@
           variant="outline"
           size="sm"
           :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span v-if="!isMobile">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
         </UButton>
 
         <UButton
@@ -71,7 +72,7 @@
           :disabled="isLoading"
           @click="() => void reloadContent()"
         >
-          <span v-if="!isMobile">Reload</span>
+          <span>Reload</span>
         </UButton>
       </div>
     </div>
@@ -120,13 +121,15 @@
     </div>
 
     <div
-      v-if="displayStyle === 'list' && filteredItems.length > 0"
+      v-if="contentStyle === 'list' && filteredItems.length > 0"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-225 w-full text-sm">
+        <table class="min-w-235 w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
                   <UIcon
@@ -136,12 +139,16 @@
                 </button>
               </th>
               <th class="w-full text-left">Field</th>
-              <th class="w-44 whitespace-nowrap">Actions</th>
+              <th class="w-48 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-default">
-            <tr v-for="field in filteredItems" :key="field.id" class="hover:bg-muted/20">
+            <tr
+              v-for="field in filteredItems"
+              :key="field.id"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+            >
               <td class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
@@ -182,7 +189,7 @@
                 </div>
               </td>
 
-              <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
+              <td class="w-48 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     color="neutral"
@@ -191,7 +198,7 @@
                     icon="i-lucide-file-up"
                     @click="exportItem(field)"
                   >
-                    <span v-if="!isMobile">Export</span>
+                    Export
                   </UButton>
 
                   <UButton
@@ -201,7 +208,7 @@
                     icon="i-lucide-pencil"
                     @click="editItem(field)"
                   >
-                    <span v-if="!isMobile">Edit</span>
+                    Edit
                   </UButton>
 
                   <UButton
@@ -211,7 +218,7 @@
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(field)"
                   >
-                    <span v-if="!isMobile">Delete</span>
+                    Delete
                   </UButton>
                 </div>
               </td>
@@ -225,7 +232,11 @@
       <div v-for="field in filteredItems" :key="field.id" class="min-w-0 w-full max-w-full">
         <UCard
           class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
-          :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+          :ui="{
+            header: 'p-4 pb-3',
+            body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
+            footer: 'border-t border-default px-4 py-4',
+          }"
         >
           <template #header>
             <div class="flex min-w-0 items-start justify-between gap-3">
@@ -250,7 +261,7 @@
                   square
                   @click="exportItem(field)"
                 >
-                  <span class="hidden sm:inline">Export</span>
+                  <span>Export Field</span>
                 </UButton>
 
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -318,27 +329,29 @@
             </div>
           </div>
 
-          <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-pencil"
-              class="w-full justify-center"
-              @click="editItem(field)"
-            >
-              Edit
-            </UButton>
+          <template #footer>
+            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-pencil"
+                class="w-full justify-center"
+                @click="editItem(field)"
+              >
+                Edit
+              </UButton>
 
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-trash"
-              class="w-full justify-center"
-              @click="() => void deleteItem(field)"
-            >
-              Delete
-            </UButton>
-          </div>
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                class="w-full justify-center"
+                @click="() => void deleteItem(field)"
+              >
+                Delete
+              </UButton>
+            </div>
+          </template>
         </UCard>
       </div>
     </div>
@@ -411,9 +424,9 @@ import type { APIResponse } from '~/types/responses';
 import { copyText, encode } from '~/utils';
 
 const box = useConfirm();
-const isMobile = useMediaQuery({ maxWidth: 1024 });
 const { toggleExpand, expandClass } = useExpandableMeta();
 const displayStyle = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
+const isMobile = useMediaQuery({ maxWidth: 639 });
 const dlFields = useDlFields();
 const route = useRoute();
 const router = useRouter();
@@ -453,6 +466,9 @@ const allSelected = computed(
 );
 
 const hasSelected = computed(() => selectedIds.value.length > 0);
+const contentStyle = computed<'list' | 'grid'>(() =>
+  isMobile.value ? 'grid' : displayStyle.value,
+);
 
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [

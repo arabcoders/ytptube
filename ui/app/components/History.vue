@@ -1,12 +1,15 @@
 <template>
   <div class="w-full min-w-0 max-w-full space-y-4">
-    <div v-if="hasItems" class="flex flex-wrap items-center justify-between gap-3">
+    <div
+      v-if="hasItems"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+    >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
+          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
           {{ masterSelectAll ? 'Unselect' : 'Select' }}
@@ -34,9 +37,10 @@
         variant="outline"
         size="sm"
         :icon="direction === 'desc' ? 'i-lucide-arrow-down-a-z' : 'i-lucide-arrow-up-a-z'"
-        square
         @click="toggleDirection"
-      />
+      >
+        <span>Sort</span>
+      </UButton>
     </div>
 
     <UAlert
@@ -48,17 +52,24 @@
     />
 
     <div
-      v-if="'list' === display_style && hasItems"
+      v-if="'list' === contentStyle && hasItems"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-190 table-fixed w-full text-sm">
+        <table class="min-w-210 table-fixed w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
               <th class="w-12">
-                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
+                <button
+                  type="button"
+                  class="cursor-pointer"
+                  :aria-label="masterSelectAll ? 'Unselect all items' : 'Select all items'"
+                  @click="toggleMasterSelection"
+                >
                   <UIcon
-                    :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
+                    :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
                     class="size-4"
                   />
                 </button>
@@ -67,13 +78,17 @@
               <th class="w-32 whitespace-nowrap">Status</th>
               <th class="w-36 whitespace-nowrap">Created</th>
               <th class="w-36 whitespace-nowrap">Size/Starts</th>
-              <th class="w-44 whitespace-nowrap">Actions</th>
+              <th class="w-80 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-default">
-            <tr v-for="item in displayedItems" :key="item._id" class="align-top hover:bg-muted/20">
-              <td class="px-3 py-3 text-center align-top">
+            <tr
+              v-for="item in displayedItems"
+              :key="item._id"
+              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+            >
+              <td class="border-r border-default/60 px-3 py-3 text-center align-top">
                 <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
                     :id="`checkbox-${item._id}`"
@@ -85,7 +100,7 @@
                 </label>
               </td>
 
-              <td class="w-0 px-3 py-3 align-top">
+              <td class="w-0 border-r border-default/60 px-3 py-3 align-top">
                 <div class="flex min-w-0 items-start justify-between gap-3">
                   <div class="min-w-0 flex-1">
                     <UTooltip
@@ -174,7 +189,7 @@
                 </p>
               </td>
 
-              <td class="px-3 py-3 text-center align-top text-sm">
+              <td class="border-r border-default/60 px-3 py-3 text-center align-top text-sm">
                 <div class="inline-flex items-center gap-2 text-default">
                   <span class="inline-flex items-center">
                     <UIcon
@@ -186,13 +201,17 @@
                 </div>
               </td>
 
-              <td class="px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap">
+              <td
+                class="border-r border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
+              >
                 <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   <span :date-datetime="item.datetime" v-rtime="item.datetime" />
                 </UTooltip>
               </td>
 
-              <td class="px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap">
+              <td
+                class="border-r border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
+              >
                 <template
                   v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)"
                 >
@@ -211,38 +230,41 @@
                 </template>
               </td>
 
-              <td class="w-44 px-3 py-3 align-top whitespace-nowrap">
+              <td class="w-80 px-3 py-3 align-top whitespace-nowrap">
                 <div class="flex items-center justify-end gap-1">
                   <UButton
                     v-if="showRetryAction(item)"
-                    color="warning"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-rotate-cw"
-                    square
                     @click="() => void retryItem(item, true)"
-                  />
+                  >
+                    Retry
+                  </UButton>
 
                   <UButton
                     v-if="item.filename"
-                    color="info"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-download"
-                    square
                     external
                     :href="makeDownload(config, item)"
                     :download="item.filename?.split('/').reverse()[0]"
-                  />
+                  >
+                    Download
+                  </UButton>
 
                   <UButton
-                    color="error"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-trash"
-                    square
                     @click="() => void removeItem(item)"
-                  />
+                  >
+                    Remove
+                  </UButton>
 
                   <UDropdownMenu v-if="item.url" :items="itemActionGroups(item)" :modal="false">
                     <UButton
@@ -273,8 +295,12 @@
       >
         <UCard
           class="flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden border"
-          :class="historyCardClass(item)"
-          :ui="{ body: 'flex flex-1 flex-col gap-4 p-4', header: 'p-4 pb-3', root: 'bg-default' }"
+          :ui="{
+            body: 'flex flex-1 flex-col gap-4 p-4',
+            footer: 'border-t border-default px-4 py-4',
+            header: 'p-4 pb-3',
+            root: 'bg-default',
+          }"
         >
           <template #header>
             <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
@@ -390,102 +416,85 @@
           </div>
 
           <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
-            <div
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
+            <button
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'status')"
             >
-              <span class="inline-flex items-center gap-2">
+              <span class="inline-flex w-full items-center justify-center gap-2">
                 <UIcon
                   :name="setIcon(item)"
                   :class="[setIconColor(item), isQueuedAnimation(item), 'size-4 shrink-0']"
                 />
-                <span>{{ setStatus(item) }}</span>
+                <span :class="['min-w-0 text-center', expandClass(item._id, 'status')]">
+                  {{ setStatus(item) }}
+                </span>
               </span>
-            </div>
+            </button>
 
-            <div
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
+            <button
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'preset')"
             >
-              <UTooltip :text="`Preset: ${item.preset}`">
-                <span class="block min-w-0 truncate">{{ item.preset }}</span>
-              </UTooltip>
-            </div>
+              <span class="inline-flex w-full items-center justify-center gap-2">
+                <UIcon name="i-lucide-sliders-horizontal" class="size-4 shrink-0 text-toned" />
+                <span :class="['min-w-0 text-center', expandClass(item._id, 'preset')]">
+                  {{ item.preset }}
+                </span>
+              </span>
+            </button>
 
-            <div
+            <button
               v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)"
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'retry_at')"
             >
               <UTooltip
                 :text="`Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`"
               >
-                <span
-                  :date-datetime="item.live_in || item.extras?.release_in"
-                  v-rtime="item.live_in || item.extras?.release_in"
-                />
+                <span class="inline-flex w-full items-center justify-center gap-2">
+                  <UIcon name="i-lucide-calendar" class="size-4 shrink-0 text-toned" />
+                  <span
+                    :class="['min-w-0 text-center', expandClass(item._id, 'retry_at')]"
+                    :date-datetime="item.live_in || item.extras?.release_in"
+                    v-rtime="item.live_in || item.extras?.release_in"
+                  />
+                </span>
               </UTooltip>
-            </div>
+            </button>
 
-            <div
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+            <button
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'datetime')"
             >
               <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
-                <span :date-datetime="item.datetime" v-rtime="item.datetime" />
+                <span class="inline-flex w-full items-center justify-center gap-2">
+                  <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
+                  <span
+                    :class="['min-w-0 text-center', expandClass(item._id, 'datetime')]"
+                    :date-datetime="item.datetime"
+                    v-rtime="item.datetime"
+                  />
+                </span>
               </UTooltip>
-            </div>
+            </button>
 
-            <div
+            <button
               v-if="item.file_size"
-              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+              type="button"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+              @click="toggleExpand(item._id, 'size')"
             >
-              {{ formatBytes(item.file_size) }}
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
-            <UButton
-              v-if="showRetryAction(item)"
-              color="warning"
-              variant="outline"
-              icon="i-lucide-rotate-cw"
-              class="w-full justify-center"
-              @click="() => void retryItem(item, false)"
-            >
-              Retry
-            </UButton>
-
-            <UButton
-              v-if="item.filename"
-              color="info"
-              variant="outline"
-              icon="i-lucide-download"
-              class="w-full justify-center"
-              external
-              :href="makeDownload(config, item)"
-              :download="item.filename?.split('/').reverse()[0]"
-            >
-              Download
-            </UButton>
-
-            <UButton
-              color="error"
-              variant="outline"
-              icon="i-lucide-trash"
-              class="w-full justify-center"
-              @click="() => void removeItem(item)"
-            >
-              {{ config.app.remove_files ? 'Remove' : 'Clear' }}
-            </UButton>
-
-            <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-settings-2"
-                trailing-icon="i-lucide-chevron-down"
-                class="w-full justify-center"
-              >
-                Actions
-              </UButton>
-            </UDropdownMenu>
+              <span class="inline-flex w-full items-center justify-center gap-2">
+                <UIcon name="i-lucide-hard-drive" class="size-4 shrink-0 text-toned" />
+                <span :class="['min-w-0 text-center', expandClass(item._id, 'size')]">
+                  {{ formatBytes(item.file_size) }}
+                </span>
+              </span>
+            </button>
           </div>
 
           <div
@@ -508,6 +517,56 @@
               {{ item.msg }}
             </p>
           </div>
+
+          <template #footer>
+            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
+              <UButton
+                v-if="showRetryAction(item)"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-rotate-cw"
+                class="w-full justify-center"
+                @click="() => void retryItem(item, false)"
+              >
+                Retry
+              </UButton>
+
+              <UButton
+                v-if="item.filename"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-download"
+                class="w-full justify-center"
+                external
+                :href="makeDownload(config, item)"
+                :download="item.filename?.split('/').reverse()[0]"
+              >
+                Download
+              </UButton>
+
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                class="w-full justify-center"
+                @click="() => void removeItem(item)"
+              >
+                {{ config.app.remove_files ? 'Remove' : 'Clear' }}
+              </UButton>
+
+              <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-settings-2"
+                  trailing-icon="i-lucide-chevron-down"
+                  class="w-full justify-center"
+                >
+                  Actions
+                </UButton>
+              </UDropdownMenu>
+            </div>
+          </template>
         </UCard>
       </LateLoader>
     </div>
@@ -614,6 +673,7 @@
 import moment from 'moment';
 import { useStorage, useIntersectionObserver } from '@vueuse/core';
 import { useDialog } from '~/composables/useDialog';
+import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import type { StoreItem } from '~/types/store';
 import { useConfirm } from '~/composables/useConfirm';
 import { deepIncludes, getPath, getImage, isDownloadSkipped } from '~/utils';
@@ -637,11 +697,13 @@ const socket = useSocketStore();
 const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
+const { toggleExpand, expandClass } = useExpandableMeta();
 
 const showCompleted = useStorage<boolean>('showCompleted', true);
 const hideThumbnail = useStorage<boolean>('hideThumbnailHistory', false);
 const direction = useStorage<'asc' | 'desc'>('sortCompleted', 'desc');
 const display_style = useStorage<'grid' | 'list'>('display_style', 'grid');
+const isMobile = useMediaQuery({ maxWidth: 639 });
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
@@ -653,6 +715,10 @@ const embed_url = ref('');
 const video_item = ref<StoreItem | null>(null);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
 const expandedMessages = reactive<Record<string, Set<string>>>({});
+
+const contentStyle = computed<'grid' | 'list'>(() =>
+  isMobile.value ? 'grid' : display_style.value,
+);
 
 const paginationInfo = computed(() => stateStore.getPagination());
 
@@ -818,18 +884,6 @@ const getGridImage = (item: StoreItem): string => getImage(config.app.download_p
 
 const showRetryAction = (item: StoreItem): boolean => !item.filename && !isDownloadSkipped(item);
 
-const historyCardClass = (item: StoreItem): string => {
-  if (item.status === 'error') {
-    return 'border-error';
-  }
-
-  if (item.live_in || item.is_live) {
-    return 'border-info';
-  }
-
-  return 'border-default';
-};
-
 const bulkActionGroups = computed(() => {
   const groups: Array<Array<Record<string, unknown>>> = [
     [
@@ -842,7 +896,6 @@ const bulkActionGroups = computed(() => {
       {
         label: config.app.remove_files ? 'Remove' : 'Clear',
         icon: 'i-lucide-trash',
-        color: 'error',
         disabled: !hasSelected.value,
         onSelect: () => void deleteSelectedItems(),
       },
@@ -869,7 +922,6 @@ const bulkActionGroups = computed(() => {
       {
         label: 'Retry Incomplete',
         icon: 'i-lucide-rotate-cw',
-        color: 'warning',
         onSelect: () => void retryIncomplete(),
       },
     );
@@ -897,7 +949,6 @@ const itemActionGroups = (item: StoreItem) => {
       mediaActions.push({
         label: 'Retry download',
         icon: 'i-lucide-rotate-cw',
-        color: 'warning',
         onSelect: () => void retryItem(item, true),
       });
     }
@@ -905,14 +956,12 @@ const itemActionGroups = (item: StoreItem) => {
     mediaActions.push({
       label: 'Generate NFO',
       icon: 'i-lucide-file-code-2',
-      color: 'info',
       onSelect: () => void generateNfo(item),
     });
   } else if (isEmbedable(item.url)) {
     mediaActions.push({
       label: 'Play video',
       icon: 'i-lucide-play',
-      color: 'error',
       onSelect: () => {
         embed_url.value = getEmbedable(item.url) as string;
       },
@@ -946,7 +995,6 @@ const itemActionGroups = (item: StoreItem) => {
       {
         label: 'Add to archive',
         icon: 'i-lucide-archive',
-        color: 'error',
         onSelect: () => addArchiveDialog(item),
       },
     ]);
@@ -957,7 +1005,6 @@ const itemActionGroups = (item: StoreItem) => {
       {
         label: 'Remove from archive',
         icon: 'i-lucide-archive-x',
-        color: 'error',
         onSelect: () => removeFromArchiveDialog(item),
       },
     ]);
@@ -1113,7 +1160,7 @@ const setStatus = (item: StoreItem) => {
     if (item.extras?.is_premiere) {
       return 'Premiere';
     }
-    return display_style.value === 'grid' ? 'Stream' : 'Live';
+    return 'Live';
   }
   if ('skip' === item.status) {
     return 'Skipped';

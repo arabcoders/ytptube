@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <UPageHeader
       title="Downloads"
-      description="Queued and completed downloads are displayed here."
+      description="Manage queued, active, and completed downloads in one workspace."
       :ui="{
         root: 'border-b border-default py-4',
         headline: 'hidden',
@@ -39,7 +39,7 @@
               icon="i-lucide-filter"
               @click="toggleFilter = !toggleFilter"
             >
-              <span v-if="!isMobile">Filter</span>
+              <span>Filter</span>
             </UButton>
 
             <UButton
@@ -50,7 +50,7 @@
               icon="i-lucide-pause"
               @click="() => void pauseDownload()"
             >
-              <span v-if="!isMobile">Pause</span>
+              <span>Pause</span>
             </UButton>
 
             <UButton
@@ -61,7 +61,7 @@
               icon="i-lucide-play"
               @click="() => void resumeDownload()"
             >
-              <span v-if="!isMobile">Resume</span>
+              <span>Resume</span>
             </UButton>
 
             <UButton
@@ -71,7 +71,7 @@
               icon="i-lucide-plus"
               @click="config.showForm = !config.showForm"
             >
-              <span v-if="!isMobile">Add</span>
+              <span>Add</span>
             </UButton>
           </template>
 
@@ -81,16 +81,17 @@
               variant="outline"
               size="sm"
               :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+              class="hidden sm:inline-flex"
               @click="changeDisplay"
             >
-              <span v-if="!isMobile">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+              <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
             </UButton>
           </template>
         </UDashboardToolbar>
       </template>
     </UPageHeader>
 
-    <div v-if="config.showForm" class="page-form-wrap">
+    <div v-if="config.showForm" ref="formSection" class="page-form-wrap scroll-mt-24">
       <NewDownload
         :item="item_form"
         @clear_form="item_form = {}"
@@ -100,63 +101,68 @@
       />
     </div>
 
-    <UPageCard
-      variant="outline"
-      :ui="{
-        root: 'w-full min-w-0 max-w-full bg-default',
-        container: 'w-full min-w-0 max-w-full p-0 sm:p-0',
-        wrapper: 'w-full min-w-0 items-stretch',
-        body: 'w-full min-w-0 max-w-full p-0',
-      }"
-    >
-      <template #body>
-        <UTabs
-          v-model="activeTab"
-          :items="tabItems"
-          value-key="value"
-          color="neutral"
-          variant="link"
-          size="md"
-          :content="false"
-          :ui="{
-            root: 'flex-col gap-4',
-            list: 'border-b border-default px-2 sm:px-4',
-            trigger: 'justify-start rounded-none px-3 py-3 text-sm font-medium',
-            trailingBadge: 'ml-1',
-          }"
-          @update:model-value="(value) => void setActiveTab(value as TabType)"
-        />
+    <UEmpty
+      v-if="!hasDownloadsContent"
+      icon="i-lucide-inbox"
+      title="No downloads yet"
+      description="Add a URL to get started."
+      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+    />
 
-        <div class="w-full min-w-0 max-w-full px-0 pt-2">
-          <div v-show="'queue' === activeTab" class="w-full min-w-0 max-w-full">
-            <Queue
-              :thumbnails="show_thumbnail"
-              :query="query"
-              @getInfo="
-                (url: string, preset: string = '', cli: string = '') =>
-                  view_info(url, false, preset, cli)
-              "
-              @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
-              @clear_search="query = ''"
-            />
+    <div v-else class="space-y-8">
+      <section id="queue" class="scroll-mt-24 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default pb-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+              <UIcon name="i-lucide-download" class="size-4 text-toned" />
+              <h2>Queue</h2>
+            </div>
+
+            <p class="text-sm text-toned">Active and queued downloads.</p>
           </div>
 
-          <div v-show="'history' === activeTab" class="w-full min-w-0 max-w-full">
-            <History
-              :query="query"
-              :thumbnails="show_thumbnail"
-              @getInfo="
-                (url: string, preset: string = '', cli: string = '') =>
-                  view_info(url, false, preset, cli)
-              "
-              @add_new="(item: item_request) => toNewDownload(item)"
-              @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
-              @clear_search="query = ''"
-            />
-          </div>
+          <UBadge color="info" variant="soft" size="sm">{{ queueCount }}</UBadge>
         </div>
-      </template>
-    </UPageCard>
+
+        <Queue
+          :thumbnails="show_thumbnail"
+          :query="query"
+          @getInfo="
+            (url: string, preset: string = '', cli: string = '') =>
+              view_info(url, false, preset, cli)
+          "
+          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+          @clear_search="query = ''"
+        />
+      </section>
+
+      <section id="history" class="scroll-mt-24 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default pb-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+              <UIcon name="i-lucide-history" class="size-4 text-toned" />
+              <h2>History</h2>
+            </div>
+
+            <p class="text-sm text-toned">Completed, skipped, and failed downloads.</p>
+          </div>
+
+          <UBadge color="neutral" variant="soft" size="sm">{{ historyCount }}</UBadge>
+        </div>
+
+        <History
+          :query="query"
+          :thumbnails="show_thumbnail"
+          @getInfo="
+            (url: string, preset: string = '', cli: string = '') =>
+              view_info(url, false, preset, cli)
+          "
+          @add_new="(item: item_request) => void toNewDownload(item)"
+          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+          @clear_search="query = ''"
+        />
+      </section>
+    </div>
 
     <GetInfo
       v-if="info_view.url"
@@ -178,15 +184,14 @@ import type { StoreItem } from '~/types/store';
 const config = useConfigStore();
 const stateStore = useStateStore();
 const route = useRoute();
-const router = useRouter();
 const { confirmDialog } = useDialog();
 
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
 const display_style = useStorage<string>('display_style', 'grid');
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
-const isMobile = useMediaQuery({ maxWidth: 1024 });
 
+const formSection = ref<HTMLElement | null>(null);
 const info_view = ref({
   url: '',
   preset: '',
@@ -197,33 +202,7 @@ const item_form = ref<item_request | object>({});
 const query = ref('');
 const toggleFilter = ref(false);
 
-type TabType = 'queue' | 'history';
-
-const activeTab = ref<TabType>('queue');
-
-const getInitialTab = (): TabType => {
-  const tabParam = route.query.tab as string;
-  return tabParam === 'queue' || tabParam === 'history' ? tabParam : 'queue';
-};
-
-const setActiveTab = async (tab: TabType): Promise<void> => {
-  activeTab.value = tab;
-  await router.push({ query: { ...route.query, tab }, replace: true });
-};
-
-watch(
-  () => route.query.tab,
-  (newTab) => {
-    if (!['queue', 'history'].includes(newTab as string)) {
-      return;
-    }
-    activeTab.value = newTab as TabType;
-  },
-);
-
 onMounted(async () => {
-  const route = useRoute();
-
   if (route.query?.simple !== undefined) {
     const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
     simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string);
@@ -233,31 +212,14 @@ onMounted(async () => {
     window.history.replaceState({}, '', url.toString());
   }
 
-  activeTab.value = getInitialTab();
   useHead({ title: getTitle() });
 });
 
 const queueCount = computed(() => stateStore.count('queue'));
 const historyCount = computed(() => stateStore.count('history'));
-
-const tabItems = computed(() => [
-  {
-    label: 'Downloads',
-    icon: 'i-lucide-download',
-    value: 'queue',
-    badge: { label: String(queueCount.value), color: 'info' as const, variant: 'soft' as const },
-  },
-  {
-    label: 'History',
-    icon: 'i-lucide-history',
-    value: 'history',
-    badge: {
-      label: String(historyCount.value),
-      color: 'primary' as const,
-      variant: 'soft' as const,
-    },
-  },
-]);
+const hasDownloadsContent = computed(
+  () => queueCount.value > 0 || historyCount.value > 0 || query.value.trim().length > 0,
+);
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -356,6 +318,8 @@ const toNewDownload = async (item: item_request | Partial<StoreItem>) => {
 
   await nextTick();
   config.showForm = true;
+  await nextTick();
+  formSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 </script>
 
