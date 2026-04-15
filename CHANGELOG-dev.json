@@ -1,8 +1,36 @@
 [
     {
-        "tag": "dev-20260415-182a2e97",
-        "date": "2026-04-14T21:37:12+00:00",
+        "tag": "dev-20260415-70648c22",
+        "date": "2026-04-15T20:53:15+00:00",
         "commits": [
+            {
+                "sha": "70648c22",
+                "message": "Refactor: standardize the look and feel of the pages after recent nuxt ui migration",
+                "author": "arabcoders",
+                "date": "2026-04-15T20:53:15+00:00",
+                "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2"
+            },
+            {
+                "sha": "bb246cc6",
+                "message": "wip",
+                "author": "arabcoders",
+                "date": "2026-04-15T18:52:52+00:00",
+                "full_sha": "bb246cc6f5e02dee4f53fd27d177de9b204410c0"
+            },
+            {
+                "sha": "e7fd6001",
+                "message": "fix: opacity interaction with the new form guard",
+                "author": "arabcoders",
+                "date": "2026-04-15T15:14:36+00:00",
+                "full_sha": "e7fd60010b2f490bc935732f9ff8a39c77069190"
+            },
+            {
+                "sha": "9337e81f",
+                "message": "refactor: remove useless tests",
+                "author": "arabcoders",
+                "date": "2026-04-15T15:13:04+00:00",
+                "full_sha": "9337e81f622edcf11c91fed89e75373380b3726d"
+            },
             {
                 "sha": "182a2e97",
                 "message": "feat: add form guards to prevent accidental data loss",
@@ -4393,7 +4421,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784"
+        "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2"
     },
     {
         "tag": "dev-20250616-c07465a6",

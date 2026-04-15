@@ -29,9 +29,37 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784",
-    "date": "2026-04-14T21:37:12+00:00",
+    "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2",
+    "date": "2026-04-15T20:53:15+00:00",
     "commits": [
+      {
+        "sha": "70648c22",
+        "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2",
+        "message": "Refactor: standardize the look and feel of the pages after recent nuxt ui migration",
+        "author": "arabcoders",
+        "date": "2026-04-15T20:53:15+00:00"
+      },
+      {
+        "sha": "bb246cc6",
+        "full_sha": "bb246cc6f5e02dee4f53fd27d177de9b204410c0",
+        "message": "wip",
+        "author": "arabcoders",
+        "date": "2026-04-15T18:52:52+00:00"
+      },
+      {
+        "sha": "e7fd6001",
+        "full_sha": "e7fd60010b2f490bc935732f9ff8a39c77069190",
+        "message": "fix: opacity interaction with the new form guard",
+        "author": "arabcoders",
+        "date": "2026-04-15T15:14:36+00:00"
+      },
+      {
+        "sha": "9337e81f",
+        "full_sha": "9337e81f622edcf11c91fed89e75373380b3726d",
+        "message": "refactor: remove useless tests",
+        "author": "arabcoders",
+        "date": "2026-04-15T15:13:04+00:00"
+      },
       {
         "sha": "182a2e97",
         "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784",
