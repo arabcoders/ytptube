@@ -1,44 +1,57 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex flex-wrap items-center gap-2 text-lg font-semibold text-highlighted">
-          <UIcon name="i-lucide-terminal" class="size-5 text-toned" />
-          <span>Console</span>
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-start gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
 
-          <UBadge :color="sessionStatusColor" variant="soft" size="sm">
-            <span class="inline-flex items-center gap-1.5">
-              <UIcon
-                :name="sessionStatusIcon"
-                class="size-3.5"
-                :class="sessionStatusSpinning ? 'animate-spin' : ''"
-              />
-              <span>{{ sessionStatusLabel }}</span>
-            </span>
-          </UBadge>
-
-          <UBadge v-if="hasActiveSession" color="neutral" variant="outline" size="sm">
-            Session {{ shortSessionId }}
-          </UBadge>
-
-          <UBadge
-            v-if="sessionExitCode !== null && !isLoading"
-            :color="exitCodeBadgeColor"
-            variant="outline"
-            size="sm"
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
           >
-            Exit {{ sessionExitCode }}
-          </UBadge>
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
 
-          <UBadge v-if="commandHistory.length > 0" color="neutral" variant="outline" size="sm">
-            {{ commandHistory.length }} saved
-          </UBadge>
+          <div class="flex flex-wrap items-center gap-2">
+            <UBadge :color="sessionStatusColor" variant="soft" size="sm">
+              <span class="inline-flex items-center gap-1.5">
+                <UIcon
+                  :name="sessionStatusIcon"
+                  class="size-3.5"
+                  :class="sessionStatusSpinning ? 'animate-spin' : ''"
+                />
+                <span>{{ sessionStatusLabel }}</span>
+              </span>
+            </UBadge>
+
+            <UBadge v-if="hasActiveSession" color="neutral" variant="outline" size="sm">
+              Session {{ shortSessionId }}
+            </UBadge>
+
+            <UBadge
+              v-if="sessionExitCode !== null && !isLoading"
+              :color="exitCodeBadgeColor"
+              variant="outline"
+              size="sm"
+            >
+              Exit {{ sessionExitCode }}
+            </UBadge>
+
+            <UBadge v-if="commandHistory.length > 0" color="neutral" variant="outline" size="sm">
+              {{ commandHistory.length }} saved
+            </UBadge>
+          </div>
+
+          <p class="max-w-3xl text-sm text-toned">{{ sessionStatusDescription }}</p>
         </div>
-
-        <p class="text-sm text-toned">{{ sessionStatusDescription }}</p>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
+      <div class="flex flex-wrap gap-2 xl:justify-end">
         <UButton
           color="neutral"
           variant="outline"
@@ -354,6 +367,7 @@ import { useConsoleSession } from '~/composables/useConsoleSession';
 import { useDialog } from '~/composables/useDialog';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { disableOpacity, enableOpacity } from '~/utils';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 useHead({ title: 'Console' });
 
@@ -370,6 +384,7 @@ const config = useConfigStore();
 const toast = useNotification();
 const dialog = useDialog();
 const consoleSession = useConsoleSession();
+const pageShell = requirePageShell('console');
 
 const terminal = ref<Terminal | null>(null);
 const terminalFit = ref<FitAddon | null>(null);

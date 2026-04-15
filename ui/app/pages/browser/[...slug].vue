@@ -1,43 +1,109 @@
 <template>
-  <div class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-2">
-        <div class="flex flex-wrap items-center gap-2 text-sm text-toned">
-          <nav aria-label="Breadcrumb" class="min-w-0">
-            <ol class="flex flex-wrap items-center gap-1.5">
-              <template v-for="(item, index) in breadcrumbItems" :key="item.path">
-                <li v-if="index > 0" aria-hidden="true" class="text-muted">/</li>
-                <li>
-                  <a
-                    v-if="index !== breadcrumbItems.length - 1"
-                    :href="buildStateUrl(item.path)"
-                    class="rounded px-1 py-0.5 text-left text-default hover:text-highlighted"
-                    @click="handleBreadcrumbClick($event, item.path)"
-                  >
-                    {{ item.name }}
-                  </a>
-                  <span v-else class="rounded px-1 py-0.5 font-medium text-highlighted">
-                    {{ item.name }}
-                  </span>
-                </li>
-              </template>
-            </ol>
+  <div class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-start gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
+
+        <div class="min-w-0 flex-1 space-y-3">
+          <nav
+            aria-label="Breadcrumb"
+            class="flex min-w-0 flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+
+            <template v-for="item in breadcrumbTrailItems" :key="item.path">
+              <span>/</span>
+
+              <button
+                type="button"
+                class="max-w-full truncate normal-case tracking-normal transition hover:text-highlighted"
+                @click="() => void reloadContent(item.path)"
+              >
+                {{ item.name }}
+              </button>
+            </template>
+
+            <UIcon
+              v-if="isLoading"
+              name="i-lucide-loader-circle"
+              class="size-4 animate-spin text-info"
+            />
           </nav>
 
-          <UIcon
-            v-if="isLoading"
-            name="i-lucide-loader-circle"
-            class="size-4 animate-spin text-info"
-          />
+          <div>
+            <h1 class="truncate text-2xl font-semibold text-highlighted">
+              {{ currentDirectoryName }}
+            </h1>
+          </div>
         </div>
-
-        <p class="text-sm text-toned">
-          {{ browserPath }}
-        </p>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <div v-if="show_filter" class="relative w-full sm:w-72">
+      <div class="flex flex-col gap-3 xl:items-end">
+        <div class="flex flex-wrap gap-2 xl:justify-end">
+          <UButton
+            color="neutral"
+            :variant="show_filter ? 'soft' : 'outline'"
+            size="sm"
+            icon="i-lucide-filter"
+            @click="toggleFilter"
+          >
+            <span>Filter</span>
+          </UButton>
+
+          <UButton
+            v-if="controlEnabled"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-folder-plus"
+            @click="() => void handleCreateDirectory()"
+          >
+            <span>New Folder</span>
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+            class="hidden sm:inline-flex"
+            @click="toggleDisplayStyle"
+          >
+            <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          </UButton>
+
+          <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-arrow-up-down"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              <span>Sort</span>
+            </UButton>
+          </UDropdownMenu>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-refresh-cw"
+            :loading="isLoading"
+            :disabled="isLoading"
+            @click="() => void reloadContent(browserPath)"
+          >
+            <span>Reload</span>
+          </UButton>
+        </div>
+
+        <div v-if="show_filter" class="relative w-full xl:w-80">
           <span
             class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
           >
@@ -52,62 +118,6 @@
             class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
           />
         </div>
-
-        <UButton
-          color="neutral"
-          :variant="show_filter ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-filter"
-          @click="toggleFilter"
-        >
-          <span>Filter</span>
-        </UButton>
-
-        <UButton
-          v-if="controlEnabled"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-folder-plus"
-          @click="() => void handleCreateDirectory()"
-        >
-          <span>New Folder</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
-          @click="toggleDisplayStyle"
-        >
-          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
-        </UButton>
-
-        <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-arrow-up-down"
-            trailing-icon="i-lucide-chevron-down"
-          >
-            <span>Sort</span>
-          </UButton>
-        </UDropdownMenu>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-refresh-cw"
-          :loading="isLoading"
-          :disabled="isLoading"
-          @click="() => void reloadContent(browserPath)"
-        >
-          <span>Reload</span>
-        </UButton>
       </div>
     </div>
 
@@ -532,6 +542,7 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import type { FileItem } from '~/types/filebrowser';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const route = useRoute();
 const toast = useNotification();
@@ -559,9 +570,14 @@ const controlEnabled = computed(() => Boolean(config.app.browser_control_enabled
 const contentStyle = computed<'list' | 'grid'>(() =>
   isMobile.value ? 'grid' : 'list' === display_style.value ? 'list' : 'grid',
 );
+const pageShell = requirePageShell('files');
 const hasItems = computed(() => filteredItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const displayedItemPaths = computed(() => filteredItems.value.map((item) => item.path));
+const currentDirectoryName = computed(
+  () => breadcrumbItems.value[breadcrumbItems.value.length - 1]?.name || 'Home',
+);
+const breadcrumbTrailItems = computed(() => breadcrumbItems.value.slice(0, -1));
 const sortDirectionIcon = computed(() =>
   sort_order.value === 'asc' ? 'i-lucide-arrow-down' : 'i-lucide-arrow-up',
 );
@@ -733,19 +749,6 @@ const closeModel = (): void => {
 const clearFilter = (): void => {
   localSearch.value = '';
   show_filter.value = false;
-};
-
-const isPlainLeftClick = (event: MouseEvent): boolean => {
-  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
-};
-
-const handleBreadcrumbClick = (event: MouseEvent, path: string): void => {
-  if (!isPlainLeftClick(event)) {
-    return;
-  }
-
-  event.preventDefault();
-  void reloadContent(path);
 };
 
 const itemHref = (item: FileItem): string => {

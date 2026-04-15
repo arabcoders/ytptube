@@ -1,8 +1,10 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex flex-wrap items-center gap-2 text-lg font-semibold text-highlighted">
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-start gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
           <UIcon
             name="i-lucide-file-text"
             :class="[
@@ -12,7 +14,16 @@
             :title="loading ? 'Loading history' : 'Live stream active'"
             :aria-label="loading ? 'Loading history' : 'Live stream active'"
           />
-          <span>Logs</span>
+        </span>
+
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
 
           <UBadge v-if="loading" color="info" variant="soft" size="sm">Loading history</UBadge>
 
@@ -36,24 +47,52 @@
           <UBadge v-if="reachedEnd && !hasActiveFilter" color="neutral" variant="soft" size="sm">
             Start of file loaded
           </UBadge>
-        </div>
 
-        <p class="text-sm text-toned">Scroll near the top to load older logs.</p>
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <UButton
-          v-if="!autoScroll"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-arrow-down"
-          @click="scrollToBottom(false)"
-        >
-          Jump to Live Tail
-        </UButton>
+      <div class="flex flex-col gap-3 xl:items-end">
+        <div class="flex flex-wrap gap-2 xl:justify-end">
+          <UButton
+            v-if="!autoScroll"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-arrow-down"
+            @click="scrollToBottom(false)"
+          >
+            Jump to Live Tail
+          </UButton>
 
-        <div v-if="toggleFilter || query" class="relative w-full sm:w-72">
+          <UButton
+            color="neutral"
+            :variant="toggleFilter ? 'soft' : 'outline'"
+            size="sm"
+            icon="i-lucide-filter"
+            @click="toggleFilter = !toggleFilter"
+          >
+            Filter
+          </UButton>
+
+          <UButton
+            color="neutral"
+            :variant="textWrap ? 'soft' : 'outline'"
+            size="sm"
+            icon="i-lucide-wrap-text"
+            :aria-pressed="textWrap"
+            :title="textWrap ? 'Wrap lines enabled' : 'Wrap lines disabled'"
+            :class="[
+              'transition-all',
+              textWrap ? '-translate-y-px ring ring-default shadow-xs' : '',
+            ]"
+            @click="textWrap = !textWrap"
+          >
+            Wrap lines
+          </UButton>
+        </div>
+
+        <div v-if="toggleFilter || query" class="relative w-full xl:w-80">
           <span
             class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
           >
@@ -68,29 +107,6 @@
             class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
           />
         </div>
-
-        <UButton
-          color="neutral"
-          :variant="toggleFilter ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-filter"
-          @click="toggleFilter = !toggleFilter"
-        >
-          Filter
-        </UButton>
-
-        <UButton
-          color="neutral"
-          :variant="textWrap ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-wrap-text"
-          :aria-pressed="textWrap"
-          :title="textWrap ? 'Wrap lines enabled' : 'Wrap lines disabled'"
-          :class="['transition-all', textWrap ? '-translate-y-px ring ring-default shadow-xs' : '']"
-          @click="textWrap = !textWrap"
-        >
-          Wrap lines
-        </UButton>
       </div>
     </div>
 
@@ -185,6 +201,7 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { log_line } from '~/types/logs';
 import { disableOpacity, enableOpacity, parse_api_error, request, uri } from '~/utils';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 type FilteredLogEntry = {
   log: log_line;
@@ -201,6 +218,7 @@ let scrollTimeout: NodeJS.Timeout | null = null;
 const toast = useNotification();
 const config = useConfigStore();
 const route = useRoute();
+const pageShell = requirePageShell('logs');
 
 const logContainer = useTemplateRef<HTMLDivElement>('logContainer');
 const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker');

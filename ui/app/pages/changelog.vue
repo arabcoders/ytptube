@@ -1,20 +1,49 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-          <UIcon name="i-lucide-git-commit-horizontal" class="size-5 text-toned" />
-          <span>CHANGELOG</span>
-        </div>
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
 
-        <p class="text-sm text-toned">
-          Latest project changes, loaded remotely when available and falling back to the bundled
-          changelog file.
-        </p>
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
+
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <div v-if="toggleFilter && logs.length > 0" class="relative w-full sm:w-80">
+      <div class="flex flex-col gap-3 xl:items-end">
+        <div class="flex flex-wrap gap-2 xl:justify-end">
+          <UButton
+            v-if="logs.length > 0"
+            color="neutral"
+            :variant="toggleFilter ? 'soft' : 'outline'"
+            size="sm"
+            icon="i-lucide-filter"
+            @click="toggleFilter = !toggleFilter"
+          >
+            <span>Filter</span>
+          </UButton>
+
+          <USwitch
+            v-model="latestOnly"
+            color="primary"
+            size="sm"
+            :label="latestOnly ? 'Latest Only' : 'All Loaded'"
+            :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
+          />
+        </div>
+
+        <div v-if="toggleFilter && logs.length > 0" class="relative w-full xl:w-80">
           <span
             class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
           >
@@ -29,25 +58,6 @@
             class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
           />
         </div>
-
-        <UButton
-          v-if="logs.length > 0"
-          color="neutral"
-          :variant="toggleFilter ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-filter"
-          @click="toggleFilter = !toggleFilter"
-        >
-          <span>Filter</span>
-        </UButton>
-
-        <USwitch
-          v-model="latestOnly"
-          color="primary"
-          size="sm"
-          :label="latestOnly ? 'Latest Only' : 'All Loaded'"
-          :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
-        />
       </div>
     </div>
 
@@ -188,9 +198,11 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { changelogs, changeset } from '~/types/changelogs';
 import { request, ucFirst, uri } from '~/utils';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const toast = useNotification();
 const config = useConfigStore();
+const pageShell = requirePageShell('changelog');
 
 useHead({ title: 'CHANGELOG' });
 

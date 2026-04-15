@@ -486,22 +486,19 @@ import { ref, onMounted, readonly } from 'vue';
 import { useStorage } from '@vueuse/core';
 import moment from 'moment';
 import type { toastPosition } from '~/composables/useNotification';
-import { getDocsNavigationEntries } from '~/composables/useDocs';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
 import Simple from '~/components/Simple.vue';
 import Shutdown from '~/components/shutdown.vue';
 import type { version_check } from '~/types';
-
-type NavEntry = {
-  id: string;
-  label: string;
-  description?: string;
-  icon: string;
-  to?: string;
-  children?: NavEntry[];
-};
+import {
+  getActiveNavItem,
+  getNavItems,
+  getNavSections,
+  isNavItemActive,
+  type NavItem,
+} from '~/utils/topLevelNavigation';
 
 type SidebarSection = {
   id: string;
@@ -552,166 +549,51 @@ const navigationUi = (collapsed: boolean) => ({
   linkLabel: collapsed ? 'hidden' : 'truncate',
 });
 
-const navEntryPath = (item: NavEntry): string => (item.to ? item.to.split(/[?#]/)[0] || '/' : '');
-
-const isNavEntryActive = (item: NavEntry): boolean => {
-  if (item.id === 'downloads') {
-    return route.path === '/' && route.hash !== '#history';
-  }
-
-  if (item.id === 'history') {
-    return route.path === '/' && route.hash === '#history';
-  }
-
-  const path = navEntryPath(item);
-  if (!path) {
-    return false;
-  }
-
-  return path === '/'
-    ? route.path === '/'
-    : route.path === path || route.path.startsWith(`${path}/`);
-};
-
-const makeNavigationItem = (item: NavEntry): NavigationMenuItem => ({
+const makeNavigationItem = (item: NavItem): NavigationMenuItem => ({
   label: item.label,
   icon: item.icon,
   to: item.to,
   value: item.id,
-  active: isNavEntryActive(item),
+  active: isNavItemActive(item, route),
 });
 
-const docsNavigationEntries = getDocsNavigationEntries();
+const navigationAvailability = computed(() => ({
+  fileLogging: Boolean(config.app?.file_logging),
+  consoleEnabled: Boolean(config.app?.console_enabled),
+}));
 
-const allNavItems = computed<NavEntry[]>(() => [
-  {
-    id: 'downloads',
-    label: 'Downloads',
-    description: 'Manage queued, active, and completed downloads in one workspace.',
-    icon: 'i-lucide-download',
-    to: '/',
-  },
-  {
-    id: 'history',
-    label: 'History',
-    description: 'Jump to the history section on the downloads page.',
-    icon: 'i-lucide-history',
-    to: '/#history',
-  },
-  {
-    id: 'files',
-    label: 'Files',
-    description: 'Browse downloaded files.',
-    icon: 'i-lucide-folder-tree',
-    to: '/browser',
-  },
-  {
-    id: 'presets',
-    label: 'Presets',
-    description:
-      'Presets are pre-defined command options for yt-dlp that you want to apply to given download.',
-    icon: 'i-lucide-sliders-horizontal',
-    to: '/presets',
-  },
-  {
-    id: 'custom-fields',
-    label: 'Custom Fields',
-    description: 'Custom fields allow you to add new fields to the download form.',
-    icon: 'i-lucide-braces',
-    to: '/dl_fields',
-  },
-  {
-    id: 'conditions',
-    label: 'Conditions',
-    description: 'Run yt-dlp custom match filter on returned info and apply options.',
-    icon: 'i-lucide-filter',
-    to: '/conditions',
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    description: 'Send notifications to your webhooks based on specified events or presets.',
-    icon: 'i-lucide-bell',
-    to: '/notifications',
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    icon: 'i-lucide-list-todo',
-    children: [
-      {
-        id: 'tasks-list',
-        label: 'Tasks',
-        description: 'Queue playlist/channels for automatic download at specified intervals.',
-        icon: 'i-lucide-list-todo',
-        to: '/tasks',
-      },
-      {
-        id: 'task-definitions',
-        label: 'Task Definitions',
-        description: 'Create definitions to turn any website into a downloadable feed of links.',
-        icon: 'i-lucide-workflow',
-        to: '/task_definitions',
-      },
-    ],
-  },
-  {
-    id: 'tools',
-    label: 'Tools',
-    icon: 'i-lucide-wrench',
-    children: [
-      ...(config.app?.file_logging
-        ? [
-            {
-              id: 'logs',
-              label: 'Logs',
-              description: 'Scroll near the top to load older logs.',
-              icon: 'i-lucide-file-text',
-              to: '/logs',
-            },
-          ]
-        : []),
-      ...(config.app.console_enabled
-        ? [
-            {
-              id: 'console',
-              label: 'Console',
-              description: 'Run yt-dlp commands directly in a non-interactive session.',
-              icon: 'i-lucide-terminal',
-              to: '/console',
-            },
-          ]
-        : []),
-    ],
-  },
-  {
-    id: 'docs',
-    label: 'Docs',
-    icon: 'i-lucide-book-open',
-    children: [
-      ...docsNavigationEntries,
-      {
-        id: 'changelog',
-        label: 'Changelog',
-        description:
-          'Latest project changes, loaded remotely when available and falling back to the bundled changelog file.',
-        icon: 'i-lucide-list',
-        to: '/changelog',
-      },
-    ],
-  },
-]);
+const navItems = computed(() => getNavItems(navigationAvailability.value));
+
+const groupSectionEntries = (entries: Array<NavItem>): Array<Array<NavItem>> => {
+  const order = [...new Set(entries.map((entry) => entry.group))];
+  return order.map((group) => entries.filter((entry) => entry.group === group));
+};
+
+const sidebarItems = computed<
+  Array<{
+    id: string;
+    label: string;
+    items: Array<Array<NavItem>>;
+  }>
+>(() => {
+  return getNavSections()
+    .map((section) => {
+      const sectionEntries = navItems.value.filter(
+        (entry) => entry.section === section.id && entry.sidebarVisible !== false,
+      );
+
+      return {
+        id: section.id,
+        label: section.label,
+        items: groupSectionEntries(sectionEntries),
+      };
+    })
+    .filter((section) => section.items.some((group) => group.length > 0));
+});
 
 const pageTitle = computed(() => {
-  if (route.path === '/') {
-    return 'Downloads';
-  }
-
-  const flat = allNavItems.value.flatMap((item) => [item, ...(item.children || [])]);
-  const match = flat
-    .filter((item) => isNavEntryActive(item))
-    .sort((left, right) => navEntryPath(right).length - navEntryPath(left).length)[0];
-  return match?.label || 'YTPTube';
+  const match = getActiveNavItem(route, navigationAvailability.value);
+  return match?.navbarTitle || match?.label || 'YTPTube';
 });
 
 const buildTooltip = computed(
@@ -735,81 +617,30 @@ const connectionBannerIcon = computed(() =>
   socket.connectionStatus === 'connecting' ? 'i-lucide-loader-circle' : 'i-lucide-info',
 );
 
-const sidebarSections = computed<Array<SidebarSection>>(() => {
-  const topLevelItems = (ids: string[]) =>
-    ids
-      .map((id) => allNavItems.value.find((item) => item.id === id))
-      .filter((item): item is NavEntry => Boolean(item))
-      .map((item) => makeNavigationItem(item));
-
-  const childItems = (id: string) =>
-    (allNavItems.value.find((item) => item.id === id)?.children || []).map((item) =>
-      makeNavigationItem(item),
-    );
-
-  return [
-    {
-      id: 'downloads',
-      label: 'Downloads',
-      items:
-        topLevelItems(['downloads', 'history', 'files']).length > 0
-          ? [topLevelItems(['downloads', 'history', 'files'])]
-          : [],
-    },
-    {
-      id: 'automation',
-      label: 'Automation',
-      items: childItems('tasks').length > 0 ? [childItems('tasks')] : [],
-    },
-    {
-      id: 'configuration',
-      label: 'Configuration',
-      items:
-        topLevelItems(['presets', 'custom-fields', 'conditions', 'notifications']).length > 0
-          ? [topLevelItems(['presets', 'custom-fields', 'conditions', 'notifications'])]
-          : [],
-    },
-    {
-      id: 'tools',
-      label: 'Tools',
-      items: childItems('tools').length > 0 ? [childItems('tools')] : [],
-    },
-    {
-      id: 'docs',
-      label: 'Docs',
-      items: childItems('docs').length > 0 ? [childItems('docs')] : [],
-    },
-  ].filter((section) => section.items.some((group) => group.length > 0));
-});
+const sidebarSections = computed<Array<SidebarSection>>(() =>
+  sidebarItems.value.map((section) => ({
+    ...section,
+    items: section.items.map((group) => group.map((entry) => makeNavigationItem(entry))),
+  })),
+);
 
 const routeSearchGroups = computed(() => [
-  {
-    id: 'routes',
-    label: 'Routes',
-    items: allNavItems.value.flatMap((item) => {
-      const self = item.to
-        ? [
-            {
-              label: item.label,
-              description: item.description,
-              icon: item.icon,
-              suffix: item.to,
-              onSelect: () => handleRouteSelect(item),
-            },
-          ]
-        : [];
-
-      const children = (item.children || []).map((child) => ({
-        label: child.label,
-        description: child.description,
-        icon: child.icon,
-        suffix: child.to || '',
-        onSelect: () => handleRouteSelect(child),
-      }));
-
-      return [...self, ...children];
-    }),
-  },
+  ...sidebarItems.value
+    .map((section) => ({
+      id: section.id,
+      label: section.label,
+      items: section.items
+        .flat()
+        .filter((entry) => entry.searchable !== false)
+        .map((entry) => ({
+          label: entry.label,
+          description: entry.description,
+          icon: entry.icon,
+          suffix: entry.to,
+          onSelect: () => handleRouteSelect(entry),
+        })),
+    }))
+    .filter((section) => section.items.length > 0),
   {
     id: 'downloads',
     label: 'Downloads',
@@ -872,7 +703,7 @@ const syncShellModeClass = () => {
   html.classList.toggle('simple-mode', simpleMode.value);
 };
 
-const handleRouteSelect = async (item: NavEntry) => {
+const handleRouteSelect = async (item: NavItem) => {
   await closeRouteSearch();
 
   if (item.to) {

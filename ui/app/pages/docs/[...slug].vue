@@ -1,22 +1,40 @@
 <template>
   <main class="space-y-6">
-    <UPageHeader :title="docEntry.title" :description="docEntry.description" :ui="pageHeaderUi">
-      <template #links>
-        <div class="flex flex-wrap items-center gap-2">
-          <UButton
-            v-for="entry in docsEntries"
-            :key="entry.id"
-            :to="entry.route"
-            :color="entry.file === docEntry.file ? 'primary' : 'neutral'"
-            :variant="entry.file === docEntry.file ? 'solid' : 'outline'"
-            size="sm"
-            :icon="entry.icon"
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
+
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
           >
-            {{ entry.navLabel }}
-          </UButton>
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
+
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
         </div>
-      </template>
-    </UPageHeader>
+      </div>
+
+      <div class="flex flex-wrap gap-2 xl:justify-end">
+        <UButton
+          v-for="entry in docsEntries"
+          :key="entry.id"
+          :to="entry.route"
+          :color="entry.file === docEntry.file ? 'primary' : 'neutral'"
+          :variant="entry.file === docEntry.file ? 'solid' : 'outline'"
+          size="sm"
+          :icon="entry.icon"
+        >
+          {{ entry.navLabel }}
+        </UButton>
+      </div>
+    </div>
 
     <UPageCard variant="outline" :ui="pageCardUi">
       <template #body>
@@ -31,6 +49,7 @@
 <script setup lang="ts">
 import Markdown from '~/components/Markdown.vue';
 import { DOCS_ENTRIES, getDocsEntryBySlug } from '~/composables/useDocs';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const route = useRoute();
 
@@ -49,18 +68,11 @@ const docEntry = computed(() => {
   return entry;
 });
 
+const pageShell = computed(() => requirePageShell(docEntry.value.id));
+
 useHead(() => ({
   title: docEntry.value.title,
 }));
-
-const pageHeaderUi = {
-  root: 'border-b border-default py-4',
-  headline: 'hidden',
-  title: 'text-2xl font-semibold text-highlighted',
-  description: 'text-sm text-toned',
-  wrapper: 'flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between',
-  links: 'flex flex-wrap items-center gap-2',
-};
 
 const pageCardUi = {
   root: 'w-full bg-default',

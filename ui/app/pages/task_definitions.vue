@@ -1,19 +1,84 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-          <UIcon name="i-lucide-workflow" class="size-5 text-toned" />
-          <span>Task Definitions</span>
-        </div>
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
 
-        <p class="text-sm text-toned">
-          Create definitions to turn any website into a downloadable feed of links.
-        </p>
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
+
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <div v-if="showFilter && definitions.length > 0" class="relative w-full sm:w-80">
+      <div class="flex flex-col gap-3 xl:items-end">
+        <div class="flex flex-wrap gap-2 xl:justify-end">
+          <UButton
+            v-if="definitions.length > 0"
+            color="neutral"
+            :variant="showFilter ? 'soft' : 'outline'"
+            size="sm"
+            icon="i-lucide-filter"
+            @click="toggleFilterPanel"
+          >
+            <span>Filter</span>
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-search"
+            @click="inspect = true"
+          >
+            <span>Inspect</span>
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-plus"
+            @click="openCreate"
+          >
+            <span>New Definition</span>
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+            class="hidden sm:inline-flex"
+            @click="toggleDisplayStyle"
+          >
+            <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-refresh-cw"
+            :loading="isLoading"
+            :disabled="isLoading"
+            @click="() => void reloadContent()"
+          >
+            <span>Reload</span>
+          </UButton>
+        </div>
+
+        <div v-if="showFilter && definitions.length > 0" class="relative w-full xl:w-80">
           <span
             class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
           >
@@ -28,60 +93,6 @@
             class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
           />
         </div>
-
-        <UButton
-          v-if="definitions.length > 0"
-          color="neutral"
-          :variant="showFilter ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-filter"
-          @click="toggleFilterPanel"
-        >
-          <span>Filter</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-search"
-          @click="inspect = true"
-        >
-          <span>Inspect</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-plus"
-          @click="openCreate"
-        >
-          <span>New Definition</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
-          @click="toggleDisplayStyle"
-        >
-          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-refresh-cw"
-          :loading="isLoading"
-          :disabled="isLoading"
-          @click="() => void reloadContent()"
-        >
-          <span>Reload</span>
-        </UButton>
       </div>
     </div>
 
@@ -458,6 +469,7 @@ import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
 import { useDialog } from '~/composables/useDialog';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { copyText, encode } from '~/utils';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 import type {
   TaskDefinitionDetailed,
@@ -483,6 +495,8 @@ const DEFAULT_DEFINITION: TaskDefinitionDocument = {
     },
   },
 };
+
+const pageShell = requirePageShell('task-definitions');
 
 const { toggleExpand, expandClass } = useExpandableMeta();
 

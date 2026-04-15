@@ -1,95 +1,94 @@
 <template>
   <div class="space-y-6">
-    <UPageHeader
-      title="Downloads"
-      description="Manage queued, active, and completed downloads in one workspace."
-      :ui="{
-        root: 'border-b border-default py-4',
-        headline: 'hidden',
-        title: 'text-2xl font-semibold text-highlighted',
-        description: 'text-sm text-toned',
-        wrapper: 'flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between',
-        links: 'flex flex-wrap items-center gap-2',
-      }"
-    >
-      <template #links>
-        <UDashboardToolbar
-          :ui="{
-            root: 'w-full border-0 p-0',
-            left: 'flex flex-wrap items-center gap-2',
-            right: 'flex flex-wrap items-center gap-2',
-          }"
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
         >
-          <template #left>
-            <UInput
-              v-if="toggleFilter"
-              id="filter"
-              v-model.lazy="query"
-              type="search"
-              placeholder="Filter displayed content"
-              icon="i-lucide-filter"
-              size="sm"
-              class="w-full sm:w-72"
-            />
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
 
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-filter"
-              @click="toggleFilter = !toggleFilter"
-            >
-              <span>Filter</span>
-            </UButton>
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
 
-            <UButton
-              v-if="false === config.paused"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-pause"
-              @click="() => void pauseDownload()"
-            >
-              <span>Pause</span>
-            </UButton>
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+        </div>
+      </div>
 
-            <UButton
-              v-else
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-play"
-              @click="() => void resumeDownload()"
-            >
-              <span>Resume</span>
-            </UButton>
+      <div class="flex flex-col gap-3 xl:items-end">
+        <div class="flex flex-wrap gap-2 xl:justify-end">
+          <UButton
+            color="neutral"
+            :variant="toggleFilter ? 'soft' : 'outline'"
+            size="sm"
+            icon="i-lucide-filter"
+            @click="toggleFilter = !toggleFilter"
+          >
+            <span>Filter</span>
+          </UButton>
 
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-plus"
-              @click="config.showForm = !config.showForm"
-            >
-              <span>Add</span>
-            </UButton>
-          </template>
+          <UButton
+            v-if="false === config.paused"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-pause"
+            @click="() => void pauseDownload()"
+          >
+            <span>Pause</span>
+          </UButton>
 
-          <template #right>
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-              class="hidden sm:inline-flex"
-              @click="changeDisplay"
-            >
-              <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
-            </UButton>
-          </template>
-        </UDashboardToolbar>
-      </template>
-    </UPageHeader>
+          <UButton
+            v-else
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-play"
+            @click="() => void resumeDownload()"
+          >
+            <span>Resume</span>
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-plus"
+            @click="config.showForm = !config.showForm"
+          >
+            <span>Add</span>
+          </UButton>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+            class="hidden sm:inline-flex"
+            @click="changeDisplay"
+          >
+            <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          </UButton>
+        </div>
+
+        <UInput
+          v-if="toggleFilter"
+          id="filter"
+          v-model.lazy="query"
+          type="search"
+          placeholder="Filter displayed content"
+          icon="i-lucide-filter"
+          size="sm"
+          class="w-full xl:w-80"
+        />
+      </div>
+    </div>
 
     <div v-if="config.showForm" ref="formSection" class="page-form-wrap scroll-mt-24">
       <NewDownload
@@ -111,19 +110,6 @@
 
     <div v-else class="space-y-8">
       <section id="queue" class="scroll-mt-24 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default pb-3">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-              <UIcon name="i-lucide-download" class="size-4 text-toned" />
-              <h2>Queue</h2>
-            </div>
-
-            <p class="text-sm text-toned">Active and queued downloads.</p>
-          </div>
-
-          <UBadge color="info" variant="soft" size="sm">{{ queueCount }}</UBadge>
-        </div>
-
         <Queue
           :thumbnails="show_thumbnail"
           :query="query"
@@ -137,14 +123,14 @@
       </section>
 
       <section id="history" class="scroll-mt-24 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default pb-3">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-              <UIcon name="i-lucide-history" class="size-4 text-toned" />
-              <h2>History</h2>
+        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-default pb-3">
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
+              <UIcon :name="historyShell.icon" class="size-4 text-toned" />
+              <h2>{{ historyShell.pageLabel }}</h2>
             </div>
 
-            <p class="text-sm text-toned">Completed, skipped, and failed downloads.</p>
+            <p class="text-sm text-toned">{{ historyShell.description }}</p>
           </div>
 
           <UBadge color="neutral" variant="soft" size="sm">{{ historyCount }}</UBadge>
@@ -180,6 +166,7 @@ import { useStorage } from '@vueuse/core';
 import { useDialog } from '~/composables/useDialog';
 import type { item_request } from '~/types/item';
 import type { StoreItem } from '~/types/store';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const config = useConfigStore();
 const stateStore = useStateStore();
@@ -190,6 +177,8 @@ const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
 const display_style = useStorage<string>('display_style', 'grid');
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
+const pageShell = requirePageShell('downloads');
+const historyShell = requirePageShell('history');
 
 const formSection = ref<HTMLElement | null>(null);
 const info_view = ref({
