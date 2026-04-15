@@ -923,11 +923,12 @@ onMounted(async () => {
 
 watch(bg_enable, async (v) => await handleImage(v));
 watch(simpleMode, () => syncShellModeClass());
-watch(bg_opacity, (v) => {
+watch(bg_opacity, () => {
   if (false === bg_enable.value) {
     return;
   }
-  document.querySelector('body')?.setAttribute('style', `opacity: ${v}`);
+
+  syncOpacity();
 });
 
 watch(loadedImage, () => {
@@ -936,7 +937,6 @@ watch(loadedImage, () => {
   }
 
   const html = document.documentElement;
-  const body = document.querySelector('body');
 
   const style = {
     'background-color': 'unset',
@@ -954,7 +954,7 @@ watch(loadedImage, () => {
       .trim(),
   );
   html.classList.add('bg-fanart');
-  body?.setAttribute('style', `opacity: ${bg_opacity.value}`);
+  syncOpacity();
 });
 
 const handleImage = async (enabled: boolean) => {

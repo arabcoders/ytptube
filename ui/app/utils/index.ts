@@ -742,8 +742,31 @@ const setBodyOpacity = (value: string): boolean => {
     return false;
   }
 
-  body.setAttribute('style', `opacity: ${value}`);
+  body.style.opacity = value;
   return true;
+};
+
+const clearBodyOpacity = (): boolean => {
+  const body = document.querySelector('body');
+  if (!body) {
+    return false;
+  }
+
+  body.style.removeProperty('opacity');
+  return true;
+};
+
+const syncOpacity = (): boolean => {
+  if (!getStorageValue<boolean>('random_bg', true, false)) {
+    opacityLockCount = 0;
+    return clearBodyOpacity();
+  }
+
+  if (opacityLockCount > 0) {
+    return setBodyOpacity('1.0');
+  }
+
+  return setBodyOpacity(String(getStorageValue<number>('random_bg_opacity', 0.95)));
 };
 
 const disableOpacity = (): boolean => {
@@ -763,11 +786,7 @@ const enableOpacity = (): boolean => {
   }
 
   opacityLockCount = Math.max(0, opacityLockCount - 1);
-  if (opacityLockCount > 0) {
-    return setBodyOpacity('1.0');
-  }
-
-  return setBodyOpacity(String(getStorageValue<number>('random_bg_opacity', 0.95)));
+  return syncOpacity();
 };
 
 const stripPath = (base_path: string, real_path: string): string => {
@@ -1028,6 +1047,7 @@ export {
   awaiter,
   encode,
   decode,
+  syncOpacity,
   disableOpacity,
   enableOpacity,
   stripPath,

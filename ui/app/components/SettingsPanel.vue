@@ -4,7 +4,7 @@
     :side="direction"
     :dismissible="true"
     :overlay="true"
-    :ui="{ content: 'w-full sm:max-w-xl' }"
+    :ui="{ content: 'yt-settings-panel w-full sm:max-w-xl' }"
     @update:open="(open) => !open && emitter('close')"
   >
     <template #header>
