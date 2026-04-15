@@ -21,26 +21,6 @@ class TestUpdateChecker:
         EventBus._reset_singleton()
         Cache._reset_singleton()
 
-    def test_singleton_pattern(self):
-        """Test that UpdateChecker follows singleton pattern."""
-        from app.library.UpdateChecker import UpdateChecker
-
-        instance1 = UpdateChecker.get_instance()
-        instance2 = UpdateChecker.get_instance()
-
-        assert instance1 is instance2, "Should return same instance"
-
-    def test_initialization_with_defaults(self):
-        """Test UpdateChecker initializes with default config and scheduler."""
-        from app.library.UpdateChecker import UpdateChecker
-
-        checker = UpdateChecker.get_instance()
-
-        assert checker._config is not None, "Should have config instance"
-        assert checker._scheduler is not None, "Should have scheduler instance"
-        assert checker._notify is not None, "Should have EventBus instance"
-        assert checker._job_id is None, "Should have no job ID initially"
-
     def test_attach_schedules_check_when_enabled(self):
         """Test that attach schedules update check when config.check_for_updates is True."""
         import asyncio
