@@ -176,11 +176,14 @@
 
                       <UDashboardSearchButton class="shrink-0" />
 
-                      <UColorModeButton
+                      <UButton
                         color="neutral"
                         variant="ghost"
                         size="sm"
-                        aria-label="Toggle color mode"
+                        :icon="colorModeButtonIcon"
+                        :aria-label="colorModeButtonAriaLabel"
+                        :title="colorModeButtonTitle"
+                        @click="cycleColorMode"
                       />
 
                       <UButton
@@ -506,9 +509,12 @@ type SidebarSection = {
   items: Array<Array<NavigationMenuItem>>;
 };
 
+type ColorModePreference = 'system' | 'light' | 'dark';
+
 const socket = useSocketStore();
 const config = useConfigStore();
 const route = useRoute();
+const colorMode = useColorMode();
 const loadedImage = ref();
 const loadingImage = ref(false);
 const bg_enable = useStorage('random_bg', true);
@@ -520,6 +526,57 @@ const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Click to check');
 const showRouteSearch = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
+
+const colorModePreferences: Array<ColorModePreference> = ['system', 'light', 'dark'];
+
+const colorModePreference = computed<ColorModePreference>(() => {
+  const preference = colorMode.preference;
+  return colorModePreferences.includes(preference as ColorModePreference)
+    ? (preference as ColorModePreference)
+    : 'system';
+});
+
+const colorModeButtonIcon = computed(() => {
+  switch (colorModePreference.value) {
+    case 'light':
+      return 'i-lucide-sun';
+    case 'dark':
+      return 'i-lucide-moon';
+    default:
+      return 'i-lucide-monitor';
+  }
+});
+
+const nextColorModePreference = computed<ColorModePreference>(() => {
+  const currentIndex = colorModePreferences.indexOf(colorModePreference.value);
+  return colorModePreferences[(currentIndex + 1) % colorModePreferences.length] ?? 'system';
+});
+
+const colorModeButtonTitle = computed(() => {
+  switch (colorModePreference.value) {
+    case 'light':
+      return 'Theme: Light';
+    case 'dark':
+      return 'Theme: Dark';
+    default:
+      return 'Theme: System';
+  }
+});
+
+const colorModeButtonAriaLabel = computed(() => {
+  switch (nextColorModePreference.value) {
+    case 'light':
+      return 'Switch theme to light';
+    case 'dark':
+      return 'Switch theme to dark';
+    default:
+      return 'Switch theme to system';
+  }
+});
+
+const cycleColorMode = (): void => {
+  colorMode.preference = nextColorModePreference.value;
+};
 
 const dashboardSidebarUi = {
   root: 'border-r border-default bg-default/95 backdrop-blur-sm',
