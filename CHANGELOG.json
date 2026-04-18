@@ -29,9 +29,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "fe7c18e6c6893f4b980e02808f63b9b52c0e4fb9",
-    "date": "2026-04-18T19:12:32+00:00",
+    "full_sha": "e644ea63578557a6148daba2e42fd367e26d8e83",
+    "date": "2026-04-18T19:17:10+00:00",
     "commits": [
+      {
+        "sha": "e644ea63",
+        "full_sha": "e644ea63578557a6148daba2e42fd367e26d8e83",
+        "message": "refactor: rename sidebarOpen to showSidebar",
+        "author": "arabcoders",
+        "date": "2026-04-18T19:17:10+00:00"
+      },
       {
         "sha": "fe7c18e6",
         "full_sha": "fe7c18e6c6893f4b980e02808f63b9b52c0e4fb9",
