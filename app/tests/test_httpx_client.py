@@ -1,5 +1,3 @@
-"""Comprehensive tests for httpx_client Cloudflare challenge solving."""
-
 from __future__ import annotations
 
 import http.cookiejar

@@ -59,7 +59,13 @@ export default defineNuxtConfig({
   },
   modules: ['@nuxt/ui', '@pinia/nuxt', '@vueuse/nuxt', '@nuxt/eslint'],
   icon: {
-    serverBundle: 'local',
+    provider: 'none',
+    fallbackToApi: false,
+    clientBundle: {
+      scan: {
+        globInclude: ['app/**/*.{vue,ts,js}'],
+      },
+    },
   },
   nitro: {
     output: {

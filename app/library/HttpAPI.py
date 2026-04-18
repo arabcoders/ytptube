@@ -107,10 +107,10 @@ class HttpAPI:
         registered_options: list = []
 
         base_path: str = self.config.base_path.rstrip("/")
-        from app.routes.api._static import preload_static
+        from app.routes.api._static import setup_static_routes
 
         load_modules(self.rootPath, self.rootPath / "routes" / "api")
-        preload_static(self.rootPath, self.config)
+        setup_static_routes(self.rootPath, self.config)
 
         async def options_handler(_: Request) -> Response:
             return web.Response(status=204)

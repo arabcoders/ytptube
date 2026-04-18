@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
-
-import pytest
 
 from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
 

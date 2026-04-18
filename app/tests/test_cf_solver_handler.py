@@ -1,5 +1,3 @@
-"""Comprehensive tests for cf_solver_handler yt-dlp request handler."""
-
 from __future__ import annotations
 
 import http.cookiejar

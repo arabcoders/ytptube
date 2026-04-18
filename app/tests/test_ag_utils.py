@@ -1,18 +1,3 @@
-"""
-Tests for ag_utils.py functions.
-
-This test suite provides comprehensive coverage for all functions in ag_utils.py:
-- get_value: Tests callable detection and value retrieval
-- ag_set: Tests nested dictionary path setting with various scenarios
-- ag: Tests nested dictionary/list/object access with dot notation
-- ag_sets: Tests bulk setting of multiple paths
-- ag_exists: Tests existence checking for nested paths
-- ag_delete: Tests deletion of nested paths and keys
-
-Total test functions: 53
-All edge cases, error conditions, and normal operations are covered.
-"""
-
 from unittest.mock import MagicMock
 
 import pytest
