@@ -29,9 +29,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "00ce7efb327f61f06f3bc1f62be662ec6552038a",
-    "date": "2026-04-18T17:39:20+00:00",
+    "full_sha": "fe7c18e6c6893f4b980e02808f63b9b52c0e4fb9",
+    "date": "2026-04-18T19:12:32+00:00",
     "commits": [
+      {
+        "sha": "fe7c18e6",
+        "full_sha": "fe7c18e6c6893f4b980e02808f63b9b52c0e4fb9",
+        "message": "feat: add swipe functionality for sidebar in mobile",
+        "author": "arabcoders",
+        "date": "2026-04-18T19:12:32+00:00"
+      },
       {
         "sha": "00ce7efb",
         "full_sha": "00ce7efb327f61f06f3bc1f62be662ec6552038a",

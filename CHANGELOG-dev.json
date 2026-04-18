@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260418-00ce7efb",
-        "date": "2026-04-18T17:39:20+00:00",
+        "tag": "dev-20260418-fe7c18e6",
+        "date": "2026-04-18T19:12:32+00:00",
         "commits": [
+            {
+                "sha": "fe7c18e6",
+                "message": "feat: add swipe functionality for sidebar in mobile",
+                "author": "arabcoders",
+                "date": "2026-04-18T19:12:32+00:00",
+                "full_sha": "fe7c18e6c6893f4b980e02808f63b9b52c0e4fb9"
+            },
             {
                 "sha": "00ce7efb",
                 "message": "feat: add validation for internal URLs in conditions_test",
@@ -4449,7 +4456,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "00ce7efb327f61f06f3bc1f62be662ec6552038a"
+        "full_sha": "fe7c18e6c6893f4b980e02808f63b9b52c0e4fb9"
     },
     {
         "tag": "dev-20250616-c07465a6",
