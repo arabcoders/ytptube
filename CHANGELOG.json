@@ -29,9 +29,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "9d1bde7355327260271ba302bb815ee395ba1038",
-    "date": "2026-04-18T17:00:32+00:00",
+    "full_sha": "00ce7efb327f61f06f3bc1f62be662ec6552038a",
+    "date": "2026-04-18T17:39:20+00:00",
     "commits": [
+      {
+        "sha": "00ce7efb",
+        "full_sha": "00ce7efb327f61f06f3bc1f62be662ec6552038a",
+        "message": "feat: add validation for internal URLs in conditions_test",
+        "author": "arabcoders",
+        "date": "2026-04-18T17:39:20+00:00"
+      },
+      {
+        "sha": "3f6149aa",
+        "full_sha": "3f6149aaf7428fb6698005ad9acc7f339819788f",
+        "message": "refactor: use plain text for multi-line messages ni confirm dialog",
+        "author": "arabcoders",
+        "date": "2026-04-18T17:18:41+00:00"
+      },
       {
         "sha": "9d1bde73",
         "full_sha": "9d1bde7355327260271ba302bb815ee395ba1038",
