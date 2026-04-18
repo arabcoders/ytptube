@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260415-70648c22",
-        "date": "2026-04-15T20:53:15+00:00",
+        "tag": "dev-20260418-9d1bde73",
+        "date": "2026-04-18T17:00:32+00:00",
         "commits": [
+            {
+                "sha": "9d1bde73",
+                "message": "fix: restore tri-option for theme color",
+                "author": "arabcoders",
+                "date": "2026-04-18T17:00:32+00:00",
+                "full_sha": "9d1bde7355327260271ba302bb815ee395ba1038"
+            },
+            {
+                "sha": "00404fc6",
+                "message": "refactor: made _static.py dynamic",
+                "author": "arabcoders",
+                "date": "2026-04-18T16:26:44+00:00",
+                "full_sha": "00404fc6d4d290fc308a922ce39ea9fdb7720b3a"
+            },
             {
                 "sha": "70648c22",
                 "message": "Refactor: standardize the look and feel of the pages after recent nuxt ui migration",
@@ -4421,7 +4435,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2"
+        "full_sha": "9d1bde7355327260271ba302bb815ee395ba1038"
     },
     {
         "tag": "dev-20250616-c07465a6",

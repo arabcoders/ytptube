@@ -29,9 +29,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2",
-    "date": "2026-04-15T20:53:15+00:00",
+    "full_sha": "9d1bde7355327260271ba302bb815ee395ba1038",
+    "date": "2026-04-18T17:00:32+00:00",
     "commits": [
+      {
+        "sha": "9d1bde73",
+        "full_sha": "9d1bde7355327260271ba302bb815ee395ba1038",
+        "message": "fix: restore tri-option for theme color",
+        "author": "arabcoders",
+        "date": "2026-04-18T17:00:32+00:00"
+      },
+      {
+        "sha": "00404fc6",
+        "full_sha": "00404fc6d4d290fc308a922ce39ea9fdb7720b3a",
+        "message": "refactor: made _static.py dynamic",
+        "author": "arabcoders",
+        "date": "2026-04-18T16:26:44+00:00"
+      },
       {
         "sha": "70648c22",
         "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2",
