@@ -767,15 +767,16 @@ const deleteSelected = async (): Promise<void> => {
 
   const { status } = await confirmDialog({
     title: 'Delete Selected Notifications',
-    rawHTML:
-      `Delete <strong class="text-red-500">${selectedIds.value.length}</strong> notification target/s?<ul>` +
+    message:
+      `Delete ${selectedIds.value.length} notification target/s?` +
+      '\n\n' +
       selectedIds.value
         .map((id) => {
           const item = filteredTargets.value.find((target) => target.id === id);
-          return item ? `<li>${item.id}: ${item.name}</li>` : '';
+          return item ? `${item.id}: ${item.name}` : '';
         })
-        .join('') +
-      '</ul>',
+        .filter(Boolean)
+        .join('\n'),
     confirmText: 'Delete',
     confirmColor: 'error',
   });

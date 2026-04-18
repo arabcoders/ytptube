@@ -1000,15 +1000,16 @@ const deleteSelected = async () => {
 
   const { status } = await confirmDialog({
     title: 'Delete Selected Tasks',
-    rawHTML:
-      `Delete <strong class="text-red-500">${selectedElms.value.length}</strong> task/s?<ul>` +
+    message:
+      `Delete ${selectedElms.value.length} task/s?` +
+      '\n\n' +
       selectedElms.value
         .map((id) => {
           const item = tasks.value.find((task) => task.id === id);
-          return item ? `<li>${item.id}: ${item.name}</li>` : '';
+          return item ? `${item.id}: ${item.name}` : '';
         })
-        .join('') +
-      '</ul>',
+        .filter(Boolean)
+        .join('\n'),
     confirmText: 'Delete',
     confirmColor: 'error',
   });
@@ -1151,15 +1152,16 @@ const runSelected = async () => {
   }
 
   const { status } = await confirmDialog({
-    rawHTML:
-      'Run the following tasks?<ul>' +
+    message:
+      'Run the following tasks?' +
+      '\n\n' +
       selectedElms.value
         .map((id) => {
           const item = tasks.value.find((task) => task.id === id);
-          return item ? `<li>${item.name}</li>` : '';
+          return item ? item.name : '';
         })
-        .join('') +
-      '</ul>',
+        .filter(Boolean)
+        .join('\n'),
   });
 
   if (true !== status) {
@@ -1346,24 +1348,13 @@ const generateMeta = async (item: Task) => {
 
   try {
     const { status } = await confirmDialog({
-      rawHTML: `
-      <p>
-        Generate '${item.name}' metadata? you will be notified when it is done.
-      </p>
-      <p>
-        <b>This action will generate:</b>
-        <ul>
-          <li><strong>tvshow.nfo</strong> - for media center compatibility</li>
-          <li><strong>title [id].info.json</strong> - yt-dlp metadata file</li>
-          <li>
-          <strong>Thumbnails</strong>: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg
-          <u>if they are available</u>.
-          </li>
-        </ul>
-      </p>
-      <p class="text-red-500">
-          <span>Warning</span>: This will overwrite existing metadata files if they exist.
-      </p>`,
+      message:
+        `Generate '${item.name}' metadata? You will be notified when it is done.` +
+        '\n\nThis action will generate:' +
+        '\n- tvshow.nfo - for media center compatibility' +
+        '\n- title [id].info.json - yt-dlp metadata file' +
+        '\n- Thumbnails: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg if they are available.' +
+        '\n\nWarning: This will overwrite existing metadata files if they exist.',
     });
 
     if (true !== status) {

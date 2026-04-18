@@ -934,15 +934,6 @@ const itemTypeLabel = (item: FileItem): string => {
   return item.type === 'file' ? 'File' : ucFirst(item.type);
 };
 
-const escapeHtml = (value: string): string => {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-};
-
 const toggleFilter = async (): Promise<void> => {
   show_filter.value = !show_filter.value;
 
@@ -1060,8 +1051,9 @@ const handleDeleteSelected = async (): Promise<void> => {
     return;
   }
 
-  const rawHTML =
-    '<ul>' +
+  const message =
+    'Delete the following items?' +
+    '\n\n' +
     selectedElms.value
       .map((selectedPath) => {
         const item = items.value.find((entry) => entry.path === selectedPath);
@@ -1069,15 +1061,14 @@ const handleDeleteSelected = async (): Promise<void> => {
           return '';
         }
 
-        return `<li><strong>${escapeHtml(itemTypeLabel(item))}:</strong> ${escapeHtml(item.name)}</li>`;
+        return `${itemTypeLabel(item)}: ${item.name}`;
       })
-      .join('') +
-    '</ul>';
+      .filter(Boolean)
+      .join('\n');
 
   const { status } = await dialog.confirmDialog({
     title: 'Delete Confirmation',
-    message: 'Delete the following items?',
-    rawHTML,
+    message,
     confirmText: 'Delete',
     cancelText: 'Cancel',
     confirmColor: 'error',

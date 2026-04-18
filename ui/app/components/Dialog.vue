@@ -9,7 +9,7 @@
     @after:enter="focusInput"
   >
     <template #body>
-      <p v-if="state.current?.opts.message">
+      <p v-if="state.current?.opts.message" class="whitespace-pre-line wrap-break-word">
         {{ state.current?.opts.message }}
       </p>
 
@@ -22,14 +22,6 @@
           @keydown.enter.stop.prevent="onEnter"
         />
       </UFormField>
-
-      <div
-        v-else-if="
-          'confirm' === state.current?.type && (state.current?.opts as ConfirmOptions)?.rawHTML
-        "
-        class="max-h-[40vh] overflow-auto text-sm text-default"
-        v-html="(state.current?.opts as ConfirmOptions)?.rawHTML"
-      />
 
       <div
         v-if="

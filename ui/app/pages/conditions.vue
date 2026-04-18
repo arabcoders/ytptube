@@ -709,15 +709,16 @@ const deleteSelected = async (): Promise<void> => {
 
   const { status } = await confirmDialog({
     title: 'Delete Selected Conditions',
-    rawHTML:
-      `Delete <strong class="text-red-500">${selectedIds.value.length}</strong> condition/s?<ul>` +
+    message:
+      `Delete ${selectedIds.value.length} condition/s?` +
+      '\n\n' +
       selectedIds.value
         .map((id) => {
           const item = filteredItems.value.find((cond) => cond.id === id);
-          return item ? `<li>${item.id}: ${item.name}</li>` : '';
+          return item ? `${item.id}: ${item.name}` : '';
         })
-        .join('') +
-      '</ul>',
+        .filter(Boolean)
+        .join('\n'),
     confirmText: 'Delete',
     confirmColor: 'error',
   });

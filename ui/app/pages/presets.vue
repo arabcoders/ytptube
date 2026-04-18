@@ -585,15 +585,16 @@ const deleteSelected = async (): Promise<void> => {
 
   const { status } = await confirmDialog({
     title: 'Delete Selected Presets',
-    rawHTML:
-      `Delete <strong class="text-red-500">${selectedIds.value.length}</strong> preset/s?<ul>` +
+    message:
+      `Delete ${selectedIds.value.length} preset/s?` +
+      '\n\n' +
       selectedIds.value
         .map((id) => {
           const item = filteredPresets.value.find((preset) => preset.id === id);
-          return item ? `<li>${item.id}: ${prettyName(item.name)}</li>` : '';
+          return item ? `${item.id}: ${prettyName(item.name)}` : '';
         })
-        .join('') +
-      '</ul>',
+        .filter(Boolean)
+        .join('\n'),
     confirmText: 'Delete',
     confirmColor: 'error',
   });

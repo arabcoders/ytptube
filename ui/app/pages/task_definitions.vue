@@ -793,15 +793,16 @@ const deleteSelected = async (): Promise<void> => {
 
   const { status } = await confirmDialog({
     title: 'Delete Selected Task Definitions',
-    rawHTML:
-      `Delete <strong class="text-red-500">${selectedIds.value.length}</strong> task definition/s?<ul>` +
+    message:
+      `Delete ${selectedIds.value.length} task definition/s?` +
+      '\n\n' +
       selectedIds.value
         .map((id) => {
           const item = filteredDefinitions.value.find((definition) => definition.id === id);
-          return item ? `<li>${item.id}: ${item.name || '(Unnamed definition)'}</li>` : '';
+          return item ? `${item.id}: ${item.name || '(Unnamed definition)'}` : '';
         })
-        .join('') +
-      '</ul>',
+        .filter(Boolean)
+        .join('\n'),
     confirmText: 'Delete',
     confirmColor: 'error',
   });

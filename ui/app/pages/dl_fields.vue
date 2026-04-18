@@ -618,15 +618,16 @@ const deleteSelected = async (): Promise<void> => {
 
   const { status } = await confirmDialog({
     title: 'Delete Selected Fields',
-    rawHTML:
-      `Delete <strong class="text-red-500">${selectedIds.value.length}</strong> field/s?<ul>` +
+    message:
+      `Delete ${selectedIds.value.length} field/s?` +
+      '\n\n' +
       selectedIds.value
         .map((id) => {
           const item = filteredItems.value.find((field) => field.id === id);
-          return item ? `<li>${item.id}: ${item.name}</li>` : '';
+          return item ? `${item.id}: ${item.name}` : '';
         })
-        .join('') +
-      '</ul>',
+        .filter(Boolean)
+        .join('\n'),
     confirmText: 'Delete',
     confirmColor: 'error',
   });
