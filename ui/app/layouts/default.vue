@@ -64,6 +64,7 @@
             :ui="{ base: 'relative flex min-h-full overflow-visible' }"
           >
             <UDashboardSidebar
+              v-model:open="sidebarOpen"
               side="left"
               collapsible
               resizable
@@ -485,9 +486,10 @@
 
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
-import { ref, onMounted, readonly } from 'vue';
+import { ref, onBeforeUnmount, onMounted, readonly } from 'vue';
 import { useStorage } from '@vueuse/core';
 import moment from 'moment';
+import { useMediaQuery } from '~/composables/useMediaQuery';
 import type { toastPosition } from '~/composables/useNotification';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
@@ -510,6 +512,10 @@ type SidebarSection = {
 };
 
 type ColorModePreference = 'system' | 'light' | 'dark';
+type SwipeMode = 'open' | 'close';
+
+const MOBILE_SIDEBAR_EDGE_WIDTH = 32;
+const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
 
 const socket = useSocketStore();
 const config = useConfigStore();
@@ -525,7 +531,18 @@ const show_settings = ref(false);
 const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Click to check');
 const showRouteSearch = ref(false);
+const sidebarOpen = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
+const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
+
+const SwipeState = {
+  mode: null as SwipeMode | null,
+  tracking: false,
+  startX: 0,
+  startY: 0,
+  endX: 0,
+  endY: 0,
+};
 
 const colorModePreferences: Array<ColorModePreference> = ['system', 'light', 'dark'];
 
@@ -576,6 +593,100 @@ const colorModeButtonAriaLabel = computed(() => {
 
 const cycleColorMode = (): void => {
   colorMode.preference = nextColorModePreference.value;
+};
+
+const resetSwipe = (): void => {
+  SwipeState.mode = null;
+  SwipeState.tracking = false;
+  SwipeState.startX = 0;
+  SwipeState.startY = 0;
+  SwipeState.endX = 0;
+  SwipeState.endY = 0;
+};
+
+const updateSwipePosition = (touch?: Touch): void => {
+  if (!touch) {
+    return;
+  }
+
+  SwipeState.endX = touch.clientX;
+  SwipeState.endY = touch.clientY;
+};
+
+const handleSwipeStart = (event: TouchEvent): void => {
+  if (!isMobile.value || event.touches.length !== 1) {
+    resetSwipe();
+    return;
+  }
+
+  const touch = event.touches[0];
+
+  if (!touch) {
+    resetSwipe();
+    return;
+  }
+
+  const swipeMode: SwipeMode | null = sidebarOpen.value
+    ? 'close'
+    : touch.clientX <= MOBILE_SIDEBAR_EDGE_WIDTH
+      ? 'open'
+      : null;
+
+  if (!swipeMode) {
+    resetSwipe();
+    return;
+  }
+
+  SwipeState.mode = swipeMode;
+  SwipeState.tracking = true;
+  SwipeState.startX = touch.clientX;
+  SwipeState.startY = touch.clientY;
+  updateSwipePosition(touch);
+};
+
+const handleSwipeMove = (event: TouchEvent): void => {
+  if (!SwipeState.tracking || event.touches.length !== 1) {
+    return;
+  }
+
+  updateSwipePosition(event.touches[0]);
+};
+
+const completeSwipe = (): void => {
+  if (!SwipeState.tracking) {
+    return;
+  }
+
+  const swipeMode = SwipeState.mode;
+  const deltaX = SwipeState.endX - SwipeState.startX;
+  const deltaY = SwipeState.endY - SwipeState.startY;
+  const isHorizontalOpenSwipe =
+    swipeMode === 'open' &&
+    deltaX >= MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE &&
+    deltaX > Math.abs(deltaY);
+  const isHorizontalCloseSwipe =
+    swipeMode === 'close' &&
+    deltaX <= -MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE &&
+    Math.abs(deltaX) > Math.abs(deltaY);
+
+  resetSwipe();
+
+  if (isHorizontalOpenSwipe) {
+    sidebarOpen.value = true;
+  }
+
+  if (isHorizontalCloseSwipe) {
+    sidebarOpen.value = false;
+  }
+};
+
+const handleSwipeEnd = (event: TouchEvent): void => {
+  updateSwipePosition(event.changedTouches[0]);
+  completeSwipe();
+};
+
+const handleSwipeCancel = (): void => {
+  resetSwipe();
 };
 
 const dashboardSidebarUi = {
@@ -819,6 +930,22 @@ const checkForUpdates = async () => {
 };
 
 onMounted(async () => {
+  document.addEventListener('touchstart', handleSwipeStart, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener('touchmove', handleSwipeMove, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener('touchend', handleSwipeEnd, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener('touchcancel', handleSwipeCancel, {
+    passive: true,
+    capture: true,
+  });
   syncShellModeClass();
 
   try {
@@ -841,8 +968,23 @@ onMounted(async () => {
   } catch {}
 });
 
+onBeforeUnmount(() => {
+  document.removeEventListener('touchstart', handleSwipeStart, true);
+  document.removeEventListener('touchmove', handleSwipeMove, true);
+  document.removeEventListener('touchend', handleSwipeEnd, true);
+  document.removeEventListener('touchcancel', handleSwipeCancel, true);
+});
+
 watch(bg_enable, async (v) => await handleImage(v));
 watch(simpleMode, () => syncShellModeClass());
+watch(isMobile, (v) => {
+  if (v) {
+    return;
+  }
+
+  sidebarOpen.value = false;
+  resetSwipe();
+});
 watch(bg_opacity, () => {
   if (false === bg_enable.value) {
     return;
