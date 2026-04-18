@@ -64,7 +64,7 @@
             :ui="{ base: 'relative flex min-h-full overflow-visible' }"
           >
             <UDashboardSidebar
-              v-model:open="sidebarOpen"
+              v-model:open="showSidebar"
               side="left"
               collapsible
               resizable
@@ -531,7 +531,7 @@ const show_settings = ref(false);
 const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Click to check');
 const showRouteSearch = ref(false);
-const sidebarOpen = ref(false);
+const showSidebar = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
 
@@ -626,7 +626,7 @@ const handleSwipeStart = (event: TouchEvent): void => {
     return;
   }
 
-  const swipeMode: SwipeMode | null = sidebarOpen.value
+  const swipeMode: SwipeMode | null = showSidebar.value
     ? 'close'
     : touch.clientX <= MOBILE_SIDEBAR_EDGE_WIDTH
       ? 'open'
@@ -672,11 +672,11 @@ const completeSwipe = (): void => {
   resetSwipe();
 
   if (isHorizontalOpenSwipe) {
-    sidebarOpen.value = true;
+    showSidebar.value = true;
   }
 
   if (isHorizontalCloseSwipe) {
-    sidebarOpen.value = false;
+    showSidebar.value = false;
   }
 };
 
@@ -982,7 +982,7 @@ watch(isMobile, (v) => {
     return;
   }
 
-  sidebarOpen.value = false;
+  showSidebar.value = false;
   resetSwipe();
 });
 watch(bg_opacity, () => {
