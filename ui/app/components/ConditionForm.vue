@@ -475,7 +475,9 @@
                   : 'i-lucide-circle-help'
             "
             title="Filter Status"
-            :description="logicStatusText"
+            :description="
+              testData.data.status === null ? 'Not tested' : logicTest ? 'Matched' : 'Not matched'
+            "
           />
 
           <UFormField :ui="fieldUi">
@@ -671,14 +673,6 @@ const logicTest = computed(() => {
   } catch {
     return false;
   }
-});
-
-const logicStatusText = computed(() => {
-  if (testData.value.data.status === null) {
-    return 'Not tested';
-  }
-
-  return logicTest.value ? 'Matched' : 'Not matched';
 });
 
 const checkInfo = async (): Promise<void> => {

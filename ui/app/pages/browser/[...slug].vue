@@ -44,80 +44,74 @@
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 xl:items-end">
-        <div class="flex flex-wrap gap-2 xl:justify-end">
-          <UButton
-            color="neutral"
-            :variant="show_filter ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-filter"
-            @click="toggleFilter"
-          >
-            <span>Filter</span>
-          </UButton>
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+        <UButton
+          color="neutral"
+          :variant="show_filter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilter"
+        >
+          <span>Filter</span>
+        </UButton>
 
-          <UButton
-            v-if="controlEnabled"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-folder-plus"
-            @click="() => void handleCreateDirectory()"
-          >
-            <span>New Folder</span>
-          </UButton>
+        <UButton
+          v-if="controlEnabled"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-folder-plus"
+          @click="() => void handleCreateDirectory()"
+        >
+          <span>New Folder</span>
+        </UButton>
 
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-            class="hidden sm:inline-flex"
-            @click="toggleDisplayStyle"
-          >
-            <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
-          </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
+          @click="toggleDisplayStyle"
+        >
+          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+        </UButton>
 
-          <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-arrow-up-down"
-              trailing-icon="i-lucide-chevron-down"
-            >
-              <span>Sort</span>
-            </UButton>
-          </UDropdownMenu>
-
+        <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
           <UButton
             color="neutral"
             variant="outline"
             size="sm"
-            icon="i-lucide-refresh-cw"
-            :loading="isLoading"
-            :disabled="isLoading"
-            @click="() => void reloadContent(browserPath)"
+            icon="i-lucide-arrow-up-down"
+            trailing-icon="i-lucide-chevron-down"
           >
-            <span>Reload</span>
+            <span>Sort</span>
           </UButton>
-        </div>
+        </UDropdownMenu>
 
-        <div v-if="show_filter" class="relative w-full xl:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-          <input
-            id="search"
-            ref="searchInput"
-            v-model.lazy="localSearch"
-            type="search"
-            placeholder="Filter"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @click="() => void reloadContent(browserPath)"
+        >
+          <span>Reload</span>
+        </UButton>
+
+        <UInput
+          v-if="show_filter"
+          id="search"
+          ref="searchInput"
+          v-model.lazy="localSearch"
+          type="search"
+          placeholder="Filter"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
@@ -458,10 +452,6 @@
         title="No results"
         :description="`No results found for '${localSearch}'.`"
       />
-
-      <UButton color="neutral" variant="outline" size="sm" @click="clearFilter"
-        >Clear filter</UButton
-      >
     </div>
 
     <UAlert
@@ -554,7 +544,7 @@ const display_style = useStorage<string>('browser_display_style', 'list');
 const isMobile = useMediaQuery({ maxWidth: 639 });
 const show_filter = ref(false);
 const localSearch = ref('');
-const searchInput = ref<HTMLInputElement | null>(null);
+const searchInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
 
 const items = browser.items;
 const browserPath = browser.path;
@@ -943,7 +933,7 @@ const toggleFilter = async (): Promise<void> => {
   }
 
   await nextTick();
-  searchInput.value?.focus();
+  searchInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
 };
 
 const toggleDisplayStyle = (): void => {

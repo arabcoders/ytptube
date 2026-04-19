@@ -21,69 +21,63 @@
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 xl:items-end">
-        <div class="flex flex-wrap gap-2 xl:justify-end">
-          <UButton
-            v-if="tasks.length > 0"
-            color="neutral"
-            :variant="showFilter ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-filter"
-            @click="toggleFilterPanel"
-          >
-            <span>Filter</span>
-          </UButton>
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+        <UButton
+          v-if="tasks.length > 0"
+          color="neutral"
+          :variant="showFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilterPanel"
+        >
+          <span>Filter</span>
+        </UButton>
 
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-plus"
-            @click="openCreateForm"
-          >
-            <span>New Task</span>
-          </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="openCreateForm"
+        >
+          <span>New Task</span>
+        </UButton>
 
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-            class="hidden sm:inline-flex"
-            @click="toggleDisplayStyle"
-          >
-            <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
-          </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
+          @click="toggleDisplayStyle"
+        >
+          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+        </UButton>
 
-          <UButton
-            v-if="tasks.length > 0"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-refresh-cw"
-            :loading="isLoading"
-            :disabled="isLoading"
-            @click="() => void reloadContent()"
-          >
-            <span>Reload</span>
-          </UButton>
-        </div>
+        <UButton
+          v-if="tasks.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @click="() => void reloadContent()"
+        >
+          <span>Reload</span>
+        </UButton>
 
-        <div v-if="showFilter && tasks.length > 0" class="relative w-full xl:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-          <input
-            id="filter"
-            ref="filterInput"
-            v-model="query"
-            type="search"
-            placeholder="Filter displayed content"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
+        <UInput
+          v-if="showFilter && tasks.length > 0"
+          id="filter"
+          ref="filterInput"
+          v-model="query"
+          type="search"
+          placeholder="Filter displayed content"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
@@ -623,10 +617,6 @@
         title="No Results"
         :description="`No results found for the query: ${query}. Please try a different search term.`"
       />
-
-      <UButton color="neutral" variant="outline" size="sm" @click="query = ''">
-        Clear filter
-      </UButton>
     </div>
 
     <UAlert
@@ -672,8 +662,12 @@
     <UModal
       v-if="toggleForm"
       :open="toggleForm"
-      :title="editorTitle"
-      :description="editorDescription"
+      :title="taskRef ? `Edit - ${task.name || 'Task'}` : 'Add new task'"
+      :description="
+        taskRef
+          ? 'Update the settings of your automated download task'
+          : 'Create an automated download task'
+      "
       :dismissible="!addInProgress"
       :ui="{ content: 'w-full sm:max-w-7xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="handleEditorOpenChange"
@@ -767,7 +761,7 @@ const massDelete = ref(false);
 const inspectTask = ref<Task | null>(null);
 const query = ref('');
 const showFilter = ref(false);
-const filterInput = ref<HTMLInputElement | null>(null);
+const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
 const CACHE_KEY = 'tasks:handler_support';
 const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_KEY) || {});
 
@@ -779,16 +773,6 @@ const contentStyle = computed<'list' | 'grid'>(() =>
 );
 
 const editorSessionId = ref(0);
-
-const editorTitle = computed(() => {
-  return taskRef.value ? `Edit - ${task.value.name}` : 'Add new task';
-});
-
-const editorDescription = computed(() => {
-  return taskRef.value
-    ? 'Update the settings of your automated download task'
-    : 'Create an automated download task';
-});
 
 const formKey = computed(() => `${taskRef.value ?? 'new'}:${editorSessionId.value}`);
 
@@ -885,7 +869,7 @@ const toggleFilterPanel = async (): Promise<void> => {
   }
 
   await nextTick();
-  filterInput.value?.focus();
+  filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
 };
 
 const toggleMasterSelection = (): void => {

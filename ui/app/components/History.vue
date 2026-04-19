@@ -32,15 +32,24 @@
         </UDropdownMenu>
       </div>
 
-      <UButton
-        color="neutral"
-        variant="outline"
-        size="sm"
-        :icon="direction === 'desc' ? 'i-lucide-arrow-down-a-z' : 'i-lucide-arrow-up-a-z'"
-        @click="toggleDirection"
-      >
-        <span>Sort</span>
-      </UButton>
+      <div class="flex flex-wrap items-center gap-2">
+        <UBadge color="neutral" variant="soft" size="sm">
+          <span class="inline-flex items-center gap-1.5">
+            <UIcon name="i-lucide-history" class="size-3.5" />
+            <span>Total: {{ stateStore.count('history') }}</span>
+          </span>
+        </UBadge>
+
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="direction === 'desc' ? 'i-lucide-arrow-down-a-z' : 'i-lucide-arrow-up-a-z'"
+          @click="toggleDirection"
+        >
+          <span>Sort</span>
+        </UButton>
+      </div>
     </div>
 
     <UAlert
@@ -599,15 +608,6 @@
                 <li><code>source_name:task_name</code> - items added by the specified task.</li>
               </ul>
             </div>
-
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              @click="() => emitter('clear_search')"
-            >
-              Clear filter
-            </UButton>
           </div>
         </template>
       </UAlert>

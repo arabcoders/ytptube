@@ -25,104 +25,61 @@
             <span>{{ pageShell.pageLabel }}</span>
           </div>
 
-          <UBadge v-if="loading" color="info" variant="soft" size="sm">Loading history</UBadge>
-
-          <UBadge color="neutral" variant="soft" size="sm">
-            {{ filteredLogs.length }} shown
-          </UBadge>
-
-          <UBadge
-            v-if="logs.length !== filteredLogs.length"
-            color="neutral"
-            variant="outline"
-            size="sm"
-          >
-            {{ logs.length }} loaded
-          </UBadge>
-
-          <UBadge v-if="hasActiveFilter" color="warning" variant="soft" size="sm">
-            {{ matchCount }} matches
-          </UBadge>
-
-          <UBadge v-if="reachedEnd && !hasActiveFilter" color="neutral" variant="soft" size="sm">
-            Start of file loaded
-          </UBadge>
-
           <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 xl:items-end">
-        <div class="flex flex-wrap gap-2 xl:justify-end">
-          <UButton
-            v-if="!autoScroll"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-arrow-down"
-            @click="scrollToBottom(false)"
-          >
-            Jump to Live Tail
-          </UButton>
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+        <UButton
+          v-if="!autoScroll"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-arrow-down"
+          @click="scrollToBottom(false)"
+        >
+          Jump to Live Tail
+        </UButton>
 
-          <UButton
-            color="neutral"
-            :variant="toggleFilter ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-filter"
-            @click="toggleFilter = !toggleFilter"
-          >
-            Filter
-          </UButton>
+        <UButton
+          color="neutral"
+          :variant="toggleFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilter = !toggleFilter"
+        >
+          Filter
+        </UButton>
 
-          <UButton
-            color="neutral"
-            :variant="textWrap ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-wrap-text"
-            :aria-pressed="textWrap"
-            :title="textWrap ? 'Wrap lines enabled' : 'Wrap lines disabled'"
-            :class="[
-              'transition-all',
-              textWrap ? '-translate-y-px ring ring-default shadow-xs' : '',
-            ]"
-            @click="textWrap = !textWrap"
-          >
-            Wrap lines
-          </UButton>
-        </div>
+        <UButton
+          color="neutral"
+          :variant="textWrap ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-wrap-text"
+          :aria-pressed="textWrap"
+          :title="textWrap ? 'Wrap lines enabled' : 'Wrap lines disabled'"
+          :class="['transition-all', textWrap ? '-translate-y-px ring ring-default shadow-xs' : '']"
+          @click="textWrap = !textWrap"
+        >
+          Wrap lines
+        </UButton>
 
-        <div v-if="toggleFilter || query" class="relative w-full xl:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-
-          <input
-            id="filter"
-            v-model.lazy="query"
-            type="search"
-            placeholder="Filter displayed content"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
+        <UInput
+          v-if="toggleFilter || query"
+          id="filter"
+          v-model.lazy="query"
+          type="search"
+          placeholder="Filter displayed content"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
     <UPageCard variant="naked" :ui="pageCardUi">
       <template #body>
         <div class="w-full min-w-0 max-w-full space-y-3">
-          <div class="flex flex-wrap items-center justify-end gap-2 text-xs text-toned">
-            <span v-if="searchTerm">
-              Query: <code>{{ searchTerm }}</code>
-            </span>
-
-            <span v-if="filterContext > 0">
-              Context: <code>{{ filterContext }}</code>
-            </span>
-          </div>
-
           <div class="w-full min-w-0 max-w-full overflow-hidden">
             <div
               ref="logContainer"
@@ -164,24 +121,24 @@
                   </article>
                 </div>
 
-                <div
-                  v-else
-                  class="rounded-xl border border-default bg-muted/20 px-4 py-6 text-center"
-                >
-                  <div class="space-y-2">
-                    <p class="text-sm font-semibold text-highlighted">
-                      {{
-                        hasActiveFilter
-                          ? 'No log lines match the current filter.'
-                          : 'No log lines are available yet.'
-                      }}
-                    </p>
+                <div v-else class="space-y-3 font-sans text-sm leading-normal">
+                  <UAlert
+                    v-if="query"
+                    color="warning"
+                    variant="soft"
+                    icon="i-lucide-search"
+                    title="No Results"
+                    :description="`No log lines found for the query: ${query}. Please try a different search term.`"
+                  />
 
-                    <p v-if="hasActiveFilter" class="text-xs text-toned">
-                      Try a different term or clear <code>{{ query }}</code
-                      >.
-                    </p>
-                  </div>
+                  <UAlert
+                    v-else
+                    color="warning"
+                    variant="soft"
+                    icon="i-lucide-circle-alert"
+                    title="No log lines"
+                    description="No log lines are available yet."
+                  />
                 </div>
 
                 <div ref="bottomMarker" />
@@ -319,8 +276,6 @@ const filteredLogs = computed<FilteredLogEntry[]>(() => {
 
   return result;
 });
-
-const matchCount = computed(() => filteredLogs.value.filter((entry) => entry.isMatch).length);
 
 const fetchLogs = async (): Promise<void> => {
   loading.value = true;

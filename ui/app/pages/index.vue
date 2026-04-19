@@ -21,61 +21,59 @@
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 xl:items-end">
-        <div class="flex flex-wrap gap-2 xl:justify-end">
-          <UButton
-            color="neutral"
-            :variant="toggleFilter ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-filter"
-            @click="toggleFilter = !toggleFilter"
-          >
-            <span>Filter</span>
-          </UButton>
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+        <UButton
+          color="neutral"
+          :variant="toggleFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilter = !toggleFilter"
+        >
+          <span>Filter</span>
+        </UButton>
 
-          <UButton
-            v-if="false === config.paused"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-pause"
-            @click="() => void pauseDownload()"
-          >
-            <span>Pause</span>
-          </UButton>
+        <UButton
+          v-if="false === config.paused"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-pause"
+          @click="() => void pauseDownload()"
+        >
+          <span>Pause</span>
+        </UButton>
 
-          <UButton
-            v-else
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-play"
-            @click="() => void resumeDownload()"
-          >
-            <span>Resume</span>
-          </UButton>
+        <UButton
+          v-else
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-play"
+          @click="() => void resumeDownload()"
+        >
+          <span>Resume</span>
+        </UButton>
 
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-plus"
-            @click="config.showForm = !config.showForm"
-          >
-            <span>Add</span>
-          </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="config.showForm = !config.showForm"
+        >
+          <span>Add</span>
+        </UButton>
 
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-            class="hidden sm:inline-flex"
-            @click="changeDisplay"
-          >
-            <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
-          </UButton>
-        </div>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
+          @click="changeDisplay"
+        >
+          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+        </UButton>
 
         <UInput
           v-if="toggleFilter"
@@ -85,7 +83,7 @@
           placeholder="Filter displayed content"
           icon="i-lucide-filter"
           size="sm"
-          class="w-full xl:w-80"
+          class="order-last w-full sm:order-first sm:w-80"
         />
       </div>
     </div>
@@ -123,17 +121,26 @@
       </section>
 
       <section id="history" class="scroll-mt-24 space-y-4">
-        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-default pb-3">
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
-              <UIcon :name="historyShell.icon" class="size-4 text-toned" />
-              <h2>{{ historyShell.pageLabel }}</h2>
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div class="flex min-w-0 items-center gap-3">
+            <span
+              class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+            >
+              <UIcon :name="historyShell.icon" class="size-5" />
+            </span>
+
+            <div class="min-w-0 space-y-2">
+              <div
+                class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+              >
+                <span>{{ historyShell.sectionLabel }}</span>
+                <span>/</span>
+                <span>{{ historyShell.pageLabel }}</span>
+              </div>
+
+              <p class="max-w-3xl text-sm text-toned">{{ historyShell.description }}</p>
             </div>
-
-            <p class="text-sm text-toned">{{ historyShell.description }}</p>
           </div>
-
-          <UBadge color="neutral" variant="soft" size="sm">{{ historyCount }}</UBadge>
         </div>
 
         <History
@@ -205,9 +212,8 @@ onMounted(async () => {
 });
 
 const queueCount = computed(() => stateStore.count('queue'));
-const historyCount = computed(() => stateStore.count('history'));
 const hasDownloadsContent = computed(
-  () => queueCount.value > 0 || historyCount.value > 0 || query.value.trim().length > 0,
+  () => queueCount.value > 0 || stateStore.count('history') > 0 || query.value.trim().length > 0,
 );
 
 watch(toggleFilter, () => {

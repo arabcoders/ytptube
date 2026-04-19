@@ -21,43 +21,36 @@
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 xl:items-end">
-        <div class="flex flex-wrap gap-2 xl:justify-end">
-          <UButton
-            v-if="logs.length > 0"
-            color="neutral"
-            :variant="toggleFilter ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-filter"
-            @click="toggleFilter = !toggleFilter"
-          >
-            <span>Filter</span>
-          </UButton>
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+        <UButton
+          v-if="logs.length > 0"
+          color="neutral"
+          :variant="toggleFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilter = !toggleFilter"
+        >
+          <span>Filter</span>
+        </UButton>
 
-          <USwitch
-            v-model="latestOnly"
-            color="primary"
-            size="sm"
-            :label="latestOnly ? 'Latest Only' : 'All Loaded'"
-            :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
-          />
-        </div>
+        <USwitch
+          v-model="latestOnly"
+          color="primary"
+          size="sm"
+          :label="latestOnly ? 'Latest Only' : 'All Loaded'"
+          :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
+        />
 
-        <div v-if="toggleFilter && logs.length > 0" class="relative w-full xl:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-
-          <input
-            id="filter"
-            v-model.lazy="query"
-            type="search"
-            placeholder="Filter changelog entries"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
+        <UInput
+          v-if="toggleFilter && logs.length > 0"
+          id="filter"
+          v-model.lazy="query"
+          type="search"
+          placeholder="Filter changelog entries"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
@@ -175,10 +168,6 @@
           title="No Results"
           :description="`No changelog entries found for the query: ${query}.`"
         />
-
-        <UButton v-if="query" color="neutral" variant="outline" size="sm" @click="query = ''">
-          Clear filter
-        </UButton>
 
         <UAlert
           v-else

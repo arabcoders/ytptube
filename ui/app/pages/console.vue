@@ -1,5 +1,5 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-6">
+  <main class="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-6">
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
       <div class="flex min-w-0 items-start gap-3">
         <span
@@ -17,37 +17,7 @@
             <span>{{ pageShell.pageLabel }}</span>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <UBadge :color="sessionStatusColor" variant="soft" size="sm">
-              <span class="inline-flex items-center gap-1.5">
-                <UIcon
-                  :name="sessionStatusIcon"
-                  class="size-3.5"
-                  :class="sessionStatusSpinning ? 'animate-spin' : ''"
-                />
-                <span>{{ sessionStatusLabel }}</span>
-              </span>
-            </UBadge>
-
-            <UBadge v-if="hasActiveSession" color="neutral" variant="outline" size="sm">
-              Session {{ shortSessionId }}
-            </UBadge>
-
-            <UBadge
-              v-if="sessionExitCode !== null && !isLoading"
-              :color="exitCodeBadgeColor"
-              variant="outline"
-              size="sm"
-            >
-              Exit {{ sessionExitCode }}
-            </UBadge>
-
-            <UBadge v-if="commandHistory.length > 0" color="neutral" variant="outline" size="sm">
-              {{ commandHistory.length }} saved
-            </UBadge>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ sessionStatusDescription }}</p>
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
         </div>
       </div>
 
@@ -75,13 +45,15 @@
       </div>
     </div>
 
-    <UPageCard variant="naked" :ui="pageCardUi">
+    <UPageCard variant="naked" :ui="pageCardUi" class="flex min-h-0 flex-1">
       <template #body>
-        <div class="space-y-4">
-          <div class="overflow-hidden rounded-xl border border-default bg-neutral-950/95 shadow-sm">
+        <div class="flex min-h-0 flex-1 flex-col gap-4">
+          <div
+            class="flex min-h-72 min-w-0 flex-1 overflow-hidden rounded-sm border border-default bg-neutral-950/95 shadow-sm"
+          >
             <div
               ref="terminal_window"
-              class="terminal-host min-h-[55vh] max-h-[55vh] overflow-hidden"
+              class="terminal-host h-full min-h-0 w-full overflow-hidden"
             />
           </div>
 
@@ -92,14 +64,25 @@
               <div class="min-w-0 flex-1 space-y-1">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div
-                    class="flex min-w-0 items-center gap-2 text-sm font-semibold text-highlighted"
+                    class="flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-highlighted"
                   >
                     <UIcon name="i-lucide-send" class="size-4 shrink-0 text-toned" />
                     <span>Command</span>
+
+                    <UBadge :color="sessionStatusColor" variant="soft" size="sm">
+                      <span class="inline-flex items-center gap-1.5">
+                        <UIcon
+                          :name="sessionStatusIcon"
+                          class="size-3.5"
+                          :class="sessionStatusSpinning ? 'animate-spin' : ''"
+                        />
+                        <span>{{ sessionStatusLabel }}</span>
+                      </span>
+                    </UBadge>
                   </div>
 
-                  <UBadge :color="inputModeColor" variant="soft" size="sm">
-                    {{ inputModeLabel }}
+                  <UBadge :color="isMultiLineInput ? 'info' : 'neutral'" variant="soft" size="sm">
+                    {{ isMultiLineInput ? 'Multi-line' : 'Single-line' }}
                   </UBadge>
                 </div>
 
@@ -121,36 +104,12 @@
               />
 
               <UAlert
-                v-if="hasYtDlpPrefix"
-                color="warning"
-                variant="soft"
-                icon="i-lucide-triangle-alert"
-                title="Remove the yt-dlp prefix"
-              >
-                <template #description>
-                  <p class="text-sm text-default">
-                    Enter only the URLs and flags. This page already runs commands as
-                    <code>yt-dlp &lt;your command&gt;</code>.
-                  </p>
-                </template>
-              </UAlert>
-
-              <UAlert
                 v-if="sessionStatus === 'reconnecting'"
                 color="warning"
                 variant="soft"
                 icon="i-lucide-rotate-cw"
-                title="Reconnecting to the live stream"
-                description="The command is still tracked in the background and the page is trying to reattach automatically."
-              />
-
-              <UAlert
-                v-if="showExpiredAlert"
-                color="warning"
-                variant="soft"
-                icon="i-lucide-clock-3"
-                title="Session expired"
-                description="The saved transcript has aged out, but the last command was restored so you can run it again."
+                title="Reconnecting to the command stream"
+                description="The connection was lost. Attempting to reconnect and restore the stream."
               />
 
               <UAlert
@@ -159,16 +118,7 @@
                 variant="soft"
                 icon="i-lucide-circle-off"
                 title="Session interrupted"
-                description="The last command did not finish cleanly. Inspect the transcript above or rerun the command below."
-              />
-
-              <UAlert
-                v-if="showNonZeroExitAlert"
-                color="warning"
-                variant="soft"
-                icon="i-lucide-badge-alert"
-                :title="`Command exited with code ${sessionExitCode}`"
-                description="The transcript is preserved so you can review the output or run the command again."
+                description="The command execution was interrupted."
               />
 
               <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
@@ -180,8 +130,8 @@
                     class="console-input"
                     :options="ytDlpOptions"
                     :disabled="isStartBlocked"
-                    :icon="commandInputIcon"
-                    :icon-class="commandInputIconClass"
+                    :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-terminal'"
+                    :icon-class="isLoading ? 'animate-spin' : ''"
                     placeholder="--help"
                     :rows="5"
                     @keydown="handleKeyDown"
@@ -194,8 +144,8 @@
                     class="console-input"
                     :options="ytDlpOptions"
                     :disabled="isStartBlocked"
-                    :icon="commandInputIcon"
-                    :icon-class="commandInputIconClass"
+                    :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-terminal'"
+                    :icon-class="isLoading ? 'animate-spin' : ''"
                     placeholder="--help"
                     :multiple="true"
                     :allowShortFlags="true"
@@ -348,11 +298,19 @@
 }
 
 .terminal-host :deep(.xterm) {
+  height: 100%;
   padding: 0.75rem !important;
 }
 
 .terminal-host :deep(.xterm-viewport) {
+  -ms-overflow-style: none;
   background-color: transparent !important;
+  scrollbar-width: none;
+}
+
+.terminal-host :deep(.xterm-viewport::-webkit-scrollbar) {
+  width: 0;
+  height: 0;
 }
 </style>
 
@@ -386,8 +344,8 @@ const dialog = useDialog();
 const consoleSession = useConsoleSession();
 const pageShell = requirePageShell('console');
 
-const terminal = ref<Terminal | null>(null);
-const terminalFit = ref<FitAddon | null>(null);
+const terminal = shallowRef<Terminal | null>(null);
+const terminalFit = shallowRef<FitAddon | null>(null);
 const command = ref('');
 const manualReconnectPending = ref(false);
 const cancelPending = ref(false);
@@ -398,10 +356,10 @@ const storedCommand = useStorage<string>('console_command', '');
 const commandHistory = useStorage<string[]>('console_command_history', []);
 
 const pageCardUi = {
-  root: 'w-full bg-transparent',
-  container: 'w-full p-0 sm:p-0',
-  wrapper: 'w-full items-stretch',
-  body: 'w-full',
+  root: 'flex min-h-0 flex-1 w-full bg-transparent',
+  container: 'flex min-h-0 flex-1 w-full p-0 sm:p-0',
+  wrapper: 'flex min-h-0 flex-1 w-full items-stretch',
+  body: 'flex min-h-0 flex-1 w-full flex-col',
 };
 
 const historyCardUi = {
@@ -419,11 +377,9 @@ const sessionStatus = computed(() => consoleSession.state.value.status);
 const sessionError = computed(() => consoleSession.state.value.error);
 const sessionExitCode = computed(() => consoleSession.state.value.exitCode);
 const hasActiveSession = computed(() => Boolean(consoleSession.state.value.sessionId));
-const shortSessionId = computed(() => consoleSession.state.value.sessionId?.slice(0, 8) ?? '');
 const displayCommand = computed(() => command.value.trim().replace(/^yt-dlp\b\s*/i, ''));
 const runnableCommand = computed(() => displayCommand.value.replace(/\n/g, ' ').trim());
 const hasValidCommand = computed(() => Boolean(runnableCommand.value));
-const hasYtDlpPrefix = computed(() => /^yt-dlp\b/i.test(command.value.trim()));
 const isLoading = computed(() => consoleSession.isLoading.value);
 const isMultiLineInput = computed(() => Boolean(command.value && command.value.includes('\n')));
 const historyEntries = computed(() => commandHistory.value);
@@ -433,22 +389,6 @@ const showCancelButton = computed(() =>
 );
 const isStartBlocked = computed(() => isLoading.value);
 const canStartCommand = computed(() => !isStartBlocked.value && hasValidCommand.value);
-const showExpiredAlert = computed(
-  () => sessionStatus.value === 'expired' && Boolean(consoleSession.state.value.command),
-);
-const showNonZeroExitAlert = computed(
-  () =>
-    !isLoading.value && typeof sessionExitCode.value === 'number' && sessionExitCode.value !== 0,
-);
-const inputModeLabel = computed(() => (isMultiLineInput.value ? 'Multi-line' : 'Single-line'));
-const inputModeColor = computed(() => (isMultiLineInput.value ? 'info' : 'neutral'));
-const commandInputIcon = computed(() =>
-  isLoading.value ? 'i-lucide-loader-circle' : 'i-lucide-terminal',
-);
-const commandInputIconClass = computed(() => (isLoading.value ? 'animate-spin' : ''));
-const exitCodeBadgeColor = computed(() => {
-  return sessionExitCode.value === 0 ? 'success' : 'error';
-});
 const runButtonLabel = computed(() => {
   if (runnableCommand.value === 'clear') {
     return 'Clear output';
@@ -483,7 +423,7 @@ const sessionStatusLabel = computed(() => {
       return 'Reconnecting';
 
     case 'finished':
-      return 'Finished';
+      return sessionExitCode.value === 0 ? 'Finished' : 'Failed';
 
     case 'interrupted':
       return 'Interrupted';
@@ -510,7 +450,7 @@ const sessionStatusColor = computed(() => {
       return 'warning';
 
     case 'finished':
-      return 'success';
+      return sessionExitCode.value === 0 ? 'success' : 'error';
 
     case 'error':
       return 'error';
@@ -527,7 +467,7 @@ const sessionStatusIcon = computed(() => {
       return 'i-lucide-loader-circle';
 
     case 'finished':
-      return 'i-lucide-circle-check';
+      return sessionExitCode.value === 0 ? 'i-lucide-circle-check' : 'i-lucide-triangle-alert';
 
     case 'interrupted':
       return 'i-lucide-circle-off';
@@ -543,38 +483,6 @@ const sessionStatusIcon = computed(() => {
   }
 });
 const sessionStatusSpinning = computed(() => ACTIVE_SESSION_STATUSES.includes(sessionStatus.value));
-const sessionStatusDescription = computed(() => {
-  switch (sessionStatus.value) {
-    case 'starting':
-    case 'running':
-      return 'The command keeps running even if you reload or navigate away.';
-
-    case 'reconnecting':
-      return 'The command is still tracked in the background while the page reconnects to the stream.';
-
-    case 'finished':
-      return typeof sessionExitCode.value === 'number' && sessionExitCode.value !== 0
-        ? `The last command finished with exit code ${sessionExitCode.value}.`
-        : 'The last command completed and its transcript is still available.';
-
-    case 'interrupted':
-      return 'The last command was interrupted before it completed.';
-
-    case 'expired':
-      return 'The transcript expired, but you can rerun the restored command below.';
-
-    case 'error':
-      return typeof sessionExitCode.value === 'number'
-        ? `The last command failed with exit code ${sessionExitCode.value}.`
-        : hasActiveSession.value
-          ? 'The live stream ran into a problem while the page was attached to the session.'
-          : 'The command request failed before a durable session could be restored.';
-
-    default:
-      return 'Run yt-dlp commands directly in a non-interactive session.';
-  }
-});
-
 watch(command, (value) => {
   storedCommand.value = value;
 });

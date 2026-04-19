@@ -21,83 +21,77 @@
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 xl:items-end">
-        <div class="flex flex-wrap gap-2 xl:justify-end">
-          <UButton
-            v-if="notifications.length > 0"
-            color="neutral"
-            :variant="showFilter ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-filter"
-            @click="toggleFilterPanel"
-          >
-            <span>Filter</span>
-          </UButton>
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          :variant="showFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilterPanel"
+        >
+          <span>Filter</span>
+        </UButton>
 
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-plus"
-            @click="openCreate"
-          >
-            <span>New Notification</span>
-          </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="openCreate"
+        >
+          <span>New Notification</span>
+        </UButton>
 
-          <UButton
-            v-if="notifications.length > 0"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-send"
-            :loading="sendingTest"
-            :disabled="sendingTest"
-            @click="() => void sendTest()"
-          >
-            <span>Send Test</span>
-          </UButton>
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-send"
+          :loading="sendingTest"
+          :disabled="sendingTest"
+          @click="() => void sendTest()"
+        >
+          <span>Send Test</span>
+        </UButton>
 
-          <UButton
-            v-if="notifications.length > 0"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-            class="hidden sm:inline-flex"
-            @click="toggleDisplayStyle"
-          >
-            <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
-          </UButton>
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
+          @click="toggleDisplayStyle"
+        >
+          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+        </UButton>
 
-          <UButton
-            v-if="notifications.length > 0"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-refresh-cw"
-            :loading="isLoading"
-            :disabled="isLoading"
-            @click="() => void reloadContent()"
-          >
-            <span>Reload</span>
-          </UButton>
-        </div>
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @click="() => void reloadContent()"
+        >
+          <span>Reload</span>
+        </UButton>
 
-        <div v-if="showFilter && notifications.length > 0" class="relative w-full xl:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-          <input
-            id="filter"
-            ref="filterInput"
-            v-model="query"
-            type="search"
-            placeholder="Filter displayed content"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
+        <UInput
+          v-if="showFilter && notifications.length > 0"
+          id="filter"
+          ref="filterInput"
+          v-model="query"
+          type="search"
+          placeholder="Filter displayed content"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
@@ -482,10 +476,6 @@
         title="No Results"
         :description="`No results found for the query: ${query}. Please try a different search term.`"
       />
-
-      <UButton color="neutral" variant="outline" size="sm" @click="query = ''">
-        Clear filter
-      </UButton>
     </div>
 
     <UAlert
@@ -532,8 +522,8 @@
     <UModal
       v-if="editorOpen"
       :open="editorOpen"
-      :title="modalTitle"
-      :description="modalDescription"
+      :title="targetRef ? `Edit - ${target.name}` : 'Add new notification target'"
+      description="Send notifications to your webhooks based on specified events or presets."
       :dismissible="!addInProgress"
       :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="handleEditorOpenChange"
@@ -593,7 +583,7 @@ const editorDirty = ref(false);
 const sendingTest = ref(false);
 const query = ref('');
 const showFilter = ref(false);
-const filterInput = ref<HTMLInputElement | null>(null);
+const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
 const selectedIds = ref<number[]>([]);
 const massDelete = ref(false);
 
@@ -604,12 +594,6 @@ const contentStyle = computed<'list' | 'grid'>(() =>
   isMobile.value ? 'grid' : displayStyle.value,
 );
 
-const modalTitle = computed(() =>
-  targetRef.value ? `Edit - ${target.value.name}` : 'Add new notification target',
-);
-const modalDescription = computed(
-  () => 'Send notifications to your webhooks based on specified events or presets.',
-);
 const modalKey = computed(
   () => `${targetRef.value ?? 'new'}-${editorOpen.value ? 'open' : 'closed'}`,
 );
@@ -699,7 +683,7 @@ const toggleFilterPanel = async (): Promise<void> => {
   }
 
   await nextTick();
-  filterInput.value?.focus();
+  filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
 };
 
 const loadContent = async (pageNumber = page.value): Promise<void> => {

@@ -5,7 +5,7 @@
     >
       <div class="min-w-0 flex-1">
         <div class="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-default">
-          <UIcon v-if="resolvedIcon" :name="resolvedIcon" class="size-4 shrink-0 text-toned" />
+          <UIcon v-if="props.icon" :name="props.icon" class="size-4 shrink-0 text-toned" />
           <UTooltip :text="field ? `yt-dlp option: ${field}` : undefined">
             <span class="truncate" :class="{ 'has-tooltip': field }">
               {{ label }}
@@ -52,7 +52,7 @@
       </template>
       <template v-else>
         <span class="inline-flex items-center gap-2 font-semibold">
-          <UIcon v-if="resolvedIcon" :name="resolvedIcon" class="size-4 text-toned" />
+          <UIcon v-if="props.icon" :name="props.icon" class="size-4 text-toned" />
           <UTooltip :text="field ? `yt-dlp option: ${field}` : undefined">
             <span :class="{ 'has-tooltip': field }">
               {{ label }}
@@ -140,14 +140,6 @@ const boolModel = computed({
   set: (value: boolean) => {
     model.value = value;
   },
-});
-
-const resolvedIcon = computed(() => {
-  if (!props.icon) {
-    return '';
-  }
-
-  return props.icon;
 });
 
 const fieldUi = computed(() => ({
