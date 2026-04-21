@@ -1336,6 +1336,32 @@ class TestQueueManager:
         item.close.assert_awaited_once()
         assert status[item.info._id] == "ok", "Regular running cancel should still report success"
 
+    @pytest.mark.asyncio
+    async def test_clear_flushes_history_deletes_before_returning(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        queue_manager.config = Mock(remove_files=False, download_path="/tmp")
+        queue_manager._notify = Mock()
+
+        item = Mock()
+        item.info = make_item(id="done-id", title="Finished clip")
+        item.info._id = "done-id"
+        item.info.status = "finished"
+        item.info.filename = "clip.mp4"
+        item.info.folder = ""
+
+        done_store = Mock()
+        done_store.get = AsyncMock(return_value=item)
+        done_store.delete = AsyncMock()
+        done_store._connection = Mock()
+        done_store._connection.flush = AsyncMock()
+        queue_manager.done = done_store
+
+        status = await DownloadQueue.clear(queue_manager, [item.info._id], remove_file=False)
+
+        done_store.delete.assert_awaited_once_with(item.info._id)
+        done_store._connection.flush.assert_awaited_once()
+        assert status[item.info._id] == "ok", "Clear should still report success after flushing deletes"
+
 
 class TestPoolManager:
     @pytest.mark.asyncio
