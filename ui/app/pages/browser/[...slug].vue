@@ -148,21 +148,18 @@
         </UDropdownMenu>
       </div>
 
-      <p class="text-sm text-toned">
-        Page {{ pagination.page }} of {{ pagination.total_pages || 1 }}
-      </p>
+      <UPagination
+        v-if="pagination.total_pages > 1"
+        :page="pagination.page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="handlePageChange"
+        size="sm"
+      />
     </div>
-
-    <UPagination
-      v-if="pagination.total_pages > 1"
-      :page="pagination.page"
-      :total="pagination.total"
-      :items-per-page="pagination.per_page"
-      :disabled="isLoading"
-      show-edges
-      :sibling-count="0"
-      @update:page="handlePageChange"
-    />
 
     <div
       v-if="contentStyle === 'list' && hasItems"
@@ -187,15 +184,7 @@
                   />
                 </button>
               </th>
-              <th :class="controlEnabled ? 'w-20' : 'w-24'">
-                #
-                <UIcon
-                  v-if="sort_by === 'type'"
-                  :name="sortDirectionIcon"
-                  class="ml-1 inline-flex size-3.5"
-                />
-              </th>
-              <th class="text-left">
+              <th class="w-full text-left">
                 Name
                 <UIcon
                   v-if="sort_by === 'name'"
@@ -240,16 +229,14 @@
                 </label>
               </td>
 
-              <td class="px-3 py-3 text-center align-middle">
-                <UTooltip :text="item.name">
-                  <span class="inline-flex items-center justify-center text-toned">
-                    <UIcon :name="itemTypeIcon(item)" class="size-6" />
-                  </span>
-                </UTooltip>
-              </td>
-
               <td class="px-3 py-3 align-middle">
-                <div class="flex min-w-0 items-center justify-between gap-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  <UTooltip :text="itemTypeLabel(item)">
+                    <span class="inline-flex shrink-0 items-center justify-center text-toned">
+                      <UIcon :name="itemTypeIcon(item)" class="size-5" />
+                    </span>
+                  </UTooltip>
+
                   <div class="min-w-0 flex-1">
                     <UTooltip :text="item.name">
                       <a
@@ -484,16 +471,18 @@
       description="You can enable rename, delete, move, and create directory controls by setting YTP_BROWSER_CONTROL_ENABLED=true and restarting the application."
     />
 
-    <UPagination
-      v-if="pagination.total_pages > 1"
-      :page="pagination.page"
-      :total="pagination.total"
-      :items-per-page="pagination.per_page"
-      :disabled="isLoading"
-      show-edges
-      :sibling-count="0"
-      @update:page="handlePageChange"
-    />
+    <div v-if="pagination.total_pages > 1" class="flex justify-end">
+      <UPagination
+        :page="pagination.page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="handlePageChange"
+        size="sm"
+      />
+    </div>
 
     <UModal
       v-if="model_item"

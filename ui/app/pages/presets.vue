@@ -112,8 +112,6 @@
           </UButton>
         </UDropdownMenu>
       </div>
-
-      <div class="text-xs text-toned">{{ filteredPresets.length }} displayed</div>
     </div>
 
     <div

@@ -100,8 +100,8 @@
 
     <UEmpty
       v-if="!hasQueueContent"
-      icon="i-lucide-inbox"
-      title="No downloads yet"
+      icon="i-lucide-triangle-alert"
+      title="No active or queued downloads yet"
       class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 

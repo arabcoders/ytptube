@@ -95,17 +95,6 @@
       </div>
     </div>
 
-    <UPagination
-      v-if="paging?.total_pages > 1"
-      :page="paging.page"
-      :total="paging.total"
-      :items-per-page="paging.per_page"
-      :disabled="isLoading"
-      show-edges
-      :sibling-count="0"
-      @update:page="navigatePage"
-    />
-
     <div
       v-if="!isLoading && filteredTargets.length > 0"
       class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
@@ -138,7 +127,17 @@
         </UDropdownMenu>
       </div>
 
-      <div class="text-xs text-toned">{{ filteredTargets.length }} displayed</div>
+      <UPagination
+        v-if="paging?.total_pages > 1"
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="navigatePage"
+        size="sm"
+      />
     </div>
 
     <div
@@ -489,6 +488,19 @@
       title="No targets"
       description="No notification targets found. Click on the New Notification button to add your first notification target."
     />
+
+    <div v-if="filteredTargets.length > 0 && paging?.total_pages > 1" class="flex justify-end">
+      <UPagination
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="navigatePage"
+        size="sm"
+      />
+    </div>
 
     <div
       v-if="!query && filteredTargets.length > 0"

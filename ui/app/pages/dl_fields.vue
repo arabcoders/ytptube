@@ -82,17 +82,6 @@
       </div>
     </div>
 
-    <UPagination
-      v-if="paging?.total_pages > 1"
-      :page="paging.page"
-      :total="paging.total"
-      :items-per-page="paging.per_page"
-      :disabled="isLoading"
-      show-edges
-      :sibling-count="0"
-      @update:page="navigatePage"
-    />
-
     <div
       v-if="!isLoading && filteredItems.length > 0"
       class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
@@ -125,7 +114,17 @@
         </UDropdownMenu>
       </div>
 
-      <div class="text-xs text-toned">{{ filteredItems.length }} displayed</div>
+      <UPagination
+        v-if="paging?.total_pages > 1"
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="navigatePage"
+        size="sm"
+      />
     </div>
 
     <div
@@ -391,6 +390,19 @@
       title="No items"
       description="There are no custom defined fields yet. Click the New Field button to add your first field."
     />
+
+    <div v-if="filteredItems.length > 0 && paging?.total_pages > 1" class="flex justify-end">
+      <UPagination
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="navigatePage"
+        size="sm"
+      />
+    </div>
 
     <UModal
       v-if="editorOpen"
