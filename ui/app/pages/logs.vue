@@ -173,7 +173,7 @@ const FILTER_CONTEXT_REGEX = /context:(\d+)/;
 let scrollTimeout: NodeJS.Timeout | null = null;
 
 const toast = useNotification();
-const config = useConfigStore();
+const config = useYtpConfig();
 const route = useRoute();
 const pageShell = requirePageShell('logs');
 

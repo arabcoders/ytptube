@@ -718,9 +718,9 @@ import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const box = useConfirm();
 const toast = useNotification();
-const config = useConfigStore();
-const socket = useSocketStore();
-const stateStore = useStateStore();
+const config = useYtpConfig();
+const socket = useAppSocket();
+const stateStore = useQueueState();
 const pageShell = requirePageShell('tasks');
 const { confirmDialog } = useDialog();
 const sessionCache = useSessionCache();

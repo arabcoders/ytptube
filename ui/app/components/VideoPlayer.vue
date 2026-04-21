@@ -291,7 +291,7 @@ import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts';
 import type { StoreItem } from '~/types/store';
 import type { file_info, video_source_element, video_track_element } from '~/types/video';
 
-const config = useConfigStore();
+const config = useYtpConfig();
 
 const props = defineProps<{ item: StoreItem }>();
 const emitter = defineEmits<{

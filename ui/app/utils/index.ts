@@ -143,45 +143,6 @@ const dEvent = (eventName: string, detail: Record<string, any> = {}): boolean =>
 };
 
 /**
- * Generate a pagination list based on current page, total pages, and delta range.
- *
- * @param current - The current active page number.
- * @param last - The last page number.
- * @param delta - How many pages to show before/after the current page.
- * @returns An array of pagination entries including optional gaps.
- */
-const makePagination = (
-  current: number,
-  last: number,
-  delta: number = 5,
-): Array<{ page: number; text: string; selected: boolean }> => {
-  const pagination: Array<{ page: number; text: string; selected: boolean }> = [];
-  if (last < 2) {
-    return pagination;
-  }
-
-  const strR = '-'.repeat(9 + `${last}`.length);
-  const left = current - delta;
-  const right = current + delta + 1;
-
-  for (let i = 1; i <= last; i++) {
-    if (1 === i || last === i || (i >= left && i < right)) {
-      if (i === left && i > 2) {
-        pagination.push({ page: 0, text: strR, selected: false });
-      }
-
-      pagination.push({ page: i, text: `Page #${i}`, selected: i === current });
-
-      if (i === right - 1 && i < last - 1) {
-        pagination.push({ page: 0, text: strR, selected: false });
-      }
-    }
-  }
-
-  return pagination;
-};
-
-/**
  * Safely encode a path string for use in a URL.
  *
  * @param item - The input path string.
@@ -1027,7 +988,6 @@ export {
   r,
   copyText,
   dEvent,
-  makePagination,
   encodePath,
   request,
   removeANSIColors,

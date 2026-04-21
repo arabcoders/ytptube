@@ -138,9 +138,10 @@
 
 <script setup lang="ts">
 import moment from 'moment';
+import { useNotificationCenter } from '~/composables/useNotificationCenter';
 import type { notificationType } from '~/composables/useNotification';
 
-const store = useNotificationStore();
+const store = useNotificationCenter();
 
 const copiedId = ref<string | null>(null);
 const expandedId = ref<string | null>(null);

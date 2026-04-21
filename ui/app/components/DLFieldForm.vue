@@ -260,7 +260,7 @@ const props = defineProps<{
 
 const toast = useNotification();
 const box = useConfirm();
-const config = useConfigStore();
+const config = useYtpConfig();
 
 const fieldTypes = ['string', 'text', 'bool'] as const;
 const fieldTypeItems = [...fieldTypes];

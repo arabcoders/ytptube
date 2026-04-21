@@ -338,7 +338,7 @@ let terminalResizeObserver: ResizeObserver | null = null;
 let didInitialRender = false;
 let renderedChunkCount = 0;
 
-const config = useConfigStore();
+const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
 const consoleSession = useConsoleSession();

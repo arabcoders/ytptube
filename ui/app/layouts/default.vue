@@ -1,7 +1,11 @@
 <template>
   <UApp :toaster="toasterConfig">
     <Transition name="shell-mode" mode="out-in">
-      <div v-if="simpleMode" key="simple" class="shell-stage flex flex-col">
+      <div
+        v-if="simpleMode"
+        key="simple"
+        class="shell-stage flex flex-col bg-default/95 backdrop-blur-sm"
+      >
         <UAlert
           v-if="showConnectionBanner"
           color="warning"
@@ -517,8 +521,8 @@ type SwipeMode = 'open' | 'close';
 const MOBILE_SIDEBAR_EDGE_WIDTH = 32;
 const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
 
-const socket = useSocketStore();
-const config = useConfigStore();
+const socket = useAppSocket();
+const config = useYtpConfig();
 const route = useRoute();
 const colorMode = useColorMode();
 const loadedImage = ref();

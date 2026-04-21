@@ -95,12 +95,15 @@
       </div>
     </div>
 
-    <Pager
+    <UPagination
       v-if="paging?.total_pages > 1"
       :page="paging.page"
-      :last_page="paging.total_pages"
-      :isLoading="isLoading"
-      @navigate="navigatePage"
+      :total="paging.total"
+      :items-per-page="paging.per_page"
+      :disabled="isLoading"
+      show-edges
+      :sibling-count="0"
+      @update:page="navigatePage"
     />
 
     <div

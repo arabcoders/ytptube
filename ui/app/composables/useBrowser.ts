@@ -1,7 +1,6 @@
 import { ref, readonly, computed, toRaw } from 'vue';
 
 import { useNotification } from '~/composables/useNotification';
-import { useConfigStore } from '~/stores/ConfigStore';
 import { request, parse_api_error, sTrim, encodePath } from '~/utils';
 import type { FileItem, Pagination } from '~/types/filebrowser';
 
@@ -50,7 +49,7 @@ const handleError = (error: unknown): void => {
 };
 
 const buildQueryParams = (page?: number): string => {
-  const config = useConfigStore();
+  const config = useYtpConfig();
   const params = new URLSearchParams();
   params.set('page', String(page ?? pagination.value.page));
   params.set('per_page', String(config.app.default_pagination || 50));

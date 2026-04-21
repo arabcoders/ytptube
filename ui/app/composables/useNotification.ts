@@ -1,4 +1,5 @@
 import { useStorage } from '@vueuse/core';
+import { useNotificationCenter } from '~/composables/useNotificationCenter';
 import { getNuxtToastManager } from '~/utils/nuxtToastManager';
 
 export type notificationType = 'info' | 'success' | 'warning' | 'error';
@@ -70,7 +71,7 @@ const sendMessage = (
   message: string,
   opts?: notificationOptions,
 ): void => {
-  const notificationStore = useNotificationStore();
+  const notificationStore = useNotificationCenter();
 
   const useToastNotification =
     !window.isSecureContext ||
@@ -115,7 +116,7 @@ const sendMessage = (
 };
 
 const notify = (type: notificationType, message: string, opts?: notificationOptions): void => {
-  const notificationStore = useNotificationStore();
+  const notificationStore = useNotificationCenter();
 
   if (!opts) {
     opts = {};

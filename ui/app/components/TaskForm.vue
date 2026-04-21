@@ -521,7 +521,7 @@ const emitter = defineEmits<{
 }>();
 
 const toast = useNotification();
-const config = useConfigStore();
+const config = useYtpConfig();
 const dialog = useDialog();
 const { findPreset, getPresetDefault, selectItems } = usePresetOptions();
 const showImport = useStorage('showTaskImport', false);

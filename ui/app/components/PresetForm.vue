@@ -370,7 +370,7 @@ const props = defineProps<{
   presets?: Preset[];
 }>();
 
-const config = useConfigStore();
+const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
 const { presets, findPreset, selectItems } = usePresetOptions(() => props.presets);

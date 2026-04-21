@@ -326,15 +326,6 @@ describe('data conversion helpers', () => {
     expect(utils.decode(encoded)).toEqual(payload);
   });
 
-  it('makePagination builds a ranged pagination list', () => {
-    const pages = utils.makePagination(5, 10, 1);
-    const selected = pages.find((page: any) => page.selected);
-    expect(selected?.page).toBe(5);
-    expect(pages.length).toBeGreaterThan(0);
-    expect(pages[0]?.page).toBe(1);
-    expect(pages[pages.length - 1]?.page).toBe(10);
-  });
-
   it('getQueryParams parses query strings', () => {
     expect(utils.getQueryParams('?a=1&b=two')).toEqual({ a: '1', b: 'two' });
   });

@@ -1,7 +1,23 @@
-import { describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it, mock } from 'bun:test'
 
-import { usePresetOptions } from '~/composables/usePresetOptions'
 import type { Preset } from '~/types/presets'
+
+let configState = {
+  presets: [] as Preset[],
+  app: {
+    download_path: '/downloads',
+  },
+}
+
+mock.module('~/composables/useYtpConfig', () => ({
+  useYtpConfig: () => configState,
+}))
+
+let usePresetOptions: typeof import('~/composables/usePresetOptions').usePresetOptions
+
+beforeAll(async () => {
+  ;({ usePresetOptions } = await import('~/composables/usePresetOptions'))
+})
 
 const buildPreset = (name: string, isDefault: boolean): Preset => ({
   name,
@@ -15,12 +31,12 @@ const buildPreset = (name: string, isDefault: boolean): Preset => ({
 })
 
 const setConfigStore = (presets: Preset[]) => {
-  ;(globalThis as any).useConfigStore = () => ({
+  configState = {
     presets,
     app: {
       download_path: '/downloads',
     },
-  })
+  }
 }
 
 describe('usePresetOptions', () => {

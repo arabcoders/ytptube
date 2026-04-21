@@ -468,7 +468,7 @@ import { requirePageShell } from '~/utils/topLevelNavigation';
 type PresetWithUI = Preset & { raw?: boolean; toggle_description?: boolean };
 
 const presetsStore = usePresets();
-const config = useConfigStore();
+const config = useYtpConfig();
 const box = useConfirm();
 const editor = usePresetEditor();
 const pageShell = requirePageShell('presets');

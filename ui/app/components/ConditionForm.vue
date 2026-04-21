@@ -538,7 +538,7 @@ const props = defineProps<{
 const toast = useNotification();
 const showImport = useStorage('showImport', false);
 const box = useConfirm();
-const config = useConfigStore();
+const config = useYtpConfig();
 
 const form = reactive<Condition>(normalizeCondition(props.item));
 const importString = ref('');

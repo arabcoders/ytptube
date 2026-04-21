@@ -520,7 +520,7 @@ const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string | undefined, cli: string | undefined): void;
   (e: 'clear_form'): void;
 }>();
-const config = useConfigStore();
+const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
 const { findPreset, hasPreset, selectItems, getPresetDefault } = usePresetOptions();

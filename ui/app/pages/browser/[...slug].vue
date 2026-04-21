@@ -153,12 +153,15 @@
       </p>
     </div>
 
-    <Pager
+    <UPagination
       v-if="pagination.total_pages > 1"
       :page="pagination.page"
-      :last_page="pagination.total_pages"
-      :isLoading="isLoading"
-      @navigate="handlePageChange"
+      :total="pagination.total"
+      :items-per-page="pagination.per_page"
+      :disabled="isLoading"
+      show-edges
+      :sibling-count="0"
+      @update:page="handlePageChange"
     />
 
     <div
@@ -481,12 +484,15 @@
       description="You can enable rename, delete, move, and create directory controls by setting YTP_BROWSER_CONTROL_ENABLED=true and restarting the application."
     />
 
-    <Pager
+    <UPagination
       v-if="pagination.total_pages > 1"
       :page="pagination.page"
-      :last_page="pagination.total_pages"
-      :isLoading="isLoading"
-      @navigate="handlePageChange"
+      :total="pagination.total"
+      :items-per-page="pagination.per_page"
+      :disabled="isLoading"
+      show-edges
+      :sibling-count="0"
+      @update:page="handlePageChange"
     />
 
     <UModal
@@ -536,7 +542,7 @@ import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const route = useRoute();
 const toast = useNotification();
-const config = useConfigStore();
+const config = useYtpConfig();
 const dialog = useDialog();
 const browser = useBrowser();
 

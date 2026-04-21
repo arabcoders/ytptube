@@ -190,7 +190,7 @@ import { request, ucFirst, uri } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const toast = useNotification();
-const config = useConfigStore();
+const config = useYtpConfig();
 const pageShell = requirePageShell('changelog');
 
 useHead({ title: 'CHANGELOG' });
