@@ -1,8 +1,134 @@
 [
     {
-        "tag": "master-20260414-8729f030",
-        "date": "2026-04-14T14:32:17+00:00",
+        "tag": "master-20260421-ed77ea50",
+        "date": "2026-04-21T20:24:42+00:00",
         "commits": [
+            {
+                "sha": "716fce89",
+                "message": "fix: newDownload was causing infinite loop when switching to mulit url mode",
+                "author": "arabcoders",
+                "date": "2026-04-21T19:57:25+00:00",
+                "full_sha": "716fce894122318471992a5c71ad78c513f2c96e"
+            },
+            {
+                "sha": "03cabe6c",
+                "message": "refactor: wait on db flush before returning in API history clear response",
+                "author": "arabcoders",
+                "date": "2026-04-21T19:56:46+00:00",
+                "full_sha": "03cabe6c70bd7d330681a739d7d1f8f37a03b722"
+            },
+            {
+                "sha": "6eaa15b3",
+                "message": "refactor: standardize pagination position",
+                "author": "arabcoders",
+                "date": "2026-04-21T19:55:52+00:00",
+                "full_sha": "6eaa15b37afff08f215448ec715c83280621ee6d"
+            },
+            {
+                "sha": "e7dfee66",
+                "message": "refactor: seperate history from queue",
+                "author": "arabcoders",
+                "date": "2026-04-21T18:48:38+00:00",
+                "full_sha": "e7dfee66b139e673303adf5bc2376a2e5bd924bf"
+            },
+            {
+                "sha": "210712ce",
+                "message": "refactor: drop pinia stores",
+                "author": "arabcoders",
+                "date": "2026-04-21T17:51:47+00:00",
+                "full_sha": "210712cee2c909d8d2cb50a8f45929f5910c907d"
+            },
+            {
+                "sha": "fc5cf84d",
+                "message": "refactor(ui): more consistency changes.",
+                "author": "arabcoders",
+                "date": "2026-04-19T18:22:29+00:00",
+                "full_sha": "fc5cf84dd2a709ae84cfa746240b15f1e6841e17"
+            },
+            {
+                "sha": "e644ea63",
+                "message": "refactor: rename sidebarOpen to showSidebar",
+                "author": "arabcoders",
+                "date": "2026-04-18T19:17:10+00:00",
+                "full_sha": "e644ea63578557a6148daba2e42fd367e26d8e83"
+            },
+            {
+                "sha": "fe7c18e6",
+                "message": "feat: add swipe functionality for sidebar in mobile",
+                "author": "arabcoders",
+                "date": "2026-04-18T19:12:32+00:00",
+                "full_sha": "fe7c18e6c6893f4b980e02808f63b9b52c0e4fb9"
+            },
+            {
+                "sha": "00ce7efb",
+                "message": "feat: add validation for internal URLs in conditions_test",
+                "author": "arabcoders",
+                "date": "2026-04-18T17:39:20+00:00",
+                "full_sha": "00ce7efb327f61f06f3bc1f62be662ec6552038a"
+            },
+            {
+                "sha": "3f6149aa",
+                "message": "refactor: use plain text for multi-line messages ni confirm dialog",
+                "author": "arabcoders",
+                "date": "2026-04-18T17:18:41+00:00",
+                "full_sha": "3f6149aaf7428fb6698005ad9acc7f339819788f"
+            },
+            {
+                "sha": "9d1bde73",
+                "message": "fix: restore tri-option for theme color",
+                "author": "arabcoders",
+                "date": "2026-04-18T17:00:32+00:00",
+                "full_sha": "9d1bde7355327260271ba302bb815ee395ba1038"
+            },
+            {
+                "sha": "00404fc6",
+                "message": "refactor: made _static.py dynamic",
+                "author": "arabcoders",
+                "date": "2026-04-18T16:26:44+00:00",
+                "full_sha": "00404fc6d4d290fc308a922ce39ea9fdb7720b3a"
+            },
+            {
+                "sha": "70648c22",
+                "message": "Refactor: standardize the look and feel of the pages after recent nuxt ui migration",
+                "author": "arabcoders",
+                "date": "2026-04-15T20:53:15+00:00",
+                "full_sha": "70648c2253c834fbab097467eb547cccb2d11ed2"
+            },
+            {
+                "sha": "bb246cc6",
+                "message": "wip",
+                "author": "arabcoders",
+                "date": "2026-04-15T18:52:52+00:00",
+                "full_sha": "bb246cc6f5e02dee4f53fd27d177de9b204410c0"
+            },
+            {
+                "sha": "e7fd6001",
+                "message": "fix: opacity interaction with the new form guard",
+                "author": "arabcoders",
+                "date": "2026-04-15T15:14:36+00:00",
+                "full_sha": "e7fd60010b2f490bc935732f9ff8a39c77069190"
+            },
+            {
+                "sha": "9337e81f",
+                "message": "refactor: remove useless tests",
+                "author": "arabcoders",
+                "date": "2026-04-15T15:13:04+00:00",
+                "full_sha": "9337e81f622edcf11c91fed89e75373380b3726d"
+            },
+            {
+                "sha": "182a2e97",
+                "message": "feat: add form guards to prevent accidental data loss",
+                "author": "arabcoders",
+                "date": "2026-04-14T21:37:12+00:00",
+                "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784"
+            },
+            {
+                "sha": "360d2f3d",
+                "message": "refactor: minor fixes to overall design.",
+                "author": "arabcoders",
+                "date": "2026-04-14T20:43:48+00:00",
+                "full_sha": "360d2f3df8765b5174ecdefd701f8ae68ed1791e"
+            },
             {
                 "sha": "dbff4c67",
                 "message": "feat(console): make terminal window more durable and support reloading and stopping commands.",
@@ -4379,7 +4505,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8729f030c7f44bb8a531388fcaf2523344c91bfb"
+        "full_sha": "ed77ea508caae7b659f43a9a24d89a0c18b97b21"
     },
     {
         "tag": "master-20250616-c07465a6",
