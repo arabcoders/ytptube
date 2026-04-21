@@ -29,9 +29,44 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "fc5cf84dd2a709ae84cfa746240b15f1e6841e17",
-    "date": "2026-04-19T18:22:29+00:00",
+    "full_sha": "716fce894122318471992a5c71ad78c513f2c96e",
+    "date": "2026-04-21T19:57:25+00:00",
     "commits": [
+      {
+        "sha": "716fce89",
+        "full_sha": "716fce894122318471992a5c71ad78c513f2c96e",
+        "message": "fix: newDownload was causing infinite loop when switching to mulit url mode",
+        "author": "arabcoders",
+        "date": "2026-04-21T19:57:25+00:00"
+      },
+      {
+        "sha": "03cabe6c",
+        "full_sha": "03cabe6c70bd7d330681a739d7d1f8f37a03b722",
+        "message": "refactor: wait on db flush before returning in API history clear response",
+        "author": "arabcoders",
+        "date": "2026-04-21T19:56:46+00:00"
+      },
+      {
+        "sha": "6eaa15b3",
+        "full_sha": "6eaa15b37afff08f215448ec715c83280621ee6d",
+        "message": "refactor: standardize pagination position",
+        "author": "arabcoders",
+        "date": "2026-04-21T19:55:52+00:00"
+      },
+      {
+        "sha": "e7dfee66",
+        "full_sha": "e7dfee66b139e673303adf5bc2376a2e5bd924bf",
+        "message": "refactor: seperate history from queue",
+        "author": "arabcoders",
+        "date": "2026-04-21T18:48:38+00:00"
+      },
+      {
+        "sha": "210712ce",
+        "full_sha": "210712cee2c909d8d2cb50a8f45929f5910c907d",
+        "message": "refactor: drop pinia stores",
+        "author": "arabcoders",
+        "date": "2026-04-21T17:51:47+00:00"
+      },
       {
         "sha": "fc5cf84d",
         "full_sha": "fc5cf84dd2a709ae84cfa746240b15f1e6841e17",
