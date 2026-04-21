@@ -40,7 +40,8 @@
 
             <UButton
               type="button"
-              color="primary"
+              color="neutral"
+              variant="outline"
               icon="i-lucide-import"
               size="lg"
               class="justify-center sm:min-w-28"
@@ -248,7 +249,7 @@
           <div class="flex items-end">
             <UButton
               type="button"
-              color="error"
+              color="neutral"
               variant="outline"
               icon="i-lucide-trash"
               :disabled="addInProgress"
@@ -306,7 +307,8 @@
         <div class="flex items-end">
           <UButton
             type="button"
-            color="primary"
+            color="neutral"
+            variant="outline"
             icon="i-lucide-plus"
             class="justify-center"
             :disabled="addInProgress || !newExtraKey || !newExtraValue"
@@ -473,7 +475,9 @@
                   : 'i-lucide-circle-help'
             "
             title="Filter Status"
-            :description="logicStatusText"
+            :description="
+              testData.data.status === null ? 'Not tested' : logicTest ? 'Matched' : 'Not matched'
+            "
           />
 
           <UFormField :ui="fieldUi">
@@ -521,6 +525,7 @@ import { match_str } from '~/utils/ytdlp';
 
 const emitter = defineEmits<{
   (e: 'cancel'): void;
+  (e: 'dirty-change', dirty: boolean): void;
   (e: 'submit', payload: { reference: number | null | undefined; item: Condition }): void;
 }>();
 
@@ -533,7 +538,7 @@ const props = defineProps<{
 const toast = useNotification();
 const showImport = useStorage('showImport', false);
 const box = useConfirm();
-const config = useConfigStore();
+const config = useYtpConfig();
 
 const form = reactive<Condition>(normalizeCondition(props.item));
 const importString = ref('');
@@ -554,6 +559,16 @@ const testData = ref<{
 });
 const showOptions = ref(false);
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
+
+const dirtySource = computed(() => ({
+  reference: props.reference ?? null,
+  form: normalizeCondition(form),
+  importString: importString.value,
+  showImport: showImport.value,
+  newExtraKey: newExtraKey.value,
+  newExtraValue: newExtraValue.value,
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -584,9 +599,19 @@ watch(
   () => props.item,
   (value) => {
     Object.assign(form, normalizeCondition(value));
+
+    importString.value = '';
+    newExtraKey.value = '';
+    newExtraValue.value = '';
+    nextTick(() => {
+      markClean();
+      emitter('dirty-change', false);
+    });
   },
   { deep: true },
 );
+
+watch(isDirty, (value: boolean) => emitter('dirty-change', value));
 
 watch(
   () => config.ytdlp_options,
@@ -648,14 +673,6 @@ const logicTest = computed(() => {
   } catch {
     return false;
   }
-});
-
-const logicStatusText = computed(() => {
-  if (testData.value.data.status === null) {
-    return 'Not tested';
-  }
-
-  return logicTest.value ? 'Matched' : 'Not matched';
 });
 
 const checkInfo = async (): Promise<void> => {
@@ -853,4 +870,9 @@ const updateExtraValue = (key: string, rawValue: string): void => {
     [key]: rawValue.trim() ? parseValue(rawValue.trim()) : '',
   };
 };
+
+onMounted(() => {
+  markClean();
+  emitter('dirty-change', false);
+});
 </script>

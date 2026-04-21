@@ -1,8 +1,9 @@
 # YTPTube
 
-![Build Status](https://github.com/ArabCoders/ytptube/actions/workflows/main.yml/badge.svg)
+![Build Status](https://github.com/arabcoders/ytptube/actions/workflows/main.yml/badge.svg)
 ![MIT License](https://img.shields.io/github/license/arabcoders/ytptube.svg)
-![Docker pull](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
+![Docker Pull](https://img.shields.io/docker/pulls/arabcoders/ytptube.svg)
+![gchr Pull](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
 
 **YTPTube** is a web-based GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp), designed to make downloading videos from 
 video platforms easier and user-friendly. It supports downloading playlists, channels, live streams and 

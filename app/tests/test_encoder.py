@@ -1,21 +1,3 @@
-"""
-Tests for encoder.py - JSON encoding utilities.
-
-This test suite provides comprehensive coverage for the Encoder class:
-- Tests serialization of various Python types
-- Tests special handling of Path objects
-- Tests DateRange serialization
-- Tests date serialization
-- Tests ImpersonateTarget serialization
-- Tests ItemDTO serialization
-- Tests object serialization with serialize() method
-- Tests object serialization with __dict__ fallback
-- Tests fallback to default JSONEncoder behavior
-
-Total test functions: 10
-All supported types and edge cases are covered.
-"""
-
 import json
 from datetime import date
 from pathlib import Path

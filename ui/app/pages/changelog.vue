@@ -1,35 +1,27 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-          <UIcon name="i-lucide-git-commit-horizontal" class="size-5 text-toned" />
-          <span>CHANGELOG</span>
-        </div>
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
 
-        <p class="text-sm text-toned">
-          Latest project changes, loaded remotely when available and falling back to the bundled
-          changelog file.
-        </p>
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
+
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <div v-if="toggleFilter && logs.length > 0" class="relative w-full sm:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-
-          <input
-            id="filter"
-            v-model.lazy="query"
-            type="search"
-            placeholder="Filter changelog entries"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
-
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
         <UButton
           v-if="logs.length > 0"
           color="neutral"
@@ -38,7 +30,7 @@
           icon="i-lucide-filter"
           @click="toggleFilter = !toggleFilter"
         >
-          <span v-if="!isMobile">Filter</span>
+          <span>Filter</span>
         </UButton>
 
         <USwitch
@@ -47,6 +39,17 @@
           size="sm"
           :label="latestOnly ? 'Latest Only' : 'All Loaded'"
           :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
+        />
+
+        <UInput
+          v-if="toggleFilter && logs.length > 0"
+          id="filter"
+          v-model.lazy="query"
+          type="search"
+          placeholder="Filter changelog entries"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
         />
       </div>
     </div>
@@ -79,17 +82,25 @@
                       Installed
                     </UBadge>
                   </div>
-
-                  <p v-if="log.date" class="text-xs text-toned">
-                    <UTooltip :text="`Release Date: ${log.date}`">
-                      <span>{{ moment(log.date).fromNow() }}</span>
-                    </UTooltip>
-                  </p>
                 </div>
 
-                <UBadge color="neutral" variant="soft" size="sm">
-                  {{ log.commits?.length || 0 }} commits
-                </UBadge>
+                <div class="flex flex-wrap items-center justify-end gap-2 text-xs text-toned">
+                  <span
+                    class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                  >
+                    <UIcon name="i-lucide-list" class="size-3.5" />
+                    <span>{{ log.commits?.length || 0 }} commits</span>
+                  </span>
+
+                  <UTooltip v-if="log.date" :text="`Release Date: ${log.date}`">
+                    <span
+                      class="inline-flex cursor-help items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
+                      <UIcon name="i-lucide-calendar-days" class="size-3.5" />
+                      <span>{{ moment(log.date).fromNow() }}</span>
+                    </span>
+                  </UTooltip>
+                </div>
               </div>
 
               <div class="space-y-3 border-t border-default pt-4">
@@ -98,35 +109,48 @@
                   :key="commit.sha"
                   class="flex flex-col gap-2 rounded-md border border-default bg-muted/20 px-3 py-3"
                 >
-                  <div class="flex flex-wrap items-start justify-between gap-3">
-                    <p class="min-w-0 flex-1 text-sm text-default">
+                  <div class="min-w-0">
+                    <NuxtLink
+                      :to="`${REPO}/commit/${commit.full_sha}`"
+                      target="_blank"
+                      class="block min-w-0 text-sm text-default hover:underline"
+                    >
                       <span class="font-semibold text-highlighted">
                         {{ ucFirst(commit.message).replace(/\.$/, '') }}.
                       </span>
-                    </p>
-
-                    <div class="flex shrink-0 items-center gap-2">
-                      <NuxtLink
-                        :to="`${REPO}/commit/${commit.full_sha}`"
-                        target="_blank"
-                        class="text-xs font-medium text-primary hover:underline"
-                      >
-                        {{ commit.sha }}
-                      </NuxtLink>
-
-                      <UIcon
-                        v-if="commit.full_sha === app_sha"
-                        name="i-lucide-check"
-                        class="size-4 text-success"
-                      />
-                    </div>
+                    </NuxtLink>
                   </div>
 
-                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-toned">
-                    <span>{{ commit.author }}</span>
-                    <UTooltip :text="`SHA: ${commit.full_sha} - Date: ${commit.date}`">
-                      <span>{{ moment(commit.date).fromNow() }}</span>
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
+                      <UIcon name="i-lucide-user" class="size-3.5" />
+                      {{ commit.author }}
+                    </span>
+                    <UTooltip :text="`Date: ${commit.date}`">
+                      <span
+                        class="inline-flex cursor-help items-center gap-1 rounded-md border border-default px-2 py-1"
+                      >
+                        <UIcon name="i-lucide-clock-3" class="size-3.5" />
+                        {{ moment(commit.date).fromNow() }}
+                      </span>
                     </UTooltip>
+                    <UTooltip :text="`SHA: ${commit.full_sha}`">
+                      <span
+                        class="inline-flex cursor-help items-center gap-1 rounded-md border border-default px-2 py-1 font-medium"
+                      >
+                        <UIcon name="i-lucide-git-commit-horizontal" class="size-3.5" />
+                        {{ commit.sha }}
+                      </span>
+                    </UTooltip>
+                    <span
+                      v-if="commit.full_sha === app_sha"
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 font-medium"
+                    >
+                      <UIcon name="i-lucide-check" class="size-3.5 text-success" />
+                      <span>Installed</span>
+                    </span>
                   </div>
                 </article>
               </div>
@@ -144,10 +168,6 @@
           title="No Results"
           :description="`No changelog entries found for the query: ${query}.`"
         />
-
-        <UButton v-if="query" color="neutral" variant="outline" size="sm" @click="query = ''">
-          Clear filter
-        </UButton>
 
         <UAlert
           v-else
@@ -167,10 +187,11 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { changelogs, changeset } from '~/types/changelogs';
 import { request, ucFirst, uri } from '~/utils';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const toast = useNotification();
-const config = useConfigStore();
-const isMobile = useMediaQuery({ maxWidth: 1024 });
+const config = useYtpConfig();
+const pageShell = requirePageShell('changelog');
 
 useHead({ title: 'CHANGELOG' });
 

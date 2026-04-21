@@ -66,7 +66,7 @@
       <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <UButton
           type="button"
-          color="warning"
+          color="neutral"
           variant="outline"
           icon="i-lucide-rotate-ccw"
           :disabled="loading"
@@ -127,7 +127,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { request } from '~/utils';
-import { useConfigStore } from '~/stores/ConfigStore';
 import type { TaskInspectRequest, TaskInspectResponse } from '~/types/task_inspect';
 
 const props = defineProps<{
@@ -138,7 +137,7 @@ const props = defineProps<{
 
 const { selectItems } = usePresetOptions();
 
-const config = useConfigStore();
+const config = useYtpConfig();
 const url = ref(props.url ?? '');
 const preset = ref(props.preset || config.app.default_preset || '');
 const handler = ref(props.handler ?? '');

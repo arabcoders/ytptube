@@ -1,0 +1,403 @@
+import { proxyRefs, readonly, ref } from 'vue';
+import { useYtpConfig } from '~/composables/useYtpConfig';
+import { useQueueState } from '~/composables/useQueueState';
+import type { StoreItem } from '~/types/store';
+import type {
+  ConfigUpdatePayload,
+  WebSocketClientEmits,
+  WebSocketEnvelope,
+  WSEP as WSEP,
+} from '~/types/sockets';
+
+export type connectionStatus = 'connected' | 'disconnected' | 'connecting';
+
+type SocketHandler = (...args: unknown[]) => void;
+type HandlerRegistry = Map<SocketHandler, SocketHandler>;
+type KnownEvent = keyof WSEP;
+
+const getRuntimeConfig = () => useRuntimeConfig();
+const getConfig = () => useYtpConfig();
+const getQueueState = () => useQueueState();
+const getToast = () => useNotification();
+
+const socket = ref<WebSocket | null>(null);
+const isConnected = ref<boolean>(false);
+const connectionStatus = ref<connectionStatus>('disconnected');
+const error = ref<string | null>(null);
+const error_count = ref<number>(0);
+const wasHidden = ref<boolean>(false);
+const reconnectTimeout = ref<NodeJS.Timeout | null>(null);
+const manualDisconnect = ref<boolean>(false);
+const reconnectAttempts = ref<number>(0);
+
+const handlers = new Map<string, HandlerRegistry>();
+
+const emit = <K extends keyof WebSocketClientEmits>(
+  event: K,
+  data: WebSocketClientEmits[K],
+): void => {
+  if (!socket.value || WebSocket.OPEN !== socket.value.readyState) {
+    return;
+  }
+  socket.value.send(JSON.stringify({ event, data }));
+};
+
+function on<K extends KnownEvent>(event: K | K[], callback: (payload: WSEP[K]) => void): void;
+function on<K extends KnownEvent>(
+  event: K | K[],
+  callback: (event: K, payload: WSEP[K]) => void,
+  withEvent: true,
+): void;
+function on(event: string | string[], callback: SocketHandler, withEvent?: boolean): void;
+function on(event: string | string[], callback: SocketHandler, withEvent: boolean = false): void {
+  const events = Array.isArray(event) ? event : [event];
+  events.forEach((eventName) => {
+    if (!handlers.has(eventName)) {
+      handlers.set(eventName, new Map());
+    }
+
+    const registry = handlers.get(eventName) as HandlerRegistry;
+    const handler =
+      true === withEvent
+        ? (payload: unknown) => callback(eventName, payload)
+        : (payload: unknown) => callback(payload);
+
+    registry.set(callback, handler);
+  });
+}
+
+function off<K extends KnownEvent>(event: K | K[], callback?: (payload: WSEP[K]) => void): void;
+function off(event: string | string[], callback?: SocketHandler): void;
+function off(event: string | string[], callback?: SocketHandler): void {
+  const events = Array.isArray(event) ? event : [event];
+  events.forEach((eventName) => {
+    const registry = handlers.get(eventName);
+    if (!registry) {
+      return;
+    }
+
+    if (!callback) {
+      registry.clear();
+      handlers.delete(eventName);
+      return;
+    }
+
+    registry.delete(callback);
+    if (0 === registry.size) {
+      handlers.delete(eventName);
+    }
+  });
+}
+
+const getSessionId = (): string | null => null;
+
+const dispatch = (eventName: string, payload: unknown): void => {
+  const registry = handlers.get(eventName);
+  if (!registry) {
+    return;
+  }
+
+  registry.forEach((handler) => handler(payload));
+};
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    wasHidden.value = true;
+    return;
+  }
+
+  if (true === wasHidden.value && false === isConnected.value) {
+    if (null !== reconnectTimeout.value) {
+      clearTimeout(reconnectTimeout.value);
+      reconnectTimeout.value = null;
+    }
+
+    reconnectTimeout.value = setTimeout(() => {
+      if (false === isConnected.value) {
+        console.debug('[SocketStore] Page visible after background, reconnecting...');
+        reconnect();
+      }
+      reconnectTimeout.value = null;
+    }, 100);
+  }
+
+  wasHidden.value = false;
+};
+
+const setupVisibilityListener = () => {
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+  }
+};
+
+const cleanupVisibilityListener = () => {
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }
+  if (null !== reconnectTimeout.value) {
+    clearTimeout(reconnectTimeout.value);
+    reconnectTimeout.value = null;
+  }
+};
+
+const scheduleReconnect = () => {
+  if (true === manualDisconnect.value || true === isConnected.value) {
+    return;
+  }
+
+  if (reconnectAttempts.value >= 50) {
+    return;
+  }
+
+  if (null !== reconnectTimeout.value) {
+    return;
+  }
+
+  reconnectTimeout.value = setTimeout(() => {
+    reconnectAttempts.value += 1;
+    reconnectTimeout.value = null;
+    connect();
+  }, 5000);
+};
+
+const reconnect = () => {
+  if (true === isConnected.value) {
+    return;
+  }
+  connect();
+  connectionStatus.value = 'connecting';
+};
+
+const disconnect = () => {
+  manualDisconnect.value = true;
+  if (null === socket.value) {
+    return;
+  }
+  socket.value.close();
+  socket.value = null;
+  isConnected.value = false;
+  connectionStatus.value = 'disconnected';
+  cleanupVisibilityListener();
+};
+
+const buildWsUrl = (): string => {
+  const runtimeConfig = getRuntimeConfig();
+  const basePath = runtimeConfig.app.baseURL.replace(/\/$/, '');
+  const wsPath = `${basePath}/ws?_=${Date.now()}`;
+  const configuredBase = runtimeConfig.public.wss?.trim();
+
+  if (configuredBase) {
+    return new URL(wsPath, configuredBase).toString();
+  }
+
+  const scheme = 'https:' === window.location.protocol ? 'wss' : 'ws';
+  return new URL(wsPath, `${scheme}://${window.location.host}`).toString();
+};
+
+const connect = () => {
+  const runtimeConfig = getRuntimeConfig();
+
+  if (socket.value && WebSocket.OPEN === socket.value.readyState) {
+    return;
+  }
+
+  if (socket.value && WebSocket.CONNECTING === socket.value.readyState) {
+    return;
+  }
+
+  manualDisconnect.value = false;
+  connectionStatus.value = 'connecting';
+
+  socket.value = new WebSocket(buildWsUrl());
+
+  if ('development' === runtimeConfig.public?.APP_ENV) {
+    window.ws = socket.value;
+  }
+
+  socket.value.addEventListener('open', () => {
+    isConnected.value = true;
+    connectionStatus.value = 'connected';
+    error.value = null;
+    error_count.value = 0;
+    reconnectAttempts.value = 0;
+    dispatch('connect', null);
+  });
+
+  socket.value.addEventListener('close', () => {
+    isConnected.value = false;
+    connectionStatus.value = 'disconnected';
+    error.value = 'Disconnected from server.';
+    dispatch('disconnect', null);
+    scheduleReconnect();
+  });
+
+  socket.value.addEventListener('error', () => {
+    isConnected.value = false;
+    connectionStatus.value = 'disconnected';
+    error.value = 'Connection error: Unknown error';
+    error_count.value += 1;
+    dispatch('connect_error', { message: 'Unknown error' });
+    scheduleReconnect();
+  });
+
+  socket.value.addEventListener('message', (event: MessageEvent<string>) => {
+    let payload: WebSocketEnvelope | null = null;
+    try {
+      payload = JSON.parse(event.data);
+    } catch {
+      return;
+    }
+
+    if (!payload?.event || 'string' != typeof payload.event) {
+      return;
+    }
+
+    let data = payload.data;
+    if ('string' === typeof data) {
+      try {
+        data = JSON.parse(data);
+      } catch {
+        data = payload.data;
+      }
+    }
+
+    dispatch(payload.event, data);
+  });
+
+  setupVisibilityListener();
+};
+
+on('connect', () => getConfig().loadConfig(false));
+
+on('connected', () => {
+  error.value = null;
+  getConfig().loadConfig(false);
+});
+
+on('item_added', (data: WSEP['item_added']) => {
+  const queueState = getQueueState();
+  const toast = getToast();
+
+  queueState.add(data.data._id, data.data);
+  toast.success(`Item queued: ${ag(queueState.get(data.data._id, {} as StoreItem), 'title')}`);
+});
+
+on(
+  ['log_info', 'log_success', 'log_warning', 'log_error'],
+  (event, data: WSEP['log_info']) => {
+    const toast = getToast();
+    const message =
+      'string' === typeof data?.message
+        ? data.message
+        : String((data?.data as Record<string, unknown>)?.message ?? '');
+    const extra = (data?.data as Record<string, unknown>)?.data || data?.data || {};
+    switch (event) {
+      case 'log_info':
+        toast.info(message, extra);
+        break;
+      case 'log_success':
+        toast.success(message, extra);
+        break;
+      case 'log_warning':
+        toast.warning(message, extra);
+        break;
+      case 'log_error':
+        toast.error(message, extra);
+        break;
+    }
+  },
+  true,
+);
+
+on('item_cancelled', (data: WSEP['item_cancelled']) => {
+  const queueState = getQueueState();
+  const toast = getToast();
+  const id = data.data._id;
+
+  if (true !== queueState.has(id)) {
+    return;
+  }
+
+  toast.warning(`Download cancelled: ${ag(queueState.get(id, {} as StoreItem), 'title')}`);
+
+  if (true === queueState.has(id)) {
+    queueState.remove(id);
+  }
+});
+
+on('item_deleted', (data: WSEP['item_deleted']) => {
+  const queueState = getQueueState();
+  const id = data.data._id;
+
+  if (true === queueState.has(id)) {
+    queueState.remove(id);
+  }
+});
+
+on('item_updated', (data: WSEP['item_updated']) => {
+  const queueState = getQueueState();
+  const id = data.data._id;
+
+  if (true === queueState.has(id)) {
+    queueState.update(id, data.data);
+  }
+});
+
+on('item_moved', (data: WSEP['item_moved']) => {
+  const queueState = getQueueState();
+  const to = data.data.to;
+  const id = data.data.item._id;
+
+  if ('queue' === to) {
+    queueState.add(id, data.data.item);
+  }
+
+  if ('history' === to) {
+    if (true === queueState.has(id)) {
+      queueState.remove(id);
+    }
+  }
+});
+
+on(
+  ['paused', 'resumed'],
+  (event, data: WSEP['paused']) => {
+    const config = getConfig();
+    const toast = getToast();
+    const pausedState = Boolean(data.data.paused);
+    config.update('paused', pausedState);
+
+    if ('resumed' === event) {
+      toast.success('Download queue resumed.');
+      return;
+    }
+
+    toast.warning('Download queue paused.', { timeout: 10000 });
+  },
+  true,
+);
+
+on('config_update', (data: WSEP['config_update']) => {
+  const config = getConfig();
+  const configUpdate = data.data as ConfigUpdatePayload;
+  if (!configUpdate) {
+    return;
+  }
+  config.patch(configUpdate.feature, configUpdate.action, configUpdate.data);
+});
+
+const appSocketApi = proxyRefs({
+  connect,
+  reconnect,
+  disconnect,
+  on,
+  off,
+  emit,
+  isConnected,
+  getSessionId,
+  connectionStatus: readonly(connectionStatus),
+  error: readonly(error),
+  error_count: readonly(error_count),
+});
+
+export const useAppSocket = () => appSocketApi;

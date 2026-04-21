@@ -1,5 +1,3 @@
-"""Comprehensive tests for cf_solver_handler yt-dlp request handler."""
-
 from __future__ import annotations
 
 import http.cookiejar
@@ -224,34 +222,3 @@ class TestCFSolverRH:
         new_request = self.module.CFSolverRH._mark_retry(request)
 
         assert new_request.extensions.get("cf_retry") is True
-
-
-class TestCfSolverPreference:
-    """Test cf_solver_preference function."""
-
-    def test_preference_with_flaresolverr(self, cf_handler_module, monkeypatch):
-        """Test preference when FlareSolverr is configured."""
-        mock_config = Mock()
-        mock_config.flaresolverr_url = "http://localhost:8191/v1"
-
-        import app.library.config
-
-        monkeypatch.setattr(app.library.config.Config, "get_instance", lambda: mock_config)
-
-    def test_preference_without_flaresolverr(self, cf_handler_module, monkeypatch):
-        """Test preference when FlareSolverr is not configured."""
-        mock_config = Mock()
-        mock_config.flaresolverr_url = None
-
-        import app.library.config
-
-        monkeypatch.setattr(app.library.config.Config, "get_instance", lambda: mock_config)
-
-    def test_preference_with_empty_flaresolverr(self, cf_handler_module, monkeypatch):
-        """Test preference when FlareSolverr URL is empty."""
-        mock_config = Mock()
-        mock_config.flaresolverr_url = ""
-
-        import app.library.config
-
-        monkeypatch.setattr(app.library.config.Config, "get_instance", lambda: mock_config)

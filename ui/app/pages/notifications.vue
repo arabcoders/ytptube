@@ -1,34 +1,27 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-          <UIcon name="i-lucide-bell" class="size-5 text-toned" />
-          <span>Notifications</span>
-        </div>
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
 
-        <p class="text-sm text-toned">
-          Send notifications to your webhooks based on specified events or presets.
-        </p>
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
+
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <div v-if="showFilter && notifications.length > 0" class="relative w-full sm:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-          <input
-            id="filter"
-            ref="filterInput"
-            v-model="query"
-            type="search"
-            placeholder="Filter displayed content"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
-
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
         <UButton
           v-if="notifications.length > 0"
           color="neutral"
@@ -37,7 +30,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span v-if="!isMobile">Filter</span>
+          <span>Filter</span>
         </UButton>
 
         <UButton
@@ -47,7 +40,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span v-if="!isMobile">New Notification</span>
+          <span>New Notification</span>
         </UButton>
 
         <UButton
@@ -60,7 +53,7 @@
           :disabled="sendingTest"
           @click="() => void sendTest()"
         >
-          <span v-if="!isMobile">Send Test</span>
+          <span>Send Test</span>
         </UButton>
 
         <UButton
@@ -69,9 +62,10 @@
           variant="outline"
           size="sm"
           :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span v-if="!isMobile">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
         </UButton>
 
         <UButton
@@ -84,34 +78,108 @@
           :disabled="isLoading"
           @click="() => void reloadContent()"
         >
-          <span v-if="!isMobile">Reload</span>
+          <span>Reload</span>
         </UButton>
+
+        <UInput
+          v-if="showFilter && notifications.length > 0"
+          id="filter"
+          ref="filterInput"
+          v-model="query"
+          type="search"
+          placeholder="Filter displayed content"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
-    <Pager
-      v-if="paging?.total_pages > 1"
-      :page="paging.page"
-      :last_page="paging.total_pages"
-      :isLoading="isLoading"
-      @navigate="navigatePage"
-    />
+    <div
+      v-if="!isLoading && filteredTargets.length > 0"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+    >
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+          @click="toggleMasterSelection"
+        >
+          {{ allSelected ? 'Unselect' : 'Select' }}
+        </UButton>
+
+        <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
+          {{ selectedIds.length }}
+        </UBadge>
+
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-list"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            Actions
+          </UButton>
+        </UDropdownMenu>
+      </div>
+
+      <UPagination
+        v-if="paging?.total_pages > 1"
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="navigatePage"
+        size="sm"
+      />
+    </div>
 
     <div
-      v-if="displayStyle === 'list' && filteredTargets.length > 0"
+      v-if="contentStyle === 'list' && filteredTargets.length > 0"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-225 w-full text-sm">
+        <table class="min-w-235 w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
+              <th class="w-12">
+                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
+                  <UIcon
+                    :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+                    class="size-4"
+                  />
+                </button>
+              </th>
               <th class="w-full text-left">Targets</th>
-              <th class="w-44 whitespace-nowrap">Actions</th>
+              <th class="w-48 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-default">
-            <tr v-for="item in filteredTargets" :key="item.id" class="hover:bg-muted/20">
+            <tr
+              v-for="item in filteredTargets"
+              :key="item.id"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+            >
+              <td class="px-3 py-3 text-center align-middle">
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="item.id"
+                  />
+                </label>
+              </td>
+
               <td class="px-3 py-3 align-middle">
                 <div class="space-y-2">
                   <div class="min-w-0 text-sm font-semibold text-highlighted">
@@ -141,54 +209,61 @@
                       <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
                     </button>
 
-                    <span class="inline-flex items-center gap-1">
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
                       <UIcon name="i-lucide-bell-ring" class="size-3.5" />
                       <span>On: {{ joinEvents(item.on) }}</span>
                     </span>
 
-                    <span class="inline-flex items-center gap-1">
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
                       <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
                       <span>Presets: {{ joinPresets(item.presets) }}</span>
                     </span>
 
-                    <span v-if="headerKeys(item).length > 0" class="inline-flex items-center gap-1">
+                    <span
+                      v-if="headerKeys(item).length > 0"
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
                       <UIcon name="i-lucide-key" class="size-3.5" />
-                      <span>Headers: {{ headerKeys(item).join(', ') }}</span>
+                      <span>Headers: {{ headerKeys(item).length }}</span>
                     </span>
                   </div>
                 </div>
               </td>
 
-              <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
+              <td class="w-48 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
-                    color="info"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-file-up"
                     @click="exportItem(item)"
                   >
-                    <span v-if="!isMobile">Export</span>
+                    <span class="hidden sm:inline">Export</span>
                   </UButton>
 
                   <UButton
-                    color="warning"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-pencil"
                     @click="editItem(item)"
                   >
-                    <span v-if="!isMobile">Edit</span>
+                    <span class="hidden sm:inline">Edit</span>
                   </UButton>
 
                   <UButton
-                    color="error"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(item)"
                   >
-                    <span v-if="!isMobile">Delete</span>
+                    <span class="hidden sm:inline">Delete</span>
                   </UButton>
                 </div>
               </td>
@@ -199,104 +274,191 @@
     </div>
 
     <div v-else-if="filteredTargets.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <UCard
-        v-for="item in filteredTargets"
-        :key="item.id"
-        class="flex h-full flex-col border bg-default"
-        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
-      >
-        <template #header>
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1 space-y-2">
-              <span class="text-sm font-semibold text-highlighted">
-                {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }})
-              </span>
-              @
-              <a
-                :href="item.request.url"
-                target="_blank"
-                rel="noreferrer"
-                class="text-sm text-primary hover:underline"
-              >
-                {{ item.name }}
-              </a>
+      <div v-for="item in filteredTargets" :key="item.id" class="min-w-0 w-full max-w-full">
+        <UCard
+          class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
+          :ui="{
+            header: 'p-4 pb-3',
+            body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
+            footer: 'border-t border-default px-4 py-4',
+          }"
+        >
+          <template #header>
+            <div class="flex min-w-0 items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start gap-2">
+                  <button
+                    type="button"
+                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    @click="toggleExpand(item.id, 'title')"
+                  >
+                    <span :class="['block', expandClass(item.id, 'title')]">
+                      {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
+                      {{ item.name }}
+                    </span>
+                  </button>
+                </div>
+              </div>
 
-              <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
-                  :disabled="addInProgress"
-                  @click="() => void toggleEnabled(item)"
+              <div class="flex shrink-0 items-center gap-2">
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-file-up"
+                  square
+                  @click="exportItem(item)"
                 >
-                  <UIcon
-                    name="i-lucide-power"
-                    class="size-3.5"
-                    :class="item.enabled !== false ? 'text-success' : 'text-error'"
+                  <span>Export Target</span>
+                </UButton>
+
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="item.id"
                   />
-                  <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
-                </button>
+                </label>
               </div>
             </div>
+          </template>
 
-            <UButton
-              color="info"
-              variant="ghost"
-              size="xs"
-              icon="i-lucide-file-up"
-              square
-              @click="exportItem(item)"
-            />
-          </div>
-        </template>
+          <div class="space-y-2 text-sm text-default">
+            <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                :disabled="addInProgress"
+                @click="() => void toggleEnabled(item)"
+              >
+                <UIcon
+                  name="i-lucide-power"
+                  class="size-3.5"
+                  :class="item.enabled !== false ? 'text-success' : 'text-error'"
+                />
+                <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+              </button>
 
-        <div class="space-y-2 text-sm text-default">
-          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
-            <div class="flex items-start gap-2">
-              <UIcon name="i-lucide-bell-ring" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <span class="wrap-break-word">On: {{ joinEvents(item.on) }}</span>
+              <span
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              >
+                <UIcon name="i-lucide-bell-ring" class="size-3.5" />
+                <span>Events: {{ item.on.length || 'All' }}</span>
+              </span>
+
+              <span
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              >
+                <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
+                <span>Presets: {{ item.presets.length || 'All' }}</span>
+              </span>
+
+              <span
+                v-if="headerKeys(item).length > 0"
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              >
+                <UIcon name="i-lucide-key" class="size-3.5" />
+                <span>Headers: {{ headerKeys(item).length }}</span>
+              </span>
             </div>
-          </div>
 
-          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
-            <div class="flex items-start gap-2">
-              <UIcon name="i-lucide-sliders-horizontal" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <span class="wrap-break-word">Presets: {{ joinPresets(item.presets) }}</span>
+            <button
+              type="button"
+              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+              @click="toggleExpand(item.id, 'url')"
+            >
+              <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-toned">Target URL</div>
+                <a
+                  :href="item.request.url"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="block text-highlighted hover:underline"
+                  @click.stop
+                >
+                  <span :class="['block', expandClass(item.id, 'url')]">
+                    {{ item.request.url }}
+                  </span>
+                </a>
+              </div>
+            </button>
+
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(item.id, 'events')"
+              >
+                <UIcon name="i-lucide-bell-ring" class="mt-0.5 size-4 shrink-0 text-toned" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Events</div>
+                  <span :class="['block', expandClass(item.id, 'events')]">{{
+                    joinEvents(item.on)
+                  }}</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(item.id, 'presets')"
+              >
+                <UIcon
+                  name="i-lucide-sliders-horizontal"
+                  class="mt-0.5 size-4 shrink-0 text-toned"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Presets</div>
+                  <span :class="['block', expandClass(item.id, 'presets')]">
+                    {{ joinPresets(item.presets) }}
+                  </span>
+                </div>
+              </button>
             </div>
-          </div>
 
-          <div
-            v-if="headerKeys(item).length > 0"
-            class="rounded-md border border-default bg-muted/20 px-3 py-2"
-          >
-            <div class="flex items-start gap-2">
+            <button
+              v-if="headerKeys(item).length > 0"
+              type="button"
+              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+              @click="toggleExpand(item.id, 'headers')"
+            >
               <UIcon name="i-lucide-key" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <span class="wrap-break-word">Headers: {{ headerKeys(item).join(', ') }}</span>
-            </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-toned">Headers</div>
+                <span :class="['block', expandClass(item.id, 'headers')]">
+                  {{ headerKeys(item).join(', ') }}
+                </span>
+              </div>
+            </button>
           </div>
-        </div>
 
-        <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
-          <UButton
-            color="warning"
-            variant="outline"
-            icon="i-lucide-pencil"
-            class="w-full justify-center"
-            @click="editItem(item)"
-          >
-            Edit
-          </UButton>
+          <template #footer>
+            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-pencil"
+                class="w-full justify-center"
+                @click="editItem(item)"
+              >
+                Edit
+              </UButton>
 
-          <UButton
-            color="error"
-            variant="outline"
-            icon="i-lucide-trash"
-            class="w-full justify-center"
-            @click="() => void deleteItem(item)"
-          >
-            Delete
-          </UButton>
-        </div>
-      </UCard>
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                class="w-full justify-center"
+                @click="() => void deleteItem(item)"
+              >
+                Delete
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </div>
     </div>
 
     <UAlert
@@ -316,10 +478,6 @@
         title="No Results"
         :description="`No results found for the query: ${query}. Please try a different search term.`"
       />
-
-      <UButton color="neutral" variant="outline" size="sm" @click="query = ''">
-        Clear filter
-      </UButton>
     </div>
 
     <UAlert
@@ -330,6 +488,19 @@
       title="No targets"
       description="No notification targets found. Click on the New Notification button to add your first notification target."
     />
+
+    <div v-if="filteredTargets.length > 0 && paging?.total_pages > 1" class="flex justify-end">
+      <UPagination
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="navigatePage"
+        size="sm"
+      />
+    </div>
 
     <div
       v-if="!query && filteredTargets.length > 0"
@@ -366,11 +537,11 @@
     <UModal
       v-if="editorOpen"
       :open="editorOpen"
-      :title="modalTitle"
-      :description="modalDescription"
+      :title="targetRef ? `Edit - ${target.name}` : 'Add new notification target'"
+      description="Send notifications to your webhooks based on specified events or presets."
       :dismissible="!addInProgress"
       :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && closeEditor()"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <NotificationForm
@@ -379,7 +550,8 @@
           :reference="targetRef"
           :item="target"
           :allowedEvents="allowedEvents"
-          @cancel="closeEditor()"
+          @cancel="() => void requestCloseEditor()"
+          @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
       </template>
@@ -388,20 +560,27 @@
 </template>
 
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
 import { useStorage } from '@vueuse/core';
+import { useDialog } from '~/composables/useDialog';
+import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useConfirm } from '~/composables/useConfirm';
 import { useNotifications } from '~/composables/useNotifications';
 import { copyText, encode, parse_api_error, request, ucFirst } from '~/utils';
 import type { ImportedItem } from '~/types';
 import type { notification } from '~/types/notification';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const toast = useNotification();
 const box = useConfirm();
-const isMobile = useMediaQuery({ maxWidth: 1024 });
+const { confirmDialog } = useDialog();
+const { toggleExpand, expandClass } = useExpandableMeta();
+const pageShell = requirePageShell('notifications');
 const displayStyleState = useStorage<'list' | 'grid' | 'cards'>(
   'notification_display_style',
   'cards',
 );
+const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const notificationsStore = useNotifications();
 const notifications = notificationsStore.notifications;
@@ -415,24 +594,39 @@ const page = ref(1);
 const targetRef = ref<number | undefined>(undefined);
 const target = ref<notification>(defaultState());
 const editorOpen = ref(false);
+const editorDirty = ref(false);
 const sendingTest = ref(false);
 const query = ref('');
 const showFilter = ref(false);
-const filterInput = ref<HTMLInputElement | null>(null);
+const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
+const selectedIds = ref<number[]>([]);
+const massDelete = ref(false);
 
 const displayStyle = computed<'list' | 'grid'>(() =>
   displayStyleState.value === 'list' ? 'list' : 'grid',
 );
+const contentStyle = computed<'list' | 'grid'>(() =>
+  isMobile.value ? 'grid' : displayStyle.value,
+);
 
-const modalTitle = computed(() =>
-  targetRef.value ? `Edit - ${target.value.name}` : 'Add new notification target',
-);
-const modalDescription = computed(
-  () => 'Send notifications to your webhooks based on specified events or presets.',
-);
 const modalKey = computed(
   () => `${targetRef.value ?? 'new'}-${editorOpen.value ? 'open' : 'closed'}`,
 );
+
+const discardEditor = (): void => {
+  editorDirty.value = false;
+  target.value = defaultState();
+  targetRef.value = undefined;
+};
+
+const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
+  useDirtyCloseGuard(editorOpen, {
+    dirty: editorDirty,
+    message: 'You have unsaved notification changes. Do you want to discard them?',
+    onDiscard: async () => {
+      discardEditor();
+    },
+  });
 
 const filteredTargets = computed<notification[]>(() => {
   const normalizedQuery = query.value?.toLowerCase();
@@ -445,11 +639,46 @@ const filteredTargets = computed<notification[]>(() => {
   return items.filter((item) => deepIncludes(item, normalizedQuery, new WeakSet()));
 });
 
+const selectableNotificationIds = computed(() =>
+  filteredTargets.value.map((item) => item.id).filter((id): id is number => typeof id === 'number'),
+);
+
+const allSelected = computed(
+  () =>
+    selectableNotificationIds.value.length > 0 &&
+    selectableNotificationIds.value.every((id) => selectedIds.value.includes(id)),
+);
+
+const hasSelected = computed(() => selectedIds.value.length > 0);
+
+const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Remove Selected',
+      icon: 'i-lucide-trash',
+      color: 'error',
+      disabled: !hasSelected.value || massDelete.value,
+      onSelect: () => void deleteSelected(),
+    },
+  ],
+]);
+
 watch(showFilter, (value) => {
   if (!value) {
     query.value = '';
   }
 });
+
+watch(
+  filteredTargets,
+  (items) => {
+    const validIds = new Set(
+      items.map((item) => item.id).filter((id): id is number => typeof id === 'number'),
+    );
+    selectedIds.value = selectedIds.value.filter((id) => validIds.has(id));
+  },
+  { deep: true },
+);
 
 function defaultState(): notification {
   return {
@@ -469,7 +698,7 @@ const toggleFilterPanel = async (): Promise<void> => {
   }
 
   await nextTick();
-  filterInput.value?.focus();
+  filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
 };
 
 const loadContent = async (pageNumber = page.value): Promise<void> => {
@@ -488,6 +717,7 @@ const navigatePage = async (newPage: number): Promise<void> => {
 const resetEditor = (): void => {
   target.value = defaultState();
   targetRef.value = undefined;
+  editorDirty.value = false;
 };
 
 const closeEditor = (): void => {
@@ -500,7 +730,17 @@ const openCreate = (): void => {
   editorOpen.value = true;
 };
 
+const toggleMasterSelection = (): void => {
+  if (allSelected.value) {
+    selectedIds.value = [];
+    return;
+  }
+
+  selectedIds.value = [...selectableNotificationIds.value];
+};
+
 const editItem = (item: notification): void => {
+  editorDirty.value = false;
   target.value = JSON.parse(JSON.stringify(item)) as notification;
   targetRef.value = item.id ?? undefined;
   editorOpen.value = true;
@@ -517,6 +757,51 @@ const deleteItem = async (item: notification): Promise<void> => {
   }
 
   await notificationsStore.deleteNotification(item.id);
+};
+
+const deleteSelected = async (): Promise<void> => {
+  if (selectedIds.value.length < 1) {
+    return;
+  }
+
+  const { status } = await confirmDialog({
+    title: 'Delete Selected Notifications',
+    message:
+      `Delete ${selectedIds.value.length} notification target/s?` +
+      '\n\n' +
+      selectedIds.value
+        .map((id) => {
+          const item = filteredTargets.value.find((target) => target.id === id);
+          return item ? `${item.id}: ${item.name}` : '';
+        })
+        .filter(Boolean)
+        .join('\n'),
+    confirmText: 'Delete',
+    confirmColor: 'error',
+  });
+
+  if (true !== status) {
+    return;
+  }
+
+  const itemsToDelete = filteredTargets.value.filter(
+    (item) => item.id && selectedIds.value.includes(item.id),
+  );
+  if (itemsToDelete.length < 1) {
+    return;
+  }
+
+  massDelete.value = true;
+
+  for (const item of itemsToDelete) {
+    if (!item.id) {
+      continue;
+    }
+    await notificationsStore.deleteNotification(item.id);
+  }
+
+  selectedIds.value = [];
+  massDelete.value = false;
 };
 
 const toggleEnabled = async (item: notification): Promise<void> => {

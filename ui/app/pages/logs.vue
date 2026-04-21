@@ -1,8 +1,10 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex flex-wrap items-center gap-2 text-lg font-semibold text-highlighted">
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-start gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
           <UIcon
             name="i-lucide-file-text"
             :class="[
@@ -12,36 +14,22 @@
             :title="loading ? 'Loading history' : 'Live stream active'"
             :aria-label="loading ? 'Loading history' : 'Live stream active'"
           />
-          <span>Logs</span>
+        </span>
 
-          <UBadge v-if="loading" color="info" variant="soft" size="sm">Loading history</UBadge>
-
-          <UBadge color="neutral" variant="soft" size="sm">
-            {{ filteredLogs.length }} shown
-          </UBadge>
-
-          <UBadge
-            v-if="logs.length !== filteredLogs.length"
-            color="neutral"
-            variant="outline"
-            size="sm"
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
           >
-            {{ logs.length }} loaded
-          </UBadge>
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
 
-          <UBadge v-if="hasActiveFilter" color="warning" variant="soft" size="sm">
-            {{ matchCount }} matches
-          </UBadge>
-
-          <UBadge v-if="reachedEnd && !hasActiveFilter" color="neutral" variant="soft" size="sm">
-            Start of file loaded
-          </UBadge>
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
         </div>
-
-        <p class="text-sm text-toned">Scroll near the top to load older logs.</p>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
         <UButton
           v-if="!autoScroll"
           color="neutral"
@@ -52,22 +40,6 @@
         >
           Jump to Live Tail
         </UButton>
-
-        <div v-if="toggleFilter || query" class="relative w-full sm:w-72">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-
-          <input
-            id="filter"
-            v-model.lazy="query"
-            type="search"
-            placeholder="Filter displayed content"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
 
         <UButton
           color="neutral"
@@ -91,22 +63,23 @@
         >
           Wrap lines
         </UButton>
+
+        <UInput
+          v-if="toggleFilter || query"
+          id="filter"
+          v-model.lazy="query"
+          type="search"
+          placeholder="Filter displayed content"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
     <UPageCard variant="naked" :ui="pageCardUi">
       <template #body>
         <div class="w-full min-w-0 max-w-full space-y-3">
-          <div class="flex flex-wrap items-center justify-end gap-2 text-xs text-toned">
-            <span v-if="searchTerm">
-              Query: <code>{{ searchTerm }}</code>
-            </span>
-
-            <span v-if="filterContext > 0">
-              Context: <code>{{ filterContext }}</code>
-            </span>
-          </div>
-
           <div class="w-full min-w-0 max-w-full overflow-hidden">
             <div
               ref="logContainer"
@@ -148,24 +121,24 @@
                   </article>
                 </div>
 
-                <div
-                  v-else
-                  class="rounded-xl border border-default bg-muted/20 px-4 py-6 text-center"
-                >
-                  <div class="space-y-2">
-                    <p class="text-sm font-semibold text-highlighted">
-                      {{
-                        hasActiveFilter
-                          ? 'No log lines match the current filter.'
-                          : 'No log lines are available yet.'
-                      }}
-                    </p>
+                <div v-else class="space-y-3 font-sans text-sm leading-normal">
+                  <UAlert
+                    v-if="query"
+                    color="warning"
+                    variant="soft"
+                    icon="i-lucide-search"
+                    title="No Results"
+                    :description="`No log lines found for the query: ${query}. Please try a different search term.`"
+                  />
 
-                    <p v-if="hasActiveFilter" class="text-xs text-toned">
-                      Try a different term or clear <code>{{ query }}</code
-                      >.
-                    </p>
-                  </div>
+                  <UAlert
+                    v-else
+                    color="warning"
+                    variant="soft"
+                    icon="i-lucide-circle-alert"
+                    title="No log lines"
+                    description="No log lines are available yet."
+                  />
                 </div>
 
                 <div ref="bottomMarker" />
@@ -185,6 +158,7 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { log_line } from '~/types/logs';
 import { disableOpacity, enableOpacity, parse_api_error, request, uri } from '~/utils';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 type FilteredLogEntry = {
   log: log_line;
@@ -199,8 +173,9 @@ const FILTER_CONTEXT_REGEX = /context:(\d+)/;
 let scrollTimeout: NodeJS.Timeout | null = null;
 
 const toast = useNotification();
-const config = useConfigStore();
+const config = useYtpConfig();
 const route = useRoute();
+const pageShell = requirePageShell('logs');
 
 const logContainer = useTemplateRef<HTMLDivElement>('logContainer');
 const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker');
@@ -301,8 +276,6 @@ const filteredLogs = computed<FilteredLogEntry[]>(() => {
 
   return result;
 });
-
-const matchCount = computed(() => filteredLogs.value.filter((entry) => entry.isMatch).length);
 
 const fetchLogs = async (): Promise<void> => {
   loading.value = true;

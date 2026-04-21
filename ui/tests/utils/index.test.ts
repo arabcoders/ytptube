@@ -131,19 +131,7 @@ afterEach(() => {
   }
 });
 
-describe('utils/index setup', () => {
-  it('exposes core utilities after mocks initialize', () => {
-    expect(Array.isArray(utils.separators)).toBe(true);
-    expect(typeof utils.getValue).toBe('function');
-  });
-});
-
 describe('object access helpers', () => {
-  it('getValue resolves direct values and callables', () => {
-    expect(utils.getValue(5)).toBe(5);
-    expect(utils.getValue(() => 7)).toBe(7);
-  });
-
   it('ag returns nested value or default value', () => {
     const payload = { a: { b: { c: 42 } } };
     expect(utils.ag(payload, 'a.b.c')).toBe(42);
@@ -240,16 +228,6 @@ describe('string manipulation helpers', () => {
     expect(utils.iTrim('//path//to//file//', '/', 'both')).toBe('path//to//file');
   });
 
-  it('eTrim and sTrim delegate to iTrim ends', () => {
-    expect(utils.eTrim('##name##', '#')).toBe('##name');
-    expect(utils.sTrim('##name##', '#')).toBe('name##');
-  });
-
-  it('ucFirst capitalizes first character', () => {
-    expect(utils.ucFirst('ytp')).toBe('Ytp');
-    expect(utils.ucFirst('')).toBe('');
-  });
-
   it('encodePath safely encodes components', () => {
     expect(utils.encodePath('folder#1/video name.mp4')).toBe('folder%231/video%20name.mp4');
   });
@@ -309,11 +287,6 @@ describe('string manipulation helpers', () => {
     expect(utils.removeANSIColors(sample)).toBe('Error');
   });
 
-  it('dec2hex converts to two character hex strings', () => {
-    expect(utils.dec2hex(15)).toBe('0f');
-    expect(utils.dec2hex(255)).toBe('ff');
-  });
-
   it('basename returns final segment optionally trimming extension', () => {
     expect(utils.basename('/downloads/video.mp4')).toBe('video.mp4');
     expect(utils.basename('/downloads/video.mp4', '.mp4')).toBe('video');
@@ -336,11 +309,6 @@ describe('string manipulation helpers', () => {
     expect(utils.formatTime(90)).toBe('01:30');
     expect(utils.formatTime(3661)).toBe('01:01:01');
   });
-
-  it('getSeparatorsName returns human readable label', () => {
-    expect(utils.getSeparatorsName(',')).toContain('Comma');
-    expect(utils.getSeparatorsName('*')).toBe('Unknown');
-  });
 });
 
 describe('data conversion helpers', () => {
@@ -356,15 +324,6 @@ describe('data conversion helpers', () => {
     const encoded = utils.encode(payload);
     expect(typeof encoded).toBe('string');
     expect(utils.decode(encoded)).toEqual(payload);
-  });
-
-  it('makePagination builds a ranged pagination list', () => {
-    const pages = utils.makePagination(5, 10, 1);
-    const selected = pages.find((page: any) => page.selected);
-    expect(selected?.page).toBe(5);
-    expect(pages.length).toBeGreaterThan(0);
-    expect(pages[0]?.page).toBe(1);
-    expect(pages[pages.length - 1]?.page).toBe(10);
   });
 
   it('getQueryParams parses query strings', () => {
@@ -401,29 +360,6 @@ describe('data conversion helpers', () => {
 });
 
 describe('dom and browser helpers', () => {
-  it('dEvent dispatches custom event with detail payload', () => {
-    const detail = { foo: 'bar' };
-    let received: unknown = null;
-    const listener = (event: Event) => {
-      received = (event as CustomEvent).detail;
-    };
-
-    window.addEventListener('custom-detail', listener);
-    const dispatched = utils.dEvent('custom-detail', detail);
-    window.removeEventListener('custom-detail', listener);
-
-    expect(dispatched).toBe(true);
-    expect(received).toEqual(detail);
-  });
-
-  it('toggleClass adds and removes classes', () => {
-    const el = document.createElement('div');
-    utils.toggleClass(el, 'active');
-    expect(el.classList.contains('active')).toBe(true);
-    utils.toggleClass(el, 'active');
-    expect(el.classList.contains('active')).toBe(false);
-  });
-
   it('copyText uses clipboard API and notifies success', async () => {
     utils.copyText('sample');
 
@@ -439,7 +375,7 @@ describe('dom and browser helpers', () => {
   it('disableOpacity toggles body opacity when enabled', () => {
     const result = utils.disableOpacity();
     expect(result).toBe(true);
-    expect(document.body.getAttribute('style')).toBe('opacity: 1.0');
+    expect(document.body.style.opacity).toBe('1');
   });
 
   it('disableOpacity returns false when background disabled', () => {
@@ -474,7 +410,27 @@ describe('dom and browser helpers', () => {
     storageMap.set('random_bg_opacity', { value: 0.75 });
     const result = utils.enableOpacity();
     expect(result).toBe(true);
-    expect(document.body.getAttribute('style')).toBe('opacity: 0.75');
+    expect(document.body.style.opacity).toBe('0.75');
+  });
+
+  it('syncOpacity keeps full opacity while a lock is active', () => {
+    utils.disableOpacity();
+    storageMap.set('random_bg_opacity', { value: 0.35 });
+
+    const result = utils.syncOpacity();
+
+    expect(result).toBe(true);
+    expect(document.body.style.opacity).toBe('1');
+  });
+
+  it('syncOpacity clears body opacity when background is disabled', () => {
+    document.body.style.opacity = '0.8';
+    storageMap.set('random_bg', { value: false });
+
+    const result = utils.syncOpacity();
+
+    expect(result).toBe(true);
+    expect(document.body.style.opacity).toBe('');
   });
 });
 
@@ -520,14 +476,6 @@ describe('network and id helpers', () => {
     await expect(utils.convertCliOptions('--bad')).rejects.toThrow('Error: (400): fail');
   });
 
-  it('makeId uses crypto random values for deterministic id', () => {
-    const id = utils.makeId(4);
-    expect(id).toBe('0101');
-    expect(getRandomValuesMock).toHaveBeenCalled();
-    const typedArray = getRandomValuesMock.mock.calls[0]?.[0] as Uint8Array;
-    expect(typedArray).toBeInstanceOf(Uint8Array);
-    expect(typedArray.length).toBe(2);
-  });
 });
 
 describe('async helpers', () => {

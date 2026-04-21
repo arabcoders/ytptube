@@ -300,6 +300,7 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         status: dict[str, str] = {}
+        deleted_ids: list[str] = []
 
         for id in ids:
             try:
@@ -349,6 +350,7 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {e!s}")
 
             await self.done.delete(id)
+            deleted_ids.append(id)
 
             _status: str = "Removed" if removed_files > 0 else "Cleared"
             self._notify.emit(
@@ -364,6 +366,9 @@ class DownloadQueue(metaclass=Singleton):
 
             LOG.info(msg=msg)
             status[id] = "ok"
+
+        if deleted_ids:
+            await self.done._connection.flush()
 
         return status
 

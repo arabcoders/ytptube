@@ -15,8 +15,10 @@ try {
   }
 } catch {}
 
+const isProd = 'production' === process.env.NODE_ENV;
 export default defineNuxtConfig({
   ssr: false,
+  sourcemap: false === isProd,
   devtools: { enabled: true },
   devServer: {
     port: 8082,
@@ -57,14 +59,22 @@ export default defineNuxtConfig({
     },
     pageTransition: { name: 'page' },
   },
-  modules: ['@nuxt/ui', '@pinia/nuxt', '@vueuse/nuxt', '@nuxt/eslint'],
+  modules: ['@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint'],
   icon: {
-    serverBundle: 'local',
+    provider: 'none',
+    fallbackToApi: false,
+    clientBundle: {
+      icons: isProd ? [] : ['lucide:book'],
+      scan: {
+        globInclude: ['app/**/*.{vue,ts,js}', 'node_modules/@nuxt/ui/dist/shared/ui*.mjs'],
+        globExclude: ['dist', 'build', 'coverage', 'test', 'tests', '.*'],
+      },
+    },
   },
   nitro: {
+    sourceMap: false === isProd,
     output: {
-      publicDir:
-        'production' === process.env.NODE_ENV ? __dirname + '/exported' : __dirname + '/dist',
+      publicDir: isProd ? __dirname + '/exported' : __dirname + '/dist',
     },
     ...extraNitro,
   },
@@ -87,6 +97,15 @@ export default defineNuxtConfig({
     },
     build: {
       chunkSizeWarningLimit: 2000,
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if ('SOURCEMAP_BROKEN' === warning.code) {
+            return;
+          }
+
+          warn(warning);
+        },
+      },
     },
   },
   telemetry: false,

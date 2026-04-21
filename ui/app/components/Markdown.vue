@@ -202,6 +202,24 @@
   border-radius: 0.9rem;
 }
 
+.docs-markdown img.docs-markdown__image--inline {
+  display: inline-block;
+  max-width: none;
+  vertical-align: middle;
+  border: 0;
+  border-radius: 0;
+}
+
+.docs-markdown img.docs-markdown__image--badge {
+  height: 1.25rem;
+}
+
+.docs-markdown img.docs-markdown__image--large {
+  width: auto;
+  min-width: min(100%, 24rem);
+  margin-inline: auto;
+}
+
 .markdown-alert {
   --markdown-alert-accent: color-mix(in oklab, var(--ui-border-accented) 70%, transparent);
   margin-top: 1rem;
@@ -294,6 +312,18 @@ const content = ref('');
 const error = ref('');
 const isLoading = ref(true);
 
+const isInlineMarkdownImage = (href: string): boolean => {
+  return /(?:badge\.svg|shields\.io|ghcr-badge|\.svg(?:[?#].*)?$)/i.test(href);
+};
+
+const getMarkdownImageClasses = (href: string): string[] => {
+  if (isInlineMarkdownImage(href)) {
+    return ['docs-markdown__image--inline', 'docs-markdown__image--badge'];
+  }
+
+  return ['docs-markdown__image--large'];
+};
+
 const createMarkdownParser = () => {
   const parser = new Marked();
 
@@ -370,7 +400,9 @@ const createMarkdownParser = () => {
         const refPolicy = ' referrerpolicy="no-referrer"';
         const crossorigin = token._isExternalImage ? ' crossorigin="anonymous"' : '';
         const loading = ' loading="lazy"';
-        return `<img src="${token.href || ''}"${alt}${title}${refPolicy}${crossorigin}${loading} />`;
+        const src = token.href || '';
+        const classes = getMarkdownImageClasses(src).join(' ');
+        return `<img src="${src}" class="${classes}"${alt}${title}${refPolicy}${crossorigin}${loading} />`;
       },
     },
   });

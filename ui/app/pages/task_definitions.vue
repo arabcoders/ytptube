@@ -1,34 +1,27 @@
 <template>
-  <main class="w-full min-w-0 max-w-full space-y-4">
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-      <div class="min-w-0 space-y-1">
-        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-          <UIcon name="i-lucide-workflow" class="size-5 text-toned" />
-          <span>Task Definitions</span>
-        </div>
+  <main class="w-full min-w-0 max-w-full space-y-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+        >
+          <UIcon :name="pageShell.icon" class="size-5" />
+        </span>
 
-        <p class="text-sm text-toned">
-          Create definitions to turn any website into a downloadable feed of links.
-        </p>
+        <div class="min-w-0 space-y-2">
+          <div
+            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
+          >
+            <span>{{ pageShell.sectionLabel }}</span>
+            <span>/</span>
+            <span>{{ pageShell.pageLabel }}</span>
+          </div>
+
+          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <div v-if="showFilter && definitions.length > 0" class="relative w-full sm:w-80">
-          <span
-            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
-          >
-            <UIcon name="i-lucide-filter" class="size-4" />
-          </span>
-          <input
-            id="filter"
-            ref="filterInput"
-            v-model="query"
-            type="search"
-            placeholder="Filter displayed content"
-            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
-          />
-        </div>
-
+      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
         <UButton
           v-if="definitions.length > 0"
           color="neutral"
@@ -37,7 +30,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span v-if="!isMobile">Filter</span>
+          <span>Filter</span>
         </UButton>
 
         <UButton
@@ -47,7 +40,7 @@
           icon="i-lucide-search"
           @click="inspect = true"
         >
-          <span v-if="!isMobile">Inspect</span>
+          <span>Inspect</span>
         </UButton>
 
         <UButton
@@ -57,7 +50,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span v-if="!isMobile">New Definition</span>
+          <span>New Definition</span>
         </UButton>
 
         <UButton
@@ -65,9 +58,10 @@
           variant="outline"
           size="sm"
           :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span v-if="!isMobile">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
         </UButton>
 
         <UButton
@@ -79,8 +73,20 @@
           :disabled="isLoading"
           @click="() => void reloadContent()"
         >
-          <span v-if="!isMobile">Reload</span>
+          <span>Reload</span>
         </UButton>
+
+        <UInput
+          v-if="showFilter && definitions.length > 0"
+          id="filter"
+          ref="filterInput"
+          v-model="query"
+          type="search"
+          placeholder="Filter displayed content"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </div>
     </div>
 
@@ -94,17 +100,62 @@
     />
 
     <div
-      v-if="display_style === 'list' && filteredDefinitions.length > 0"
+      v-if="!isLoading && filteredDefinitions.length > 0"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+    >
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+          @click="toggleMasterSelection"
+        >
+          {{ allSelected ? 'Unselect' : 'Select' }}
+        </UButton>
+
+        <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
+          {{ selectedIds.length }}
+        </UBadge>
+
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-list"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            Actions
+          </UButton>
+        </UDropdownMenu>
+      </div>
+
+      <div class="text-xs text-toned">{{ filteredDefinitions.length }} displayed</div>
+    </div>
+
+    <div
+      v-if="contentStyle === 'list' && filteredDefinitions.length > 0"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-245 w-full text-sm">
+        <table class="min-w-255 w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+            <tr
+              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+            >
+              <th class="w-12">
+                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
+                  <UIcon
+                    :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+                    class="size-4"
+                  />
+                </button>
+              </th>
               <th class="w-full text-left">Definition</th>
               <th class="w-28 whitespace-nowrap">Priority</th>
               <th class="w-36 whitespace-nowrap">Updated</th>
-              <th class="w-44 whitespace-nowrap">Actions</th>
+              <th class="w-48 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -112,8 +163,19 @@
             <tr
               v-for="definition in filteredDefinitions"
               :key="definition.id"
-              class="hover:bg-muted/20"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
             >
+              <td class="px-3 py-3 text-center align-middle">
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="definition.id"
+                  />
+                </label>
+              </td>
+
               <td class="px-3 py-3 align-middle">
                 <div class="space-y-1">
                   <div class="font-semibold text-highlighted">
@@ -123,7 +185,7 @@
                   <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
                     <button
                       type="button"
-                      class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 transition hover:bg-muted"
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
                       @click="() => void toggle(definition)"
                     >
                       <UIcon
@@ -134,19 +196,19 @@
                       <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
                     </button>
 
-                    <span class="inline-flex items-center gap-1">
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
                       <UIcon name="i-lucide-link" class="size-3.5" />
-                      <span
-                        >{{ definition.match_url.length }} match pattern{{
-                          definition.match_url.length === 1 ? '' : 's'
-                        }}</span
-                      >
+                      <span>Patterns: {{ definition.match_url.length }} match/s</span>
                     </span>
                   </div>
                 </div>
               </td>
 
-              <td class="px-3 py-3 text-center align-middle">{{ definition.priority }}</td>
+              <td class="px-3 py-3 text-center align-middle">
+                {{ definition.priority }}
+              </td>
 
               <td class="px-3 py-3 text-center align-middle whitespace-nowrap">
                 <UTooltip :text="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')">
@@ -158,36 +220,36 @@
                 </UTooltip>
               </td>
 
-              <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
+              <td class="w-48 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
-                    color="info"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-file-up"
                     @click="() => void exportDefinition(definition)"
                   >
-                    <span v-if="!isMobile">Export</span>
+                    <span class="hidden sm:inline">Export</span>
                   </UButton>
 
                   <UButton
-                    color="warning"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-pencil"
                     @click="() => void openEdit(definition)"
                   >
-                    <span v-if="!isMobile">Edit</span>
+                    <span class="hidden sm:inline">Edit</span>
                   </UButton>
 
                   <UButton
-                    color="error"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-trash"
                     @click="() => void remove(definition)"
                   >
-                    <span v-if="!isMobile">Delete</span>
+                    <span class="hidden sm:inline">Delete</span>
                   </UButton>
                 </div>
               </td>
@@ -201,110 +263,122 @@
       v-else-if="filteredDefinitions.length > 0"
       class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
-      <UCard
+      <div
         v-for="definition in filteredDefinitions"
         :key="definition.id"
-        class="flex h-full flex-col border bg-default"
-        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+        class="min-w-0 w-full max-w-full"
       >
-        <template #header>
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1 space-y-2">
-              <div class="text-sm font-semibold text-highlighted wrap-break-word">
-                {{ definition.name || '(Unnamed definition)' }}
-              </div>
-
-              <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
-                  @click="() => void toggle(definition)"
-                >
-                  <UIcon
-                    name="i-lucide-power"
-                    class="size-3.5"
-                    :class="definition.enabled ? 'text-success' : 'text-error'"
-                  />
-                  <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
-                </button>
-
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
-                  <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>Priority {{ definition.priority }}</span>
-                </span>
-
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
-                  <UIcon name="i-lucide-link" class="size-3.5" />
-                  <span
-                    >{{ definition.match_url.length }} match pattern{{
-                      definition.match_url.length === 1 ? '' : 's'
-                    }}</span
+        <UCard
+          class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
+          :ui="{
+            header: 'p-4 pb-3',
+            body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
+            footer: 'border-t border-default px-4 py-4',
+          }"
+        >
+          <template #header>
+            <div class="flex min-w-0 items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start gap-2">
+                  <button
+                    type="button"
+                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    @click="toggleExpand(definition.id, 'title')"
                   >
+                    <span :class="['block', expandClass(definition.id, 'title')]">
+                      {{ definition.name || '(Unnamed)' }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-file-up"
+                  square
+                  @click="() => void exportDefinition(definition)"
+                >
+                  <span>Export Definition</span>
+                </UButton>
+
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="definition.id"
+                  />
+                </label>
+              </div>
+            </div>
+          </template>
+
+          <div class="space-y-2 text-sm text-default">
+            <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                @click="() => void toggle(definition)"
+              >
+                <UIcon
+                  name="i-lucide-power"
+                  class="size-3.5"
+                  :class="definition.enabled ? 'text-success' : 'text-error'"
+                />
+                <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
+              </button>
+
+              <span
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              >
+                <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                <span>Priority: {{ definition.priority }}</span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+              @click="toggleExpand(definition.id, 'patterns')"
+            >
+              <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-toned">URL patterns</div>
+                <span :class="['block', expandClass(definition.id, 'patterns')]">
+                  {{ definition.match_url.join('\n') }}
                 </span>
               </div>
-            </div>
-
-            <UButton
-              color="info"
-              variant="ghost"
-              size="xs"
-              icon="i-lucide-file-up"
-              square
-              @click="() => void exportDefinition(definition)"
-            />
+            </button>
           </div>
-        </template>
 
-        <div class="space-y-3 text-sm text-default">
-          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
-            <div
-              class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-toned"
-            >
-              <UIcon name="i-lucide-link" class="size-3.5" />
-              <span>Match patterns</span>
-            </div>
-
-            <div class="space-y-1 text-sm">
-              <div
-                v-for="pattern in definition.match_url.slice(0, 3)"
-                :key="pattern"
-                class="truncate text-default"
+          <template #footer>
+            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-pencil"
+                class="w-full justify-center"
+                @click="() => void openEdit(definition)"
               >
-                {{ pattern }}
-              </div>
-              <div v-if="definition.match_url.length > 3" class="text-xs text-toned">
-                +{{ definition.match_url.length - 3 }} more
-              </div>
+                Edit
+              </UButton>
+
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                class="w-full justify-center"
+                @click="() => void remove(definition)"
+              >
+                Delete
+              </UButton>
             </div>
-          </div>
-        </div>
-
-        <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
-          <UButton
-            color="warning"
-            variant="outline"
-            icon="i-lucide-pencil"
-            class="w-full justify-center"
-            @click="() => void openEdit(definition)"
-          >
-            Edit
-          </UButton>
-
-          <UButton
-            color="error"
-            variant="outline"
-            icon="i-lucide-trash"
-            class="w-full justify-center"
-            @click="() => void remove(definition)"
-          >
-            Delete
-          </UButton>
-        </div>
-      </UCard>
+          </template>
+        </UCard>
+      </div>
     </div>
 
     <UAlert
@@ -324,10 +398,6 @@
         title="No Results"
         :description="`No results found for the query: ${query}. Please try a different search term.`"
       />
-
-      <UButton color="neutral" variant="outline" size="sm" @click="query = ''"
-        >Clear filter</UButton
-      >
     </div>
 
     <UAlert
@@ -342,11 +412,19 @@
     <UModal
       v-if="isEditorOpen"
       :open="isEditorOpen"
-      :title="editorTitle"
-      :description="editorDescription"
+      :title="
+        editorMode === 'create'
+          ? 'Create Task Definition'
+          : `Edit - ${currentSummary?.name || 'Task Definition'}`
+      "
+      :description="
+        editorLoading
+          ? 'Loading full definition before editing.'
+          : 'Use the GUI editor when it fits, or switch to advanced JSON for full control.'
+      "
       :dismissible="!editorLoading && !editorSubmitting"
       :ui="{ content: 'w-full sm:max-w-7xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && closeEditor()"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <TaskDefinitionEditor
@@ -356,7 +434,8 @@
           :loading="editorLoading"
           :submitting="editorSubmitting"
           @submit="submitDefinition"
-          @cancel="closeEditor"
+          @cancel="() => void requestCloseEditor()"
+          @dirty-change="(dirty) => (editorDirty = dirty)"
           @import-existing="importExistingDefinition"
         />
       </template>
@@ -378,14 +457,17 @@
 </template>
 
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
 import moment from 'moment';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
 
+import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
 import { useDialog } from '~/composables/useDialog';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { copyText, encode } from '~/utils';
+import { requirePageShell } from '~/utils/topLevelNavigation';
 
 import type {
   TaskDefinitionDetailed,
@@ -412,7 +494,9 @@ const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   },
 };
 
-const isMobile = useMediaQuery({ maxWidth: 1024 });
+const pageShell = requirePageShell('task-definitions');
+
+const { toggleExpand, expandClass } = useExpandableMeta();
 
 const taskDefs = useTaskDefinitionsComposable();
 const definitionsRef = taskDefs.definitions;
@@ -430,6 +514,7 @@ const definitions = computed<TaskDefinitionSummary[]>(() => [...definitionsRef.v
 const { confirmDialog } = useDialog();
 
 const isEditorOpen = ref(false);
+const editorDirty = ref(false);
 const editorMode = ref<'create' | 'edit'>('create');
 const editorLoading = ref(false);
 const editorSubmitting = ref(false);
@@ -437,11 +522,14 @@ const workingDefinition = ref<TaskDefinitionDocument | null>(null);
 const workingId = ref<number | null>(null);
 const inspect = ref(false);
 const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid');
+const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const query = ref('');
 const showFilter = ref(false);
-const filterInput = ref<HTMLInputElement | null>(null);
+const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
 const hideImportByDefault = ref(false);
+const selectedIds = ref<number[]>([]);
+const massDelete = ref(false);
 
 const filteredDefinitions = computed<TaskDefinitionSummary[]>(() => {
   const normalizedQuery = query.value.trim().toLowerCase();
@@ -463,6 +551,35 @@ const filteredDefinitions = computed<TaskDefinitionSummary[]>(() => {
   });
 });
 
+const selectableDefinitionIds = computed(() =>
+  filteredDefinitions.value
+    .map((item) => item.id)
+    .filter((id): id is number => typeof id === 'number'),
+);
+
+const allSelected = computed(
+  () =>
+    selectableDefinitionIds.value.length > 0 &&
+    selectableDefinitionIds.value.every((id) => selectedIds.value.includes(id)),
+);
+
+const hasSelected = computed(() => selectedIds.value.length > 0);
+const contentStyle = computed<'list' | 'grid'>(() =>
+  isMobile.value ? 'grid' : display_style.value,
+);
+
+const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Remove Selected',
+      icon: 'i-lucide-trash',
+      color: 'error',
+      disabled: !hasSelected.value || massDelete.value,
+      onSelect: () => void deleteSelected(),
+    },
+  ],
+]);
+
 const currentSummary = computed<TaskDefinitionSummary | undefined>(() => {
   if (editorMode.value !== 'edit' || !workingId.value) {
     return undefined;
@@ -471,29 +588,44 @@ const currentSummary = computed<TaskDefinitionSummary | undefined>(() => {
   return definitions.value.find((item) => item.id === workingId.value);
 });
 
-const editorTitle = computed(() => {
-  return editorMode.value === 'create'
-    ? 'Create Task Definition'
-    : `Edit - ${currentSummary.value?.name || 'Task Definition'}`;
-});
-
-const editorDescription = computed(() => {
-  if (editorLoading.value) {
-    return 'Loading full definition before editing.';
-  }
-
-  return 'Use the GUI editor when it fits, or switch to advanced JSON for full control.';
-});
-
 const showImportByDefault = computed(
   () => editorMode.value === 'create' && !hideImportByDefault.value,
 );
+
+const discardEditor = (): void => {
+  editorDirty.value = false;
+  workingDefinition.value = null;
+  workingId.value = null;
+  editorLoading.value = false;
+  editorSubmitting.value = false;
+  hideImportByDefault.value = false;
+};
+
+const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
+  useDirtyCloseGuard(isEditorOpen, {
+    dirty: editorDirty,
+    message: 'You have unsaved task definition changes. Do you want to discard them?',
+    onDiscard: async () => {
+      discardEditor();
+    },
+  });
 
 watch(showFilter, (value) => {
   if (!value) {
     query.value = '';
   }
 });
+
+watch(
+  filteredDefinitions,
+  (items) => {
+    const validIds = new Set(
+      items.map((item) => item.id).filter((id): id is number => typeof id === 'number'),
+    );
+    selectedIds.value = selectedIds.value.filter((id) => validIds.has(id));
+  },
+  { deep: true },
+);
 
 const cloneDocument = (document: TaskDefinitionDocument): TaskDefinitionDocument => {
   return JSON.parse(JSON.stringify(document)) as TaskDefinitionDocument;
@@ -507,7 +639,7 @@ const toggleFilterPanel = async (): Promise<void> => {
   }
 
   await nextTick();
-  filterInput.value?.focus();
+  filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
 };
 
 const reloadContent = async (): Promise<void> => {
@@ -518,7 +650,17 @@ const toggleDisplayStyle = (): void => {
   display_style.value = display_style.value === 'list' ? 'grid' : 'list';
 };
 
+const toggleMasterSelection = (): void => {
+  if (allSelected.value) {
+    selectedIds.value = [];
+    return;
+  }
+
+  selectedIds.value = [...selectableDefinitionIds.value];
+};
+
 const openCreate = (): void => {
+  editorDirty.value = false;
   editorMode.value = 'create';
   workingId.value = null;
   workingDefinition.value = cloneDocument(DEFAULT_DEFINITION);
@@ -529,6 +671,7 @@ const openCreate = (): void => {
 };
 
 const openEdit = async (summary: TaskDefinitionSummary): Promise<void> => {
+  editorDirty.value = false;
   editorMode.value = 'edit';
   workingId.value = summary.id;
   workingDefinition.value = null;
@@ -559,6 +702,7 @@ const importExistingDefinition = async (id: number): Promise<void> => {
     return;
   }
 
+  editorDirty.value = false;
   editorMode.value = 'create';
   workingId.value = null;
   workingDefinition.value = {
@@ -578,6 +722,7 @@ const closeEditor = (): void => {
     return;
   }
 
+  editorDirty.value = false;
   isEditorOpen.value = false;
   workingDefinition.value = null;
   workingId.value = null;
@@ -623,6 +768,48 @@ const remove = async (summary: TaskDefinitionSummary): Promise<void> => {
   }
 
   await deleteDefinition(summary.id);
+};
+
+const deleteSelected = async (): Promise<void> => {
+  if (selectedIds.value.length < 1) {
+    return;
+  }
+
+  const { status } = await confirmDialog({
+    title: 'Delete Selected Task Definitions',
+    message:
+      `Delete ${selectedIds.value.length} task definition/s?` +
+      '\n\n' +
+      selectedIds.value
+        .map((id) => {
+          const item = filteredDefinitions.value.find((definition) => definition.id === id);
+          return item ? `${item.id}: ${item.name || '(Unnamed definition)'}` : '';
+        })
+        .filter(Boolean)
+        .join('\n'),
+    confirmText: 'Delete',
+    confirmColor: 'error',
+  });
+
+  if (true !== status) {
+    return;
+  }
+
+  const itemsToDelete = filteredDefinitions.value.filter(
+    (item) => item.id && selectedIds.value.includes(item.id),
+  );
+  if (itemsToDelete.length < 1) {
+    return;
+  }
+
+  massDelete.value = true;
+
+  for (const item of itemsToDelete) {
+    await deleteDefinition(item.id);
+  }
+
+  selectedIds.value = [];
+  massDelete.value = false;
 };
 
 const toggle = async (summary: TaskDefinitionSummary): Promise<void> => {

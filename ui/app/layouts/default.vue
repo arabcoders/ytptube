@@ -1,7 +1,11 @@
 <template>
   <UApp :toaster="toasterConfig">
     <Transition name="shell-mode" mode="out-in">
-      <div v-if="simpleMode" key="simple" class="shell-stage flex flex-col">
+      <div
+        v-if="simpleMode"
+        key="simple"
+        class="shell-stage flex flex-col bg-default/95 backdrop-blur-sm"
+      >
         <UAlert
           v-if="showConnectionBanner"
           color="warning"
@@ -25,14 +29,14 @@
               variant="link"
               size="sm"
               class="px-0"
-              @click="() => socket.reconnect()"
+              @click="socket.reconnect()"
             >
               Reconnect
             </UButton>
           </template>
         </UAlert>
 
-        <Simple @show_settings="() => (show_settings = true)" />
+        <Simple @show_settings="show_settings = true" />
       </div>
 
       <div v-else key="regular" class="shell-stage flex flex-col">
@@ -64,6 +68,7 @@
             :ui="{ base: 'relative flex min-h-full overflow-visible' }"
           >
             <UDashboardSidebar
+              v-model:open="showSidebar"
               side="left"
               collapsible
               resizable
@@ -169,19 +174,24 @@
                         variant="ghost"
                         size="sm"
                         icon="i-lucide-refresh-cw"
-                        @click="reloadPage"
+                        @click="$router.go(0)"
                       >
                         <span class="hidden xl:inline">Reload</span>
                       </UButton>
 
                       <UDashboardSearchButton class="shrink-0" />
 
-                      <UColorModeButton
+                      <UButton
                         color="neutral"
                         variant="ghost"
                         size="sm"
-                        aria-label="Toggle color mode"
-                      />
+                        :icon="colorModeButtonIcon"
+                        :aria-label="colorModeButtonTitle"
+                        :title="colorModeButtonTitle"
+                        @click="colorMode.preference = nextColorModePreference"
+                      >
+                        <span class="hidden xl:inline">{{ colorModeButtonTitle }}</span>
+                      </UButton>
 
                       <UButton
                         color="neutral"
@@ -248,7 +258,7 @@
                               <button
                                 type="button"
                                 class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="reloadPage"
+                                @click="$router.go(0)"
                               >
                                 click here
                               </button>
@@ -261,7 +271,7 @@
                               <button
                                 type="button"
                                 class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="() => config.loadConfig(true)"
+                                @click="config.loadConfig(true)"
                               >
                                 reload configuration
                               </button>
@@ -269,7 +279,7 @@
                               <button
                                 type="button"
                                 class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="reloadPage"
+                                @click="$router.go(0)"
                               >
                                 reload the page
                               </button>
@@ -318,7 +328,7 @@
                             variant="link"
                             size="sm"
                             class="px-0"
-                            @click="() => socket.reconnect()"
+                            @click="socket.reconnect()"
                           >
                             Reconnect
                           </UButton>
@@ -329,7 +339,7 @@
                         v-if="config.is_loaded"
                         class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col"
                       >
-                        <NuxtPage :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+                        <NuxtPage :isLoading="loadingImage" @reload_bg="loadImage(true)" />
                       </div>
                     </div>
 
@@ -473,8 +483,8 @@
     <SettingsPanel
       :isOpen="show_settings"
       :isLoading="loadingImage"
-      @close="closeSettings()"
-      @reload_bg="() => loadImage(true)"
+      @close="show_settings = false"
+      @reload_bg="loadImage(true)"
       direction="right"
     />
   </UApp>
@@ -482,26 +492,24 @@
 
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
-import { ref, onMounted, readonly } from 'vue';
+import { ref, onBeforeUnmount, onMounted, readonly } from 'vue';
 import { useStorage } from '@vueuse/core';
 import moment from 'moment';
+import { useMediaQuery } from '~/composables/useMediaQuery';
 import type { toastPosition } from '~/composables/useNotification';
-import { getDocsNavigationEntries } from '~/composables/useDocs';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
 import Simple from '~/components/Simple.vue';
 import Shutdown from '~/components/shutdown.vue';
 import type { version_check } from '~/types';
-
-type NavEntry = {
-  id: string;
-  label: string;
-  description?: string;
-  icon: string;
-  to?: string;
-  children?: NavEntry[];
-};
+import {
+  getActiveNavItem,
+  getNavItems,
+  getNavSections,
+  isNavItemActive,
+  type NavItem,
+} from '~/utils/topLevelNavigation';
 
 type SidebarSection = {
   id: string;
@@ -509,9 +517,16 @@ type SidebarSection = {
   items: Array<Array<NavigationMenuItem>>;
 };
 
-const socket = useSocketStore();
-const config = useConfigStore();
+type ColorModePreference = 'system' | 'light' | 'dark';
+type SwipeMode = 'open' | 'close';
+
+const MOBILE_SIDEBAR_EDGE_WIDTH = 32;
+const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
+
+const socket = useAppSocket();
+const config = useYtpConfig();
 const route = useRoute();
+const colorMode = useColorMode();
 const loadedImage = ref();
 const loadingImage = ref(false);
 const bg_enable = useStorage('random_bg', true);
@@ -522,7 +537,148 @@ const show_settings = ref(false);
 const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Click to check');
 const showRouteSearch = ref(false);
+const showSidebar = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
+const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
+
+const SwipeState = {
+  mode: null as SwipeMode | null,
+  tracking: false,
+  startX: 0,
+  startY: 0,
+  endX: 0,
+  endY: 0,
+};
+
+const colorModePreferences: Array<ColorModePreference> = ['system', 'light', 'dark'];
+
+const colorModePreference = computed<ColorModePreference>(() => {
+  const preference = colorMode.preference;
+  return colorModePreferences.includes(preference as ColorModePreference)
+    ? (preference as ColorModePreference)
+    : 'system';
+});
+
+const colorModeButtonIcon = computed(() => {
+  switch (colorModePreference.value) {
+    case 'light':
+      return 'i-lucide-sun';
+    case 'dark':
+      return 'i-lucide-moon';
+    default:
+      return 'i-lucide-monitor';
+  }
+});
+
+const nextColorModePreference = computed<ColorModePreference>(() => {
+  const currentIndex = colorModePreferences.indexOf(colorModePreference.value);
+  return colorModePreferences[(currentIndex + 1) % colorModePreferences.length] ?? 'system';
+});
+
+const colorModeButtonTitle = computed(() => {
+  switch (colorModePreference.value) {
+    case 'light':
+      return 'Light';
+    case 'dark':
+      return 'Dark';
+    default:
+      return 'System';
+  }
+});
+
+const resetSwipe = (): void => {
+  SwipeState.mode = null;
+  SwipeState.tracking = false;
+  SwipeState.startX = 0;
+  SwipeState.startY = 0;
+  SwipeState.endX = 0;
+  SwipeState.endY = 0;
+};
+
+const updateSwipePosition = (touch?: Touch): void => {
+  if (!touch) {
+    return;
+  }
+
+  SwipeState.endX = touch.clientX;
+  SwipeState.endY = touch.clientY;
+};
+
+const handleSwipeStart = (event: TouchEvent): void => {
+  if (!isMobile.value || event.touches.length !== 1) {
+    resetSwipe();
+    return;
+  }
+
+  const touch = event.touches[0];
+
+  if (!touch) {
+    resetSwipe();
+    return;
+  }
+
+  const swipeMode: SwipeMode | null = showSidebar.value
+    ? 'close'
+    : touch.clientX <= MOBILE_SIDEBAR_EDGE_WIDTH
+      ? 'open'
+      : null;
+
+  if (!swipeMode) {
+    resetSwipe();
+    return;
+  }
+
+  SwipeState.mode = swipeMode;
+  SwipeState.tracking = true;
+  SwipeState.startX = touch.clientX;
+  SwipeState.startY = touch.clientY;
+  updateSwipePosition(touch);
+};
+
+const handleSwipeMove = (event: TouchEvent): void => {
+  if (!SwipeState.tracking || event.touches.length !== 1) {
+    return;
+  }
+
+  updateSwipePosition(event.touches[0]);
+};
+
+const completeSwipe = (): void => {
+  if (!SwipeState.tracking) {
+    return;
+  }
+
+  const swipeMode = SwipeState.mode;
+  const deltaX = SwipeState.endX - SwipeState.startX;
+  const deltaY = SwipeState.endY - SwipeState.startY;
+  const isHorizontalOpenSwipe =
+    swipeMode === 'open' &&
+    deltaX >= MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE &&
+    deltaX > Math.abs(deltaY);
+  const isHorizontalCloseSwipe =
+    swipeMode === 'close' &&
+    deltaX <= -MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE &&
+    Math.abs(deltaX) > Math.abs(deltaY);
+
+  resetSwipe();
+
+  if (isHorizontalOpenSwipe) {
+    showSidebar.value = true;
+  }
+
+  if (isHorizontalCloseSwipe) {
+    showSidebar.value = false;
+  }
+};
+
+const handleSwipeEnd = (event: TouchEvent): void => {
+  updateSwipePosition(event.changedTouches[0]);
+  completeSwipe();
+};
+
+const handleSwipeCancel = (): void => {
+  resetSwipe();
+};
 
 const dashboardSidebarUi = {
   root: 'border-r border-default bg-default/95 backdrop-blur-sm',
@@ -552,134 +708,51 @@ const navigationUi = (collapsed: boolean) => ({
   linkLabel: collapsed ? 'hidden' : 'truncate',
 });
 
-const makeNavigationItem = (item: NavEntry): NavigationMenuItem => ({
+const makeNavigationItem = (item: NavItem): NavigationMenuItem => ({
   label: item.label,
   icon: item.icon,
   to: item.to,
   value: item.id,
+  active: isNavItemActive(item, route),
 });
 
-const docsNavigationEntries = getDocsNavigationEntries();
+const navigationAvailability = computed(() => ({
+  fileLogging: Boolean(config.app?.file_logging),
+  consoleEnabled: Boolean(config.app?.console_enabled),
+}));
 
-const allNavItems = computed<NavEntry[]>(() => [
-  {
-    id: 'downloads',
-    label: 'Downloads',
-    description: 'Queued and completed downloads list.',
-    icon: 'i-lucide-download',
-    to: '/',
-  },
-  {
-    id: 'files',
-    label: 'Files',
-    description: 'Browse downloaded files.',
-    icon: 'i-lucide-folder-tree',
-    to: '/browser',
-  },
-  {
-    id: 'presets',
-    label: 'Presets',
-    description:
-      'Presets are pre-defined command options for yt-dlp that you want to apply to given download.',
-    icon: 'i-lucide-sliders-horizontal',
-    to: '/presets',
-  },
-  {
-    id: 'custom-fields',
-    label: 'Custom Fields',
-    description: 'Custom fields allow you to add new fields to the download form.',
-    icon: 'i-lucide-braces',
-    to: '/dl_fields',
-  },
-  {
-    id: 'conditions',
-    label: 'Conditions',
-    description: 'Run yt-dlp custom match filter on returned info and apply options.',
-    icon: 'i-lucide-filter',
-    to: '/conditions',
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    description: 'Send notifications to your webhooks based on specified events or presets.',
-    icon: 'i-lucide-bell',
-    to: '/notifications',
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    icon: 'i-lucide-list-todo',
-    children: [
-      {
-        id: 'tasks-list',
-        label: 'Tasks',
-        description: 'Queue playlist/channels for automatic download at specified intervals.',
-        icon: 'i-lucide-list-todo',
-        to: '/tasks',
-      },
-      {
-        id: 'task-definitions',
-        label: 'Task Definitions',
-        description: 'Create definitions to turn any website into a downloadable feed of links.',
-        icon: 'i-lucide-workflow',
-        to: '/task_definitions',
-      },
-    ],
-  },
-  {
-    id: 'tools',
-    label: 'Tools',
-    icon: 'i-lucide-wrench',
-    children: [
-      ...(config.app?.file_logging
-        ? [
-            {
-              id: 'logs',
-              label: 'Logs',
-              description: 'Scroll near the top to load older logs.',
-              icon: 'i-lucide-file-text',
-              to: '/logs',
-            },
-          ]
-        : []),
-      ...(config.app.console_enabled
-        ? [
-            {
-              id: 'console',
-              label: 'Console',
-              description: 'Run yt-dlp commands directly in a non-interactive session.',
-              icon: 'i-lucide-terminal',
-              to: '/console',
-            },
-          ]
-        : []),
-    ],
-  },
-  {
-    id: 'docs',
-    label: 'Docs',
-    icon: 'i-lucide-book-open',
-    children: [
-      ...docsNavigationEntries,
-      {
-        id: 'changelog',
-        label: 'Changelog',
-        description:
-          'Latest project changes, loaded remotely when available and falling back to the bundled changelog file.',
-        icon: 'i-lucide-list',
-        to: '/changelog',
-      },
-    ],
-  },
-]);
+const navItems = computed(() => getNavItems(navigationAvailability.value));
+
+const groupSectionEntries = (entries: Array<NavItem>): Array<Array<NavItem>> => {
+  const order = [...new Set(entries.map((entry) => entry.group))];
+  return order.map((group) => entries.filter((entry) => entry.group === group));
+};
+
+const sidebarItems = computed<
+  Array<{
+    id: string;
+    label: string;
+    items: Array<Array<NavItem>>;
+  }>
+>(() => {
+  return getNavSections()
+    .map((section) => {
+      const sectionEntries = navItems.value.filter(
+        (entry) => entry.section === section.id && entry.sidebarVisible !== false,
+      );
+
+      return {
+        id: section.id,
+        label: section.label,
+        items: groupSectionEntries(sectionEntries),
+      };
+    })
+    .filter((section) => section.items.some((group) => group.length > 0));
+});
 
 const pageTitle = computed(() => {
-  const path = route.path;
-  const flat = allNavItems.value.flatMap((item) => [item, ...(item.children || [])]);
-  const match = flat
-    .filter((item) => item.to && (item.to === '/' ? path === '/' : path.startsWith(item.to)))
-    .sort((left, right) => (right.to?.length || 0) - (left.to?.length || 0))[0];
-  return match?.label || 'YTPTube';
+  const match = getActiveNavItem(route, navigationAvailability.value);
+  return match?.navbarTitle || match?.label || 'YTPTube';
 });
 
 const buildTooltip = computed(
@@ -703,81 +776,30 @@ const connectionBannerIcon = computed(() =>
   socket.connectionStatus === 'connecting' ? 'i-lucide-loader-circle' : 'i-lucide-info',
 );
 
-const sidebarSections = computed<Array<SidebarSection>>(() => {
-  const topLevelItems = (ids: string[]) =>
-    ids
-      .map((id) => allNavItems.value.find((item) => item.id === id))
-      .filter((item): item is NavEntry => Boolean(item))
-      .map((item) => makeNavigationItem(item));
-
-  const childItems = (id: string) =>
-    (allNavItems.value.find((item) => item.id === id)?.children || []).map((item) =>
-      makeNavigationItem(item),
-    );
-
-  return [
-    {
-      id: 'downloads',
-      label: 'Downloads',
-      items:
-        topLevelItems(['downloads', 'files']).length > 0
-          ? [topLevelItems(['downloads', 'files'])]
-          : [],
-    },
-    {
-      id: 'automation',
-      label: 'Automation',
-      items: childItems('tasks').length > 0 ? [childItems('tasks')] : [],
-    },
-    {
-      id: 'configuration',
-      label: 'Configuration',
-      items: [
-        topLevelItems(['presets', 'custom-fields']),
-        topLevelItems(['conditions', 'notifications']),
-      ].filter((group) => group.length > 0),
-    },
-    {
-      id: 'tools',
-      label: 'Tools',
-      items: childItems('tools').length > 0 ? [childItems('tools')] : [],
-    },
-    {
-      id: 'docs',
-      label: 'Docs',
-      items: childItems('docs').length > 0 ? [childItems('docs')] : [],
-    },
-  ].filter((section) => section.items.some((group) => group.length > 0));
-});
+const sidebarSections = computed<Array<SidebarSection>>(() =>
+  sidebarItems.value.map((section) => ({
+    ...section,
+    items: section.items.map((group) => group.map((entry) => makeNavigationItem(entry))),
+  })),
+);
 
 const routeSearchGroups = computed(() => [
-  {
-    id: 'routes',
-    label: 'Routes',
-    items: allNavItems.value.flatMap((item) => {
-      const self = item.to
-        ? [
-            {
-              label: item.label,
-              description: item.description,
-              icon: item.icon,
-              suffix: item.to,
-              onSelect: () => handleRouteSelect(item),
-            },
-          ]
-        : [];
-
-      const children = (item.children || []).map((child) => ({
-        label: child.label,
-        description: child.description,
-        icon: child.icon,
-        suffix: child.to || '',
-        onSelect: () => handleRouteSelect(child),
-      }));
-
-      return [...self, ...children];
-    }),
-  },
+  ...sidebarItems.value
+    .map((section) => ({
+      id: section.id,
+      label: section.label,
+      items: section.items
+        .flat()
+        .filter((entry) => entry.searchable !== false)
+        .map((entry) => ({
+          label: entry.label,
+          description: entry.description,
+          icon: entry.icon,
+          suffix: entry.to,
+          onSelect: () => handleRouteSelect(entry),
+        })),
+    }))
+    .filter((section) => section.items.length > 0),
   {
     id: 'downloads',
     label: 'Downloads',
@@ -840,7 +862,7 @@ const syncShellModeClass = () => {
   html.classList.toggle('simple-mode', simpleMode.value);
 };
 
-const handleRouteSelect = async (item: NavEntry) => {
+const handleRouteSelect = async (item: NavItem) => {
   await closeRouteSearch();
 
   if (item.to) {
@@ -899,6 +921,22 @@ const checkForUpdates = async () => {
 };
 
 onMounted(async () => {
+  document.addEventListener('touchstart', handleSwipeStart, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener('touchmove', handleSwipeMove, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener('touchend', handleSwipeEnd, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener('touchcancel', handleSwipeCancel, {
+    passive: true,
+    capture: true,
+  });
   syncShellModeClass();
 
   try {
@@ -921,13 +959,29 @@ onMounted(async () => {
   } catch {}
 });
 
+onBeforeUnmount(() => {
+  document.removeEventListener('touchstart', handleSwipeStart, true);
+  document.removeEventListener('touchmove', handleSwipeMove, true);
+  document.removeEventListener('touchend', handleSwipeEnd, true);
+  document.removeEventListener('touchcancel', handleSwipeCancel, true);
+});
+
 watch(bg_enable, async (v) => await handleImage(v));
 watch(simpleMode, () => syncShellModeClass());
-watch(bg_opacity, (v) => {
+watch(isMobile, (v) => {
+  if (v) {
+    return;
+  }
+
+  showSidebar.value = false;
+  resetSwipe();
+});
+watch(bg_opacity, () => {
   if (false === bg_enable.value) {
     return;
   }
-  document.querySelector('body')?.setAttribute('style', `opacity: ${v}`);
+
+  syncOpacity();
 });
 
 watch(loadedImage, () => {
@@ -936,7 +990,6 @@ watch(loadedImage, () => {
   }
 
   const html = document.documentElement;
-  const body = document.querySelector('body');
 
   const style = {
     'background-color': 'unset',
@@ -954,7 +1007,7 @@ watch(loadedImage, () => {
       .trim(),
   );
   html.classList.add('bg-fanart');
-  body?.setAttribute('style', `opacity: ${bg_opacity.value}`);
+  syncOpacity();
 });
 
 const handleImage = async (enabled: boolean) => {
@@ -1025,8 +1078,6 @@ const useVersionUpdate = () => {
 
 const { newVersionIsAvailable } = useVersionUpdate();
 
-const closeSettings = () => (show_settings.value = false);
-
 const shutdownApp = async () => {
   if (false === config.app.is_native) {
     await alertDialog({
@@ -1064,8 +1115,6 @@ const shutdownApp = async () => {
     });
   }
 };
-
-const reloadPage = () => window.location.reload();
 
 const connectionStatusColor = computed(() => {
   switch (socket.connectionStatus) {
@@ -1111,6 +1160,8 @@ const toasterConfig = computed(() => ({
   expand: true,
   progress: true,
 }));
+
+const reloadPage = () => window.location.reload();
 </script>
 
 <style>

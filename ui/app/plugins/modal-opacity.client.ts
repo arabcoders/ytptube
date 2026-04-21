@@ -1,6 +1,7 @@
-import { disableOpacity, enableOpacity } from '~/utils';
+import { disableOpacity, enableOpacity, syncOpacity } from '~/utils';
 
 const OVERLAY_SELECTOR = '[data-slot="overlay"]';
+const SETTINGS_PANEL_SELECTOR = '.yt-settings-panel';
 
 export default defineNuxtPlugin(() => {
   if (import.meta.server) {
@@ -11,11 +12,28 @@ export default defineNuxtPlugin(() => {
   let isLocked = false;
 
   const syncOverlayOpacity = (): void => {
-    const hasOverlay = document.querySelector(OVERLAY_SELECTOR) !== null;
+    const overlays = Array.from(document.querySelectorAll(OVERLAY_SELECTOR));
+    const hasOverlay = overlays.length > 0;
+    const isSettingsOnlyOverlay =
+      overlays.length === 1 && document.querySelector(SETTINGS_PANEL_SELECTOR) !== null;
+
+    if (isSettingsOnlyOverlay) {
+      if (isLocked) {
+        enableOpacity();
+        isLocked = false;
+      }
+
+      return;
+    }
 
     if (hasOverlay && !isLocked) {
       disableOpacity();
       isLocked = true;
+      return;
+    }
+
+    if (hasOverlay) {
+      syncOpacity();
       return;
     }
 
@@ -40,18 +58,4 @@ export default defineNuxtPlugin(() => {
   } else {
     startObserver();
   }
-
-  window.addEventListener(
-    'beforeunload',
-    () => {
-      observer?.disconnect();
-      observer = null;
-
-      if (isLocked) {
-        enableOpacity();
-        isLocked = false;
-      }
-    },
-    { once: true },
-  );
 });

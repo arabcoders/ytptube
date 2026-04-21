@@ -14,6 +14,9 @@ const props = defineProps<{
   unrenderDelay?: number;
 }>();
 
+const ROOT_MARGIN = 600;
+const nuxtApp = useNuxtApp();
+
 const shouldRender = ref(false);
 const targetEl = ref<HTMLElement | null>(null);
 const fixedMinHeight = ref(0);
@@ -21,12 +24,35 @@ const fixedMinHeight = ref(0);
 let unrenderTimer: ReturnType<typeof setTimeout> | null = null;
 let renderTimer: ReturnType<typeof setTimeout> | null = null;
 
-function onIdle(cb: () => void): void {
-  if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(cb);
-  } else {
-    setTimeout(() => nextTick(cb), 300);
+function ensureRenderedIfNearViewport(): void {
+  if (!targetEl.value) {
+    return;
   }
+
+  const rect = targetEl.value.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+
+  if (
+    rect.bottom < -ROOT_MARGIN ||
+    rect.top > viewportHeight + ROOT_MARGIN ||
+    rect.right < 0 ||
+    rect.left > viewportWidth
+  ) {
+    return;
+  }
+
+  if (unrenderTimer) {
+    clearTimeout(unrenderTimer);
+    unrenderTimer = null;
+  }
+
+  if (renderTimer) {
+    clearTimeout(renderTimer);
+    renderTimer = null;
+  }
+
+  shouldRender.value = true;
 }
 
 const { stop } = useIntersectionObserver(
@@ -43,7 +69,7 @@ const { stop } = useIntersectionObserver(
         props.unrender ? 200 : 0,
       );
 
-      shouldRender.value = true;
+      ensureRenderedIfNearViewport();
 
       if (!props.unrender) {
         stop();
@@ -61,19 +87,55 @@ const { stop } = useIntersectionObserver(
       }, props.unrenderDelay ?? 6000);
     }
   },
-  { rootMargin: '600px' },
+  { rootMargin: `${ROOT_MARGIN}px` },
 );
 
-if (props.renderOnIdle) {
-  onIdle(() => {
-    shouldRender.value = true;
-    if (!props.unrender) {
-      stop();
-    }
+const removePageHooks = [
+  nuxtApp.hook('page:finish', () => {
+    requestAnimationFrame(() => {
+      ensureRenderedIfNearViewport();
+    });
+  }),
+  nuxtApp.hook('page:transition:finish', () => {
+    requestAnimationFrame(() => {
+      ensureRenderedIfNearViewport();
+    });
+  }),
+];
+
+onMounted(() => {
+  window.addEventListener('resize', ensureRenderedIfNearViewport, { passive: true });
+  requestAnimationFrame(() => {
+    ensureRenderedIfNearViewport();
   });
+});
+
+if (props.renderOnIdle) {
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(() => {
+      shouldRender.value = true;
+      if (!props.unrender) {
+        stop();
+      }
+    });
+  } else {
+    setTimeout(
+      () =>
+        nextTick(() => {
+          shouldRender.value = true;
+          if (!props.unrender) {
+            stop();
+          }
+        }),
+      300,
+    );
+  }
 }
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', ensureRenderedIfNearViewport);
+  removePageHooks.forEach((removeHook) => removeHook());
+
   if (renderTimer) {
     clearTimeout(renderTimer);
   }

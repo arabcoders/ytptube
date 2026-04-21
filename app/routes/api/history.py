@@ -215,7 +215,11 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
         page += 1
 
     if not items_to_delete:
-        return web.json_response(data={"error": "No items matched the filter."}, status=web.HTTPBadRequest.status_code)
+        return web.json_response(
+            data={"items": {}, "deleted": 0},
+            status=web.HTTPOk.status_code,
+            dumps=encoder.encode,
+        )
 
     return web.json_response(
         data={

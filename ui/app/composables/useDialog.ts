@@ -53,10 +53,6 @@ export type ConfirmOptions = BaseOptions & {
    */
   cancelText?: string;
   /**
-   * Raw HTML content to include in the dialog message.
-   */
-  rawHTML?: string;
-  /**
    * Optional checkbox-style options to return with the confirmation result.
    */
   options?: DialogOption[];

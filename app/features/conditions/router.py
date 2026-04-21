@@ -15,6 +15,7 @@ from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.router import route
+from app.library.Utils import validate_url
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -82,6 +83,11 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
 
     if not (cond := params.get("condition")):
         return web.json_response({"error": "condition is required."}, status=web.HTTPBadRequest.status_code)
+
+    try:
+        validate_url(url, allow_internal=config.allow_internal_urls)
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
     try:
         preset: str = params.get("preset", config.default_preset)

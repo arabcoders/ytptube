@@ -9,7 +9,7 @@
     @after:enter="focusInput"
   >
     <template #body>
-      <p v-if="state.current?.opts.message">
+      <p v-if="state.current?.opts.message" class="whitespace-pre-line wrap-break-word">
         {{ state.current?.opts.message }}
       </p>
 
@@ -22,14 +22,6 @@
           @keydown.enter.stop.prevent="onEnter"
         />
       </UFormField>
-
-      <div
-        v-else-if="
-          'confirm' === state.current?.type && (state.current?.opts as ConfirmOptions)?.rawHTML
-        "
-        class="max-h-[40vh] overflow-auto text-sm text-default"
-        v-html="(state.current?.opts as ConfirmOptions)?.rawHTML"
-      />
 
       <div
         v-if="
@@ -51,7 +43,7 @@
       <template v-if="'alert' === state.current?.type">
         <UButton
           id="primaryButton"
-          :color="resolveConfirmColor(state.current?.opts.confirmColor)"
+          :color="state.current?.opts.confirmColor ?? 'primary'"
           @click="onEnter"
         >
           {{ state.current?.opts.confirmText ?? 'OK' }}
@@ -61,7 +53,7 @@
       <template v-else-if="'confirm' === state.current?.type || 'prompt' === state.current?.type">
         <UButton
           id="primaryButton"
-          :color="resolveConfirmColor(state.current?.opts.confirmColor)"
+          :color="state.current?.opts.confirmColor ?? 'primary'"
           :disabled="
             'prompt' === state.current?.type &&
             localInput === (state.current?.opts as PromptOptions)?.initial
@@ -128,8 +120,6 @@ const focusInput = async () => {
   }
   requestAnimationFrame(focusPrimary);
 };
-
-const resolveConfirmColor = (color?: ConfirmOptions['confirmColor']) => color ?? 'primary';
 
 const onCancel = () => cancel();
 const onEnter = () =>

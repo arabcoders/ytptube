@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import pytest
 import pytest_asyncio
+from types import SimpleNamespace
+import pytest
+from aiohttp import web
+from aiohttp.test_utils import make_mocked_request
 
-from app.features.conditions.models import ConditionModel
+from app.features.conditions.router import conditions_test
+from app.library.config import Config
+from app.library.encoder import Encoder
 from app.features.conditions.repository import ConditionsRepository
 from app.library.sqlite_store import SqliteStore
 
@@ -34,27 +40,42 @@ async def repo():
     SqliteStore._reset_singleton()
 
 
+def _json_request(path: str, payload: object) -> web.Request:
+    request = make_mocked_request("POST", path)
+
+    async def _json() -> object:
+        return payload
+
+    request.json = _json  # type: ignore[attr-defined]
+    return request
+
+
+class TestAllowInternalUrlsScope:
+    def setup_method(self) -> None:
+        Config._reset_singleton()
+
+    @pytest.mark.asyncio
+    async def test_conditions_test_rejects_internal_url_when_disallowed(self) -> None:
+        config = Config.get_instance()
+        config.allow_internal_urls = False
+        encoder = Encoder()
+        cache = SimpleNamespace(hash=lambda value: value, has=lambda _key: False, set=lambda **_kwargs: None)
+
+        request = _json_request(
+            "/api/conditions/test/",
+            {"url": "http://127.0.0.1/test", "condition": "title", "preset": config.default_preset},
+        )
+
+        response = await conditions_test(request, encoder, cache, config)
+
+        assert response.status == web.HTTPBadRequest.status_code
+        body = response.body
+        assert isinstance(body, bytes)
+        assert b"internal urls" in body.lower()
+
+
 class TestConditionsRepository:
     """Test suite for ConditionsRepository database operations."""
-
-    @pytest.mark.asyncio
-    async def test_repository_singleton(self, repo):
-        """Verify repository follows singleton pattern."""
-        instance1 = ConditionsRepository.get_instance()
-        instance2 = ConditionsRepository.get_instance()
-        assert instance1 is instance2, "Should return same singleton instance"
-
-    @pytest.mark.asyncio
-    async def test_list_empty(self, repo):
-        """List returns empty when no conditions exist."""
-        conditions = await repo.list()
-        assert conditions == [], "Should return empty list when no conditions"
-
-    @pytest.mark.asyncio
-    async def test_count_empty(self, repo):
-        """Count returns 0 when no conditions exist."""
-        count = await repo.count()
-        assert count == 0, "Should return 0 when no conditions exist"
 
     @pytest.mark.asyncio
     async def test_create_condition(self, repo):

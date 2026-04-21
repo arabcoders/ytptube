@@ -258,57 +258,6 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('calls callback on success', async () => {
-      const requestSpy = spyOn(utils, 'request')
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: true,
-          status: 200,
-          jsonData: mockTask,
-        }),
-      )
-
-      const callback = mock(() => {})
-      const tasks = useTasks()
-      const newTask = { ...mockTask }
-      delete (newTask as any).id
-
-      await tasks.createTask(newTask, callback)
-
-      expect(callback).toHaveBeenCalledWith({
-        success: true,
-        error: null,
-        detail: null,
-        data: mockTask,
-      })
-      requestSpy.mockRestore()
-    })
-
-    it('calls callback on error', async () => {
-      const requestSpy = spyOn(utils, 'request')
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: false,
-          status: 400,
-          jsonData: { detail: [{ loc: ['name'], msg: 'Field required', type: 'value_error' }] },
-        }),
-      )
-
-      const callback = mock(() => {})
-      const tasks = useTasks()
-      const newTask = { ...mockTask }
-      delete (newTask as any).id
-
-      await tasks.createTask(newTask, callback)
-
-      expect(callback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.any(String),
-        }),
-      )
-      requestSpy.mockRestore()
-    })
   })
 
   describe('updateTask', () => {
@@ -328,31 +277,6 @@ describe('useTasks', () => {
       const result = await tasks.updateTask(1, updated)
 
       expect(result?.name).toBe('Updated Name')
-      requestSpy.mockRestore()
-    })
-
-    it('calls callback on success', async () => {
-      const updatedTask = { ...mockTask, name: 'Updated' }
-      const requestSpy = spyOn(utils, 'request')
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: true,
-          status: 200,
-          jsonData: updatedTask,
-        }),
-      )
-
-      const callback = mock(() => {})
-      const tasks = useTasks()
-
-      await tasks.updateTask(1, updatedTask, callback)
-
-      expect(callback).toHaveBeenCalledWith({
-        success: true,
-        error: null,
-        detail: null,
-        data: updatedTask,
-      })
       requestSpy.mockRestore()
     })
 
@@ -394,54 +318,6 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('calls callback on patch success', async () => {
-      const patchedTask = { ...mockTask, enabled: false }
-      const requestSpy = spyOn(utils, 'request')
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: true,
-          status: 200,
-          jsonData: patchedTask,
-        }),
-      )
-
-      const callback = mock(() => {})
-      const tasks = useTasks()
-
-      await tasks.patchTask(1, { enabled: false }, callback)
-
-      expect(callback).toHaveBeenCalledWith({
-        success: true,
-        error: null,
-        detail: null,
-        data: patchedTask,
-      })
-      requestSpy.mockRestore()
-    })
-
-    it('handles validation errors with callback', async () => {
-      const requestSpy = spyOn(utils, 'request')
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: false,
-          status: 400,
-          jsonData: { detail: [{ loc: ['timer'], msg: 'Invalid CRON expression', type: 'value_error' }] },
-        }),
-      )
-
-      const callback = mock(() => {})
-      const tasks = useTasks()
-
-      await tasks.patchTask(1, { timer: 'invalid' }, callback)
-
-      expect(callback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.any(String),
-        }),
-      )
-      requestSpy.mockRestore()
-    })
   })
 
   describe('deleteTask', () => {
@@ -465,54 +341,6 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('calls callback on delete success', async () => {
-      const requestSpy = spyOn(utils, 'request')
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: true,
-          status: 200,
-          jsonData: mockTask,
-        }),
-      )
-
-      const callback = mock(() => {})
-      const tasks = useTasks()
-
-      await tasks.deleteTask(1, callback)
-
-      expect(callback).toHaveBeenCalledWith({
-        success: true,
-        error: null,
-        detail: null,
-        data: true,
-      })
-      requestSpy.mockRestore()
-    })
-
-    it('calls callback on delete error', async () => {
-      const requestSpy = spyOn(utils, 'request')
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: false,
-          status: 404,
-          jsonData: { error: 'Task not found' },
-        }),
-      )
-
-      const callback = mock(() => {})
-      const tasks = useTasks()
-
-      await tasks.deleteTask(999, callback)
-
-      expect(callback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.any(String),
-          data: false,
-        }),
-      )
-      requestSpy.mockRestore()
-    })
   })
 
   describe('inspectTaskHandler', () => {

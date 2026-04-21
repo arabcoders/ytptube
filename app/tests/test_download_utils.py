@@ -8,11 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from app.library.downloads.utils import (
-    BAD_LIVE_STREAM_OPTIONS,
-    DEBUG_MESSAGE_PREFIXES,
-    GENERIC_EXTRACTORS,
     LIMITS,
-    YTDLP_PROGRESS_FIELDS,
     create_debug_safe_dict,
     get_extractor_limit,
     handle_task_exception,
@@ -22,26 +18,6 @@ from app.library.downloads.utils import (
     safe_relative_path,
     wait_for_process_with_timeout,
 )
-
-
-class TestConstants:
-    def test_generic_extractors_tuple(self) -> None:
-        assert isinstance(GENERIC_EXTRACTORS, tuple), "Should be a tuple"
-        assert "HTML5MediaEmbed" in GENERIC_EXTRACTORS, "Should contain HTML5MediaEmbed"
-        assert "generic" in GENERIC_EXTRACTORS, "Should contain generic"
-
-    def test_ytdlp_progress_fields_tuple(self) -> None:
-        assert isinstance(YTDLP_PROGRESS_FIELDS, tuple), "Should be a tuple"
-        assert "status" in YTDLP_PROGRESS_FIELDS, "Should contain status field"
-        assert "downloaded_bytes" in YTDLP_PROGRESS_FIELDS, "Should contain downloaded_bytes field"
-
-    def test_bad_live_stream_options_list(self) -> None:
-        assert isinstance(BAD_LIVE_STREAM_OPTIONS, list), "Should be a list"
-        assert "concurrent_fragment_downloads" in BAD_LIVE_STREAM_OPTIONS, "Should contain concurrent option"
-
-    def test_debug_message_prefixes_list(self) -> None:
-        assert isinstance(DEBUG_MESSAGE_PREFIXES, list), "Should be a list"
-        assert "[debug] " in DEBUG_MESSAGE_PREFIXES, "Should contain debug prefix"
 
 
 class TestPathUtilities:

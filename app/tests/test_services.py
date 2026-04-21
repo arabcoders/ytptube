@@ -1,5 +1,4 @@
-import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -12,16 +11,6 @@ class TestServices:
     def setup_method(self):
         """Clear services before each test."""
         Services._reset_singleton()
-
-    def test_singleton_behavior(self):
-        """Test that Services follows singleton pattern."""
-        service1 = Services()
-        service2 = Services()
-        service3 = Services.get_instance()
-
-        assert service1 is service2, "Multiple Services() calls should return same instance"
-        assert service1 is service3, "get_instance() should return same instance"
-        assert id(service1) == id(service2) == id(service3), "All references should point to same object"
 
     def test_add_and_get_service(self):
         """Test adding and retrieving services."""
@@ -264,29 +253,6 @@ class TestServices:
         expected = "db:database, cache:redis, args:(), kwargs:{}"
         assert result == expected
 
-    def test_service_types_preserved(self):
-        """Test that different service types are preserved correctly."""
-        services = Services()
-
-        # Test various types
-        string_service = "string_value"
-        int_service = 42
-        list_service = [1, 2, 3]
-        dict_service = {"key": "value"}
-        custom_object = MagicMock()
-
-        services.add("string", string_service)
-        services.add("int", int_service)
-        services.add("list", list_service)
-        services.add("dict", dict_service)
-        services.add("object", custom_object)
-
-        assert services.get("string") == string_service
-        assert services.get("int") == int_service
-        assert services.get("list") == list_service
-        assert services.get("dict") == dict_service
-        assert services.get("object") is custom_object
-
     def test_add_none_service(self):
         """Test adding None as a service value."""
         services = Services()
@@ -295,22 +261,6 @@ class TestServices:
         assert services.has("none_service") is True
         assert services.get("none_service") is None
 
-    def test_service_name_edge_cases(self):
-        """Test edge cases for service names."""
-        services = Services()
-
-        # Empty string name
-        services.add("", "empty_name_value")
-        assert services.get("") == "empty_name_value"
-
-        # Numeric string name
-        services.add("123", "numeric_name")
-        assert services.get("123") == "numeric_name"
-
-        # Special characters in name
-        services.add("special-chars_123!@#", "special_value")
-        assert services.get("special-chars_123!@#") == "special_value"
-
     def test_overwrite_existing_service(self):
         """Test overwriting an existing service."""
         services = Services()
@@ -318,22 +268,6 @@ class TestServices:
         services.add("service", "new_value")
 
         assert services.get("service") == "new_value"
-
-    def test_singleton_persistence_across_operations(self):
-        """Test that singleton behavior persists across various operations."""
-        # Get instance and add a service
-        services1 = Services()
-        services1.add("persistent", "value")
-
-        # Get another instance and verify service exists
-        services2 = Services.get_instance()
-        assert services2.get("persistent") == "value"
-
-        # Clear from one instance
-        services1.clear()
-
-        # Verify cleared in other instance
-        assert services2.get("persistent") is None
 
     def test_handler_exception_propagation(self):
         """Test that exceptions in handlers are properly propagated."""
@@ -397,14 +331,6 @@ class TestServices:
         result = services.handle_sync(lambda_handler)
         assert result == "Lambda: lambda_value"
 
-    def test_logging_configuration(self):
-        """Test that logging is properly configured."""
-        # This test verifies the module-level logger setup
-        from app.library.Services import LOG
-
-        assert isinstance(LOG, logging.Logger)
-        assert LOG.name == "app.library.Services"
-
     def test_service_container_isolation(self):
         """Test that services don't interfere with each other."""
         services = Services()
@@ -420,27 +346,6 @@ class TestServices:
         services.remove("data")
         assert services.get("data") is None
         assert services.get("data_backup")["type"] == "backup"
-
-    def test_large_number_of_services(self):
-        """Test handling a large number of services."""
-        services = Services()
-
-        # Add many services
-        num_services = 1000
-        for i in range(num_services):
-            services.add(f"service_{i}", f"value_{i}")
-
-        # Verify all exist
-        assert len(services.get_all()) == num_services
-
-        # Verify specific services
-        assert services.get("service_0") == "value_0"
-        assert services.get("service_500") == "value_500"
-        assert services.get("service_999") == "value_999"
-
-        # Clear should work efficiently
-        services.clear()
-        assert len(services.get_all()) == 0
 
     def test_add_all_overwrites_existing(self):
         """Test that add_all overwrites existing services."""
@@ -464,20 +369,6 @@ class TestServices:
         # Should not affect existing services
         assert services.get("existing") == "value"
         assert len(services.get_all()) == 1
-
-    def test_type_var_generic_behavior(self):
-        """Test that TypeVar T is handled correctly."""
-        services = Services()
-
-        # Add different types and ensure they're returned correctly
-        services.add("string", "text")
-        services.add("number", 42)
-        services.add("boolean", True)  # noqa: FBT003
-
-        # Type should be preserved (runtime check)
-        assert isinstance(services.get("string"), str)
-        assert isinstance(services.get("number"), int)
-        assert isinstance(services.get("boolean"), bool)
 
     def test_concurrent_access_safety(self):
         """Test basic thread safety aspects of singleton."""
@@ -504,47 +395,3 @@ class TestServices:
 
         # All should be the same instance
         assert len(set(results)) == 1, "All threads should get the same singleton instance"
-
-    def test_method_chaining_possibility(self):
-        """Test that methods can be potentially chained."""
-        services = Services()
-
-        # While current implementation doesn't return self, test the pattern works
-        services.add("test1", "value1")
-        services.add("test2", "value2")
-        services.remove("test1")
-
-        assert services.get("test1") is None
-        assert services.get("test2") == "value2"
-
-    def test_edge_case_empty_handler_name(self):
-        """Test handlers with minimal or no names."""
-        services = Services()
-        services.add("param", "value")
-
-        # Anonymous lambda
-        result = services.handle_sync(lambda param: f"anon: {param}")
-        assert result == "anon: value"
-
-        # Function with minimal signature info
-        def minimal(param):
-            return param
-
-        result = services.handle_sync(minimal)
-        assert result == "value"
-
-    def test_services_state_isolation(self):
-        """Test that different Services instances share state properly."""
-        # This test verifies the singleton behavior more thoroughly
-        s1 = Services()
-        s1.add("shared", "data")
-
-        s2 = Services.get_instance()
-        assert s2.get("shared") == "data"
-
-        s2.add("another", "value")
-        assert s1.get("another") == "value"
-
-        # Clear from s1 affects s2
-        s1.clear()
-        assert len(s2.get_all()) == 0

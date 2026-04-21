@@ -1,20 +1,3 @@
-"""
-Tests for cache.py - Thread-safe caching utilities.
-
-This test suite provides comprehensive coverage for the Cache class:
-- Tests basic cache operations (set, get, delete, clear)
-- Tests TTL (time-to-live) functionality
-- Tests thread safety
-- Tests cache expiration
-- Tests default value handling
-- Tests key existence checking
-- Tests hash generation
-- Tests async methods
-
-Total test functions: 15
-All cache operations and edge cases are covered.
-"""
-
 import asyncio
 import threading
 import time

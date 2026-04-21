@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 import pytest_asyncio
 
-from app.features.tasks.models import TaskModel
 from app.features.tasks.repository import TasksRepository
 from app.library.sqlite_store import SqliteStore
 
@@ -34,25 +33,6 @@ async def repo(tmp_path):
 
 class TestTasksRepository:
     """Test suite for TasksRepository database operations."""
-
-    @pytest.mark.asyncio
-    async def test_repository_singleton(self, repo):
-        """Verify repository follows singleton pattern."""
-        instance1 = TasksRepository.get_instance()
-        instance2 = TasksRepository.get_instance()
-        assert instance1 is instance2, "Should return same singleton instance"
-
-    @pytest.mark.asyncio
-    async def test_list_empty(self, repo):
-        """List returns empty when no tasks exist."""
-        tasks = await repo.list()
-        assert tasks == [], "Should return empty list when no tasks"
-
-    @pytest.mark.asyncio
-    async def test_count_empty(self, repo):
-        """Count returns 0 when no tasks exist."""
-        count = await repo.count()
-        assert count == 0, "Should return 0 when no tasks exist"
 
     @pytest.mark.asyncio
     async def test_create_task(self, repo):

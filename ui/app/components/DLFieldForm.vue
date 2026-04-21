@@ -40,7 +40,8 @@
 
             <UButton
               type="button"
-              color="primary"
+              color="neutral"
+              variant="outline"
               icon="i-lucide-import"
               size="lg"
               class="justify-center sm:min-w-28"
@@ -247,6 +248,7 @@ import { decode } from '~/utils';
 
 const emitter = defineEmits<{
   (e: 'cancel'): void;
+  (e: 'dirty-change', dirty: boolean): void;
   (e: 'submit', payload: { reference: number | null | undefined; item: DLField }): void;
 }>();
 
@@ -258,7 +260,7 @@ const props = defineProps<{
 
 const toast = useNotification();
 const box = useConfirm();
-const config = useConfigStore();
+const config = useYtpConfig();
 
 const fieldTypes = ['string', 'text', 'bool'] as const;
 const fieldTypeItems = [...fieldTypes];
@@ -266,6 +268,14 @@ const form = reactive<DLField>(normalizeField(props.item));
 const ytDlpOptions = ref<AutoCompleteOptions>([]);
 const showImport = useStorage('showDlFieldsImport', false);
 const importString = ref('');
+
+const dirtySource = computed(() => ({
+  reference: props.reference ?? null,
+  form: normalizeField(form),
+  importString: importString.value,
+  showImport: showImport.value,
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -287,9 +297,17 @@ watch(
   () => props.item,
   (value) => {
     Object.assign(form, normalizeField(value));
+
+    importString.value = '';
+    nextTick(() => {
+      markClean();
+      emitter('dirty-change', false);
+    });
   },
   { deep: true },
 );
+
+watch(isDirty, (value: boolean) => emitter('dirty-change', value));
 
 watch(
   () => config.ytdlp_options,
@@ -399,4 +417,9 @@ const checkInfo = (): void => {
 
   emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) });
 };
+
+onMounted(() => {
+  markClean();
+  emitter('dirty-change', false);
+});
 </script>

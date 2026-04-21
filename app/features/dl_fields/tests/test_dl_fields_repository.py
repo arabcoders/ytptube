@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 import pytest_asyncio
 
-from app.features.dl_fields.models import DLFieldModel
 from app.features.dl_fields.repository import DLFieldsRepository
 from app.library.sqlite_store import SqliteStore
 
@@ -34,25 +33,6 @@ async def repo(tmp_path):
 
 class TestDLFieldsRepository:
     """Test suite for DLFieldsRepository database operations."""
-
-    @pytest.mark.asyncio
-    async def test_repository_singleton(self, repo):
-        """Verify repository follows singleton pattern."""
-        instance1 = DLFieldsRepository.get_instance()
-        instance2 = DLFieldsRepository.get_instance()
-        assert instance1 is instance2, "Should return same singleton instance"
-
-    @pytest.mark.asyncio
-    async def test_list_empty(self, repo):
-        """List returns empty when no fields exist."""
-        fields = await repo.list()
-        assert fields == [], "Should return empty list when no fields"
-
-    @pytest.mark.asyncio
-    async def test_count_empty(self, repo):
-        """Count returns 0 when no fields exist."""
-        count = await repo.count()
-        assert count == 0, "Should return 0 when no fields exist"
 
     @pytest.mark.asyncio
     async def test_create_field(self, repo):

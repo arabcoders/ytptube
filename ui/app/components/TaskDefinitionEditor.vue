@@ -1,83 +1,17 @@
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div class="flex flex-wrap items-center gap-2">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          :disabled="isBusy"
-          @click="showImport = !showImport"
-        >
-          {{ showImport ? 'Hide import' : 'Show import' }}
-        </UButton>
-
-        <div class="inline-flex rounded-md border border-default bg-muted/20 p-1">
-          <UButton
-            type="button"
-            size="sm"
-            icon="i-lucide-sliders-horizontal"
-            :color="mode === 'gui' ? 'primary' : 'neutral'"
-            :variant="mode === 'gui' ? 'solid' : 'ghost'"
-            :disabled="!guiSupported || isBusy"
-            @click="switchMode('gui')"
-          >
-            GUI
-          </UButton>
-          <UButton
-            type="button"
-            size="sm"
-            icon="i-lucide-code"
-            :color="mode === 'advanced' ? 'primary' : 'neutral'"
-            :variant="mode === 'advanced' ? 'solid' : 'ghost'"
-            :disabled="isBusy"
-            @click="switchMode('advanced')"
-          >
-            Advanced
-          </UButton>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <UButton
-          v-if="mode === 'advanced'"
-          type="button"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-wand-sparkles"
-          :disabled="isBusy"
-          @click="beautify"
-        >
-          Format
-        </UButton>
-
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-x"
-          :disabled="submitting"
-          @click="cancel"
-        >
-          Cancel
-        </UButton>
-
-        <UButton
-          type="button"
-          color="primary"
-          size="sm"
-          icon="i-lucide-save"
-          :loading="submitting"
-          :disabled="isBusy"
-          @click="submit"
-        >
-          Save
-        </UButton>
-      </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <UButton
+        type="button"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+        :disabled="isBusy"
+        @click="showImport = !showImport"
+      >
+        {{ showImport ? 'Hide import' : 'Show import' }}
+      </UButton>
     </div>
 
     <div
@@ -132,7 +66,8 @@
 
           <UButton
             type="button"
-            color="primary"
+            color="neutral"
+            variant="outline"
             icon="i-lucide-import"
             class="justify-center sm:min-w-28"
             :disabled="isBusy || !importString.trim()"
@@ -219,7 +154,7 @@
         <UFormField
           class="md:col-span-3"
           :ui="fieldUi"
-          description="Disabled definitions won't match tasks."
+          description="Whether this definition is active or not."
         >
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
@@ -364,7 +299,7 @@
           </div>
 
           <div class="grid gap-4 md:grid-cols-12">
-            <UFormField class="md:col-span-4" :ui="fieldUi">
+            <UFormField class="md:col-span-4" :ui="fieldUi" description="Selector type">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-shapes" class="size-4 text-toned" />
@@ -383,7 +318,7 @@
               />
             </UFormField>
 
-            <UFormField class="md:col-span-8" :ui="fieldUi">
+            <UFormField class="md:col-span-8" :ui="fieldUi" description="Match expression">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-crosshair" class="size-4 text-toned" />
@@ -415,7 +350,8 @@
 
           <UButton
             type="button"
-            color="primary"
+            color="neutral"
+            variant="outline"
             size="sm"
             icon="i-lucide-plus"
             :disabled="isBusy"
@@ -431,7 +367,9 @@
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table class="min-w-215 table-fixed w-full text-sm">
               <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-                <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+                <tr
+                  class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+                >
                   <th class="w-40">
                     <span class="inline-flex items-center gap-1.5">
                       <UIcon name="i-lucide-key" class="size-3.5 text-toned" />
@@ -473,7 +411,7 @@
                 <tr
                   v-for="(field, index) in guiState.fields"
                   :key="`${index}-${field.key}`"
-                  class="align-top"
+                  class="align-top [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
                 >
                   <td class="px-3 py-3">
                     <UInput
@@ -517,7 +455,7 @@
                   <td class="px-3 py-3 text-right">
                     <UButton
                       type="button"
-                      color="error"
+                      color="neutral"
                       variant="outline"
                       size="xs"
                       icon="i-lucide-trash"
@@ -571,6 +509,77 @@
         :description="errorMessage"
       />
     </template>
+
+    <div
+      class="flex flex-col gap-3 border-t border-default pt-5 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div class="inline-flex self-start rounded-md border border-default bg-muted/20 p-1">
+        <UButton
+          type="button"
+          size="sm"
+          icon="i-lucide-sliders-horizontal"
+          color="neutral"
+          :variant="mode === 'gui' ? 'soft' : 'ghost'"
+          :disabled="!guiSupported || isBusy"
+          @click="switchMode('gui')"
+        >
+          GUI
+        </UButton>
+        <UButton
+          type="button"
+          size="sm"
+          icon="i-lucide-code"
+          color="neutral"
+          :variant="mode === 'advanced' ? 'soft' : 'ghost'"
+          :disabled="isBusy"
+          @click="switchMode('advanced')"
+        >
+          Advanced
+        </UButton>
+      </div>
+
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <UButton
+          v-if="mode === 'advanced'"
+          type="button"
+          color="neutral"
+          variant="outline"
+          size="lg"
+          icon="i-lucide-wand-sparkles"
+          :disabled="isBusy"
+          class="justify-center"
+          @click="beautify"
+        >
+          Format
+        </UButton>
+
+        <UButton
+          type="button"
+          color="neutral"
+          variant="outline"
+          size="lg"
+          icon="i-lucide-x"
+          :disabled="submitting"
+          class="justify-center"
+          @click="cancel"
+        >
+          Cancel
+        </UButton>
+
+        <UButton
+          type="button"
+          color="primary"
+          size="lg"
+          icon="i-lucide-save"
+          :loading="submitting"
+          :disabled="isBusy"
+          class="justify-center"
+          @click="submit"
+        >
+          Save
+        </UButton>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -615,6 +624,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'submit', payload: TaskDefinitionDocument): void;
   (e: 'cancel'): void;
+  (e: 'dirty-change', dirty: boolean): void;
   (e: 'import-existing', id: number): void;
 }>();
 
@@ -707,6 +717,16 @@ const existingDefinitionItems = computed(() => {
     value: item.id,
   }));
 });
+
+const dirtySource = computed(() => ({
+  mode: mode.value,
+  showImport: showImport.value,
+  importString: importString.value,
+  selectedExisting: selectedExisting.value,
+  jsonText: jsonText.value,
+  guiState: JSON.parse(JSON.stringify(guiState)),
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
 
 const resetGuiState = (state: GuiState): void => {
   guiState.name = state.name;
@@ -1027,6 +1047,10 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
       containerSelector: '',
       fields: [defaultField()],
     });
+    nextTick(() => {
+      markClean();
+      emit('dirty-change', false);
+    });
     return;
   }
 
@@ -1050,6 +1074,11 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
     mode.value = 'advanced';
     errorMessage.value = 'Failed to prepare definition for editing.';
   }
+
+  nextTick(() => {
+    markClean();
+    emit('dirty-change', false);
+  });
 };
 
 const importFromString = (): void => {
@@ -1087,6 +1116,8 @@ watch(
   (doc) => applyDocument(doc),
   { immediate: true },
 );
+
+watch(isDirty, (value: boolean) => emit('dirty-change', value));
 
 const switchMode = (next: EditorMode): void => {
   if (isBusy.value || next === mode.value) {

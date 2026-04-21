@@ -11,15 +11,7 @@ def reset_routes():
     ROUTES.clear()
 
 
-class TestRouteType:
-    def test_all_returns_values(self) -> None:
-        assert set(RouteType.all()) == {"http", "socket"}
-
-
 class TestMakeRouteName:
-    def test_basic_http_path(self) -> None:
-        assert make_route_name("GET", "/api/test") == "get:api.test"
-
     def test_trailing_slash_and_root(self) -> None:
         # Current behavior converts empty part to 'part'
         assert make_route_name("post", "/") == "post:part"

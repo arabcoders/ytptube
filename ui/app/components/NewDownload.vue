@@ -37,7 +37,6 @@
                       base: 'min-h-[7.25rem] bg-elevated/60 ring-default focus-visible:ring-primary',
                     }"
                     @keydown="handleKeyDown"
-                    @input="() => void adjustTextareaHeight()"
                   />
                   <UInput
                     v-else
@@ -520,7 +519,7 @@ const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string | undefined, cli: string | undefined): void;
   (e: 'clear_form'): void;
 }>();
-const config = useConfigStore();
+const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
 const { findPreset, hasPreset, selectItems, getPresetDefault } = usePresetOptions();
@@ -662,9 +661,10 @@ const is_valid_dl_field = (dl_field: string): boolean => {
   return false;
 };
 
-const adjustTextareaHeight = async (): Promise<void> => {
-  await nextTick();
-  urlTextarea.value?.textareaRef?.dispatchEvent(new Event('input', { bubbles: true }));
+const getUrlElement = (): HTMLInputElement | HTMLTextAreaElement | null => {
+  return (
+    urlTextarea.value?.textareaRef || (document.getElementById('url') as HTMLInputElement | null)
+  );
 };
 
 const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
@@ -690,10 +690,10 @@ const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
 
     await nextTick();
 
-    if (urlTextarea.value) {
-      await adjustTextareaHeight();
-      urlTextarea.value.textareaRef?.setSelectionRange(cursorPos + 1, cursorPos + 1);
-      urlTextarea.value.textareaRef?.focus();
+    const field = getUrlElement();
+    if (field instanceof HTMLTextAreaElement) {
+      field.setSelectionRange(cursorPos + 1, cursorPos + 1);
+      field.focus();
     }
   }
 };
@@ -714,11 +714,11 @@ const handlePaste = async (event: ClipboardEvent): Promise<void> => {
 
   await nextTick();
 
-  if (urlTextarea.value) {
-    await adjustTextareaHeight();
+  const field = getUrlElement();
+  if (field instanceof HTMLTextAreaElement) {
     const newPos = start + pastedText.length;
-    urlTextarea.value.textareaRef?.setSelectionRange(newPos, newPos);
-    urlTextarea.value.textareaRef?.focus();
+    field.setSelectionRange(newPos, newPos);
+    field.focus();
   }
 };
 
@@ -944,10 +944,6 @@ onMounted(async () => {
   if (!separators.some((s) => s.value === separator.value)) {
     separator.value = separators[0]?.value ?? ',';
   }
-
-  if (isMultiLineInput.value && urlTextarea.value) {
-    await adjustTextareaHeight();
-  }
 });
 
 const runCliCommand = async (): Promise<void> => {
@@ -1148,11 +1144,9 @@ const hasValidUrl = computed(() => form.value.url && form.value.url.trim().lengt
 watch(isMultiLineInput, async (newValue) => {
   await nextTick();
   if (newValue) {
-    await adjustTextareaHeight();
     urlTextarea.value?.textareaRef?.focus();
     return;
   }
-  const inputElement = document.getElementById('url') as HTMLInputElement;
-  inputElement?.focus();
+  getUrlElement()?.focus();
 });
 </script>

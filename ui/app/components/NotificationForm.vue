@@ -40,7 +40,8 @@
 
             <UButton
               type="button"
-              color="primary"
+              color="neutral"
+              variant="outline"
               icon="i-lucide-import"
               size="lg"
               class="justify-center sm:min-w-28"
@@ -382,7 +383,7 @@
           <div class="flex items-end">
             <UButton
               type="button"
-              color="error"
+              color="neutral"
               variant="outline"
               icon="i-lucide-trash"
               :disabled="addInProgress"
@@ -442,6 +443,7 @@ import type { notification, notificationRequestHeaderItem } from '~/types/notifi
 
 const emitter = defineEmits<{
   (event: 'cancel'): void;
+  (event: 'dirty-change', dirty: boolean): void;
   (event: 'submit', payload: { reference: number | undefined; item: notification }): void;
 }>();
 
@@ -488,13 +490,29 @@ const selectUi = {
 
 const isAppriseTarget = computed(() => Boolean(form.request.url) && isApprise(form.request.url));
 
+const dirtySource = computed(() => ({
+  reference: props.reference ?? null,
+  form: normalizeNotification(form),
+  importString: importString.value,
+  showImport: showImport.value,
+}));
+const { isDirty, markClean } = useDirtyState(dirtySource);
+
 watch(
   () => props.item,
   (value) => {
     Object.assign(form, normalizeNotification(value));
+
+    importString.value = '';
+    nextTick(() => {
+      markClean();
+      emitter('dirty-change', false);
+    });
   },
   { deep: true },
 );
+
+watch(isDirty, (value: boolean) => emitter('dirty-change', value));
 
 function createDefaultNotification(): notification {
   return {
@@ -633,4 +651,9 @@ const importItem = async (): Promise<void> => {
     toast.error(`Failed to import task. ${error.message}`);
   }
 };
+
+onMounted(() => {
+  markClean();
+  emitter('dirty-change', false);
+});
 </script>

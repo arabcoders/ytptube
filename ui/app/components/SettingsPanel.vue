@@ -4,7 +4,7 @@
     :side="direction"
     :dismissible="true"
     :overlay="true"
-    :ui="{ content: 'w-full sm:max-w-xl' }"
+    :ui="{ content: 'yt-settings-panel w-full sm:max-w-xl' }"
     @update:open="(open) => !open && emitter('close')"
   >
     <template #header>
@@ -275,7 +275,6 @@
 <script setup lang="ts">
 import { watch, onMounted, onBeforeUnmount, ref, computed } from 'vue';
 import { useStorage } from '@vueuse/core';
-import { useConfigStore } from '~/stores/ConfigStore';
 import { useNotification } from '~/composables/useNotification';
 import type { notificationTarget, toastPosition } from '~/composables/useNotification';
 
@@ -294,7 +293,7 @@ const props = withDefaults(
 
 const emitter = defineEmits<{ (e: 'close' | 'reload_bg'): void }>();
 
-const config = useConfigStore();
+const config = useYtpConfig();
 const notification = useNotification();
 
 const bg_enable = useStorage<boolean>('random_bg', true);

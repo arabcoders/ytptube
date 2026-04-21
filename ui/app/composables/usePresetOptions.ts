@@ -1,5 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue';
 
+import { useYtpConfig } from '~/composables/useYtpConfig';
 import type { Preset } from '~/types/presets';
 import { prettyName } from '~/utils';
 
@@ -19,7 +20,7 @@ export const usePresetOptions = (
   source?: MaybeRefOrGetter<Preset[] | readonly Preset[] | undefined>,
   options: UsePresetOptionsOptions = {},
 ) => {
-  const config = useConfigStore();
+  const config = useYtpConfig();
 
   const presets = computed<Preset[]>(() => {
     const items = source ? toValue(source) : config.presets;
