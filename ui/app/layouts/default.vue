@@ -29,14 +29,14 @@
               variant="link"
               size="sm"
               class="px-0"
-              @click="() => socket.reconnect()"
+              @click="socket.reconnect()"
             >
               Reconnect
             </UButton>
           </template>
         </UAlert>
 
-        <Simple @show_settings="() => (show_settings = true)" />
+        <Simple @show_settings="show_settings = true" />
       </div>
 
       <div v-else key="regular" class="shell-stage flex flex-col">
@@ -174,7 +174,7 @@
                         variant="ghost"
                         size="sm"
                         icon="i-lucide-refresh-cw"
-                        @click="reloadPage"
+                        @click="$router.go(0)"
                       >
                         <span class="hidden xl:inline">Reload</span>
                       </UButton>
@@ -186,10 +186,12 @@
                         variant="ghost"
                         size="sm"
                         :icon="colorModeButtonIcon"
-                        :aria-label="colorModeButtonAriaLabel"
+                        :aria-label="colorModeButtonTitle"
                         :title="colorModeButtonTitle"
-                        @click="cycleColorMode"
-                      />
+                        @click="colorMode.preference = nextColorModePreference"
+                      >
+                        <span class="hidden xl:inline">{{ colorModeButtonTitle }}</span>
+                      </UButton>
 
                       <UButton
                         color="neutral"
@@ -256,7 +258,7 @@
                               <button
                                 type="button"
                                 class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="reloadPage"
+                                @click="$router.go(0)"
                               >
                                 click here
                               </button>
@@ -269,7 +271,7 @@
                               <button
                                 type="button"
                                 class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="() => config.loadConfig(true)"
+                                @click="config.loadConfig(true)"
                               >
                                 reload configuration
                               </button>
@@ -277,7 +279,7 @@
                               <button
                                 type="button"
                                 class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="reloadPage"
+                                @click="$router.go(0)"
                               >
                                 reload the page
                               </button>
@@ -326,7 +328,7 @@
                             variant="link"
                             size="sm"
                             class="px-0"
-                            @click="() => socket.reconnect()"
+                            @click="socket.reconnect()"
                           >
                             Reconnect
                           </UButton>
@@ -337,7 +339,7 @@
                         v-if="config.is_loaded"
                         class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col"
                       >
-                        <NuxtPage :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+                        <NuxtPage :isLoading="loadingImage" @reload_bg="loadImage(true)" />
                       </div>
                     </div>
 
@@ -481,8 +483,8 @@
     <SettingsPanel
       :isOpen="show_settings"
       :isLoading="loadingImage"
-      @close="closeSettings()"
-      @reload_bg="() => loadImage(true)"
+      @close="show_settings = false"
+      @reload_bg="loadImage(true)"
       direction="right"
     />
   </UApp>
@@ -576,28 +578,13 @@ const nextColorModePreference = computed<ColorModePreference>(() => {
 const colorModeButtonTitle = computed(() => {
   switch (colorModePreference.value) {
     case 'light':
-      return 'Theme: Light';
+      return 'Light';
     case 'dark':
-      return 'Theme: Dark';
+      return 'Dark';
     default:
-      return 'Theme: System';
+      return 'System';
   }
 });
-
-const colorModeButtonAriaLabel = computed(() => {
-  switch (nextColorModePreference.value) {
-    case 'light':
-      return 'Switch theme to light';
-    case 'dark':
-      return 'Switch theme to dark';
-    default:
-      return 'Switch theme to system';
-  }
-});
-
-const cycleColorMode = (): void => {
-  colorMode.preference = nextColorModePreference.value;
-};
 
 const resetSwipe = (): void => {
   SwipeState.mode = null;
@@ -1091,8 +1078,6 @@ const useVersionUpdate = () => {
 
 const { newVersionIsAvailable } = useVersionUpdate();
 
-const closeSettings = () => (show_settings.value = false);
-
 const shutdownApp = async () => {
   if (false === config.app.is_native) {
     await alertDialog({
@@ -1130,8 +1115,6 @@ const shutdownApp = async () => {
     });
   }
 };
-
-const reloadPage = () => window.location.reload();
 
 const connectionStatusColor = computed(() => {
   switch (socket.connectionStatus) {
@@ -1177,6 +1160,8 @@ const toasterConfig = computed(() => ({
   expand: true,
   progress: true,
 }));
+
+const reloadPage = () => window.location.reload();
 </script>
 
 <style>

@@ -20,7 +20,6 @@ type NavDefinition = {
   matchPath?: string;
   sidebarVisible?: boolean;
   searchable?: boolean;
-  activeMode?: 'path' | 'downloads' | 'history';
   navbarTitle?: string;
   requires?: 'file_logging' | 'console_enabled';
 };
@@ -70,7 +69,6 @@ const NavItems: Array<NavDefinition> = [
     icon: 'i-lucide-download',
     to: '/',
     matchPath: '/',
-    activeMode: 'downloads',
   },
   {
     id: 'history',
@@ -81,9 +79,8 @@ const NavItems: Array<NavDefinition> = [
     breadcrumbSectionLabel: 'Workspace',
     description: 'Completed, skipped, and failed downloads.',
     icon: 'i-lucide-history',
-    to: '/#history',
-    matchPath: '/',
-    activeMode: 'history',
+    to: '/history',
+    matchPath: '/history',
     navbarTitle: 'Downloads',
   },
   {
@@ -269,24 +266,14 @@ export const getNavItemById = (id: string): NavItem | undefined => {
 };
 
 export const isNavItemActive = (entry: NavItem, route: LocationPath): boolean => {
-  switch (entry.activeMode) {
-    case 'downloads':
-      return route.path === '/' && route.hash !== '#history';
+  const current = normalizePath(route.path);
+  const target = normalizePath(entry.matchPath);
 
-    case 'history':
-      return route.path === '/' && route.hash === '#history';
-
-    default: {
-      const current = normalizePath(route.path);
-      const target = normalizePath(entry.matchPath);
-
-      if (target === '/') {
-        return current === '/';
-      }
-
-      return current === target || current.startsWith(`${target}/`);
-    }
+  if (target === '/') {
+    return current === '/';
   }
+
+  return current === target || current.startsWith(`${target}/`);
 };
 
 export const getActiveNavItem = (
