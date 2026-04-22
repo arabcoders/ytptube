@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "3c1567930f71482a02ea142504d790b3476d57ea",
+    "date": "2026-04-22T19:02:40+00:00",
+    "commits": [
+      {
+        "sha": "3c156793",
+        "full_sha": "3c1567930f71482a02ea142504d790b3476d57ea",
+        "message": "feat: add system limits API endpoint and UI for download capacity overview",
+        "author": "arabcoders",
+        "date": "2026-04-22T19:02:40+00:00"
+      },
+      {
+        "sha": "29777ff9",
+        "full_sha": "29777ff928051540d1fbcc55ba49237bb2207084",
+        "message": "refactor: remove ui_update_title and standardize page title",
+        "author": "arabcoders",
+        "date": "2026-04-22T17:55:29+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.1.0",
     "full_sha": "fdc08989aedcea76d896c14c220d10c8f75adc36",
     "date": "2026-04-22T17:01:40+00:00",
