@@ -23,7 +23,7 @@
 
       <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
         <UButton
-          v-if="presetsNoDefault.length > 0"
+          v-if="presets.length > 0"
           color="neutral"
           :variant="showFilter ? 'soft' : 'outline'"
           size="sm"
@@ -62,13 +62,13 @@
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
-          @click="() => void presetsStore.loadPresets(1, 1000)"
+          @click="() => void loadContent(page)"
         >
           <span>Reload</span>
         </UButton>
 
         <UInput
-          v-if="showFilter && presetsNoDefault.length > 0"
+          v-if="showFilter && presets.length > 0"
           id="filter"
           ref="filterInput"
           v-model="query"
@@ -112,6 +112,18 @@
           </UButton>
         </UDropdownMenu>
       </div>
+
+      <UPagination
+        v-if="paging?.total_pages > 1"
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="loadContent"
+        size="sm"
+      />
     </div>
 
     <div
@@ -416,6 +428,22 @@
       description="There are no custom defined presets."
     />
 
+    <div
+      v-if="filteredPresets.length > 0 && !query && paging?.total_pages > 1"
+      class="flex justify-end"
+    >
+      <UPagination
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="loadContent"
+        size="sm"
+      />
+    </div>
+
     <UAlert v-if="!query && presets.length > 0" color="info" variant="soft">
       <template #description>
         <ul class="list-disc space-y-2 pl-5 text-sm text-default">
@@ -443,7 +471,6 @@
           :addInProgress="editor.addInProgress.value"
           :reference="editor.reference.value"
           :preset="editor.preset.value"
-          :presets="presets"
           @cancel="() => void editor.requestClose()"
           @dirty-change="(dirty) => (editor.dirty.value = dirty)"
           @submit="editor.submit"
@@ -470,6 +497,8 @@ const config = useYtpConfig();
 const box = useConfirm();
 const editor = usePresetEditor();
 const pageShell = requirePageShell('presets');
+const route = useRoute();
+const router = useRouter();
 const { confirmDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
 
@@ -481,21 +510,19 @@ const showFilter = ref(false);
 const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
 const selectedIds = ref<number[]>([]);
 const massDelete = ref(false);
+const page = ref<number>(route.query.page ? parseInt(route.query.page as string, 10) : 1);
 
 const presets = computed(() => presetsStore.presets.value as PresetWithUI[]);
+const paging = presetsStore.pagination;
 const isLoading = presetsStore.isLoading;
-
-const presetsNoDefault = computed(() => presets.value.filter((item) => !item.default));
 
 const filteredPresets = computed<PresetWithUI[]>(() => {
   const normalizedQuery = query.value?.toLowerCase();
   if (!normalizedQuery) {
-    return presetsNoDefault.value;
+    return presets.value;
   }
 
-  return presetsNoDefault.value.filter((item) =>
-    deepIncludes(item, normalizedQuery, new WeakSet()),
-  );
+  return presets.value.filter((item) => deepIncludes(item, normalizedQuery, new WeakSet()));
 });
 
 const selectablePresetIds = computed(() =>
@@ -525,6 +552,19 @@ const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   ],
 ]);
 
+const syncPageQuery = async (pageNumber: number): Promise<void> => {
+  const totalPages = paging.value.total_pages;
+  const nextQuery = { ...route.query };
+
+  if (totalPages > 1) {
+    nextQuery.page = String(pageNumber);
+  } else {
+    delete nextQuery.page;
+  }
+
+  await router.replace({ query: nextQuery });
+};
+
 watch(showFilter, (value) => {
   if (!value) {
     query.value = '';
@@ -551,6 +591,13 @@ const toggleFilterPanel = async (): Promise<void> => {
 
   await nextTick();
   filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
+};
+
+const loadContent = async (pageNumber = 1): Promise<void> => {
+  page.value = pageNumber;
+  await presetsStore.loadPresets(pageNumber, undefined, { excludeDefaults: true });
+  await nextTick();
+  await syncPageQuery(pageNumber);
 };
 
 const toggleMasterSelection = (): void => {
@@ -596,15 +643,20 @@ const deleteSelected = async (): Promise<void> => {
 
   massDelete.value = true;
 
-  for (const item of itemsToDelete) {
-    if (!item.id) {
-      continue;
+  try {
+    for (const item of itemsToDelete) {
+      if (!item.id) {
+        continue;
+      }
+
+      await presetsStore.deletePreset(item.id);
     }
-    await presetsStore.deletePreset(item.id);
+  } finally {
+    selectedIds.value = [];
+    massDelete.value = false;
   }
 
-  selectedIds.value = [];
-  massDelete.value = false;
+  await loadContent(page.value);
 };
 
 const deleteItem = async (item: Preset): Promise<void> => {
@@ -640,5 +692,5 @@ const calcPath = (path?: string): string => {
   return path ? location + '/' + sTrim(path, '/') : location;
 };
 
-onMounted(async () => await presetsStore.loadPresets(1, 1000));
+onMounted(async () => await loadContent(page.value));
 </script>

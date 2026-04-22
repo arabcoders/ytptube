@@ -89,6 +89,18 @@ class TestPresetsRepository:
         assert [item.name for item in items] == ["gamma", "beta", "alpha"], "Should sort by requested field"
 
     @pytest.mark.asyncio
+    async def test_list_paginated_excludes_defaults(self, repo):
+        await repo.create({"name": "System Default", "default": True, "priority": 10})
+        await repo.create({"name": "Custom Preset", "priority": 1})
+
+        items, total, page, total_pages = await repo.list_paginated(page=1, per_page=10, exclude_defaults=True)
+
+        assert [item.name for item in items] == ["custom_preset"], "Should exclude default presets"
+        assert total == 1, "Should count only custom presets"
+        assert page == 1, "Should keep current page when filtered results exist"
+        assert total_pages == 1, "Should compute pages from the filtered total"
+
+    @pytest.mark.asyncio
     async def test_list_paginated_supports_multiple_sort_fields(self, repo):
         await repo.create({"name": "Charlie", "priority": 2})
         await repo.create({"name": "Alpha", "priority": 1})
@@ -153,3 +165,17 @@ class TestPresetRoutes:
 
         assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort direction"
         assert "order" in payload["error"], "Should explain invalid sort direction"
+
+    async def test_list_route_supports_excluding_defaults(self, repo):
+        await repo.create({"name": "System Default", "default": True, "priority": 10})
+        await repo.create({"name": "Custom Preset", "priority": 1})
+
+        request = MagicMock(spec=Request)
+        request.query = {"page": "1", "per_page": "10", "exclude_defaults": "true"}
+
+        response = await presets_list(request, Encoder(), repo)
+        payload = json.loads(response.text)
+
+        assert response.status == web.HTTPOk.status_code, "Should return 200 for valid default exclusion"
+        assert [item["name"] for item in payload["items"]] == ["custom_preset"], "Should exclude default presets"
+        assert payload["pagination"]["total"] == 1, "Should report filtered total"

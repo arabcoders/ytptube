@@ -367,13 +367,12 @@ const props = defineProps<{
   reference?: number | null;
   preset: Partial<Preset>;
   addInProgress?: boolean;
-  presets?: Preset[];
 }>();
 
 const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
-const { presets, findPreset, selectItems } = usePresetOptions(() => props.presets);
+const { presets, findPreset, selectItems } = usePresetOptions();
 
 const form = reactive<Preset>({
   name: '',

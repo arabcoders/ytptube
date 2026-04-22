@@ -1777,6 +1777,7 @@ Binary image data with appropriate headers
 - `per_page` (optional): Items per page. Default: `config.default_pagination`.
 - `sort` (optional): Comma-separated sort fields. Accepted values: `id`, `name`, `priority`, `default`, `created_at`, `updated_at`. Default: `priority,name`.
 - `order` (optional): Comma-separated sort directions matching `sort`, or a single direction applied to every requested sort field. Accepted values: `asc`, `desc`. Default: `desc,asc`.
+- `exclude_defaults` (optional): When `true`, excludes system presets from the results. Default: `false`.
 
 **Response**:
 ```json
@@ -1806,10 +1807,9 @@ Binary image data with appropriate headers
 
 **Notes**:
 - `default: true` indicates this is a system default preset (cannot be modified or deleted)
-- Default ordering remains `priority desc, name asc`
 
 **Error Responses**:
-- `400 Bad Request` - Invalid pagination or sorting query parameters
+- `400 Bad Request` - Invalid data was provided.
 
 ---
 
