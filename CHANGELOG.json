@@ -154,6 +154,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959",
+    "date": "2026-04-22T16:38:35+00:00",
+    "commits": [
+      {
+        "sha": "35f38d7c",
+        "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959",
+        "message": "refactor: update presets UI to follow same rules as other pages.\n\nCo-authored-by: Copilot <copilot@github.com>",
+        "author": "arabcoders",
+        "date": "2026-04-22T16:38:35+00:00"
+      },
+      {
+        "sha": "c9534bdf",
+        "full_sha": "c9534bdf11dfcec1f0ffcd89fab09f95e10b4814",
+        "message": "refactor: remove useless wrappers",
+        "author": "arabcoders",
+        "date": "2026-04-22T16:04:11+00:00"
+      },
+      {
+        "sha": "510bc2df",
+        "full_sha": "510bc2df2b70db8d85bd20fba01a0d92129bec11",
+        "message": "fix: tasks was missing pagination UI elements",
+        "author": "arabcoders",
+        "date": "2026-04-22T15:07:21+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.6",
     "full_sha": "0eabc2197b3060be87d06c62361b013277c7da84",
     "date": "2026-04-11T16:27:44+00:00",
