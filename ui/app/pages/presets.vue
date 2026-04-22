@@ -62,7 +62,7 @@
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
-          @click="() => void reloadContent()"
+          @click="() => void presetsStore.loadPresets(1, 1000)"
         >
           <span>Reload</span>
         </UButton>
@@ -553,10 +553,6 @@ const toggleFilterPanel = async (): Promise<void> => {
   filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
 };
 
-const reloadContent = async (): Promise<void> => {
-  await presetsStore.loadPresets(1, 1000);
-};
-
 const toggleMasterSelection = (): void => {
   if (allSelected.value) {
     selectedIds.value = [];
@@ -644,5 +640,5 @@ const calcPath = (path?: string): string => {
   return path ? location + '/' + sTrim(path, '/') : location;
 };
 
-onMounted(async () => await reloadContent());
+onMounted(async () => await presetsStore.loadPresets(1, 1000));
 </script>

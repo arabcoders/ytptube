@@ -5,7 +5,7 @@
     :title="state.current?.opts.title ?? defaultTitle"
     :dismissible="true"
     :ui="{ content: 'max-w-lg', body: 'space-y-4', footer: 'justify-end gap-2' }"
-    @update:open="(open) => !open && onCancel()"
+    @update:open="(open) => !open && cancel()"
     @after:enter="focusInput"
   >
     <template #body>
@@ -63,7 +63,7 @@
           {{ state.current?.opts.confirmText ?? 'OK' }}
         </UButton>
 
-        <UButton color="neutral" variant="outline" @click="onCancel">
+        <UButton color="neutral" variant="outline" @click="cancel">
           {{ (state.current?.opts as PromptOptions | ConfirmOptions)?.cancelText ?? 'Cancel' }}
         </UButton>
       </template>
@@ -121,7 +121,6 @@ const focusInput = async () => {
   requestAnimationFrame(focusPrimary);
 };
 
-const onCancel = () => cancel();
 const onEnter = () =>
   confirm('confirm' === state.current?.type ? selected.value : localInput.value);
 

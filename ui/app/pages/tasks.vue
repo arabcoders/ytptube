@@ -62,7 +62,7 @@
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
-          @click="() => void reloadContent()"
+          @click="() => void loadContent(page)"
         >
           <span>Reload</span>
         </UButton>
@@ -121,7 +121,7 @@
         :disabled="isLoading"
         show-edges
         :sibling-count="0"
-        @update:page="navigatePage"
+        @update:page="loadContent"
         size="sm"
       />
     </div>
@@ -646,7 +646,7 @@
         :disabled="isLoading"
         show-edges
         :sibling-count="0"
-        @update:page="navigatePage"
+        @update:page="loadContent"
         size="sm"
       />
     </div>
@@ -1000,14 +1000,6 @@ const loadContent = async (pageNumber = page.value, fromMounted: boolean = false
       console.error(error);
     }
   }
-};
-
-const reloadContent = async (fromMounted: boolean = false) => {
-  await loadContent(page.value, fromMounted);
-};
-
-const navigatePage = async (newPage: number): Promise<void> => {
-  await loadContent(newPage);
 };
 
 const resetForm = (closeForm: boolean = false) => {

@@ -71,7 +71,7 @@
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
-          @click="() => void reloadContent()"
+          @click="() => void loadDefinitions(1, 1000)"
         >
           <span>Reload</span>
         </UButton>
@@ -642,10 +642,6 @@ const toggleFilterPanel = async (): Promise<void> => {
   filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
 };
 
-const reloadContent = async (): Promise<void> => {
-  await loadDefinitions(1, 1000);
-};
-
 const toggleDisplayStyle = (): void => {
   display_style.value = display_style.value === 'list' ? 'grid' : 'list';
 };
@@ -837,7 +833,7 @@ const exportDefinition = async (summary: TaskDefinitionSummary): Promise<void> =
 
 onMounted(async () => {
   if (!definitions.value.length) {
-    await reloadContent();
+    await loadDefinitions(1, 1000);
   }
 });
 </script>
