@@ -62,7 +62,7 @@
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
-          @click="() => void reloadContent()"
+          @click="() => void loadContent(page)"
         >
           <span>Reload</span>
         </UButton>
@@ -113,7 +113,17 @@
         </UDropdownMenu>
       </div>
 
-      <div class="text-xs text-toned">{{ filteredTasks.length }} displayed</div>
+      <UPagination
+        v-if="paging?.total_pages > 1"
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="loadContent"
+        size="sm"
+      />
     </div>
 
     <div
@@ -628,6 +638,19 @@
       description="There are no tasks defined yet. Click the New Task button to create your first automated download task."
     />
 
+    <div v-if="filteredTasks.length > 0 && paging?.total_pages > 1" class="flex justify-end">
+      <UPagination
+        :page="paging.page"
+        :total="paging.total"
+        :items-per-page="paging.per_page"
+        :disabled="isLoading"
+        show-edges
+        :sibling-count="0"
+        @update:page="loadContent"
+        size="sm"
+      />
+    </div>
+
     <UAlert v-if="tasks.length > 0" color="info" variant="soft">
       <template #description>
         <ul class="list-disc space-y-2 pl-5 text-sm text-default">
@@ -722,6 +745,8 @@ const config = useYtpConfig();
 const socket = useAppSocket();
 const stateStore = useQueueState();
 const pageShell = requirePageShell('tasks');
+const route = useRoute();
+const router = useRouter();
 const { confirmDialog } = useDialog();
 const sessionCache = useSessionCache();
 const { toggleExpand, expandClass } = useExpandableMeta();
@@ -731,6 +756,7 @@ const isMobile = useMediaQuery({ maxWidth: 639 });
 const tasksComposable = useTasks();
 const {
   tasks,
+  pagination: paging,
   isLoading,
   addInProgress,
   isTaskInProgress,
@@ -762,6 +788,7 @@ const inspectTask = ref<Task | null>(null);
 const query = ref('');
 const showFilter = ref(false);
 const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
+const page = ref<number>(route.query.page ? parseInt(route.query.page as string, 10) : 1);
 const CACHE_KEY = 'tasks:handler_support';
 const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_KEY) || {});
 
@@ -861,6 +888,19 @@ watch(
   { immediate: true },
 );
 
+const syncPageQuery = async (pageNumber: number): Promise<void> => {
+  const totalPages = tasksComposable.pagination.value.total_pages;
+  const nextQuery = { ...route.query };
+
+  if (totalPages > 1) {
+    nextQuery.page = String(pageNumber);
+  } else {
+    delete nextQuery.page;
+  }
+
+  await router.replace({ query: nextQuery });
+};
+
 const toggleFilterPanel = async (): Promise<void> => {
   showFilter.value = !showFilter.value;
   if (!showFilter.value) {
@@ -941,9 +981,15 @@ const willTaskBeProcessed = (item: Task): boolean => {
   return hasTimer || hasHandler;
 };
 
-const reloadContent = async (fromMounted: boolean = false) => {
+const loadContent = async (pageNumber = page.value, fromMounted: boolean = false) => {
+  page.value = pageNumber;
+
   try {
-    await tasksComposable.loadTasks();
+    await tasksComposable.loadTasks(pageNumber);
+
+    page.value = tasksComposable.pagination.value.page;
+    await nextTick();
+    await syncPageQuery(page.value);
 
     if (tasks.value.length > 0) {
       cleanStaleCache(tasks.value);
@@ -1400,7 +1446,7 @@ const itemActionGroups = (item: Task): DropdownMenuItem[][] => [
 ];
 
 onMounted(async () => {
-  await reloadContent(true);
+  await loadContent(page.value, true);
 });
 
 onBeforeUnmount(() => socket.off('item_status', statusHandler));

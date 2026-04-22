@@ -163,8 +163,14 @@
       }
 
       @media (max-width: 560px) {
+        body {
+          padding-top: calc(1rem + env(safe-area-inset-top));
+          padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        }
+
         .loading-card {
           padding: 1.3rem;
+          transform: translateY(clamp(-2.75rem, -7vh, -1.5rem));
         }
 
         .brand {

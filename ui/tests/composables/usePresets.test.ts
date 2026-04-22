@@ -104,6 +104,26 @@ describe('usePresets', () => {
       requestSpy.mockRestore()
     })
 
+    it('requests custom presets without defaults when asked', async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({
+          ok: true,
+          status: 200,
+          jsonData: {
+            items: [mockPreset],
+            pagination: mockPagination,
+          },
+        }),
+      )
+
+      const presets = usePresets()
+      await presets.loadPresets(2, 25, { excludeDefaults: true })
+
+      expect(requestSpy).toHaveBeenCalledWith('/api/presets/?page=2&per_page=25&exclude_defaults=true')
+      requestSpy.mockRestore()
+    })
+
     it('sorts presets by priority then name', async () => {
       const items = [
         { ...mockPreset, id: 1, name: 'B', priority: 2 },
@@ -127,12 +147,12 @@ describe('usePresets', () => {
       await presets.loadPresets()
 
       const sorted = presets.presets.value
-      expect(sorted[0].priority).toBe(2)
-      expect(sorted[0].name).toBe('A')
-      expect(sorted[1].priority).toBe(2)
-      expect(sorted[1].name).toBe('B')
-      expect(sorted[2].priority).toBe(1)
-      expect(sorted[2].name).toBe('C')
+      expect(sorted[0]!.priority).toBe(2)
+      expect(sorted[0]!.name).toBe('A')
+      expect(sorted[1]!.priority).toBe(2)
+      expect(sorted[1]!.name).toBe('B')
+      expect(sorted[2]!.priority).toBe(1)
+      expect(sorted[2]!.name).toBe('C')
       requestSpy.mockRestore()
     })
 
@@ -219,7 +239,7 @@ describe('usePresets', () => {
       const presets = usePresets()
       await presets.updatePreset(1, { ...mockPreset, default: true })
 
-      const requestBody = JSON.parse((requestSpy.mock.calls[0][1] as any).body)
+      const requestBody = JSON.parse((requestSpy.mock.calls[0]![1] as any).body)
       expect(requestBody.id).toBeUndefined()
       expect(requestBody.default).toBe(false)
       requestSpy.mockRestore()
@@ -257,7 +277,7 @@ describe('usePresets', () => {
       const presets = usePresets()
       await presets.patchPreset(1, { id: 10, default: true })
 
-      const requestBody = JSON.parse((requestSpy.mock.calls[0][1] as any).body)
+      const requestBody = JSON.parse((requestSpy.mock.calls[0]![1] as any).body)
       expect(requestBody.id).toBeUndefined()
       expect(requestBody.default).toBe(false)
       requestSpy.mockRestore()

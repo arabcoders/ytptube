@@ -180,25 +180,32 @@ class PresetsRepository(metaclass=Singleton):
         per_page: int,
         sort: str | None = None,
         order: str | None = None,
+        exclude_defaults: bool = False,
     ) -> tuple[list[PresetModel], int, int, int]:
         order_by = self._build_order_by(sort, order)
 
         async with self.session() as session:
-            total: int = await self.count()
+            total: int = await self.count(exclude_defaults=exclude_defaults)
             total_pages: int = (total + per_page - 1) // per_page if total > 0 else 1
 
             if page > total_pages and total > 0:
                 page = total_pages
 
-            query: Select[tuple[PresetModel]] = (
-                select(PresetModel).order_by(*order_by).limit(per_page).offset((page - 1) * per_page)
-            )
+            query: Select[tuple[PresetModel]] = select(PresetModel)
+            if exclude_defaults:
+                query = query.where(PresetModel.default.is_(False))
+
+            query = query.order_by(*order_by).limit(per_page).offset((page - 1) * per_page)
             result: Result[tuple[PresetModel]] = await session.execute(query)
             return list(result.scalars().all()), total, page, total_pages
 
-    async def count(self) -> int:
+    async def count(self, exclude_defaults: bool = False) -> int:
         async with self.session() as session:
-            result: Result[tuple[int]] = await session.execute(select(func.count()).select_from(PresetModel))
+            query = select(func.count()).select_from(PresetModel)
+            if exclude_defaults:
+                query = query.where(PresetModel.default.is_(False))
+
+            result: Result[tuple[int]] = await session.execute(query)
             return int(result.scalar_one())
 
     async def get(self, identifier: int | str) -> PresetModel | None:

@@ -76,7 +76,7 @@
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
-          @click="() => void reloadContent()"
+          @click="() => void loadContent(page)"
         >
           <span>Reload</span>
         </UButton>
@@ -135,7 +135,7 @@
         :disabled="isLoading"
         show-edges
         :sibling-count="0"
-        @update:page="navigatePage"
+        @update:page="loadContent"
         size="sm"
       />
     </div>
@@ -497,7 +497,7 @@
         :disabled="isLoading"
         show-edges
         :sibling-count="0"
-        @update:page="navigatePage"
+        @update:page="loadContent"
         size="sm"
       />
     </div>
@@ -704,14 +704,6 @@ const toggleFilterPanel = async (): Promise<void> => {
 const loadContent = async (pageNumber = page.value): Promise<void> => {
   page.value = pageNumber;
   await notificationsStore.loadNotifications(pageNumber);
-};
-
-const reloadContent = async (): Promise<void> => {
-  await loadContent(page.value);
-};
-
-const navigatePage = async (newPage: number): Promise<void> => {
-  await loadContent(newPage);
 };
 
 const resetEditor = (): void => {

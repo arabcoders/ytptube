@@ -26,10 +26,11 @@ async def presets_list(request: Request, encoder: Encoder, repo: PresetsReposito
     try:
         page, per_page = normalize_pagination(request)
         items, total, current_page, total_pages = await repo.list_paginated(
-            page,
-            per_page,
+            page=page,
+            per_page=per_page,
             sort=request.query.get("sort"),
             order=request.query.get("order"),
+            exclude_defaults=bool(request.query.get("exclude_defaults", False)),
         )
     except ValueError as exc:
         return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)

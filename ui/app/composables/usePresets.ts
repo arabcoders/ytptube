@@ -129,6 +129,7 @@ const removePreset = (id: number) => {
 const loadPresets = async (
   page: number = 1,
   perPage: number | undefined = undefined,
+  options: { excludeDefaults?: boolean } = {},
 ): Promise<void> => {
   isLoading.value = true;
   try {
@@ -136,6 +137,10 @@ const loadPresets = async (
     if (perPage !== undefined) {
       url += `&per_page=${perPage}`;
     }
+    if (options.excludeDefaults) {
+      url += '&exclude_defaults=true';
+    }
+
     const response = await request(url);
     await ensureSuccess(response);
 

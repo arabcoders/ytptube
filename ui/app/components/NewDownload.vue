@@ -170,7 +170,7 @@
           </div>
 
           <div
-            v-if="show_description && !hasFormatInConfig && get_preset(form.preset)?.description"
+            v-if="show_description && !hasFormatInConfig && findPreset(form.preset)?.description"
             class="max-h-36 overflow-auto rounded-md border border-default bg-muted/30 px-3 py-2 text-sm text-toned"
           >
             <button
@@ -180,7 +180,7 @@
             >
               <span class="inline-flex items-start gap-2">
                 <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0 text-info" />
-                <span class="is-ellipsis">{{ get_preset(form.preset)?.description }}</span>
+                <span class="is-ellipsis">{{ findPreset(form.preset)?.description }}</span>
               </span>
             </button>
           </div>
@@ -1124,7 +1124,6 @@ const hasFormatInConfig = computed(
   (): boolean => !!form.value.cli?.match(/(?<!\S)(-f|--format)(=|\s)(\S+)/),
 );
 
-const get_preset = (name: string | undefined) => findPreset(name);
 const expand_description = (e: Event) =>
   toggleClass(e.target as HTMLElement, ['is-ellipsis', 'is-pre-wrap']);
 
