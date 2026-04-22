@@ -1,20 +1,18 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from 'bun:test';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test';
 
 const disableOpacityMock = mock(() => {});
 const enableOpacityMock = mock(() => {});
 const syncOpacityMock = mock(() => {});
 
-mock.module('~/utils', () => ({
-  disableOpacity: disableOpacityMock,
-  enableOpacity: enableOpacityMock,
-  syncOpacity: syncOpacityMock,
-}));
-
 (globalThis as typeof globalThis & { defineNuxtPlugin?: (setup: () => void) => () => void }).defineNuxtPlugin =
   (setup) => setup;
 
+let utils: Awaited<typeof import('~/utils/index')>;
 let plugin: Awaited<typeof import('../../app/plugins/modal-opacity.client.ts')>['default'];
 let started = false;
+let disableOpacitySpy: ReturnType<typeof spyOn>;
+let enableOpacitySpy: ReturnType<typeof spyOn>;
+let syncOpacitySpy: ReturnType<typeof spyOn>;
 
 const flushMutations = async (): Promise<void> => {
   await Promise.resolve();
@@ -38,7 +36,17 @@ const startPlugin = (): void => {
 };
 
 beforeAll(async () => {
+  utils = await import('~/utils/index');
+  disableOpacitySpy = spyOn(utils, 'disableOpacity').mockImplementation(disableOpacityMock);
+  enableOpacitySpy = spyOn(utils, 'enableOpacity').mockImplementation(enableOpacityMock);
+  syncOpacitySpy = spyOn(utils, 'syncOpacity').mockImplementation(syncOpacityMock);
   plugin = (await import('../../app/plugins/modal-opacity.client.ts')).default;
+});
+
+afterAll(() => {
+  disableOpacitySpy.mockRestore();
+  enableOpacitySpy.mockRestore();
+  syncOpacitySpy.mockRestore();
 });
 
 beforeEach(() => {
