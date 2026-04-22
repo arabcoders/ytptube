@@ -286,7 +286,7 @@ class Config(metaclass=Singleton):
         "console_enabled",
         "browser_control_enabled",
         "ytdlp_auto_update",
-        "prevent_premiere_live",
+        "prevent_live_premiere",
         "temp_disabled",
         "allow_internal_urls",
         "simple_mode",

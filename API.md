@@ -96,6 +96,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
     - [GET /api/system/configuration](#get-apisystemconfiguration)
+    - [GET /api/system/limits](#get-apisystemlimits)
     - [POST /api/system/terminal](#post-apisystemterminal)
     - [GET /api/system/terminal/active](#get-apisystemterminalactive)
     - [GET /api/system/terminal/{session\_id}](#get-apisystemterminalsession_id)
@@ -2476,6 +2477,55 @@ or an error:
 - This endpoint combines multiple data sources into a single response for efficient initialization
 - The `folders` array includes available download folders up to the configured depth limit
 - The `queue` array contains active download items
+
+---
+
+### GET /api/system/limits
+**Purpose**: Get the system limits.
+
+**Response**:
+```json
+{
+  "downloads": {
+    "paused": false,
+    "live_bypasses_limits": true,
+    "global": {
+      "limit": 20,
+      "active": 3,
+      "available": 17,
+      "live_active": 1,
+      "queued": 8
+    },
+    "per_extractor": {
+      "default_limit": 2,
+      "items": [
+        {
+          "name": "youtube",
+          "limit": 3,
+          "source": "env_override",
+          "active": 2,
+          "queued": 4,
+          "available": 1
+        }
+      ]
+    }
+  },
+  "extraction": {
+    "concurrency": 4,
+    "timeout_seconds": 70,
+    "info_cache_ttl_seconds": 10800
+  },
+  "live": {
+    "prevent_premiere": true,
+    "premiere_buffer_minutes": 5
+  }
+}
+```
+
+**Notes**:
+- `downloads.global` counts only non-live downloads against the worker limit.
+- `downloads.global.live_active` is reported separately because live downloads bypass the global and per-extractor worker limits.
+- `downloads.per_extractor.items[*].source` is `default` unless an override was provided through `YTP_MAX_WORKERS_FOR_<EXTRACTOR>`.
 
 ---
 

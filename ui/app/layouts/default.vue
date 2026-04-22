@@ -167,6 +167,16 @@
 
                   <template #right>
                     <div class="flex items-center gap-1 sm:gap-2">
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-gauge"
+                        @click="showLimits = true"
+                      >
+                        <span class="hidden xl:inline">Limits</span>
+                      </UButton>
+
                       <NotifyDropdown />
 
                       <UButton
@@ -475,6 +485,18 @@
               placeholder="Search routes and actions"
               :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
             />
+
+            <UModal
+              v-if="showLimits"
+              :open="showLimits"
+              title="Download Limits"
+              :ui="{ content: 'sm:max-w-4xl', body: 'p-0' }"
+              @update:open="(open) => !open && (showLimits = false)"
+            >
+              <template #body>
+                <LimitsPage />
+              </template>
+            </UModal>
           </UDashboardGroup>
         </div>
       </div>
@@ -497,7 +519,8 @@ import { useStorage } from '@vueuse/core';
 import moment from 'moment';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import type { toastPosition } from '~/composables/useNotification';
-import { formatPageTitle } from '~/utils';
+import LimitsPage from '~/components/LimitsPage.vue';
+import { formatPageTitle, parse_api_response, request, syncOpacity, uri } from '~/utils';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
@@ -539,6 +562,7 @@ const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Click to check');
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
+const showLimits = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
 

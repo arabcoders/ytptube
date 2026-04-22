@@ -184,7 +184,8 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
                     starts_in: datetime = (
                         starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
                     )
-                    starts_in = starts_in + timedelta(minutes=5, seconds=dl.extras.get("duration", 0))
+                    buffer_time = queue.config.live_premiere_buffer if queue.config.live_premiere_buffer >= 0 else 5
+                    starts_in = starts_in + timedelta(minutes=buffer_time, seconds=dl.extras.get("duration", 0))
                     dlInfo.info.error += f" Download will start at {starts_in.astimezone().isoformat()}."
                     _requeue = False
                 except Exception as e:
