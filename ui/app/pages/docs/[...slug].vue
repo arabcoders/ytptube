@@ -49,6 +49,7 @@
 <script setup lang="ts">
 import Markdown from '~/components/Markdown.vue';
 import { DOCS_ENTRIES, getDocsEntryBySlug } from '~/composables/useDocs';
+import { formatPageTitle } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const route = useRoute();
@@ -71,7 +72,7 @@ const docEntry = computed(() => {
 const pageShell = computed(() => requirePageShell(docEntry.value.id));
 
 useHead(() => ({
-  title: docEntry.value.title,
+  title: formatPageTitle(docEntry.value.title),
 }));
 
 const pageCardUi = {

@@ -15,7 +15,6 @@ const state = reactive<ConfigState>({
   app: {
     download_path: '/downloads',
     remove_files: false,
-    ui_update_title: true,
     output_template: '',
     ytdlp_version: '',
     max_workers: 20,

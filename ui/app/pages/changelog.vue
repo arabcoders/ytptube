@@ -193,8 +193,6 @@ const toast = useNotification();
 const config = useYtpConfig();
 const pageShell = requirePageShell('changelog');
 
-useHead({ title: 'CHANGELOG' });
-
 const PROJECT = 'ytptube';
 const REPO = `https://github.com/arabcoders/${PROJECT}`;
 const REPO_URL = `https://arabcoders.github.io/${PROJECT}/CHANGELOG.json?version={version}`;

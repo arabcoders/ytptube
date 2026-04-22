@@ -527,6 +527,7 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import type { FileItem } from '~/types/filebrowser';
+import { formatPageTitle } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const route = useRoute();
@@ -559,6 +560,7 @@ const pageShell = requirePageShell('files');
 const hasItems = computed(() => filteredItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const displayedItemPaths = computed(() => filteredItems.value.map((item) => item.path));
+const browserPageTitle = computed(() => `File Browser: /${sTrim(browserPath.value || '/', '/')}`);
 const currentDirectoryName = computed(
   () => breadcrumbItems.value[breadcrumbItems.value.length - 1]?.name || 'Home',
 );
@@ -752,6 +754,10 @@ const itemSizeLabel = (item: FileItem): string => {
   return item.type === 'file' ? formatBytes(item.size) : ucFirst(item.type);
 };
 
+useHead(() => ({
+  title: formatPageTitle(decodeURIComponent(browserPageTitle.value)),
+}));
+
 const updateUrl = (dir: string, page?: number): void => {
   const normalizedDir = dir.replace(/^\/+/, '').replace(/\/+$/, '');
   const displayDir = normalizedDir ? normalizedDir : '/';
@@ -762,8 +768,6 @@ const updateUrl = (dir: string, page?: number): void => {
   if (fullUrl !== window.location.href) {
     history.replaceState({ path: normalizedDir || '/', title }, title, stateUrl);
   }
-
-  useHead({ title: decodeURIComponent(title) });
 };
 
 const handleClick = (item: FileItem): void => {

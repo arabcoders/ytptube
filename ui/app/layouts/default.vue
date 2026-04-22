@@ -497,6 +497,7 @@ import { useStorage } from '@vueuse/core';
 import moment from 'moment';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import type { toastPosition } from '~/composables/useNotification';
+import { formatPageTitle } from '~/utils';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
@@ -750,10 +751,17 @@ const sidebarItems = computed<
     .filter((section) => section.items.some((group) => group.length > 0));
 });
 
-const pageTitle = computed(() => {
-  const match = getActiveNavItem(route, navigationAvailability.value);
-  return match?.navbarTitle || match?.label || 'YTPTube';
-});
+const activeNavItem = computed(() => getActiveNavItem(route, navigationAvailability.value));
+
+const pageTitle = computed(
+  () => activeNavItem.value?.navbarTitle || activeNavItem.value?.label || 'YTPTube',
+);
+
+const documentTitle = computed(() => activeNavItem.value?.pageLabel || pageTitle.value);
+
+useHead(() => ({
+  title: formatPageTitle(documentTitle.value),
+}));
 
 const buildTooltip = computed(
   () =>

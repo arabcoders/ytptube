@@ -497,8 +497,6 @@ onBeforeUnmount(() => {
     scrollTimeout = null;
   }
 });
-
-useHead({ title: 'Logs' });
 </script>
 
 <style scoped>

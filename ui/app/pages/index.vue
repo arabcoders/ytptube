@@ -781,8 +781,7 @@ const embed_url = ref('');
 const isRefreshing = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
 
-const queueCount = computed(() => stateStore.count());
-const hasQueueContent = computed(() => queueCount.value > 0 || query.value.trim().length > 0);
+const hasQueueContent = computed(() => stateStore.count() > 0 || query.value.trim().length > 0);
 const contentStyle = computed<'grid' | 'list'>(() =>
   isMobile.value ? 'grid' : display_style.value,
 );
@@ -811,14 +810,6 @@ const hasPausable = computed(() =>
 const thumbnailRatioClass = computed(() =>
   thumbnail_ratio.value === 'is-16by9' ? 'aspect-video' : 'aspect-[3/1]',
 );
-
-const getTitle = (): string => {
-  if (!config.app.ui_update_title) {
-    return 'YTPTube';
-  }
-
-  return `YTPTube: ( ${stateStore.count()}/${config.app.max_workers}:${config.app.max_workers_per_extractor} )`;
-};
 
 const refreshQueue = async (): Promise<void> => {
   if (isRefreshing.value) {
@@ -871,8 +862,6 @@ onMounted(async () => {
     window.history.replaceState({}, '', url.toString());
   }
 
-  useHead({ title: getTitle() });
-
   if (Object.keys(pendingDownloadFormItem.value).length > 0) {
     await toNewDownload(pendingDownloadFormItem.value);
     pendingDownloadFormItem.value = {};
@@ -890,18 +879,6 @@ watch(toggleFilter, () => {
     query.value = '';
   }
 });
-
-watch(
-  () => stateStore.queue,
-  () => {
-    if (!config.app.ui_update_title) {
-      return;
-    }
-
-    useHead({ title: getTitle() });
-  },
-  { deep: true },
-);
 
 watch(
   () => socket.isConnected,

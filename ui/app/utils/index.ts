@@ -3,6 +3,7 @@ import type { convert_args_response, Paginated } from '~/types/responses';
 import type { StoreItem } from '~/types/store';
 
 const AG_SEPARATOR = '.';
+const APP_TITLE = 'YTPTube';
 
 const separators = [
   { name: 'Comma', value: ',' },
@@ -971,7 +972,18 @@ const parse_api_error = async (json: unknown): Promise<string> => {
   return 'Unknown error occurred';
 };
 
+const formatPageTitle = (title?: string | null): string => {
+  const normalized = title?.trim();
+
+  if (!normalized || normalized === APP_TITLE) {
+    return APP_TITLE;
+  }
+
+  return `${normalized} | ${APP_TITLE}`;
+};
+
 export {
+  APP_TITLE,
   separators,
   convertCliOptions,
   getSeparatorsName,
@@ -1019,4 +1031,5 @@ export {
   parse_list_response,
   parse_api_response,
   parse_api_error,
+  formatPageTitle,
 };

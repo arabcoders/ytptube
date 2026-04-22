@@ -327,8 +327,6 @@ import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { disableOpacity, enableOpacity } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
-useHead({ title: 'Console' });
-
 const MAX_HISTORY_ITEMS = 50;
 const ACTIVE_SESSION_STATUSES = ['starting', 'running', 'reconnecting'];
 

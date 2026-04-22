@@ -285,7 +285,7 @@
 import { useStorage } from '@vueuse/core';
 import { watch } from 'vue';
 import Hls from 'hls.js';
-import { disableOpacity, enableOpacity } from '~/utils';
+import { disableOpacity, enableOpacity, formatPageTitle } from '~/utils';
 import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts';
 
 import type { StoreItem } from '~/types/store';
@@ -318,6 +318,8 @@ const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
 const havePoster = ref(false);
 const showHelp = ref(false);
 const usingHls = ref(false);
+
+useHead(() => (title.value ? { title: formatPageTitle(`Playing: ${title.value}`) } : {}));
 
 let unbindMediaSessionListeners: null | (() => void) = null;
 let hls: Hls | null = null;
@@ -679,10 +681,6 @@ onBeforeUnmount(() => {
     unbindMediaSessionListeners = null;
   }
 
-  if (title.value) {
-    window.document.title = 'YTPTube';
-  }
-
   if (!video.value) {
     return;
   }
@@ -705,10 +703,6 @@ const prepareVideoPlayer = () => {
   }
 
   applyMediaSessionMetadata();
-
-  if (title.value) {
-    window.document.title = `YTPTube - Playing: ${title.value}`;
-  }
 
   if (!video.value) {
     return;
