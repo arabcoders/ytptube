@@ -155,9 +155,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959",
-    "date": "2026-04-22T16:38:35+00:00",
+    "full_sha": "c2cb5527f577cecc3a80708336f100f8da98dc9d",
+    "date": "2026-04-22T16:50:56+00:00",
     "commits": [
+      {
+        "sha": "c2cb5527",
+        "full_sha": "c2cb5527f577cecc3a80708336f100f8da98dc9d",
+        "message": "fix: broken tests in CI",
+        "author": "arabcoders",
+        "date": "2026-04-22T16:50:56+00:00"
+      },
       {
         "sha": "35f38d7c",
         "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959",

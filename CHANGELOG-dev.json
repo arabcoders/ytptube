@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260422-35f38d7c",
-        "date": "2026-04-22T16:38:35+00:00",
+        "tag": "dev-20260422-c2cb5527",
+        "date": "2026-04-22T16:50:56+00:00",
         "commits": [
+            {
+                "sha": "c2cb5527",
+                "message": "fix: broken tests in CI",
+                "author": "arabcoders",
+                "date": "2026-04-22T16:50:56+00:00",
+                "full_sha": "c2cb5527f577cecc3a80708336f100f8da98dc9d"
+            },
             {
                 "sha": "35f38d7c",
                 "message": "refactor: update presets UI to follow same rules as other pages.\n\nCo-authored-by: Copilot <copilot@github.com>",
@@ -4526,7 +4533,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959"
+        "full_sha": "c2cb5527f577cecc3a80708336f100f8da98dc9d"
     },
     {
         "tag": "dev-20250616-c07465a6",
