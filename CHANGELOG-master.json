@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20260421-ed77ea50",
-        "date": "2026-04-21T20:24:42+00:00",
+        "tag": "master-20260422-fdc08989",
+        "date": "2026-04-22T17:01:40+00:00",
         "commits": [
+            {
+                "sha": "c2cb5527",
+                "message": "fix: broken tests in CI",
+                "author": "arabcoders",
+                "date": "2026-04-22T16:50:56+00:00",
+                "full_sha": "c2cb5527f577cecc3a80708336f100f8da98dc9d"
+            },
+            {
+                "sha": "35f38d7c",
+                "message": "refactor: update presets UI to follow same rules as other pages.\n\nCo-authored-by: Copilot <copilot@github.com>",
+                "author": "arabcoders",
+                "date": "2026-04-22T16:38:35+00:00",
+                "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959"
+            },
+            {
+                "sha": "c9534bdf",
+                "message": "refactor: remove useless wrappers",
+                "author": "arabcoders",
+                "date": "2026-04-22T16:04:11+00:00",
+                "full_sha": "c9534bdf11dfcec1f0ffcd89fab09f95e10b4814"
+            },
+            {
+                "sha": "510bc2df",
+                "message": "fix: tasks was missing pagination UI elements",
+                "author": "arabcoders",
+                "date": "2026-04-22T15:07:21+00:00",
+                "full_sha": "510bc2df2b70db8d85bd20fba01a0d92129bec11"
+            },
             {
                 "sha": "716fce89",
                 "message": "fix: newDownload was causing infinite loop when switching to mulit url mode",
@@ -4505,7 +4533,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ed77ea508caae7b659f43a9a24d89a0c18b97b21"
+        "full_sha": "fdc08989aedcea76d896c14c220d10c8f75adc36"
     },
     {
         "tag": "master-20250616-c07465a6",
