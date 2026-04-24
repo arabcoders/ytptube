@@ -38,7 +38,7 @@
           icon="i-lucide-arrow-down"
           @click="scrollToBottom(false)"
         >
-          Jump to Live Tail
+          Scroll to bottom
         </UButton>
 
         <UButton
@@ -79,69 +79,69 @@
 
     <UPageCard variant="naked" :ui="pageCardUi">
       <template #body>
-        <div class="w-full min-w-0 max-w-full space-y-3">
-          <div class="w-full min-w-0 max-w-full overflow-hidden">
+        <div class="overflow-hidden rounded-sm border border-default bg-default shadow-sm">
+          <div
+            ref="logContainer"
+            class="logbox overflow-x-auto overflow-y-auto bg-elevated/30 font-mono text-sm text-default overscroll-x-contain"
+            @scroll.passive="handleScroll"
+          >
             <div
-              ref="logContainer"
-              class="logbox overflow-x-auto overflow-y-auto overscroll-x-contain"
-              @scroll.passive="handleScroll"
+              v-if="reachedEnd && !hasActiveFilter"
+              class="flex justify-center border-b border-default/40 px-4 py-3"
             >
               <div
-                :class="[
-                  'space-y-2 font-mono text-[12px] leading-6 text-default',
-                  textWrap ? 'w-full min-w-0' : 'w-max min-w-full',
-                ]"
-                role="log"
-                aria-live="polite"
+                class="rounded-full border border-default bg-elevated/40 px-3 py-1 text-[11px] text-toned"
               >
-                <div v-if="reachedEnd && !hasActiveFilter" class="flex justify-center">
-                  <div
-                    class="rounded-full border border-default bg-muted/40 px-3 py-1 text-[11px] text-toned"
-                  >
-                    No older lines remain in this file.
-                  </div>
+                No older lines remain in this file.
+              </div>
+            </div>
+
+            <template v-if="filteredLogs.length > 0">
+              <article
+                v-for="(entry, index) in filteredLogs"
+                :key="entry.log.id"
+                :class="logRowClass(entry, index)"
+              >
+                <div class="log-timestamp" :title="logTimeTitle(entry.log.datetime)">
+                  {{ logTimeLabel(entry.log.datetime) }}
                 </div>
 
-                <div v-if="filteredLogs.length > 0" class="space-y-1.5">
-                  <article
-                    v-for="(entry, index) in filteredLogs"
-                    :key="entry.log.id"
-                    :class="[
-                      logRowClass(entry, index),
-                      textWrap ? 'log-row--wrap-fit' : 'log-row--nowrap-fit',
-                    ]"
-                  >
-                    <span class="log-timestamp" :title="logTimeTitle(entry.log.datetime)">
-                      {{ logTimeLabel(entry.log.datetime) }}
-                    </span>
-
-                    <p class="log-line" :class="textWrap ? 'log-line--wrap' : 'log-line--nowrap'">
-                      {{ entry.log.line }}
-                    </p>
-                  </article>
-                </div>
-
-                <div v-else class="space-y-3 font-sans text-sm leading-normal">
-                  <UAlert
-                    v-if="query"
-                    color="warning"
-                    variant="soft"
-                    icon="i-lucide-search"
-                    title="No Results"
-                    :description="`No log lines found for the query: ${query}. Please try a different search term.`"
+                <div
+                  class="log-content"
+                  :class="textWrap ? 'log-content--wrap' : 'log-content--nowrap'"
+                >
+                  <span
+                    class="log-tone-dot"
+                    :class="`log-tone-dot--${detectLogTone(entry.log.line)}`"
                   />
-
-                  <UAlert
-                    v-else
-                    color="warning"
-                    variant="soft"
-                    icon="i-lucide-circle-alert"
-                    title="No log lines"
-                    description="No log lines are available yet."
-                  />
+                  <p class="log-line" :class="textWrap ? 'log-line--wrap' : 'log-line--nowrap'">
+                    {{ entry.log.line }}
+                  </p>
                 </div>
+              </article>
+            </template>
 
-                <div ref="bottomMarker" />
+            <div
+              v-else
+              class="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 py-8 text-center font-sans"
+            >
+              <UIcon
+                :name="query ? 'i-lucide-filter-x' : 'i-lucide-circle-off'"
+                class="size-6 text-toned"
+              />
+
+              <div class="space-y-1">
+                <p class="text-sm font-medium text-default">
+                  {{ query ? 'No logs match this query' : 'No log lines available' }}
+                </p>
+
+                <p class="text-sm text-toned">
+                  {{
+                    query
+                      ? `No log lines found for the query: ${query}. Please try a different search term.`
+                      : 'No log lines are available yet.'
+                  }}
+                </p>
               </div>
             </div>
           </div>
@@ -157,7 +157,7 @@ import type { EventSourceMessage } from '@microsoft/fetch-event-source';
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { log_line } from '~/types/logs';
-import { disableOpacity, enableOpacity, parse_api_error, request, uri } from '~/utils';
+import { parse_api_error, request, uri } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 type FilteredLogEntry = {
@@ -178,7 +178,6 @@ const route = useRoute();
 const pageShell = requirePageShell('logs');
 
 const logContainer = useTemplateRef<HTMLDivElement>('logContainer');
-const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker');
 const textWrap = useStorage<boolean>('logs_wrap', true);
 const sseController = ref<AbortController | null>(null);
 
@@ -277,6 +276,19 @@ const filteredLogs = computed<FilteredLogEntry[]>(() => {
   return result;
 });
 
+const scrollLogContainerToBottom = async (behavior: ScrollBehavior = 'auto'): Promise<void> => {
+  await nextTick();
+
+  if (!logContainer.value) {
+    return;
+  }
+
+  logContainer.value.scrollTo({
+    top: logContainer.value.scrollHeight,
+    behavior,
+  });
+};
+
 const fetchLogs = async (): Promise<void> => {
   loading.value = true;
 
@@ -311,11 +323,9 @@ const fetchLogs = async (): Promise<void> => {
       reachedEnd.value = true;
     }
 
-    nextTick(() => {
-      if (autoScroll.value && bottomMarker.value) {
-        bottomMarker.value.scrollIntoView({ behavior: 'auto' });
-      }
-    });
+    if (autoScroll.value) {
+      await scrollLogContainerToBottom();
+    }
   } catch (error) {
     console.error('Failed to fetch logs:', error);
   } finally {
@@ -347,11 +357,9 @@ const handleScroll = (): void => {
   }
 };
 
-const scrollToBottom = (fast = false): void => {
+const scrollToBottom = async (fast = false): Promise<void> => {
   autoScroll.value = true;
-  nextTick(() => {
-    bottomMarker.value?.scrollIntoView({ behavior: fast ? 'auto' : 'smooth' });
-  });
+  await scrollLogContainerToBottom(fast ? 'auto' : 'smooth');
 };
 
 const handleStreamMessage = (event: EventSourceMessage): void => {
@@ -372,11 +380,9 @@ const handleStreamMessage = (event: EventSourceMessage): void => {
 
   logs.value.push(payload);
 
-  nextTick(() => {
-    if (autoScroll.value && bottomMarker.value) {
-      bottomMarker.value.scrollIntoView({ behavior: 'smooth' });
-    }
-  });
+  if (autoScroll.value) {
+    void scrollLogContainerToBottom('smooth');
+  }
 };
 
 const startLogStream = async (): Promise<void> => {
@@ -483,14 +489,12 @@ onMounted(async () => {
     return;
   }
 
-  disableOpacity();
   await fetchLogs();
   await startLogStream();
 });
 
 onBeforeUnmount(() => {
   sseController.value?.abort();
-  enableOpacity();
 
   if (scrollTimeout) {
     clearTimeout(scrollTimeout);
@@ -507,65 +511,92 @@ onBeforeUnmount(() => {
   min-height: 55vh;
   max-height: 60vh;
   background: transparent;
-  padding: 0.75rem;
 }
 
 .log-row {
   display: flex;
   min-width: 0;
-  align-items: flex-start;
-  gap: 0.75rem;
-  border: 1px solid transparent;
-  border-radius: 0.75rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--ui-border) 40%, transparent);
   box-sizing: border-box;
-  padding: 0.625rem 0.75rem;
-  background: var(--ui-bg);
+  background: transparent;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease;
 }
 
-.log-row--wrap-fit {
-  width: 100%;
-}
-
-.log-row--nowrap-fit {
-  min-width: 100%;
-  width: max-content;
+.log-row:last-child {
+  border-bottom: 0;
 }
 
 .log-row--alt {
-  background: var(--ui-bg-elevated);
+  background: color-mix(in oklab, var(--ui-bg-elevated) 40%, transparent);
 }
 
 .log-row--match {
-  border-color: color-mix(in oklab, var(--ui-warning) 35%, transparent);
-  background: color-mix(in oklab, var(--ui-warning) 12%, var(--ui-bg) 88%);
+  background: color-mix(in oklab, var(--ui-warning) 10%, var(--ui-bg-elevated) 90%);
 }
 
 .log-row--context {
-  border-color: color-mix(in oklab, var(--ui-border) 75%, transparent);
-  background: color-mix(in oklab, var(--ui-bg-muted) 30%, var(--ui-bg) 70%);
+  background: color-mix(in oklab, var(--ui-bg-muted) 30%, transparent);
 }
 
 .log-row:hover {
-  border-color: var(--ui-border-accented);
-  background: color-mix(in oklab, var(--ui-bg-elevated) 65%, var(--ui-bg-muted) 35%);
+  background: color-mix(in oklab, var(--ui-bg-elevated) 70%, var(--ui-bg-muted) 30%);
 }
 
 .log-timestamp {
-  display: inline-flex;
-  min-width: 4.75rem;
+  display: flex;
+  width: 5.5rem;
+  min-width: 5.5rem;
   flex-shrink: 0;
   align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in oklab, var(--ui-border) 80%, transparent);
-  background: color-mix(in oklab, var(--ui-bg-muted) 50%, var(--ui-bg) 50%);
-  padding: 0.2rem 0.55rem;
+  justify-content: flex-end;
+  border-right: 1px solid color-mix(in oklab, var(--ui-border) 40%, transparent);
+  background: color-mix(in oklab, var(--ui-bg-elevated) 55%, transparent);
+  padding: 0.65rem 0.75rem;
   font-size: 11px;
   font-weight: 600;
   color: var(--ui-text-toned);
+}
+
+.log-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  line-height: 1.6;
+}
+
+.log-content--nowrap {
+  width: max-content;
+  min-width: calc(100% - 5.5rem);
+}
+
+.log-tone-dot {
+  display: inline-flex;
+  width: 0.5rem;
+  min-width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.45rem;
+  border-radius: 9999px;
+}
+
+.log-tone-dot--default {
+  background: color-mix(in oklab, var(--ui-text-toned) 55%, transparent);
+}
+
+.log-tone-dot--info {
+  background: var(--ui-info);
+}
+
+.log-tone-dot--warning {
+  background: var(--ui-warning);
+}
+
+.log-tone-dot--error {
+  background: var(--ui-error);
 }
 
 .log-line {

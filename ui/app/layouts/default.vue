@@ -55,9 +55,15 @@
             </template>
 
             <template #actions>
-              <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
-                Reload app
-              </UButton>
+              <div class="flex items-center gap-3">
+                <UButton to="/changelog" color="neutral" variant="link" size="sm" class="px-0">
+                  View changelog
+                </UButton>
+
+                <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
+                  Reload app
+                </UButton>
+              </div>
             </template>
           </UAlert>
 
@@ -393,11 +399,7 @@
                           >
                             <UIcon name="i-lucide-info" class="size-4 text-warning" />
                             <span>Update available:</span>
-                            <NuxtLink
-                              :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
-                              target="_blank"
-                              class="font-semibold text-highlighted"
-                            >
+                            <NuxtLink to="/changelog" class="font-semibold text-highlighted">
                               {{ config.app.new_version }}
                             </NuxtLink>
                           </p>
