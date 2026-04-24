@@ -39,7 +39,7 @@
         <Simple @show_settings="show_settings = true" />
       </div>
 
-      <div v-else key="regular" class="shell-stage flex flex-col">
+      <div v-else key="regular" class="shell-stage shell-surface flex flex-col">
         <Shutdown v-if="app_shutdown" />
 
         <div id="main_container" class="shell-root flex flex-col" v-else>
@@ -183,13 +183,14 @@
                         color="neutral"
                         variant="ghost"
                         size="sm"
-                        icon="i-lucide-refresh-cw"
-                        @click="$router.go(0)"
-                      >
-                        <span class="hidden xl:inline">Reload</span>
-                      </UButton>
+                        icon="i-lucide-search"
+                        aria-label="Search routes and actions"
+                        title="Search routes and actions"
+                        class="shrink-0 lg:hidden"
+                        @click="showRouteSearch = true"
+                      />
 
-                      <UDashboardSearchButton class="shrink-0" />
+                      <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
 
                       <UButton
                         color="neutral"
@@ -201,6 +202,16 @@
                         @click="colorMode.preference = nextColorModePreference"
                       >
                         <span class="hidden xl:inline">{{ colorModeButtonTitle }}</span>
+                      </UButton>
+
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-refresh-cw"
+                        @click="$router.go(0)"
+                      >
+                        <span class="hidden xl:inline">Reload</span>
                       </UButton>
 
                       <UButton
@@ -706,7 +717,7 @@ const handleSwipeCancel = (): void => {
 };
 
 const dashboardSidebarUi = {
-  root: 'border-r border-default bg-default/95 backdrop-blur-sm',
+  root: 'shell-surface border-r border-default bg-default/95 backdrop-blur-sm',
   header: 'border-b border-default px-2.5 py-3',
   body: 'gap-3 px-2.5 py-3',
   footer: 'border-t border-default px-2.5 py-3',
