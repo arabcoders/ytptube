@@ -1,4 +1,7 @@
 from datetime import UTC, datetime, timedelta
+import os
+from tempfile import mkstemp
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from sqlalchemy import text
@@ -9,9 +12,11 @@ from app.library.sqlite_store import SqliteStore
 
 
 async def make_store() -> SqliteStore:
-    """Create an isolated in-memory SqliteStore instance with schema."""
+    """Create an isolated temporary SqliteStore instance with schema."""
     SqliteStore._reset_singleton()
-    store = SqliteStore.get_instance(db_path=":memory:")
+    fd, db_path = mkstemp(prefix="ytptube-sqlite-store-", suffix=".db")
+    os.close(fd)
+    store = SqliteStore.get_instance(db_path=db_path)
     await store.get_connection()
     assert store._engine is not None, "Engine should be initialized after _ensure_conn"
     return store
@@ -77,6 +82,31 @@ async def test_sqlalchemy_engine_disposed_on_close() -> None:
 
 
 @pytest.mark.asyncio
+async def test_named_in_memory_databases_are_isolated() -> None:
+    SqliteStore._reset_singleton()
+    first = SqliteStore.get_instance(db_path=":memory:named-a")
+    await first.get_connection()
+    await first.execute_raw(
+        'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+        (
+            "first",
+            "queue",
+            "https://example.com/a",
+            '{"id":"a","title":"A","url":"https://example.com/a","folder":"/downloads","status":"finished"}',
+            "2024-01-01 00:00:00",
+        ),
+    )
+    await first.close()
+
+    SqliteStore._reset_singleton()
+    second = SqliteStore.get_instance(db_path=":memory:named-b")
+    await second.get_connection()
+    rows = await second.fetch_raw('SELECT "id" FROM "history" WHERE "id" = ?', ("first",))
+    assert rows == []
+    await second.close()
+
+
+@pytest.mark.asyncio
 async def test_enqueue_upsert_and_fetch_saved():
     store = await make_store()
     item = make_item(1)
@@ -131,14 +161,17 @@ async def test_count_with_status_filters():
     store = await make_store()
     finished_items = [make_item(i, status="finished") for i in range(2)]
     pending_items = [make_item(i + 10, status="pending") for i in range(3)]
+    skipped_items = [make_item(i + 20, status="skip") for i in range(2)]
 
-    for itm in finished_items + pending_items:
+    for itm in finished_items + pending_items + skipped_items:
         await store.enqueue_upsert("history", itm)
     await store.flush()
 
     assert await store.count("history", status_filter="finished") == 2
     assert await store.count("history", status_filter="pending") == 3
-    assert await store.count("history", status_filter="!finished") == 3
+    assert await store.count("history", status_filter="finished,skip") == 4
+    assert await store.count("history", status_filter="!finished") == 5
+    assert await store.count("history", status_filter="!finished,!skip") == 3
     await store.close()
 
 
@@ -224,6 +257,44 @@ async def test_enqueue_bulk_delete_returns_count_and_bulk_path():
     # direct bulk_delete should report affected rows
     count = await store.bulk_delete("history", [items[2]._id])
     assert count == 1
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_get_many_by_ids_and_status_and_bulk_delete_by_status():
+    store = await make_store()
+    finished = [make_item(i, status="finished") for i in range(2)]
+    pending = [make_item(i + 10, status="pending") for i in range(2)]
+    skipped = [make_item(i + 20, status="skip") for i in range(2)]
+
+    for item in finished + pending + skipped:
+        await store.enqueue_upsert("history", item)
+    await store.flush()
+
+    by_ids = await store.get_many_by_ids("history", [pending[1]._id, finished[0]._id])
+    assert [item_id for item_id, _ in by_ids] == [pending[1]._id, finished[0]._id]
+
+    by_status = await store.get_many_by_status("history", "finished")
+    assert {item_id for item_id, _ in by_status} == {finished[0]._id, finished[1]._id}
+
+    completed = await store.get_many_by_status("history", "finished,skip")
+    assert {item_id for item_id, _ in completed} == {
+        finished[0]._id,
+        finished[1]._id,
+        skipped[0]._id,
+        skipped[1]._id,
+    }
+
+    deleted = await store.bulk_delete_by_status("history", "finished")
+    assert deleted == 2
+
+    remaining = await store.fetch_saved("history")
+    assert {item_id for item_id, _ in remaining} == {
+        pending[0]._id,
+        pending[1]._id,
+        skipped[0]._id,
+        skipped[1]._id,
+    }
     await store.close()
 
 

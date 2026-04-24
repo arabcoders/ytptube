@@ -10,31 +10,6 @@ from app.library.Events import Event, EventBus, EventListener, Events
 class TestEvents:
     """Test the Events constants class."""
 
-    def test_events_constants_exist(self):
-        """Test that all expected event constants exist."""
-        # Basic lifecycle events
-        assert Events.STARTUP == "startup"
-        assert Events.LOADED == "loaded"
-        assert Events.STARTED == "started"
-        assert Events.SHUTDOWN == "shutdown"
-
-        # Connection events
-        assert Events.CONNECTED == "connected"
-        assert Events.CONFIG_UPDATE == "config_update"
-
-        # Log events
-        assert Events.LOG_INFO == "log_info"
-        assert Events.LOG_WARNING == "log_warning"
-        assert Events.LOG_ERROR == "log_error"
-        assert Events.LOG_SUCCESS == "log_success"
-
-        # Item events
-        assert Events.ITEM_ADDED == "item_added"
-        assert Events.ITEM_UPDATED == "item_updated"
-        assert Events.ITEM_COMPLETED == "item_completed"
-        assert Events.ITEM_CANCELLED == "item_cancelled"
-        assert Events.ITEM_DELETED == "item_deleted"
-
     def test_events_get_all(self):
         """Test Events.get_all() method returns all constants."""
         all_events = Events.get_all()
@@ -59,6 +34,7 @@ class TestEvents:
             "item_completed",
             "item_cancelled",
             "item_deleted",
+            "item_bulk_deleted",
             "item_paused",
             "item_resumed",
             "item_moved",
@@ -94,6 +70,7 @@ class TestEvents:
             Events.LOG_SUCCESS,
             Events.ITEM_ADDED,
             Events.ITEM_UPDATED,
+            Events.ITEM_BULK_DELETED,
         ]
 
         for expected in expected_frontend:

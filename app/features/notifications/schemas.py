@@ -16,6 +16,7 @@ class NotificationEvents:
     ITEM_COMPLETED: str = Events.ITEM_COMPLETED
     ITEM_CANCELLED: str = Events.ITEM_CANCELLED
     ITEM_DELETED: str = Events.ITEM_DELETED
+    ITEM_BULK_DELETED: str = Events.ITEM_BULK_DELETED
     ITEM_PAUSED: str = Events.ITEM_PAUSED
     ITEM_RESUMED: str = Events.ITEM_RESUMED
     ITEM_MOVED: str = Events.ITEM_MOVED

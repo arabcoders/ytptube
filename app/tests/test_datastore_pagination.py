@@ -1,5 +1,6 @@
 import json
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -25,9 +26,10 @@ async def reset_sqlite_store() -> None:
 
 
 async def make_db(data: int = 100) -> SqliteStore:
-    """Create a temporary database with test data."""
+    """Create a named in-memory database with test data."""
     await reset_sqlite_store()
-    ins = SqliteStore.get_instance(db_path=":memory:")
+    db_path = f":memory:test-datastore-pagination-{uuid4().hex}"
+    ins = SqliteStore.get_instance(db_path=db_path)
     await ins.get_connection()
 
     base_time = datetime.now(UTC)
@@ -235,6 +237,13 @@ class TestDataStorePagination:
             "folder": "/downloads",
             "status": "downloading",
         }
+        item_data_skip = {
+            "url": "https://example.com/skip",
+            "title": "Skipped Video",
+            "id": "skip-video",
+            "folder": "/downloads",
+            "status": "skip",
+        }
 
         db = await make_db(data=100)
         try:
@@ -258,6 +267,16 @@ class TestDataStorePagination:
                     datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             )
+            await db.execute_raw(
+                'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+                (
+                    "skip-id",
+                    str(StoreType.HISTORY),
+                    item_data_skip["url"],
+                    json.dumps(item_data_skip),
+                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                ),
+            )
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
 
             # Filter for finished items only
@@ -276,6 +295,14 @@ class TestDataStorePagination:
             assert len(items) == 1
             assert total == 1
             assert items[0][1].info.status == "pending"
+
+            items, total, _page, _total_pages = await datastore.get_items_paginated(
+                page=1, per_page=200, status_filter="finished,skip"
+            )
+
+            assert total == 101
+            assert len(items) == 101
+            assert {item.info.status for _, item in items} == {"finished", "skip"}
         finally:
             await db.close()
 
@@ -295,6 +322,13 @@ class TestDataStorePagination:
             "id": "error-video",
             "folder": "/downloads",
             "status": "error",
+        }
+        item_data_skip = {
+            "url": "https://example.com/skip2",
+            "title": "Skipped Video 2",
+            "id": "skip-video-2",
+            "folder": "/downloads",
+            "status": "skip",
         }
         db = await make_db(data=0)
         try:
@@ -318,6 +352,16 @@ class TestDataStorePagination:
                     datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             )
+            await db.execute_raw(
+                'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+                (
+                    "skip-id-2",
+                    str(StoreType.HISTORY),
+                    item_data_skip["url"],
+                    json.dumps(item_data_skip),
+                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                ),
+            )
 
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
 
@@ -326,14 +370,22 @@ class TestDataStorePagination:
                 page=1, per_page=50, status_filter="!finished"
             )
 
-            assert total == 2  # Only 2 non-finished items
-            assert len(items) == 2
+            assert total == 3
+            assert len(items) == 3
             for _item_id, item in items:
                 assert item.info.status != "finished"
 
-            # Verify we have pending and error
+            # Verify we have pending, error, and skip
             statuses = {item.info.status for _, item in items}
-            assert statuses == {"pending", "error"}
+            assert statuses == {"pending", "error", "skip"}
+
+            items, total, _page, _total_pages = await datastore.get_items_paginated(
+                page=1, per_page=50, status_filter="!finished,!skip"
+            )
+
+            assert total == 2
+            assert len(items) == 2
+            assert {item.info.status for _, item in items} == {"pending", "error"}
         finally:
             await db.close()
 

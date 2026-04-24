@@ -177,9 +177,15 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
             status=web.HTTPBadRequest.status_code,
         )
 
-    ds = queue.queue if storeType == StoreType.QUEUE else queue.done
-
     if ids:
+        if storeType == StoreType.HISTORY:
+            result = await queue.clear_bulk(ids, remove_file=remove_file)
+            return web.json_response(
+                data={"items": {}, "deleted": int(result.get("deleted", 0))},
+                status=web.HTTPOk.status_code,
+                dumps=encoder.encode,
+            )
+
         return web.json_response(
             data={
                 "items": await (
@@ -198,6 +204,23 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
             status=web.HTTPBadRequest.status_code,
         )
 
+    if storeType == StoreType.HISTORY:
+        result = await queue.clear_by_status(status_filter, remove_file=remove_file)
+        deleted = int(result.get("deleted", 0))
+        if deleted < 1:
+            return web.json_response(
+                data={"items": {}, "deleted": 0},
+                status=web.HTTPOk.status_code,
+                dumps=encoder.encode,
+            )
+
+        return web.json_response(
+            data={"items": {}, "deleted": deleted},
+            status=web.HTTPOk.status_code,
+            dumps=encoder.encode,
+        )
+
+    ds = queue.queue
     items_to_delete = []
     page = 1
     per_page = 1000
@@ -223,11 +246,7 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
 
     return web.json_response(
         data={
-            "items": await (
-                queue.cancel(items_to_delete)
-                if storeType == StoreType.QUEUE
-                else queue.clear(items_to_delete, remove_file=remove_file)
-            ),
+            "items": await queue.cancel(items_to_delete),
             "deleted": len(items_to_delete),
         },
         status=web.HTTPOk.status_code,

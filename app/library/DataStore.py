@@ -120,6 +120,48 @@ class DataStore:
 
         return None
 
+    async def get_many_by_ids(self, ids: Iterable[str]) -> list[tuple[str, Download]]:
+        ids_list = list(ids)
+        if not ids_list:
+            return []
+
+        items: list[tuple[str, Download]] = []
+        missing_ids: list[str] = []
+
+        for item_id in ids_list:
+            cached = self._dict.get(item_id)
+            if cached:
+                items.append((item_id, cached))
+                continue
+            missing_ids.append(item_id)
+
+        if StoreType.HISTORY == self._type and missing_ids:
+            loaded = await self._connection.get_many_by_ids(str(self._type), missing_ids)
+            for item_id, item in loaded:
+                self._dict[item_id] = Download(info=item)
+
+        items.extend((item_id, download) for item_id in ids_list if (download := self._dict.get(item_id)))
+
+        seen: set[str] = set()
+        ordered: list[tuple[str, Download]] = []
+        for item_id, download in items:
+            if item_id in seen:
+                continue
+            seen.add(item_id)
+            ordered.append((item_id, download))
+        return ordered
+
+    async def get_many_by_status(self, status_filter: str) -> list[tuple[str, Download]]:
+        if StoreType.HISTORY != self._type:
+            return []
+
+        items = await self._connection.get_many_by_status(str(self._type), status_filter)
+        downloads: list[tuple[str, Download]] = []
+        for item_id, item in items:
+            self._dict[item_id] = Download(info=item)
+            downloads.append((item_id, self._dict[item_id]))
+        return downloads
+
     def items(self):
         return self._dict.items()
 
@@ -175,10 +217,40 @@ class DataStore:
         return [(item_id, Download(info=item)) for item_id, item in items], total_items, current_page, total_pages
 
     async def bulk_delete(self, ids: Iterable[str]) -> int:
-        deleted = await self._connection.bulk_delete(str(self._type), ids)
-        for _id in ids:
+        ids_list = list(ids)
+        deleted = await self._connection.bulk_delete(str(self._type), ids_list)
+        for _id in ids_list:
             self._dict.pop(_id, None)
         return deleted
+
+    async def bulk_delete_by_status(self, status_filter: str) -> int:
+        deleted = await self._connection.bulk_delete_by_status(str(self._type), status_filter)
+        if deleted > 0:
+            self._drop_cached_by_status(status_filter)
+        return deleted
+
+    def _drop_cached_by_status(self, status_filter: str) -> None:
+        raw_statuses = [entry.strip() for entry in status_filter.split(",") if entry.strip()]
+        if not raw_statuses:
+            return
+
+        if all(entry.startswith("!") for entry in raw_statuses):
+            excluded = {entry[1:].strip() for entry in raw_statuses if entry[1:].strip()}
+            if not excluded:
+                return
+
+            for item_id, download in list(self._dict.items()):
+                if download.info and download.info.status not in excluded:
+                    self._dict.pop(item_id, None)
+            return
+
+        included = {entry for entry in raw_statuses if not entry.startswith("!")}
+        if not included:
+            return
+
+        for item_id, download in list(self._dict.items()):
+            if download.info and download.info.status in included:
+                self._dict.pop(item_id, None)
 
     async def test(self) -> bool:
         await self._connection.count(str(self._type))

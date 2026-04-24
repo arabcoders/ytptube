@@ -1131,16 +1131,13 @@ const clearCompleted = async (): Promise<void> => {
 
   selectedElms.value = [];
 
-  await Promise.all([
-    deleteHistoryItems({ status: 'finished', removeFile: false }),
-    deleteHistoryItems({ status: 'skip', removeFile: false }),
-  ]);
+  await deleteHistoryItems({ status: 'finished,skip', removeFile: false });
 
   await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const clearIncomplete = async (): Promise<void> => {
-  if (false === (await box.confirm('Clear all in-complete downloads?'))) {
+  if (false === (await box.confirm('Clear all incomplete downloads?'))) {
     return;
   }
 

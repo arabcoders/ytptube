@@ -372,6 +372,103 @@ class DownloadQueue(metaclass=Singleton):
 
         return status
 
+    async def clear_bulk(self, ids: list[str], remove_file: bool = False) -> dict[str, int | str]:
+        if not ids:
+            return {"deleted": 0}
+
+        items = await self.done.get_many_by_ids(ids)
+        if not items:
+            return {"deleted": 0}
+
+        if self.config.remove_files is not True:
+            remove_file = False
+
+        removed_files = 0
+        deleted_ids: list[str] = []
+        deleted_titles: list[str] = []
+
+        for item_id, item in items:
+            item_ref: str = f"{item_id=} {item.info.id=} {item.info.title=}"
+            filename: str = ""
+
+            LOG.debug(f"{remove_file=} {item_ref} - Removing local files: {item.info.status=}")
+
+            if remove_file and "finished" == item.info.status and item.info.filename:
+                filename = str(item.info.filename)
+                if item.info.folder:
+                    filename = f"{item.info.folder}/{item.info.filename}"
+
+                try:
+                    rf = Path(
+                        calc_download_path(
+                            base_path=Path(self.config.download_path),
+                            folder=filename,
+                            create_path=False,
+                        )
+                    )
+                    if rf.is_file() and rf.exists():
+                        if rf.stem and rf.suffix:
+                            for file_ref in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
+                                if file_ref.is_file() and file_ref.exists() and not file_ref.name.startswith("."):
+                                    removed_files += 1
+                                    LOG.debug(f"Removing '{item_ref}' local file '{file_ref.name}'.")
+                                    file_ref.unlink(missing_ok=True)
+                        else:
+                            LOG.debug(f"Removing '{item_ref}' local file '{rf.name}'.")
+                            rf.unlink(missing_ok=True)
+                            removed_files += 1
+                    else:
+                        LOG.warning(f"Failed to remove '{item_ref}' local file '{filename}'. File not found.")
+                except Exception as e:
+                    LOG.error(f"Unable to remove '{item_ref}' local file '{filename}'. {e!s}")
+
+            deleted_ids.append(item_id)
+            deleted_titles.append(item.info.title or item.info.id or item_id)
+
+        deleted_count = await self.done.bulk_delete(deleted_ids)
+        if deleted_count < 1:
+            return {"deleted": 0}
+
+        title = "History Removed" if removed_files > 0 else "History Cleared"
+        message = f"Removed {deleted_count} item{'s' if deleted_count != 1 else ''} from history."
+        if removed_files > 0:
+            message += f" Also removed {removed_files} local file{'s' if removed_files != 1 else ''}."
+
+        self._notify.emit(
+            Events.ITEM_BULK_DELETED,
+            data={"ids": deleted_ids, "count": deleted_count},
+            title=title,
+            message=message,
+        )
+
+        summary = ", ".join(deleted_titles[:5])
+        if deleted_count > 5:
+            summary += ", ..."
+        LOG.info(f"Bulk cleared {deleted_count} history item(s): {summary}")
+
+        return {"deleted": deleted_count}
+
+    async def clear_by_status(self, status_filter: str, remove_file: bool = False) -> dict[str, int | str]:
+        if self.config.remove_files is not True:
+            remove_file = False
+
+        if not remove_file:
+            deleted_count = await self.done.bulk_delete_by_status(status_filter)
+            if deleted_count < 1:
+                return {"deleted": 0}
+
+            self._notify.emit(
+                Events.ITEM_BULK_DELETED,
+                data={"count": deleted_count, "status": status_filter},
+                title="History Cleared",
+                message=f"Cleared {deleted_count} item{'s' if deleted_count != 1 else ''} from history.",
+            )
+            LOG.info(f"Bulk cleared {deleted_count} history item(s) by status '{status_filter}'.")
+            return {"deleted": deleted_count}
+
+        items = await self.done.get_many_by_status(status_filter)
+        return await self.clear_bulk([item_id for item_id, _ in items], remove_file=remove_file)
+
     async def get(self, mode: str = "all") -> dict[str, list[dict[str, ItemDTO]]]:
         """
         Get the download queue and the download history.

@@ -133,6 +133,7 @@ This document describes the available endpoints and their usage. All endpoints r
         - [`item_updated`](#item_updated)
         - [`item_cancelled`](#item_cancelled)
         - [`item_deleted`](#item_deleted)
+        - [`item_bulk_deleted`](#item_bulk_deleted)
         - [`item_moved`](#item_moved)
         - [`item_status`](#item_status)
         - [`paused`](#paused)
@@ -382,7 +383,7 @@ or an error:
 **Body Parameters**:
 - `type` (string, required): Type of items - `"queue"` or `"done"`
 - `ids` (array, optional): List of specific item IDs to delete. If provided, `status` filter is ignored
-- `status` (string, optional): Filter by status (e.g., `"finished"`, `"!finished"`). Required if `ids` not provided
+- `status` (string, optional): Filter by status (e.g., `"finished"`, `"!finished"`, `"finished,skip"`, `"!finished,!skip"`). Required if `ids` not provided
 - `remove_file` (boolean, optional): Whether to delete files from disk. Default: `true`.
 
 > [!NOTE]
@@ -413,6 +414,15 @@ or an error:
 {
   "type": "done",
   "status": "!finished",
+  "remove_file": false
+}
+```
+
+**Delete all completed and skipped items in one request:**
+```json
+{
+  "type": "done",
+  "status": "finished,skip",
   "remove_file": false
 }
 ```
@@ -449,6 +459,7 @@ or an error:
 **Notes**:
 - When using filter mode, all matching items will be deleted.
 - Filter mode with `{ "status": "!finished" }` is useful for cleaning up failed/pending downloads.
+- `status` also accepts comma-separated include filters (`finished,skip`) and comma-separated exclude filters (`!finished,!skip`).
 - Filter mode returns a `deleted` count indicating how many items were removed.
 
 ---
@@ -3171,6 +3182,24 @@ Emitted when a download item is deleted from the queue or history.
   "event": "item_deleted",
   "data": {
     "id": "abc123"
+  }
+}
+```
+
+---
+
+##### `item_bulk_deleted`
+
+Emitted when multiple items are cleared in bulk operation.
+
+**Event**:
+```json
+{
+  "event": "item_bulk_deleted",
+  "data": {
+    "count": 10001,
+    "status": "finished,skip",
+    "ids": ["id1", "id2", "..."]  // optional, included when clear is driven by explicit ids
   }
 }
 ```

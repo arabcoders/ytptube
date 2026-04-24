@@ -4,6 +4,8 @@ from collections import OrderedDict
 from dataclasses import asdict
 from datetime import UTC, datetime
 from email.utils import formatdate
+from unittest.mock import AsyncMock, Mock
+from uuid import uuid4
 
 import pytest
 
@@ -28,9 +30,9 @@ async def reset_sqlite_store() -> None:
 
 
 async def make_db(data: int = 0) -> SqliteStore:
-    """Create a temporary database with test data."""
+    """Create a named in-memory database with test data."""
     await reset_sqlite_store()
-    ins = SqliteStore.get_instance(db_path=":memory:")
+    ins = SqliteStore.get_instance(db_path=f":memory:test-datastore-{uuid4().hex}")
     await ins.get_connection()
 
     base_time = datetime.now(UTC)
@@ -215,6 +217,31 @@ class TestDataStore:
         # Should not raise
         ok = await store.test()
         assert ok is True
+
+    @pytest.mark.asyncio
+    async def test_bulk_delete_by_status_drops_matching_cached_items(self) -> None:
+        connection = Mock()
+        connection.bulk_delete_by_status = AsyncMock(return_value=2)
+        store = DataStore(StoreType.HISTORY, connection)
+
+        finished = make_item(id="finished")
+        finished.status = "finished"
+        skipped = make_item(id="skipped")
+        skipped.status = "skip"
+        pending = make_item(id="pending")
+        pending.status = "pending"
+
+        store._dict[finished._id] = StubDownload(info=finished)
+        store._dict[skipped._id] = StubDownload(info=skipped)
+        store._dict[pending._id] = StubDownload(info=pending)
+
+        deleted = await store.bulk_delete_by_status("finished,skip")
+
+        assert deleted == 2
+        connection.bulk_delete_by_status.assert_awaited_once_with("done", "finished,skip")
+        assert finished._id not in store._dict
+        assert skipped._id not in store._dict
+        assert pending._id in store._dict
 
     @pytest.mark.asyncio
     async def test_get_item_returns_none_when_no_kwargs(self) -> None:
