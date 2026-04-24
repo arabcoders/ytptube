@@ -12,7 +12,7 @@
             },
             {
                 "sha": "35f38d7c",
-                "message": "refactor: update presets UI to follow same rules as other pages.\n\nCo-authored-by: Copilot <copilot@github.com>",
+                "message": "refactor: update presets UI to follow same rules as other pages.",
                 "author": "arabcoders",
                 "date": "2026-04-22T16:38:35+00:00",
                 "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959"

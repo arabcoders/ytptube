@@ -12,7 +12,7 @@
             },
             {
                 "sha": "30a0c30d",
-                "message": "refactor: fix slowness in deleting big number of items\n\nCo-authored-by: Copilot <copilot@github.com>",
+                "message": "refactor: fix slowness in deleting big number of items",
                 "author": "arabcoders",
                 "date": "2026-04-24T20:18:14+00:00",
                 "full_sha": "30a0c30d944ea79103b7e496eeabf1e9a217c999"
@@ -54,7 +54,7 @@
             },
             {
                 "sha": "35f38d7c",
-                "message": "refactor: update presets UI to follow same rules as other pages.\n\nCo-authored-by: Copilot <copilot@github.com>",
+                "message": "refactor: update presets UI to follow same rules as other pages.",
                 "author": "arabcoders",
                 "date": "2026-04-22T16:38:35+00:00",
                 "full_sha": "35f38d7ceeed11f41c796a3bc591a05845b1f959"
