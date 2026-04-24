@@ -129,9 +129,6 @@ class Config(metaclass=Singleton):
     apprise_config: str = "{config_path}{os_sep}apprise.yml"
     """The path to the Apprise configuration file."""
 
-    ui_update_title: bool = True
-    """Update the title of the browser tab with the current status."""
-
     pip_packages: str = ""
     """The pip packages to install."""
 
@@ -284,13 +281,12 @@ class Config(metaclass=Singleton):
         "access_log",
         "remove_files",
         "ignore_ui",
-        "ui_update_title",
         "pip_ignore_updates",
         "file_logging",
         "console_enabled",
         "browser_control_enabled",
         "ytdlp_auto_update",
-        "prevent_premiere_live",
+        "prevent_live_premiere",
         "temp_disabled",
         "allow_internal_urls",
         "simple_mode",
@@ -308,7 +304,6 @@ class Config(metaclass=Singleton):
         "output_template",
         "started",
         "remove_files",
-        "ui_update_title",
         "max_workers",
         "max_workers_per_extractor",
         "default_preset",

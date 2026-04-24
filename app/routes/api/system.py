@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from app.features.dl_fields.service import DLFields
 from app.features.presets.service import Presets
 from app.library.config import Config
 from app.library.downloads import DownloadQueue
+from app.library.downloads.core import Download
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.router import route
@@ -363,3 +365,114 @@ async def stream_terminal_session(
             {"error": str(exc)},
             status=web.HTTPBadRequest.status_code,
         )
+
+
+@route("GET", "api/system/limits", "system.limits")
+async def system_limits(queue: DownloadQueue, config: Config, encoder: Encoder) -> Response:
+    """Return user-facing operational limits for downloads and extraction."""
+    active_downloads: dict[str, Download] = queue.pool.get_active_downloads()
+    queue_items: list[tuple[str, Download]] = list(queue.queue.items())
+
+    active_non_live: list[Download] = [download for download in active_downloads.values() if not download.is_live]
+    active_live: list[Download] = [download for download in active_downloads.values() if download.is_live]
+    queued_non_live: list[Download] = [
+        download
+        for _, download in queue_items
+        if not download.started() and not download.is_live and getattr(download.info, "auto_start", True) is not False
+    ]
+
+    def _get_extractor_override_limits(config: Config) -> dict[str, dict[str, int | str]]:
+        overrides: dict[str, dict[str, int | str]] = {}
+        prefix = "YTP_MAX_WORKERS_FOR_"
+
+        for env_key, raw_value in os.environ.items():
+            if not env_key.startswith(prefix):
+                continue
+
+            if not (extractor := env_key.removeprefix(prefix).strip().lower()):
+                continue
+
+            if not raw_value.isdigit() or int(raw_value) < 1:
+                continue
+
+            configured = int(raw_value)
+            overrides[extractor] = {
+                "configured": raw_value,
+                "effective": min(configured, config.max_workers),
+                "source": "env_override",
+            }
+
+        return overrides
+
+    overrides: dict[str, dict[str, int | str]] = _get_extractor_override_limits(config)
+    per_extractor: dict[str, dict[str, int | str]] = {}
+
+    for download in [*active_non_live, *queued_non_live]:
+        extractor = (download.info.get_extractor() or "unknown").lower()
+        entry = per_extractor.setdefault(
+            extractor,
+            {
+                "name": extractor,
+                "limit": config.max_workers_per_extractor,
+                "source": "default",
+                "active": 0,
+                "queued": 0,
+                "available": config.max_workers_per_extractor,
+            },
+        )
+
+        if extractor in overrides:
+            entry["limit"] = overrides[extractor]["effective"]
+            entry["source"] = overrides[extractor]["source"]
+
+        if download in active_non_live:
+            entry["active"] += 1
+        else:
+            entry["queued"] += 1
+
+    for extractor, override in overrides.items():
+        per_extractor.setdefault(
+            extractor,
+            {
+                "name": extractor,
+                "limit": override["effective"],
+                "source": override["source"],
+                "active": 0,
+                "queued": 0,
+                "available": override["effective"],
+            },
+        )
+
+    for entry in per_extractor.values():
+        entry["available"] = max(int(entry["limit"]) - int(entry["active"]), 0)
+
+    return web.json_response(
+        data={
+            "downloads": {
+                "paused": queue.is_paused(),
+                "live_bypasses_limits": True,
+                "global": {
+                    "limit": config.max_workers,
+                    "active": len(active_non_live),
+                    "available": max(config.max_workers - len(active_non_live), 0),
+                    "live_active": len(active_live),
+                    "queued": len(queued_non_live),
+                },
+                "per_extractor": {
+                    "default_limit": config.max_workers_per_extractor,
+                    "items": sorted(per_extractor.values(), key=lambda item: str(item["name"])),
+                },
+            },
+            "extraction": {
+                "concurrency": config.extract_info_concurrency,
+                "timeout_seconds": config.extract_info_timeout,
+                "info_cache_ttl_seconds": config.download_info_expires,
+            },
+            "live": {
+                "prevent_premiere": config.prevent_live_premiere,
+                "premiere_buffer_minutes": config.live_premiere_buffer,
+            },
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )

@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from dataclasses import fields
 from datetime import UTC, datetime
 from email.utils import formatdate
+from urllib.parse import quote_plus
 
 from aiohttp import web
 from sqlalchemy import text
@@ -23,6 +24,51 @@ from .Utils import init_class
 LOG: logging.Logger = logging.getLogger(__name__)
 
 ITEM_DTO_FIELDS: set[str] = {f.name for f in fields(ItemDTO)}
+
+
+def _memory_db_url(db_path: str) -> str:
+    if db_path == ":memory:":
+        return "sqlite+aiosqlite:///file::memory:?cache=shared&uri=true"
+
+    memory_name = db_path[len(":memory:") :].lstrip(":") or "default"
+    quoted_name = quote_plus(memory_name)
+    return f"sqlite+aiosqlite:///file:{quoted_name}?mode=memory&cache=shared&uri=true"
+
+
+def _decode_row(row: dict) -> ItemDTO:
+    row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
+    data = json.loads(row["data"])
+    data.pop("_id", None)
+    item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
+    item._id = row["id"]
+    item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
+    return item
+
+
+def _build_status_filter_clause(status_filter: str | None) -> tuple[str | None, dict[str, str]]:
+    if not status_filter:
+        return None, {}
+
+    raw_statuses = [entry.strip() for entry in status_filter.split(",") if entry.strip()]
+    if not raw_statuses:
+        return None, {}
+
+    if all(entry.startswith("!") for entry in raw_statuses):
+        statuses = [entry[1:].strip() for entry in raw_statuses if entry[1:].strip()]
+        if not statuses:
+            return None, {}
+
+        placeholders = ", ".join(f":status_{index}" for index in range(len(statuses)))
+        params = {f"status_{index}": status for index, status in enumerate(statuses)}
+        return f"json_extract(data, '$.status') NOT IN ({placeholders})", params
+
+    statuses = [entry for entry in raw_statuses if not entry.startswith("!")]
+    if not statuses:
+        return None, {}
+
+    placeholders = ", ".join(f":status_{index}" for index in range(len(statuses)))
+    params = {f"status_{index}": status for index, status in enumerate(statuses)}
+    return f"json_extract(data, '$.status') IN ({placeholders})", params
 
 
 class Terminator:
@@ -111,16 +157,7 @@ class SqliteStore(metaclass=ThreadSafe):
         )
         rows = result.mappings().all()
 
-        items: list[tuple[str, ItemDTO]] = []
-        for row in rows:
-            row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
-            data = json.loads(row["data"])
-            data.pop("_id", None)
-            item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
-            item._id = row["id"]
-            item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
-            items.append((row["id"], item))
-        return items
+        return [(row["id"], _decode_row(row)) for row in rows]
 
     async def exists(self, type_value: str, key: str | None = None, url: str | None = None) -> bool:
         return await self.get(type_value, key=key, url=url) is not None
@@ -154,13 +191,7 @@ class SqliteStore(metaclass=ThreadSafe):
         if not row:
             return None
 
-        row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
-        data = json.loads(row["data"])
-        data.pop("_id", None)
-        item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
-        item._id = row["id"]
-        item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
-        return item
+        return _decode_row(row)
 
     async def get_by_id(self, type_value: str, id: str) -> ItemDTO | None:
         await self.get_connection()
@@ -173,13 +204,43 @@ class SqliteStore(metaclass=ThreadSafe):
         if not row:
             return None
 
-        row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
-        data = json.loads(row["data"])
-        data.pop("_id", None)
-        item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
-        item._id = row["id"]
-        item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
-        return item
+        return _decode_row(row)
+
+    async def get_many_by_ids(self, type_value: str, ids: Iterable[str]) -> list[tuple[str, ItemDTO]]:
+        ids_list = list(ids)
+        if not ids_list:
+            return []
+
+        await self.get_connection()
+        placeholders = ", ".join(f":id_{index}" for index in range(len(ids_list)))
+        params: dict[str, str] = {"type_value": type_value}
+        params.update({f"id_{index}": item_id for index, item_id in enumerate(ids_list)})
+
+        result = await self._conn.execute(
+            text(
+                f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value AND "id" IN ({placeholders})'  # noqa: S608
+            ),
+            params,
+        )
+        rows = result.mappings().all()
+        order = {item_id: index for index, item_id in enumerate(ids_list)}
+        rows.sort(key=lambda row: order.get(row["id"], len(ids_list)))
+        return [(row["id"], _decode_row(row)) for row in rows]
+
+    async def get_many_by_status(self, type_value: str, status_filter: str) -> list[tuple[str, ItemDTO]]:
+        await self.get_connection()
+        params: dict[str, str] = {"type_value": type_value}
+        where_clauses = ['"type" = :type_value']
+
+        status_clause, status_params = _build_status_filter_clause(status_filter)
+        if status_clause:
+            where_clauses.append(status_clause)
+            params.update(status_params)
+
+        query = f'SELECT "id", "data", "created_at" FROM "history" WHERE {" AND ".join(where_clauses)} ORDER BY "created_at" DESC'  # noqa: S608
+        result = await self._conn.execute(text(query), params)
+        rows = result.mappings().all()
+        return [(row["id"], _decode_row(row)) for row in rows]
 
     async def get_item(self, type_value: str, **kwargs) -> ItemDTO | None:
         """
@@ -265,12 +326,7 @@ class SqliteStore(metaclass=ThreadSafe):
         if not row:
             return None
 
-        row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
-        data = json.loads(row["data"])
-        data.pop("_id", None)
-        item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
-        item._id = row["id"]
-        item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
+        item = _decode_row(row)
 
         return item if any(matches_condition(k, v, item.__dict__) for k, v in kwargs.items()) else None
 
@@ -279,14 +335,10 @@ class SqliteStore(metaclass=ThreadSafe):
         where_clauses: list[str] = ['"type" = :type_value']
         params: dict[str, str] = {"type_value": type_value}
 
-        if status_filter:
-            if status_filter.startswith("!"):
-                status_value = status_filter[1:]
-                where_clauses.append("json_extract(data, '$.status') != :status")
-                params["status"] = status_value
-            else:
-                where_clauses.append("json_extract(data, '$.status') = :status")
-                params["status"] = status_filter
+        status_clause, status_params = _build_status_filter_clause(status_filter)
+        if status_clause:
+            where_clauses.append(status_clause)
+            params.update(status_params)
 
         where_clause: str = " AND ".join(where_clauses)
         count_query: str = f'SELECT COUNT(*) as count FROM "history" WHERE {where_clause}'  # noqa: S608
@@ -308,14 +360,10 @@ class SqliteStore(metaclass=ThreadSafe):
         where_clauses: list[str] = ['"type" = :type_value']
         params: dict[str, str | int] = {"type_value": type_value}
 
-        if status_filter:
-            if status_filter.startswith("!"):
-                status_value = status_filter[1:]
-                where_clauses.append("json_extract(data, '$.status') != :status")
-                params["status"] = status_value
-            else:
-                where_clauses.append("json_extract(data, '$.status') = :status")
-                params["status"] = status_filter
+        status_clause, status_params = _build_status_filter_clause(status_filter)
+        if status_clause:
+            where_clauses.append(status_clause)
+            params.update(status_params)
 
         where_clause: str = " AND ".join(where_clauses)
         count_query: str = f'SELECT COUNT(*) as count FROM "history" WHERE {where_clause}'  # noqa: S608
@@ -338,15 +386,7 @@ class SqliteStore(metaclass=ThreadSafe):
         result = await self._conn.execute(text(query), params)
         rows = result.mappings().all()
 
-        items: list[tuple[str, ItemDTO]] = []
-        for row in rows:
-            row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
-            data = json.loads(row["data"])
-            data.pop("_id", None)
-            item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
-            item._id = row["id"]
-            item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
-            items.append((row["id"], item))
+        items = [(row["id"], _decode_row(row)) for row in rows]
 
         return items, total_items, page, total_pages
 
@@ -373,6 +413,23 @@ class SqliteStore(metaclass=ThreadSafe):
 
         result = await self._conn.execute(
             text(f'DELETE FROM "history" WHERE "type" = :type_value AND "id" IN ({placeholders})'),  # noqa: S608
+            params,
+        )
+        await self._conn.commit()
+        return result.rowcount if result else 0
+
+    async def bulk_delete_by_status(self, type_value: str, status_filter: str) -> int:
+        await self.get_connection()
+        params: dict[str, str] = {"type_value": type_value}
+        where_clauses = ['"type" = :type_value']
+
+        status_clause, status_params = _build_status_filter_clause(status_filter)
+        if status_clause:
+            where_clauses.append(status_clause)
+            params.update(status_params)
+
+        result = await self._conn.execute(
+            text(f'DELETE FROM "history" WHERE {" AND ".join(where_clauses)}'),  # noqa: S608
             params,
         )
         await self._conn.commit()
@@ -553,7 +610,7 @@ class SqliteStore(metaclass=ThreadSafe):
         from app.main import ROOT_PATH
 
         if self._db_path.startswith(":memory"):
-            db_url: str = "sqlite+aiosqlite:///file::memory:?cache=shared&uri=true"
+            db_url: str = _memory_db_url(self._db_path)
         else:
             os.makedirs(os.path.dirname(self._db_path) or ".", exist_ok=True)
             db_url: str = f"sqlite+aiosqlite:///{self._db_path}"

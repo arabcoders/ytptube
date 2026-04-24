@@ -39,7 +39,7 @@
         <Simple @show_settings="show_settings = true" />
       </div>
 
-      <div v-else key="regular" class="shell-stage flex flex-col">
+      <div v-else key="regular" class="shell-stage shell-surface flex flex-col">
         <Shutdown v-if="app_shutdown" />
 
         <div id="main_container" class="shell-root flex flex-col" v-else>
@@ -55,9 +55,15 @@
             </template>
 
             <template #actions>
-              <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
-                Reload app
-              </UButton>
+              <div class="flex items-center gap-3">
+                <UButton to="/changelog" color="neutral" variant="link" size="sm" class="px-0">
+                  View changelog
+                </UButton>
+
+                <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
+                  Reload app
+                </UButton>
+              </div>
             </template>
           </UAlert>
 
@@ -167,19 +173,30 @@
 
                   <template #right>
                     <div class="flex items-center gap-1 sm:gap-2">
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-gauge"
+                        @click="showLimits = true"
+                      >
+                        <span class="hidden xl:inline">Limits</span>
+                      </UButton>
+
                       <NotifyDropdown />
 
                       <UButton
                         color="neutral"
                         variant="ghost"
                         size="sm"
-                        icon="i-lucide-refresh-cw"
-                        @click="$router.go(0)"
-                      >
-                        <span class="hidden xl:inline">Reload</span>
-                      </UButton>
+                        icon="i-lucide-search"
+                        aria-label="Search routes and actions"
+                        title="Search routes and actions"
+                        class="shrink-0 lg:hidden"
+                        @click="showRouteSearch = true"
+                      />
 
-                      <UDashboardSearchButton class="shrink-0" />
+                      <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
 
                       <UButton
                         color="neutral"
@@ -191,6 +208,16 @@
                         @click="colorMode.preference = nextColorModePreference"
                       >
                         <span class="hidden xl:inline">{{ colorModeButtonTitle }}</span>
+                      </UButton>
+
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-refresh-cw"
+                        @click="$router.go(0)"
+                      >
+                        <span class="hidden xl:inline">Reload</span>
                       </UButton>
 
                       <UButton
@@ -372,11 +399,7 @@
                           >
                             <UIcon name="i-lucide-info" class="size-4 text-warning" />
                             <span>Update available:</span>
-                            <NuxtLink
-                              :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
-                              target="_blank"
-                              class="font-semibold text-highlighted"
-                            >
+                            <NuxtLink to="/changelog" class="font-semibold text-highlighted">
                               {{ config.app.new_version }}
                             </NuxtLink>
                           </p>
@@ -475,6 +498,18 @@
               placeholder="Search routes and actions"
               :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
             />
+
+            <UModal
+              v-if="showLimits"
+              :open="showLimits"
+              title="Download Limits"
+              :ui="{ content: 'sm:max-w-4xl', body: 'p-0' }"
+              @update:open="(open) => !open && (showLimits = false)"
+            >
+              <template #body>
+                <LimitsPage />
+              </template>
+            </UModal>
           </UDashboardGroup>
         </div>
       </div>
@@ -497,6 +532,9 @@ import { useStorage } from '@vueuse/core';
 import moment from 'moment';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import type { toastPosition } from '~/composables/useNotification';
+import LimitsPage from '~/components/LimitsPage.vue';
+import { formatPageTitle, parse_api_response, request, syncOpacity, uri } from '~/utils';
+import { getSidebarSwipeMode } from '~/utils/sidebarSwipe';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
@@ -520,7 +558,6 @@ type SidebarSection = {
 type ColorModePreference = 'system' | 'light' | 'dark';
 type SwipeMode = 'open' | 'close';
 
-const MOBILE_SIDEBAR_EDGE_WIDTH = 32;
 const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
 
 const socket = useAppSocket();
@@ -538,6 +575,7 @@ const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Click to check');
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
+const showLimits = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
 
@@ -617,11 +655,11 @@ const handleSwipeStart = (event: TouchEvent): void => {
     return;
   }
 
-  const swipeMode: SwipeMode | null = showSidebar.value
-    ? 'close'
-    : touch.clientX <= MOBILE_SIDEBAR_EDGE_WIDTH
-      ? 'open'
-      : null;
+  const swipeMode: SwipeMode | null = getSidebarSwipeMode(
+    showSidebar.value,
+    touch.clientX,
+    navigator,
+  );
 
   if (!swipeMode) {
     resetSwipe();
@@ -681,7 +719,7 @@ const handleSwipeCancel = (): void => {
 };
 
 const dashboardSidebarUi = {
-  root: 'border-r border-default bg-default/95 backdrop-blur-sm',
+  root: 'shell-surface border-r border-default bg-default/95 backdrop-blur-sm',
   header: 'border-b border-default px-2.5 py-3',
   body: 'gap-3 px-2.5 py-3',
   footer: 'border-t border-default px-2.5 py-3',
@@ -750,10 +788,17 @@ const sidebarItems = computed<
     .filter((section) => section.items.some((group) => group.length > 0));
 });
 
-const pageTitle = computed(() => {
-  const match = getActiveNavItem(route, navigationAvailability.value);
-  return match?.navbarTitle || match?.label || 'YTPTube';
-});
+const activeNavItem = computed(() => getActiveNavItem(route, navigationAvailability.value));
+
+const pageTitle = computed(
+  () => activeNavItem.value?.navbarTitle || activeNavItem.value?.label || 'YTPTube',
+);
+
+const documentTitle = computed(() => activeNavItem.value?.pageLabel || pageTitle.value);
+
+useHead(() => ({
+  title: formatPageTitle(documentTitle.value),
+}));
 
 const buildTooltip = computed(
   () =>

@@ -33,6 +33,22 @@
 }
 
 @layer components {
+  .shell-surface {
+    background:
+      radial-gradient(circle at top left, rgb(99 102 241 / 0.1), transparent 28%),
+      radial-gradient(circle at top right, rgb(245 158 11 / 0.08), transparent 22%),
+      linear-gradient(180deg, rgb(255 255 255 / 0.84), rgb(248 250 252 / 0.9));
+    backdrop-filter: blur(16px);
+  }
+
+  .dark .shell-surface {
+    background:
+      radial-gradient(circle at top left, rgb(99 102 241 / 0.12), transparent 26%),
+      radial-gradient(circle at top right, rgb(245 158 11 / 0.07), transparent 20%),
+      linear-gradient(180deg, rgb(9 12 18 / 0.84), rgb(17 24 39 / 0.9));
+    backdrop-filter: blur(16px);
+  }
+
   .play-overlay {
     position: relative;
     display: block;

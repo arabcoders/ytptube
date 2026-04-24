@@ -30,7 +30,6 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_DEBUG                       | Whether to turn on debug mode                                       | `false`               |
 | YTP_DEBUGPY_PORT                | The port to use for the debugpy debugger                            | `5678`                |
 | YTP_EXTRACT_INFO_TIMEOUT        | The timeout for extracting video information                        | `70`                  |
-| YTP_UI_UPDATE_TITLE             | Whether to update the title of the page with the current stats      | `true`                |
 | YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |
 | YTP_PIP_IGNORE_UPDATES          | Do not update the custom pip packages                               | `false`               |
 | YTP_PICTURES_BACKENDS           | A comma separated list of pictures urls to use                      | `(not_set)`           |

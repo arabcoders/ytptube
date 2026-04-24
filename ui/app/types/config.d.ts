@@ -7,8 +7,6 @@ type AppConfig = {
   download_path: string;
   /** Indicates if files should be removed after download */
   remove_files: boolean;
-  /** Indicates if the UI should update the title with the current download status */
-  ui_update_title: boolean;
   /** Output template for yt-dlp, e.g. "%(title)s.%(ext)s" */
   output_template: string;
   /** yt-dlp version, e.g. "2023.10.01" */

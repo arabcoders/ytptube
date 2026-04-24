@@ -1362,6 +1362,78 @@ class TestQueueManager:
         done_store._connection.flush.assert_awaited_once()
         assert status[item.info._id] == "ok", "Clear should still report success after flushing deletes"
 
+    @pytest.mark.asyncio
+    async def test_clear_bulk_uses_bulk_delete_and_aggregate_notification(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        queue_manager.config = Mock(remove_files=False, download_path="/tmp")
+        queue_manager._notify = Mock()
+
+        item_one = Mock()
+        item_one.info = make_item(id="done-id-1", title="Finished clip 1")
+        item_one.info._id = "done-id-1"
+        item_one.info.status = "finished"
+
+        item_two = Mock()
+        item_two.info = make_item(id="done-id-2", title="Finished clip 2")
+        item_two.info._id = "done-id-2"
+        item_two.info.status = "finished"
+
+        done_store = Mock()
+        done_store.get_many_by_ids = AsyncMock(return_value=[("done-id-1", item_one), ("done-id-2", item_two)])
+        done_store.bulk_delete = AsyncMock(return_value=2)
+        queue_manager.done = done_store
+
+        result = await DownloadQueue.clear_bulk(queue_manager, ["done-id-1", "done-id-2"], remove_file=False)
+
+        assert result == {"deleted": 2}
+        done_store.get_many_by_ids.assert_awaited_once_with(["done-id-1", "done-id-2"])
+        done_store.bulk_delete.assert_awaited_once_with(["done-id-1", "done-id-2"])
+        queue_manager._notify.emit.assert_called_once()
+        assert queue_manager._notify.emit.call_args.args[0] == Events.ITEM_BULK_DELETED
+        assert queue_manager._notify.emit.call_args.kwargs["data"] == {"ids": ["done-id-1", "done-id-2"], "count": 2}
+
+    @pytest.mark.asyncio
+    async def test_clear_by_status_uses_status_fetch_before_bulk_delete(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        queue_manager.config = Mock(remove_files=False, download_path="/tmp")
+        queue_manager._notify = Mock()
+
+        done_store = Mock()
+        done_store.bulk_delete_by_status = AsyncMock(return_value=1)
+        done_store.get_many_by_status = AsyncMock()
+        queue_manager.done = done_store
+
+        result = await DownloadQueue.clear_by_status(queue_manager, "finished", remove_file=False)
+
+        assert result == {"deleted": 1}
+        done_store.bulk_delete_by_status.assert_awaited_once_with("finished")
+        done_store.get_many_by_status.assert_not_called()
+        queue_manager._notify.emit.assert_called_once()
+        assert queue_manager._notify.emit.call_args.args[0] == Events.ITEM_BULK_DELETED
+        assert queue_manager._notify.emit.call_args.kwargs["data"] == {"count": 1, "status": "finished"}
+
+    @pytest.mark.asyncio
+    async def test_clear_by_status_with_file_removal_fetches_matching_items(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        queue_manager.config = Mock(remove_files=True, download_path="/tmp")
+        queue_manager._notify = Mock()
+
+        item = Mock()
+        item.info = make_item(id="done-id", title="Finished clip")
+        item.info._id = "done-id"
+        item.info.status = "finished"
+
+        done_store = Mock()
+        done_store.get_many_by_status = AsyncMock(return_value=[("done-id", item)])
+        queue_manager.done = done_store
+        queue_manager.clear_bulk = AsyncMock(return_value={"deleted": 1})
+
+        result = await DownloadQueue.clear_by_status(queue_manager, "finished", remove_file=True)
+
+        assert result == {"deleted": 1}
+        done_store.get_many_by_status.assert_awaited_once_with("finished")
+        queue_manager.clear_bulk.assert_awaited_once_with(["done-id"], remove_file=True)
+
 
 class TestPoolManager:
     @pytest.mark.asyncio

@@ -96,6 +96,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
     - [GET /api/system/configuration](#get-apisystemconfiguration)
+    - [GET /api/system/limits](#get-apisystemlimits)
     - [POST /api/system/terminal](#post-apisystemterminal)
     - [GET /api/system/terminal/active](#get-apisystemterminalactive)
     - [GET /api/system/terminal/{session\_id}](#get-apisystemterminalsession_id)
@@ -132,6 +133,7 @@ This document describes the available endpoints and their usage. All endpoints r
         - [`item_updated`](#item_updated)
         - [`item_cancelled`](#item_cancelled)
         - [`item_deleted`](#item_deleted)
+        - [`item_bulk_deleted`](#item_bulk_deleted)
         - [`item_moved`](#item_moved)
         - [`item_status`](#item_status)
         - [`paused`](#paused)
@@ -381,7 +383,7 @@ or an error:
 **Body Parameters**:
 - `type` (string, required): Type of items - `"queue"` or `"done"`
 - `ids` (array, optional): List of specific item IDs to delete. If provided, `status` filter is ignored
-- `status` (string, optional): Filter by status (e.g., `"finished"`, `"!finished"`). Required if `ids` not provided
+- `status` (string, optional): Filter by status (e.g., `"finished"`, `"!finished"`, `"finished,skip"`, `"!finished,!skip"`). Required if `ids` not provided
 - `remove_file` (boolean, optional): Whether to delete files from disk. Default: `true`.
 
 > [!NOTE]
@@ -412,6 +414,15 @@ or an error:
 {
   "type": "done",
   "status": "!finished",
+  "remove_file": false
+}
+```
+
+**Delete all completed and skipped items in one request:**
+```json
+{
+  "type": "done",
+  "status": "finished,skip",
   "remove_file": false
 }
 ```
@@ -448,6 +459,7 @@ or an error:
 **Notes**:
 - When using filter mode, all matching items will be deleted.
 - Filter mode with `{ "status": "!finished" }` is useful for cleaning up failed/pending downloads.
+- `status` also accepts comma-separated include filters (`finished,skip`) and comma-separated exclude filters (`!finished,!skip`).
 - Filter mode returns a `deleted` count indicating how many items were removed.
 
 ---
@@ -2479,6 +2491,55 @@ or an error:
 
 ---
 
+### GET /api/system/limits
+**Purpose**: Get the system limits.
+
+**Response**:
+```json
+{
+  "downloads": {
+    "paused": false,
+    "live_bypasses_limits": true,
+    "global": {
+      "limit": 20,
+      "active": 3,
+      "available": 17,
+      "live_active": 1,
+      "queued": 8
+    },
+    "per_extractor": {
+      "default_limit": 2,
+      "items": [
+        {
+          "name": "youtube",
+          "limit": 3,
+          "source": "env_override",
+          "active": 2,
+          "queued": 4,
+          "available": 1
+        }
+      ]
+    }
+  },
+  "extraction": {
+    "concurrency": 4,
+    "timeout_seconds": 70,
+    "info_cache_ttl_seconds": 10800
+  },
+  "live": {
+    "prevent_premiere": true,
+    "premiere_buffer_minutes": 5
+  }
+}
+```
+
+**Notes**:
+- `downloads.global` counts only non-live downloads against the worker limit.
+- `downloads.global.live_active` is reported separately because live downloads bypass the global and per-extractor worker limits.
+- `downloads.per_extractor.items[*].source` is `default` unless an override was provided through `YTP_MAX_WORKERS_FOR_<EXTRACTOR>`.
+
+---
+
 ### POST /api/system/terminal
 **Purpose**: Start a yt-dlp terminal session. Requires `YTP_CONSOLE_ENABLED=true`.
 
@@ -3121,6 +3182,24 @@ Emitted when a download item is deleted from the queue or history.
   "event": "item_deleted",
   "data": {
     "id": "abc123"
+  }
+}
+```
+
+---
+
+##### `item_bulk_deleted`
+
+Emitted when multiple items are cleared in bulk operation.
+
+**Event**:
+```json
+{
+  "event": "item_bulk_deleted",
+  "data": {
+    "count": 10001,
+    "status": "finished,skip",
+    "ids": ["id1", "id2", "..."]  // optional, included when clear is driven by explicit ids
   }
 }
 ```

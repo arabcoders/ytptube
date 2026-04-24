@@ -37,6 +37,7 @@ class Events:
     ITEM_COMPLETED: str = "item_completed"
     ITEM_CANCELLED: str = "item_cancelled"
     ITEM_DELETED: str = "item_deleted"
+    ITEM_BULK_DELETED: str = "item_bulk_deleted"
     ITEM_PAUSED: str = "item_paused"
     ITEM_RESUMED: str = "item_resumed"
     ITEM_MOVED: str = "item_moved"
@@ -87,6 +88,7 @@ class Events:
             Events.ITEM_UPDATED,
             Events.ITEM_CANCELLED,
             Events.ITEM_DELETED,
+            Events.ITEM_BULK_DELETED,
             Events.ITEM_MOVED,
             Events.ITEM_STATUS,
             Events.PAUSED,
