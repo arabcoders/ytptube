@@ -534,6 +534,7 @@ import { useMediaQuery } from '~/composables/useMediaQuery';
 import type { toastPosition } from '~/composables/useNotification';
 import LimitsPage from '~/components/LimitsPage.vue';
 import { formatPageTitle, parse_api_response, request, syncOpacity, uri } from '~/utils';
+import { getSidebarSwipeMode } from '~/utils/sidebarSwipe';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
@@ -557,7 +558,6 @@ type SidebarSection = {
 type ColorModePreference = 'system' | 'light' | 'dark';
 type SwipeMode = 'open' | 'close';
 
-const MOBILE_SIDEBAR_EDGE_WIDTH = 32;
 const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
 
 const socket = useAppSocket();
@@ -655,11 +655,11 @@ const handleSwipeStart = (event: TouchEvent): void => {
     return;
   }
 
-  const swipeMode: SwipeMode | null = showSidebar.value
-    ? 'close'
-    : touch.clientX <= MOBILE_SIDEBAR_EDGE_WIDTH
-      ? 'open'
-      : null;
+  const swipeMode: SwipeMode | null = getSidebarSwipeMode(
+    showSidebar.value,
+    touch.clientX,
+    navigator,
+  );
 
   if (!swipeMode) {
     resetSwipe();
