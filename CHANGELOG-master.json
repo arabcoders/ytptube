@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20260422-fdc08989",
-        "date": "2026-04-22T17:01:40+00:00",
+        "tag": "master-20260425-4ee75377",
+        "date": "2026-04-24T22:42:01+00:00",
         "commits": [
+            {
+                "sha": "73410f2a",
+                "message": "fix: edge swipe on iOS safari",
+                "author": "arabcoders",
+                "date": "2026-04-24T20:27:53+00:00",
+                "full_sha": "73410f2acde93552cef9ca394cdf1da74b552bc2"
+            },
+            {
+                "sha": "30a0c30d",
+                "message": "refactor: fix slowness in deleting big number of items",
+                "author": "arabcoders",
+                "date": "2026-04-24T20:18:14+00:00",
+                "full_sha": "30a0c30d944ea79103b7e496eeabf1e9a217c999"
+            },
+            {
+                "sha": "7d79e0e8",
+                "message": "refactor: minor UI fixes for logs",
+                "author": "arabcoders",
+                "date": "2026-04-24T17:48:17+00:00",
+                "full_sha": "7d79e0e8b0369b725a20985a1ae269a524e3dce0"
+            },
+            {
+                "sha": "31786ad8",
+                "message": "fix: sidebar should follow same overall opcity",
+                "author": "arabcoders",
+                "date": "2026-04-24T17:22:30+00:00",
+                "full_sha": "31786ad8d9cb68f1a424a617e403d37440c7a7d2"
+            },
+            {
+                "sha": "3c156793",
+                "message": "feat: add system limits API endpoint and UI for download capacity overview",
+                "author": "arabcoders",
+                "date": "2026-04-22T19:02:40+00:00",
+                "full_sha": "3c1567930f71482a02ea142504d790b3476d57ea"
+            },
+            {
+                "sha": "29777ff9",
+                "message": "refactor: remove ui_update_title and standardize page title",
+                "author": "arabcoders",
+                "date": "2026-04-22T17:55:29+00:00",
+                "full_sha": "29777ff928051540d1fbcc55ba49237bb2207084"
+            },
             {
                 "sha": "c2cb5527",
                 "message": "fix: broken tests in CI",
@@ -4533,7 +4575,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fdc08989aedcea76d896c14c220d10c8f75adc36"
+        "full_sha": "4ee75377336b8b9ffa3bd345b3812bae02e02404"
     },
     {
         "tag": "master-20250616-c07465a6",
