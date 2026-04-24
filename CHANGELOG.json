@@ -1,9 +1,37 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "3c1567930f71482a02ea142504d790b3476d57ea",
-    "date": "2026-04-22T19:02:40+00:00",
+    "full_sha": "73410f2acde93552cef9ca394cdf1da74b552bc2",
+    "date": "2026-04-24T20:27:53+00:00",
     "commits": [
+      {
+        "sha": "73410f2a",
+        "full_sha": "73410f2acde93552cef9ca394cdf1da74b552bc2",
+        "message": "fix: edge swipe on iOS safari",
+        "author": "arabcoders",
+        "date": "2026-04-24T20:27:53+00:00"
+      },
+      {
+        "sha": "30a0c30d",
+        "full_sha": "30a0c30d944ea79103b7e496eeabf1e9a217c999",
+        "message": "refactor: fix slowness in deleting big number of items\n\nCo-authored-by: Copilot <copilot@github.com>",
+        "author": "arabcoders",
+        "date": "2026-04-24T20:18:14+00:00"
+      },
+      {
+        "sha": "7d79e0e8",
+        "full_sha": "7d79e0e8b0369b725a20985a1ae269a524e3dce0",
+        "message": "refactor: minor UI fixes for logs",
+        "author": "arabcoders",
+        "date": "2026-04-24T17:48:17+00:00"
+      },
+      {
+        "sha": "31786ad8",
+        "full_sha": "31786ad8d9cb68f1a424a617e403d37440c7a7d2",
+        "message": "fix: sidebar should follow same overall opcity",
+        "author": "arabcoders",
+        "date": "2026-04-24T17:22:30+00:00"
+      },
       {
         "sha": "3c156793",
         "full_sha": "3c1567930f71482a02ea142504d790b3476d57ea",
