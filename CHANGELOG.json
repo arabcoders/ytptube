@@ -49,6 +49,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "50253c650ace81e27d0dc9ebda70d6c0c8716c6d",
+    "date": "2026-04-25T17:24:45+00:00",
+    "commits": [
+      {
+        "sha": "50253c65",
+        "full_sha": "50253c650ace81e27d0dc9ebda70d6c0c8716c6d",
+        "message": "refactor: re-add the automatic history update after download",
+        "author": "arabcoders",
+        "date": "2026-04-25T17:24:45+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.1.0",
     "full_sha": "fdc08989aedcea76d896c14c220d10c8f75adc36",
     "date": "2026-04-22T17:01:40+00:00",
