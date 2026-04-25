@@ -714,6 +714,7 @@ const {
   loadHistory,
   reloadHistory,
   deleteHistoryItems,
+  historyMoveHandler,
 } = useHistoryState();
 
 const embedUrl = ref('');
@@ -1271,19 +1272,9 @@ const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
   toast.info('Removed from history queue.');
 };
 
-const handleHistoryItemMoved = (payload: { data: { to: 'queue' | 'history' } }): void => {
-  if (!simpleMode.value || !historyInitialized.value) {
-    return;
-  }
-
-  if ('history' !== payload.data.to || 1 !== pagination.value.page) {
-    return;
-  }
-
-  window.setTimeout(() => {
-    void reloadHistory({ order: 'DESC', perPage: configStore.app.default_pagination });
-  }, 1000);
-};
+const handleHistoryItemMoved = historyMoveHandler(
+  () => simpleMode.value && historyInitialized.value,
+);
 
 const showMessage = (item: StoreItem): boolean => {
   if (!item?.msg || item.msg === item?.error) {
