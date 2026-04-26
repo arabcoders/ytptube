@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unreleased (master)",
-    "full_sha": "4ee75377336b8b9ffa3bd345b3812bae02e02404",
-    "date": "2026-04-24T22:42:01+00:00",
+    "full_sha": "cb1c355e5867db357984422c3678dcbe2cc3fca3",
+    "date": "2026-04-26T17:26:51+00:00",
     "commits": [
+      {
+        "sha": "f33dc84c",
+        "full_sha": "f33dc84c57acbe75a9868a15dc9ea97b149ba115",
+        "message": "refactor: minor ui update",
+        "author": "arabcoders",
+        "date": "2026-04-26T17:18:38+00:00"
+      },
+      {
+        "sha": "50253c65",
+        "full_sha": "50253c650ace81e27d0dc9ebda70d6c0c8716c6d",
+        "message": "refactor: re-add the automatic history update after download",
+        "author": "arabcoders",
+        "date": "2026-04-25T17:24:45+00:00"
+      },
       {
         "sha": "73410f2a",
         "full_sha": "73410f2acde93552cef9ca394cdf1da74b552bc2",
@@ -45,20 +59,6 @@
         "message": "refactor: remove ui_update_title and standardize page title",
         "author": "arabcoders",
         "date": "2026-04-22T17:55:29+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "50253c650ace81e27d0dc9ebda70d6c0c8716c6d",
-    "date": "2026-04-25T17:24:45+00:00",
-    "commits": [
-      {
-        "sha": "50253c65",
-        "full_sha": "50253c650ace81e27d0dc9ebda70d6c0c8716c6d",
-        "message": "refactor: re-add the automatic history update after download",
-        "author": "arabcoders",
-        "date": "2026-04-25T17:24:45+00:00"
       }
     ]
   },
