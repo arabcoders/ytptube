@@ -761,6 +761,7 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDialog } from '~/composables/useDialog';
+import { useAppSocket } from '~/composables/useAppSocket';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
@@ -782,6 +783,7 @@ import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const config = useYtpConfig();
 const stateStore = useQueueState();
+const socketStore = useAppSocket();
 const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
@@ -798,6 +800,7 @@ const {
   loadHistory,
   reloadHistory,
   deleteHistoryItems,
+  historyMoveHandler,
 } = useHistoryState();
 
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
@@ -834,8 +837,15 @@ const paginationInfo = computed(() => ({
   isLoaded: isLoaded.value,
 }));
 
+const handleHistoryItemMoved = historyMoveHandler();
+
 onMounted(async () => {
+  socketStore.on('item_moved', handleHistoryItemMoved);
   await loadHistory(1, { order: 'DESC', perPage: config.app.default_pagination });
+});
+
+onBeforeUnmount(() => {
+  socketStore.off('item_moved', handleHistoryItemMoved);
 });
 
 watch(showFilter, () => {

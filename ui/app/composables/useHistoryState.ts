@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 
 import { useNotification } from '~/composables/useNotification';
+import type { WSEP } from '~/types/sockets';
 import { useYtpConfig } from '~/composables/useYtpConfig';
 import { parse_api_error, parse_list_response, request } from '~/utils';
 import type { Pagination } from '~/types/responses';
@@ -168,6 +169,44 @@ const resetHistory = (): void => {
   lastError.value = null;
 };
 
+const addHistoryItem = (item: StoreItem): void => {
+  const existingIndex = items.value.findIndex((existing) => existing._id === item._id);
+
+  if (existingIndex !== -1) {
+    items.value = [
+      item,
+      ...items.value.slice(0, existingIndex),
+      ...items.value.slice(existingIndex + 1),
+    ];
+    return;
+  }
+
+  items.value = [item, ...items.value];
+  pagination.value.total++;
+
+  if (items.value.length > pagination.value.per_page) {
+    items.value = items.value.slice(0, pagination.value.per_page);
+  }
+
+  pagination.value.total_pages = Math.max(
+    1,
+    Math.ceil(pagination.value.total / pagination.value.per_page),
+  );
+  pagination.value.has_next = pagination.value.page < pagination.value.total_pages;
+};
+
+const historyMoveHandler = (
+  shouldHandle: () => boolean = () => isLoaded.value,
+): ((payload: WSEP['item_moved']) => void) => {
+  return (payload: WSEP['item_moved']): void => {
+    if ('history' !== payload.data.to || !shouldHandle()) {
+      return;
+    }
+
+    addHistoryItem(payload.data.item);
+  };
+};
+
 export const useHistoryState = () => {
   return {
     items,
@@ -180,5 +219,7 @@ export const useHistoryState = () => {
     reloadHistory,
     deleteHistoryItems,
     resetHistory,
+    upsertHistoryItem: addHistoryItem,
+    historyMoveHandler,
   };
 };

@@ -306,29 +306,26 @@
               </span>
             </div>
 
-            <button
-              v-if="item.folder"
-              type="button"
-              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-              @click="toggleExpand(item.id, 'folder')"
-            >
-              <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <div class="min-w-0 flex-1">
-                <div class="text-xs font-medium text-toned">Download path</div>
-                <span :class="['block', expandClass(item.id, 'folder')]">{{
-                  calcPath(item.folder)
-                }}</span>
-              </div>
-            </button>
+            <div v-if="item.folder || item.template || item.cli" class="feature-meta-grid">
+              <button
+                v-if="item.folder"
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(item.id, 'folder')"
+              >
+                <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Download path</div>
+                  <span :class="['block', expandClass(item.id, 'folder')]">{{
+                    calcPath(item.folder)
+                  }}</span>
+                </div>
+              </button>
 
-            <div v-if="item.template || item.cli" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 v-if="item.template"
                 type="button"
-                :class="[
-                  'flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left',
-                  !item.cli && 'sm:col-span-2',
-                ]"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
                 @click="toggleExpand(item.id, 'template')"
               >
                 <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
@@ -343,10 +340,7 @@
               <button
                 v-if="item.cli"
                 type="button"
-                :class="[
-                  'flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left',
-                  !item.template && 'sm:col-span-2',
-                ]"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
                 @click="toggleExpand(item.id, 'cli')"
               >
                 <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />

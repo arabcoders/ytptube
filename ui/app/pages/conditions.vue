@@ -309,56 +309,47 @@
               </span>
             </div>
 
-            <button
-              type="button"
-              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-              @click="toggleExpand(cond.id, 'filter')"
-            >
-              <UIcon name="i-lucide-filter" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <div class="min-w-0 flex-1">
-                <div class="text-xs font-medium text-toned">Filter</div>
-                <span :class="['block', expandClass(cond.id, 'filter')]">{{ cond.filter }}</span>
-              </div>
-            </button>
+            <div class="feature-meta-grid">
+              <button
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(cond.id, 'filter')"
+              >
+                <UIcon name="i-lucide-filter" class="mt-0.5 size-4 shrink-0 text-toned" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Filter</div>
+                  <span :class="['block', expandClass(cond.id, 'filter')]">{{ cond.filter }}</span>
+                </div>
+              </button>
 
-            <div v-if="cond.cli || cond.description" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 v-if="cond.cli"
                 type="button"
-                :class="[
-                  'flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left',
-                  !cond.description && 'sm:col-span-2',
-                ]"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
                 @click="toggleExpand(cond.id, 'cli')"
               >
                 <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">CLI</div>
+                  <div class="text-xs font-medium text-toned">CLI options</div>
                   <span :class="['block', expandClass(cond.id, 'cli')]">{{ cond.cli }}</span>
                 </div>
               </button>
-
-              <button
-                v-if="cond.description"
-                type="button"
-                :class="[
-                  'flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left',
-                  !cond.cli && 'sm:col-span-2',
-                ]"
-                @click="toggleExpand(cond.id, 'description')"
-              >
-                <UIcon
-                  name="i-lucide-message-square-text"
-                  class="mt-0.5 size-4 shrink-0 text-toned"
-                />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">Description</div>
-                  <span :class="['block', expandClass(cond.id, 'description')]">{{
-                    cond.description
-                  }}</span>
-                </div>
-              </button>
             </div>
+
+            <button
+              v-if="cond.description"
+              type="button"
+              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+              @click="toggleExpand(cond.id, 'description')"
+            >
+              <UIcon name="i-lucide-align-left" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-toned">Description</div>
+                <span :class="['block', expandClass(cond.id, 'description')]">{{
+                  cond.description
+                }}</span>
+              </div>
+            </button>
 
             <div
               v-if="extrasEntries(cond.extras).length > 0"

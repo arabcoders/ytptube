@@ -33,6 +33,22 @@
 }
 
 @layer components {
+  .feature-meta-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  @media (width >= 40rem) {
+    .feature-meta-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .feature-meta-grid > :last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+  }
+
   .shell-surface {
     background:
       radial-gradient(circle at top left, rgb(99 102 241 / 0.1), transparent 28%),
