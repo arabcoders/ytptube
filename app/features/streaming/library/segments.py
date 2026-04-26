@@ -1,11 +1,11 @@
 import asyncio
-import hashlib
 import logging
 import os
 import subprocess  # type: ignore
 import sys
 import tempfile
 from pathlib import Path
+from secrets import token_hex
 from typing import TYPE_CHECKING, ClassVar
 
 from aiohttp import web
@@ -68,21 +68,21 @@ class Segments:
         self.attempted: set[str] = set()
         "The set of attempted codecs."
 
-    async def build_ffmpeg_args(self, file: Path, s_codec: str) -> list[str]:
+    def _make_stream_input(self, file: Path) -> Path:
+        while True:
+            stream_input = Path(tempfile.gettempdir()).joinpath(f"ytptube_stream.{token_hex(8)}")
+            try:
+                stream_input.symlink_to(file, target_is_directory=False)
+                return stream_input
+            except FileExistsError:
+                continue
+
+    async def build_ffmpeg_args(self, file: Path, s_codec: str, *, stream_input: Path | None = None) -> list[str]:
         try:
             ff: FFProbeResult = await ffprobe(file)
         except UnicodeDecodeError:
             pass
-
-        tmpFile: Path = Path(tempfile.gettempdir()).joinpath(
-            f"ytptube_stream.{hashlib.sha256(str(file).encode()).hexdigest()}"
-        )
-
-        if not tmpFile.exists():
-            try:
-                tmpFile.symlink_to(file, target_is_directory=False)
-            except FileExistsError:
-                pass
+        input_path = stream_input or file
 
         startTime: str = f"{0:.6f}" if self.index == 0 else f"{self.duration * self.index:.6f}"
 
@@ -123,7 +123,7 @@ class Segments:
             # hardware/global input options must come before -i
             *input_args,
             "-i",
-            f"file:{tmpFile}",
+            f"file:{input_path}",
             "-map_metadata",
             "-1",
         ]
@@ -240,22 +240,27 @@ class Segments:
         else:
             codecs: list[str] = [codec, *list(encoder_fallback_chain(codec))]
 
-        for s_codec in codecs:
-            if s_codec in self.attempted:
-                continue
+        stream_input = self._make_stream_input(file)
+        try:
+            for s_codec in codecs:
+                if s_codec in self.attempted:
+                    continue
 
-            ffmpeg_args: list[str] = await self.build_ffmpeg_args(file, s_codec)
-            _, rc, client_disconnected, stderr_text = await self._run(resp, file, ffmpeg_args)
+                ffmpeg_args: list[str] = await self.build_ffmpeg_args(file, s_codec, stream_input=stream_input)
+                _, rc, client_disconnected, stderr_text = await self._run(resp, file, ffmpeg_args)
 
-            if 0 == rc:
-                Segments._cached_vcodec = s_codec
-                Segments._cache_initialized = True
-                return
+                if 0 == rc:
+                    Segments._cached_vcodec = s_codec
+                    Segments._cache_initialized = True
+                    return
 
-            if client_disconnected:
-                return
+                if client_disconnected:
+                    return
 
-            if 0 != rc:
-                err: str = stderr_text[:500] if stderr_text else "no error output"
-                LOG.warning(f"transcoding has failed (cmd={ffmpeg_args}) (rc={rc}): {err}. Trying fallbacks.")
-                self.attempted.add(s_codec)
+                if 0 != rc:
+                    err: str = stderr_text[:500] if stderr_text else "no error output"
+                    LOG.warning(f"transcoding has failed (cmd={ffmpeg_args}) (rc={rc}): {err}. Trying fallbacks.")
+                    self.attempted.add(s_codec)
+        finally:
+            if stream_input.is_symlink():
+                stream_input.unlink()

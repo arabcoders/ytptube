@@ -14,6 +14,7 @@ from app.library.config import Config
 from app.library.encoder import Encoder
 from app.features.conditions.repository import ConditionsRepository
 from app.library.sqlite_store import SqliteStore
+from app.tests.helpers import make_in_memory_db_path
 
 
 @pytest_asyncio.fixture
@@ -21,7 +22,7 @@ async def repo():
     ConditionsRepository._reset_singleton()
     SqliteStore._reset_singleton()
 
-    store = SqliteStore(db_path=":memory:")
+    store = SqliteStore(db_path=make_in_memory_db_path("conditions-repository"))
     await store.get_connection()
 
     # Create repository
@@ -30,10 +31,7 @@ async def repo():
     yield repository
 
     # Cleanup - close connections properly
-    if store._conn:
-        await store._conn.close()
-    if store._engine:
-        await store._engine.dispose()
+    await store.close()
 
     # Reset singletons
     ConditionsRepository._reset_singleton()

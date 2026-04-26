@@ -5,14 +5,13 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from email.utils import formatdate
 from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
-
 import pytest
 
 from app.library.DataStore import DataStore, StoreType
 from app.library.ItemDTO import ItemDTO
 from app.library.operations import Operation
 from app.library.sqlite_store import SqliteStore
+from app.tests.helpers import make_in_memory_db_path
 
 
 async def reset_sqlite_store() -> None:
@@ -32,7 +31,7 @@ async def reset_sqlite_store() -> None:
 async def make_db(data: int = 0) -> SqliteStore:
     """Create a named in-memory database with test data."""
     await reset_sqlite_store()
-    ins = SqliteStore.get_instance(db_path=f":memory:test-datastore-{uuid4().hex}")
+    ins = SqliteStore.get_instance(db_path=make_in_memory_db_path("test-datastore"))
     await ins.get_connection()
 
     base_time = datetime.now(UTC)

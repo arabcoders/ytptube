@@ -1,6 +1,4 @@
 from datetime import UTC, datetime, timedelta
-import os
-from tempfile import mkstemp
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -9,14 +7,13 @@ from sqlalchemy import text
 from app.library.ItemDTO import ItemDTO
 from app.library.operations import Operation
 from app.library.sqlite_store import SqliteStore
+from app.tests.helpers import make_in_memory_db_path
 
 
 async def make_store() -> SqliteStore:
-    """Create an isolated temporary SqliteStore instance with schema."""
+    """Create an isolated named in-memory SqliteStore instance with schema."""
     SqliteStore._reset_singleton()
-    fd, db_path = mkstemp(prefix="ytptube-sqlite-store-", suffix=".db")
-    os.close(fd)
-    store = SqliteStore.get_instance(db_path=db_path)
+    store = SqliteStore.get_instance(db_path=make_in_memory_db_path("sqlite-store"))
     await store.get_connection()
     assert store._engine is not None, "Engine should be initialized after _ensure_conn"
     return store
@@ -38,7 +35,7 @@ def make_item(idx: int, *, status: str = "finished", cli: str = "", download_ski
 async def test_sessionmaker_returns_valid_sessionmaker() -> None:
     """Test that sessionmaker() returns a working async_sessionmaker."""
     SqliteStore._reset_singleton()
-    store = SqliteStore.get_instance(db_path=":memory:")
+    store = SqliteStore.get_instance(db_path=make_in_memory_db_path("sessionmaker"))
 
     # Ensure connection is initialized
     await store.get_connection()
@@ -58,7 +55,7 @@ async def test_sessionmaker_returns_valid_sessionmaker() -> None:
 async def test_sessionmaker_raises_before_init() -> None:
     """Test that sessionmaker() raises error before connection initialization."""
     SqliteStore._reset_singleton()
-    store = SqliteStore.get_instance(db_path=":memory:")
+    store = SqliteStore.get_instance(db_path=make_in_memory_db_path("sessionmaker-before-init"))
 
     with pytest.raises(RuntimeError, match="Database connection not initialized"):
         store.sessionmaker()
@@ -70,7 +67,7 @@ async def test_sessionmaker_raises_before_init() -> None:
 async def test_sqlalchemy_engine_disposed_on_close() -> None:
     """Test that SQLAlchemy engine is properly disposed on close."""
     SqliteStore._reset_singleton()
-    store = SqliteStore.get_instance(db_path=":memory:")
+    store = SqliteStore.get_instance(db_path=make_in_memory_db_path("engine-close"))
 
     await store.get_connection()
     assert store._engine is not None, "Engine should be created"
