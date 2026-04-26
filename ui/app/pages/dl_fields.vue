@@ -300,13 +300,10 @@
               </span>
             </div>
 
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div class="feature-meta-grid">
               <button
                 type="button"
-                :class="[
-                  'flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left',
-                  !field.description && 'sm:col-span-2',
-                ]"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
                 @click="toggleExpand(field.id, 'field')"
               >
                 <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />

@@ -363,29 +363,44 @@
               </span>
             </div>
 
-            <button
-              type="button"
-              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-              @click="toggleExpand(item.id, 'url')"
-            >
-              <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <div class="min-w-0 flex-1">
-                <div class="text-xs font-medium text-toned">Target URL</div>
-                <a
-                  :href="item.request.url"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="block text-highlighted hover:underline"
-                  @click.stop
-                >
-                  <span :class="['block', expandClass(item.id, 'url')]">
-                    {{ item.request.url }}
-                  </span>
-                </a>
-              </div>
-            </button>
+            <div class="feature-meta-grid">
+              <button
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(item.id, 'url')"
+              >
+                <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Target URL</div>
+                  <a
+                    :href="item.request.url"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="block text-highlighted hover:underline"
+                    @click.stop
+                  >
+                    <span :class="['block', expandClass(item.id, 'url')]">
+                      {{ item.request.url }}
+                    </span>
+                  </a>
+                </div>
+              </button>
 
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                v-if="headerKeys(item).length > 0"
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(item.id, 'headers')"
+              >
+                <UIcon name="i-lucide-key" class="mt-0.5 size-4 shrink-0 text-toned" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Headers</div>
+                  <span :class="['block', expandClass(item.id, 'headers')]">
+                    {{ headerKeys(item).join(', ') }}
+                  </span>
+                </div>
+              </button>
+
               <button
                 type="button"
                 class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
@@ -417,21 +432,6 @@
                 </div>
               </button>
             </div>
-
-            <button
-              v-if="headerKeys(item).length > 0"
-              type="button"
-              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-              @click="toggleExpand(item.id, 'headers')"
-            >
-              <UIcon name="i-lucide-key" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <div class="min-w-0 flex-1">
-                <div class="text-xs font-medium text-toned">Headers</div>
-                <span :class="['block', expandClass(item.id, 'headers')]">
-                  {{ headerKeys(item).join(', ') }}
-                </span>
-              </div>
-            </button>
           </div>
 
           <template #footer>
