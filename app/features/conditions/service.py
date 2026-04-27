@@ -1,4 +1,6 @@
 import logging
+from collections.abc import Iterable
+from numbers import Number
 
 from aiohttp import web
 
@@ -9,6 +11,30 @@ from app.library.Events import EventBus, Events
 from app.library.Singleton import Singleton
 
 LOG: logging.Logger = logging.getLogger("feature.conditions")
+
+
+def _ignored_identifiers(ignore_conditions: Iterable[str | Number] | None) -> tuple[set[str], bool]:
+    ignored: set[str] = set()
+    ignore_all = False
+
+    if not ignore_conditions:
+        return ignored, ignore_all
+
+    for value in ignore_conditions:
+        if isinstance(value, bool) or not isinstance(value, (str, Number)):
+            continue
+
+        identifier = str(value).strip()
+        if not identifier:
+            continue
+
+        if "*" == identifier:
+            ignore_all = True
+            continue
+
+        ignored.add(identifier)
+
+    return ignored, ignore_all
 
 
 class Conditions(metaclass=Singleton):
@@ -87,18 +113,23 @@ class Conditions(metaclass=Singleton):
         repo = self._repo
         return await repo.get(identifier)
 
-    async def match(self, info: dict) -> ConditionModel | None:
+    async def match(self, info: dict, ignore_conditions: Iterable[str | Number] | None = None) -> ConditionModel | None:
         """
         Check if any condition matches the info dict.
 
         Args:
             info (dict): The info dict to check.
+            ignore_conditions (Iterable[str | Number] | None): Condition ids or names to skip for this match.
 
         Returns:
             Condition|None: The condition if found, None otherwise.
 
         """
         if not info or not isinstance(info, dict) or len(info) < 1:
+            return None
+
+        ignored_identifiers, ignore_all = _ignored_identifiers(ignore_conditions)
+        if ignore_all:
             return None
 
         repo = self._repo
@@ -108,6 +139,9 @@ class Conditions(metaclass=Singleton):
 
         for item in sorted(items, key=lambda x: x.priority, reverse=True):
             if not item.enabled:
+                continue
+
+            if str(item.id) in ignored_identifiers or item.name in ignored_identifiers:
                 continue
 
             if not item.filter:

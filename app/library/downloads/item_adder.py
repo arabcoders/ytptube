@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 import uuid
+from numbers import Number
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -26,6 +27,28 @@ if TYPE_CHECKING:
     from .queue_manager import DownloadQueue
 
 LOG: logging.Logger = logging.getLogger("downloads.add")
+
+
+def _get_ignored_conditions(extras: dict | None) -> list[str]:
+    if not extras or not isinstance(extras, dict):
+        return []
+
+    ignore_conditions = extras.get("ignore_conditions")
+    if not isinstance(ignore_conditions, list):
+        return []
+
+    ignored: list[str] = []
+    for value in ignore_conditions:
+        if isinstance(value, bool) or not isinstance(value, (str, Number)):
+            continue
+
+        identifier = str(value).strip()
+        if not identifier:
+            continue
+
+        ignored.append(identifier)
+
+    return ignored
 
 
 async def add_item(
@@ -253,7 +276,11 @@ async def add(
                     )
                     return {"status": "error", "msg": message, "hidden": True}
 
-        if not item.requeued and (condition := await Conditions.get_instance().match(info=entry)):
+        ignored_conditions = _get_ignored_conditions(item.extras)
+
+        if not item.requeued and (
+            condition := await Conditions.get_instance().match(info=entry, ignore_conditions=ignored_conditions)
+        ):
             already.pop()
 
             message = f"Condition '{condition.name}' matched for '{item!r}'."

@@ -83,6 +83,10 @@ async def process_playlist(
         if "thumbnail" not in etr and "youtube" in str(extractor_key).lower():
             extras["thumbnail"] = "https://img.youtube.com/vi/{id}/maxresdefault.jpg".format(**etr)
 
+        ignore_conditions = item.extras.get("ignore_conditions") if isinstance(item.extras, dict) else None
+        if isinstance(ignore_conditions, list) and ignore_conditions:
+            extras["ignore_conditions"] = ignore_conditions
+
         newItem: Item = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
 
         if ("video" == etr.get("_type") and etr.get("url")) or (

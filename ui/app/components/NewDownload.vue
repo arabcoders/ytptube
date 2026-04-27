@@ -230,7 +230,13 @@
                 />
               </div>
 
-              <div class="md:col-span-2 xl:col-span-6">
+              <div
+                :class="
+                  hasIgnoreConditionOptions
+                    ? 'md:col-span-2 xl:col-span-3'
+                    : 'md:col-span-2 xl:col-span-6'
+                "
+              >
                 <DLInput
                   id="output_template"
                   v-model="form.template"
@@ -244,18 +250,61 @@
                 >
                   <template #description>
                     <span>
-                      All output template naming options can be found on
+                      See
                       <NuxtLink
                         target="_blank"
                         class="font-medium text-primary hover:underline"
                         to="https://github.com/yt-dlp/yt-dlp#output-template"
                       >
-                        the yt-dlp output template page.
+                        the yt-dlp output template page
                       </NuxtLink>
+                      for info.
                     </span>
                   </template>
                 </DLInput>
               </div>
+
+              <UFormField
+                v-if="hasIgnoreConditionOptions"
+                class="md:col-span-2 xl:col-span-3 w-full"
+                :ui="advancedEditorFieldUi"
+              >
+                <template #label>
+                  <span class="inline-flex items-center gap-2 font-semibold">
+                    <UIcon name="i-lucide-list-minus" class="size-4 text-toned" />
+                    <span>Ignore conditions</span>
+                  </span>
+                </template>
+
+                <template #description>
+                  <span> Skip selected condition rules. </span>
+                </template>
+
+                <template #hint>
+                  <button
+                    v-if="selectedIgnoreConditions.length > 0"
+                    type="button"
+                    class="font-medium text-primary hover:underline"
+                    @click="selectedIgnoreConditions = []"
+                  >
+                    Clear selection
+                  </button>
+                </template>
+
+                <USelectMenu
+                  v-model="selectedIgnoreConditions"
+                  :items="ignoreConditionOptions"
+                  value-key="value"
+                  label-key="label"
+                  multiple
+                  placeholder="Select conditions to ignore"
+                  class="w-full"
+                  size="lg"
+                  :disabled="addInProgress || conditions.isLoading.value"
+                  :search-input="{ placeholder: 'Search conditions' }"
+                  :ui="{ base: 'w-full', content: 'min-w-[18rem]' }"
+                />
+              </UFormField>
             </div>
 
             <div class="grid gap-4 xl:grid-cols-2">
@@ -305,7 +354,7 @@
                 <template #label>
                   <span class="inline-flex items-center gap-2 font-semibold">
                     <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
-                    <span> Cookies </span>
+                    <span>Cookies</span>
                   </span>
                 </template>
 
@@ -509,6 +558,8 @@
 import { useStorage } from '@vueuse/core';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import TextDropzone from '~/components/TextDropzone.vue';
+import { useConditions } from '~/composables/useConditions';
+import type { Condition } from '~/types/conditions';
 import type { item_request } from '~/types/item';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
@@ -522,6 +573,7 @@ const emitter = defineEmits<{
 const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
+const conditions = useConditions();
 const { findPreset, hasPreset, selectItems, getPresetDefault } = usePresetOptions();
 
 const showAdvanced = useStorage<boolean>('show_advanced', false);
@@ -540,6 +592,101 @@ const dlFieldsExtra = ['--no-download-archive', '--no-continue'];
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null);
 const urlTextarea = ref<{ textareaRef?: HTMLTextAreaElement | null } | null>(null);
+
+type IgnoreConditionOption = {
+  value: string;
+  label: string;
+};
+
+const normalizeIgnoreConditionValues = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if ('boolean' === typeof entry) {
+        return '';
+      }
+
+      if ('number' === typeof entry || 'string' === typeof entry) {
+        return String(entry).trim();
+      }
+
+      return '';
+    })
+    .filter((entry, index, items) => !!entry && items.indexOf(entry) === index);
+};
+
+const buildIgnoreConditionOptions = (
+  items: readonly Condition[],
+  selectedValues: readonly string[] = [],
+): IgnoreConditionOption[] => {
+  const options = items
+    .filter((condition) => condition.enabled)
+    .map((condition) => ({
+      value:
+        condition.id !== undefined && condition.id !== null ? String(condition.id) : condition.name,
+      label: condition.name,
+    }));
+
+  const missingSelectedItems = selectedValues
+    .filter((value) => value !== '*' && !options.some((item) => item.value === value))
+    .map((value) => ({
+      value,
+      label: value,
+    }));
+
+  return [
+    {
+      value: '*',
+      label: 'All conditions',
+    },
+    ...options,
+    ...missingSelectedItems,
+  ];
+};
+
+const mergeIgnoreConditionsIntoExtras = (
+  extras: Record<string, unknown> | undefined,
+  ignoreConditions: string[],
+): Record<string, unknown> => {
+  const nextExtras = { ...(extras || {}) };
+
+  if (ignoreConditions.length > 0) {
+    nextExtras.ignore_conditions = [...ignoreConditions];
+    return nextExtras;
+  }
+
+  delete nextExtras.ignore_conditions;
+  return nextExtras;
+};
+
+const hasAllConditionsLoaded = computed(() => {
+  const loaded = conditions.conditions.value.length;
+  const total = conditions.pagination.value.total;
+
+  return loaded > 0 && (total <= 0 || loaded >= total);
+});
+
+const ensureIgnoreConditionsLoaded = async (): Promise<void> => {
+  if (conditions.isLoading.value || hasAllConditionsLoaded.value) {
+    return;
+  }
+
+  await conditions.loadConditions(1, 1000);
+};
+
+const selectedIgnoreConditions = computed<string[]>({
+  get: () => normalizeIgnoreConditionValues(form.value?.extras?.ignore_conditions),
+  set: (values) => {
+    const extras = mergeIgnoreConditionsIntoExtras(
+      form.value?.extras,
+      normalizeIgnoreConditionValues(values),
+    );
+    form.value.extras = Object.keys(extras).length > 0 ? extras : {};
+  },
+});
 
 const testResultsText = computed(() => {
   if (typeof testResultsData.value === 'string') {
@@ -595,6 +742,15 @@ const form = useStorage<item_request>('local_config_v1', {
 }) as Ref<item_request>;
 
 const presetItems = computed(() => selectItems.value);
+const ignoreConditionOptions = computed(() =>
+  buildIgnoreConditionOptions(
+    conditions.conditions.value,
+    normalizeIgnoreConditionValues(form.value?.extras?.ignore_conditions),
+  ),
+);
+const hasIgnoreConditionOptions = computed(() =>
+  ignoreConditionOptions.value.some((option) => option.value !== '*'),
+);
 
 const mobileActionGroups = computed(() => {
   const groups = [
@@ -909,6 +1065,18 @@ watch(
           .filter((flag) => flag.startsWith('--'))
           .map((flag) => ({ value: flag, description: opt.description || '' })),
       )),
+  { immediate: true },
+);
+
+watch(
+  showAdvanced,
+  (open) => {
+    if (!open) {
+      return;
+    }
+
+    void ensureIgnoreConditionsLoaded();
+  },
   { immediate: true },
 );
 

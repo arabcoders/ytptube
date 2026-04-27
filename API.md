@@ -348,7 +348,10 @@ or an error:
   "cookies": "...", // -- optional. If provided, it MUST BE in Netscape HTTP Cookie format.
   "template": "%(title)s.%(ext)s", // -- optional. The filename template to use for this item.
   "cli": "--write-subs --embed-subs", // -- optional. Additional command options for yt-dlp to apply to this item.
-  "auto_start": true // -- optional. Whether to auto-start the download after adding it. Defaults to true.
+  "auto_start": true, // -- optional. Whether to auto-start the download after adding it. Defaults to true.
+  "extras": {
+    "ignore_conditions": ["123", "My Condition"] // -- optional. Skip matching conditions by id string or exact name for this request only. Use ["*"] to ignore all conditions.
+  }
 }
 
 // Or multiple items (array of objects)
