@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "084f5082ad174e6a6d725db03a8da9d9afbaef7e",
+    "date": "2026-04-27T17:58:00+00:00",
+    "commits": [
+      {
+        "sha": "084f5082",
+        "full_sha": "084f5082ad174e6a6d725db03a8da9d9afbaef7e",
+        "message": "feat: add support for ignoring conditions in downloads and UI",
+        "author": "arabcoders",
+        "date": "2026-04-27T17:58:00+00:00"
+      },
+      {
+        "sha": "fc6bc88e",
+        "full_sha": "fc6bc88e6171e24f21788ddff3bf45a79675a28a",
+        "message": "refactor: use one tmp directory for tests",
+        "author": "arabcoders",
+        "date": "2026-04-26T21:31:14+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.1.1",
     "full_sha": "cb1c355e5867db357984422c3678dcbe2cc3fca3",
     "date": "2026-04-26T17:26:51+00:00",
