@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 import re
-import tempfile
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -20,6 +19,7 @@ from app.features.ytdlp.utils import (
     archive_add,
     archive_read,
 )
+from app.tests.helpers import make_test_temp_dir
 
 
 class CaptureHandler(logging.Handler):
@@ -549,7 +549,7 @@ class TestArchiveFunctions:
 
     def setup_method(self):
         """Set up test archive file."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("ytdlp-archive"))
         self.archive_file = Path(self.temp_dir) / "archive.txt"
 
     def teardown_method(self):

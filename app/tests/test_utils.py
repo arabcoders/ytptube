@@ -2,7 +2,6 @@ import asyncio
 import copy
 import re
 import shutil
-import tempfile
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -43,6 +42,7 @@ from app.library.Utils import (
     validate_uuid,
 )
 from app.routes.api.logs import _read_logfile, _tail_log
+from app.tests.helpers import make_test_temp_dir, temporary_test_dir
 
 
 class TestTimedLruCache:
@@ -283,7 +283,7 @@ class TestCalcDownloadPath:
 
     def setup_method(self):
         """Set up test directory."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("calc-download-path"))
         self.base_path = Path(self.temp_dir)
 
     def teardown_method(self):
@@ -977,7 +977,7 @@ class TestDeleteDir:
 
     def setup_method(self):
         """Set up test directory."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("delete-dir"))
         self.test_dir = Path(self.temp_dir) / "test_delete"
         self.test_dir.mkdir()
         (self.test_dir / "file.txt").write_text("test content")
@@ -1007,7 +1007,7 @@ class TestListFolders:
 
     def setup_method(self):
         """Set up test directory structure."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("list-folders"))
         self.base = Path(self.temp_dir)
         (self.base / "folder1").mkdir()
         (self.base / "folder2").mkdir()
@@ -1237,8 +1237,7 @@ class TestGetFileSidecar:
 
     def test_get_file_sidecar_with_files(self):
         """Test getting sidecar files when they exist."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            base_path = Path(temp_dir)
+        with temporary_test_dir("file-sidecar") as base_path:
             video_file = base_path / "video.mp4"
             srt_file = base_path / "video.srt"
             nfo_file = base_path / "video.nfo"
@@ -1252,8 +1251,7 @@ class TestGetFileSidecar:
 
     def test_get_file_sidecar_no_files(self):
         """Test getting sidecar files when none exist."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            base_path = Path(temp_dir)
+        with temporary_test_dir("file-sidecar-empty") as base_path:
             video_file = base_path / "video.mp4"
             video_file.write_text("video content")
 
@@ -1266,7 +1264,7 @@ class TestCheckId:
 
     def setup_method(self):
         """Set up test files."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("check-id"))
         self.test_dir = Path(self.temp_dir)
 
     def teardown_method(self):
@@ -1347,7 +1345,7 @@ class TestGetPossibleImages:
 
     def setup_method(self):
         """Set up test directory with images."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("possible-images"))
         self.test_dir = Path(self.temp_dir)
 
         # Create some test image files
@@ -1408,7 +1406,7 @@ class TestGetFile:
 
     def setup_method(self):
         """Set up test files."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("get-file"))
         self.download_path = Path(self.temp_dir)
 
     def teardown_method(self):
@@ -1472,7 +1470,7 @@ class TestGetFiles:
 
     def setup_method(self):
         """Set up test directory structure."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("get-files"))
         self.base_path = Path(self.temp_dir)
 
         # Create test files and directories
@@ -1504,7 +1502,7 @@ class TestReadLogfile:
 
     def setup_method(self):
         """Set up test log file."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("read-logfile"))
         self.log_file = Path(self.temp_dir) / "test.log"
 
     def teardown_method(self):
@@ -1540,7 +1538,7 @@ class TestTailLog:
 
     def setup_method(self):
         """Set up test log file."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("tail-log"))
         self.log_file = Path(self.temp_dir) / "test.log"
 
     def teardown_method(self):
@@ -1571,7 +1569,7 @@ class TestLoadCookies:
 
     def setup_method(self):
         """Set up test cookie file."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("load-cookies"))
         self.cookie_file = Path(self.temp_dir) / "cookies.txt"
 
     def teardown_method(self):
@@ -1640,7 +1638,7 @@ class TestLoadModules:
 
     def setup_method(self):
         """Set up test module structure."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("load-modules"))
         self.root_path = Path(self.temp_dir)
         self.module_dir = self.root_path / "test_modules"
         self.module_dir.mkdir()
@@ -1885,7 +1883,7 @@ class TestCreateCookiesFile:
 
     def setup_method(self):
         """Set up test environment."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("create-cookies-file"))
         self.test_path = Path(self.temp_dir)
 
     def teardown_method(self):

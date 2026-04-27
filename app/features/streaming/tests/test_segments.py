@@ -1,13 +1,12 @@
 import asyncio
-import hashlib
 import logging
-import tempfile
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from app.features.streaming.library.segments import Segments
+from app.tests.helpers import get_test_system_temp_root
 
 
 class DummyFF:
@@ -20,6 +19,10 @@ class DummyFF:
 
     def has_audio(self) -> bool:
         return self._a
+
+
+def _ffmpeg_input_path(args: list[str]) -> Path:
+    return Path(args[args.index("-i") + 1].removeprefix("file:"))
 
 
 @pytest.mark.asyncio
@@ -53,8 +56,7 @@ async def test_build_ffmpeg_args_video_and_audio(tmp_path: Path, monkeypatch: py
     assert captured_args, "ffmpeg was not invoked"
     args = captured_args[0]
 
-    # Compute expected symlink path used by Segments
-    tmpFile = Path(tempfile.gettempdir()).joinpath(f"ytptube_stream.{hashlib.sha256(str(media).encode()).hexdigest()}")
+    tmp_file = _ffmpeg_input_path(args)
 
     # Start time is duration * index with 6 decimals for non-zero index
     assert "-ss" in args
@@ -64,7 +66,9 @@ async def test_build_ffmpeg_args_video_and_audio(tmp_path: Path, monkeypatch: py
     assert args[args.index("-t") + 1] == f"{5.5:.6f}"
     # Input uses file:<symlink>
     assert "-i" in args
-    assert args[args.index("-i") + 1] == f"file:{tmpFile}"
+    assert tmp_file.parent == get_test_system_temp_root()
+    assert tmp_file.name.startswith("ytptube_stream.")
+    assert not tmp_file.exists()
     # Includes video and audio mapping and codecs
     assert "-map" in args
     assert "0:v:0" in args
@@ -338,6 +342,9 @@ async def test_stream_gpu_fallback_switches_codec(monkeypatch: pytest.MonkeyPatc
 
 @pytest.mark.asyncio
 async def test_stream_normal_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    media = tmp_path / "file.mp4"
+    media.write_bytes(b"data")
+
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
@@ -346,16 +353,21 @@ async def test_stream_normal_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
     # Process that yields two chunks and then EOF
     proc = _FakeProc([b"abc", b"def", b""])
 
-    async def fake_create_subprocess_exec(*_args: Any, **_kwargs: Any):
+    captured_args: list[list[str]] = []
+
+    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
+        captured_args.append(list(args[1:]))
         return proc
 
     monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
 
     seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
     resp = _FakeResp()
-    await seg.stream(tmp_path / "file.mp4", resp)
+    await seg.stream(media, resp)
 
     assert bytes(resp.data) == b"abcdef"
+    assert not _ffmpeg_input_path(captured_args[0]).exists()
+    assert media.exists()
     # EOF behavior may differ; don't require True
 
 
@@ -368,7 +380,10 @@ async def test_stream_client_reset(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
 
     proc = _FakeProc([b"abc", b"def"])  # will attempt to write and fail
 
-    async def fake_create_subprocess_exec(*_args: Any, **_kwargs: Any):
+    captured_args: list[list[str]] = []
+
+    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
+        captured_args.append(list(args[1:]))
         return proc
 
     monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
@@ -380,6 +395,7 @@ async def test_stream_client_reset(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
 
     # Should not write EOF due to client disconnect
     assert resp.eof is False
+    assert not _ffmpeg_input_path(captured_args[0]).exists()
 
 
 @pytest.mark.asyncio

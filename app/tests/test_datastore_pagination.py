@@ -1,6 +1,5 @@
 import json
 from datetime import UTC, datetime
-from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -9,6 +8,7 @@ from app.library.DataStore import DataStore, StoreType
 from app.library.downloads import Download
 from app.library.ItemDTO import ItemDTO
 from app.library.sqlite_store import SqliteStore
+from app.tests.helpers import make_in_memory_db_path
 
 
 async def reset_sqlite_store() -> None:
@@ -28,7 +28,7 @@ async def reset_sqlite_store() -> None:
 async def make_db(data: int = 100) -> SqliteStore:
     """Create a named in-memory database with test data."""
     await reset_sqlite_store()
-    db_path = f":memory:test-datastore-pagination-{uuid4().hex}"
+    db_path = make_in_memory_db_path("test-datastore-pagination")
     ins = SqliteStore.get_instance(db_path=db_path)
     await ins.get_connection()
 

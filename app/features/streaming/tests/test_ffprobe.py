@@ -1,8 +1,9 @@
-import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
+from app.tests.helpers import make_test_temp_dir
 
 
 class TestFFProbe:
@@ -10,7 +11,7 @@ class TestFFProbe:
 
     def setup_method(self):
         """Set up test files."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(make_test_temp_dir("ffprobe"))
         self.test_file = Path(self.temp_dir) / "test_video.mp4"
         self.test_file.touch()
 

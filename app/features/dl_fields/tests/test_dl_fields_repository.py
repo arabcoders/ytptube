@@ -7,25 +7,23 @@ import pytest_asyncio
 
 from app.features.dl_fields.repository import DLFieldsRepository
 from app.library.sqlite_store import SqliteStore
+from app.tests.helpers import make_in_memory_db_path
 
 
 @pytest_asyncio.fixture
-async def repo(tmp_path):
+async def repo():
     """Provide a fresh repository instance with initialized database for each test."""
     DLFieldsRepository._reset_singleton()
     SqliteStore._reset_singleton()
 
-    store = SqliteStore(db_path=str(":memory:"))
+    store = SqliteStore(db_path=make_in_memory_db_path("dl-fields-repository"))
     await store.get_connection()
 
     repository = DLFieldsRepository.get_instance()
 
     yield repository
 
-    if store._conn:
-        await store._conn.close()
-    if store._engine:
-        await store._engine.dispose()
+    await store.close()
 
     DLFieldsRepository._reset_singleton()
     SqliteStore._reset_singleton()

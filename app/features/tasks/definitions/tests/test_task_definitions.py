@@ -21,6 +21,7 @@ from app.features.tasks.definitions.router import (
 from app.library.encoder import Encoder
 from app.library.sqlite_store import SqliteStore
 from app.main import EventBus
+from app.tests.helpers import make_in_memory_db_path
 
 
 def _sample_definition(name: str = "example", *, priority: int = 0) -> dict:
@@ -49,17 +50,14 @@ async def repo() -> AsyncGenerator[TaskDefinitionsRepository, None]:
     TaskDefinitionsRepository._reset_singleton()
     SqliteStore._reset_singleton()
 
-    store = SqliteStore(db_path=":memory:")
+    store = SqliteStore(db_path=make_in_memory_db_path("task-definitions-repository"))
     await store.get_connection()
 
     repository = TaskDefinitionsRepository.get_instance()
 
     yield repository
 
-    if store._conn:
-        await store._conn.close()
-    if store._engine:
-        await store._engine.dispose()
+    await store.close()
 
     TaskDefinitionsRepository._reset_singleton()
     SqliteStore._reset_singleton()
