@@ -3,6 +3,7 @@ import type { EventSourceMessage } from '@microsoft/fetch-event-source';
 import { useStorage } from '@vueuse/core';
 import { computed, ref } from 'vue';
 
+import type { TerminalSessionItem, TerminalSessionsResponse } from '~/types';
 import { parse_api_error, parse_api_response, request, uri } from '~/utils';
 
 type ConsoleSessionStatus =
@@ -48,10 +49,25 @@ type CancelConsoleSessionResult = {
   message?: string;
 };
 
+type RecentSessionItem = {
+  sessionId: string;
+  command: string;
+  status: 'starting' | 'running' | 'completed';
+  createdAt: number | null;
+  startedAt: number | null;
+  finishedAt: number | null;
+  expiresAt: number | null;
+  availableUntil: number | null;
+  exitCode: number | null;
+  lastSequence: number;
+};
+
 const STORAGE_KEY = 'console_session_state';
+const HIDDEN_RECENT_SESSIONS_KEY = 'console_hidden_recent_sessions';
 const MAX_TRANSCRIPT_CHUNKS = 1500;
 const MAX_TRANSCRIPT_CHARS = 120000;
 const RECONNECT_DELAY_MS = 1500;
+const RECENT_SESSIONS_MAX = 30;
 
 const DEFAULT_STATE: ConsoleSessionState = {
   sessionId: null,
@@ -160,6 +176,8 @@ const normalizePersistedState = (
 };
 
 const sessionState = useStorage<ConsoleSessionState>(STORAGE_KEY, { ...DEFAULT_STATE });
+const hiddenRecentSessions = useStorage<Array<string>>(HIDDEN_RECENT_SESSIONS_KEY, []);
+const recentSessions = ref<Array<RecentSessionItem>>([]);
 const streamController = ref<AbortController | null>(null);
 const reconnectTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const connectionNonce = ref(0);
@@ -174,6 +192,68 @@ const updateState = (patch: Partial<ConsoleSessionState>): void => {
     },
     { allowActiveWithoutSessionId: true },
   );
+};
+
+const normalizeHiddenRecentSessions = (): Array<string> => {
+  return hiddenRecentSessions.value
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.trim())
+    .filter((value) => Boolean(value));
+};
+
+const setHiddenRecentSessions = (items: Array<string>): void => {
+  hiddenRecentSessions.value = Array.from(new Set(items));
+};
+
+const isRecentSessionHidden = (sessionId: string): boolean => {
+  return normalizeHiddenRecentSessions().includes(sessionId);
+};
+
+const sortRecentSessions = (items: Array<RecentSessionItem>): Array<RecentSessionItem> => {
+  return items.slice().sort((left, right) => {
+    const leftTime = left.finishedAt ?? left.startedAt ?? left.createdAt ?? 0;
+    const rightTime = right.finishedAt ?? right.startedAt ?? right.createdAt ?? 0;
+    return rightTime - leftTime;
+  });
+};
+
+const trimRecentSessions = (items: Array<RecentSessionItem>): Array<RecentSessionItem> => {
+  return items.slice(0, RECENT_SESSIONS_MAX);
+};
+
+const setRecentSessions = (items: Array<RecentSessionItem>): void => {
+  recentSessions.value = trimRecentSessions(
+    sortRecentSessions(items.filter((item) => !isRecentSessionHidden(item.sessionId))),
+  );
+};
+
+const upsertRecentSession = (item: RecentSessionItem): void => {
+  if (isRecentSessionHidden(item.sessionId)) {
+    return;
+  }
+
+  setRecentSessions([
+    item,
+    ...recentSessions.value.filter((entry) => entry.sessionId !== item.sessionId),
+  ]);
+};
+
+const hideRecentSession = (sessionId: string): void => {
+  const normalized = sessionId.trim();
+  if (!normalized) {
+    return;
+  }
+
+  setHiddenRecentSessions([...normalizeHiddenRecentSessions(), normalized]);
+  setRecentSessions(recentSessions.value.filter((item) => item.sessionId !== normalized));
+};
+
+const clearRecentSessions = (): void => {
+  setHiddenRecentSessions([
+    ...normalizeHiddenRecentSessions(),
+    ...recentSessions.value.map((item) => item.sessionId),
+  ]);
+  recentSessions.value = [];
 };
 
 const appendTranscript = (chunk: string): void => {
@@ -215,6 +295,7 @@ const clearTranscript = (): void => {
 const markExpired = (): void => {
   stopStream();
   updateState({ status: 'expired', error: '' });
+  syncCurrentSessionToRecentSessions();
 };
 
 const finishSession = (
@@ -227,6 +308,7 @@ const finishSession = (
     exitCode,
     error: '',
   });
+  syncCurrentSessionToRecentSessions();
 };
 
 const scheduleReconnect = (): void => {
@@ -289,6 +371,97 @@ const parseResponseError = async (response: Response): Promise<string> => {
   return response.statusText || 'Request failed.';
 };
 
+const normalizeRecentSessionStatus = (
+  status: string | null | undefined,
+): RecentSessionItem['status'] => {
+  switch (normalizeStatus(status, 'finished')) {
+    case 'starting':
+      return 'starting';
+
+    case 'running':
+    case 'reconnecting':
+      return 'running';
+
+    default:
+      return 'completed';
+  }
+};
+
+const recentSessionFromPayload = (payload: TerminalSessionItem): RecentSessionItem | null => {
+  if (typeof payload.session_id !== 'string' || !payload.session_id.trim()) {
+    return null;
+  }
+
+  if (typeof payload.command !== 'string') {
+    return null;
+  }
+
+  return {
+    sessionId: payload.session_id,
+    command: payload.command,
+    status: normalizeRecentSessionStatus(payload.status),
+    createdAt: typeof payload.created_at === 'number' ? payload.created_at : null,
+    startedAt: typeof payload.started_at === 'number' ? payload.started_at : null,
+    finishedAt: typeof payload.finished_at === 'number' ? payload.finished_at : null,
+    expiresAt: typeof payload.expires_at === 'number' ? payload.expires_at : null,
+    availableUntil: typeof payload.available_until === 'number' ? payload.available_until : null,
+    exitCode: typeof payload.exit_code === 'number' ? payload.exit_code : null,
+    lastSequence: typeof payload.last_sequence === 'number' ? payload.last_sequence : 0,
+  };
+};
+
+const syncCurrentSessionToRecentSessions = (): void => {
+  if (!sessionState.value.sessionId || !sessionState.value.command.trim()) {
+    return;
+  }
+
+  const existing =
+    recentSessions.value.find((item) => item.sessionId === sessionState.value.sessionId) ?? null;
+  const isFinished = ['finished', 'interrupted', 'error', 'expired'].includes(
+    sessionState.value.status,
+  );
+  const lastSequence =
+    sessionState.value.lastEventId && /^\d+$/.test(sessionState.value.lastEventId)
+      ? Number(sessionState.value.lastEventId)
+      : (existing?.lastSequence ?? 0);
+
+  upsertRecentSession({
+    sessionId: sessionState.value.sessionId,
+    command: sessionState.value.command,
+    status: normalizeRecentSessionStatus(sessionState.value.status),
+    createdAt: existing?.createdAt ?? null,
+    startedAt: existing?.startedAt ?? null,
+    finishedAt: isFinished
+      ? (existing?.finishedAt ?? Date.now() / 1000)
+      : (existing?.finishedAt ?? null),
+    expiresAt: existing?.expiresAt ?? null,
+    availableUntil: existing?.availableUntil ?? null,
+    exitCode: sessionState.value.exitCode ?? existing?.exitCode ?? null,
+    lastSequence,
+  });
+};
+
+const fetchRecentSessions = async (): Promise<void> => {
+  try {
+    const response = await request('/api/system/terminal');
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = await parse_api_response<TerminalSessionsResponse>(response.json());
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item) => recentSessionFromPayload(item))
+          .filter((item): item is RecentSessionItem => item !== null)
+      : [];
+
+    setRecentSessions(items);
+    syncCurrentSessionToRecentSessions();
+  } catch {
+    return;
+  }
+};
+
 const refreshSessionMetadata = async (): Promise<void> => {
   if (!sessionState.value.sessionId) {
     return;
@@ -303,10 +476,14 @@ const refreshSessionMetadata = async (): Promise<void> => {
     }
 
     updateState(normalizeResponse(payload));
+    syncCurrentSessionToRecentSessions();
   } catch (error) {
     if (error instanceof ConsoleSessionExpiredError) {
       markExpired();
+      return;
     }
+
+    return;
   }
 };
 
@@ -400,6 +577,7 @@ const connectStream = async (): Promise<void> => {
       onopen: async (response) => {
         if (response.ok) {
           updateState({ status: 'running', error: '' });
+          syncCurrentSessionToRecentSessions();
           return;
         }
 
@@ -434,6 +612,7 @@ const connectStream = async (): Promise<void> => {
 
         if (event.event === 'status') {
           updateState(normalizeResponse(payload as ConsoleSessionResponse));
+          syncCurrentSessionToRecentSessions();
           return;
         }
 
@@ -501,6 +680,7 @@ const connectStream = async (): Promise<void> => {
     const message = error instanceof Error ? error.message : String(error);
     appendTranscript(`Error: ${message}\n`);
     updateState({ status: 'error', error: message });
+    syncCurrentSessionToRecentSessions();
   } finally {
     if (streamController.value === controller) {
       streamController.value = null;
@@ -517,11 +697,14 @@ const restoreSession = async (): Promise<void> => {
 
       if (payload) {
         updateState(normalizeResponse(payload));
+        syncCurrentSessionToRecentSessions();
       }
 
       if (sessionState.value.sessionId && isActiveSessionStatus(sessionState.value.status)) {
         await connectStream();
       }
+
+      await fetchRecentSessions();
 
       return;
     }
@@ -531,28 +714,36 @@ const restoreSession = async (): Promise<void> => {
       sessionState.value.command ||
       sessionState.value.transcript.length > 0
     ) {
+      await fetchRecentSessions();
       return;
     }
 
     const active = await readSessionResponse('/api/system/terminal/active', { allowMissing: true });
     if (!active) {
+      await fetchRecentSessions();
       return;
     }
 
     updateState(normalizeResponse(active));
+    syncCurrentSessionToRecentSessions();
 
     if (sessionState.value.sessionId && isActiveSessionStatus(sessionState.value.status)) {
       await connectStream();
     }
+
+    await fetchRecentSessions();
   } catch (error) {
     if (error instanceof ConsoleSessionExpiredError) {
       markExpired();
+      await fetchRecentSessions();
       return;
     }
 
     if (sessionState.value.sessionId && isActiveSessionStatus(sessionState.value.status)) {
       await connectStream();
     }
+
+    await fetchRecentSessions();
   }
 };
 
@@ -594,16 +785,20 @@ const startSession = async ({
       ]),
       error: '',
     });
+    syncCurrentSessionToRecentSessions();
 
     if (sessionState.value.sessionId && isActiveSessionStatus(sessionState.value.status)) {
       await connectStream();
     }
+
+    await fetchRecentSessions();
 
     return Boolean(sessionState.value.sessionId);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     appendTranscript(`Error: ${message}\n`);
     updateState({ status: 'error', error: message });
+    syncCurrentSessionToRecentSessions();
     return false;
   }
 };
@@ -623,6 +818,7 @@ const cancelSession = async (): Promise<CancelConsoleSessionResult> => {
 
     if (response.status === 404) {
       await refreshSessionMetadata();
+      await fetchRecentSessions();
       return { status: 'missing', message: 'Terminal session not found.' };
     }
 
@@ -631,6 +827,7 @@ const cancelSession = async (): Promise<CancelConsoleSessionResult> => {
     }
 
     updateState({ error: '' });
+    await fetchRecentSessions();
     return { status: 'cancelled' };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -642,6 +839,32 @@ const cancelSession = async (): Promise<CancelConsoleSessionResult> => {
 const resetState = (): void => {
   stopStream();
   sessionState.value = { ...DEFAULT_STATE };
+  recentSessions.value = [];
+  hiddenRecentSessions.value = [];
+};
+
+const replaySession = async (item: RecentSessionItem): Promise<boolean> => {
+  stopStream();
+  updateState({
+    sessionId: item.sessionId,
+    command: item.command,
+    status: item.status === 'running' ? 'reconnecting' : 'finished',
+    lastEventId: null,
+    exitCode: item.exitCode,
+    transcript: [],
+    error: '',
+  });
+  syncCurrentSessionToRecentSessions();
+
+  await connectStream();
+  await fetchRecentSessions();
+
+  if (sessionState.value.status === 'expired') {
+    hideRecentSession(item.sessionId);
+    return false;
+  }
+
+  return sessionState.value.status !== 'error';
 };
 
 const useConsoleSession = () => {
@@ -649,7 +872,12 @@ const useConsoleSession = () => {
     state: sessionState,
     bufferedTranscript: computed(() => sessionState.value.transcript.slice()),
     isLoading: computed(() => isActiveSessionStatus(sessionState.value.status)),
+    recentSessions: computed(() => recentSessions.value.slice()),
     clearTranscript,
+    clearRecentSessions,
+    fetchRecentSessions,
+    hideRecentSession,
+    replaySession,
     restoreSession,
     startSession,
     cancelSession,

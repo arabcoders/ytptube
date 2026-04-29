@@ -177,27 +177,27 @@
                             class="flex items-center gap-2 text-sm font-semibold text-highlighted"
                           >
                             <UIcon name="i-lucide-history" class="size-4 text-toned" />
-                            <span>Command history</span>
+                            <span>Recent runs</span>
                           </div>
 
                           <UButton
                             color="neutral"
                             variant="outline"
                             size="sm"
-                            icon="i-lucide-trash"
-                            :disabled="historyEntries.length < 1"
-                            @click="() => void clearHistory()"
+                            icon="i-lucide-eye-off"
+                            :disabled="recentSessionEntries.length < 1"
+                            @click="() => void hideRecentSessions()"
                           >
-                            Clear history
+                            Hide recent runs
                           </UButton>
                         </div>
 
                         <UAlert
-                          v-if="historyEntries.length < 1"
+                          v-if="recentSessionEntries.length < 1"
                           color="info"
                           variant="soft"
                           icon="i-lucide-clock-3"
-                          title="Command history is empty"
+                          title="No recent console sessions"
                         />
 
                         <div
@@ -205,34 +205,119 @@
                           class="max-h-96 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
                         >
                           <div class="w-full max-w-full overflow-auto overscroll-contain">
-                            <table class="min-w-155 w-full text-sm">
+                            <table class="w-full text-sm">
                               <tbody class="divide-y divide-default">
                                 <tr
-                                  v-for="(cmd, index) in historyEntries"
-                                  :key="`${index}-${cmd}`"
+                                  v-for="item in recentSessionEntries"
+                                  :key="item.sessionId"
                                   class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
                                 >
                                   <td class="px-3 py-3 align-middle">
-                                    <button
-                                      type="button"
-                                      class="block w-full text-left font-mono text-xs text-default hover:text-highlighted"
-                                      @click="() => void loadCommand(cmd)"
-                                    >
-                                      {{ cmd.replace(/\n/g, ' ') }}
-                                    </button>
+                                    <div class="space-y-2">
+                                      <button
+                                        type="button"
+                                        class="block w-full text-left font-mono text-xs text-default hover:text-highlighted"
+                                        @click="() => void replayRecentSession(item)"
+                                      >
+                                        {{ item.command }}
+                                      </button>
+
+                                      <div
+                                        class="flex flex-wrap items-center gap-2 text-[11px] text-toned"
+                                      >
+                                        <UBadge
+                                          :color="recentSessionStatusColor(item)"
+                                          variant="soft"
+                                          size="sm"
+                                        >
+                                          <span
+                                            v-if="recentSessionStatusSpinning(item)"
+                                            class="inline-flex items-center gap-1.5"
+                                          >
+                                            <UIcon
+                                              :name="recentSessionStatusIcon(item)"
+                                              class="size-3.5 animate-spin"
+                                            />
+                                            <span>{{ recentSessionStatusLabel(item) }}</span>
+                                          </span>
+                                          <span v-else class="inline-flex items-center gap-1.5">
+                                            <UIcon
+                                              :name="recentSessionStatusIcon(item)"
+                                              class="size-3.5"
+                                            />
+                                            <span>{{ recentSessionStatusLabel(item) }}</span>
+                                          </span>
+                                        </UBadge>
+
+                                        <UTooltip
+                                          v-if="item.finishedAt || item.startedAt || item.createdAt"
+                                          :text="
+                                            moment
+                                              .unix(
+                                                item.finishedAt ||
+                                                  item.startedAt ||
+                                                  item.createdAt ||
+                                                  0,
+                                              )
+                                              .format('YYYY-M-DD H:mm Z')
+                                          "
+                                        >
+                                          <span
+                                            class="inline-flex items-center gap-1.5 cursor-help"
+                                          >
+                                            <UIcon name="i-lucide-clock-3" class="size-3.5" />
+                                            <time
+                                              :datetime="
+                                                moment
+                                                  .unix(
+                                                    item.finishedAt ||
+                                                      item.startedAt ||
+                                                      item.createdAt ||
+                                                      0,
+                                                  )
+                                                  .toISOString()
+                                              "
+                                            >
+                                              {{
+                                                moment
+                                                  .unix(
+                                                    item.finishedAt ||
+                                                      item.startedAt ||
+                                                      item.createdAt ||
+                                                      0,
+                                                  )
+                                                  .fromNow()
+                                              }}
+                                            </time>
+                                          </span>
+                                        </UTooltip>
+                                      </div>
+                                    </div>
                                   </td>
 
                                   <td
-                                    class="w-12 px-3 py-3 text-center align-middle whitespace-nowrap"
+                                    class="w-28 px-3 py-3 text-center align-middle whitespace-nowrap"
                                   >
-                                    <UButton
-                                      color="neutral"
-                                      variant="ghost"
-                                      size="xs"
-                                      icon="i-lucide-x"
-                                      square
-                                      @click="removeFromHistory(index)"
-                                    />
+                                    <div class="flex items-center justify-end gap-1">
+                                      <UButton
+                                        color="neutral"
+                                        variant="ghost"
+                                        size="xs"
+                                        icon="i-lucide-terminal"
+                                        @click="() => void loadCommand(item.command)"
+                                      >
+                                        Fill
+                                      </UButton>
+
+                                      <UButton
+                                        color="neutral"
+                                        variant="ghost"
+                                        size="xs"
+                                        icon="i-lucide-x"
+                                        square
+                                        @click="hideRecentSession(item.sessionId)"
+                                      />
+                                    </div>
                                   </td>
                                 </tr>
                               </tbody>
@@ -315,6 +400,7 @@
 </style>
 
 <script setup lang="ts">
+import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -327,7 +413,6 @@ import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { disableOpacity, enableOpacity } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
-const MAX_HISTORY_ITEMS = 50;
 const ACTIVE_SESSION_STATUSES = ['starting', 'running', 'reconnecting'];
 
 let flushFrame: number | null = null;
@@ -351,7 +436,6 @@ const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window');
 const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null);
 const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null);
 const storedCommand = useStorage<string>('console_command', '');
-const commandHistory = useStorage<string[]>('console_command_history', []);
 
 const pageCardUi = {
   root: 'flex min-h-0 flex-1 w-full bg-transparent',
@@ -371,6 +455,7 @@ const ytDlpOptions = computed<AutoCompleteOptions>(() =>
 );
 
 const bufferedTranscript = consoleSession.bufferedTranscript;
+const recentSessions = consoleSession.recentSessions;
 const sessionStatus = computed(() => consoleSession.state.value.status);
 const sessionError = computed(() => consoleSession.state.value.error);
 const sessionExitCode = computed(() => consoleSession.state.value.exitCode);
@@ -380,7 +465,7 @@ const runnableCommand = computed(() => displayCommand.value.replace(/\n/g, ' ').
 const hasValidCommand = computed(() => Boolean(runnableCommand.value));
 const isLoading = computed(() => consoleSession.isLoading.value);
 const isMultiLineInput = computed(() => Boolean(command.value && command.value.includes('\n')));
-const historyEntries = computed(() => commandHistory.value);
+const recentSessionEntries = computed(() => recentSessions.value);
 const canManualReconnect = computed(() => sessionStatus.value === 'reconnecting');
 const showCancelButton = computed(() =>
   ['starting', 'running', 'reconnecting'].includes(sessionStatus.value),
@@ -481,6 +566,63 @@ const sessionStatusIcon = computed(() => {
   }
 });
 const sessionStatusSpinning = computed(() => ACTIVE_SESSION_STATUSES.includes(sessionStatus.value));
+
+const isRecentSessionFailed = (item: (typeof recentSessions.value)[number]): boolean => {
+  return item.status === 'completed' && item.exitCode !== null && item.exitCode !== 0;
+};
+
+const recentSessionStatusLabel = (item: (typeof recentSessions.value)[number]): string => {
+  if (isRecentSessionFailed(item)) {
+    return 'Failed';
+  }
+
+  switch (item.status) {
+    case 'starting':
+      return 'Starting';
+
+    case 'running':
+      return 'Running';
+
+    default:
+      return 'Completed';
+  }
+};
+
+const recentSessionStatusColor = (
+  item: (typeof recentSessions.value)[number],
+): 'success' | 'error' | 'info' | 'neutral' => {
+  if (isRecentSessionFailed(item)) {
+    return 'error';
+  }
+
+  switch (item.status) {
+    case 'starting':
+    case 'running':
+      return 'info';
+
+    default:
+      return item.exitCode === 0 ? 'success' : 'neutral';
+  }
+};
+
+const recentSessionStatusIcon = (item: (typeof recentSessions.value)[number]): string => {
+  if (isRecentSessionFailed(item)) {
+    return 'i-lucide-triangle-alert';
+  }
+
+  switch (item.status) {
+    case 'starting':
+    case 'running':
+      return 'i-lucide-loader-circle';
+
+    default:
+      return item.exitCode === 0 ? 'i-lucide-circle-check' : 'i-lucide-circle-dot';
+  }
+};
+
+const recentSessionStatusSpinning = (item: (typeof recentSessions.value)[number]): boolean => {
+  return ['starting', 'running'].includes(item.status);
+};
 watch(command, (value) => {
   storedCommand.value = value;
 });
@@ -765,13 +907,6 @@ const handlePaste = async (event: ClipboardEvent): Promise<void> => {
   }
 };
 
-const addToHistory = (cmd: string): void => {
-  commandHistory.value = [cmd, ...commandHistory.value.filter((item) => item !== cmd)].slice(
-    0,
-    MAX_HISTORY_ITEMS,
-  );
-};
-
 const runCommand = async (): Promise<void> => {
   if (!canStartCommand.value) {
     return;
@@ -794,8 +929,6 @@ const runCommand = async (): Promise<void> => {
   }
 
   await ensureTerminal();
-
-  addToHistory(displayCommand.value);
 
   const started = await consoleSession.startSession({
     command: runnableCommand.value,
@@ -871,14 +1004,19 @@ const loadCommand = async (cmd: string): Promise<void> => {
   await focusInput();
 };
 
-const clearHistory = async (): Promise<void> => {
-  if (historyEntries.value.length < 1) {
+const hideRecentSession = (sessionId: string): void => {
+  consoleSession.hideRecentSession(sessionId);
+};
+
+const hideRecentSessions = async (): Promise<void> => {
+  if (recentSessionEntries.value.length < 1) {
     return;
   }
 
   const { status } = await dialog.confirmDialog({
     title: 'Confirm Action',
-    message: 'Clear commands history?',
+    message: 'Hide the current recent runs from this browser?',
+    confirmText: 'Hide runs',
     confirmColor: 'error',
   });
 
@@ -886,11 +1024,20 @@ const clearHistory = async (): Promise<void> => {
     return;
   }
 
-  commandHistory.value = [];
+  consoleSession.clearRecentSessions();
+  await focusInput();
 };
 
-const removeFromHistory = (index: number): void => {
-  commandHistory.value = commandHistory.value.filter((_, i) => i !== index);
+const replayRecentSession = async (item: (typeof recentSessions.value)[number]): Promise<void> => {
+  try {
+    await consoleSession.replaySession(item);
+    restoreBufferedTerminalOutput();
+  } catch {
+    consoleSession.hideRecentSession(item.sessionId);
+  } finally {
+    await nextTick();
+    await focusInput();
+  }
 };
 
 onMounted(async () => {
@@ -907,6 +1054,7 @@ onMounted(async () => {
 
   await ensureTerminal();
   await consoleSession.restoreSession();
+  await consoleSession.fetchRecentSessions();
   restoreBufferedTerminalOutput();
 
   if (storedCommand.value.trim()) {

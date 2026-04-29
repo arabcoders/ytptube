@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import web
 
 from app.library.config import Config
+from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 
@@ -31,8 +32,10 @@ ACTIVE_FILE_NAME = "active.json"
 METADATA_FILE_NAME = "metadata.json"
 TRANSCRIPT_FILE_NAME = "transcript.jsonl"
 DEFAULT_DRAIN_TTL = 30.0
+COMPLETED_SESSION_RETENTION = 86400.0
 DEFAULT_KEEPALIVE_INTERVAL = 15.0
 DEFAULT_SHUTDOWN_TIMEOUT = 5.0
+CLEANUP_SCHEDULE = "5 */1 * * *"
 
 
 class TerminalSessionConflictError(RuntimeError):
@@ -55,8 +58,10 @@ class TerminalSessionManager(metaclass=Singleton):
         self._lock = asyncio.Lock()
         self._active: ActiveTerminalSession | None = None
         self._drain_ttl: float = DEFAULT_DRAIN_TTL
+        self._completed_retention: float = COMPLETED_SESSION_RETENTION
         self._keepalive_interval: float = DEFAULT_KEEPALIVE_INTERVAL
         self._shutdown_timeout: float = DEFAULT_SHUTDOWN_TIMEOUT
+        self._cleanup_job_id: str | None = None
 
     @staticmethod
     def get_instance() -> TerminalSessionManager:
@@ -67,11 +72,20 @@ class TerminalSessionManager(metaclass=Singleton):
         Services.get_instance().add("terminal_manager", self)
         app.on_startup.append(self.on_startup)
         app.on_shutdown.append(self.on_shutdown)
+        self._cleanup_job_id = Scheduler.get_instance().add(
+            timer=CLEANUP_SCHEDULE,
+            func=self.cleanup,
+            id=f"{__class__.__name__}.{__class__.cleanup.__name__}",
+        )
 
     async def on_startup(self, _: web.Application) -> None:
         await self.initialize()
 
     async def on_shutdown(self, _: web.Application) -> None:
+        if self._cleanup_job_id is not None:
+            Scheduler.get_instance().remove(self._cleanup_job_id)
+            self._cleanup_job_id = None
+
         session_id: str | None = None
         task: asyncio.Task[None] | None = None
 
@@ -121,12 +135,17 @@ class TerminalSessionManager(metaclass=Singleton):
 
     async def cleanup(self) -> None:
         async with self._lock:
-            self._cleanup_expired_sessions(time.time())
+            LOG.debug("Running scheduled terminal session cleanup.")
+            removed = self._cleanup_expired_sessions(time.time())
+            LOG.debug("Scheduled terminal session cleanup finished. Removed %d expired sessions.", removed)
+
+    async def list_sessions(self) -> list[dict[str, Any]]:
+        async with self._lock:
+            return self._list_sessions_locked()
 
     async def create_session(self, command: str) -> dict[str, Any]:
         async with self._lock:
             now = time.time()
-            self._cleanup_expired_sessions(now)
 
             active_session = self._get_active_session_locked()
             if active_session is not None:
@@ -160,22 +179,20 @@ class TerminalSessionManager(metaclass=Singleton):
 
     async def get_active_session(self) -> dict[str, Any] | None:
         async with self._lock:
-            self._cleanup_expired_sessions(time.time())
             metadata = self._get_active_session_locked()
             return None if metadata is None else dict(metadata)
 
     async def get_session(self, session_id: str) -> dict[str, Any] | None:
         async with self._lock:
-            self._cleanup_expired_sessions(time.time())
             metadata = self._load_metadata(session_id)
-            return None if metadata is None else dict(metadata)
+            if metadata is None or self._is_expired_metadata(metadata, time.time()):
+                return None
+            return dict(metadata)
 
     async def cancel_session(self, session_id: str) -> dict[str, Any]:
         async with self._lock:
-            self._cleanup_expired_sessions(time.time())
-
             metadata = self._load_metadata(session_id)
-            if metadata is None:
+            if metadata is None or self._is_expired_metadata(metadata, time.time()):
                 msg = f"Unknown terminal session '{session_id}'."
                 raise FileNotFoundError(msg)
 
@@ -218,6 +235,9 @@ class TerminalSessionManager(metaclass=Singleton):
             async with self._lock:
                 metadata = self._load_metadata(session_id)
                 if metadata is not None:
+                    if self._is_expired_metadata(metadata, time.time()):
+                        return response
+
                     replay_until = int(metadata.get("last_sequence", last_sent))
 
                 runtime = self._active
@@ -443,7 +463,7 @@ class TerminalSessionManager(metaclass=Singleton):
             metadata["status"] = status
             metadata["exit_code"] = exit_code
             metadata["finished_at"] = now
-            metadata["expires_at"] = now + self._drain_ttl
+            metadata["expires_at"] = now + self._completed_retention
             self._write_json(self._metadata_path(session_id), metadata)
 
             if self._load_active_marker() == session_id:
@@ -468,6 +488,31 @@ class TerminalSessionManager(metaclass=Singleton):
 
         return metadata
 
+    def _list_sessions_locked(self) -> list[dict[str, Any]]:
+        self._ensure_root()
+        items: list[dict[str, Any]] = []
+
+        for path in self.root_path.iterdir():
+            if path.name == ACTIVE_FILE_NAME or path.is_dir() is False:
+                continue
+
+            metadata = self._load_metadata(path.name)
+            if metadata is None:
+                continue
+
+            if self._is_expired_metadata(metadata, time.time()):
+                continue
+
+            item = dict(metadata)
+            item["available_until"] = self._available_until(metadata)
+            items.append(item)
+
+        items.sort(
+            key=lambda item: float(item.get("finished_at") or item.get("started_at") or item.get("created_at") or 0),
+            reverse=True,
+        )
+        return items
+
     def _recover_orphaned_active_session(self, now: float) -> None:
         session_id = self._load_active_marker()
         if session_id is None:
@@ -480,14 +525,15 @@ class TerminalSessionManager(metaclass=Singleton):
 
         metadata["status"] = "interrupted"
         metadata["finished_at"] = now
-        metadata["expires_at"] = now + self._drain_ttl
+        metadata["expires_at"] = now + self._completed_retention
         metadata["exit_code"] = -1 if metadata.get("exit_code") is None else metadata["exit_code"]
         self._write_json(self._metadata_path(session_id), metadata)
         self._clear_active_marker()
 
-    def _cleanup_expired_sessions(self, now: float) -> None:
+    def _cleanup_expired_sessions(self, now: float) -> int:
         self._ensure_root()
         active_session_id = self._load_active_marker()
+        removed = 0
 
         for path in self.root_path.iterdir():
             if path.name == ACTIVE_FILE_NAME or path.is_dir() is False:
@@ -496,10 +542,10 @@ class TerminalSessionManager(metaclass=Singleton):
             metadata = self._load_metadata(path.name)
             if metadata is None:
                 shutil.rmtree(path, ignore_errors=True)
+                removed += 1
                 continue
 
-            expires_at = metadata.get("expires_at")
-            if expires_at is None or float(expires_at) > now:
+            if not self._is_expired_metadata(metadata, now):
                 continue
 
             if active_session_id == path.name:
@@ -507,6 +553,10 @@ class TerminalSessionManager(metaclass=Singleton):
                 active_session_id = None
 
             shutil.rmtree(path, ignore_errors=True)
+
+            removed += 1
+
+        return removed
 
     def _parse_since(self, request: Request) -> int:
         values: list[int] = []
@@ -537,7 +587,7 @@ class TerminalSessionManager(metaclass=Singleton):
             now = time.time()
             metadata["status"] = "interrupted"
             metadata["finished_at"] = now
-            metadata["expires_at"] = now + self._drain_ttl
+            metadata["expires_at"] = now + self._completed_retention
             metadata["exit_code"] = -1 if metadata.get("exit_code") is None else metadata["exit_code"]
             self._write_json(self._metadata_path(session_id), metadata)
 
@@ -617,6 +667,20 @@ class TerminalSessionManager(metaclass=Singleton):
                 events.append(event)
 
         return events
+
+    def _available_until(self, metadata: dict[str, Any]) -> float | None:
+        expires_at = metadata.get("expires_at")
+        if expires_at is None:
+            return None
+
+        return float(expires_at)
+
+    def _is_expired_metadata(self, metadata: dict[str, Any], now: float) -> bool:
+        expires_at = self._available_until(metadata)
+        if expires_at is None:
+            return False
+
+        return expires_at <= now
 
     def _build_env(self) -> dict[str, str]:
         env_vars = os.environ.copy()

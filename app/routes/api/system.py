@@ -274,6 +274,20 @@ async def create_terminal_session(
     return web.json_response(data=metadata, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
+@route("GET", "api/system/terminal", "system.terminal.list")
+async def list_terminal_sessions(
+    config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
+) -> Response:
+    if not config.console_enabled:
+        return web.json_response(
+            {"error": "Console feature is disabled."},
+            status=web.HTTPForbidden.status_code,
+        )
+
+    items = await terminal_manager.list_sessions()
+    return web.json_response(data={"items": items}, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
 @route("GET", "api/system/terminal/active", "system.terminal.active")
 async def get_active_terminal_session(
     config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager

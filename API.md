@@ -98,6 +98,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/system/configuration](#get-apisystemconfiguration)
     - [GET /api/system/limits](#get-apisystemlimits)
     - [POST /api/system/terminal](#post-apisystemterminal)
+    - [GET /api/system/terminal](#get-apisystemterminal)
     - [GET /api/system/terminal/active](#get-apisystemterminalactive)
     - [GET /api/system/terminal/{session\_id}](#get-apisystemterminalsession_id)
     - [DELETE /api/system/terminal/{session\_id}](#delete-apisystemterminalsession_id)
@@ -2579,6 +2580,36 @@ or an error:
 
 ---
 
+### GET /api/system/terminal
+**Purpose**: List recent terminal sessions.
+
+**Response**:
+```json
+{
+  "items": [
+    {
+      "session_id": "3a8c5f7e2d3b4a8f9c0d1e2f3a4b5c6d",
+      "command": "--help",
+      "status": "completed",
+      "created_at": 1713000000.0,
+      "started_at": 1713000000.0,
+      "finished_at": 1713000004.0,
+      "expires_at": 1713086404.0,
+      "available_until": 1713086404.0,
+      "exit_code": 0,
+      "last_sequence": 15
+    }
+  ]
+}
+```
+
+**Notes**:
+- Expired sessions are removed automatically later.
+
+- `403 Forbidden` if console is disabled.
+
+---
+
 ### GET /api/system/terminal/active
 **Purpose**: Return the currently active terminal session metadata, or `null` if no session is active.
 
@@ -2606,7 +2637,7 @@ or
 ---
 
 ### GET /api/system/terminal/{session_id}
-**Purpose**: Return metadata for a specific terminal session while it is active or still within the replay/drain window.
+**Purpose**: Return metadata for a specific terminal session.
 
 **Response**:
 ```json
@@ -2617,7 +2648,7 @@ or
   "created_at": 1713000000.0,
   "started_at": 1713000000.0,
   "finished_at": 1713000004.0,
-  "expires_at": 1713000034.0,
+  "expires_at": 1713086404.0,
   "exit_code": 0,
   "last_sequence": 15
 }
@@ -2641,8 +2672,7 @@ or
 
 **Notes**:
 - This only applies to the currently active session.
-- The client should stay attached to the stream to receive the final `close` event and refreshed terminal status.
-- Cancelled sessions finalize as `interrupted` and remain replayable until the drain window expires.
+- Cancelled sessions are marked as `interrupted`.
 
 - `403 Forbidden` if console is disabled.
 - `404 Not Found` if the session does not exist or has already expired.
@@ -2673,10 +2703,6 @@ If both `since` and `Last-Event-ID` are present, the larger value is used.
 ```json
 { "exitcode": 0 }
 ```
-
-**Notes**:
-- Replay/restore works while the session is still running or until the finished session expires.
-- Finished sessions are removed lazily after the transcript drain window elapses.
 
 - `403 Forbidden` if console is disabled.
 - `400 Bad Request` if the replay cursor is invalid.

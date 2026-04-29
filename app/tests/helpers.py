@@ -11,7 +11,7 @@ from uuid import uuid4
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-_TEST_RUN_ROOT = Path(gettempdir()) / "ytptube-tests" / uuid4().hex
+_TEST_RUN_ROOT = Path(gettempdir()) / "tests-ytptube" / uuid4().hex
 _TEST_SYSTEM_TEMP_ROOT = _TEST_RUN_ROOT / "tmp"
 
 

@@ -90,6 +90,9 @@ export default defineNuxtConfig({
         'marked-base-url',
         'marked-alert',
         'marked-gfm-heading-id',
+        'hls.js',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
       ],
     },
     server: {
