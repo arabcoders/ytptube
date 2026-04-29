@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "11bd4204aaa40a2b9b2d0d3ec57170858d901c97",
+    "date": "2026-04-29T19:25:39+00:00",
+    "commits": [
+      {
+        "sha": "11bd4204",
+        "full_sha": "11bd4204aaa40a2b9b2d0d3ec57170858d901c97",
+        "message": "refactor: update terminal api",
+        "author": "arabcoders",
+        "date": "2026-04-29T19:25:39+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.1.2",
     "full_sha": "cf4386e1a56d972de4860f98d608d21065841015",
     "date": "2026-04-27T22:21:27+00:00",
