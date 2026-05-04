@@ -21,7 +21,7 @@ def reset_generic_handler(monkeypatch):
     monkeypatch.setattr(GenericTaskHandler, "_sources_mtime", {})
 
 
-def test_build_task_definition_parses_valid_payload():
+def test_build_def_payload():
     definition = TaskDefinition(
         id=1,
         name="example",
@@ -40,16 +40,12 @@ def test_build_task_definition_parses_valid_payload():
         ),
     )
 
-    assert definition is not None, "TaskDefinition should be created"
-    assert "example" == definition.name, "Name should match"
-    assert "https://example.com/articles/*" in definition.match_url, "Match URL should be in list"
-    assert "link" in definition.definition.parse, "Parse should contain link field"
-    assert ".article a.link::attr(href)" == definition.definition.parse["link"]["expression"], (
-        "Link expression should match"
-    )
+    assert definition.name == "example"
+    assert definition.match_url == ["https://example.com/articles/*"]
+    assert definition.definition.parse["link"]["expression"] == ".article a.link::attr(href)"
 
 
-def test_build_task_definition_handles_container():
+def test_build_def_container():
     definition = TaskDefinition(
         id=2,
         name="container",
@@ -73,13 +69,11 @@ def test_build_task_definition_handles_container():
         ),
     )
 
-    assert definition is not None, "TaskDefinition should be created"
-    assert "items" in definition.definition.parse, "Parse should contain items container"
-    assert ".cards .card" == definition.definition.parse["items"]["selector"], "Items selector should match"
-    assert "link" in definition.definition.parse["items"]["fields"], "Items fields should contain link"
+    assert definition.definition.parse["items"]["selector"] == ".cards .card"
+    assert definition.definition.parse["items"]["fields"]["link"]["attribute"] == "href"
 
 
-def test_build_task_definition_handles_json():
+def test_build_def_json():
     definition = TaskDefinition(
         id=3,
         name="json-def",
@@ -104,16 +98,12 @@ def test_build_task_definition_handles_json():
         ),
     )
 
-    assert definition is not None, "TaskDefinition should be created"
-    assert "json" == definition.definition.response.type, "Response type should be json"
-    assert "items" in definition.definition.parse, "Parse should contain items container"
-    assert "jsonpath" == definition.definition.parse["items"]["type"], "Items type should be jsonpath"
-    assert "jsonpath" == definition.definition.parse["items"]["fields"]["link"]["type"], (
-        "Link field type should be jsonpath"
-    )
+    assert definition.definition.response.type == "json"
+    assert definition.definition.parse["items"]["type"] == "jsonpath"
+    assert definition.definition.parse["items"]["fields"]["link"]["type"] == "jsonpath"
 
 
-def test_parse_items_extracts_values():
+def test_parse_items_basic():
     definition = TaskDefinition(
         id=4,
         name="example",
@@ -146,14 +136,16 @@ def test_parse_items_extracts_values():
 
     items = GenericTaskHandler._parse_items(definition, html, "https://example.com/base/")
 
-    assert 2 == len(items), "Should extract 2 items"
-    assert "https://example.com/article-101" == items[0]["link"], "First item link should be absolute URL"
-    assert "First Title" == items[0]["title"], "First item title should match"
-    assert "101" == items[0]["id"], "First item id should match"
-    assert "https://example.com/article-102" == items[1]["link"], "Second item link should match"
+    assert len(items) == 2
+    assert items[0] == {
+        "link": "https://example.com/article-101",
+        "title": "First Title",
+        "id": "101",
+    }
+    assert items[1]["link"] == "https://example.com/article-102"
 
 
-def test_parse_items_handles_nested_card_layout():
+def test_parse_items_cards():
     definition = TaskDefinition(
         id=5,
         name="nested",
@@ -234,19 +226,21 @@ def test_parse_items_handles_nested_card_layout():
 
     items = GenericTaskHandler._parse_items(definition, html, "https://example.com")
 
-    assert 2 == len(items), "Should extract 2 items"
-    assert "https://example.com/poems/view/111" == items[0]["link"], "First item link should match"
-    assert "First Poem" == items[0]["title"], "First item title should match"
-    assert "Poet Alpha" == items[0]["poet"], "First item poet should match"
-    assert "Category One" == items[0]["category"], "First item category should match"
+    assert len(items) == 2
+    assert items[0] == {
+        "link": "https://example.com/poems/view/111",
+        "title": "First Poem",
+        "poet": "Poet Alpha",
+        "category": "Category One",
+    }
+    assert items[1] == {
+        "link": "https://example.com/poems/view/222",
+        "title": "Second Poem",
+        "poet": "Poet Beta",
+    }
 
-    assert "https://example.com/poems/view/222" == items[1]["link"], "Second item link should match"
-    assert "Second Poem" == items[1]["title"], "Second item title should match"
-    assert "Poet Beta" == items[1]["poet"], "Second item poet should match"
-    assert "category" not in items[1], "Second item should not have category"
 
-
-def test_parse_items_handles_json_container():
+def test_parse_items_json():
     definition = TaskDefinition(
         id=6,
         name="json",
@@ -287,14 +281,10 @@ def test_parse_items_handles_json_container():
         json_data=payload,
     )
 
-    assert 2 == len(items), "Should extract 2 items (third missing link)"
-    assert "https://example.com/video/1" == items[0]["link"], "First item link should be absolute"
-    assert "First" == items[0]["title"], "First item title should match"
-    assert "1" == items[0]["id"], "First item id should match"
-
-    assert "https://example.com/video/2" == items[1]["link"], "Second item link should match"
-    assert "Second" == items[1]["title"], "Second item title should match"
-    assert "2" == items[1]["id"], "Second item id should match"
+    assert items == [
+        {"link": "https://example.com/video/1", "title": "First", "id": "1"},
+        {"link": "https://example.com/video/2", "title": "Second", "id": "2"},
+    ]
 
 
 @pytest.mark.asyncio
@@ -345,14 +335,14 @@ async def test_generic_task_handler_inspect(monkeypatch):
         task = HandleTask(id=1, name="Inspect", url="https://example.com/api")
         result: TaskResult | TaskFailure = await GenericTaskHandler.extract(task)
 
-        assert isinstance(result, TaskResult), "Result should be TaskResult"
-        assert 1 == len(result.items), "Should have 1 item"
+        assert isinstance(result, TaskResult)
+        assert len(result.items) == 1
         item = result.items[0]
-        assert "https://example.com/video/1" == item.url, "Item URL should match"
-        assert "First" == item.title, "Item title should match"
+        assert item.url == "https://example.com/video/1"
+        assert item.title == "First"
 
 
-def test_parse_items_handles_json_top_level_list():
+def test_parse_items_json_list():
     definition = TaskDefinition(
         id=8,
         name="json-list",
@@ -389,8 +379,7 @@ def test_parse_items_handles_json_top_level_list():
         json_data=payload,
     )
 
-    assert 2 == len(items), "Should extract 2 items"
-    assert "https://example.com/video/1" == items[0]["link"], "First item link should match"
-    assert "First" == items[0]["title"], "First item title should match"
-    assert "https://example.com/video/2" == items[1]["link"], "Second item link should match"
-    assert "Second" == items[1]["title"], "Second item title should match"
+    assert items == [
+        {"link": "https://example.com/video/1", "title": "First"},
+        {"link": "https://example.com/video/2", "title": "Second"},
+    ]

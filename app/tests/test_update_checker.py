@@ -21,7 +21,7 @@ class TestUpdateChecker:
         EventBus._reset_singleton()
         Cache._reset_singleton()
 
-    def test_attach_schedules_check_when_enabled(self):
+    def test_attach_enabled(self):
         """Test that attach schedules update check when config.check_for_updates is True."""
         import asyncio
 
@@ -50,7 +50,7 @@ class TestUpdateChecker:
                     scheduler.remove(checker._job_id)
                 loop.close()
 
-    def test_attach_skips_scheduling_when_disabled(self):
+    def test_attach_disabled(self):
         """Test that attach skips scheduling when config.check_for_updates is False."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
@@ -111,7 +111,7 @@ class TestUpdateChecker:
                 loop.close()
 
     @pytest.mark.asyncio
-    async def test_check_for_updates_skips_when_disabled(self):
+    async def test_check_for_updates_disabled(self):
         """Test that check_for_updates skips when config.check_for_updates is False."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
@@ -255,7 +255,7 @@ class TestUpdateChecker:
 
     @pytest.mark.asyncio
     @patch("app.library.UpdateChecker.get_async_client")
-    async def test_check_ytdlp_version_handles_http_error(self, mock_client):
+    async def test_check_ytdlp_version_http_error(self, mock_client):
         """Test that yt-dlp check handles HTTP errors gracefully."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker

@@ -109,7 +109,7 @@ afterEach(() => {
 })
 
 describe('useConsoleSession', () => {
-  it('starts a session, persists prompt transcript, and stores streamed output', async () => {
+  it('start_session', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(
       createMockResponse({
@@ -166,7 +166,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('restores a running session using both since and Last-Event-ID', async () => {
+  it('restore_with_cursor', async () => {
     const session = useConsoleSession()
     session.state.value = {
       sessionId: 'sess-restore',
@@ -196,7 +196,6 @@ describe('useConsoleSession', () => {
     expect(fetchEventSourceMock).toHaveBeenCalledTimes(1)
 
     const streamCall = fetchEventSourceMock.mock.calls[0]
-    expect(streamCall).toBeDefined()
     if (!streamCall) {
       throw new Error('Expected fetchEventSource to be called once.')
     }
@@ -209,7 +208,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('marks the session expired and stops retry setup on stream not found', async () => {
+  it('mark_expired_404', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(
       createMockResponse({
@@ -243,7 +242,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('restores a persisted session even after a local stream error state', async () => {
+  it('restore_after_stream_error', async () => {
     const session = useConsoleSession()
     session.state.value = {
       sessionId: 'sess-reconnect',
@@ -277,7 +276,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('deduplicates replayed events when reconnect resumes from the last event id', async () => {
+  it('dedupe_replayed_events', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(
       createMockResponse({
@@ -333,7 +332,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('refreshes final metadata after close so interrupted sessions keep their backend status', async () => {
+  it('refresh_final_status', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(
       createMockResponse({
@@ -382,7 +381,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('requests cancellation for the active session without dropping local state early', async () => {
+  it('cancel_without_reset', async () => {
     const session = useConsoleSession()
     session.state.value = {
       sessionId: 'sess-stop',
@@ -413,12 +412,12 @@ describe('useConsoleSession', () => {
     const deleteCall = requestSpy.mock.calls.find(
       (call) => call[0] === '/api/system/terminal/sess-stop' && call[1]?.method === 'DELETE',
     )
-    expect(deleteCall).toBeDefined()
+    expect(deleteCall).toEqual(['/api/system/terminal/sess-stop', { method: 'DELETE' }])
 
     requestSpy.mockRestore()
   })
 
-  it('disconnects the local stream without issuing a cancel request', async () => {
+  it('disconnect_local', async () => {
     const session = useConsoleSession()
     session.state.value = {
       sessionId: 'sess-detach',
@@ -449,7 +448,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('refreshes metadata when cancel targets a missing session', async () => {
+  it('refresh_missing_cancel', async () => {
     const session = useConsoleSession()
     session.state.value = {
       sessionId: 'sess-missing',
@@ -478,7 +477,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('clears visible transcript without dropping the active session cursor', () => {
+  it('clear_transcript', () => {
     const session = useConsoleSession()
     session.state.value = {
       sessionId: 'sess-active',
@@ -498,7 +497,7 @@ describe('useConsoleSession', () => {
     expect(session.state.value.lastEventId).toBe('15')
   })
 
-  it('fetches recent sessions and filters locally hidden entries', async () => {
+  it('filter_hidden_recents', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(
       createMockResponse({
@@ -557,7 +556,7 @@ describe('useConsoleSession', () => {
     requestSpy.mockRestore()
   })
 
-  it('replays a recent session by reconnecting to its stream', async () => {
+  it('replay_recent_session', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(
       createMockResponse({

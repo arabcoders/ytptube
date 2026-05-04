@@ -166,7 +166,7 @@ class TestTerminalSessionRoutes:
         assert manager._cleanup_job_id == f"{TerminalSessionManager.__name__}.{TerminalSessionManager.cleanup.__name__}"
 
     @pytest.mark.asyncio
-    async def test_start_returns_session_metadata_and_active_conflict(
+    async def test_start_conflict_meta(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -206,7 +206,7 @@ class TestTerminalSessionRoutes:
         await task
 
     @pytest.mark.asyncio
-    async def test_stream_endpoint_replays_persisted_events_and_resume_cursor(
+    async def test_stream_replays_resume(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -256,7 +256,7 @@ class TestTerminalSessionRoutes:
         assert "id: 3" in resumed_payload
 
     @pytest.mark.asyncio
-    async def test_completed_session_expires_after_drain_window(
+    async def test_completed_expires(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -293,7 +293,7 @@ class TestTerminalSessionRoutes:
         assert not (manager.root_path / session_id).exists()
 
     @pytest.mark.asyncio
-    async def test_list_sessions_returns_recent_completed_session_until_retention_expires(
+    async def test_list_keeps_recent_done(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -341,9 +341,7 @@ class TestTerminalSessionRoutes:
         assert not (manager.root_path / session_id).exists()
 
     @pytest.mark.asyncio
-    async def test_list_sessions_orders_newest_first_and_skips_expired_items(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]
-    ) -> None:
+    async def test_list_orders_newest(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
 
@@ -411,7 +409,7 @@ class TestTerminalSessionRoutes:
         assert not (manager.root_path / expired_id).exists()
 
     @pytest.mark.asyncio
-    async def test_shutdown_interrupts_active_session_and_clears_active_marker(
+    async def test_shutdown_clears_active(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -451,7 +449,7 @@ class TestTerminalSessionRoutes:
         assert -15 == transcript[-1]["data"]["exitcode"]
 
     @pytest.mark.asyncio
-    async def test_stream_endpoint_emits_keepalive_for_silent_active_session(
+    async def test_stream_keepalive(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -489,7 +487,7 @@ class TestTerminalSessionRoutes:
         assert 'data: {"exitcode": 0}' in stream_payload
 
     @pytest.mark.asyncio
-    async def test_cancel_endpoint_interrupts_active_session(
+    async def test_cancel_active(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -535,7 +533,7 @@ class TestTerminalSessionRoutes:
         assert -15 == transcript[-1]["data"]["exitcode"]
 
     @pytest.mark.asyncio
-    async def test_cancel_endpoint_returns_conflict_for_inactive_session(
+    async def test_cancel_inactive_conflict(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -564,9 +562,7 @@ class TestTerminalSessionRoutes:
         assert b"not active" in cancel_response.body.lower()
 
     @pytest.mark.asyncio
-    async def test_cancel_endpoint_returns_not_found_for_unknown_session(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]
-    ) -> None:
+    async def test_cancel_unknown(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
 

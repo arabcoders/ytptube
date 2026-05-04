@@ -99,7 +99,7 @@ class TestPresetsRepository:
         assert total_pages == 1, "Should compute pages from the filtered total"
 
     @pytest.mark.asyncio
-    async def test_list_paginated_supports_multiple_sort_fields(self, repo):
+    async def test_list_paginated_multi_sort(self, repo):
         await repo.create({"name": "Charlie", "priority": 2})
         await repo.create({"name": "Alpha", "priority": 1})
         await repo.create({"name": "Bravo", "priority": 1})
@@ -113,24 +113,24 @@ class TestPresetsRepository:
         ], "Should support multiple sort fields and directions"
 
     @pytest.mark.asyncio
-    async def test_list_paginated_rejects_invalid_sort_field(self, repo):
+    async def test_list_paginated_bad_sort(self, repo):
         with pytest.raises(ValueError, match="sort must use supported fields"):
             await repo.list_paginated(page=1, per_page=10, sort="cli", order="asc")
 
     @pytest.mark.asyncio
-    async def test_list_paginated_rejects_invalid_sort_direction(self, repo):
+    async def test_list_paginated_bad_order(self, repo):
         with pytest.raises(ValueError, match="order must be 'asc' or 'desc'"):
             await repo.list_paginated(page=1, per_page=10, sort="name", order="sideways")
 
     @pytest.mark.asyncio
-    async def test_list_paginated_rejects_mismatched_sort_and_order_lengths(self, repo):
+    async def test_list_paginated_mismatched_order(self, repo):
         with pytest.raises(ValueError, match="order must provide one direction or match the number of sort fields"):
             await repo.list_paginated(page=1, per_page=10, sort="priority,name", order="asc,desc,asc")
 
 
 @pytest.mark.asyncio
 class TestPresetRoutes:
-    async def test_list_route_supports_sort_params(self, repo):
+    async def test_list_route_sort(self, repo):
         await repo.create({"name": "Alpha", "priority": 1})
         await repo.create({"name": "Bravo", "priority": 1})
         await repo.create({"name": "Charlie", "priority": 2})
@@ -144,7 +144,7 @@ class TestPresetRoutes:
         assert response.status == web.HTTPOk.status_code, "Should return 200 for valid sorting"
         assert [item["name"] for item in payload["items"]] == ["bravo", "alpha", "charlie"], "Should sort response"
 
-    async def test_list_route_rejects_invalid_sort_field(self, repo):
+    async def test_list_route_bad_sort(self, repo):
         request = MagicMock(spec=Request)
         request.query = {"sort": "cli", "order": "asc"}
 
@@ -154,7 +154,7 @@ class TestPresetRoutes:
         assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort field"
         assert "sort" in payload["error"], "Should explain invalid sort field"
 
-    async def test_list_route_rejects_invalid_sort_direction(self, repo):
+    async def test_list_route_bad_order(self, repo):
         request = MagicMock(spec=Request)
         request.query = {"sort": "name", "order": "sideways"}
 
@@ -164,7 +164,7 @@ class TestPresetRoutes:
         assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort direction"
         assert "order" in payload["error"], "Should explain invalid sort direction"
 
-    async def test_list_route_supports_excluding_defaults(self, repo):
+    async def test_list_route_exclude_defaults(self, repo):
         await repo.create({"name": "System Default", "default": True, "priority": 10})
         await repo.create({"name": "Custom Preset", "priority": 1})
 

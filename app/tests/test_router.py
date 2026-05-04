@@ -90,7 +90,7 @@ class TestAddRoute:
         assert r.method == "POST"
         assert r.path == "/api/create/"
 
-    def test_add_route_socket_without_alias(self) -> None:
+    def test_add_route_socket_no_alias(self) -> None:
         async def s():
             return "s"
 
@@ -109,7 +109,7 @@ class TestAddRoute:
 
 
 class TestGetters:
-    def test_get_routes_returns_copy_like_mapping(self) -> None:
+    def test_get_routes_copy(self) -> None:
         async def h():
             return "x"
 

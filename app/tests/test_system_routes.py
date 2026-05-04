@@ -121,7 +121,7 @@ class TestSystemLimitsEndpoint:
         Config._reset_singleton()
 
     @pytest.mark.asyncio
-    async def test_system_limits_returns_user_facing_limits(self):
+    async def test_system_limits_public(self):
         config = Config.get_instance()
         config.max_workers = 10
         config.max_workers_per_extractor = 3
@@ -188,7 +188,7 @@ class TestSystemLimitsEndpoint:
             "available": 3,
         }
 
-    def test_config_reads_prevent_live_premiere_boolean_env(self):
+    def test_config_reads_live_premiere(self):
         with patch.dict("os.environ", {"YTP_PREVENT_LIVE_PREMIERE": "false"}, clear=False):
             Config._reset_singleton()
             config = Config.get_instance()

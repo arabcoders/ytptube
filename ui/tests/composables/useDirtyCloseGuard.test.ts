@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe('useDirtyCloseGuard', () => {
-  it('confirms discard on route leave when the editor is open and dirty', async () => {
+  it('confirm_route_leave', async () => {
     const open = ref(true);
     const dirty = ref(true);
     const onDiscard = mock(() => {});
@@ -75,7 +75,7 @@ describe('useDirtyCloseGuard', () => {
     expect(open.value).toBe(false);
   });
 
-  it('blocks route updates when the user keeps editing', async () => {
+  it('block_route_update', async () => {
     const open = ref(true);
     const dirty = ref(true);
 
@@ -94,7 +94,7 @@ describe('useDirtyCloseGuard', () => {
     expect(open.value).toBe(true);
   });
 
-  it('only prevents browser unload while the editor is open and dirty, then removes the listener on unmount', () => {
+  it('guard_beforeunload', () => {
     const open = ref(true);
     const dirty = ref(true);
 
@@ -130,7 +130,7 @@ describe('useDirtyCloseGuard', () => {
     expect(afterUnmountEvent.defaultPrevented).toBe(false);
   });
 
-  it('dedupes concurrent close requests into one discard dialog', async () => {
+  it('dedupe_close_prompt', async () => {
     const open = ref(true);
     const dirty = ref(true);
     const onDiscard = mock(() => {});
@@ -162,7 +162,7 @@ describe('useDirtyCloseGuard', () => {
     expect(open.value).toBe(false);
   });
 
-  it('does not guard route changes when the editor is clean', async () => {
+  it('skip_clean_editor', async () => {
     const open = ref(true);
     const dirty = ref(false);
 

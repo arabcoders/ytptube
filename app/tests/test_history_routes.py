@@ -52,7 +52,7 @@ def _make_download(
 
 
 @pytest.mark.asyncio
-async def test_items_delete_uses_bulk_history_status_clear() -> None:
+async def test_items_delete_status() -> None:
     request = _FakeRequest(payload={"type": StoreType.HISTORY.value, "status": "finished,skip", "remove_file": False})
     queue = Mock()
     queue.clear_by_status = AsyncMock(return_value={"deleted": 12})
@@ -67,7 +67,7 @@ async def test_items_delete_uses_bulk_history_status_clear() -> None:
 
 
 @pytest.mark.asyncio
-async def test_items_delete_uses_bulk_history_id_clear() -> None:
+async def test_items_delete_ids() -> None:
     request = _FakeRequest(payload={"type": StoreType.HISTORY.value, "ids": ["a", "b"], "remove_file": False})
     queue = Mock()
     queue.clear_bulk = AsyncMock(return_value={"deleted": 2})
@@ -82,7 +82,7 @@ async def test_items_delete_uses_bulk_history_id_clear() -> None:
 
 
 @pytest.mark.asyncio
-async def test_item_rename_requires_new_name() -> None:
+async def test_item_rename_needs_name() -> None:
     request = _FakeRequest(payload={})
     request.match_info["id"] = "item-1"
     queue = SimpleNamespace(
@@ -100,7 +100,7 @@ async def test_item_rename_requires_new_name() -> None:
 
 
 @pytest.mark.asyncio
-async def test_item_rename_returns_not_found_when_item_missing() -> None:
+async def test_item_rename_missing() -> None:
     request = _FakeRequest(payload={"new_name": "renamed.mp4"})
     request.match_info["id"] = "missing"
     queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=None)))
@@ -116,7 +116,7 @@ async def test_item_rename_returns_not_found_when_item_missing() -> None:
 
 
 @pytest.mark.asyncio
-async def test_item_rename_requires_existing_downloaded_file() -> None:
+async def test_item_rename_needs_file() -> None:
     request = _FakeRequest(payload={"new_name": "renamed.mp4"})
     request.match_info["id"] = "item-1"
     item = _make_download(filename="video.mp4")
@@ -135,7 +135,7 @@ async def test_item_rename_requires_existing_downloaded_file() -> None:
 
 
 @pytest.mark.asyncio
-async def test_item_rename_renames_file_and_sidecars() -> None:
+async def test_item_rename_sidecars() -> None:
     with temporary_test_dir("history-rename") as temp_dir:
         media = temp_dir / "video.mp4"
         subtitle = temp_dir / "video.en.srt"
@@ -166,7 +166,7 @@ async def test_item_rename_renames_file_and_sidecars() -> None:
 
 
 @pytest.mark.asyncio
-async def test_item_rename_returns_conflict_on_collision() -> None:
+async def test_item_rename_conflict() -> None:
     with temporary_test_dir("history-rename-conflict") as temp_dir:
         media = temp_dir / "video.mp4"
         conflict = temp_dir / "renamed.mp4"

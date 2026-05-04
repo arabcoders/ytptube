@@ -78,7 +78,7 @@ describe('useConditions', () => {
   })
 
   describe('loadConditions', () => {
-    it('loads conditions with pagination successfully', async () => {
+    it('load_conditions', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -101,7 +101,7 @@ describe('useConditions', () => {
       requestSpy.mockRestore()
     })
 
-    it('sorts conditions by priority then name', async () => {
+    it('sort_priority', async () => {
       const items = [
         { ...mockCondition, id: 1, name: 'B', priority: 2 },
         { ...mockCondition, id: 2, name: 'A', priority: 2 },
@@ -136,7 +136,7 @@ describe('useConditions', () => {
   })
 
   describe('getCondition', () => {
-    it('fetches a single condition successfully', async () => {
+    it('get_condition', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -157,7 +157,7 @@ describe('useConditions', () => {
   })
 
   describe('createCondition', () => {
-    it('creates a condition successfully', async () => {
+    it('create_condition', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -183,7 +183,7 @@ describe('useConditions', () => {
   })
 
   describe('updateCondition', () => {
-    it('updates a condition successfully', async () => {
+    it('update_condition', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -202,7 +202,7 @@ describe('useConditions', () => {
       requestSpy.mockRestore()
     })
 
-    it('removes id field from condition before sending', async () => {
+    it('strip_update_id', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -216,13 +216,13 @@ describe('useConditions', () => {
       await conditions.updateCondition(1, mockCondition)
 
       const requestBody = JSON.parse((requestSpy.mock.calls[0][1] as any).body)
-      expect(requestBody.id).toBeUndefined()
+      expect('id' in requestBody).toBe(false)
       requestSpy.mockRestore()
     })
   })
 
   describe('patchCondition', () => {
-    it('patches a condition successfully', async () => {
+    it('patch_condition', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -242,7 +242,7 @@ describe('useConditions', () => {
   })
 
   describe('deleteCondition', () => {
-    it('deletes a condition successfully', async () => {
+    it('delete_condition', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -265,7 +265,7 @@ describe('useConditions', () => {
   })
 
   describe('testCondition', () => {
-    it('tests a condition successfully', async () => {
+    it('test_condition', async () => {
       const testResponse = {
         status: true,
         condition: 'duration > 60',
@@ -292,7 +292,7 @@ describe('useConditions', () => {
       requestSpy.mockRestore()
     })
 
-    it('handles test errors', async () => {
+    it('store_test_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -309,7 +309,7 @@ describe('useConditions', () => {
       })
 
       expect(result).toBeNull()
-      expect(conditions.lastError.value).toBeTruthy()
+      expect(conditions.lastError.value).toBe('Invalid URL')
       requestSpy.mockRestore()
     })
   })

@@ -63,7 +63,7 @@ afterEach(async () => {
 });
 
 describe('modal opacity plugin', () => {
-  it('ignores a settings-only overlay', async () => {
+  it('ignore_settings_overlay', async () => {
     startPlugin();
 
     const settingsPanel = document.createElement('div');
@@ -77,7 +77,7 @@ describe('modal opacity plugin', () => {
     expect(syncOpacityMock).not.toHaveBeenCalled();
   });
 
-  it('restores opacity when a normal overlay closes back to settings-only', async () => {
+  it('restore_after_close', async () => {
     startPlugin();
 
     const settingsPanel = document.createElement('div');
@@ -99,7 +99,7 @@ describe('modal opacity plugin', () => {
     expect(enableOpacityMock).toHaveBeenCalledTimes(1);
   });
 
-  it('resyncs opacity when overlays change while already locked', async () => {
+  it('resync_while_locked', async () => {
     startPlugin();
 
     document.body.append(createOverlay());
@@ -112,7 +112,7 @@ describe('modal opacity plugin', () => {
     expect(syncOpacityMock).toHaveBeenCalledTimes(1);
   });
 
-  it('does not unlock opacity on beforeunload when reload is canceled', async () => {
+  it('keep_lock_beforeunload', async () => {
     startPlugin();
 
     document.body.append(createOverlay());

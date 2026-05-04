@@ -195,7 +195,7 @@ class TestMiniFilter(unittest.TestCase):
         self._test("filesize>=1GiB", {"filesize": 2**30}, expected_result=True, test_name="filesize_1gib_positive")
         self._test("filesize>=1GiB", {"filesize": 1000000}, expected_result=False, test_name="filesize_1gib_negative")
 
-    def test_complex_duration_units_with_or_and_grouping(self):
+    def test_duration_or_grouping(self):
         """Test complex expressions with duration units, OR operations, and grouping. Skip yt-dlp due to known parsing bugs."""
         # Test grouping with duration units
         expr = "(filesize>1MB & duration<10m) || uploader='BBC'"
@@ -310,7 +310,7 @@ class TestMiniFilter(unittest.TestCase):
         self._test(expr, {"title": "a(b)c"}, expected_result=True, test_name="quoted_parentheses_match")
         self._test(expr, {"title": "abc"}, expected_result=False, test_name="quoted_parentheses_no_match")
 
-    def test_escaped_ampersand_inside_quoted_regex(self):
+    def test_quoted_regex_ampersand(self):
         expr = r"description~='(?i)\bcats \& dogs\b'"
 
         parser = MiniFilter(expr)

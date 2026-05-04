@@ -75,7 +75,7 @@ class TestServices:
         assert services.get("service3") == "value3"
         assert len(services.get_all()) == 3
 
-    def test_get_all_returns_copy(self):
+    def test_get_all_copy(self):
         """Test that get_all returns a copy, not the original dict."""
         services = Services()
         services.add("test", "value")

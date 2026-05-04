@@ -85,7 +85,7 @@ describe('usePlayerSubtitles', () => {
     delete (globalThis as { fetch?: typeof fetch }).fetch;
   });
 
-  it('loads subtitle manifest and exposes the preferred native track', async () => {
+  it('load_native_track', async () => {
     fetchMock.mockResolvedValueOnce(
       createMockResponse({
         ok: true,
@@ -140,7 +140,7 @@ describe('usePlayerSubtitles', () => {
     expect(usesAssSubtitleTrack.value).toBe(false);
   });
 
-  it('uses the provided full manifest path including folders', async () => {
+  it('keep_manifest_path', async () => {
     fetchMock.mockResolvedValueOnce(
       createMockResponse({
         ok: true,
@@ -170,7 +170,7 @@ describe('usePlayerSubtitles', () => {
     );
   });
 
-  it('creates and destroys an ASS renderer for ASS subtitles when playback becomes active', async () => {
+  it('mount_ass_renderer', async () => {
     fetchMock.mockResolvedValueOnce(
       createMockResponse({
         ok: true,
@@ -238,7 +238,7 @@ describe('usePlayerSubtitles', () => {
     expect(assDestroyMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('recreates an ASS renderer when the layout version changes without refetching subtitles', async () => {
+  it('remount_on_layout_change', async () => {
     fetchMock.mockResolvedValueOnce(
       createMockResponse({
         ok: true,

@@ -10,7 +10,7 @@ describe('usePlayerShortcuts', () => {
     document.body.innerHTML = '';
   });
 
-  it('toggles native text tracks and subtitle state on c', async () => {
+  it('toggle_subs_c', async () => {
     const { usePlayerShortcuts } = await import('~/composables/usePlayerShortcuts');
     const addEventListenerSpy = spyOn(document, 'addEventListener');
 
@@ -63,7 +63,7 @@ describe('usePlayerShortcuts', () => {
     addEventListenerSpy.mockRestore();
   });
 
-  it('closes help before closing the player on escape', async () => {
+  it('close_help_first', async () => {
     const { usePlayerShortcuts } = await import('~/composables/usePlayerShortcuts');
 
     const media = {

@@ -460,7 +460,7 @@ class TestEvent:
             assert f"handler3_{i}" in results
 
     @pytest.mark.asyncio
-    async def test_mixed_sync_async_handlers_execution_order(self):
+    async def test_mixed_handlers_order(self):
         """Test that mixed sync/async handlers execute properly without blocking."""
         bus = EventBus()
         execution_times = []
@@ -511,7 +511,7 @@ class TestEvent:
 class TestEventListener:
     """Test the EventListener class."""
 
-    def test_event_listener_creation_with_sync_callback(self):
+    def test_listener_sync_init(self):
         """Test creating EventListener with synchronous callback."""
 
         def sync_callback(event, name, **kwargs):  # noqa: ARG001
@@ -523,7 +523,7 @@ class TestEventListener:
         assert listener.call_back == sync_callback
         assert listener.is_coroutine is False
 
-    def test_event_listener_creation_with_async_callback(self):
+    def test_listener_async_init(self):
         """Test creating EventListener with asynchronous callback."""
 
         async def async_callback(event, name, **kwargs):  # noqa: ARG001

@@ -53,7 +53,7 @@ class TestAllowInternalUrlsScope:
         Config._reset_singleton()
 
     @pytest.mark.asyncio
-    async def test_conditions_test_rejects_internal_url_when_disallowed(self) -> None:
+    async def test_rejects_internal_url(self) -> None:
         config = Config.get_instance()
         config.allow_internal_urls = False
         encoder = Encoder()

@@ -64,7 +64,7 @@ async def test_make_stream_basic_ok_codecs(tmp_path: Path, monkeypatch: pytest.M
 
 
 @pytest.mark.asyncio
-async def test_make_stream_transcode_flags_and_remainder(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_make_stream_transcode_flags(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     base = tmp_path / "dl"
     base.mkdir()
     media = base / "v.mp4"
@@ -107,7 +107,7 @@ async def test_make_stream_transcode_flags_and_remainder(tmp_path: Path, monkeyp
 
 
 @pytest.mark.asyncio
-async def test_make_stream_raises_without_duration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_make_stream_no_duration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     base = tmp_path / "dl"
     base.mkdir()
     media = base / "v.mp4"

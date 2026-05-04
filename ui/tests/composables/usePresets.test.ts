@@ -81,7 +81,7 @@ describe('usePresets', () => {
   })
 
   describe('loadPresets', () => {
-    it('loads presets with pagination successfully', async () => {
+    it('load_presets', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -104,7 +104,7 @@ describe('usePresets', () => {
       requestSpy.mockRestore()
     })
 
-    it('requests custom presets without defaults when asked', async () => {
+    it('exclude_defaults', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -124,7 +124,7 @@ describe('usePresets', () => {
       requestSpy.mockRestore()
     })
 
-    it('sorts presets by priority then name', async () => {
+    it('sort_priority', async () => {
       const items = [
         { ...mockPreset, id: 1, name: 'B', priority: 2 },
         { ...mockPreset, id: 2, name: 'A', priority: 2 },
@@ -159,7 +159,7 @@ describe('usePresets', () => {
   })
 
   describe('getPreset', () => {
-    it('fetches a single preset successfully', async () => {
+    it('get_preset', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -180,7 +180,7 @@ describe('usePresets', () => {
   })
 
   describe('createPreset', () => {
-    it('creates a preset successfully', async () => {
+    it('create_preset', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -209,7 +209,7 @@ describe('usePresets', () => {
   })
 
   describe('updatePreset', () => {
-    it('updates a preset successfully', async () => {
+    it('update_preset', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -226,7 +226,7 @@ describe('usePresets', () => {
       requestSpy.mockRestore()
     })
 
-    it('strips id from update payload', async () => {
+    it('strip_update_id', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -240,14 +240,14 @@ describe('usePresets', () => {
       await presets.updatePreset(1, { ...mockPreset, default: true })
 
       const requestBody = JSON.parse((requestSpy.mock.calls[0]![1] as any).body)
-      expect(requestBody.id).toBeUndefined()
+      expect('id' in requestBody).toBe(false)
       expect(requestBody.default).toBe(false)
       requestSpy.mockRestore()
     })
   })
 
   describe('patchPreset', () => {
-    it('patches a preset successfully', async () => {
+    it('patch_preset', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -264,7 +264,7 @@ describe('usePresets', () => {
       requestSpy.mockRestore()
     })
 
-    it('strips id and default from patch payload', async () => {
+    it('sanitize_patch', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -278,14 +278,14 @@ describe('usePresets', () => {
       await presets.patchPreset(1, { id: 10, default: true })
 
       const requestBody = JSON.parse((requestSpy.mock.calls[0]![1] as any).body)
-      expect(requestBody.id).toBeUndefined()
+      expect('id' in requestBody).toBe(false)
       expect(requestBody.default).toBe(false)
       requestSpy.mockRestore()
     })
   })
 
   describe('deletePreset', () => {
-    it('deletes a preset successfully', async () => {
+    it('delete_preset', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({

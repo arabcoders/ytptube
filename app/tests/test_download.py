@@ -327,7 +327,7 @@ class TestDownloadFlow:
         assert queue.items[0]["download_skipped"] is True
         assert queue.items[1]["download_skipped"] is True
 
-    def test_download_resets_sigint_handler_in_worker(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_download_resets_sigint(self, monkeypatch: pytest.MonkeyPatch) -> None:
         class Cfg:
             debug = False
             ytdlp_debug = False
@@ -415,9 +415,7 @@ class TestDownloadFlow:
         assert ydl._interrupted is True
         ydl.to_screen.assert_called_once_with("[info] Interrupt received, exiting cleanly...")
 
-    def test_download_prefers_real_playlist_extras_over_placeholder_preinfo(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_playlist_extras(self, monkeypatch: pytest.MonkeyPatch) -> None:
         class Cfg:
             debug = False
             ytdlp_debug = False
@@ -606,9 +604,7 @@ class TestDownloadFlow:
         assert download.info.filename == "video.mp4", "Final filename should be set from status update"
 
     @pytest.mark.asyncio
-    async def test_live_cancelled_download_drains_final_status_updates(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
+    async def test_live_cancel_drains_final(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         class Cfg:
             debug = False
             ytdlp_debug = False
@@ -711,7 +707,7 @@ class TestDownloadFlow:
         assert download.info.filename == "live.mp4", "Finalized live filename should be preserved"
 
     @pytest.mark.asyncio
-    async def test_regular_cancelled_download_skips_live_drain_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def test_regular_cancel_skips_drain(self, monkeypatch: pytest.MonkeyPatch) -> None:
         class Cfg:
             debug = False
             ytdlp_debug = False
@@ -785,7 +781,7 @@ class TestDownloadSpawnPickling:
     def setup_method(self):
         EventBus._reset_singleton()
 
-    def test_spawn_pickling_ignores_local_event_listener(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_spawn_pickling_ignores_listener(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         class Cfg:
             debug = False
             ytdlp_debug = False
@@ -835,7 +831,7 @@ class TestDownloadSpawnPickling:
 
 
 class TestTempManager:
-    def test_create_temp_path_when_disabled(self) -> None:
+    def test_create_temp_path_disabled(self) -> None:
         info = make_item()
         logger = logging.getLogger("test")
         tm = TempManager(info, "/tmp", temp_disabled=True, temp_keep=False, logger=logger)
@@ -844,7 +840,7 @@ class TestTempManager:
         assert result is None, "Should return None when temp_disabled is True"
         assert tm.temp_path is None, "temp_path should remain None when disabled"
 
-    def test_create_temp_path_when_no_temp_dir(self) -> None:
+    def test_create_temp_path_no_dir(self) -> None:
         info = make_item()
         logger = logging.getLogger("test")
         tm = TempManager(info, None, temp_disabled=False, temp_keep=False, logger=logger)
@@ -874,7 +870,7 @@ class TestTempManager:
         path2 = tm2.create_temp_path()
         assert path1 == path2, "Same download ID should produce same temp path"
 
-    def test_delete_temp_when_disabled(self, tmp_path: Path) -> None:
+    def test_delete_temp_disabled(self, tmp_path: Path) -> None:
         info = make_item()
         logger = logging.getLogger("test")
         tm = TempManager(info, str(tmp_path), temp_disabled=True, temp_keep=False, logger=logger)
@@ -884,7 +880,7 @@ class TestTempManager:
         tm.delete_temp()
         assert tm.temp_path.exists(), "Should not delete when temp_disabled is True"
 
-    def test_delete_temp_when_temp_keep_enabled(self, tmp_path: Path) -> None:
+    def test_delete_temp_keep(self, tmp_path: Path) -> None:
         info = make_item()
         logger = logging.getLogger("test")
         tm = TempManager(info, str(tmp_path), temp_disabled=False, temp_keep=True, logger=logger)
@@ -894,12 +890,13 @@ class TestTempManager:
         tm.delete_temp()
         assert tm.temp_path.exists(), "Should not delete when temp_keep is True"
 
-    def test_delete_temp_when_no_temp_path(self) -> None:
+    def test_delete_temp_no_path(self) -> None:
         info = make_item()
         logger = logging.getLogger("test")
         tm = TempManager(info, "/tmp", temp_disabled=False, temp_keep=False, logger=logger)
 
         tm.delete_temp()
+        assert tm.temp_path is None, "temp_path should stay unset"
 
     def test_delete_temp_keeps_partial_download(self, tmp_path: Path) -> None:
         info = make_item()
@@ -964,7 +961,7 @@ class TestProcessManager:
         assert pm.cancel_event.is_set() is False, "Should clear stale cancel events before starting"
         assert "download-test-id" == proc.name, "Process name should include download ID"
 
-    def test_started_returns_true_when_process_created(self) -> None:
+    def test_started(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
 
@@ -973,13 +970,13 @@ class TestProcessManager:
         pm.create_process(lambda: None)
         assert pm.started() is True, "Should return True after process created"
 
-    def test_running_returns_false_when_no_process(self) -> None:
+    def test_running_no_process(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
 
         assert pm.running() is False, "Should return False when no process"
 
-    def test_is_cancelled_returns_false_by_default(self) -> None:
+    def test_is_cancelled_default(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
 
@@ -994,7 +991,7 @@ class TestProcessManager:
         result = pm.cancel()
         assert pm.is_cancelled() is True, "Should mark as cancelled"
 
-    def test_cancel_returns_false_when_not_started(self) -> None:
+    def test_cancel_not_started(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
 
@@ -1002,7 +999,7 @@ class TestProcessManager:
         assert result is False, "Should return False when process not started"
         assert pm.is_cancelled() is False, "Should not mark as cancelled when not started"
 
-    def test_kill_returns_false_when_not_running(self) -> None:
+    def test_kill_not_running(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
 
@@ -1025,7 +1022,7 @@ class TestProcessManager:
             mock_kill.assert_called_once_with(12345, signal.SIGUSR1)
             assert result is True, "Should return True when process killed successfully"
 
-    def test_kill_uses_live_cancel_event_and_longer_graceful_timeout(self) -> None:
+    def test_kill_live_uses_event(self) -> None:
         logger = logging.getLogger("test")
         pm_live = ProcessManager("test-id", is_live=True, logger=logger)
         pm_regular = ProcessManager("test-id", is_live=False, logger=logger)
@@ -1065,7 +1062,7 @@ class TestProcessManager:
             mock_wait.assert_called_once_with(pm_regular.proc, 5)
 
     @pytest.mark.asyncio
-    async def test_close_returns_false_when_not_started(self) -> None:
+    async def test_close_not_started(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
 
@@ -1073,7 +1070,7 @@ class TestProcessManager:
         assert result is False, "Should return False when process not started"
 
     @pytest.mark.asyncio
-    async def test_close_returns_false_when_cancel_in_progress(self) -> None:
+    async def test_close_during_cancel(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
         pm.proc = Mock()
@@ -1118,7 +1115,7 @@ class TestStatusTracker:
         assert st.final_update is False, "Should initialize final_update as False"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_ignores_invalid_id(self, mock_config: dict) -> None:
+    async def test_status_ignores_bad_id(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "wrong-id", "status": "downloading"}
 
@@ -1126,7 +1123,7 @@ class TestStatusTracker:
         assert st.info.status != "downloading", "Should not update status for wrong ID"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_ignores_short_status(self, mock_config: dict) -> None:
+    async def test_status_ignores_short(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id"}
 
@@ -1141,7 +1138,7 @@ class TestStatusTracker:
         assert st.info.status == "downloading", "Should update info status"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_sets_download_skipped(self, mock_config: dict) -> None:
+    async def test_status_sets_skipped(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id", "status": "downloading", "download_skipped": True}
 
@@ -1157,7 +1154,7 @@ class TestStatusTracker:
         assert st.tmpfilename == "/tmp/file.part", "Should update tmpfilename"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_calculates_percent(self, mock_config: dict) -> None:
+    async def test_status_sets_percent(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         status = {
             "id": "test-id",
@@ -1172,7 +1169,7 @@ class TestStatusTracker:
         assert st.info.percent == 50.0, "Should calculate percent correctly"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_uses_estimated_total(self, mock_config: dict) -> None:
+    async def test_status_uses_estimate(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         status = {
             "id": "test-id",
@@ -1186,7 +1183,7 @@ class TestStatusTracker:
         assert st.info.percent == 30.0, "Should calculate percent from estimate"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_handles_zero_division(self, mock_config: dict) -> None:
+    async def test_status_percent(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         status = {
             "id": "test-id",
@@ -1199,7 +1196,7 @@ class TestStatusTracker:
         assert st.info.percent == 50.0, "Should calculate percent correctly with valid total"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_sets_speed_and_eta(self, mock_config: dict) -> None:
+    async def test_status_sets_speed_eta(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id", "status": "downloading", "speed": 1024000, "eta": 60}
 
@@ -1258,7 +1255,7 @@ class TestStatusTracker:
         assert st.final_update is True, "Should stop draining after final update"
 
     @pytest.mark.asyncio
-    async def test_drain_queue_handles_errors_gracefully(self, mock_config: dict) -> None:
+    async def test_drain_queue_skips_invalid(self, mock_config: dict) -> None:
         queue = DummyQueue()
         queue.put({"id": "test-id", "status": "downloading"})
         queue.put(None)
@@ -1267,8 +1264,9 @@ class TestStatusTracker:
         st = StatusTracker(**config)
 
         await st.drain_queue(max_iterations=5)
+        assert st.info.status == "downloading", "valid updates should still be processed"
 
-    def test_cancel_update_task_cancels_running_task(self, mock_config: dict) -> None:
+    def test_cancel_update_task(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
         st.update_task = Mock()
         st.update_task.done = Mock(return_value=False)
@@ -1277,10 +1275,11 @@ class TestStatusTracker:
         st.cancel_update_task()
         st.update_task.cancel.assert_called_once()
 
-    def test_cancel_update_task_handles_no_task(self, mock_config: dict) -> None:
+    def test_cancel_update_task_noop(self, mock_config: dict) -> None:
         st = StatusTracker(**mock_config)
 
         st.cancel_update_task()
+        assert st.update_task is None, "missing tasks should be ignored"
 
     def test_put_terminator_adds_to_queue(self, mock_config: dict) -> None:
         queue = DummyQueue()
@@ -1316,7 +1315,7 @@ class TestQueueManager:
         assert status[item.info._id] == "ok", "Running cancel should still report success"
 
     @pytest.mark.asyncio
-    async def test_cancel_running_regular_item_closes_immediately(self) -> None:
+    async def test_cancel_regular_closes(self) -> None:
         queue_manager = object.__new__(DownloadQueue)
         queue_manager.queue = Mock()
         queue_manager.done = Mock()
@@ -1338,7 +1337,7 @@ class TestQueueManager:
         assert status[item.info._id] == "ok", "Regular running cancel should still report success"
 
     @pytest.mark.asyncio
-    async def test_clear_flushes_history_deletes_before_returning(self) -> None:
+    async def test_clear_flushes_history(self) -> None:
         queue_manager = object.__new__(DownloadQueue)
         queue_manager.config = Mock(remove_files=False, download_path="/tmp")
         queue_manager._notify = Mock()
@@ -1364,7 +1363,7 @@ class TestQueueManager:
         assert status[item.info._id] == "ok", "Clear should still report success after flushing deletes"
 
     @pytest.mark.asyncio
-    async def test_clear_bulk_uses_bulk_delete_and_aggregate_notification(self) -> None:
+    async def test_clear_bulk_notifies(self) -> None:
         queue_manager = object.__new__(DownloadQueue)
         queue_manager.config = Mock(remove_files=False, download_path="/tmp")
         queue_manager._notify = Mock()
@@ -1394,7 +1393,7 @@ class TestQueueManager:
         assert queue_manager._notify.emit.call_args.kwargs["data"] == {"ids": ["done-id-1", "done-id-2"], "count": 2}
 
     @pytest.mark.asyncio
-    async def test_clear_by_status_uses_status_fetch_before_bulk_delete(self) -> None:
+    async def test_clear_status_fetches(self) -> None:
         queue_manager = object.__new__(DownloadQueue)
         queue_manager.config = Mock(remove_files=False, download_path="/tmp")
         queue_manager._notify = Mock()
@@ -1414,7 +1413,7 @@ class TestQueueManager:
         assert queue_manager._notify.emit.call_args.kwargs["data"] == {"count": 1, "status": "finished"}
 
     @pytest.mark.asyncio
-    async def test_clear_by_status_with_file_removal_fetches_matching_items(self) -> None:
+    async def test_clear_status_files_fetch(self) -> None:
         queue_manager = object.__new__(DownloadQueue)
         queue_manager.config = Mock(remove_files=True, download_path="/tmp")
         queue_manager._notify = Mock()
@@ -1438,7 +1437,7 @@ class TestQueueManager:
 
 class TestPoolManager:
     @pytest.mark.asyncio
-    async def test_cancelled_entry_with_final_file_stays_finished(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def test_cancelled_file_stays_finished(self, monkeypatch: pytest.MonkeyPatch) -> None:
         emitted_events: list[str] = []
 
         class EB:
@@ -1483,9 +1482,7 @@ class TestPoolManager:
         done_store.put.assert_awaited_once_with(entry)
 
     @pytest.mark.asyncio
-    async def test_cancelled_regular_entry_with_final_file_stays_cancelled(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_cancelled_regular_file_stays(self, monkeypatch: pytest.MonkeyPatch) -> None:
         emitted_events: list[str] = []
 
         class EB:

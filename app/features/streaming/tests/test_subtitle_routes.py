@@ -37,9 +37,7 @@ def _make_request(path: str, *, match_info: dict[str, str]) -> web.Request:
 
 
 @pytest.mark.asyncio
-async def test_subtitles_manifest_lists_tracks_in_native_first_order(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_subtitles_manifest_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = Config.get_instance()
     config.download_path = str(tmp_path)
 
@@ -79,7 +77,6 @@ async def test_subtitles_manifest_lists_tracks_in_native_first_order(
     response = await router.subtitles_manifest_get(req, config, req.app)
 
     assert response.status == web.HTTPOk.status_code
-    assert response.body is not None
     body = response.text
     assert '"source_format": "vtt"' in body
     assert '"renderer": "native"' in body
@@ -89,7 +86,7 @@ async def test_subtitles_manifest_lists_tracks_in_native_first_order(
 
 
 @pytest.mark.asyncio
-async def test_subtitles_track_get_returns_raw_ass_delivery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_subtitles_track_get_ass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = Config.get_instance()
     config.download_path = str(tmp_path)
 
@@ -113,9 +110,7 @@ async def test_subtitles_track_get_returns_raw_ass_delivery(tmp_path: Path, monk
 
 
 @pytest.mark.asyncio
-async def test_subtitles_track_get_rejects_mismatched_source_format(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_subtitles_track_bad_format(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = Config.get_instance()
     config.download_path = str(tmp_path)
 
@@ -134,5 +129,4 @@ async def test_subtitles_track_get_rejects_mismatched_source_format(
     response = await router.subtitles_track_get(req, config, req.app)
 
     assert response.status == web.HTTPBadRequest.status_code
-    assert response.body is not None
     assert b"does not match requested source format" in response.body

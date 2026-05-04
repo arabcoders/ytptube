@@ -44,7 +44,7 @@ async def test_make_vtt_reads_file(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_make_delivery_returns_raw_ass_with_ass_content_type(tmp_path: Path) -> None:
+async def test_make_delivery_ass(tmp_path: Path) -> None:
     ass = tmp_path / "file.ass"
     content = "[Script Info]\nTitle: Demo\n"
     ass.write_text(content, encoding="utf-8")
@@ -55,7 +55,7 @@ async def test_make_delivery_returns_raw_ass_with_ass_content_type(tmp_path: Pat
     assert media_type == "text/x-ssa; charset=UTF-8"
 
 
-def test_get_subtitle_tracks_prefers_native_then_ass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_tracks_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     media = tmp_path / "video.mkv"
     media.write_text("x", encoding="utf-8")
     ass_file = tmp_path / "video.ass"
@@ -107,7 +107,7 @@ async def test_make_no_events_raises(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_make_single_event_returns_vtt(tmp_path: Path) -> None:
+async def test_make_single_vtt(tmp_path: Path) -> None:
     srt = tmp_path / "sub.ass"
     srt.write_text("dummy")
 
@@ -122,7 +122,7 @@ async def test_make_single_event_returns_vtt(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_make_two_events_pop_first_when_ends_equal(tmp_path: Path) -> None:
+async def test_make_two_events_same_end(tmp_path: Path) -> None:
     srt = tmp_path / "sub.srt"
     srt.write_text("dummy")
 
@@ -138,7 +138,7 @@ async def test_make_two_events_pop_first_when_ends_equal(tmp_path: Path) -> None
 
 
 @pytest.mark.asyncio
-async def test_make_two_events_no_pop_when_different(tmp_path: Path) -> None:
+async def test_make_two_events_keep_both(tmp_path: Path) -> None:
     srt = tmp_path / "sub.srt"
     srt.write_text("dummy")
 

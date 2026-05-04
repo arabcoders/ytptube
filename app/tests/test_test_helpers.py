@@ -10,14 +10,14 @@ from app.tests.helpers import (
 )
 
 
-def test_make_test_disk_path_uses_test_run_root() -> None:
+def test_disk_path_root() -> None:
     path = make_test_disk_path("artifacts", "example.txt")
 
     assert path.parent.exists()
     assert path.is_relative_to(get_test_run_root())
 
 
-def test_make_test_temp_dir_creates_directory() -> None:
+def test_temp_dir_created() -> None:
     path = make_test_temp_dir("helpers")
 
     assert path.exists()
@@ -25,7 +25,7 @@ def test_make_test_temp_dir_creates_directory() -> None:
     assert path.is_relative_to(get_test_run_root())
 
 
-def test_tmp_path_runs_under_custom_temp_root(tmp_path: Path) -> None:
+def test_tmp_path_root(tmp_path: Path) -> None:
     expected_root = get_test_run_root() / "pytest"
 
     assert tmp_path.is_relative_to(expected_root)
