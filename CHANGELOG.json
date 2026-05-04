@@ -1,9 +1,37 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "80316df9524b266248eb5c38353c56840912b1d7",
-    "date": "2026-05-04T06:21:43+00:00",
+    "full_sha": "7ac7039592dfef9742a744c09ca2d5ac48fcd615",
+    "date": "2026-05-04T19:23:19+00:00",
     "commits": [
+      {
+        "sha": "7ac70395",
+        "full_sha": "7ac7039592dfef9742a744c09ca2d5ac48fcd615",
+        "message": "chore: tests clean up",
+        "author": "arabcoders",
+        "date": "2026-05-04T19:23:19+00:00"
+      },
+      {
+        "sha": "2ab0db93",
+        "full_sha": "2ab0db93dca2db660930b2b84432f7307259953c",
+        "message": "fix: new video player subtitle files were missing folder arg",
+        "author": "arabcoders",
+        "date": "2026-05-04T18:53:13+00:00"
+      },
+      {
+        "sha": "cca97d9a",
+        "full_sha": "cca97d9a579cbe022d22939575cdbb7d5fe31aa0",
+        "message": "feat: extra placeholders for output template",
+        "author": "arabcoders",
+        "date": "2026-05-04T18:42:52+00:00"
+      },
+      {
+        "sha": "285e6616",
+        "full_sha": "285e661667e84007418ad25c3cbdb8c1ab267ad9",
+        "message": "feat: add rename to history items.",
+        "author": "arabcoders",
+        "date": "2026-05-04T17:29:34+00:00"
+      },
       {
         "sha": "80316df9",
         "full_sha": "80316df9524b266248eb5c38353c56840912b1d7",
