@@ -55,6 +55,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/player/m3u8/{mode}/{file:.\*}.m3u8](#get-apiplayerm3u8modefilem3u8)
     - [GET /api/player/segments/{segment}/{file:.\*}.ts](#get-apiplayersegmentssegmentfilets)
     - [GET /api/player/subtitle/{file:.\*}.vtt](#get-apiplayersubtitlefilevtt)
+    - [GET /api/player/subtitles/manifest/{file:.\*}](#get-apiplayersubtitlesmanifestfile)
+    - [GET /api/player/subtitles/{source_format}/{file:.\*}](#get-apiplayersubtitlessource_formatfile)
     - [GET /api/thumbnail](#get-apithumbnail)
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
@@ -1551,6 +1553,51 @@ Binary TS data (`Content-Type: video/mpegts`).
 
 ---
 
+### GET /api/player/subtitles/manifest/{file:.*}
+**Purpose**: Returns subtitle track metadata for a local media file.  
+
+**Path Parameter**:
+- `file` = Relative path of the media file within the `download_path`.
+
+**Response**:
+```json
+{
+  "subtitles": [
+    {
+      "lang": "en",
+      "name": "VTT (0) - en",
+      "source_format": "vtt",
+      "delivery_format": "vtt",
+      "renderer": "native",
+      "url": "/api/player/subtitles/vtt/path/to/video.en.vtt"
+    },
+    {
+      "lang": "en",
+      "name": "ASS (1) - en",
+      "source_format": "ass",
+      "delivery_format": "ass",
+      "renderer": "assjs",
+      "url": "/api/player/subtitles/ass/path/to/video.en.ass"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/player/subtitles/{source_format}/{file:.*}
+**Purpose**: Delivers a subtitle file using its preferred playback format.  
+
+**Path Parameters**:
+- `source_format` = `vtt`, `srt`, or `ass`.
+- `file` = Relative path of the subtitle file.
+
+**Response**:
+- `text/vtt; charset=UTF-8` for `vtt` and `srt` sources.
+- `text/x-ssa; charset=UTF-8` for `ass` sources.
+
+---
+
 ### GET /api/thumbnail
 **Purpose**: Proxy/fetch a remote thumbnail image.  
 
@@ -1594,21 +1641,16 @@ Binary image data with the appropriate `Content-Type`.
   },
   "mimetype": "video/mp4",
   "sidecar": {
-    "subtitles": [
+    "subtitle": [
       {
-        "file": "filename.xxx.vtt",
+        "file": "filename.xxx.ass",
         "lang": "xxx",
-        "name": "VTT 0 - XXX|end",
+        "name": "ASS (0) - xxx"
       },
       ...
-      }
     ],
-    "video": [],
-    "audio": [],
     "image": [],
-    "text": [],
-    "metadata": [],
-    ...
+    "text": []
   }
 }
 ```

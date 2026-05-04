@@ -2,14 +2,14 @@ type KeyboardShortcutContext = {
   video: HTMLVideoElement;
 };
 
-type video_track_element = {
+type VideoTrackElement = {
   file: string;
   kind: string;
   label: string;
   lang: string;
 };
 
-type video_source_element = {
+type VideoSourceElement = {
   src: string;
   type: string;
   onerror: (e: Event) => void;
@@ -68,7 +68,7 @@ type FFProbeResult = {
   is_audio: boolean;
 };
 
-type file_info = {
+type FileInfo = {
   title: string;
   ffprobe: FFProbeResult;
   mimetype: string;
@@ -80,10 +80,17 @@ type file_info = {
   error?: string;
 };
 
+type PlayerSourceElement = {
+  src: string;
+  type?: string;
+  onerror?: (e: Event) => void;
+};
+
 export type {
-  video_track_element,
-  video_source_element,
+  VideoTrackElement,
+  VideoSourceElement,
+  PlayerSourceElement,
   FFProbeResult,
-  file_info,
+  FileInfo,
   KeyboardShortcutContext,
 };

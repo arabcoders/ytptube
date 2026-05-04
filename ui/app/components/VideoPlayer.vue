@@ -1,295 +1,367 @@
-<style scoped>
-.player-shell {
-  position: relative;
-  width: 100%;
-}
-
-.player {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 80vh;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-.keyboard-help {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.95);
-  color: var(--bulma-white);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  border-radius: 4px;
-  overflow-y: auto;
-  padding: 2rem;
-}
-
-.shortcuts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1000px;
-  width: 100%;
-}
-
-.shortcut-section {
-  text-align: left;
-}
-
-.shortcut-section h3 {
-  color: var(--bulma-primary);
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-}
-
-.shortcut-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  font-size: 0.95rem;
-}
-
-.shortcut-item span:first-child {
-  flex: 1;
-}
-
-.shortcut-item .kbd-group {
-  display: flex;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
-.shortcut-key {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 3px;
-  margin-right: 1rem;
-  font-family: monospace;
-  font-weight: bold;
-  min-width: 60px;
-  text-align: center;
-}
-
-.help-close-hint {
-  margin-top: 2rem;
-  font-size: 0.9rem;
-  color: var(--bulma-light);
-}
-</style>
-
 <template>
-  <div v-if="infoLoaded">
-    <div class="player-shell">
+  <div v-if="loading" class="flex justify-center py-10">
+    <UIcon name="i-lucide-loader-circle" class="size-16 animate-spin text-toned" />
+  </div>
+
+  <div v-else class="space-y-4">
+    <div
+      ref="playerContainer"
+      class="relative flex w-full overflow-hidden rounded-sm bg-black"
+      :class="
+        isFullscreen
+          ? 'h-screen w-screen max-h-screen max-w-none items-center justify-center rounded-none'
+          : 'max-h-[70vh] max-w-full items-center justify-center sm:max-h-[72vh]'
+      "
+    >
+      <button
+        v-if="!active"
+        type="button"
+        class="group absolute inset-0 z-40 block overflow-hidden bg-black text-left"
+        @click="activatePlayer"
+      >
+        <img
+          v-if="poster"
+          :src="uri(poster)"
+          :alt="`${title || 'Untitled media'} preview`"
+          class="block h-full w-full bg-black object-contain opacity-90 transition duration-200 group-hover:opacity-100"
+        />
+        <div
+          v-else
+          class="flex h-full w-full items-center justify-center bg-black/90 text-white/80"
+        >
+          <UIcon :name="isAudio ? 'i-lucide-disc-3' : 'i-lucide-film'" class="size-12" />
+        </div>
+        <div
+          class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-black/20"
+        />
+        <div
+          class="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-4 px-4 py-4 sm:px-6"
+        >
+          <div class="min-w-0">
+            <div class="text-xs uppercase tracking-[0.2em] text-white/70">Click to play</div>
+            <div class="mt-1 truncate text-lg font-semibold text-white">
+              {{ title || 'Untitled media' }}
+            </div>
+          </div>
+          <div
+            class="flex size-16 shrink-0 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur ring-1 ring-white/25"
+          >
+            <UIcon name="i-lucide-play" class="ml-1 size-8" />
+          </div>
+        </div>
+      </button>
+
       <video
-        class="player"
-        ref="video"
-        :poster="uri(thumbnail)"
+        ref="videoElement"
+        class="share-video-element block bg-black object-contain"
+        :class="
+          isFullscreen
+            ? 'h-full w-full max-h-screen max-w-screen'
+            : 'h-auto w-full max-w-full max-h-[70vh] sm:max-h-[72vh]'
+        "
         playsinline
-        controls
+        webkit-playsinline
+        preload="metadata"
         crossorigin="anonymous"
-        preload="auto"
-        autoplay
+        :poster="poster ? uri(poster) : undefined"
+        @error="handleMediaError"
+        @loadeddata="handleVideoLoadedData"
+        @loadedmetadata="handleVideoLoadedMetadata"
+        @timeupdate="handleVideoTimeUpdate"
+        @play="handleVideoPlay"
+        @pause="handleVideoPause"
+        @dblclick="handleVideoDoubleClick"
+        @pointermove="showControls"
+        @resize="scheduleAssLayoutRefresh"
+        @volumechange="handleMediaVolumeChange"
+        @webkitbeginfullscreen="handleVideoWebkitBeginFullscreen"
+        @webkitendfullscreen="handleVideoWebkitEndFullscreen"
       >
         <source
           v-for="source in sources"
           :key="source.src"
           :src="source.src"
-          @error="source.onerror"
           :type="source.type"
+          @error="source.onerror"
         />
         <track
-          v-for="(track, i) in tracks"
-          :key="track.file"
-          :kind="track.kind"
-          :label="track.label"
-          :srclang="track.lang"
-          :src="track.file"
-          :default="notFirefox && 0 === i"
+          v-if="nativeSubtitleTrack && subtitleEnabled"
+          :key="nativeSubtitleTrack.url"
+          kind="subtitles"
+          :srclang="nativeSubtitleTrack.lang || 'und'"
+          :label="nativeSubtitleTrack.name || 'Subtitles'"
+          default
+          :src="uri(nativeSubtitleTrack.url)"
         />
+        Your browser does not support the video tag.
       </video>
 
-      <div class="flex items-center justify-between gap-3">
-        <div>
-          <button
-            v-if="infoLoaded && !usingHls && hasVideoStream"
-            type="button"
-            class="hidden items-center gap-2 text-info transition-colors hover:text-info/80 md:inline-flex"
-            @click.prevent="forceSwitchToHls"
-          >
-            <UIcon name="i-lucide-refresh-cw" class="size-4" />
-            <span>Trouble playing? switch to HLS stream.</span>
-          </button>
+      <button
+        v-if="active && showSeekZones"
+        type="button"
+        class="absolute inset-y-0 left-0 z-10 w-1/3"
+        aria-label="Back 10 seconds"
+        @click="seekBy(-10)"
+      />
+      <button
+        v-if="active && isTouchDevice"
+        type="button"
+        class="absolute inset-y-0 left-1/3 z-10 w-1/3"
+        :aria-label="controlsVisible ? 'Hide controls' : 'Show controls'"
+        @click="toggleControls"
+      />
+      <button
+        v-if="active && showSeekZones"
+        type="button"
+        class="absolute inset-y-0 right-0 z-10 w-1/3"
+        aria-label="Forward 10 seconds"
+        @click="seekBy(10)"
+      />
+
+      <div
+        v-if="usesAssSubtitleTrack"
+        ref="assOverlayElement"
+        class="pointer-events-none absolute inset-0 z-20 overflow-hidden"
+        aria-hidden="true"
+      />
+
+      <div
+        v-if="active && showSeekZones && controlsVisible"
+        class="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-1/3 items-center justify-start px-5"
+      >
+        <div
+          class="rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"
+        >
+          -10s
         </div>
-        <div>
-          <button
-            type="button"
-            class="hidden items-center gap-2 text-toned transition-colors hover:text-default md:inline-flex"
-            @click="showHelp = !showHelp"
-          >
-            <UIcon name="i-lucide-circle-help" class="size-4" />
-            <span>Show keyboard shortcuts with <kbd>?</kbd> or <kbd>/</kbd></span>
-          </button>
+      </div>
+      <div
+        v-if="active && showSeekZones && controlsVisible"
+        class="pointer-events-none absolute inset-y-0 right-0 z-20 flex w-1/3 items-center justify-end px-5"
+      >
+        <div
+          class="rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"
+        >
+          +10s
         </div>
       </div>
 
-      <div v-if="showHelp" class="keyboard-help" @click.self="showHelp = false">
-        <h2 style="margin-bottom: 1.5rem">Keyboard Shortcuts</h2>
-
-        <div class="shortcuts-grid">
-          <div class="shortcut-section">
-            <h3>Playback Control</h3>
-            <div class="shortcut-item">
-              <span>Play/Pause</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">SPACE</kbd>
-                <kbd class="shortcut-key">K</kbd>
+      <div
+        v-if="active"
+        class="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/95 via-black/70 to-transparent px-3 pb-3 pt-10 text-white transition-opacity duration-200"
+        :class="controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0'"
+        @click.self="toggleControls"
+        @pointermove="showControls"
+      >
+        <div class="rounded-sm border border-white/10 bg-black/45 p-3 shadow-2xl backdrop-blur-md">
+          <div class="space-y-3">
+            <input
+              :value="progress"
+              type="range"
+              min="0"
+              max="1000"
+              step="1"
+              class="h-1.5 w-full accent-white"
+              aria-label="Seek video"
+              @input="handleSeekInput"
+            />
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
+                  :aria-label="paused ? 'Play video' : 'Pause video'"
+                  @click="togglePlayback"
+                />
+                <div class="min-w-0 text-xs font-medium text-white/90">
+                  {{ timeLabel }}
+                </div>
               </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Rewind 10s</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">J</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Forward 10s</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">L</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Mute/Unmute</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">M</kbd>
-              </div>
-            </div>
-          </div>
-
-          <div class="shortcut-section">
-            <h3>Seeking</h3>
-            <div class="shortcut-item">
-              <span>Seek Back 5s</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">←</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Seek Forward 5s</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">→</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Jump to Start</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">HOME</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Jump to End</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">END</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Jump to %</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">0-9</kbd>
-              </div>
-            </div>
-          </div>
-
-          <div class="shortcut-section">
-            <h3>Volume & Speed</h3>
-            <div class="shortcut-item">
-              <span>Increase Volume</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">↑</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Decrease Volume</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">↓</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Increase Speed</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">'</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Decrease Speed</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">;</kbd>
+              <div class="flex items-center gap-2">
+                <UButton
+                  v-if="hasSubtitles"
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  :icon="subtitleEnabled ? 'i-lucide-captions' : 'i-lucide-captions-off'"
+                  :aria-label="subtitleEnabled ? 'Disable subtitles' : 'Enable subtitles'"
+                  @click="subtitleEnabled = !subtitleEnabled"
+                />
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  :icon="effectiveVolume <= 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
+                  :aria-label="effectiveVolume <= 0 ? 'Unmute video' : 'Mute video'"
+                  @click="toggleMute"
+                />
+                <input
+                  :value="Math.round(effectiveVolume * 100)"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  class="w-20 accent-white"
+                  aria-label="Video volume"
+                  @input="handleVolumeInput"
+                />
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
+                  :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+                  @click="toggleFullscreen"
+                />
               </div>
             </div>
           </div>
-
-          <div class="shortcut-section">
-            <h3>Display & Other</h3>
-            <div class="shortcut-item">
-              <span>Fullscreen</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">F</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Picture in Picture (PiP)</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">P</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Toggle Captions</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">C</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Frame Advance</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">.</kbd>
-              </div>
-            </div>
-            <div class="shortcut-item">
-              <span>Frame Rewind</span>
-              <div class="kbd-group">
-                <kbd class="shortcut-key">,</kbd>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="help-close-hint">
-          Click outside or press <kbd>?</kbd> or <kbd>/</kbd> to close
         </div>
       </div>
     </div>
-  </div>
-  <div v-else class="flex justify-center py-10">
-    <UIcon name="i-lucide-loader-circle" class="size-16 animate-spin text-toned" />
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-3 text-sm">
+        <button
+          v-if="!usingHls && hasVideo"
+          type="button"
+          class="inline-flex items-center gap-2 text-info transition-colors hover:text-info/80"
+          @click.prevent="forceSwitchToHls"
+        >
+          <UIcon name="i-lucide-refresh-cw" class="size-4" />
+          <span>Trouble playing? switch to HLS stream.</span>
+        </button>
+        <span v-if="subtitleLoading" class="text-toned">Looking for matching subtitles...</span>
+        <span v-else-if="subtitleLoadError" class="text-warning">{{ subtitleLoadError }}</span>
+      </div>
+
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 text-toned transition-colors hover:text-default"
+        @click="showHelp = !showHelp"
+      >
+        <UIcon name="i-lucide-circle-help" class="size-4" />
+        <span>Show keyboard shortcuts with <kbd>?</kbd> or <kbd>/</kbd></span>
+      </button>
+    </div>
+
+    <UModal
+      v-model:open="showHelp"
+      title="Keyboard Shortcuts"
+      :portal="helpPortal"
+      :ui="{ content: 'sm:max-w-3xl' }"
+    >
+      <template #body>
+        <div class="grid gap-5 text-sm sm:grid-cols-2">
+          <div class="space-y-3">
+            <div class="font-semibold text-highlighted">Playback</div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Play or pause</span>
+              <span class="text-muted">Space, K</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Back 10 seconds</span>
+              <span class="text-muted">J</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Forward 10 seconds</span>
+              <span class="text-muted">L</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Mute</span>
+              <span class="text-muted">M</span>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="font-semibold text-highlighted">Navigation</div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Back 5 seconds</span>
+              <span class="text-muted">Left</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Forward 5 seconds</span>
+              <span class="text-muted">Right</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Go to start or end</span>
+              <span class="text-muted">Home, End</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Jump through the timeline</span>
+              <span class="text-muted">0-9</span>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="font-semibold text-highlighted">Volume & Speed</div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Volume up or down</span>
+              <span class="text-muted">Up, Down</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Faster</span>
+              <span class="text-muted">'</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Slower</span>
+              <span class="text-muted">;</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Step frame by frame</span>
+              <span class="text-muted">, .</span>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="font-semibold text-highlighted">Display</div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Fullscreen</span>
+              <span class="text-muted">F</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Show or hide subtitles</span>
+              <span class="text-muted">C</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Open this help</span>
+              <span class="text-muted">?, /</span>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Close help or player</span>
+              <span class="text-muted">Esc</span>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core';
-import { watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import Hls from 'hls.js';
-import { disableOpacity, enableOpacity, formatPageTitle } from '~/utils';
-import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts';
+import {
+  disableOpacity,
+  enableOpacity,
+  encodePath,
+  formatPageTitle,
+  makeDownload,
+  request,
+  uri,
+} from '~/utils';
+import { usePlayerMediaVolume } from '~/composables/usePlayerMediaVolume';
+import { usePlayerShortcutHelp } from '~/composables/usePlayerShortcutHelp';
+import { usePlayerShortcuts } from '~/composables/usePlayerShortcuts';
+import { usePlayerSubtitles } from '~/composables/usePlayerSubtitles';
+import {
+  canRequestFullscreen,
+  exitDocumentFullscreen,
+  getFullscreenElement,
+  requestElementFullscreen,
+} from '~/utils/fullscreen';
 
 import type { StoreItem } from '~/types/store';
-import type { file_info, video_source_element, video_track_element } from '~/types/video';
+import type { FileInfo, PlayerSourceElement } from '~/types/video';
 
 const config = useYtpConfig();
 
@@ -299,53 +371,507 @@ const emitter = defineEmits<{
   (e: 'error', message: string): void;
 }>();
 
-const video = useTemplateRef<HTMLVideoElement>('video');
-const tracks = ref<Array<video_track_element>>([]);
-const sources = ref<Array<video_source_element>>([]);
+const {
+  volume,
+  muted,
+  effectiveVolume,
+  setVolume,
+  changeVolume,
+  toggleMute: toggleStoredMute,
+} = usePlayerMediaVolume();
+const showShortcutHelp = usePlayerShortcutHelp();
 
-const thumbnail = ref('/images/placeholder.png');
-const artist = ref('');
+const playerContainer = ref<HTMLElement | null>(null);
+const videoElement = ref<HTMLVideoElement | null>(null);
+const assOverlayElement = ref<HTMLElement | null>(null);
+const playerInfo = ref<FileInfo | null>(null);
+const sources = ref<Array<PlayerSourceElement>>([]);
+const loading = ref(true);
+const loadingError = ref('');
+const active = ref(false);
+const isFullscreen = ref(false);
+const assLayoutVersion = ref(0);
+const controlsVisible = ref(true);
+const currentTime = ref(0);
+const duration = ref(0);
+const paused = ref(true);
+const isTouchDevice = ref(false);
 const title = ref('');
+const artist = ref('');
+const poster = ref('/images/placeholder.png');
+const hasPoster = ref(false);
 const isAudio = ref(false);
-const hasVideoStream = ref(false);
-const videoWidth = ref<number | undefined>(undefined);
-const videoHeight = ref<number | undefined>(undefined);
-const volume = useStorage('player_volume', 1);
-const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox');
-const infoLoaded = ref(false);
-const destroyed = ref(false);
-const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
-const havePoster = ref(false);
-const showHelp = ref(false);
+const hasVideo = ref(false);
 const usingHls = ref(false);
+const destroyed = ref(false);
+const showHelp = computed({
+  get: () => showShortcutHelp.value,
+  set: (value: boolean) => {
+    showShortcutHelp.value = value;
+  },
+});
+const helpPortal = computed<boolean | HTMLElement>(() => {
+  if (isFullscreen.value) {
+    return playerContainer.value || false;
+  }
+
+  return true;
+});
+
+let assLayoutRefreshFrame = 0;
+let controlsHideTimeout = 0;
+let gainContext: AudioContext | null = null;
+let gainSource: MediaElementAudioSourceNode | null = null;
+let gainNode: GainNode | null = null;
+let gainElement: HTMLMediaElement | null = null;
+let unbindMediaSession: null | (() => void) = null;
+let hls: Hls | null = null;
+
+const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
+const mediaFile = computed(() => props.item.filename || '');
+const canPlay = computed(() => Boolean(mediaFile.value && !loadingError.value));
+const shouldRender = computed(() => active.value && !loading.value);
+const isPlaying = computed(() => !paused.value);
+const progress = computed(() => {
+  if (!duration.value) return 0;
+  return Math.round((currentTime.value / duration.value) * 1000);
+});
+const timeLabel = computed(() => {
+  const currentLabel = formatDuration(Math.round(currentTime.value));
+  const durationLabel = duration.value ? formatDuration(Math.round(duration.value)) : '--:--';
+  return `${currentLabel} / ${durationLabel}`;
+});
+const showSeekZones = computed(() => {
+  return Boolean(isTouchDevice.value && isPlaying.value);
+});
+const useGainFallback = computed(() => {
+  return Boolean(isTouchDevice.value && getAudioContextCtor());
+});
+
+const {
+  subtitleLoading,
+  subtitleLoadError,
+  subtitleEnabled,
+  nativeSubtitleTrack,
+  usesAssSubtitleTrack,
+  hasSubtitles,
+} = usePlayerSubtitles({
+  mediaFile,
+  isVideo: computed(() => !isAudio.value),
+  canPlay,
+  shouldRender,
+  assLayoutVersion,
+  video: videoElement,
+  overlay: assOverlayElement,
+});
 
 useHead(() => (title.value ? { title: formatPageTitle(`Playing: ${title.value}`) } : {}));
 
-let unbindMediaSessionListeners: null | (() => void) = null;
-let hls: Hls | null = null;
-let cleanupKeyboardShortcuts: null | (() => void) = null;
+watch(
+  [volume, muted],
+  ([nextVolume]) => {
+    const normalizedVolume = normalizeMediaVolume(nextVolume);
+    if (normalizedVolume !== nextVolume) {
+      volume.value = normalizedVolume;
+      return;
+    }
 
-const handle_event = (e: KeyboardEvent) => {
-  if ('Escape' !== e.key) {
+    applyStoredMediaState(videoElement.value);
+    syncVideoState();
+  },
+  { immediate: true },
+);
+
+watch(
+  videoElement,
+  (element, previousElement) => {
+    if (previousElement && previousElement !== element) {
+      disconnectGainController();
+    }
+
+    applyStoredMediaState(element);
+    syncVideoState();
+  },
+  { immediate: true },
+);
+
+watch(hasSubtitles, (enabled) => {
+  if (!enabled) {
+    subtitleEnabled.value = false;
+  }
+});
+
+function formatDuration(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+  }
+
+  return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+}
+
+function normalizeMediaVolume(volume: number): number {
+  if (!Number.isFinite(volume)) return 1;
+  return Math.min(1, Math.max(0, volume));
+}
+
+function getAudioContextCtor(): typeof AudioContext | null {
+  if (!import.meta.client) return null;
+
+  const maybeWindow = window as Window &
+    typeof globalThis & {
+      webkitAudioContext?: typeof AudioContext;
+    };
+  return maybeWindow.AudioContext || maybeWindow.webkitAudioContext || null;
+}
+
+function currentPlaybackUrl(base: string, playlist: boolean = false): string {
+  if (!props.item.filename) {
+    return '';
+  }
+
+  if (base === 'm3u8') {
+    return makeDownload(config, props.item, base, true);
+  }
+
+  return makeDownload(config, props.item, base, playlist);
+}
+
+function activatePlayer() {
+  active.value = true;
+  void nextTick(async () => {
+    applyStoredMediaState(videoElement.value);
+    await resumeGainController();
+    try {
+      await videoElement.value?.play();
+    } catch {}
+    syncVideoState();
+    showControls();
+  });
+}
+
+function handleVideoLoadedData() {
+  syncVideoState();
+}
+
+function handleVideoLoadedMetadata() {
+  loadingError.value = '';
+  syncVideoState();
+  showControls();
+  scheduleAssLayoutRefresh();
+  if (videoElement.value) {
+    updateMediaSessionPosition(videoElement.value);
+  }
+}
+
+function handleVideoTimeUpdate() {
+  syncVideoState();
+  if (videoElement.value) {
+    updateMediaSessionPosition(videoElement.value);
+  }
+}
+
+function handleVideoPlay() {
+  loadingError.value = '';
+  void resumeGainController();
+  syncVideoState();
+  showControls();
+}
+
+function handleVideoPause() {
+  syncVideoState();
+  clearControlsHideTimeout();
+  controlsVisible.value = true;
+}
+
+function handleVideoDoubleClick() {
+  void toggleFullscreen();
+}
+
+function handleVideoWebkitBeginFullscreen() {
+  scheduleAssLayoutRefresh();
+}
+
+function handleVideoWebkitEndFullscreen() {
+  scheduleAssLayoutRefresh();
+}
+
+function handleMediaError(event: Event) {
+  void src_error(event);
+}
+
+function handleMediaVolumeChange(event: Event) {
+  const target = event.target as HTMLMediaElement | null;
+  if (!target || typeof target.volume !== 'number') return;
+
+  if (target.muted !== muted.value) {
+    muted.value = target.muted;
+  }
+
+  if (!useGainFallback.value) {
+    const normalizedVolume = normalizeMediaVolume(target.volume);
+    if (Math.abs(volume.value - normalizedVolume) > 0.001) {
+      volume.value = normalizedVolume;
+    }
+  }
+
+  syncVideoState();
+  updateMediaSessionPosition(target);
+}
+
+function handleSeekInput(event: Event) {
+  const target = event.target as HTMLInputElement | null;
+  if (!target || !videoElement.value || !duration.value) return;
+
+  const sliderValue = Number(target.value);
+  if (!Number.isFinite(sliderValue)) return;
+
+  videoElement.value.currentTime = (sliderValue / 1000) * duration.value;
+  syncVideoState();
+  showControls();
+}
+
+function handleVolumeInput(event: Event) {
+  const target = event.target as HTMLInputElement | null;
+  if (!target || !videoElement.value) return;
+
+  setVolume(Number(target.value) / 100);
+  applyStoredMediaState(videoElement.value);
+  syncVideoState();
+  showControls();
+  void resumeGainController();
+}
+
+async function togglePlayback() {
+  if (!videoElement.value) return;
+
+  try {
+    if (videoElement.value.paused) {
+      await resumeGainController();
+      await videoElement.value.play();
+      syncVideoState();
+      showControls();
+      return;
+    }
+
+    videoElement.value.pause();
+    syncVideoState();
+  } catch {}
+}
+
+function toggleMute() {
+  toggleStoredMute();
+  applyStoredMediaState(videoElement.value);
+  syncVideoState();
+  showControls();
+  void resumeGainController();
+}
+
+function seekBy(deltaSeconds: number) {
+  if (!videoElement.value) return;
+
+  if (!isPlaying.value) {
+    showControls();
     return;
   }
-  emitter('closeModel');
-};
 
-const bindMediaSessionListeners = (el: HTMLVideoElement) => {
-  const onLoadedMetadata = (e: Event) => updateMediaSessionPosition(e.currentTarget);
-  const onTimeUpdate = (e: Event) => updateMediaSessionPosition(e.currentTarget);
-  const onRateChange = (e: Event) => updateMediaSessionPosition(e.currentTarget);
-  const onSeeked = (e: Event) => updateMediaSessionPosition(e.currentTarget);
-  const onPause = async (e: Event) => {
-    const target = (e.currentTarget as HTMLVideoElement) ?? null;
+  const duration = Number.isFinite(videoElement.value.duration) ? videoElement.value.duration : 0;
+  const nextTime = Math.min(
+    Math.max(videoElement.value.currentTime + deltaSeconds, 0),
+    duration || Infinity,
+  );
+  videoElement.value.currentTime = nextTime;
+  syncVideoState();
+  showControls();
+}
+
+function applyStoredMediaState(element: HTMLMediaElement | null) {
+  if (!element) return;
+
+  if (useGainFallback.value) {
+    ensureGainController(element);
+    if (element.muted !== muted.value) {
+      element.muted = muted.value;
+    }
+    if (gainNode) {
+      gainNode.gain.value = effectiveVolume.value;
+    }
+    return;
+  }
+
+  const normalizedVolume = normalizeMediaVolume(volume.value);
+  if (Math.abs(element.volume - normalizedVolume) > 0.001) {
+    element.volume = normalizedVolume;
+  }
+
+  if (element.muted !== muted.value) {
+    element.muted = muted.value;
+  }
+}
+
+function ensureGainController(element: HTMLMediaElement | null) {
+  if (!useGainFallback.value || !element) return;
+
+  if (gainElement === element && gainNode) {
+    gainNode.gain.value = effectiveVolume.value;
+    return;
+  }
+
+  disconnectGainController();
+
+  const AudioContextCtor = getAudioContextCtor();
+  if (!AudioContextCtor) return;
+
+  if (!gainContext || gainContext.state === 'closed') {
+    try {
+      gainContext = new AudioContextCtor();
+    } catch {
+      gainContext = null;
+      return;
+    }
+  }
+
+  try {
+    gainSource = gainContext.createMediaElementSource(element);
+    gainNode = gainContext.createGain();
+    gainSource.connect(gainNode);
+    gainNode.connect(gainContext.destination);
+    gainNode.gain.value = effectiveVolume.value;
+    gainElement = element;
+  } catch {
+    disconnectGainController();
+  }
+}
+
+async function resumeGainController() {
+  if (!useGainFallback.value) return;
+
+  ensureGainController(videoElement.value);
+  if (!gainContext || gainContext.state !== 'suspended') return;
+
+  try {
+    await gainContext.resume();
+  } catch {}
+}
+
+function disconnectGainController() {
+  try {
+    gainSource?.disconnect();
+  } catch {}
+
+  try {
+    gainNode?.disconnect();
+  } catch {}
+
+  gainSource = null;
+  gainNode = null;
+  gainElement = null;
+}
+
+function syncVideoState() {
+  const video = videoElement.value;
+  if (!video) {
+    currentTime.value = 0;
+    duration.value = 0;
+    paused.value = true;
+    return;
+  }
+
+  const nextDuration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+  const nextTime =
+    Number.isFinite(video.currentTime) && video.currentTime > 0 ? video.currentTime : 0;
+
+  duration.value = nextDuration;
+  currentTime.value = nextTime;
+  paused.value = video.paused;
+}
+
+function scheduleAssLayoutRefresh() {
+  if (!usesAssSubtitleTrack.value) return;
+
+  if (assLayoutRefreshFrame) {
+    window.cancelAnimationFrame(assLayoutRefreshFrame);
+  }
+
+  void nextTick(() => {
+    assLayoutRefreshFrame = window.requestAnimationFrame(() => {
+      assLayoutRefreshFrame = 0;
+      assLayoutVersion.value += 1;
+    });
+  });
+}
+
+function showControls() {
+  controlsVisible.value = true;
+  clearControlsHideTimeout();
+
+  if (videoElement.value?.paused) {
+    return;
+  }
+
+  controlsHideTimeout = window.setTimeout(() => {
+    controlsVisible.value = false;
+  }, 2500);
+}
+
+function toggleControls() {
+  if (!controlsVisible.value) {
+    showControls();
+    return;
+  }
+
+  if (videoElement.value?.paused) {
+    return;
+  }
+
+  clearControlsHideTimeout();
+  controlsVisible.value = false;
+}
+
+function clearControlsHideTimeout() {
+  if (controlsHideTimeout) {
+    window.clearTimeout(controlsHideTimeout);
+    controlsHideTimeout = 0;
+  }
+}
+
+function syncFullscreenState() {
+  const fullscreenElement = getFullscreenElement();
+  isFullscreen.value = Boolean(
+    fullscreenElement && playerContainer.value && fullscreenElement === playerContainer.value,
+  );
+  scheduleAssLayoutRefresh();
+}
+
+async function toggleFullscreen() {
+  if (!playerContainer.value || !canRequestFullscreen(playerContainer.value)) return;
+
+  try {
+    if (isFullscreen.value) {
+      await exitDocumentFullscreen();
+    } else {
+      await requestElementFullscreen(playerContainer.value);
+    }
+  } catch {}
+}
+
+function bindMediaSessionListeners(el: HTMLVideoElement) {
+  const onLoadedMetadata = (event: Event) => updateMediaSessionPosition(event.currentTarget);
+  const onTimeUpdate = (event: Event) => updateMediaSessionPosition(event.currentTarget);
+  const onRateChange = (event: Event) => updateMediaSessionPosition(event.currentTarget);
+  const onSeeked = (event: Event) => updateMediaSessionPosition(event.currentTarget);
+  const onPause = async (event: Event) => {
+    const target = (event.currentTarget as HTMLVideoElement) ?? null;
     if (!target || destroyed.value) {
       return;
     }
     const dataUrl = await captureFrame(target);
     if (dataUrl) {
-      thumbnail.value = dataUrl;
-      havePoster.value = true;
+      poster.value = dataUrl;
+      hasPoster.value = true;
       applyMediaSessionMetadata();
     }
   };
@@ -363,9 +889,9 @@ const bindMediaSessionListeners = (el: HTMLVideoElement) => {
     el.removeEventListener('seeked', onSeeked);
     el.removeEventListener('pause', onPause);
   };
-};
+}
 
-const updateMediaSessionPosition = (target: EventTarget | null) => {
+function updateMediaSessionPosition(target: EventTarget | null) {
   if (false === 'mediaSession' in navigator) {
     return;
   }
@@ -373,77 +899,65 @@ const updateMediaSessionPosition = (target: EventTarget | null) => {
   if (!el || destroyed.value) {
     return;
   }
-  const d = el.duration;
-  if (false === Number.isFinite(d) || 0 >= d) {
+  const duration = el.duration;
+  if (false === Number.isFinite(duration) || duration <= 0) {
     return;
   }
   try {
     navigator.mediaSession.setPositionState({
-      duration: d,
+      duration,
       playbackRate: el.playbackRate,
       position: el.currentTime,
     });
   } catch {}
-};
+}
 
-const volume_change_handler = () => {
-  const el = video.value;
-  if (!el) {
-    return;
-  }
-  volume.value = el.volume;
-  updateMediaSessionPosition(el);
-};
-
-const captureFrame = async (el: HTMLVideoElement): Promise<string> => {
+async function captureFrame(el: HTMLVideoElement): Promise<string> {
   if (!el || destroyed.value) {
     return '';
   }
-  if (0 === el.videoWidth || 0 === el.videoHeight) {
+  if (el.videoWidth === 0 || el.videoHeight === 0) {
     return '';
   }
 
-  const w = el.videoWidth;
-  const h = el.videoHeight;
+  const width = el.videoWidth;
+  const height = el.videoHeight;
 
   try {
     if ('OffscreenCanvas' in window) {
-      const c = new (window as any).OffscreenCanvas(w, h);
-      const ctx = c.getContext('2d');
+      const canvas = new (window as any).OffscreenCanvas(width, height);
+      const ctx = canvas.getContext('2d');
       if (!ctx) {
         return '';
       }
-      ctx.drawImage(el, 0, 0, w, h);
-      const blob = await c.convertToBlob({ type: 'image/jpeg', quality: 0.86 });
-      return await new Promise<string>((r) => {
-        const fr = new FileReader();
-        fr.onload = () => r(String(fr.result));
-        fr.readAsDataURL(blob);
+      ctx.drawImage(el, 0, 0, width, height);
+      const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.86 });
+      return await new Promise<string>((resolve) => {
+        const fileReader = new FileReader();
+        fileReader.onload = () => resolve(String(fileReader.result));
+        fileReader.readAsDataURL(blob);
       });
-    } else {
-      const c = document.createElement('canvas');
-      c.width = w;
-      c.height = h;
-      const ctx = c.getContext('2d');
-      if (!ctx) {
-        return '';
-      }
-      ctx.drawImage(el, 0, 0, w, h);
-      return c.toDataURL('image/jpeg', 0.86);
     }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return '';
+    }
+    ctx.drawImage(el, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', 0.86);
   } catch {
     return '';
   }
-};
+}
 
-const captureFirstFramePoster = async (el: HTMLVideoElement): Promise<void> => {
-  if (!el || destroyed.value) {
+async function captureFirstFramePoster(el: HTMLVideoElement): Promise<void> {
+  if (!el || destroyed.value || hasPoster.value) {
     return;
   }
-  if (havePoster.value) {
-    return;
-  }
-  if (0 === el.videoWidth || 0 === el.videoHeight) {
+  if (el.videoWidth === 0 || el.videoHeight === 0) {
     return;
   }
 
@@ -452,24 +966,23 @@ const captureFirstFramePoster = async (el: HTMLVideoElement): Promise<void> => {
     return;
   }
 
-  thumbnail.value = dataUrl;
-  havePoster.value = true;
+  poster.value = dataUrl;
+  hasPoster.value = true;
   applyMediaSessionMetadata();
-};
+}
 
-const restoreDefaultTextTrack = async () => {
-  const el = video.value;
+async function restoreDefaultTextTrack() {
+  const el = videoElement.value;
   if (!el) {
     return;
   }
 
   try {
     const tracksList = el.textTracks;
-    if (!tracksList || 0 === tracksList.length) {
+    if (!tracksList || tracksList.length === 0) {
       return;
     }
 
-    // Check if first track has cues - if not, we need to reload tracks
     const firstTrack = tracksList[0] as TextTrack | undefined;
     const needsReload = firstTrack && (!firstTrack.cues || firstTrack.cues.length === 0);
 
@@ -483,13 +996,12 @@ const restoreDefaultTextTrack = async () => {
         setTimeout(() => {
           if (parent) {
             parent.appendChild(clone);
-            // Set mode after cues load
             clone.addEventListener(
               'load',
               () => {
                 const trackObj = clone.track;
                 if (trackObj) {
-                  trackObj.mode = idx === 0 ? 'showing' : 'disabled';
+                  trackObj.mode = idx === 0 && subtitleEnabled.value ? 'showing' : 'disabled';
                 }
               },
               { once: true },
@@ -515,214 +1027,146 @@ const restoreDefaultTextTrack = async () => {
       if (!track) {
         continue;
       }
-      const newMode = 0 === i ? 'showing' : 'disabled';
-      track.mode = newMode;
+      track.mode = i === 0 && subtitleEnabled.value ? 'showing' : 'disabled';
     }
   } catch (error) {
     console.warn('Failed to restore subtitle track state', error);
   }
-};
+}
 
-onMounted(async () => {
-  disableOpacity();
-  const req = await request(makeDownload(config, props.item, 'api/file/info'));
-  const response: file_info = await req.json();
+function applyMediaSessionMetadata() {
+  if (false === 'mediaSession' in navigator) {
+    return;
+  }
+  const metadata: MediaMetadataInit = { title: title.value };
+  if (artist.value) {
+    metadata.artist = artist.value;
+  }
+  if (poster.value) {
+    metadata.artwork = [{ src: poster.value, sizes: '1920x1080', type: 'image/jpeg' }];
+  }
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata(metadata);
+  } catch {}
+}
 
-  if (!req.ok) {
-    emitter('error', response?.error || 'Failed to fetch video info. Unknown error');
+async function loadPlayerInfo() {
+  if (!props.item.filename) {
+    loading.value = false;
+    loadingError.value = 'No media file is available for playback.';
+    emitter('error', loadingError.value);
     emitter('closeModel');
     return;
   }
 
-  await nextTick();
+  loading.value = true;
+  loadingError.value = '';
+
+  const req = await request(currentPlaybackUrl('api/file/info'));
+  const response: FileInfo = await req.json();
+
+  if (!req.ok) {
+    loading.value = false;
+    loadingError.value = response?.error || 'Failed to fetch video info. Unknown error';
+    emitter('error', loadingError.value);
+    emitter('closeModel');
+    return;
+  }
+
+  playerInfo.value = response;
 
   if (props.item.extras?.thumbnail) {
-    thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail);
-    havePoster.value = true;
-  } else {
-    if (response.sidecar?.image?.[0]?.file) {
-      thumbnail.value = makeDownload(config, { filename: response.sidecar.image[0].file });
-      havePoster.value = true;
-    }
+    poster.value = `/api/thumbnail?url=${encodePath(props.item.extras.thumbnail)}`;
+    hasPoster.value = true;
+  } else if (response.sidecar?.image?.[0]?.file) {
+    poster.value = makeDownload(config, { filename: response.sidecar.image[0].file });
+    hasPoster.value = true;
   }
 
-  hasVideoStream.value =
+  hasVideo.value =
     Array.isArray(response.ffprobe?.video) &&
-    response.ffprobe.video.some((s) => 'video' === s.codec_type);
-
-  // Extract video dimensions to prevent layout reflow
-  if (hasVideoStream.value && response.ffprobe?.video) {
-    const videoStream = response.ffprobe.video.find((s) => 'video' === s.codec_type);
-    if (videoStream?.width && videoStream?.height) {
-      videoWidth.value = videoStream.width;
-      videoHeight.value = videoStream.height;
-    }
-  }
+    response.ffprobe.video.some((stream) => stream.codec_type === 'video');
 
   if (!props.item.extras?.is_video && props.item.extras?.is_audio) {
     isAudio.value = true;
-  } else {
-    if (false === hasVideoStream.value) {
-      isAudio.value = true;
-    }
+  } else if (hasVideo.value === false) {
+    isAudio.value = true;
   }
 
+  sources.value = [];
   if (isApple) {
     const allowedCodec = response.mimetype && response.mimetype.includes('video/mp4');
-    const src = makeDownload(
-      config,
-      props.item,
-      allowedCodec ? 'api/download' : 'm3u8',
-      allowedCodec ? false : true,
-    );
+    const src = currentPlaybackUrl(allowedCodec ? 'api/download' : 'm3u8', !allowedCodec);
     sources.value.push({
       src,
       type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
-      onerror: (err: Event) => src_error(err),
+      onerror: (err: Event) => void src_error(err),
     });
     usingHls.value = !allowedCodec;
   } else {
-    const src = makeDownload(config, props.item, 'api/download', false);
-    sources.value.push({ src, type: response.mimetype, onerror: (err: Event) => src_error(err) });
+    sources.value.push({
+      src: currentPlaybackUrl('api/download'),
+      type: response.mimetype,
+      onerror: (err: Event) => void src_error(err),
+    });
     usingHls.value = false;
   }
 
   if (props.item.extras?.channel) {
     artist.value = props.item.extras.channel;
-  }
-
-  if (!artist.value && props.item.extras?.uploader) {
+  } else if (props.item.extras?.uploader) {
     artist.value = props.item.extras.uploader;
   }
 
-  if (props.item?.title) {
+  if (props.item.title) {
     title.value = props.item.title;
-  } else {
-    if (response?.title) {
-      title.value = response.title;
-    } else {
-      if (response.ffprobe?.metadata?.tags?.title) {
-        title.value = response.ffprobe.metadata.tags.title;
-      }
-    }
+  } else if (response.title) {
+    title.value = response.title;
+  } else if (response.ffprobe?.metadata?.tags?.title) {
+    title.value = response.ffprobe.metadata.tags.title;
   }
-
-  response.sidecar?.subtitle?.forEach((cap, _) => {
-    tracks.value.push({
-      kind: 'captions',
-      label: cap.name,
-      lang: cap.lang,
-      file: `${makeDownload(config, { filename: cap.file }, 'api/player/subtitle')}.vtt`,
-    });
-  });
 
   if (isApple) {
     document.documentElement.style.setProperty('--webkit-text-track-display', 'block');
   }
 
-  infoLoaded.value = true;
+  loading.value = false;
   await nextTick();
 
+  if (videoElement.value) {
+    unbindMediaSession = bindMediaSessionListeners(videoElement.value);
+  }
+
   prepareVideoPlayer();
+}
 
-  if (video.value) {
-    unbindMediaSessionListeners = bindMediaSessionListeners(video.value);
-  }
-
-  const keyboardShortcutsResult = useKeyboardShortcuts({
-    videoElement: video,
-    enabled: ref(true),
-    closePlayer: () => emitter('closeModel'),
-  });
-
-  cleanupKeyboardShortcuts = keyboardShortcutsResult.attach();
-
-  watch(keyboardShortcutsResult.showHelp, (newVal) => (showHelp.value = newVal));
-
-  document.addEventListener('keydown', handle_event);
-});
-
-const applyMediaSessionMetadata = () => {
-  if (false === 'mediaSession' in navigator) {
-    return;
-  }
-  const meta: MediaMetadataInit = { title: title.value };
-  if (artist.value) {
-    meta.artist = artist.value;
-  }
-  if (thumbnail.value) {
-    meta.artwork = [{ src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' }];
-  }
-  try {
-    navigator.mediaSession.metadata = new MediaMetadata(meta);
-  } catch {}
-};
-
-onUpdated(() => prepareVideoPlayer());
-
-onBeforeUnmount(() => {
-  enableOpacity();
-  if (hls) {
-    hls.destroy();
-    hls = null;
-  }
-
-  usingHls.value = false;
-
-  document.removeEventListener('keydown', handle_event);
-
-  if (cleanupKeyboardShortcuts) {
-    cleanupKeyboardShortcuts();
-    cleanupKeyboardShortcuts = null;
-  }
-
-  if (unbindMediaSessionListeners) {
-    unbindMediaSessionListeners();
-    unbindMediaSessionListeners = null;
-  }
-
-  if (!video.value) {
-    return;
-  }
-
-  destroyed.value = true;
-
-  try {
-    video.value.pause();
-    video.value.querySelectorAll('source').forEach((source) => source.removeAttribute('src'));
-    video.value.removeEventListener('volumechange', volume_change_handler);
-    video.value.load();
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-const prepareVideoPlayer = () => {
-  if (!infoLoaded.value) {
+function prepareVideoPlayer() {
+  if (loading.value) {
     return;
   }
 
   applyMediaSessionMetadata();
 
-  if (!video.value) {
+  if (!videoElement.value) {
     return;
   }
 
-  video.value.volume = volume.value;
-  video.value.addEventListener('volumechange', volume_change_handler);
+  applyStoredMediaState(videoElement.value);
   restoreDefaultTextTrack();
 
-  if (hasVideoStream.value) {
-    if ('requestVideoFrameCallback' in video.value) {
-      (video.value as any).requestVideoFrameCallback(() => captureFirstFramePoster(video.value!));
+  if (hasVideo.value) {
+    if ('requestVideoFrameCallback' in videoElement.value) {
+      (videoElement.value as any).requestVideoFrameCallback(() =>
+        captureFirstFramePoster(videoElement.value!),
+      );
     } else {
-      const tryOnce = () => captureFirstFramePoster(video.value!);
-      (video.value as any).addEventListener('loadeddata', tryOnce, { once: true });
+      const tryOnce = () => captureFirstFramePoster(videoElement.value!);
+      (videoElement.value as any).addEventListener('loadeddata', tryOnce, { once: true });
     }
   }
-};
+}
 
-const src_error = async (e: any) => {
+async function src_error(event: Event) {
   if (hls) {
     return;
   }
@@ -732,17 +1176,21 @@ const src_error = async (e: any) => {
     return;
   }
 
-  if (video.value && notFirefox && video.value.paused) {
+  if (videoElement.value?.paused && !active.value) {
     return;
   }
 
-  console.warn('Source failed to load, attempting HLS fallback via hls.js...', e);
-  attach_hls(makeDownload(config, props.item, 'm3u8', true));
-};
+  console.warn('Source failed to load, attempting HLS fallback via hls.js...', event);
+  attach_hls(currentPlaybackUrl('m3u8', true));
+}
 
-const attach_hls = (link: string) => {
-  if (!video.value) {
+function attach_hls(link: string) {
+  if (!videoElement.value) {
     return;
+  }
+
+  if (hls) {
+    hls.destroy();
   }
 
   hls = new Hls({
@@ -765,31 +1213,123 @@ const attach_hls = (link: string) => {
   });
 
   hls.on(Hls.Events.LEVEL_LOADED, () => {
-    if (video.value) {
-      if ('requestVideoFrameCallback' in video.value) {
-        (video.value as any).requestVideoFrameCallback(() => captureFirstFramePoster(video.value!));
+    if (videoElement.value) {
+      if ('requestVideoFrameCallback' in videoElement.value) {
+        (videoElement.value as any).requestVideoFrameCallback(() =>
+          captureFirstFramePoster(videoElement.value!),
+        );
       } else {
-        const once = () => captureFirstFramePoster(video.value!);
-        (video.value as any).addEventListener('loadeddata', once, { once: true });
+        const once = () => captureFirstFramePoster(videoElement.value!);
+        (videoElement.value as any).addEventListener('loadeddata', once, { once: true });
       }
     }
   });
 
   hls.loadSource(link);
-  hls.attachMedia(video.value);
+  hls.attachMedia(videoElement.value);
   usingHls.value = true;
-};
+}
 
-const forceSwitchToHls = () => {
+function forceSwitchToHls() {
   if (usingHls.value) {
     return;
   }
 
-  if (!hasVideoStream.value) {
+  if (!hasVideo.value) {
     useNotification().error('Cannot switch to HLS: stream has no video track.');
     return;
   }
 
-  attach_hls(makeDownload(config, props.item, 'm3u8', true));
-};
+  attach_hls(currentPlaybackUrl('m3u8', true));
+}
+
+usePlayerShortcuts({
+  enabled: computed(() => active.value && Boolean(videoElement.value)),
+  media: videoElement,
+  video: videoElement,
+  adjustVolume: (delta) => {
+    changeVolume(delta);
+    applyStoredMediaState(videoElement.value);
+    syncVideoState();
+    showControls();
+    void resumeGainController();
+  },
+  canToggleSubs: hasSubtitles,
+  helpOpen: showShortcutHelp,
+  toggleSubtitles: () => {
+    subtitleEnabled.value = !subtitleEnabled.value;
+    void nextTick(() => restoreDefaultTextTrack());
+  },
+  toggleFullscreen,
+  toggleMute,
+  closePlayer: () => emitter('closeModel'),
+});
+
+watch(subtitleEnabled, () => {
+  void nextTick(() => restoreDefaultTextTrack());
+});
+
+onMounted(async () => {
+  disableOpacity();
+  isTouchDevice.value = window.matchMedia('(pointer: coarse)').matches;
+  document.addEventListener('fullscreenchange', syncFullscreenState);
+  document.addEventListener('webkitfullscreenchange', syncFullscreenState as EventListener);
+  window.addEventListener('resize', scheduleAssLayoutRefresh);
+  window.addEventListener('orientationchange', scheduleAssLayoutRefresh);
+  syncFullscreenState();
+  await loadPlayerInfo();
+});
+
+onBeforeUnmount(() => {
+  enableOpacity();
+  document.removeEventListener('fullscreenchange', syncFullscreenState);
+  document.removeEventListener('webkitfullscreenchange', syncFullscreenState as EventListener);
+  window.removeEventListener('resize', scheduleAssLayoutRefresh);
+  window.removeEventListener('orientationchange', scheduleAssLayoutRefresh);
+
+  if (assLayoutRefreshFrame) {
+    window.cancelAnimationFrame(assLayoutRefreshFrame);
+  }
+
+  clearControlsHideTimeout();
+
+  if (hls) {
+    hls.destroy();
+    hls = null;
+  }
+
+  if (unbindMediaSession) {
+    unbindMediaSession();
+    unbindMediaSession = null;
+  }
+
+  disconnectGainController();
+  if (gainContext && gainContext.state !== 'closed') {
+    void gainContext.close().catch(() => {});
+  }
+  gainContext = null;
+
+  if (videoElement.value) {
+    destroyed.value = true;
+    try {
+      videoElement.value.pause();
+      videoElement.value
+        .querySelectorAll('source')
+        .forEach((source) => source.removeAttribute('src'));
+      videoElement.value.load();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+});
 </script>
+
+<style scoped>
+.share-video-element::-webkit-media-controls {
+  display: none;
+}
+
+.share-video-element::-webkit-media-controls-fullscreen-button {
+  display: none;
+}
+</style>

@@ -91,6 +91,7 @@ export default defineNuxtConfig({
         'marked-alert',
         'marked-gfm-heading-id',
         'hls.js',
+        'assjs',
         '@vue/devtools-core',
         '@vue/devtools-kit',
       ],

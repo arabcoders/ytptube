@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.features.streaming.library.subtitle import Subtitle, ms_to_timestamp
+from app.features.streaming.library.subtitle import Subtitle, get_subtitle_tracks, ms_to_timestamp
 
 
 class TestMsToTimestamp:
@@ -24,12 +24,12 @@ class TestMsToTimestamp:
 
 @pytest.mark.asyncio
 async def test_make_unsupported_extension(tmp_path: Path) -> None:
-    srt = tmp_path / "sub.txt"
-    srt.write_text("not a subtitle")
+    file = tmp_path / "sub.txt"
+    file.write_text("not a subtitle")
 
-    sub = Subtitle()
+    subtitle = Subtitle()
     with pytest.raises(Exception, match="subtitle type is not supported"):
-        await sub.make(srt)
+        await subtitle.make(file)
 
 
 @pytest.mark.asyncio
@@ -38,9 +38,49 @@ async def test_make_vtt_reads_file(tmp_path: Path) -> None:
     content = "WEBVTT\n\n00:00:00.00 --> 00:00:01.00\nHello"
     vtt.write_text(content)
 
-    sub = Subtitle()
-    out = await sub.make(vtt)
+    subtitle = Subtitle()
+    out = await subtitle.make(vtt)
     assert out == content
+
+
+@pytest.mark.asyncio
+async def test_make_delivery_returns_raw_ass_with_ass_content_type(tmp_path: Path) -> None:
+    ass = tmp_path / "file.ass"
+    content = "[Script Info]\nTitle: Demo\n"
+    ass.write_text(content, encoding="utf-8")
+
+    subtitle = Subtitle()
+    out, media_type = await subtitle.make_delivery(ass)
+    assert out == content
+    assert media_type == "text/x-ssa; charset=UTF-8"
+
+
+def test_get_subtitle_tracks_prefers_native_then_ass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    media = tmp_path / "video.mkv"
+    media.write_text("x", encoding="utf-8")
+    ass_file = tmp_path / "video.ass"
+    ass_file.write_text("ass", encoding="utf-8")
+    vtt_file = tmp_path / "video.vtt"
+    vtt_file.write_text("WEBVTT\n\n", encoding="utf-8")
+    srt_file = tmp_path / "video.en.srt"
+    srt_file.write_text("1\n00:00:00,000 --> 00:00:01,000\nHello\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        "app.features.streaming.library.subtitle.get_file_sidecar",
+        lambda _file: {
+            "subtitle": [
+                {"file": ass_file, "lang": "en", "name": "ASS"},
+                {"file": srt_file, "lang": "en", "name": "SRT"},
+                {"file": vtt_file, "lang": "en", "name": "VTT"},
+            ]
+        },
+    )
+
+    tracks = get_subtitle_tracks(media)
+
+    assert [track.source_format for track in tracks] == ["vtt", "srt", "ass"]
+    assert [track.delivery_format for track in tracks] == ["vtt", "vtt", "ass"]
+    assert [track.renderer for track in tracks] == ["native", "native", "assjs"]
 
 
 class _DummySubs:
@@ -61,9 +101,9 @@ async def test_make_no_events_raises(tmp_path: Path) -> None:
 
     with patch("app.features.streaming.library.subtitle.pysubs2.load") as mock_load:
         mock_load.return_value = _DummySubs(events=[])
-        sub = Subtitle()
+        subtitle = Subtitle()
         with pytest.raises(Exception, match="No subtitle events were found"):
-            await sub.make(srt)
+            await subtitle.make(srt)
 
 
 @pytest.mark.asyncio
@@ -75,8 +115,8 @@ async def test_make_single_event_returns_vtt(tmp_path: Path) -> None:
     d = _DummySubs(events=[single])
 
     with patch("app.features.streaming.library.subtitle.pysubs2.load", return_value=d):
-        sub = Subtitle()
-        out = await sub.make(srt)
+        subtitle = Subtitle()
+        out = await subtitle.make(srt)
         assert out == "OUT"
         assert d.snapshot == [1000], "Snapshot should contain the single event"
 
@@ -91,8 +131,8 @@ async def test_make_two_events_pop_first_when_ends_equal(tmp_path: Path) -> None
     d = _DummySubs(events=[e1, e2])
 
     with patch("app.features.streaming.library.subtitle.pysubs2.load", return_value=d):
-        sub = Subtitle()
-        out = await sub.make(srt)
+        subtitle = Subtitle()
+        out = await subtitle.make(srt)
         assert out == "OUT"
         assert d.snapshot == [5000], "Since ends are equal, first should be popped => only last remains"
 
@@ -107,7 +147,7 @@ async def test_make_two_events_no_pop_when_different(tmp_path: Path) -> None:
     d = _DummySubs(events=[e1, e2])
 
     with patch("app.features.streaming.library.subtitle.pysubs2.load", return_value=d):
-        sub = Subtitle()
-        out = await sub.make(srt)
+        subtitle = Subtitle()
+        out = await subtitle.make(srt)
         assert out == "OUT"
         assert d.snapshot == [5000, 6000], "Both remain since ends differ"
