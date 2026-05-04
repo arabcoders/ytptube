@@ -77,7 +77,7 @@ const buildQuery = (
   return params.toString();
 };
 
-const loadHistory = async (page: number = 1, options: HistoryLoadOptions = {}): Promise<void> => {
+const load = async (page: number = 1, options: HistoryLoadOptions = {}): Promise<void> => {
   const { order = 'DESC', status, perPage = pageSize.value } = options;
 
   isLoading.value = true;
@@ -104,12 +104,12 @@ const loadHistory = async (page: number = 1, options: HistoryLoadOptions = {}): 
   }
 };
 
-const reloadHistory = async (options: HistoryLoadOptions = {}): Promise<void> => {
+const reload = async (options: HistoryLoadOptions = {}): Promise<void> => {
   const targetPage = isLoaded.value ? pagination.value.page : 1;
-  await loadHistory(targetPage, options);
+  await load(targetPage, options);
 };
 
-const deleteHistoryItems = async (
+const remove = async (
   options: {
     ids?: string[];
     status?: string;
@@ -155,7 +155,39 @@ const deleteHistoryItems = async (
   }
 };
 
-const resetHistory = (): void => {
+const rename = async (item: StoreItem, newName: string): Promise<boolean> => {
+  const trimmedName = newName.trim();
+  if (!trimmedName || trimmedName === item.filename?.split('/').pop()) {
+    return false;
+  }
+
+  try {
+    const response = await request(`/api/history/${item._id}/rename`, {
+      method: 'POST',
+      body: JSON.stringify({ new_name: trimmedName }),
+    });
+
+    await ensureSuccess(response);
+
+    const updated = (await response.json()) as StoreItem;
+    const index = items.value.findIndex((entry) => entry._id === updated._id);
+
+    if (index !== -1) {
+      items.value = [...items.value.slice(0, index), updated, ...items.value.slice(index + 1)];
+    }
+
+    lastError.value = null;
+    return true;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) {
+      throw error;
+    }
+    return false;
+  }
+};
+
+const reset = (): void => {
   items.value = [];
   pagination.value = {
     page: 1,
@@ -169,7 +201,7 @@ const resetHistory = (): void => {
   lastError.value = null;
 };
 
-const addHistoryItem = (item: StoreItem): void => {
+const upsert = (item: StoreItem): void => {
   const existingIndex = items.value.findIndex((existing) => existing._id === item._id);
 
   if (existingIndex !== -1) {
@@ -195,7 +227,7 @@ const addHistoryItem = (item: StoreItem): void => {
   pagination.value.has_next = pagination.value.page < pagination.value.total_pages;
 };
 
-const historyMoveHandler = (
+const moveHandler = (
   shouldHandle: () => boolean = () => isLoaded.value,
 ): ((payload: WSEP['item_moved']) => void) => {
   return (payload: WSEP['item_moved']): void => {
@@ -203,7 +235,7 @@ const historyMoveHandler = (
       return;
     }
 
-    addHistoryItem(payload.data.item);
+    upsert(payload.data.item);
   };
 };
 
@@ -215,11 +247,12 @@ export const useHistoryState = () => {
     isLoaded,
     lastError,
     pageSize,
-    loadHistory,
-    reloadHistory,
-    deleteHistoryItems,
-    resetHistory,
-    upsertHistoryItem: addHistoryItem,
-    historyMoveHandler,
+    load,
+    reload,
+    remove,
+    rename,
+    reset,
+    upsert,
+    moveHandler,
   };
 };

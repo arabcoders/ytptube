@@ -24,6 +24,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/history](#delete-apihistory)
     - [POST /api/history/{id}](#post-apihistoryid)
     - [GET /api/history/{id}](#get-apihistoryid)
+    - [POST /api/history/{id}/rename](#post-apihistoryidrename)
     - [GET /api/history](#get-apihistory)
     - [GET /api/history/live](#get-apihistorylive)
     - [POST /api/history/start](#post-apihistorystart)
@@ -56,7 +57,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/player/segments/{segment}/{file:.\*}.ts](#get-apiplayersegmentssegmentfilets)
     - [GET /api/player/subtitle/{file:.\*}.vtt](#get-apiplayersubtitlefilevtt)
     - [GET /api/player/subtitles/manifest/{file:.\*}](#get-apiplayersubtitlesmanifestfile)
-    - [GET /api/player/subtitles/{source_format}/{file:.\*}](#get-apiplayersubtitlessource_formatfile)
+    - [GET /api/player/subtitles/{source\_format}/{file:.\*}](#get-apiplayersubtitlessource_formatfile)
     - [GET /api/thumbnail](#get-apithumbnail)
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
@@ -529,6 +530,41 @@ or an error:
 - `200 OK` If the item exists and is returned.
 - `404 Not Found` if the item doesn’t exist.
 - `400 Bad Request` if id is missing.
+
+---
+
+### POST /api/history/{id}/rename
+**Purpose**: Rename a downloaded history file and its sidecars.
+
+**Path Parameter**:
+- `id` = Unique history item ID.
+
+**Body**:
+```json
+{
+  "new_name": "renamed_video.mp4"
+}
+```
+
+**Response**:
+```json
+{
+  "_id": "<uuid>",
+  "title": "Video Title",
+  "url": "https://youtube.com/watch?v=...",
+  ....
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if `id` or `new_name` is missing, or the item has no downloaded file.
+- `404 Not Found` if the item does not exist.
+- `409 Conflict` if the rename destination already exists.
+- `500 Internal Server Error` if the filesystem rename fails unexpectedly.
+
+**Notes**:
+- Uses the same file rename behavior as the file browser actions.
+- Renames matching sidecar files together with the main media file.
 
 ---
 

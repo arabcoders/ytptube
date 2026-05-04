@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
@@ -10,10 +11,12 @@ from app.features.presets.service import Presets
 from app.library.config import Config
 from app.library.DataStore import StoreType
 from app.library.downloads import Download, DownloadQueue
+from app.library.downloads.utils import safe_relative_path
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.router import route
+from app.library.Utils import calc_download_path, get_file_sidecar, rename_file
 
 if TYPE_CHECKING:
     from library.downloads import Download
@@ -287,9 +290,9 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     }
 
     if "finished" == item.info.status and (filename := item.info.get_file()):
-        from app.features.streaming.library.ffprobe import ffprobe
-
         try:
+            from app.features.streaming.library.ffprobe import ffprobe
+
             info["ffprobe"] = await ffprobe(filename)
         except Exception:
             pass
@@ -300,6 +303,70 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
             pass
 
     return web.json_response(data=info, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", r"api/history/{id}/rename", "history.item.rename")
+async def item_rename(
+    request: Request,
+    queue: DownloadQueue,
+    encoder: Encoder,
+    notify: EventBus,
+    config: Config,
+) -> Response:
+    if not (id := request.match_info.get("id")):
+        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+
+    item: Download | None = await queue.done.get_by_id(id)
+    if not item:
+        return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+
+    try:
+        post: dict = await request.json()
+        if not post:
+            return web.json_response(data={"error": "no data provided."}, status=web.HTTPBadRequest.status_code)
+    except Exception:
+        return web.json_response(data={"error": "invalid JSON body."}, status=web.HTTPBadRequest.status_code)
+
+    new_name: str = str(post.get("new_name") or "").strip()
+    if not new_name:
+        return web.json_response(data={"error": "new_name is required."}, status=web.HTTPBadRequest.status_code)
+
+    filepath: Path | None = item.info.get_file(download_path=Path(config.download_path))
+    if not filepath:
+        return web.json_response(data={"error": "item has no downloaded file."}, status=web.HTTPBadRequest.status_code)
+
+    try:
+        renamed, sidecar_renamed = rename_file(filepath, new_name)
+    except ValueError as e:
+        return web.json_response(data={"error": str(e)}, status=web.HTTPConflict.status_code)
+    except OSError as e:
+        LOG.exception(e)
+        return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+
+    item_dir: Path = (
+        Path(item.info.download_dir)
+        if item.info.download_dir
+        else Path(calc_download_path(base_path=config.download_path, folder=item.info.folder, create_path=False))
+    )
+    item.info.filename = safe_relative_path(renamed, item_dir, Path(config.download_path))
+
+    try:
+        item.info.sidecar = get_file_sidecar(renamed)
+    except Exception:
+        item.info.sidecar = {}
+
+    await queue.done.put(item, no_notify=True)
+    notify.emit(Events.ITEM_UPDATED, data=item.info)
+
+    sidecar_count: int = len(sidecar_renamed)
+    sidecar_msg: str = f" and {sidecar_count} sidecar file/s" if sidecar_count > 0 else ""
+    LOG.info(f"Renamed file '{filepath}' to '{renamed}'{sidecar_msg}")
+
+    return web.json_response(
+        data=item.info,
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
 
 
 @route("POST", "api/history/{id}", "item_update")
