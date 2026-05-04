@@ -167,6 +167,28 @@ YTP_YTDLP_VERSION=2025.07.21 or master or nightly
 
 Then restart the container to apply the changes.
 
+# Custom output template placeholders
+
+YTPTube supports custom `ytp_*` placeholders in `yt-dlp` output template via the following syntax `%(ytp_*:<args>)s`.
+
+## Currently available extra placeholders are:
+
+- `ytp_random`: random mixed letters and digits,
+  - `N` A number is required to specify the length of the random string, for example `%(ytp_random:8)s` will generate a random string of 8 characters. 
+  - if the args followed by `:s` it will generate random letters only, if followed by `:d` it will generate random digits only.
+
+## Examples of the custom placeholders in action:
+
+- Template: `%(title)s [%(ytp_random:8)s].%(ext)s`
+  - Example result: `My Video [A7k2Pq9Z].mp4`
+- Template: `%(uploader)s/%(ytp_random:6:d)s - %(title)s.%(ext)s`
+  - Example result: `MyChannel/483920 - My Video.mp4`
+- Template: `%(playlist)s/%(ytp_random:10:s)s/%(title)s.%(ext)s`
+  - Example result: `Favorites/QwErTyUiOp/My Video.mp4`
+
+> [!NOTE]
+> `%(ytp_` placeholders are a YTPTube extension and not avaliable via console or directly via yt-dlp.
+
 # How can I monitor sites without RSS feeds?
 
 YTPTube includes a **generic task handler** that turns JSON definitions into site-specific scrapers. You can use it

@@ -1,5 +1,8 @@
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import patch_windows_popen_wait
 from app.features.ytdlp.utils import _DATA
 from app.features.ytdlp.ytdlp import YTDLP, _ArchiveProxy, ytdlp_options
@@ -327,3 +330,116 @@ class TestYTDLP:
 
         # Should not add anything
         ytdlp.archive.add.assert_not_called()
+
+    def test_prepare_outtmpl_resolves_custom_callable(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        result = ytdlp.evaluate_outtmpl("%(ytp_random:8)s", {"title": "x"})
+
+        assert len(result) == 8
+        assert result.isalnum()
+
+    def test_prepare_outtmpl_reuses_same_callable_value_per_download(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        result = ytdlp.evaluate_outtmpl("%(ytp_random:8)s/%(ytp_random:8)s", {"title": "x"})
+        first, second = result.split("/")
+
+        assert first == second
+
+    def test_prepare_outtmpl_does_not_reuse_callable_value_across_calls(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        first = ytdlp.evaluate_outtmpl("%(ytp_random:8)s", {"title": "x"})
+        second = ytdlp.evaluate_outtmpl("%(ytp_random:8)s", {"title": "y"})
+
+        assert first != second
+
+    def test_prepare_filename_reuses_custom_value_for_sidecars_of_same_entry(self) -> None:
+        ytdlp = YTDLP(
+            params={
+                "outtmpl": {
+                    "default": "%(ytp_random:6)s.%(ext)s",
+                    "thumbnail": "%(ytp_random:6)s.%(ext)s",
+                    "subtitle": "%(ytp_random:6)s.%(ext)s",
+                    "infojson": "%(ytp_random:6)s.%(ext)s",
+                }
+            }
+        )
+
+        info = {"id": "abc123", "title": "Example", "ext": "mp4"}
+
+        default_name = ytdlp.prepare_filename(info)
+        thumbnail_name = ytdlp.prepare_filename(info, "thumbnail")
+        subtitle_name = ytdlp.prepare_filename(info, "subtitle")
+        infojson_name = ytdlp.prepare_filename(info, "infojson")
+
+        default_base = default_name.rsplit(".", 1)[0]
+        thumbnail_base = thumbnail_name.rsplit(".", 1)[0]
+        subtitle_base = subtitle_name.rsplit(".", 1)[0]
+        infojson_base = infojson_name.removesuffix(".info.json")
+
+        assert default_base == thumbnail_base
+        assert default_base == subtitle_base
+        assert default_base == infojson_base
+
+    def test_prepare_filename_resets_custom_value_for_different_info_dict_objects(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(ytp_random:8)s.%(ext)s"}})
+
+        first = ytdlp.prepare_filename({"id": "one", "title": "One", "ext": "mp4"})
+        second = ytdlp.prepare_filename({"id": "two", "title": "Two", "ext": "mp4"})
+
+        assert first != second
+
+    @pytest.mark.parametrize(
+        ("template", "expected"),
+        [
+            ("%(ytp_random:8|fallback)s", 8),
+            ("%(ytp_random:8&{} - |)s", 11),
+            ("%(ytp_random:8)S", 8),
+        ],
+    )
+    def test_prepare_outtmpl_preserves_ytdlp_suffix_formatting(self, template: str, expected: int) -> None:
+        ytdlp = YTDLP(
+            params={
+                "outtmpl": {"default": "%(title)s"},
+                "restrictfilenames": True,
+            },
+        )
+
+        result = ytdlp.evaluate_outtmpl(template, {"title": "x"})
+
+        assert len(result) == expected
+
+    def test_prepare_outtmpl_supports_digit_and_string_modes(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        digits = ytdlp.evaluate_outtmpl("%(ytp_random:6:d)s", {"title": "x"})
+        letters = ytdlp.evaluate_outtmpl("%(ytp_random:6:s)s", {"title": "x"})
+
+        assert digits.isdigit()
+        assert letters.isalpha()
+
+    def test_prepare_outtmpl_rejects_unknown_callable(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        with pytest.raises(ValueError, match="Unsupported YTPTube output template callable"):
+            ytdlp.prepare_outtmpl("%(ytp_unknown:8)s", {"title": "x"})
+
+    def test_prepare_outtmpl_rejects_invalid_random_length(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        with pytest.raises(ValueError, match="ytp_random length must be an integer"):
+            ytdlp.prepare_outtmpl("%(ytp_random:nope)s", {"title": "x"})
+
+
+class TestOuttmpl:
+    def test_rewrite_outtmpl_uses_shared_cache_per_call_group(self) -> None:
+        cache: dict[str, object] = {}
+        template = "%(ytp_random:8)s/%(ytp_random:8)s.%(ext)s"
+
+        rewritten, info = rewrite_outtmpl(template, {"ext": "mp4"}, cache=cache)
+
+        assert rewritten == "%(__ytptube_outtmpl_0)s/%(__ytptube_outtmpl_0)s.%(ext)s"
+        assert len(cache) == 1
+        assert info["__ytptube_outtmpl_0"] == next(iter(cache.values()))

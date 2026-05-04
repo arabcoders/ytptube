@@ -310,8 +310,9 @@ class TestDownloadFlow:
         )
 
         class FakeYTDLP:
-            def __init__(self, params):
+            def __init__(self, params, enable_custom_outtmpl=False):
                 self.params = params
+                self.enable_custom_outtmpl = enable_custom_outtmpl
                 self._download_retcode = 0
                 self._interrupted = False
 
