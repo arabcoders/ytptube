@@ -429,6 +429,7 @@ let hls: Hls | null = null;
 
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
 const mediaFile = computed(() => props.item.filename || '');
+const subtitleManifestUrl = computed(() => currentPlaybackUrl('api/player/subtitles/manifest'));
 const canPlay = computed(() => Boolean(mediaFile.value && !loadingError.value));
 const shouldRender = computed(() => active.value && !loading.value);
 const isPlaying = computed(() => !paused.value);
@@ -456,7 +457,7 @@ const {
   usesAssSubtitleTrack,
   hasSubtitles,
 } = usePlayerSubtitles({
-  mediaFile,
+  manifestUrl: subtitleManifestUrl,
   isVideo: computed(() => !isAudio.value),
   canPlay,
   shouldRender,

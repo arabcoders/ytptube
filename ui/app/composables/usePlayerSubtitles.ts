@@ -8,7 +8,7 @@ import {
   toValue,
 } from 'vue';
 import type { SubtitleManifestResponse, SubtitleTrack } from '~/types/subtitles';
-import { encodePath, parse_api_error, request, uri } from '~/utils';
+import { parse_api_error, request } from '~/utils';
 
 type AssRendererInstance = {
   destroy(): unknown;
@@ -22,7 +22,7 @@ type AssRendererConstructor = new (
 ) => AssRendererInstance;
 
 type UsePlayerSubtitlesOptions = {
-  mediaFile: MaybeRefOrGetter<string>;
+  manifestUrl: MaybeRefOrGetter<string>;
   isVideo: MaybeRefOrGetter<boolean>;
   canPlay: MaybeRefOrGetter<boolean>;
   shouldRender: MaybeRefOrGetter<boolean>;
@@ -74,7 +74,7 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
   }
 
   async function loadTracks() {
-    const mediaFile = toValue(options.mediaFile);
+    const manifestUrl = toValue(options.manifestUrl);
     const isVideo = toValue(options.isVideo);
     const canPlay = toValue(options.canPlay);
     const requestId = ++subtitleRequestId;
@@ -84,7 +84,7 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
     tracks.value = [];
     subtitleLoadError.value = '';
 
-    if (!mediaFile || !isVideo || !canPlay) {
+    if (!manifestUrl || !isVideo || !canPlay) {
       subtitleLoading.value = false;
       return;
     }
@@ -92,7 +92,7 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
     subtitleLoading.value = true;
 
     try {
-      const res = await request(uri(`/api/player/subtitles/manifest/${encodePath(mediaFile)}`));
+      const res = await request(manifestUrl);
       const payload = (await res.json()) as SubtitleManifestResponse | { error?: string };
       if (!res.ok) {
         throw new Error(await parse_api_error(payload));
@@ -176,7 +176,7 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
   }
 
   watch(
-    () => [toValue(options.mediaFile), toValue(options.isVideo), toValue(options.canPlay)],
+    () => [toValue(options.manifestUrl), toValue(options.isVideo), toValue(options.canPlay)],
     () => {
       void loadTracks();
     },

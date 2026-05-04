@@ -114,7 +114,7 @@ describe('usePlayerSubtitles', () => {
     );
 
     const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
-    const mediaFile = ref('video file.mkv');
+    const manifestUrl = ref('/api/player/subtitles/manifest/video%20file.mkv');
     const isVideo = ref(true);
     const canPlay = ref(true);
     const shouldRender = ref(false);
@@ -123,7 +123,7 @@ describe('usePlayerSubtitles', () => {
 
     const { hasSubtitles, nativeSubtitleTrack, selectedSubtitleTrack, usesAssSubtitleTrack } =
       usePlayerSubtitles({
-        mediaFile,
+        manifestUrl,
         isVideo,
         canPlay,
         shouldRender,
@@ -138,6 +138,36 @@ describe('usePlayerSubtitles', () => {
     expect(selectedSubtitleTrack.value?.source_format).toBe('vtt');
     expect(nativeSubtitleTrack.value?.url).toBe('/api/player/subtitles/vtt/video.vtt');
     expect(usesAssSubtitleTrack.value).toBe(false);
+  });
+
+  it('uses the provided full manifest path including folders', async () => {
+    fetchMock.mockResolvedValueOnce(
+      createMockResponse({
+        ok: true,
+        status: 200,
+        jsonData: { subtitles: [] },
+      }),
+    );
+
+    const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
+
+    usePlayerSubtitles({
+      manifestUrl: ref(
+        '/api/player/subtitles/manifest/youtube/Channel%20Name/Season%202026/video%20file.mkv',
+      ),
+      isVideo: ref(true),
+      canPlay: ref(true),
+      shouldRender: ref(false),
+      video: ref<HTMLVideoElement | null>(document.createElement('video')),
+      overlay: ref<HTMLElement | null>(document.createElement('div')),
+    });
+
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/player/subtitles/manifest/youtube/Channel%20Name/Season%202026/video%20file.mkv',
+      expect.anything(),
+    );
   });
 
   it('creates and destroys an ASS renderer for ASS subtitles when playback becomes active', async () => {
@@ -164,7 +194,7 @@ describe('usePlayerSubtitles', () => {
     const loadRenderer = mock(async () => assConstructorMock as any);
 
     const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
-    const mediaFile = ref('video.mkv');
+    const manifestUrl = ref('/api/player/subtitles/manifest/video.mkv');
     const isVideo = ref(true);
     const canPlay = ref(true);
     const shouldRender = ref(false);
@@ -172,7 +202,7 @@ describe('usePlayerSubtitles', () => {
     const overlay = ref<HTMLElement | null>(document.createElement('div'));
 
     const { usesAssSubtitleTrack } = usePlayerSubtitles({
-      mediaFile,
+      manifestUrl,
       isVideo,
       canPlay,
       shouldRender,
@@ -195,7 +225,7 @@ describe('usePlayerSubtitles', () => {
     expect(assConstructorMock).toHaveBeenCalledTimes(1);
     expect(assShowMock).toHaveBeenCalledTimes(1);
 
-    mediaFile.value = 'second.mkv';
+    manifestUrl.value = '/api/player/subtitles/manifest/second.mkv';
     fetchMock.mockResolvedValueOnce(
       createMockResponse({
         ok: true,
@@ -235,7 +265,7 @@ describe('usePlayerSubtitles', () => {
     const assLayoutVersion = ref(0);
 
     usePlayerSubtitles({
-      mediaFile: ref('video.mkv'),
+      manifestUrl: ref('/api/player/subtitles/manifest/video.mkv'),
       isVideo: ref(true),
       canPlay: ref(true),
       shouldRender: ref(true),
