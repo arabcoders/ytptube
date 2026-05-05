@@ -151,6 +151,22 @@ def _serialize(model: Any) -> dict:
     return _model(model).model_dump()
 
 
+async def _require_timer_or_handler(task: Task, handler: TaskHandle) -> None:
+    if task.timer:
+        return
+
+    if task.handler_enabled is False:
+        msg = "Task requires a timer when the handler is disabled."
+        raise ValueError(msg)
+
+    result = await handler.inspect(url=task.url, preset=task.preset, static_only=True)
+    if isinstance(result, TaskResult) and result.metadata.get("matched") is True:
+        return
+
+    msg = "Task requires a timer when no supported handler matches the URL."
+    raise ValueError(msg)
+
+
 @route("GET", "api/tasks/", "tasks_list")
 async def tasks_list(request: Request, repo: TasksRepository, encoder: Encoder) -> Response:
     page, per_page = normalize_pagination(request)
@@ -166,7 +182,13 @@ async def tasks_list(request: Request, repo: TasksRepository, encoder: Encoder) 
 
 
 @route("POST", "api/tasks/", "tasks_add")
-async def tasks_add(request: Request, repo: TasksRepository, encoder: Encoder, notify: EventBus) -> Response:
+async def tasks_add(
+    request: Request,
+    repo: TasksRepository,
+    encoder: Encoder,
+    notify: EventBus,
+    handler: TaskHandle,
+) -> Response:
     data = await request.json()
 
     if isinstance(data, dict):
@@ -205,6 +227,7 @@ async def tasks_add(request: Request, repo: TasksRepository, encoder: Encoder, n
             status=web.HTTPConflict.status_code,
         )
 
+    pending_tasks: list[dict[str, Any]] = []
     created_tasks: list[dict[str, Any]] = []
     base_settings = first_task.model_dump(exclude={"id", "name", "url", "created_at", "updated_at"})
 
@@ -243,11 +266,23 @@ async def tasks_add(request: Request, repo: TasksRepository, encoder: Encoder, n
 
         try:
             validated = Task.model_validate(task_dict)
-            task_data = validated.model_dump()
         except ValidationError as exc:
-            LOG.warning(f"Skipping task {idx}: validation failed - {exc}")
-            continue
+            return web.json_response(
+                data={"error": "Failed to validate task.", "detail": format_validation_errors(exc)},
+                status=web.HTTPBadRequest.status_code,
+            )
 
+        try:
+            await _require_timer_or_handler(validated, handler)
+        except ValueError as exc:
+            return web.json_response(
+                data={"error": str(exc)},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        pending_tasks.append(validated.model_dump())
+
+    for idx, task_data in enumerate(pending_tasks):
         try:
             created = await repo.create(task_data)
             saved = _serialize(created)
@@ -304,7 +339,13 @@ async def tasks_delete(request: Request, repo: TasksRepository, encoder: Encoder
 
 
 @route("PATCH", r"api/tasks/{id:\d+}", "tasks_patch")
-async def tasks_patch(request: Request, repo: TasksRepository, encoder: Encoder, notify: EventBus) -> Response:
+async def tasks_patch(
+    request: Request,
+    repo: TasksRepository,
+    encoder: Encoder,
+    notify: EventBus,
+    handler: TaskHandle,
+) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
 
@@ -334,6 +375,16 @@ async def tasks_patch(request: Request, repo: TasksRepository, encoder: Encoder,
             status=web.HTTPConflict.status_code,
         )
 
+    merged = _model(model).model_copy(update=validated.model_dump(exclude_unset=True))
+
+    try:
+        await _require_timer_or_handler(merged, handler)
+    except ValueError as exc:
+        return web.json_response(
+            data={"error": str(exc)},
+            status=web.HTTPBadRequest.status_code,
+        )
+
     updated = _serialize(await repo.update(model.id, validated.model_dump(exclude_unset=True)))
     notify.emit(Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.TASKS, action=CEAction.UPDATE, data=updated))
     return web.json_response(
@@ -344,7 +395,13 @@ async def tasks_patch(request: Request, repo: TasksRepository, encoder: Encoder,
 
 
 @route("PUT", r"api/tasks/{id:\d+}", "tasks_update")
-async def tasks_update(request: Request, repo: TasksRepository, encoder: Encoder, notify: EventBus) -> Response:
+async def tasks_update(
+    request: Request,
+    repo: TasksRepository,
+    encoder: Encoder,
+    notify: EventBus,
+    handler: TaskHandle,
+) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
 
@@ -372,6 +429,14 @@ async def tasks_update(request: Request, repo: TasksRepository, encoder: Encoder
         return web.json_response(
             data={"error": f"Task with name '{validated.name}' already exists."},
             status=web.HTTPConflict.status_code,
+        )
+
+    try:
+        await _require_timer_or_handler(validated, handler)
+    except ValueError as exc:
+        return web.json_response(
+            data={"error": str(exc)},
+            status=web.HTTPBadRequest.status_code,
         )
 
     updated = _serialize(await repo.update(model.id, validated.model_dump(exclude_unset=True)))

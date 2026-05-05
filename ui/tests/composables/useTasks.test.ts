@@ -258,6 +258,29 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
+    it('store_timer_required_error', async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 400,
+          jsonData: { error: 'Task requires a timer when no supported handler matches the URL.' },
+        }),
+      )
+
+      const tasks = useTasks()
+      const newTask = { ...mockTask }
+      delete (newTask as any).id
+
+      const result = await tasks.createTask(newTask)
+
+      expect(result).toBeNull()
+      expect(tasks.lastError.value).toBe(
+        'Task requires a timer when no supported handler matches the URL.',
+      )
+      requestSpy.mockRestore()
+    })
+
   })
 
   describe('updateTask', () => {
@@ -277,6 +300,26 @@ describe('useTasks', () => {
       const result = await tasks.updateTask(1, updated)
 
       expect(result?.name).toBe('Updated Name')
+      requestSpy.mockRestore()
+    })
+
+    it('store_update_timer_error', async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 400,
+          jsonData: { error: 'Task requires a timer when the handler is disabled.' },
+        }),
+      )
+
+      const tasks = useTasks()
+      const updated = { ...mockTask, timer: '', handler_enabled: false }
+
+      const result = await tasks.updateTask(1, updated)
+
+      expect(result).toBeNull()
+      expect(tasks.lastError.value).toBe('Task requires a timer when the handler is disabled.')
       requestSpy.mockRestore()
     })
 
@@ -315,6 +358,26 @@ describe('useTasks', () => {
       const result = await tasks.patchTask(1, { enabled: false })
 
       expect(result?.enabled).toBe(false)
+      requestSpy.mockRestore()
+    })
+
+    it('store_patch_timer_error', async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 400,
+          jsonData: { error: 'Task requires a timer when no supported handler matches the URL.' },
+        }),
+      )
+
+      const tasks = useTasks()
+      const result = await tasks.patchTask(1, { timer: '' })
+
+      expect(result).toBeNull()
+      expect(tasks.lastError.value).toBe(
+        'Task requires a timer when no supported handler matches the URL.',
+      )
       requestSpy.mockRestore()
     })
 
