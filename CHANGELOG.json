@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "7ac7039592dfef9742a744c09ca2d5ac48fcd615",
-    "date": "2026-05-04T19:23:19+00:00",
+    "full_sha": "f2d7e5942022fc8ff7314d9d8ad5283e1e0fd89c",
+    "date": "2026-05-05T07:10:33+00:00",
     "commits": [
+      {
+        "sha": "f2d7e594",
+        "full_sha": "f2d7e5942022fc8ff7314d9d8ad5283e1e0fd89c",
+        "message": "refactor: more eye candy for video player.",
+        "author": "arabcoders",
+        "date": "2026-05-05T07:10:33+00:00"
+      },
+      {
+        "sha": "b438947b",
+        "full_sha": "b438947b0dd71cf2efd52bfd2ba07e5e65b9740e",
+        "message": "fix: tasks should require timer when there are no handler support.",
+        "author": "arabcoders",
+        "date": "2026-05-05T07:10:11+00:00"
+      },
       {
         "sha": "7ac70395",
         "full_sha": "7ac7039592dfef9742a744c09ca2d5ac48fcd615",
