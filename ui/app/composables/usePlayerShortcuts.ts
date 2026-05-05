@@ -8,11 +8,23 @@ import {
   toValue,
 } from 'vue';
 import {
-  clampMediaTime,
-  clampMediaVolume,
+  changeSpeed,
+  changeVolume,
+  forward,
+  frameStep,
   hasModifierKey,
+  playPause,
+  rewind,
+  seekBackward,
+  seekEnd,
+  seekForward,
+  seekStart,
+  seekToPercent,
   shouldHandleKeyboardShortcut,
+  toggleCaptions,
 } from '~/utils/keyboard';
+
+import type { KeyboardShortcutContext } from '~/types/video';
 
 type UsePlayerShortcutsOptions = {
   enabled: MaybeRefOrGetter<boolean>;
@@ -30,36 +42,6 @@ type UsePlayerShortcutsOptions = {
 export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
   const showHelp = options.helpOpen || ref(false);
 
-  function togglePlayPause(media: HTMLMediaElement) {
-    if (media.paused) {
-      void media.play().catch(() => {});
-      return;
-    }
-
-    media.pause();
-  }
-
-  function stepFrame(media: HTMLMediaElement, direction: 'forward' | 'backward') {
-    if (!media.paused) {
-      media.pause();
-    }
-
-    const frameStep = direction === 'forward' ? 0.033 : -0.033;
-    clampMediaTime(media, media.currentTime + frameStep);
-  }
-
-  function toggleNativeSubtitles(video: HTMLVideoElement) {
-    const tracks = Array.from(video.textTracks);
-    const subtitleTrack = tracks.find(
-      (track) => track.kind === 'subtitles' || track.kind === 'captions',
-    );
-    if (!subtitleTrack) {
-      return;
-    }
-
-    subtitleTrack.mode = subtitleTrack.mode === 'showing' ? 'hidden' : 'showing';
-  }
-
   async function handleKeyDown(event: KeyboardEvent) {
     if (!toValue(options.enabled) || !shouldHandleKeyboardShortcut(event)) {
       return;
@@ -69,6 +51,8 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
     if (!media) {
       return;
     }
+
+    const ctx: KeyboardShortcutContext = { video: media };
 
     const key = event.key.toLowerCase();
     if (hasModifierKey(event) && !['f', '?', '/'].includes(key)) {
@@ -80,39 +64,37 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
       case 'k':
         event.preventDefault();
         event.stopPropagation();
-        togglePlayPause(media);
+        playPause(ctx);
         break;
       case 'j':
         event.preventDefault();
         event.stopPropagation();
-        clampMediaTime(media, media.currentTime - 10);
+        rewind(ctx, 10);
         break;
       case 'l':
         event.preventDefault();
         event.stopPropagation();
-        clampMediaTime(media, media.currentTime + 10);
+        forward(ctx, 10);
         break;
       case 'arrowleft':
         event.preventDefault();
         event.stopPropagation();
-        clampMediaTime(media, media.currentTime - 5);
+        seekBackward(ctx, 5);
         break;
       case 'arrowright':
         event.preventDefault();
         event.stopPropagation();
-        clampMediaTime(media, media.currentTime + 5);
+        seekForward(ctx, 5);
         break;
       case 'home':
         event.preventDefault();
         event.stopPropagation();
-        media.currentTime = 0;
+        seekStart(ctx);
         break;
       case 'end':
         event.preventDefault();
         event.stopPropagation();
-        if (Number.isFinite(media.duration)) {
-          media.currentTime = media.duration;
-        }
+        seekEnd(ctx);
         break;
       case '0':
       case '1':
@@ -126,9 +108,7 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
       case '9': {
         event.preventDefault();
         event.stopPropagation();
-        if (Number.isFinite(media.duration) && media.duration > 0) {
-          media.currentTime = (parseInt(key, 10) / 10) * media.duration;
-        }
+        seekToPercent(ctx, parseInt(key, 10) * 10);
         break;
       }
       case 'arrowup':
@@ -139,8 +119,7 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
           break;
         }
 
-        media.volume = clampMediaVolume(media.volume + 0.1);
-        media.muted = false;
+        changeVolume(ctx, 0.1);
         break;
       case 'arrowdown':
         event.preventDefault();
@@ -150,10 +129,7 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
           break;
         }
 
-        media.volume = clampMediaVolume(media.volume - 0.1);
-        if (media.volume <= 0) {
-          media.muted = true;
-        }
+        changeVolume(ctx, -0.1);
         break;
       case 'm':
         event.preventDefault();
@@ -168,22 +144,22 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
       case ';':
         event.preventDefault();
         event.stopPropagation();
-        media.playbackRate = Math.max(0.25, media.playbackRate - 0.25);
+        changeSpeed(ctx, -0.25);
         break;
       case "'":
         event.preventDefault();
         event.stopPropagation();
-        media.playbackRate = Math.min(2, media.playbackRate + 0.25);
+        changeSpeed(ctx, 0.25);
         break;
       case ',':
         event.preventDefault();
         event.stopPropagation();
-        stepFrame(media, 'backward');
+        frameStep(ctx, 'backward');
         break;
       case '.':
         event.preventDefault();
         event.stopPropagation();
-        stepFrame(media, 'forward');
+        frameStep(ctx, 'forward');
         break;
       case 'f':
         event.preventDefault();
@@ -199,7 +175,7 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
         event.stopPropagation();
         const video = toValue(options.video);
         if (video?.textTracks.length) {
-          toggleNativeSubtitles(video);
+          toggleCaptions(video);
         }
         options.toggleSubtitles();
         break;
