@@ -1,5 +1,11 @@
 <template>
   <div class="w-full min-w-0 max-w-full space-y-6">
+    <div
+      class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+      :class="lightsOut ? 'opacity-100' : 'opacity-0'"
+      aria-hidden="true"
+    />
+
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
       <div class="flex min-w-0 items-start gap-3">
         <span
@@ -502,6 +508,7 @@
           :item="model_item"
           class="w-full"
           @closeModel="closeModel"
+          @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
 
         <GetInfo
@@ -620,6 +627,7 @@ const initialPath = (() => {
 const isUpdating = ref(false);
 
 const model_item = ref<any | null>(null);
+const playingNow = ref(false);
 
 const previewTitle = computed(() => {
   if (!model_item.value) {
@@ -640,7 +648,10 @@ const previewTitle = computed(() => {
 
 const previewModalUi = computed(() => {
   if (model_item.value?.type === 'video') {
-    return { content: 'sm:max-w-5xl', body: 'p-0' };
+    return {
+      content: lightsOut.value ? 'sm:max-w-5xl shadow-2xl' : 'sm:max-w-5xl',
+      body: 'p-0',
+    };
   }
 
   if (model_item.value?.type === 'image') {
@@ -649,6 +660,7 @@ const previewModalUi = computed(() => {
 
   return { content: 'sm:max-w-4xl', body: 'p-0' };
 });
+const lightsOut = computed(() => Boolean(model_item.value?.type === 'video' && playingNow.value));
 
 const buildStateUrl = (dir: string, page?: number): string => {
   const params = new URLSearchParams();
@@ -730,6 +742,7 @@ watch(localSearch, async (value) => {
 });
 
 const closeModel = (): void => {
+  playingNow.value = false;
   model_item.value = null;
 };
 

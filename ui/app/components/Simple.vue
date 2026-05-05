@@ -3,6 +3,12 @@
     class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
   >
     <div
+      class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+      :class="lightsOut ? 'opacity-100' : 'opacity-0'"
+      aria-hidden="true"
+    />
+
+    <div
       class="transition-transform duration-300"
       :class="{
         'lg:-translate-x-72': settingsOpen,
@@ -615,7 +621,10 @@
       :open="Boolean(videoItem)"
       title="Video"
       :dismissible="true"
-      :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
+      :ui="{
+        content: lightsOut ? 'w-full sm:max-w-5xl shadow-2xl' : 'w-full sm:max-w-5xl',
+        body: 'p-0',
+      }"
       @update:open="(open) => !open && closePlayer()"
     >
       <template #body>
@@ -628,6 +637,7 @@
           class="w-full"
           @closeModel="closePlayer"
           @error="async (error: string) => await box.alert(error)"
+          @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
       </template>
     </UModal>
@@ -719,6 +729,7 @@ const {
 
 const embedUrl = ref('');
 const videoItem = ref<StoreItem | null>(null);
+const playingNow = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
 
 const formUrl = ref('');
@@ -768,6 +779,7 @@ const historyEntries = computed<StoreItem[]>(() => historyItems.value);
 const hasAnyItems = computed(() => queueItems.value.length > 0 || historyEntries.value.length > 0);
 const showSections = computed(() => hasAnyItems.value || historyIsLoading.value);
 const isFormDisabled = computed(() => addInProgress.value);
+const lightsOut = computed(() => Boolean(videoItem.value && playingNow.value));
 const formContainerClass = computed(() => {
   if (showSections.value) {
     return 'max-w-full';
@@ -1027,6 +1039,7 @@ const openPlayer = (item: StoreItem): void => {
 };
 
 const closePlayer = (): void => {
+  playingNow.value = false;
   embedUrl.value = '';
   videoItem.value = null;
 };

@@ -1,5 +1,11 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
+    <div
+      class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+      :class="lightsOut ? 'opacity-100' : 'opacity-0'"
+      aria-hidden="true"
+    />
+
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
       <div class="flex min-w-0 items-center gap-3">
         <span
@@ -714,8 +720,8 @@
       :open="Boolean(video_item)"
       :dismissible="true"
       :title="video_item?.title || 'Player'"
-      :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
-      @update:open="(open) => !open && (video_item = null)"
+      :ui="{ content: lightsOut ? 'sm:max-w-5xl shadow-2xl' : 'sm:max-w-5xl', body: 'p-0' }"
+      @update:open="(open) => !open && closeVideo()"
     >
       <template #body>
         <VideoPlayer
@@ -725,8 +731,9 @@
           :isControls="true"
           :item="video_item"
           class="w-full"
-          @closeModel="video_item = null"
+          @closeModel="closeVideo()"
           @error="async (error: string) => await box.alert(error)"
+          @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
       </template>
     </UModal>
@@ -826,12 +833,14 @@ const selectedElms = ref<string[]>([]);
 const masterSelectAll = ref(false);
 const embed_url = ref('');
 const video_item = ref<StoreItem | null>(null);
+const playingNow = ref(false);
 const expandedMessages = reactive<Record<string, Set<string>>>({});
 
 const contentStyle = computed<'grid' | 'list'>(() =>
   isMobile.value ? 'grid' : display_style.value,
 );
 const showThumbnails = computed(() => show_thumbnail.value && !hideThumbnail.value);
+const lightsOut = computed(() => Boolean(video_item.value && playingNow.value));
 const paginationInfo = computed(() => ({
   ...pagination.value,
   isLoading: isLoading.value,
@@ -876,6 +885,11 @@ const close_info = (): void => {
   info_view.value.preset = '';
   info_view.value.cli = '';
   info_view.value.useUrl = false;
+};
+
+const closeVideo = (): void => {
+  playingNow.value = false;
+  video_item.value = null;
 };
 
 const view_info = (

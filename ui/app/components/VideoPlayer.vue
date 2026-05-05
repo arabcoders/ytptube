@@ -10,7 +10,7 @@
       :class="
         isFullscreen
           ? 'h-screen w-screen max-h-screen max-w-none items-center justify-center rounded-none'
-          : 'max-h-[70vh] max-w-full items-center justify-center sm:max-h-[72vh]'
+          : 'min-h-72 max-h-[70vh] max-w-full items-center justify-center sm:min-h-88 sm:max-h-[72vh]'
       "
     >
       <button
@@ -24,6 +24,7 @@
           :src="uri(poster)"
           :alt="`${title || 'Untitled media'} preview`"
           class="block h-full w-full bg-black object-contain opacity-90 transition duration-200 group-hover:opacity-100"
+          @error="handlePosterError"
         />
         <div
           v-else
@@ -57,7 +58,7 @@
         :class="
           isFullscreen
             ? 'h-full w-full max-h-screen max-w-screen'
-            : 'h-auto w-full max-w-full max-h-[70vh] sm:max-h-[72vh]'
+            : 'h-full min-h-72 w-full max-w-full max-h-[70vh] sm:min-h-88 sm:max-h-[72vh]'
         "
         playsinline
         webkit-playsinline
@@ -70,8 +71,9 @@
         @timeupdate="handleVideoTimeUpdate"
         @play="handleVideoPlay"
         @pause="handleVideoPause"
+        @click="handleVideoClick"
         @dblclick="handleVideoDoubleClick"
-        @pointermove="showControls"
+        @pointermove="handlePointerMove"
         @resize="scheduleAssLayoutRefresh"
         @volumechange="handleMediaVolumeChange"
         @webkitbeginfullscreen="handleVideoWebkitBeginFullscreen"
@@ -148,34 +150,39 @@
 
       <div
         v-if="active"
-        class="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/95 via-black/70 to-transparent px-3 pb-3 pt-10 text-white transition-opacity duration-200"
+        class="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/60 via-black/22 to-transparent px-3 pb-3 pt-10 text-white transition-opacity duration-150"
         :class="controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0'"
         @click.self="toggleControls"
         @pointermove="showControls"
       >
-        <div class="rounded-sm border border-white/10 bg-black/45 p-3 shadow-2xl backdrop-blur-md">
-          <div class="space-y-3">
-            <input
-              :value="progress"
-              type="range"
-              min="0"
-              max="1000"
-              step="1"
-              class="h-1.5 w-full accent-white"
-              aria-label="Seek video"
-              @input="handleSeekInput"
-            />
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
+        <div
+          class="rounded-sm border border-white/8 bg-black/18 p-2.5 shadow-lg backdrop-blur-sm sm:p-3"
+        >
+          <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+            <div class="sm:min-w-0 sm:flex-1">
+              <input
+                :value="progress"
+                type="range"
+                min="0"
+                max="1000"
+                step="1"
+                class="h-1.5 w-full accent-white opacity-70 transition-opacity hover:opacity-100"
+                aria-label="Seek video"
+                @input="handleSeekInput"
+              />
+            </div>
+            <div class="flex items-center justify-between gap-2 sm:shrink-0 sm:justify-end">
+              <div class="flex min-w-0 items-center gap-2">
                 <UButton
                   color="neutral"
                   variant="soft"
                   size="sm"
+                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
                   :aria-label="paused ? 'Play video' : 'Pause video'"
                   @click="togglePlayback"
                 />
-                <div class="min-w-0 text-xs font-medium text-white/90">
+                <div class="min-w-0 whitespace-nowrap text-xs font-medium text-white/70">
                   {{ timeLabel }}
                 </div>
               </div>
@@ -185,6 +192,7 @@
                   color="neutral"
                   variant="soft"
                   size="sm"
+                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="subtitleEnabled ? 'i-lucide-captions' : 'i-lucide-captions-off'"
                   :aria-label="subtitleEnabled ? 'Disable subtitles' : 'Enable subtitles'"
                   @click="subtitleEnabled = !subtitleEnabled"
@@ -193,6 +201,7 @@
                   color="neutral"
                   variant="soft"
                   size="sm"
+                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="effectiveVolume <= 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
                   :aria-label="effectiveVolume <= 0 ? 'Unmute video' : 'Mute video'"
                   @click="toggleMute"
@@ -203,7 +212,7 @@
                   min="0"
                   max="100"
                   step="1"
-                  class="w-20 accent-white"
+                  class="w-16 accent-white opacity-70 transition-opacity hover:opacity-100 sm:w-20"
                   aria-label="Video volume"
                   @input="handleVolumeInput"
                 />
@@ -211,6 +220,7 @@
                   color="neutral"
                   variant="soft"
                   size="sm"
+                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
                   :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
                   @click="toggleFullscreen"
@@ -369,6 +379,7 @@ const props = defineProps<{ item: StoreItem }>();
 const emitter = defineEmits<{
   (e: 'closeModel'): void;
   (e: 'error', message: string): void;
+  (e: 'playback-state-change', isPlaying: boolean): void;
 }>();
 
 const {
@@ -420,6 +431,7 @@ const helpPortal = computed<boolean | HTMLElement>(() => {
 
 let assLayoutRefreshFrame = 0;
 let controlsHideTimeout = 0;
+let pendingVideoClickTimeout = 0;
 let gainContext: AudioContext | null = null;
 let gainSource: MediaElementAudioSourceNode | null = null;
 let gainNode: GainNode | null = null;
@@ -580,15 +592,30 @@ function handleVideoPlay() {
   void resumeGainController();
   syncVideoState();
   showControls();
+  emitter('playback-state-change', true);
 }
 
 function handleVideoPause() {
   syncVideoState();
   clearControlsHideTimeout();
   controlsVisible.value = true;
+  emitter('playback-state-change', false);
+}
+
+function handleVideoClick() {
+  if (isTouchDevice.value) {
+    return;
+  }
+
+  clearPendingVideoClickTimeout();
+  pendingVideoClickTimeout = window.setTimeout(() => {
+    pendingVideoClickTimeout = 0;
+    toggleControls();
+  }, 180);
 }
 
 function handleVideoDoubleClick() {
+  clearPendingVideoClickTimeout();
   void toggleFullscreen();
 }
 
@@ -602,6 +629,17 @@ function handleVideoWebkitEndFullscreen() {
 
 function handleMediaError(event: Event) {
   void src_error(event);
+}
+
+function handlePosterError(event: Event) {
+  const target = event.target as HTMLImageElement | null;
+  if (!target || poster.value === '/images/placeholder.png') {
+    return;
+  }
+
+  poster.value = '/images/placeholder.png';
+  hasPoster.value = false;
+  target.src = uri('/images/placeholder.png');
 }
 
 function handleMediaVolumeChange(event: Event) {
@@ -621,6 +659,20 @@ function handleMediaVolumeChange(event: Event) {
 
   syncVideoState();
   updateMediaSessionPosition(target);
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (!playerContainer.value || isTouchDevice.value) {
+    return;
+  }
+
+  const rect = playerContainer.value.getBoundingClientRect();
+  const y = event.clientY - rect.top;
+  const bottomZone = Math.min(Math.max(rect.height * 0.28, 96), 180);
+
+  if (y >= rect.height - bottomZone) {
+    showControls();
+  }
 }
 
 function handleSeekInput(event: Event) {
@@ -778,6 +830,7 @@ function syncVideoState() {
     currentTime.value = 0;
     duration.value = 0;
     paused.value = true;
+    emitter('playback-state-change', false);
     return;
   }
 
@@ -788,6 +841,7 @@ function syncVideoState() {
   duration.value = nextDuration;
   currentTime.value = nextTime;
   paused.value = video.paused;
+  emitter('playback-state-change', !video.paused);
 }
 
 function scheduleAssLayoutRefresh() {
@@ -836,6 +890,13 @@ function clearControlsHideTimeout() {
   if (controlsHideTimeout) {
     window.clearTimeout(controlsHideTimeout);
     controlsHideTimeout = 0;
+  }
+}
+
+function clearPendingVideoClickTimeout() {
+  if (pendingVideoClickTimeout) {
+    window.clearTimeout(pendingVideoClickTimeout);
+    pendingVideoClickTimeout = 0;
   }
 }
 
@@ -1076,6 +1137,9 @@ async function loadPlayerInfo() {
 
   playerInfo.value = response;
 
+  poster.value = '/images/placeholder.png';
+  hasPoster.value = false;
+
   if (props.item.extras?.thumbnail) {
     poster.value = `/api/thumbnail?url=${encodePath(props.item.extras.thumbnail)}`;
     hasPoster.value = true;
@@ -1293,6 +1357,7 @@ onBeforeUnmount(() => {
   }
 
   clearControlsHideTimeout();
+  clearPendingVideoClickTimeout();
 
   if (hls) {
     hls.destroy();
