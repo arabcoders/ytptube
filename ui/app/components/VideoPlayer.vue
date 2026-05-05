@@ -99,25 +99,11 @@
       </video>
 
       <button
-        v-if="active && showSeekZones"
-        type="button"
-        class="absolute inset-y-0 left-0 z-10 w-1/3"
-        aria-label="Back 10 seconds"
-        @click="seekBy(-10)"
-      />
-      <button
         v-if="active && isTouchDevice"
         type="button"
-        class="absolute inset-y-0 left-1/3 z-10 w-1/3"
+        class="absolute inset-0 z-10"
         :aria-label="controlsVisible ? 'Hide controls' : 'Show controls'"
         @click="toggleControls"
-      />
-      <button
-        v-if="active && showSeekZones"
-        type="button"
-        class="absolute inset-y-0 right-0 z-10 w-1/3"
-        aria-label="Forward 10 seconds"
-        @click="seekBy(10)"
       />
 
       <div
@@ -128,71 +114,66 @@
       />
 
       <div
-        v-if="active && showSeekZones && controlsVisible"
-        class="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-1/3 items-center justify-start px-5"
-      >
-        <div
-          class="rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"
-        >
-          -10s
-        </div>
-      </div>
-      <div
-        v-if="active && showSeekZones && controlsVisible"
-        class="pointer-events-none absolute inset-y-0 right-0 z-20 flex w-1/3 items-center justify-end px-5"
-      >
-        <div
-          class="rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"
-        >
-          +10s
-        </div>
-      </div>
-
-      <div
         v-if="active"
-        class="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/60 via-black/22 to-transparent px-3 pb-3 pt-10 text-white transition-opacity duration-150"
+        class="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/36 via-black/8 to-transparent px-3 pb-3 pt-10 text-white transition-opacity duration-150"
         :class="controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0'"
-        @click.self="toggleControls"
         @pointermove="showControls"
       >
-        <div
-          class="rounded-sm border border-white/8 bg-black/18 p-2.5 shadow-lg backdrop-blur-sm sm:p-3"
-        >
-          <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
-            <div class="sm:min-w-0 sm:flex-1">
+        <div class="rounded-sm border border-white/8 bg-black/8 p-2.5 shadow-lg backdrop-blur-sm">
+          <div
+            class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2.5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
+          >
+            <div class="order-2 min-w-0 sm:order-1 sm:flex sm:min-w-0 sm:items-center sm:gap-3">
+              <div class="flex min-w-0 items-center gap-2">
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+                  :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
+                  :aria-label="paused ? 'Play video' : 'Pause video'"
+                  @click="togglePlayback"
+                />
+                <div class="min-w-0 truncate whitespace-nowrap text-xs font-medium text-white/60">
+                  {{ timeLabel }}
+                </div>
+              </div>
+            </div>
+            <div class="order-1 col-span-2 sm:order-2 sm:col-span-1 sm:min-w-0 sm:flex-1">
               <input
                 :value="progress"
                 type="range"
                 min="0"
                 max="1000"
                 step="1"
-                class="h-1.5 w-full accent-white opacity-70 transition-opacity hover:opacity-100"
+                class="h-1.5 w-full accent-white opacity-55 transition-opacity hover:opacity-100"
                 aria-label="Seek video"
                 @input="handleSeekInput"
               />
             </div>
-            <div class="flex items-center justify-between gap-2 sm:shrink-0 sm:justify-end">
-              <div class="flex min-w-0 items-center gap-2">
-                <UButton
-                  color="neutral"
-                  variant="soft"
-                  size="sm"
-                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-                  :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
-                  :aria-label="paused ? 'Play video' : 'Pause video'"
-                  @click="togglePlayback"
-                />
-                <div class="min-w-0 whitespace-nowrap text-xs font-medium text-white/70">
-                  {{ timeLabel }}
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
+            <div class="order-3 flex items-center justify-end sm:order-3 sm:shrink-0">
+              <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <UTooltip
+                  v-if="!usingHls && hasVideo"
+                  side="top"
+                  text="Trouble playing? Switch to HLS stream."
+                >
+                  <UButton
+                    color="neutral"
+                    variant="soft"
+                    size="sm"
+                    class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+                    icon="i-lucide-refresh-cw"
+                    aria-label="Switch to HLS stream"
+                    @click="forceSwitchToHls"
+                  />
+                </UTooltip>
                 <UButton
                   v-if="hasSubtitles"
                   color="neutral"
                   variant="soft"
                   size="sm"
-                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+                  class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="subtitleEnabled ? 'i-lucide-captions' : 'i-lucide-captions-off'"
                   :aria-label="subtitleEnabled ? 'Disable subtitles' : 'Enable subtitles'"
                   @click="subtitleEnabled = !subtitleEnabled"
@@ -201,18 +182,19 @@
                   color="neutral"
                   variant="soft"
                   size="sm"
-                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-                  :icon="effectiveVolume <= 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
-                  :aria-label="effectiveVolume <= 0 ? 'Unmute video' : 'Mute video'"
+                  class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+                  :icon="muted || mediaVol <= 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
+                  :aria-label="muted || mediaVol <= 0 ? 'Unmute video' : 'Mute video'"
                   @click="toggleMute"
                 />
                 <input
-                  :value="Math.round(effectiveVolume * 100)"
+                  v-if="!isTouchDevice"
+                  :value="Math.round(mediaVol * 100)"
                   type="range"
                   min="0"
                   max="100"
                   step="1"
-                  class="w-16 accent-white opacity-70 transition-opacity hover:opacity-100 sm:w-20"
+                  class="w-16 accent-white opacity-55 transition-opacity hover:opacity-100 sm:w-18"
                   aria-label="Video volume"
                   @input="handleVolumeInput"
                 />
@@ -220,11 +202,22 @@
                   color="neutral"
                   variant="soft"
                   size="sm"
-                  class="opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+                  class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
                   :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
                   @click="toggleFullscreen"
                 />
+                <UTooltip side="top" text="Show keyboard shortcuts with ? or /">
+                  <UButton
+                    color="neutral"
+                    variant="soft"
+                    size="sm"
+                    class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+                    icon="i-lucide-circle-help"
+                    aria-label="Show keyboard shortcuts"
+                    @click="showHelp = !showHelp"
+                  />
+                </UTooltip>
               </div>
             </div>
           </div>
@@ -232,29 +225,12 @@
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex flex-wrap items-center gap-3 text-sm">
-        <button
-          v-if="!usingHls && hasVideo"
-          type="button"
-          class="inline-flex items-center gap-2 text-info transition-colors hover:text-info/80"
-          @click.prevent="forceSwitchToHls"
-        >
-          <UIcon name="i-lucide-refresh-cw" class="size-4" />
-          <span>Trouble playing? switch to HLS stream.</span>
-        </button>
-        <span v-if="subtitleLoading" class="text-toned">Looking for matching subtitles...</span>
-        <span v-else-if="subtitleLoadError" class="text-warning">{{ subtitleLoadError }}</span>
-      </div>
-
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 text-toned transition-colors hover:text-default"
-        @click="showHelp = !showHelp"
-      >
-        <UIcon name="i-lucide-circle-help" class="size-4" />
-        <span>Show keyboard shortcuts with <kbd>?</kbd> or <kbd>/</kbd></span>
-      </button>
+    <div
+      v-if="subtitleLoading || subtitleLoadError"
+      class="flex flex-wrap items-center gap-3 text-sm"
+    >
+      <span v-if="subtitleLoading" class="text-toned">Looking for matching subtitles...</span>
+      <span v-else-if="subtitleLoadError" class="text-warning">{{ subtitleLoadError }}</span>
     </div>
 
     <UModal
@@ -349,6 +325,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useStorage } from '@vueuse/core';
 import Hls from 'hls.js';
 import {
   disableOpacity,
@@ -359,7 +336,6 @@ import {
   request,
   uri,
 } from '~/utils';
-import { usePlayerMediaVolume } from '~/composables/usePlayerMediaVolume';
 import { usePlayerShortcutHelp } from '~/composables/usePlayerShortcutHelp';
 import { usePlayerShortcuts } from '~/composables/usePlayerShortcuts';
 import { usePlayerSubtitles } from '~/composables/usePlayerSubtitles';
@@ -369,6 +345,9 @@ import {
   getFullscreenElement,
   requestElementFullscreen,
 } from '~/utils/fullscreen';
+import { clampMediaVolume } from '~/utils/keyboard';
+import { readResumeState, resumeMedia } from '~/utils/media';
+import { nextTapVisible } from '~/utils/playerControls';
 
 import type { StoreItem } from '~/types/store';
 import type { FileInfo, PlayerSourceElement } from '~/types/video';
@@ -382,14 +361,6 @@ const emitter = defineEmits<{
   (e: 'playback-state-change', isPlaying: boolean): void;
 }>();
 
-const {
-  volume,
-  muted,
-  effectiveVolume,
-  setVolume,
-  changeVolume,
-  toggleMute: toggleStoredMute,
-} = usePlayerMediaVolume();
 const showShortcutHelp = usePlayerShortcutHelp();
 
 const playerContainer = ref<HTMLElement | null>(null);
@@ -415,6 +386,8 @@ const isAudio = ref(false);
 const hasVideo = ref(false);
 const usingHls = ref(false);
 const destroyed = ref(false);
+const mediaVol = useStorage<number>('player_volume', 1);
+const muted = useStorage<boolean>('player_muted', false);
 const showHelp = computed({
   get: () => showShortcutHelp.value,
   set: (value: boolean) => {
@@ -432,19 +405,15 @@ const helpPortal = computed<boolean | HTMLElement>(() => {
 let assLayoutRefreshFrame = 0;
 let controlsHideTimeout = 0;
 let pendingVideoClickTimeout = 0;
-let gainContext: AudioContext | null = null;
-let gainSource: MediaElementAudioSourceNode | null = null;
-let gainNode: GainNode | null = null;
-let gainElement: HTMLMediaElement | null = null;
 let unbindMediaSession: null | (() => void) = null;
 let hls: Hls | null = null;
+let pendingResume: null | { time: number; shouldPlay: boolean } = null;
 
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
 const mediaFile = computed(() => props.item.filename || '');
 const subtitleManifestUrl = computed(() => currentPlaybackUrl('api/player/subtitles/manifest'));
 const canPlay = computed(() => Boolean(mediaFile.value && !loadingError.value));
 const shouldRender = computed(() => active.value && !loading.value);
-const isPlaying = computed(() => !paused.value);
 const progress = computed(() => {
   if (!duration.value) return 0;
   return Math.round((currentTime.value / duration.value) * 1000);
@@ -454,13 +423,6 @@ const timeLabel = computed(() => {
   const durationLabel = duration.value ? formatDuration(Math.round(duration.value)) : '--:--';
   return `${currentLabel} / ${durationLabel}`;
 });
-const showSeekZones = computed(() => {
-  return Boolean(isTouchDevice.value && isPlaying.value);
-});
-const useGainFallback = computed(() => {
-  return Boolean(isTouchDevice.value && getAudioContextCtor());
-});
-
 const {
   subtitleLoading,
   subtitleLoadError,
@@ -481,15 +443,15 @@ const {
 useHead(() => (title.value ? { title: formatPageTitle(`Playing: ${title.value}`) } : {}));
 
 watch(
-  [volume, muted],
-  ([nextVolume]) => {
-    const normalizedVolume = normalizeMediaVolume(nextVolume);
-    if (normalizedVolume !== nextVolume) {
-      volume.value = normalizedVolume;
+  [mediaVol, muted],
+  ([nextVol]) => {
+    const normalizedVolume = clampMediaVolume(nextVol);
+    if (normalizedVolume !== nextVol) {
+      mediaVol.value = normalizedVolume;
       return;
     }
 
-    applyStoredMediaState(videoElement.value);
+    applyMediaState(videoElement.value);
     syncVideoState();
   },
   { immediate: true },
@@ -499,10 +461,10 @@ watch(
   videoElement,
   (element, previousElement) => {
     if (previousElement && previousElement !== element) {
-      disconnectGainController();
+      previousElement.muted = true;
     }
 
-    applyStoredMediaState(element);
+    applyMediaState(element);
     syncVideoState();
   },
   { immediate: true },
@@ -526,21 +488,6 @@ function formatDuration(totalSeconds: number): string {
   return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
 }
 
-function normalizeMediaVolume(volume: number): number {
-  if (!Number.isFinite(volume)) return 1;
-  return Math.min(1, Math.max(0, volume));
-}
-
-function getAudioContextCtor(): typeof AudioContext | null {
-  if (!import.meta.client) return null;
-
-  const maybeWindow = window as Window &
-    typeof globalThis & {
-      webkitAudioContext?: typeof AudioContext;
-    };
-  return maybeWindow.AudioContext || maybeWindow.webkitAudioContext || null;
-}
-
 function currentPlaybackUrl(base: string, playlist: boolean = false): string {
   if (!props.item.filename) {
     return '';
@@ -556,8 +503,7 @@ function currentPlaybackUrl(base: string, playlist: boolean = false): string {
 function activatePlayer() {
   active.value = true;
   void nextTick(async () => {
-    applyStoredMediaState(videoElement.value);
-    await resumeGainController();
+    applyMediaState(videoElement.value);
     try {
       await videoElement.value?.play();
     } catch {}
@@ -578,6 +524,14 @@ function handleVideoLoadedMetadata() {
   if (videoElement.value) {
     updateMediaSessionPosition(videoElement.value);
   }
+
+  if (pendingResume) {
+    void resumeMedia(videoElement.value, pendingResume).finally(() => {
+      pendingResume = null;
+      syncVideoState();
+      showControls();
+    });
+  }
 }
 
 function handleVideoTimeUpdate() {
@@ -589,7 +543,6 @@ function handleVideoTimeUpdate() {
 
 function handleVideoPlay() {
   loadingError.value = '';
-  void resumeGainController();
   syncVideoState();
   showControls();
   emitter('playback-state-change', true);
@@ -604,13 +557,17 @@ function handleVideoPause() {
 
 function handleVideoClick() {
   if (isTouchDevice.value) {
+    toggleControls();
     return;
   }
 
   clearPendingVideoClickTimeout();
   pendingVideoClickTimeout = window.setTimeout(() => {
     pendingVideoClickTimeout = 0;
-    toggleControls();
+    if (controlsVisible.value && !videoElement.value?.paused) {
+      clearControlsHideTimeout();
+      controlsVisible.value = false;
+    }
   }, 180);
 }
 
@@ -650,11 +607,9 @@ function handleMediaVolumeChange(event: Event) {
     muted.value = target.muted;
   }
 
-  if (!useGainFallback.value) {
-    const normalizedVolume = normalizeMediaVolume(target.volume);
-    if (Math.abs(volume.value - normalizedVolume) > 0.001) {
-      volume.value = normalizedVolume;
-    }
+  const normalizedVolume = clampMediaVolume(target.volume);
+  if (Math.abs(mediaVol.value - normalizedVolume) > 0.001) {
+    mediaVol.value = normalizedVolume;
   }
 
   syncVideoState();
@@ -691,11 +646,12 @@ function handleVolumeInput(event: Event) {
   const target = event.target as HTMLInputElement | null;
   if (!target || !videoElement.value) return;
 
-  setVolume(Number(target.value) / 100);
-  applyStoredMediaState(videoElement.value);
+  const nextVol = clampMediaVolume(Number(target.value) / 100);
+  mediaVol.value = nextVol;
+  muted.value = nextVol <= 0;
+  applyMediaState(videoElement.value);
   syncVideoState();
   showControls();
-  void resumeGainController();
 }
 
 async function togglePlayback() {
@@ -703,7 +659,6 @@ async function togglePlayback() {
 
   try {
     if (videoElement.value.paused) {
-      await resumeGainController();
       await videoElement.value.play();
       syncVideoState();
       showControls();
@@ -716,46 +671,22 @@ async function togglePlayback() {
 }
 
 function toggleMute() {
-  toggleStoredMute();
-  applyStoredMediaState(videoElement.value);
-  syncVideoState();
-  showControls();
-  void resumeGainController();
-}
-
-function seekBy(deltaSeconds: number) {
-  if (!videoElement.value) return;
-
-  if (!isPlaying.value) {
-    showControls();
-    return;
+  if (muted.value || mediaVol.value <= 0) {
+    mediaVol.value = mediaVol.value > 0 ? clampMediaVolume(mediaVol.value) : 1;
+    muted.value = false;
+  } else {
+    muted.value = true;
   }
 
-  const duration = Number.isFinite(videoElement.value.duration) ? videoElement.value.duration : 0;
-  const nextTime = Math.min(
-    Math.max(videoElement.value.currentTime + deltaSeconds, 0),
-    duration || Infinity,
-  );
-  videoElement.value.currentTime = nextTime;
+  applyMediaState(videoElement.value);
   syncVideoState();
   showControls();
 }
 
-function applyStoredMediaState(element: HTMLMediaElement | null) {
+function applyMediaState(element: HTMLMediaElement | null) {
   if (!element) return;
 
-  if (useGainFallback.value) {
-    ensureGainController(element);
-    if (element.muted !== muted.value) {
-      element.muted = muted.value;
-    }
-    if (gainNode) {
-      gainNode.gain.value = effectiveVolume.value;
-    }
-    return;
-  }
-
-  const normalizedVolume = normalizeMediaVolume(volume.value);
+  const normalizedVolume = clampMediaVolume(mediaVol.value);
   if (Math.abs(element.volume - normalizedVolume) > 0.001) {
     element.volume = normalizedVolume;
   }
@@ -763,65 +694,6 @@ function applyStoredMediaState(element: HTMLMediaElement | null) {
   if (element.muted !== muted.value) {
     element.muted = muted.value;
   }
-}
-
-function ensureGainController(element: HTMLMediaElement | null) {
-  if (!useGainFallback.value || !element) return;
-
-  if (gainElement === element && gainNode) {
-    gainNode.gain.value = effectiveVolume.value;
-    return;
-  }
-
-  disconnectGainController();
-
-  const AudioContextCtor = getAudioContextCtor();
-  if (!AudioContextCtor) return;
-
-  if (!gainContext || gainContext.state === 'closed') {
-    try {
-      gainContext = new AudioContextCtor();
-    } catch {
-      gainContext = null;
-      return;
-    }
-  }
-
-  try {
-    gainSource = gainContext.createMediaElementSource(element);
-    gainNode = gainContext.createGain();
-    gainSource.connect(gainNode);
-    gainNode.connect(gainContext.destination);
-    gainNode.gain.value = effectiveVolume.value;
-    gainElement = element;
-  } catch {
-    disconnectGainController();
-  }
-}
-
-async function resumeGainController() {
-  if (!useGainFallback.value) return;
-
-  ensureGainController(videoElement.value);
-  if (!gainContext || gainContext.state !== 'suspended') return;
-
-  try {
-    await gainContext.resume();
-  } catch {}
-}
-
-function disconnectGainController() {
-  try {
-    gainSource?.disconnect();
-  } catch {}
-
-  try {
-    gainNode?.disconnect();
-  } catch {}
-
-  gainSource = null;
-  gainNode = null;
-  gainElement = null;
 }
 
 function syncVideoState() {
@@ -873,12 +745,18 @@ function showControls() {
 }
 
 function toggleControls() {
-  if (!controlsVisible.value) {
-    showControls();
+  const nextVisible = nextTapVisible({
+    touch: isTouchDevice.value,
+    paused: Boolean(videoElement.value?.paused),
+    visible: controlsVisible.value,
+  });
+
+  if (nextVisible === controlsVisible.value) {
     return;
   }
 
-  if (videoElement.value?.paused) {
+  if (nextVisible) {
+    showControls();
     return;
   }
 
@@ -1216,7 +1094,7 @@ function prepareVideoPlayer() {
     return;
   }
 
-  applyStoredMediaState(videoElement.value);
+  applyMediaState(videoElement.value);
   restoreDefaultTextTrack();
 
   if (hasVideo.value) {
@@ -1249,10 +1127,12 @@ async function src_error(event: Event) {
   attach_hls(currentPlaybackUrl('m3u8', true));
 }
 
-function attach_hls(link: string) {
+function attach_hls(link: string, resume = readResumeState(videoElement.value)) {
   if (!videoElement.value) {
     return;
   }
+
+  pendingResume = resume;
 
   if (hls) {
     hls.destroy();
@@ -1313,11 +1193,11 @@ usePlayerShortcuts({
   media: videoElement,
   video: videoElement,
   adjustVolume: (delta) => {
-    changeVolume(delta);
-    applyStoredMediaState(videoElement.value);
+    mediaVol.value = clampMediaVolume(mediaVol.value + delta);
+    muted.value = mediaVol.value <= 0;
+    applyMediaState(videoElement.value);
     syncVideoState();
     showControls();
-    void resumeGainController();
   },
   canToggleSubs: hasSubtitles,
   helpOpen: showShortcutHelp,
@@ -1368,12 +1248,6 @@ onBeforeUnmount(() => {
     unbindMediaSession();
     unbindMediaSession = null;
   }
-
-  disconnectGainController();
-  if (gainContext && gainContext.state !== 'closed') {
-    void gainContext.close().catch(() => {});
-  }
-  gainContext = null;
 
   if (videoElement.value) {
     destroyed.value = true;

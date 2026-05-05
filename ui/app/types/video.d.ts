@@ -1,5 +1,5 @@
 type KeyboardShortcutContext = {
-  video: HTMLVideoElement;
+  video: HTMLMediaElement;
 };
 
 type VideoTrackElement = {

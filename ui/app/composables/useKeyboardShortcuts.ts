@@ -15,6 +15,8 @@ import {
   seekToPercent,
   seekBackward,
   seekForward,
+  seekStart,
+  seekEnd,
   fullscreen,
   pictureInPicture,
   toggleCaptions,
@@ -171,13 +173,13 @@ export const useKeyboardShortcuts = (options: UseKeyboardShortcutsOptions) => {
         // Jump to start (Home)
         case 'home':
           event.preventDefault();
-          video.currentTime = 0;
+          seekStart(ctx);
           break;
 
         // Jump to end (End)
         case 'end':
           event.preventDefault();
-          video.currentTime = video.duration;
+          seekEnd(ctx);
           break;
 
         // Show/hide help (Shift+/)
