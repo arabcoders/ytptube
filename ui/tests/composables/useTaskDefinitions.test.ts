@@ -72,7 +72,7 @@ describe('useTaskDefinitions', () => {
     errorMock.mockClear()
   })
 
-  it('sorts definitions by priority then name', async () => {
+  it('sort_priority', async () => {
     const items = [
       { id: 1, name: 'B', priority: 2, updated_at: 1 },
       { id: 2, name: 'A', priority: 2, updated_at: 2 },
@@ -90,7 +90,7 @@ describe('useTaskDefinitions', () => {
     requestSpy.mockRestore()
   })
 
-  it('handles empty payload', async () => {
+  it('handle_empty_payload', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(createMockResponse({
       ok: true,
@@ -104,7 +104,7 @@ describe('useTaskDefinitions', () => {
     requestSpy.mockRestore()
   })
 
-  it('throws loadDefinitions error when throwInstead is true', async () => {
+  it('throw_load_error', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(createMockResponse({
       ok: false,
@@ -117,7 +117,7 @@ describe('useTaskDefinitions', () => {
     requestSpy.mockRestore()
   })
 
-  it('returns null on getDefinition error', async () => {
+  it('store_get_error', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(createMockResponse({
       ok: false,
@@ -132,7 +132,7 @@ describe('useTaskDefinitions', () => {
     requestSpy.mockRestore()
   })
 
-  it('creates definition successfully', async () => {
+  it('create_definition', async () => {
     const payload: TaskDefinitionDetailed = {
       id: 2,
       name: 'New',
@@ -152,7 +152,7 @@ describe('useTaskDefinitions', () => {
     requestSpy.mockRestore()
   })
 
-  it('removes definition on deleteDefinition', async () => {
+  it('remove_deleted_definition', async () => {
     const requestSpy = spyOn(utils, 'request')
     requestSpy.mockResolvedValueOnce(createMockResponse({
       ok: true,

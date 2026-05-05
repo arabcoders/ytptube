@@ -5,6 +5,7 @@ from typing import Any
 import yt_dlp
 from yt_dlp.utils import make_archive_id
 
+from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import apply_ytdlp_patches
 from app.library.cf_solver_handler import set_cf_handler
 
@@ -76,6 +77,8 @@ class YTDLP(yt_dlp.YoutubeDL):
             except Exception:
                 pass
 
+        self._ytptube_outtmpl_info: dict[str, Any] | None = None
+        self._ytptube_outtmpl_cache: dict[str, Any] = {}
         self.archive = _ArchiveProxy(orig_file)
         if not YTDLP._registered:
             try:
@@ -93,6 +96,25 @@ class YTDLP(yt_dlp.YoutubeDL):
             return None
 
         return super()._delete_downloaded_files(*args, **kwargs)
+
+    def _reset_outtmpl_cache(self) -> None:
+        self._ytptube_outtmpl_info = None
+        self._ytptube_outtmpl_cache = {}
+
+    def prepare_outtmpl(self, outtmpl, info_dict, sanitize=False):
+        if self._ytptube_outtmpl_info is not info_dict:
+            self._ytptube_outtmpl_info = info_dict
+            self._ytptube_outtmpl_cache = {}
+
+        outtmpl, enriched = rewrite_outtmpl(outtmpl, info_dict, cache=self._ytptube_outtmpl_cache)
+
+        return super().prepare_outtmpl(outtmpl, enriched, sanitize=sanitize)
+
+    def process_info(self, info_dict):
+        try:
+            return super().process_info(info_dict)
+        finally:
+            self._reset_outtmpl_cache()
 
     def record_download_archive(self, info_dict) -> None:
         if not self.params.get("download_archive"):

@@ -18,7 +18,7 @@ def reset_conditions_singleton():
 
 class TestConditionIgnoreMatching:
     @pytest.mark.asyncio
-    async def test_match_skips_condition_by_name_and_returns_next_match(self) -> None:
+    async def test_match_skip_name(self) -> None:
         first = SimpleNamespace(id=1, name="Primary", enabled=True, filter="duration > 0", priority=20)
         second = SimpleNamespace(id=2, name="Fallback", enabled=True, filter="duration > 0", priority=10)
 
@@ -30,7 +30,7 @@ class TestConditionIgnoreMatching:
         assert matched is second
 
     @pytest.mark.asyncio
-    async def test_match_skips_condition_by_stringified_id_and_returns_next_match(self) -> None:
+    async def test_match_skip_id(self) -> None:
         first = SimpleNamespace(id=123, name="Primary", enabled=True, filter="duration > 0", priority=20)
         second = SimpleNamespace(id=124, name="Fallback", enabled=True, filter="duration > 0", priority=10)
 
@@ -42,7 +42,7 @@ class TestConditionIgnoreMatching:
         assert matched is second
 
     @pytest.mark.asyncio
-    async def test_match_coerces_numeric_ignore_values_to_strings(self) -> None:
+    async def test_match_coerce_ids(self) -> None:
         first = SimpleNamespace(id=123, name="Primary", enabled=True, filter="duration > 0", priority=20)
         second = SimpleNamespace(id=124, name="Fallback", enabled=True, filter="duration > 0", priority=10)
 
@@ -54,7 +54,7 @@ class TestConditionIgnoreMatching:
         assert matched is second
 
     @pytest.mark.asyncio
-    async def test_match_returns_none_when_ignore_all_wildcard_is_present(self) -> None:
+    async def test_match_wildcard(self) -> None:
         first = SimpleNamespace(id=1, name="Primary", enabled=True, filter="duration > 0", priority=20)
 
         service = Conditions.get_instance()
@@ -67,7 +67,7 @@ class TestConditionIgnoreMatching:
 
 class TestConditionIgnorePropagation:
     @pytest.mark.asyncio
-    async def test_item_adder_passes_ignore_conditions_to_matcher(self) -> None:
+    async def test_add_passes_ignore(self) -> None:
         queue = Mock()
         queue.config = Mock(temp_path="/tmp", ignore_archived_items=False, ytdlp_debug=False)
         queue._notify = Mock()
@@ -102,7 +102,7 @@ class TestConditionIgnorePropagation:
         assert result == {"status": "ok"}
 
     @pytest.mark.asyncio
-    async def test_item_adder_coerces_numeric_ignore_conditions_to_strings(self) -> None:
+    async def test_add_coerces_ignore(self) -> None:
         queue = Mock()
         queue.config = Mock(temp_path="/tmp", ignore_archived_items=False, ytdlp_debug=False)
         queue._notify = Mock()
@@ -133,7 +133,7 @@ class TestConditionIgnorePropagation:
         matcher.match.assert_awaited_once_with(info=entry, ignore_conditions=["123", "Primary", "*"])
 
     @pytest.mark.asyncio
-    async def test_process_playlist_preserves_only_parent_ignore_conditions(self) -> None:
+    async def test_playlist_keeps_parent_ignore(self) -> None:
         captured: dict[str, object] = {}
 
         class FakeItem:

@@ -132,81 +132,81 @@ afterEach(() => {
 });
 
 describe('object access helpers', () => {
-  it('ag returns nested value or default value', () => {
+  it('ag_nested_value', () => {
     const payload = { a: { b: { c: 42 } } };
     expect(utils.ag(payload, 'a.b.c')).toBe(42);
     expect(utils.ag(payload, 'a.b.x', 'fallback')).toBe('fallback');
     expect(utils.ag(payload, 'missing', () => 'fn-default')).toBe('fn-default');
   });
 
-  it('ag_set sets nested path creating objects as needed', () => {
+  it('ag_set_path', () => {
     const payload: Record<string, unknown> = {};
     utils.ag_set(payload, 'a.b.c', 99);
     expect(payload).toEqual({ a: { b: { c: 99 } } });
   });
 
-  it('cleanObject removes requested keys', () => {
+  it('clean_object_keys', () => {
     const source = { id: 1, keep: true, drop: false };
     expect(utils.cleanObject(source, ['drop'])).toEqual({ id: 1, keep: true });
     expect(utils.cleanObject(source, [])).toEqual(source);
   });
 
-  it('stripPath removes base prefix and leading slashes', () => {
+  it('strip_path_base', () => {
     expect(utils.stripPath('/data/downloads', '/data/downloads/video.mp4')).toBe('video.mp4');
     expect(utils.stripPath('', '/var/files/test.txt')).toBe('/var/files/test.txt');
   });
 });
 
 describe('string manipulation helpers', () => {
-  it('r replaces tokens with context values', () => {
+  it('replace_tokens', () => {
     const result = utils.r('Hello {user.name}!', { user: { name: 'YTPTube' } });
     expect(result).toBe('Hello YTPTube!');
   });
 
-  it('iTrim trims delimiters at requested positions', () => {
+  it('itrim_edges', () => {
     expect(utils.iTrim('--value--', '-', 'both')).toBe('value');
     expect(utils.iTrim('::value', ':', 'start')).toBe('value');
     expect(utils.iTrim('value::', ':', 'end')).toBe('value');
   });
 
-  it('iTrim handles forward slash delimiter', () => {
+  it('itrim_slash', () => {
     expect(utils.iTrim('//value//', '/', 'both')).toBe('value');
     expect(utils.iTrim('/value', '/', 'start')).toBe('value');
     expect(utils.iTrim('value/', '/', 'end')).toBe('value');
     expect(utils.iTrim('///multiple///', '/', 'both')).toBe('multiple');
   });
 
-  it('iTrim handles backslash delimiter', () => {
+  it('itrim_backslash', () => {
     expect(utils.iTrim('\\\\value\\\\', '\\', 'both')).toBe('value');
     expect(utils.iTrim('\\value', '\\', 'start')).toBe('value');
     expect(utils.iTrim('value\\', '\\', 'end')).toBe('value');
   });
 
-  it('iTrim handles hyphen delimiter', () => {
+  it('itrim_hyphen', () => {
     expect(utils.iTrim('--value--', '-', 'both')).toBe('value');
     expect(utils.iTrim('-value', '-', 'start')).toBe('value');
     expect(utils.iTrim('value-', '-', 'end')).toBe('value');
     expect(utils.iTrim('---multiple---', '-', 'both')).toBe('multiple');
   });
 
-  it('iTrim handles caret delimiter', () => {
+  it('itrim_caret', () => {
     expect(utils.iTrim('^^value^^', '^', 'both')).toBe('value');
     expect(utils.iTrim('^value', '^', 'start')).toBe('value');
     expect(utils.iTrim('value^', '^', 'end')).toBe('value');
   });
 
-  it('iTrim handles bracket delimiters', () => {
+  it('itrim_brackets', () => {
     expect(utils.iTrim('[[value]]', '[', 'both')).toBe('value]]');
     expect(utils.iTrim(']]value[[', ']', 'both')).toBe('value[[');
   });
 
-  it('iTrim handles dot delimiter', () => {
+  it('itrim_dot', () => {
     expect(utils.iTrim('..value..', '.', 'both')).toBe('value');
     expect(utils.iTrim('.value', '.', 'start')).toBe('value');
     expect(utils.iTrim('value.', '.', 'end')).toBe('value');
   });
 
-  it('iTrim handles special regex characters', () => {
+  it('itrim_regex_chars', () => {
     expect(utils.iTrim('**value**', '*', 'both')).toBe('value');
     expect(utils.iTrim('++value++', '+', 'both')).toBe('value');
     expect(utils.iTrim('??value??', '?', 'both')).toBe('value');
@@ -215,96 +215,96 @@ describe('string manipulation helpers', () => {
     expect(utils.iTrim('((value))', ')', 'both')).toBe('((value');
   });
 
-  it('iTrim handles empty string', () => {
+  it('itrim_empty', () => {
     expect(utils.iTrim('', '/', 'both')).toBe('');
   });
 
-  it('iTrim throws error when delimiter is empty', () => {
+  it('itrim_empty_delimiter', () => {
     expect(() => utils.iTrim('value', '', 'both')).toThrow('Delimiter is required');
   });
 
-  it('iTrim preserves middle occurrences', () => {
+  it('itrim_preserve_middle', () => {
     expect(utils.iTrim('/path/to/file/', '/', 'both')).toBe('path/to/file');
     expect(utils.iTrim('//path//to//file//', '/', 'both')).toBe('path//to//file');
   });
 
-  it('encodePath safely encodes components', () => {
+  it('encode_path', () => {
     expect(utils.encodePath('folder#1/video name.mp4')).toBe('folder%231/video%20name.mp4');
   });
 
-  it('encodePath handles % character correctly', () => {
+  it('encode_percent', () => {
     expect(utils.encodePath('How to enjoy Shin Ramyun 100%.opus')).toBe(
       'How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus',
     );
   });
 
-  it('encodePath handles multiple special characters', () => {
+  it('encode_specials', () => {
     expect(utils.encodePath('100% complete [HD] #1.mp4')).toBe(
       '100%25%20complete%20%5BHD%5D%20%231.mp4',
     );
   });
 
-  it('encodePath handles paths with % character', () => {
+  it('keep_segments', () => {
     expect(utils.encodePath('folder/How to enjoy Shin Ramyun 100%.opus')).toBe(
       'folder/How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus',
     );
   });
 
-  it('encodePath handles already encoded strings', () => {
+  it('preserve_encoded', () => {
     expect(utils.encodePath('How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus')).toBe(
       'How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus',
     );
   });
 
-  it('encodePath handles mixed encoded and unencoded', () => {
+  it('mix_encoded_input', () => {
     expect(utils.encodePath('folder/file%20name 100%.mp4')).toBe('folder/file%20name%20100%25.mp4');
   });
 
-  it('encodePath handles special characters &, =, ?', () => {
+  it('encode_query_chars', () => {
     expect(utils.encodePath('query?param=value&key=100%.mp4')).toBe(
       'query%3Fparam%3Dvalue%26key%3D100%25.mp4',
     );
   });
 
-  it('encodePath handles empty string', () => {
+  it('encode_empty', () => {
     expect(utils.encodePath('')).toBe('');
   });
 
-  it('encodePath handles simple filename', () => {
+  it('encode_simple_filename', () => {
     expect(utils.encodePath('video.mp4')).toBe('video.mp4');
   });
 
-  it('encodePath handles unicode characters', () => {
+  it('encode_unicode', () => {
     expect(utils.encodePath('视频文件.mp4')).toBe('%E8%A7%86%E9%A2%91%E6%96%87%E4%BB%B6.mp4');
   });
 
-  it('encodePath handles parentheses', () => {
+  it('encode_parentheses', () => {
     expect(utils.encodePath('video (1080p).mp4')).toBe('video%20(1080p).mp4');
   });
 
-  it('removeANSIColors strips escape codes', () => {
+  it('strip_ansi', () => {
     const sample = '\u001b[31mError\u001b[0m';
     expect(utils.removeANSIColors(sample)).toBe('Error');
   });
 
-  it('basename returns final segment optionally trimming extension', () => {
+  it('basename_trim_ext', () => {
     expect(utils.basename('/downloads/video.mp4')).toBe('video.mp4');
     expect(utils.basename('/downloads/video.mp4', '.mp4')).toBe('video');
     expect(utils.basename('', '.mp4')).toBe('');
   });
 
-  it('dirname returns parent directory', () => {
+  it('dirname_parent', () => {
     expect(utils.dirname('/downloads/video.mp4')).toBe('/downloads');
     expect(utils.dirname('video.mp4')).toBe('.');
     expect(utils.dirname('/file')).toBe('/');
   });
 
-  it('formatBytes returns human readable strings', () => {
+  it('format_bytes', () => {
     expect(utils.formatBytes(0)).toBe('0 Bytes');
     expect(utils.formatBytes(1024)).toBe('1 KiB');
   });
 
-  it('formatTime renders hh:mm:ss or mm:ss', () => {
+  it('format_time', () => {
     expect(utils.formatTime(59)).toBe('59');
     expect(utils.formatTime(90)).toBe('01:30');
     expect(utils.formatTime(3661)).toBe('01:01:01');
@@ -312,47 +312,47 @@ describe('string manipulation helpers', () => {
 });
 
 describe('data conversion helpers', () => {
-  it('has_data detects arrays, objects, and json strings', () => {
+  it('has_data', () => {
     expect(utils.has_data({ key: 'value' })).toBe(true);
     expect(utils.has_data('""')).toBe(false);
     expect(utils.has_data('[1,2]')).toBe(true);
     expect(utils.has_data('')).toBe(false);
   });
 
-  it('encode and decode provide reversible transformation', () => {
+  it('encode_decode_roundtrip', () => {
     const payload = { name: 'YTPTube', count: 2 };
     const encoded = utils.encode(payload);
     expect(typeof encoded).toBe('string');
     expect(utils.decode(encoded)).toEqual(payload);
   });
 
-  it('getQueryParams parses query strings', () => {
+  it('parse_query_params', () => {
     expect(utils.getQueryParams('?a=1&b=two')).toEqual({ a: '1', b: 'two' });
   });
 
-  it('uri prefixes runtime base path', () => {
+  it('prefix_runtime_base', () => {
     runtimeConfig.app.baseURL = '/base-path';
     expect(utils.uri('/api/test')).toBe('/base-path/api/test');
     runtimeConfig.app.baseURL = '/';
     expect(utils.uri('/api/test')).toBe('/api/test');
   });
 
-  it('makeDownload builds expected url with folder and filename', () => {
+  it('build_file_url', () => {
     runtimeConfig.app.baseURL = '/base-path';
     const url = utils.makeDownload({}, { folder: 'music', filename: 'song.mp3' });
     expect(url).toBe('/base-path/api/download/music/song.mp3');
   });
 
-  it('makeDownload handles m3u8 base path', () => {
+  it('build_m3u8_url', () => {
     const url = utils.makeDownload({}, { filename: 'playlist' }, 'm3u8');
     expect(url).toBe('/base-path/api/player/m3u8/video/playlist.m3u8');
   });
 
-  it('isDownloadSkipped detects finished skipped-download items', () => {
+  it('detect_download_skipped', () => {
     expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: true } as any)).toBe(true);
   });
 
-  it('isDownloadSkipped ignores unfinished or unflagged items', () => {
+  it('ignore_non_skipped', () => {
     expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: false } as any)).toBe(false);
     expect(utils.isDownloadSkipped({ status: 'downloading', download_skipped: true } as any)).toBe(false);
     expect(utils.isDownloadSkipped(undefined as any)).toBe(false);
@@ -360,7 +360,7 @@ describe('data conversion helpers', () => {
 });
 
 describe('dom and browser helpers', () => {
-  it('copyText uses clipboard API and notifies success', async () => {
+  it('write_clipboard', async () => {
     utils.copyText('sample');
 
     await Promise.resolve();
@@ -372,13 +372,13 @@ describe('dom and browser helpers', () => {
     expect(notificationMock.success).toHaveBeenCalledWith('Text copied to clipboard.');
   });
 
-  it('disableOpacity toggles body opacity when enabled', () => {
+  it('lock_opacity', () => {
     const result = utils.disableOpacity();
     expect(result).toBe(true);
     expect(document.body.style.opacity).toBe('1');
   });
 
-  it('disableOpacity returns false when background disabled', () => {
+  it('skip_disabled_bg', () => {
     document.body.removeAttribute('style');
     storageMap.clear();
     const originalOpacity = document.body.style.opacity;
@@ -398,7 +398,7 @@ describe('dom and browser helpers', () => {
     expect(document.body.style.opacity || '').toBe(originalOpacity || '');
   });
 
-  it('enableOpacity applies stored opacity value', () => {
+  it('restore_opacity', () => {
     utils.disableOpacity();
     useStorageFn.mockImplementation((key: string, defaultValue: any) => {
       if (!storageMap.has(key)) {
@@ -413,7 +413,7 @@ describe('dom and browser helpers', () => {
     expect(document.body.style.opacity).toBe('0.75');
   });
 
-  it('syncOpacity keeps full opacity while a lock is active', () => {
+  it('keep_opacity_lock', () => {
     utils.disableOpacity();
     storageMap.set('random_bg_opacity', { value: 0.35 });
 
@@ -423,7 +423,7 @@ describe('dom and browser helpers', () => {
     expect(document.body.style.opacity).toBe('1');
   });
 
-  it('syncOpacity clears body opacity when background is disabled', () => {
+  it('clear_disabled_bg', () => {
     document.body.style.opacity = '0.8';
     storageMap.set('random_bg', { value: false });
 
@@ -435,7 +435,7 @@ describe('dom and browser helpers', () => {
 });
 
 describe('network and id helpers', () => {
-  it('request prefixes relative urls and sets defaults', async () => {
+  it('prefix_base_url', async () => {
     const responseMock = { status: 200 } as Response;
     fetchMock.mockResolvedValue(responseMock);
 
@@ -452,7 +452,7 @@ describe('network and id helpers', () => {
     expect((options as Record<string, unknown>).withCredentials).toBe(true);
   });
 
-  it('convertCliOptions posts payload and returns parsed json', async () => {
+  it('post_cli_args', async () => {
     const jsonMock = mock().mockResolvedValue({ success: true });
     const responseMock = { status: 200, json: jsonMock };
     fetchMock.mockResolvedValue(responseMock);
@@ -468,7 +468,7 @@ describe('network and id helpers', () => {
     expect(result).toEqual({ success: true });
   });
 
-  it('convertCliOptions throws on non-200 response', async () => {
+  it('throw_cli_error', async () => {
     const jsonMock = mock().mockResolvedValue({ error: 'fail' });
     const responseMock = { status: 400, json: jsonMock };
     fetchMock.mockResolvedValue(responseMock);
@@ -479,13 +479,13 @@ describe('network and id helpers', () => {
 });
 
 describe('async helpers', () => {
-  it('awaiter resolves when test becomes truthy', async () => {
+  it('resolve_truthy', async () => {
     const values = [false, false, 'done'];
     const result = await utils.awaiter(() => values.shift(), 500, 0.01);
     expect(result).toBe('done');
   });
 
-  it('awaiter returns false when timeout reached', async () => {
+  it('timeout', async () => {
     const result = await utils.awaiter(() => false, 50, 0.01);
     expect(result).toBe(false);
   });

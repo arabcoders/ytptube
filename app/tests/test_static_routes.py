@@ -34,7 +34,7 @@ def _configure_static_root(static_root: Path) -> None:
 
 class TestServeStaticFile:
     @pytest.mark.asyncio
-    async def test_nested_document_route_falls_back_to_spa_shell(self, tmp_path: Path) -> None:
+    async def test_nested_doc_falls_back(self, tmp_path: Path) -> None:
         config = Config.get_instance()
         index_file = tmp_path / "index.html"
         index_file.write_text("<html>root shell</html>", encoding="utf-8")
@@ -46,7 +46,7 @@ class TestServeStaticFile:
         assert response._path == index_file
 
     @pytest.mark.asyncio
-    async def test_generated_nested_index_is_not_preferred_over_root_shell(self, tmp_path: Path) -> None:
+    async def test_nested_index_uses_root(self, tmp_path: Path) -> None:
         config = Config.get_instance()
         root_index = tmp_path / "index.html"
         nested_index = tmp_path / "docs" / "readme" / "index.html"
@@ -82,7 +82,7 @@ class TestServeStaticFile:
         assert b"missing.js" in body
 
     @pytest.mark.asyncio
-    async def test_missing_asset_with_unknown_suffix_does_not_fall_back(self, tmp_path: Path) -> None:
+    async def test_missing_unknown_no_fallback(self, tmp_path: Path) -> None:
         config = Config.get_instance()
         (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
         assets_dir = tmp_path / "assets"
@@ -103,7 +103,7 @@ class TestServeStaticFile:
         assert b"missing.abcd123" in body
 
     @pytest.mark.asyncio
-    async def test_symlink_outside_static_root_does_not_resolve(self, tmp_path: Path) -> None:
+    async def test_symlink_outside_rejected(self, tmp_path: Path) -> None:
         config = Config.get_instance()
         (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
         outside_dir = tmp_path.parent / "outside-static-root"
@@ -144,7 +144,7 @@ class TestServeStaticFile:
         assert b"/api/missing" in body
 
     @pytest.mark.asyncio
-    async def test_dotted_browser_path_returns_not_found(self, tmp_path: Path) -> None:
+    async def test_dotted_browser_path_404(self, tmp_path: Path) -> None:
         config = Config.get_instance()
         (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
         _configure_static_root(tmp_path)
@@ -157,7 +157,7 @@ class TestServeStaticFile:
         assert response.status == web.HTTPNotFound.status_code
         assert b"/browser/foo/bar.txt" in body
 
-    def test_registers_only_root_and_catch_all_routes(self, tmp_path: Path) -> None:
+    def test_registers_root_routes(self, tmp_path: Path) -> None:
         config = Config.get_instance()
         static_root = tmp_path / "ui-exported"
         static_root.mkdir()

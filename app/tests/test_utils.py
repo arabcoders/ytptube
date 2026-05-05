@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import importlib
 import re
 import shutil
 import uuid
@@ -30,7 +31,6 @@ from app.library.Utils import (
     is_private_address,
     list_folders,
     load_cookies,
-    load_modules,
     merge_dict,
     move_file,
     parse_tags,
@@ -48,7 +48,7 @@ from app.tests.helpers import make_test_temp_dir, temporary_test_dir
 class TestTimedLruCache:
     """Test the timed_lru_cache decorator."""
 
-    def test_timed_lru_cache_basic_functionality(self):
+    def test_basic(self):
         """Test that timed_lru_cache caches function results."""
         call_count = 0
 
@@ -332,39 +332,39 @@ class TestCalcDownloadPath:
         result = calc_download_path(str(self.base_path), None, create_path=False)
         assert result == str(self.base_path), "Should return base path when folder is None"
 
-    def test_calc_download_path_removes_leading_slash(self):
+    def test_calc_path_strips_leading_slash(self):
         """Test that leading slash is removed from folder."""
         folder = "/test_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / "test_folder")
         assert result == expected, "Should remove leading slash from folder"
 
-    def test_calc_download_path_path_traversal_dotdot(self):
+    def test_calc_path_dotdot(self):
         """Test path traversal prevention with .. sequences."""
         folder = "../outside"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
-    def test_calc_download_path_path_traversal_nested_dotdot(self):
+    def test_calc_path_nested_dotdot(self):
         """Test path traversal prevention with nested .. sequences."""
         folder = "safe/../../outside"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
-    def test_calc_download_path_path_traversal_multiple_dotdot(self):
+    def test_calc_path_multi_dotdot(self):
         """Test path traversal prevention with multiple .. sequences."""
         folder = "../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
-    def test_calc_download_path_path_traversal_absolute_path(self):
+    def test_calc_path_absolute(self):
         """Test that absolute paths are made safe by removing leading slash."""
         folder = "/etc/passwd"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / "etc/passwd")
         assert result == expected, "Should remove leading slash and treat as relative path"
 
-    def test_calc_download_path_path_traversal_absolute_with_dotdot(self):
+    def test_calc_path_absolute_dotdot(self):
         """Test path traversal with absolute path containing .. sequences."""
         folder = "/../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
@@ -376,7 +376,7 @@ class TestCalcDownloadPath:
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
-    def test_calc_download_path_path_traversal_url_encoded(self):
+    def test_calc_path_url_encoded(self):
         """Test path traversal prevention with URL encoded sequences."""
         folder = "safe%2F..%2F..%2Funsafe"  # safe/../unsafe encoded
         # This should be handled at a higher level, but let's test it anyway
@@ -449,7 +449,7 @@ class TestCalcDownloadPath:
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
-    def test_calc_download_path_carriage_return_attack(self):
+    def test_calc_path_carriage_return(self):
         """Test that carriage returns in path traversal are prevented."""
         folder = "folder\r../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
@@ -479,7 +479,7 @@ class TestCalcDownloadPath:
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
-    def test_calc_download_path_url_encoded_traversal_safe(self):
+    def test_calc_path_url_encoded_safe(self):
         """Test that URL encoded path traversal is treated as literal (safe)."""
         folder = "folder..%2F..%2F..%2Fetc%2Fpasswd"  # ..%2F = ../ encoded
         result = calc_download_path(str(self.base_path), folder, create_path=False)
@@ -494,7 +494,7 @@ class TestCalcDownloadPath:
         expected = str(self.base_path / folder)
         assert result == expected, "Backslashes should be treated as literal characters on Unix"
 
-    def test_calc_download_path_mixed_separators_attack(self):
+    def test_calc_path_mixed_separators(self):
         """Test path traversal with mixed separators."""
         folder = "folder/../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
@@ -520,7 +520,7 @@ class TestCalcDownloadPath:
         # Clean up
         shutil.rmtree(sibling_dir, ignore_errors=True)
 
-    def test_calc_download_path_symlink_attack_outside(self):
+    def test_calc_path_symlink_outside(self):
         """Test that symlinks pointing outside base directory are blocked."""
         # Create a symlink pointing outside the base directory
         outside_dir = Path(self.temp_dir).parent / "outside_target"
@@ -539,7 +539,7 @@ class TestCalcDownloadPath:
                 symlink_path.unlink()
             shutil.rmtree(outside_dir, ignore_errors=True)
 
-    def test_calc_download_path_symlink_attack_with_traversal(self):
+    def test_calc_path_symlink_traversal(self):
         """Test symlink combined with path traversal."""
         # Create a directory outside base
         outside_dir = Path(self.temp_dir).parent / "target_dir"
@@ -563,7 +563,7 @@ class TestCalcDownloadPath:
             shutil.rmtree(safe_dir, ignore_errors=True)
             shutil.rmtree(outside_dir, ignore_errors=True)
 
-    def test_calc_download_path_symlink_safe_internal(self):
+    def test_calc_path_symlink_internal(self):
         """Test that symlinks pointing inside base directory are allowed."""
         # Create target directory inside base
         target_dir = self.base_path / "target"
@@ -602,7 +602,7 @@ class TestCalcDownloadPath:
         expected = str(self.base_path / deep_path)
         assert result == expected, "Should handle deeply nested paths"
 
-    def test_calc_download_path_directory_with_spaces(self):
+    def test_calc_path_spaces(self):
         """Test paths with multiple spaces and special spacing."""
         folder = "folder with   multiple    spaces"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
@@ -697,7 +697,7 @@ class TestMergeDict:
         assert "__builtins__" not in result, "__builtins__ should be filtered out"
         assert result["normal"] == "value", "Normal values should be preserved"
 
-    def test_merge_dict_blocks_multiple_dunder_pollution(self):
+    def test_merge_dict_blocks_dunders(self):
         """Test that multiple dangerous dunder attributes are blocked."""
         source = {
             "__class__": "malicious",
@@ -863,7 +863,7 @@ class TestMergeDict:
         assert len(result["data"]) == 5000
         assert result["data"] == large_list
 
-    def test_merge_dict_list_merging_with_size_limits(self):
+    def test_merge_dict_list_limits(self):
         """Test list merging respects size limits."""
         source = {"items": list(range(3000))}
         destination = {"items": list(range(2000, 5000))}  # 3000 items
@@ -921,7 +921,7 @@ class TestMergeDict:
         result = merge_dict(source, {}, max_depth=10000, max_list_size=1000000)
         assert result["a"]["b"]["c"]["data"] == "nested"
 
-    def test_merge_dict_limits_with_circular_reference_protection(self):
+    def test_merge_dict_circular_guard(self):
         """Test that limits work together with circular reference protection."""
         source = {"data": {}}
         source["data"]["circular"] = source  # Create circular reference
@@ -1088,9 +1088,7 @@ class TestValidateUuid:
     def test_wrong_version(self):
         """Test UUID4 against version 1 check."""
         test_uuid = str(uuid.uuid4())
-        # Version check is not strict in this function - it may return True for any valid UUID
-        result = validate_uuid(test_uuid, 1)
-        assert isinstance(result, bool)  # Just check it returns a boolean
+        assert validate_uuid(test_uuid, 1) is True
 
 
 class TestStripNewline:
@@ -1222,14 +1220,13 @@ class TestValidateUrl:
 
     def test_validate_url_basic(self):
         """Test basic URL validation functionality."""
-        # Test without actual validation due to missing yarl dependency
-        # Just check the function exists and handles the missing dependency gracefully
-        try:
-            result = validate_url("https://example.com")
-            assert isinstance(result, bool)
-        except ModuleNotFoundError:
-            # Expected when yarl is not installed
-            assert True
+        if importlib.util.find_spec("yarl") is None:
+            with pytest.raises(ModuleNotFoundError):
+                validate_url("https://example.com")
+            return
+
+        result = validate_url("https://example.com", allow_internal=True)
+        assert result is True
 
 
 class TestGetFileSidecar:
@@ -1300,31 +1297,35 @@ class TestArgConverter:
 
     def test_arg_converter_basic(self):
         """Test basic arg_converter functionality."""
-        try:
-            result = arg_converter("--quiet --match-filters 'duration<2min' --download-archive archive.txt")
-            assert isinstance(result, dict)
-            assert result.get("quiet") is True, "quiet should be True"
-            assert result.get("download_archive") == "archive.txt"
-            assert "match_filter" in result, "match_filters should be in result"
-        except (ModuleNotFoundError, AttributeError, ImportError):
-            # Expected when yt_dlp is not available or differs
-            assert True
+        if importlib.util.find_spec("yt_dlp") is None:
+            with pytest.raises(ModuleNotFoundError):
+                arg_converter("--quiet --match-filters 'duration<2min' --download-archive archive.txt")
+            return
+
+        result = arg_converter("--quiet --match-filters 'duration<2min' --download-archive archive.txt")
+        assert isinstance(result, dict)
+        assert result.get("quiet") is True, "quiet should be True"
+        assert result.get("download_archive") == "archive.txt"
+        assert "match_filter" in result, "match_filters should be in result"
 
     def test_arg_converter_empty_args(self):
         """Test arg_converter with empty args."""
-        try:
-            result = arg_converter("")
-            assert isinstance(result, dict)
-        except (ModuleNotFoundError, AttributeError, ImportError):
-            assert True
+        if importlib.util.find_spec("yt_dlp") is None:
+            with pytest.raises(ModuleNotFoundError):
+                arg_converter("")
+            return
+
+        result = arg_converter("")
+        assert isinstance(result, dict)
 
     def test_arg_converter_replace_in_metadata(self):
         """Test arg_converter handles replace-in-metadata without assertions."""
-        try:
-            result = arg_converter("--replace-in-metadata title foo bar")
-        except (ModuleNotFoundError, AttributeError, ImportError):
-            assert True
+        if importlib.util.find_spec("yt_dlp") is None:
+            with pytest.raises(ModuleNotFoundError):
+                arg_converter("--replace-in-metadata title foo bar")
             return
+
+        result = arg_converter("--replace-in-metadata title foo bar")
 
         postprocessors = result.get("postprocessors", [])
         assert postprocessors, "Expected metadata parser postprocessor to be present"
@@ -1584,11 +1585,10 @@ class TestLoadCookies:
 
         try:
             valid, jar = load_cookies(str(self.cookie_file))
-            assert isinstance(valid, bool)
-            assert jar is not None or not valid
+            assert valid is False
+            assert jar is not None
         except ValueError:
-            # Expected for invalid cookie files
-            assert True
+            return
 
 
 class TestStrToDt:
@@ -1596,20 +1596,23 @@ class TestStrToDt:
 
     def test_str_to_dt_basic(self):
         """Test basic string to datetime conversion."""
-        try:
-            result = str_to_dt("2023-01-02 12:00:00 UTC")
-            assert isinstance(result, datetime)
-        except ModuleNotFoundError:
-            # Expected when dateparser is not available
-            assert True
+        if importlib.util.find_spec("dateparser") is None:
+            with pytest.raises(ModuleNotFoundError):
+                str_to_dt("2023-01-02 12:00:00 UTC")
+            return
+
+        result = str_to_dt("2023-01-02 12:00:00 UTC")
+        assert isinstance(result, datetime)
 
     def test_str_to_dt_relative(self):
         """Test relative time string."""
-        try:
-            result = str_to_dt("1 hour ago")
-            assert isinstance(result, datetime)
-        except (ModuleNotFoundError, ValueError):
-            assert True
+        if importlib.util.find_spec("dateparser") is None:
+            with pytest.raises(ModuleNotFoundError):
+                str_to_dt("1 hour ago")
+            return
+
+        result = str_to_dt("1 hour ago")
+        assert isinstance(result, datetime)
 
 
 class TestInitClass:
@@ -1631,37 +1634,6 @@ class TestInitClass:
         assert result.name == "test"
         assert result.value == 42
         assert result.unused == "default"  # Should use default
-
-
-class TestLoadModules:
-    """Test the load_modules function."""
-
-    def setup_method(self):
-        """Set up test module structure."""
-        self.temp_dir = str(make_test_temp_dir("load-modules"))
-        self.root_path = Path(self.temp_dir)
-        self.module_dir = self.root_path / "test_modules"
-        self.module_dir.mkdir()
-
-        # Create test module files
-        (self.module_dir / "__init__.py").write_text("")
-        (self.module_dir / "test_module.py").write_text("# Test module")
-
-    def teardown_method(self):
-        """Clean up after tests."""
-        import shutil
-
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    def test_load_modules_basic(self):
-        """Test basic module loading."""
-        try:
-            load_modules(self.root_path, self.module_dir)
-            # Should not raise an exception
-            assert True
-        except Exception:
-            # Module loading might fail in test environment
-            assert True
 
 
 class TestGetChannelImages:
@@ -1711,7 +1683,7 @@ class TestGetChannelImages:
         assert "icon" in result
         assert result["icon"] == "http://example.com/icon.jpg"
 
-    def test_get_channel_images_landscape_from_banner_uncropped(self):
+    def test_channel_images_landscape_banner(self):
         """Test extracting landscape from banner uncropped."""
         from app.library.Utils import get_channel_images
 
@@ -1859,23 +1831,27 @@ class TestArgConverterAdvanced:
 
     def test_arg_converter_with_removed_options(self):
         """Test arg_converter with removed options tracking."""
-        try:
-            removed = []
-            result = arg_converter("--quiet --skip-download", level=True, removed_options=removed)
+        if importlib.util.find_spec("yt_dlp") is None:
+            with pytest.raises(ModuleNotFoundError):
+                arg_converter("--quiet --skip-download", level=True, removed_options=[])
+            return
 
-            assert isinstance(result, dict)
-        except (ModuleNotFoundError, AttributeError, ImportError):
-            assert True
+        removed = []
+        result = arg_converter("--quiet --skip-download", level=True, removed_options=removed)
+
+        assert isinstance(result, dict)
+        assert removed
 
     def test_arg_converter_dumps_enabled(self):
         """Test arg_converter with dumps flag enabled."""
-        try:
-            result = arg_converter("--format best", dumps=True)
+        if importlib.util.find_spec("yt_dlp") is None:
+            with pytest.raises(ModuleNotFoundError):
+                arg_converter("--format best", dumps=True)
+            return
 
-            # With dumps=True, result should still be a dict with JSON-serializable content
-            assert isinstance(result, (dict, list))
-        except (ModuleNotFoundError, AttributeError, ImportError):
-            assert True
+        result = arg_converter("--format best", dumps=True)
+
+        assert isinstance(result, (dict, list))
 
 
 class TestCreateCookiesFile:
@@ -1910,7 +1886,7 @@ class TestCreateCookiesFile:
 
     @patch("app.library.config.Config")
     @patch("app.library.Utils.load_cookies")
-    def test_create_cookies_file_without_path(self, mock_load_cookies, mock_config):
+    def test_create_cookies_file_auto_path(self, mock_load_cookies, mock_config):
         """Test creating a cookies file without a specific path (auto temp file)."""
         from app.library.Utils import create_cookies_file
 
@@ -1940,7 +1916,7 @@ class TestCreateCookiesFile:
             create_cookies_file("invalid_data", file=cookie_path)
 
     @patch("app.library.Utils.load_cookies")
-    def test_create_cookies_file_creates_parent_directory(self, mock_load_cookies):
+    def test_create_cookies_parent_dir(self, mock_load_cookies):
         """Test that create_cookies_file creates parent directories as needed."""
         from app.library.Utils import create_cookies_file
 
@@ -1955,7 +1931,7 @@ class TestCreateCookiesFile:
         assert cookie_path.parent == Path(self.test_path / "a" / "b" / "c")
 
     @patch("app.library.Utils.load_cookies")
-    def test_create_cookies_file_with_special_characters(self, mock_load_cookies):
+    def test_create_cookies_special_chars(self, mock_load_cookies):
         """Test create_cookies_file with special characters in cookie data."""
         from app.library.Utils import create_cookies_file
 
@@ -2099,7 +2075,7 @@ class TestRenameFile:
         assert subtitle_file.exists()
         assert conflicting_sidecar.exists()
 
-    def test_rename_preserves_sidecar_extensions(self, tmp_path: Path):
+    def test_rename_sidecar_extensions(self, tmp_path: Path):
         """Test that rename preserves complex sidecar extensions."""
         # Create test files with complex extensions
         test_file = tmp_path / "video.mp4"

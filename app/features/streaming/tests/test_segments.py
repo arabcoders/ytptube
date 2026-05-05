@@ -172,7 +172,7 @@ class _FakeProcFail(_FakeProc):
 
 
 @pytest.mark.asyncio
-async def test_build_ffmpeg_args_no_dri_falls_back_to_software(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_build_ffmpeg_args_no_dri(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     media = tmp_path / "file.mp4"
     media.write_bytes(b"data")
 
@@ -219,7 +219,7 @@ async def test_build_ffmpeg_args_no_dri_falls_back_to_software(tmp_path: Path, m
 
 
 @pytest.mark.asyncio
-async def test_stream_gpu_failure_falls_back_to_software(
+async def test_stream_gpu_fallback(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     async def fake_ffprobe(_file: Path):

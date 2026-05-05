@@ -3,6 +3,12 @@
     class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
   >
     <div
+      class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+      :class="lightsOut ? 'opacity-100' : 'opacity-0'"
+      aria-hidden="true"
+    />
+
+    <div
       class="transition-transform duration-300"
       :class="{
         'lg:-translate-x-72': settingsOpen,
@@ -32,7 +38,7 @@
                       :loading="isRefreshing"
                       :disabled="isRefreshing"
                       :square="isMobile"
-                      @click="() => void refreshQueue()"
+                      @click="() => refreshQueue()"
                     >
                       <span v-if="!isMobile">Reload Queue</span>
                     </UButton>
@@ -329,7 +335,7 @@
                           variant="soft"
                           size="xs"
                           icon="i-lucide-play-circle"
-                          @click="void stateStore.startItems([item._id])"
+                          @click="() => stateStore.startItems([item._id])"
                         >
                           Start
                         </UButton>
@@ -340,7 +346,7 @@
                           variant="soft"
                           size="xs"
                           icon="i-lucide-pause"
-                          @click="void stateStore.pauseItems([item._id])"
+                          @click="() => stateStore.pauseItems([item._id])"
                         >
                           Pause
                         </UButton>
@@ -350,7 +356,7 @@
                           variant="outline"
                           size="xs"
                           icon="i-lucide-x"
-                          @click="void stateStore.cancelItems([item._id])"
+                          @click="() => stateStore.cancelItems([item._id])"
                         >
                           {{ item.is_live ? 'Stop' : 'Cancel' }}
                         </UButton>
@@ -400,7 +406,7 @@
                 :sibling-count="0"
                 @update:page="
                   (page) =>
-                    loadHistory(page, {
+                    load(page, {
                       order: 'DESC',
                       perPage: configStore.app.default_pagination,
                     })
@@ -415,7 +421,7 @@
                 :loading="historyIsLoading"
                 :disabled="historyIsLoading"
                 @click="
-                  void reloadHistory({ order: 'DESC', perPage: configStore.app.default_pagination })
+                  () => reload({ order: 'DESC', perPage: configStore.app.default_pagination })
                 "
               >
                 Reload
@@ -542,7 +548,7 @@
                           variant="soft"
                           size="xs"
                           icon="i-lucide-rotate-cw"
-                          @click="() => void requeueItem(item)"
+                          @click="() => requeueItem(item)"
                         >
                           Requeue
                         </UButton>
@@ -552,7 +558,7 @@
                           variant="outline"
                           size="xs"
                           icon="i-lucide-trash"
-                          @click="() => void deleteHistoryItem(item)"
+                          @click="() => deleteHistoryItem(item)"
                         >
                           Delete
                         </UButton>
@@ -589,7 +595,7 @@
                   :sibling-count="0"
                   @update:page="
                     (page) =>
-                      loadHistory(page, {
+                      load(page, {
                         order: 'DESC',
                         perPage: configStore.app.default_pagination,
                       })
@@ -615,7 +621,10 @@
       :open="Boolean(videoItem)"
       title="Video"
       :dismissible="true"
-      :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
+      :ui="{
+        content: lightsOut ? 'w-full sm:max-w-5xl shadow-2xl' : 'w-full sm:max-w-5xl',
+        body: 'p-0',
+      }"
       @update:open="(open) => !open && closePlayer()"
     >
       <template #body>
@@ -628,6 +637,7 @@
           class="w-full"
           @closeModel="closePlayer"
           @error="async (error: string) => await box.alert(error)"
+          @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
       </template>
     </UModal>
@@ -711,14 +721,15 @@ const {
   items: historyItems,
   pagination,
   isLoading,
-  loadHistory,
-  reloadHistory,
-  deleteHistoryItems,
-  historyMoveHandler,
+  load,
+  reload,
+  remove,
+  moveHandler,
 } = useHistoryState();
 
 const embedUrl = ref('');
 const videoItem = ref<StoreItem | null>(null);
+const playingNow = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
 
 const formUrl = ref('');
@@ -768,6 +779,7 @@ const historyEntries = computed<StoreItem[]>(() => historyItems.value);
 const hasAnyItems = computed(() => queueItems.value.length > 0 || historyEntries.value.length > 0);
 const showSections = computed(() => hasAnyItems.value || historyIsLoading.value);
 const isFormDisabled = computed(() => addInProgress.value);
+const lightsOut = computed(() => Boolean(videoItem.value && playingNow.value));
 const formContainerClass = computed(() => {
   if (showSections.value) {
     return 'max-w-full';
@@ -1027,6 +1039,7 @@ const openPlayer = (item: StoreItem): void => {
 };
 
 const closePlayer = (): void => {
+  playingNow.value = false;
   embedUrl.value = '';
   videoItem.value = null;
 };
@@ -1261,20 +1274,18 @@ const requeueItem = async (item: StoreItem): Promise<void> => {
     payload.extras = JSON.parse(JSON.stringify(item.extras));
   }
 
-  await deleteHistoryItems({ ids: [item._id], removeFile: false });
-  await reloadHistory({ order: 'DESC', perPage: configStore.app.default_pagination });
+  await remove({ ids: [item._id], removeFile: false });
+  await reload({ order: 'DESC', perPage: configStore.app.default_pagination });
   await stateStore.addDownload(payload);
 };
 
 const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
-  await deleteHistoryItems({ ids: [item._id], removeFile: app.value.remove_files });
-  await reloadHistory({ order: 'DESC', perPage: configStore.app.default_pagination });
+  await remove({ ids: [item._id], removeFile: app.value.remove_files });
+  await reload({ order: 'DESC', perPage: configStore.app.default_pagination });
   toast.info('Removed from history queue.');
 };
 
-const handleHistoryItemMoved = historyMoveHandler(
-  () => simpleMode.value && historyInitialized.value,
-);
+const handleHistoryItemMoved = moveHandler(() => simpleMode.value && historyInitialized.value);
 
 const showMessage = (item: StoreItem): boolean => {
   if (!item?.msg || item.msg === item?.error) {
@@ -1303,7 +1314,7 @@ onMounted(async () => {
   await normalizeSimpleRoute();
   historyInitialized.value = true;
   socketStore.on('item_moved', handleHistoryItemMoved);
-  await loadHistory(1, { order: 'DESC', perPage: configStore.app.default_pagination });
+  await load(1, { order: 'DESC', perPage: configStore.app.default_pagination });
 
   if (!socketStore.isConnected && autoRefreshEnabled.value) {
     startAutoRefresh();
@@ -1389,7 +1400,7 @@ watch(
       return;
     }
 
-    void loadHistory(1, { order: 'DESC', perPage: configStore.app.default_pagination });
+    void load(1, { order: 'DESC', perPage: configStore.app.default_pagination });
   },
 );
 </script>

@@ -1,10 +1,13 @@
 import asyncio
 import json
 from pathlib import Path
+import time
 from typing import Any, cast
 
 import pytest
+from aiohttp import web
 
+from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.TerminalSessionManager import TerminalSessionManager
 from app.library.config import Config
@@ -13,6 +16,7 @@ from app.routes.api.system import (
     cancel_terminal_session,
     create_terminal_session,
     get_active_terminal_session,
+    list_terminal_sessions,
     get_terminal_session,
     stream_terminal_session,
 )
@@ -133,6 +137,7 @@ class _TerminableProc:
 
 @pytest.fixture
 def terminal_setup(tmp_path: Path) -> tuple[Config, TerminalSessionManager, Encoder]:
+    Scheduler._reset_singleton()
     Services._reset_singleton()
     Config._reset_singleton()
     TerminalSessionManager._reset_singleton()
@@ -150,8 +155,18 @@ def terminal_setup(tmp_path: Path) -> tuple[Config, TerminalSessionManager, Enco
 
 
 class TestTerminalSessionRoutes:
+    def test_attach_registers_cleanup_job(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
+        _config, manager, _encoder = terminal_setup
+        app = web.Application()
+
+        manager.attach(app)
+
+        scheduler = Scheduler.get_instance()
+        assert scheduler.has(f"{TerminalSessionManager.__name__}.{TerminalSessionManager.cleanup.__name__}")
+        assert manager._cleanup_job_id == f"{TerminalSessionManager.__name__}.{TerminalSessionManager.cleanup.__name__}"
+
     @pytest.mark.asyncio
-    async def test_start_returns_session_metadata_and_active_conflict(
+    async def test_start_conflict_meta(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -191,7 +206,7 @@ class TestTerminalSessionRoutes:
         await task
 
     @pytest.mark.asyncio
-    async def test_stream_endpoint_replays_persisted_events_and_resume_cursor(
+    async def test_stream_replays_resume(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -241,11 +256,11 @@ class TestTerminalSessionRoutes:
         assert "id: 3" in resumed_payload
 
     @pytest.mark.asyncio
-    async def test_completed_session_expires_after_drain_window(
+    async def test_completed_expires(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
-        manager._drain_ttl = 0.05
+        manager._completed_retention = 0.05
         await manager.initialize()
 
         async def fake_create_subprocess_exec(*_args, **_kwargs):
@@ -271,10 +286,130 @@ class TestTerminalSessionRoutes:
 
         expired = await manager.get_session(session_id)
         assert expired is None
+        assert (manager.root_path / session_id).exists()
+
+        await manager.cleanup()
+
         assert not (manager.root_path / session_id).exists()
 
     @pytest.mark.asyncio
-    async def test_shutdown_interrupts_active_session_and_clears_active_marker(
+    async def test_list_keeps_recent_done(
+        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config, manager, encoder = terminal_setup
+        manager._completed_retention = 0.2
+        manager._drain_ttl = 0.01
+        await manager.initialize()
+
+        async def fake_create_subprocess_exec(*_args, **_kwargs):
+            return _CompletedProc([b"done\n"])
+
+        monkeypatch.setattr(
+            "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
+        )
+        monkeypatch.setattr(manager, "_open_pty", lambda: None)
+
+        start_request = _FakeRequest(payload={"command": "--help"}, can_read_body=True)
+        start_response = await create_terminal_session(start_request, config, encoder, manager)
+        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+
+        assert manager._active is not None
+        await manager._active.task
+
+        await asyncio.sleep(0.03)
+
+        listed_response = await list_terminal_sessions(config, encoder, manager)
+        listed_payload = json.loads(listed_response.body.decode("utf-8"))
+
+        assert 200 == listed_response.status
+        assert 1 == len(listed_payload["items"])
+        assert session_id == listed_payload["items"][0]["session_id"]
+        assert "completed" == listed_payload["items"][0]["status"]
+        assert listed_payload["items"][0]["available_until"] is not None
+
+        persisted = await manager.get_session(session_id)
+        assert persisted is not None
+
+        await asyncio.sleep(0.19)
+
+        expired = await manager.get_session(session_id)
+        assert expired is None
+        assert (manager.root_path / session_id).exists()
+
+        await manager.cleanup()
+
+        assert not (manager.root_path / session_id).exists()
+
+    @pytest.mark.asyncio
+    async def test_list_orders_newest(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
+        config, manager, encoder = terminal_setup
+        await manager.initialize()
+
+        first_id = "first"
+        second_id = "second"
+        expired_id = "expired"
+
+        for session_id in [first_id, second_id, expired_id]:
+            session_dir = manager.root_path / session_id
+            session_dir.mkdir(parents=True, exist_ok=True)
+            manager._transcript_path(session_id).touch(exist_ok=True)
+
+        manager._write_json(
+            manager._metadata_path(first_id),
+            {
+                "session_id": first_id,
+                "command": "--first",
+                "status": "completed",
+                "created_at": 10.0,
+                "started_at": 11.0,
+                "finished_at": 20.0,
+                "expires_at": time.time() + 60,
+                "exit_code": 0,
+                "last_sequence": 2,
+            },
+        )
+        manager._write_json(
+            manager._metadata_path(second_id),
+            {
+                "session_id": second_id,
+                "command": "--second",
+                "status": "running",
+                "created_at": 30.0,
+                "started_at": 31.0,
+                "finished_at": None,
+                "expires_at": None,
+                "exit_code": None,
+                "last_sequence": 4,
+            },
+        )
+        manager._write_json(
+            manager._metadata_path(expired_id),
+            {
+                "session_id": expired_id,
+                "command": "--expired",
+                "status": "completed",
+                "created_at": 1.0,
+                "started_at": 2.0,
+                "finished_at": 3.0,
+                "expires_at": time.time() - 1,
+                "exit_code": 1,
+                "last_sequence": 1,
+            },
+        )
+
+        listed_response = await list_terminal_sessions(config, encoder, manager)
+        listed_payload = json.loads(listed_response.body.decode("utf-8"))
+
+        assert 200 == listed_response.status
+        assert [second_id, first_id] == [item["session_id"] for item in listed_payload["items"]]
+        assert (manager.root_path / expired_id).exists()
+
+        await manager.cleanup()
+
+        assert not (manager.root_path / expired_id).exists()
+
+    @pytest.mark.asyncio
+    async def test_shutdown_clears_active(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -314,7 +449,7 @@ class TestTerminalSessionRoutes:
         assert -15 == transcript[-1]["data"]["exitcode"]
 
     @pytest.mark.asyncio
-    async def test_stream_endpoint_emits_keepalive_for_silent_active_session(
+    async def test_stream_keepalive(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -352,7 +487,7 @@ class TestTerminalSessionRoutes:
         assert 'data: {"exitcode": 0}' in stream_payload
 
     @pytest.mark.asyncio
-    async def test_cancel_endpoint_interrupts_active_session(
+    async def test_cancel_active(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -398,7 +533,7 @@ class TestTerminalSessionRoutes:
         assert -15 == transcript[-1]["data"]["exitcode"]
 
     @pytest.mark.asyncio
-    async def test_cancel_endpoint_returns_conflict_for_inactive_session(
+    async def test_cancel_inactive_conflict(
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
@@ -427,9 +562,7 @@ class TestTerminalSessionRoutes:
         assert b"not active" in cancel_response.body.lower()
 
     @pytest.mark.asyncio
-    async def test_cancel_endpoint_returns_not_found_for_unknown_session(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]
-    ) -> None:
+    async def test_cancel_unknown(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
 

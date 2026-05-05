@@ -1,6 +1,19 @@
 import type { KeyboardShortcutContext } from '~/types/video';
 
-export const handlePlayPause = (ctx: KeyboardShortcutContext) => {
+export const clampMediaTime = (media: HTMLMediaElement, nextTime: number) => {
+  const duration =
+    Number.isFinite(media.duration) && media.duration > 0 ? media.duration : Infinity;
+  media.currentTime = Math.min(Math.max(nextTime, 0), duration);
+};
+
+export const clampMediaVolume = (volume: number) => {
+  return Math.min(1, Math.max(0, volume));
+};
+
+export const hasModifierKey = (event: KeyboardEvent): boolean =>
+  event.ctrlKey || event.metaKey || event.altKey;
+
+export const playPause = (ctx: KeyboardShortcutContext) => {
   if (ctx.video.paused) {
     ctx.video.play();
   } else {
@@ -8,30 +21,29 @@ export const handlePlayPause = (ctx: KeyboardShortcutContext) => {
   }
 };
 
-export const handleRewind = (ctx: KeyboardShortcutContext, seconds: number = 10) => {
+export const rewind = (ctx: KeyboardShortcutContext, seconds: number = 10) => {
   ctx.video.currentTime = Math.max(0, ctx.video.currentTime - seconds);
 };
 
-export const handleForward = (ctx: KeyboardShortcutContext, seconds: number = 10) => {
+export const forward = (ctx: KeyboardShortcutContext, seconds: number = 10) => {
   ctx.video.currentTime = Math.min(ctx.video.duration, ctx.video.currentTime + seconds);
 };
 
-export const handleMute = (ctx: KeyboardShortcutContext) => {
+export const mute = (ctx: KeyboardShortcutContext) => {
   ctx.video.muted = !ctx.video.muted;
 };
 
-export const handleVolumeChange = (ctx: KeyboardShortcutContext, delta: number) => {
-  const newVolume = Math.max(0, Math.min(1, ctx.video.volume + delta));
-  ctx.video.volume = newVolume;
+export const changeVolume = (ctx: KeyboardShortcutContext, delta: number) => {
+  const volume = clampMediaVolume(ctx.video.volume + delta);
+  ctx.video.volume = volume;
 };
 
-export const handlePlaybackSpeedChange = (ctx: KeyboardShortcutContext, delta: number) => {
-  const currentSpeed = ctx.video.playbackRate;
-  const newSpeed = Math.max(0.25, Math.min(2, currentSpeed + delta));
-  ctx.video.playbackRate = newSpeed;
+export const changeSpeed = (ctx: KeyboardShortcutContext, delta: number) => {
+  const speed = ctx.video.playbackRate;
+  ctx.video.playbackRate = Math.max(0.25, Math.min(2, speed + delta));
 };
 
-export const handleFrameStep = (
+export const frameStep = (
   ctx: KeyboardShortcutContext,
   direction: 'forward' | 'backward' = 'forward',
 ) => {
@@ -47,21 +59,21 @@ export const handleFrameStep = (
   );
 };
 
-export const handleSeekToPercent = (ctx: KeyboardShortcutContext, percent: number) => {
+export const seekToPercent = (ctx: KeyboardShortcutContext, percent: number) => {
   ctx.video.currentTime = (percent / 100) * ctx.video.duration;
 };
 
-export const handleSeekBackward = (ctx: KeyboardShortcutContext, seconds: number = 5) => {
-  ctx.video.currentTime = Math.max(0, ctx.video.currentTime - seconds);
+export const seekBackward = (ctx: KeyboardShortcutContext, seconds: number = 5) => {
+  clampMediaTime(ctx.video, ctx.video.currentTime - seconds);
 };
 
-export const handleSeekForward = (ctx: KeyboardShortcutContext, seconds: number = 5) => {
-  ctx.video.currentTime = Math.min(ctx.video.duration, ctx.video.currentTime + seconds);
+export const seekForward = (ctx: KeyboardShortcutContext, seconds: number = 5) => {
+  clampMediaTime(ctx.video, ctx.video.currentTime + seconds);
 };
 
-export const handleFullscreen = (videoElement: HTMLVideoElement) => {
+export const fullscreen = (video: HTMLVideoElement) => {
   if (!document.fullscreenElement) {
-    videoElement.requestFullscreen().catch((err) => {
+    video.requestFullscreen().catch((err) => {
       console.error(`Error attempting to enable fullscreen: ${err.message}`);
     });
   } else {
@@ -69,20 +81,20 @@ export const handleFullscreen = (videoElement: HTMLVideoElement) => {
   }
 };
 
-export const handlePictureInPicture = async (videoElement: HTMLVideoElement) => {
+export const pictureInPicture = async (video: HTMLVideoElement) => {
   try {
     if (document.pictureInPictureElement) {
       await document.exitPictureInPicture();
     } else if (document.pictureInPictureEnabled) {
-      await videoElement.requestPictureInPicture();
+      await video.requestPictureInPicture();
     }
   } catch (error) {
     console.error(`Picture-in-Picture error: ${error}`);
   }
 };
 
-export const handleToggleCaptions = (videoElement: HTMLVideoElement) => {
-  const textTracks = videoElement.textTracks;
+export const toggleCaptions = (video: HTMLVideoElement) => {
+  const textTracks = video.textTracks;
 
   if (0 === textTracks.length) {
     return;
@@ -112,5 +124,4 @@ export const shouldHandleKeyboardShortcut = (event: KeyboardEvent): boolean => {
   return true;
 };
 
-export const isModifierKey = (event: KeyboardEvent): boolean =>
-  event.ctrlKey || event.metaKey || event.altKey;
+export const modifierKey = (event: KeyboardEvent): boolean => hasModifierKey(event);

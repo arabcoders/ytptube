@@ -356,7 +356,7 @@ class TestAsyncClient:
             assert isinstance(client._transport, CFAsyncTransport)
 
     @pytest.mark.asyncio
-    async def test_async_client_cf_disabled(self):
+    async def test_async_client_custom_cf_off(self):
         """Test creating async client with CF disabled."""
         async with async_client(enable_cf=False) as client:
             assert isinstance(client, httpx.AsyncClient)
@@ -381,7 +381,7 @@ class TestAsyncClient:
             assert client._transport.base is custom
 
     @pytest.mark.asyncio
-    async def test_async_client_custom_transport_cf_disabled(self):
+    async def test_async_client_cf_disabled(self):
         """Test creating async client with custom transport and CF disabled."""
         custom = httpx.AsyncHTTPTransport()
         async with async_client(enable_cf=False, transport=custom) as client:
@@ -400,7 +400,7 @@ class TestSyncClient:
         assert isinstance(client._transport, CFTransport)
         client.close()
 
-    def test_sync_client_cf_disabled(self):
+    def test_sync_client_custom_cf_off(self):
         """Test creating sync client with CF disabled."""
         client = sync_client(enable_cf=False)
         assert isinstance(client, httpx.Client)
@@ -425,7 +425,7 @@ class TestSyncClient:
         assert client._transport.base is custom
         client.close()
 
-    def test_sync_client_custom_transport_cf_disabled(self):
+    def test_sync_client_cf_disabled(self):
         """Test creating sync client with custom transport and CF disabled."""
         custom = httpx.HTTPTransport()
         client = sync_client(enable_cf=False, transport=custom)

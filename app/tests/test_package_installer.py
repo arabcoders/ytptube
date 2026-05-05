@@ -38,7 +38,7 @@ class TestPackages:
 
 
 class TestPackageInstallerInit:
-    def test_init_with_explicit_path_adds_to_sys_path(self, tmp_path: Path) -> None:
+    def test_init_adds_sys_path(self, tmp_path: Path) -> None:
         p = tmp_path / "site"
         p.mkdir()
 
@@ -58,7 +58,7 @@ class TestPackageInstallerInit:
         assert installer.user_site.exists() is True
         assert str(installer.user_site) in sys.path
 
-    def test_init_without_path_or_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_init_no_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("YTP_CONFIG_PATH", raising=False)
         installer = PackageInstaller(pkg_path=None)
         # No user_site is set when no path or env provided
@@ -206,7 +206,7 @@ class TestInstallCmd:
 class TestActionAndCheck:
     @patch.object(PackageInstaller, "_install_pkg")
     @patch.object(PackageInstaller, "_get_installed_version")
-    def test_action_skips_when_same_pinned(self, mock_get_installed, mock_install, tmp_path: Path) -> None:
+    def test_action_skip_pinned(self, mock_get_installed, mock_install, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_get_installed.return_value = "1.2.3"
         # compare_versions normal equality should hold
@@ -216,9 +216,7 @@ class TestActionAndCheck:
     @patch.object(PackageInstaller, "_install_pkg")
     @patch.object(PackageInstaller, "_get_installed_version")
     @patch.object(PackageInstaller, "_get_latest_version")
-    def test_action_upgrade_skip_when_latest(
-        self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path
-    ) -> None:
+    def test_action_skip_latest(self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_get_installed.return_value = "2.0.0"
         mock_get_latest.return_value = "2.0.0"
@@ -228,9 +226,7 @@ class TestActionAndCheck:
     @patch.object(PackageInstaller, "_install_pkg")
     @patch.object(PackageInstaller, "_get_installed_version")
     @patch.object(PackageInstaller, "_get_latest_version")
-    def test_action_upgrade_runs_when_newer_available(
-        self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path
-    ) -> None:
+    def test_action_upgrade_newer(self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_get_installed.return_value = "1.0.0"
         mock_get_latest.return_value = "1.1.0"
@@ -239,13 +235,13 @@ class TestActionAndCheck:
 
     @patch.object(PackageInstaller, "_install_pkg")
     @patch.object(PackageInstaller, "_get_installed_version")
-    def test_action_install_when_not_installed(self, mock_get_installed, mock_install, tmp_path: Path) -> None:
+    def test_action_install_missing(self, mock_get_installed, mock_install, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_get_installed.return_value = None
         inst.action("pkg")
         mock_install.assert_called_once_with("pkg", version=None)
 
-    def test_check_with_no_packages_or_no_user_site(self, tmp_path: Path) -> None:
+    def test_check_no_packages_or_path(self, tmp_path: Path) -> None:
         # No packages
         inst = PackageInstaller(pkg_path=tmp_path)
         pkgs = Packages(env=None, file=None, upgrade=False)
@@ -257,7 +253,7 @@ class TestActionAndCheck:
         inst2.check(pkgs2)
 
     @patch.object(PackageInstaller, "action")
-    def test_check_calls_action_and_handles_errors(self, mock_action, tmp_path: Path) -> None:
+    def test_check_runs_all(self, mock_action, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         pkgs = Packages(env="foo bar", file=None, upgrade=True)
 
@@ -272,3 +268,5 @@ class TestActionAndCheck:
         # Should not raise
         inst.check(pkgs)
         assert mock_action.call_count == 2
+        mock_action.assert_any_call("foo", upgrade=True)
+        mock_action.assert_any_call("bar", upgrade=True)

@@ -367,7 +367,9 @@
                   <UIcon name="i-lucide-rss" class="size-4 text-toned" />
                   <p class="text-sm font-semibold text-default">Enable Handler</p>
                 </div>
-                <p class="text-xs text-toned">Handlers run regardless of task timer.</p>
+                <p class="text-xs text-toned">
+                  Tasks without a supported handler must use a timer.
+                </p>
               </div>
               <USwitch v-model="form.handler_enabled" :disabled="addInProgress" />
             </div>
@@ -442,6 +444,10 @@
             <strong>RSS Monitoring Basics:</strong> Runs hourly independently. Timer controls
             scheduled downloads to yt-dlp. Disable <code>Enable Handler</code> to disable RSS
             monitoring.
+          </li>
+          <li>
+            <strong>Timer Requirement:</strong> if no supported handler matches the URL, you must
+            set a CRON timer before saving.
           </li>
         </ul>
       </template>
@@ -523,6 +529,7 @@ const emitter = defineEmits<{
 const toast = useNotification();
 const config = useYtpConfig();
 const dialog = useDialog();
+const tasksComposable = useTasks();
 const { findPreset, getPresetDefault, selectItems } = usePresetOptions();
 const showImport = useStorage('showTaskImport', false);
 
@@ -786,6 +793,13 @@ const checkInfo = async (): Promise<void> => {
     form.cli = form.cli.trim();
   }
 
+  try {
+    await requireTimerForTask(form);
+  } catch (error: any) {
+    toast.error(error.message);
+    return;
+  }
+
   if (urls.length === 1) {
     emitter('submit', {
       reference: toRaw(props.reference),
@@ -811,12 +825,32 @@ const checkInfo = async (): Promise<void> => {
       } as Task;
     }
 
-    return { url } as Task;
+    return {
+      url,
+      preset: form.preset,
+      timer: form.timer,
+      handler_enabled: form.handler_enabled,
+    } as Task;
+  });
+
+  try {
+    await Promise.all(tasks.map((item) => requireTimerForTask(item)));
+  } catch (error: any) {
+    toast.error(error.message);
+    return;
+  }
+
+  const submitTasks: Task[] = tasks.map((item, idx) => {
+    if (idx === 0) {
+      return item;
+    }
+
+    return { url: item.url } as Task;
   });
 
   emitter('submit', {
     reference: toRaw(props.reference),
-    task: tasks,
+    task: submitTasks,
     archive_all: archiveAllAfterAdd.value,
   });
 };
@@ -941,6 +975,34 @@ const convert_url = async (url: string): Promise<string> => {
 
 const convertCurrentUrl = async (): Promise<void> => {
   form.url = await convert_url(form.url);
+};
+
+const requireTimerForTask = async (
+  item: Pick<Task, 'url' | 'preset' | 'timer' | 'handler_enabled'>,
+): Promise<void> => {
+  if (item.timer?.trim()) {
+    return;
+  }
+
+  if (item.handler_enabled === false) {
+    throw new Error('This task needs a CRON timer because the handler is disabled.');
+  }
+
+  const result = await tasksComposable.inspectTaskHandler({
+    url: item.url,
+    preset: item.preset,
+    static_only: true,
+  });
+
+  if (!result) {
+    throw new Error('Failed to verify handler support. Set a CRON timer or try again.');
+  }
+
+  if (result?.matched) {
+    return;
+  }
+
+  throw new Error('This task needs a CRON timer because no supported handler matches the URL.');
 };
 
 const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string = '') => {

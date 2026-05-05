@@ -48,14 +48,14 @@ class TestLogWrapper:
         with pytest.raises(TypeError, match=r"Target must be a logging\.Logger instance or a callable"):
             lw.add_target(123)  # type: ignore[arg-type]
 
-    def test_add_target_name_inference_and_custom(self) -> None:
+    def test_add_target_names(self) -> None:
         lw = LogWrapper()
         logger, _ = make_logger("one")
 
         # Name inferred from logger
         lw.add_target(logger)
         assert lw.targets[-1].name == "one"
-        assert lw.has_targets() is True
+        assert lw.has_targets()
 
         # Name inferred from callable
         def sink(level: int, msg: str, *args: Any, **kwargs: Any) -> None:  # noqa: ARG001
@@ -129,7 +129,7 @@ class TestExtractYtdlpLogs:
         logs = ["INFO: Downloading", "ERROR: Failed", "WARNING: Deprecated"]
         filters = [re.compile(r"ERROR")]
         result = extract_ytdlp_logs(logs, filters)
-        assert len(result) >= 0  # Should filter based on patterns
+        assert result == ["ERROR: Failed"]
 
     def test_extract_ytdlp_logs_empty(self):
         """Test with empty logs."""
@@ -146,8 +146,8 @@ class TestYtdlpReject:
         yt_params = {}
 
         passed, message = ytdlp_reject(entry, yt_params)
-        assert isinstance(passed, bool)
-        assert isinstance(message, str)
+        assert passed is True
+        assert message == ""
 
     def test_ytdlp_reject_with_filters(self):
         """Test rejection with filters."""
@@ -158,8 +158,9 @@ class TestYtdlpReject:
         yt_params["daterange"].__contains__ = MagicMock(return_value=False)
 
         passed, message = ytdlp_reject(entry, yt_params)
-        assert isinstance(passed, bool)
-        assert isinstance(message, str)
+        assert passed is False
+        assert "20230101" in message
+        assert "not in range" in message
 
 
 class TestParseOuttmpl:
@@ -256,7 +257,7 @@ class TestParseOuttmpl:
 
         assert result == "Test Channel/Best Videos/005 - Amazing Content [abc123xyz].mp4"
 
-    def test_parse_outtmpl_with_special_characters(self):
+    def test_parse_outtmpl_special_chars(self):
         """Test template parsing handles special characters in values."""
 
         template = "%(title)s.%(ext)s"
@@ -284,7 +285,7 @@ class TestParseOuttmpl:
 
         assert result == "My Playlist/Video Title.webm"
 
-    def test_parse_outtmpl_with_restrict_filename(self):
+    def test_parse_outtmpl_restrict(self):
         """Test template parsing with restrict_filename parameter."""
 
         template = "%(uploader)s/%(title)s.%(ext)s"
@@ -302,19 +303,19 @@ class TestParseOuttmpl:
 
 
 class TestGetThumbnail:
-    def test_returns_none_for_empty_list(self):
+    def test_empty_list(self):
         """Test that None is returned for an empty thumbnail list."""
 
         assert get_thumbnail([]) is None
 
-    def test_returns_none_for_non_list(self):
+    def test_non_list(self):
         """Test that None is returned for non-list input."""
 
         assert get_thumbnail(None) is None
         assert get_thumbnail("not a list") is None
         assert get_thumbnail({"not": "list"}) is None
 
-    def test_returns_highest_preference_thumbnail(self):
+    def test_thumbnail_preference(self):
         """Test that the thumbnail with highest preference is returned."""
 
         thumbnails = [
@@ -326,7 +327,7 @@ class TestGetThumbnail:
         result = get_thumbnail(thumbnails)
         assert result == {"url": "high.jpg", "preference": 10, "width": 200, "height": 200}
 
-    def test_returns_highest_width_when_preference_equal(self):
+    def test_thumbnail_width(self):
         """Test that the thumbnail with highest width is returned when preference is equal."""
 
         thumbnails = [
@@ -338,7 +339,7 @@ class TestGetThumbnail:
         result = get_thumbnail(thumbnails)
         assert result == {"url": "large.jpg", "preference": 1, "width": 200, "height": 200}
 
-    def test_handles_missing_attributes(self):
+    def test_missing_attrs(self):
         """Test that thumbnails with missing attributes are handled correctly."""
 
         thumbnails = [
@@ -349,7 +350,7 @@ class TestGetThumbnail:
         result = get_thumbnail(thumbnails)
         assert result["url"] == "with_pref.jpg"
 
-    def test_returns_first_when_all_equal(self):
+    def test_all_equal(self):
         """Test that any thumbnail is returned when all attributes are equal."""
 
         thumbnails = [
@@ -357,17 +358,15 @@ class TestGetThumbnail:
             {"url": "second.jpg"},
         ]
 
-        result = get_thumbnail(thumbnails)
-        assert result is not None
-        assert result["url"] in ["first.jpg", "second.jpg"]
+        assert get_thumbnail(thumbnails) == {"url": "second.jpg"}
 
 
 class TestGetExtras:
-    def test_returns_empty_dict_for_none(self):
+    def test_none(self):
         """Test that empty dict is returned for None input."""
         assert get_extras(None) == {}
 
-    def test_returns_empty_dict_for_non_dict(self):
+    def test_non_dict(self):
         """Test that empty dict is returned for non-dict input."""
         assert get_extras("not a dict") == {}
         assert get_extras([]) == {}
@@ -409,7 +408,7 @@ class TestGetExtras:
         assert result["playlist_uploader"] == "Playlist Owner"
         assert result["playlist_uploader_id"] == "owner123"
 
-    def test_handles_release_timestamp(self):
+    def test_release_timestamp(self):
         """Test handling of release_timestamp for upcoming content."""
 
         entry = {
@@ -421,7 +420,7 @@ class TestGetExtras:
         assert "release_in" in result
         assert result["release_in"] == "Fri, 13 Feb 2009 23:31:30 GMT"
 
-    def test_handles_upcoming_live_stream(self):
+    def test_upcoming_live(self):
         """Test handling of upcoming live stream."""
 
         entry = {
@@ -434,7 +433,7 @@ class TestGetExtras:
         assert result["is_live"] == 1234567890
         assert "release_in" in result
 
-    def test_handles_premiere_flag(self):
+    def test_premiere_flag(self):
         """Test handling of is_premiere flag."""
 
         entry = {
@@ -481,7 +480,7 @@ class TestGetStaticYtdlp:
 
         _DATA.YTDLP_INFO_CLS = None
 
-    def test_get_static_ytdlp_returns_instance(self):
+    def test_instance(self):
         """Test that get_static_ytdlp returns a YTDLP instance."""
         from app.features.ytdlp.ytdlp import YTDLP
 
@@ -491,7 +490,7 @@ class TestGetStaticYtdlp:
         assert instance is not None
         assert isinstance(instance, YTDLP)
 
-    def test_get_static_ytdlp_returns_same_instance(self):
+    def test_get_static_ytdlp_same(self):
         """Test that get_static_ytdlp returns the same cached instance."""
 
         instance1 = get_ytdlp()
@@ -508,7 +507,7 @@ class TestGetStaticYtdlp:
         assert instance1 is not instance2
         assert instance2 is not None
 
-    def test_get_static_ytdlp_has_correct_params(self):
+    def test_get_static_ytdlp_params(self):
         """Test that get_static_ytdlp initializes with correct parameters."""
 
         instance = get_ytdlp()
@@ -560,22 +559,22 @@ class TestArchiveFunctions:
 
     def test_archive_add_and_read(self):
         """Test adding and reading archive entries."""
-        ids = ["id1", "id2", "id3"]
+        ids = ["youtube id1", "youtube id2", "youtube id3"]
 
-        # Add entries - just test it returns a boolean
         result = archive_add(self.archive_file, ids)
-        assert isinstance(result, bool)
+        assert result is True
 
-        # Read entries - just test it returns a list
         read_ids = archive_read(self.archive_file)
-        assert isinstance(read_ids, list)
+        assert set(read_ids) == set(ids)
 
     def test_archive_delete(self):
         """Test deleting archive entries."""
-        # Delete some entries - just test it returns a boolean
-        delete_ids = ["id2"]
+        archive_add(self.archive_file, ["youtube id1", "youtube id2", "youtube id3"])
+
+        delete_ids = ["youtube id2"]
         result = archive_delete(self.archive_file, delete_ids)
-        assert isinstance(result, bool)
+        assert result is True
+        assert set(archive_read(self.archive_file)) == {"youtube id1", "youtube id3"}
 
     def test_archive_read_nonexistent(self):
         """Test reading from non-existent archive."""

@@ -1,5 +1,8 @@
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import patch_windows_popen_wait
 from app.features.ytdlp.utils import _DATA
 from app.features.ytdlp.ytdlp import YTDLP, _ArchiveProxy, ytdlp_options
@@ -20,7 +23,7 @@ class TestArchiveProxy:
         assert p2.add("") is False
 
     @patch("app.features.ytdlp.archiver.Archiver.get_instance")
-    def test_contains_and_add_delegate_to_archiver(self, mock_get_instance) -> None:
+    def test_delegates_to_archiver(self, mock_get_instance) -> None:
         arch = MagicMock()
         mock_get_instance.return_value = arch
 
@@ -44,7 +47,7 @@ class TestArchiveProxy:
 
 
 class TestYtDlpOptions:
-    def test_options_structure_and_no_suppresshelp(self) -> None:
+    def test_options_shape(self) -> None:
         opts = ytdlp_options()
 
         assert isinstance(opts, list)
@@ -91,7 +94,7 @@ class TestYTDLP:
             return ytdlp
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
-    def test_init_patches_download_archive_param(self, mock_super_init) -> None:
+    def test_init_archive_param(self, mock_super_init) -> None:
         """Test that __init__ removes download_archive before calling super, then restores it."""
         mock_super_init.return_value = None
 
@@ -118,7 +121,7 @@ class TestYTDLP:
         assert ytdlp.archive._file == "/tmp/archive.txt"
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
-    def test_init_handles_no_download_archive(self, mock_super_init) -> None:
+    def test_init_no_archive(self, mock_super_init) -> None:
         """Test __init__ works correctly when download_archive is not in params."""
         mock_super_init.return_value = None
 
@@ -136,7 +139,7 @@ class TestYTDLP:
         assert not ytdlp.archive
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
-    def test_init_handles_none_params(self, mock_super_init) -> None:
+    def test_init_none_params(self, mock_super_init) -> None:
         """Test __init__ handles None params gracefully."""
         mock_super_init.return_value = None
 
@@ -147,7 +150,7 @@ class TestYTDLP:
         assert not ytdlp.archive
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
-    def test_init_patches_windows_popen_wait_once(self, mock_super_init) -> None:
+    def test_init_patches_wait(self, mock_super_init) -> None:
         mock_super_init.return_value = None
 
         class FakePopen:
@@ -160,7 +163,7 @@ class TestYTDLP:
 
         assert getattr(FakePopen, "_ytptube_wait_patched", False) is True
 
-    def test_windows_wait_patch_uses_polling_for_blocking_wait(self) -> None:
+    def test_wait_patch_polls(self) -> None:
         calls: list[float | None] = []
 
         class FakePopen:
@@ -183,7 +186,7 @@ class TestYTDLP:
         assert result == 0
         assert calls == [0.1, 0.1, 0.1]
 
-    def test_windows_wait_patch_preserves_explicit_timeout(self) -> None:
+    def test_wait_patch_timeout(self) -> None:
         calls: list[float | None] = []
 
         class FakePopen:
@@ -202,7 +205,7 @@ class TestYTDLP:
         assert calls == [5]
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
-    def test_delete_downloaded_files_skips_when_interrupted(self, mock_super_delete) -> None:
+    def test_delete_interrupted(self, mock_super_delete) -> None:
         """Test _delete_downloaded_files skips cleanup when _interrupted is True."""
         with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params={})
@@ -221,7 +224,7 @@ class TestYTDLP:
             assert result is None
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
-    def test_delete_downloaded_files_calls_super_when_not_interrupted(self, mock_super_delete) -> None:
+    def test_delete_calls_super(self, mock_super_delete) -> None:
         """Test _delete_downloaded_files calls super when not interrupted."""
         mock_super_delete.return_value = "cleanup_result"
 
@@ -236,7 +239,7 @@ class TestYTDLP:
             # Should return super's result
             assert result == "cleanup_result"
 
-    def test_record_download_archive_does_nothing_without_download_archive_param(self) -> None:
+    def test_record_archive_missing(self) -> None:
         """Test record_download_archive returns early when download_archive is not set."""
         ytdlp = self._create_ytdlp(params={})
         ytdlp.archive = Mock()
@@ -246,7 +249,7 @@ class TestYTDLP:
         # Should not interact with archive
         ytdlp.archive.add.assert_not_called()
 
-    def test_record_download_archive_adds_archive_id(self) -> None:
+    def test_record_archive_adds_id(self) -> None:
         """Test record_download_archive adds the archive ID."""
         ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
         ytdlp.write_debug = Mock()
@@ -264,7 +267,7 @@ class TestYTDLP:
         ytdlp.archive.add.assert_called_once_with("youtube test123")
         ytdlp.write_debug.assert_called_with("Adding to archive: youtube test123")
 
-    def test_record_download_archive_handles_old_archive_ids(self) -> None:
+    def test_record_archive_old_ids(self) -> None:
         """Test record_download_archive adds _old_archive_ids when present."""
         ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
         ytdlp.write_debug = Mock()
@@ -291,7 +294,7 @@ class TestYTDLP:
         # Should not add duplicate (youtube new123 appears only once)
         assert calls.count("youtube new123") == 1
 
-    def test_record_download_archive_skips_empty_old_archive_ids(self) -> None:
+    def test_record_archive_empty_old_ids(self) -> None:
         """Test record_download_archive handles empty or invalid _old_archive_ids."""
         ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
         ytdlp.write_debug = Mock()
@@ -317,7 +320,7 @@ class TestYTDLP:
         ytdlp.record_download_archive(info_dict)
         assert ytdlp.archive.add.call_count == 1  # Only main ID
 
-    def test_record_download_archive_returns_early_on_empty_archive_id(self) -> None:
+    def test_record_archive_empty_id(self) -> None:
         """Test record_download_archive returns early when _make_archive_id returns empty."""
         ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
         ytdlp.archive = Mock()
@@ -327,3 +330,116 @@ class TestYTDLP:
 
         # Should not add anything
         ytdlp.archive.add.assert_not_called()
+
+    def test_outtmpl_callable(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        result = ytdlp.evaluate_outtmpl("%(ytp_random:8)s", {"title": "x"})
+
+        assert len(result) == 8
+        assert result.isalnum()
+
+    def test_outtmpl_reuses_value(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        result = ytdlp.evaluate_outtmpl("%(ytp_random:8)s/%(ytp_random:8)s", {"title": "x"})
+        first, second = result.split("/")
+
+        assert first == second
+
+    def test_outtmpl_new_value(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        first = ytdlp.evaluate_outtmpl("%(ytp_random:8)s", {"title": "x"})
+        second = ytdlp.evaluate_outtmpl("%(ytp_random:8)s", {"title": "y"})
+
+        assert first != second
+
+    def test_prepare_filename_sidecars(self) -> None:
+        ytdlp = YTDLP(
+            params={
+                "outtmpl": {
+                    "default": "%(ytp_random:6)s.%(ext)s",
+                    "thumbnail": "%(ytp_random:6)s.%(ext)s",
+                    "subtitle": "%(ytp_random:6)s.%(ext)s",
+                    "infojson": "%(ytp_random:6)s.%(ext)s",
+                }
+            }
+        )
+
+        info = {"id": "abc123", "title": "Example", "ext": "mp4"}
+
+        default_name = ytdlp.prepare_filename(info)
+        thumbnail_name = ytdlp.prepare_filename(info, "thumbnail")
+        subtitle_name = ytdlp.prepare_filename(info, "subtitle")
+        infojson_name = ytdlp.prepare_filename(info, "infojson")
+
+        default_base = default_name.rsplit(".", 1)[0]
+        thumbnail_base = thumbnail_name.rsplit(".", 1)[0]
+        subtitle_base = subtitle_name.rsplit(".", 1)[0]
+        infojson_base = infojson_name.removesuffix(".info.json")
+
+        assert default_base == thumbnail_base
+        assert default_base == subtitle_base
+        assert default_base == infojson_base
+
+    def test_prepare_filename_resets(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(ytp_random:8)s.%(ext)s"}})
+
+        first = ytdlp.prepare_filename({"id": "one", "title": "One", "ext": "mp4"})
+        second = ytdlp.prepare_filename({"id": "two", "title": "Two", "ext": "mp4"})
+
+        assert first != second
+
+    @pytest.mark.parametrize(
+        ("template", "expected"),
+        [
+            ("%(ytp_random:8|fallback)s", 8),
+            ("%(ytp_random:8&{} - |)s", 11),
+            ("%(ytp_random:8)S", 8),
+        ],
+    )
+    def test_outtmpl_suffix(self, template: str, expected: int) -> None:
+        ytdlp = YTDLP(
+            params={
+                "outtmpl": {"default": "%(title)s"},
+                "restrictfilenames": True,
+            },
+        )
+
+        result = ytdlp.evaluate_outtmpl(template, {"title": "x"})
+
+        assert len(result) == expected
+
+    def test_outtmpl_modes(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        digits = ytdlp.evaluate_outtmpl("%(ytp_random:6:d)s", {"title": "x"})
+        letters = ytdlp.evaluate_outtmpl("%(ytp_random:6:s)s", {"title": "x"})
+
+        assert digits.isdigit()
+        assert letters.isalpha()
+
+    def test_outtmpl_unknown_callable(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        with pytest.raises(ValueError, match="Unsupported YTPTube output template callable"):
+            ytdlp.prepare_outtmpl("%(ytp_unknown:8)s", {"title": "x"})
+
+    def test_outtmpl_invalid_length(self) -> None:
+        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
+
+        with pytest.raises(ValueError, match="ytp_random length must be an integer"):
+            ytdlp.prepare_outtmpl("%(ytp_random:nope)s", {"title": "x"})
+
+
+class TestOuttmpl:
+    def test_rewrite_outtmpl_cache(self) -> None:
+        cache: dict[str, object] = {}
+        template = "%(ytp_random:8)s/%(ytp_random:8)s.%(ext)s"
+
+        rewritten, info = rewrite_outtmpl(template, {"ext": "mp4"}, cache=cache)
+
+        assert rewritten == "%(__ytptube_outtmpl_0)s/%(__ytptube_outtmpl_0)s.%(ext)s"
+        assert len(cache) == 1
+        assert info["__ytptube_outtmpl_0"] == next(iter(cache.values()))

@@ -218,7 +218,7 @@ class TestDataStore:
         assert ok is True
 
     @pytest.mark.asyncio
-    async def test_bulk_delete_by_status_drops_matching_cached_items(self) -> None:
+    async def test_bulk_delete_status_cache(self) -> None:
         connection = Mock()
         connection.bulk_delete_by_status = AsyncMock(return_value=2)
         store = DataStore(StoreType.HISTORY, connection)
@@ -243,7 +243,7 @@ class TestDataStore:
         assert pending._id in store._dict
 
     @pytest.mark.asyncio
-    async def test_get_item_returns_none_when_no_kwargs(self) -> None:
+    async def test_get_item_no_filters(self) -> None:
         """Test that get_item returns None when no kwargs provided."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -319,7 +319,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_item_returns_none_when_no_match(self) -> None:
+    async def test_get_item_miss(self) -> None:
         """Test that get_item returns None when no attributes match."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -366,7 +366,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_item_returns_first_match(self) -> None:
+    async def test_get_item_first_match(self) -> None:
         """Test that get_item returns the first matching item when multiple match."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -689,7 +689,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_has_downloads_with_no_eligible_downloads(self) -> None:
+    async def test_has_downloads_ineligible(self) -> None:
         """Test has_downloads returns False when no downloads are eligible."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -708,7 +708,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_next_download_returns_none_when_empty(self) -> None:
+    async def test_next_download_empty(self) -> None:
         """Test get_next_download returns None when no eligible downloads."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -740,7 +740,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_update_store_item_removes_datetime_field(self) -> None:
+    async def test_update_item_drops_dt(self) -> None:
         """Test that _update_store_item removes datetime field before storage."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -760,7 +760,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_update_store_item_removes_live_in_when_finished(self) -> None:
+    async def test_update_item_drops_live_in(self) -> None:
         """Test that _update_store_item removes live_in field when status is finished."""
         store = await make_store_async(StoreType.QUEUE)
         conn = store._connection
@@ -781,7 +781,7 @@ class TestDataStore:
         await store._connection.close()
 
     @pytest.mark.asyncio
-    async def test_update_store_item_keeps_live_in_when_not_finished(self) -> None:
+    async def test_update_item_keeps_live_in(self) -> None:
         """Test that _update_store_item keeps live_in field when status is not finished."""
         store = await make_store_async(StoreType.QUEUE)
         conn = store._connection

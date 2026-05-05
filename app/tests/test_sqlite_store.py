@@ -32,7 +32,7 @@ def make_item(idx: int, *, status: str = "finished", cli: str = "", download_ski
 
 
 @pytest.mark.asyncio
-async def test_sessionmaker_returns_valid_sessionmaker() -> None:
+async def test_sessionmaker_ready() -> None:
     """Test that sessionmaker() returns a working async_sessionmaker."""
     SqliteStore._reset_singleton()
     store = SqliteStore.get_instance(db_path=make_in_memory_db_path("sessionmaker"))
@@ -120,7 +120,7 @@ async def test_enqueue_upsert_and_fetch_saved():
 
 
 @pytest.mark.asyncio
-async def test_enqueue_upsert_persists_download_skipped_flag():
+async def test_enqueue_upsert_skipped():
     store = await make_store()
     item = make_item(2, download_skipped=True)
 
@@ -237,7 +237,7 @@ async def test_enqueue_delete_removes_row():
 
 
 @pytest.mark.asyncio
-async def test_enqueue_bulk_delete_returns_count_and_bulk_path():
+async def test_enqueue_bulk_delete():
     store = await make_store()
     items = [make_item(i) for i in range(3)]
     for itm in items:
@@ -258,7 +258,7 @@ async def test_enqueue_bulk_delete_returns_count_and_bulk_path():
 
 
 @pytest.mark.asyncio
-async def test_get_many_by_ids_and_status_and_bulk_delete_by_status():
+async def test_ids_status_bulk_delete():
     store = await make_store()
     finished = [make_item(i, status="finished") for i in range(2)]
     pending = [make_item(i + 10, status="pending") for i in range(2)]
@@ -296,7 +296,7 @@ async def test_get_many_by_ids_and_status_and_bulk_delete_by_status():
 
 
 @pytest.mark.asyncio
-async def test_paginate_out_of_range_returns_last_page():
+async def test_paginate_last_page():
     store = await make_store()
     for i in range(7):
         await store.enqueue_upsert("history", make_item(i))
@@ -311,7 +311,7 @@ async def test_paginate_out_of_range_returns_last_page():
 
 
 @pytest.mark.asyncio
-async def test_get_item_returns_none_without_kwargs():
+async def test_get_item_no_filters():
     store = await make_store()
     await store.enqueue_upsert("queue", make_item(1))
     await store.flush()
@@ -387,7 +387,7 @@ async def test_exists_and_get_by_key_and_url():
 
 
 @pytest.mark.asyncio
-async def test_exists_and_get_raise_without_key_or_url():
+async def test_exists_and_get_require_lookup():
     store = await make_store()
     with pytest.raises(KeyError):
         await store.exists("queue")

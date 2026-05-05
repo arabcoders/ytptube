@@ -40,7 +40,7 @@ const setConfigStore = (presets: Preset[]) => {
 }
 
 describe('usePresetOptions', () => {
-  it('groups custom presets before default presets by default', () => {
+  it('group_custom_first', () => {
     setConfigStore([
       buildPreset('default_video', true),
       buildPreset('custom_audio', false),
@@ -56,7 +56,7 @@ describe('usePresetOptions', () => {
     ])
   })
 
-  it('supports default-first grouping when requested', () => {
+  it('group_default_first', () => {
     setConfigStore([
       buildPreset('default_video', true),
       buildPreset('custom_audio', false),

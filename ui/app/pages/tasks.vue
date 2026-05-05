@@ -661,8 +661,8 @@
             <code>Actions &gt; Archive All</code> to mark existing items as already downloaded.
           </li>
           <li>
-            <strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The
-            handler runs hourly and doesn't require timer.
+            <strong>Timer Requirement:</strong> Tasks must have either a valid timer or a supported
+            handler. If the URL does not match a handler, set a CRON timer.
           </li>
           <li>
             <strong>Generate metadata:</strong> will attempt first to save metadata based on the

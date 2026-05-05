@@ -41,7 +41,7 @@ class TestCache:
         time.sleep(0.2)
         assert self.cache.get("temp_key") is None
 
-    def test_set_without_ttl(self):
+    def test_set_no_ttl(self):
         """Test setting values without TTL (permanent)."""
         self.cache.set("permanent_key", "permanent_value")
         assert self.cache.get("permanent_key") == "permanent_value"

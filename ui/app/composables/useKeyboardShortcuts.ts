@@ -5,21 +5,21 @@
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 import {
-  handlePlayPause,
-  handleRewind,
-  handleForward,
-  handleMute,
-  handleVolumeChange,
-  handlePlaybackSpeedChange,
-  handleFrameStep,
-  handleSeekToPercent,
-  handleSeekBackward,
-  handleSeekForward,
-  handleFullscreen,
-  handlePictureInPicture,
-  handleToggleCaptions,
+  playPause,
+  rewind,
+  forward,
+  mute,
+  changeVolume,
+  changeSpeed,
+  frameStep,
+  seekToPercent,
+  seekBackward,
+  seekForward,
+  fullscreen,
+  pictureInPicture,
+  toggleCaptions,
   shouldHandleKeyboardShortcut,
-  isModifierKey,
+  modifierKey,
 } from '~/utils/keyboard';
 import type { KeyboardShortcutContext } from '~/types/video';
 
@@ -51,7 +51,7 @@ export const useKeyboardShortcuts = (options: UseKeyboardShortcutsOptions) => {
     }
 
     // Skip if modifier keys are pressed (except for shortcuts that need them)
-    if (isModifierKey(event) && !['f', 'p', '?'].includes(event.key.toLowerCase())) {
+    if (modifierKey(event) && !['f', 'p', '?'].includes(event.key.toLowerCase())) {
       return;
     }
 
@@ -64,67 +64,67 @@ export const useKeyboardShortcuts = (options: UseKeyboardShortcutsOptions) => {
         case ' ':
         case 'k':
           event.preventDefault();
-          handlePlayPause(ctx);
+          playPause(ctx);
           break;
 
         // Rewind 10 seconds (J key)
         case 'j':
           event.preventDefault();
-          handleRewind(ctx, 10);
+          rewind(ctx, 10);
           break;
 
         // Forward 10 seconds (L key)
         case 'l':
           event.preventDefault();
-          handleForward(ctx, 10);
+          forward(ctx, 10);
           break;
 
         // Seek backward 5 seconds (left arrow)
         case 'arrowleft':
           event.preventDefault();
-          handleSeekBackward(ctx, 5);
+          seekBackward(ctx, 5);
           break;
 
         // Seek forward 5 seconds (right arrow)
         case 'arrowright':
           event.preventDefault();
-          handleSeekForward(ctx, 5);
+          seekForward(ctx, 5);
           break;
 
         // Increase volume (up arrow)
         case 'arrowup':
           event.preventDefault();
-          handleVolumeChange(ctx, 0.1);
+          changeVolume(ctx, 0.1);
           break;
 
         // Decrease volume (down arrow)
         case 'arrowdown':
           event.preventDefault();
-          handleVolumeChange(ctx, -0.1);
+          changeVolume(ctx, -0.1);
           break;
 
         // Mute/Unmute
         case 'm':
           event.preventDefault();
-          handleMute(ctx);
+          mute(ctx);
           break;
 
         // Toggle fullscreen
         case 'f':
           event.preventDefault();
-          handleFullscreen(video);
+          fullscreen(video);
           break;
 
         // Picture-in-Picture
         case 'p':
           event.preventDefault();
-          await handlePictureInPicture(video);
+          await pictureInPicture(video);
           break;
 
         // Toggle captions
         case 'c':
           event.preventDefault();
-          handleToggleCaptions(video);
+          toggleCaptions(video);
           break;
 
         // Frame advance (period key) / Increase playback speed (> or ')
@@ -132,9 +132,9 @@ export const useKeyboardShortcuts = (options: UseKeyboardShortcutsOptions) => {
         case "'": {
           event.preventDefault();
           if ('.' === key) {
-            handleFrameStep(ctx, 'forward');
+            frameStep(ctx, 'forward');
           } else {
-            handlePlaybackSpeedChange(ctx, 0.25);
+            changeSpeed(ctx, 0.25);
           }
           break;
         }
@@ -144,9 +144,9 @@ export const useKeyboardShortcuts = (options: UseKeyboardShortcutsOptions) => {
         case ';': {
           event.preventDefault();
           if (',' === key) {
-            handleFrameStep(ctx, 'backward');
+            frameStep(ctx, 'backward');
           } else {
-            handlePlaybackSpeedChange(ctx, -0.25);
+            changeSpeed(ctx, -0.25);
           }
           break;
         }
@@ -164,7 +164,7 @@ export const useKeyboardShortcuts = (options: UseKeyboardShortcutsOptions) => {
         case '9': {
           event.preventDefault();
           const percent = parseInt(key) * 10;
-          handleSeekToPercent(ctx, percent);
+          seekToPercent(ctx, percent);
           break;
         }
 

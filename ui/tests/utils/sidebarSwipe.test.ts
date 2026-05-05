@@ -9,7 +9,7 @@ import {
 } from '~/utils/sidebarSwipe';
 
 describe('sidebarSwipe', () => {
-  it('detects apple mobile webkit navigators', () => {
+  it('detect_apple_touch', () => {
     expect(
       isAppleMobileTouchNavigator({
         userAgent:
@@ -38,7 +38,7 @@ describe('sidebarSwipe', () => {
     ).toBe(false);
   });
 
-  it('reserves the ios navigation edge and starts the sidebar swipe just inside it', () => {
+  it('reserve_ios_edge', () => {
     const nav = {
       userAgent:
         'Mozilla/5.0 (iPhone; CPU iPhone OS 18_4 like Mac OS X) AppleWebKit/605.1.15 Version/18.4 Mobile/15E148 Safari/604.1',
@@ -54,7 +54,7 @@ describe('sidebarSwipe', () => {
     );
   });
 
-  it('keeps the original left-edge open band on non-apple mobile browsers', () => {
+  it('keep_default_edge', () => {
     const nav = {
       userAgent:
         'Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/147.0.0.0 Mobile Safari/537.36',
@@ -67,7 +67,7 @@ describe('sidebarSwipe', () => {
     expect(canStartSidebarOpenSwipe(MOBILE_SIDEBAR_EDGE_WIDTH + 1, nav)).toBe(false);
   });
 
-  it('returns close while the sidebar is already open', () => {
+  it('return_close', () => {
     expect(getSidebarSwipeMode(true, 4)).toBe('close');
   });
 });

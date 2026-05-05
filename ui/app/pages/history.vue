@@ -1,5 +1,11 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
+    <div
+      class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+      :class="lightsOut ? 'opacity-100' : 'opacity-0'"
+      aria-hidden="true"
+    />
+
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
       <div class="flex min-w-0 items-center gap-3">
         <span
@@ -50,7 +56,7 @@
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
-          @click="void reloadHistory({ order: 'DESC', perPage: config.app.default_pagination })"
+          @click="() => reload({ order: 'DESC', perPage: config.app.default_pagination })"
         >
           <span>Reload</span>
         </UButton>
@@ -78,7 +84,7 @@
         show-edges
         :sibling-count="0"
         @update:page="
-          (page) => loadHistory(page, { order: 'DESC', perPage: config.app.default_pagination })
+          (page) => load(page, { order: 'DESC', perPage: config.app.default_pagination })
         "
       />
     </div>
@@ -314,7 +320,7 @@
                       variant="outline"
                       size="xs"
                       icon="i-lucide-rotate-cw"
-                      @click="void retryItem(item, true)"
+                      @click="() => retryItem(item, true)"
                     >
                       Retry
                     </UButton>
@@ -337,7 +343,7 @@
                       variant="outline"
                       size="xs"
                       icon="i-lucide-trash"
-                      @click="void removeItem(item)"
+                      @click="() => removeItem(item)"
                     >
                       Remove
                     </UButton>
@@ -608,7 +614,7 @@
                   variant="outline"
                   icon="i-lucide-rotate-cw"
                   class="w-full justify-center"
-                  @click="void retryItem(item, false)"
+                  @click="() => retryItem(item, false)"
                 >
                   Retry
                 </UButton>
@@ -631,7 +637,7 @@
                   variant="outline"
                   icon="i-lucide-trash"
                   class="w-full justify-center"
-                  @click="void removeItem(item)"
+                  @click="() => removeItem(item)"
                 >
                   {{ config.app.remove_files ? 'Remove' : 'Clear' }}
                 </UButton>
@@ -703,7 +709,7 @@
           show-edges
           :sibling-count="0"
           @update:page="
-            (page) => loadHistory(page, { order: 'DESC', perPage: config.app.default_pagination })
+            (page) => load(page, { order: 'DESC', perPage: config.app.default_pagination })
           "
         />
       </div>
@@ -714,8 +720,8 @@
       :open="Boolean(video_item)"
       :dismissible="true"
       :title="video_item?.title || 'Player'"
-      :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
-      @update:open="(open) => !open && (video_item = null)"
+      :ui="{ content: lightsOut ? 'sm:max-w-5xl shadow-2xl' : 'sm:max-w-5xl', body: 'p-0' }"
+      @update:open="(open) => !open && closeVideo()"
     >
       <template #body>
         <VideoPlayer
@@ -725,8 +731,9 @@
           :isControls="true"
           :item="video_item"
           class="w-full"
-          @closeModel="video_item = null"
+          @closeModel="closeVideo()"
           @error="async (error: string) => await box.alert(error)"
+          @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
       </template>
     </UModal>
@@ -786,7 +793,7 @@ const stateStore = useQueueState();
 const socketStore = useAppSocket();
 const toast = useNotification();
 const box = useConfirm();
-const { confirmDialog } = useDialog();
+const { confirmDialog, promptDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
 const pendingDownloadFormItem = useState<item_request | Record<string, never>>(
   'pending-download-form-item',
@@ -797,10 +804,11 @@ const {
   pagination,
   isLoading,
   isLoaded,
-  loadHistory,
-  reloadHistory,
-  deleteHistoryItems,
-  historyMoveHandler,
+  load,
+  reload,
+  remove,
+  rename,
+  moveHandler,
 } = useHistoryState();
 
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
@@ -825,23 +833,25 @@ const selectedElms = ref<string[]>([]);
 const masterSelectAll = ref(false);
 const embed_url = ref('');
 const video_item = ref<StoreItem | null>(null);
+const playingNow = ref(false);
 const expandedMessages = reactive<Record<string, Set<string>>>({});
 
 const contentStyle = computed<'grid' | 'list'>(() =>
   isMobile.value ? 'grid' : display_style.value,
 );
 const showThumbnails = computed(() => show_thumbnail.value && !hideThumbnail.value);
+const lightsOut = computed(() => Boolean(video_item.value && playingNow.value));
 const paginationInfo = computed(() => ({
   ...pagination.value,
   isLoading: isLoading.value,
   isLoaded: isLoaded.value,
 }));
 
-const handleHistoryItemMoved = historyMoveHandler();
+const handleHistoryItemMoved = moveHandler();
 
 onMounted(async () => {
   socketStore.on('item_moved', handleHistoryItemMoved);
-  await loadHistory(1, { order: 'DESC', perPage: config.app.default_pagination });
+  await load(1, { order: 'DESC', perPage: config.app.default_pagination });
 });
 
 onBeforeUnmount(() => {
@@ -875,6 +885,11 @@ const close_info = (): void => {
   info_view.value.preset = '';
   info_view.value.cli = '';
   info_view.value.useUrl = false;
+};
+
+const closeVideo = (): void => {
+  playingNow.value = false;
+  video_item.value = null;
 };
 
 const view_info = (
@@ -1048,6 +1063,12 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
       icon: 'i-lucide-file-code-2',
       onSelect: () => void generateNfo(item),
     });
+
+    mediaActions.push({
+      label: 'Rename file',
+      icon: 'i-lucide-pencil',
+      onSelect: () => void renameFile(item),
+    });
   } else if (isEmbedable(item.url)) {
     mediaActions.push({
       label: 'Play video',
@@ -1127,9 +1148,9 @@ const deleteSelectedItems = async (): Promise<void> => {
     return;
   }
 
-  await deleteHistoryItems({ ids: [...selectedElms.value], removeFile: config.app.remove_files });
+  await remove({ ids: [...selectedElms.value], removeFile: config.app.remove_files });
   selectedElms.value = [];
-  await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const clearCompleted = async (): Promise<void> => {
@@ -1141,9 +1162,9 @@ const clearCompleted = async (): Promise<void> => {
 
   selectedElms.value = [];
 
-  await deleteHistoryItems({ status: 'finished,skip', removeFile: false });
+  await remove({ status: 'finished,skip', removeFile: false });
 
-  await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const clearIncomplete = async (): Promise<void> => {
@@ -1152,8 +1173,8 @@ const clearIncomplete = async (): Promise<void> => {
   }
 
   selectedElms.value = [];
-  await deleteHistoryItems({ status: '!finished', removeFile: false });
-  await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
+  await remove({ status: '!finished', removeFile: false });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const setIcon = (item: StoreItem): string => {
@@ -1307,10 +1328,10 @@ const archiveItem = async (item: StoreItem, opts = {}): Promise<void> => {
   }
 
   if ((opts as { remove_history?: boolean })?.remove_history) {
-    await deleteHistoryItems({ ids: [item._id], removeFile: false });
+    await remove({ ids: [item._id], removeFile: false });
   }
 
-  await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const removeItem = async (item: StoreItem): Promise<void> => {
@@ -1324,13 +1345,13 @@ const removeItem = async (item: StoreItem): Promise<void> => {
     return;
   }
 
-  await deleteHistoryItems({ ids: [item._id], removeFile: config.app.remove_files });
+  await remove({ ids: [item._id], removeFile: config.app.remove_files });
 
   if (selectedElms.value.includes(item._id || '')) {
     selectedElms.value = selectedElms.value.filter((entry) => entry !== item._id);
   }
 
-  await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const retryItem = async (
@@ -1349,13 +1370,13 @@ const retryItem = async (
     auto_start: item.auto_start,
   };
 
-  await deleteHistoryItems({ ids: [item._id], removeFile: remove_file });
+  await remove({ ids: [item._id], removeFile: remove_file });
 
   if (selectedElms.value.includes(item._id || '')) {
     selectedElms.value = selectedElms.value.filter((entry) => entry !== item._id);
   }
 
-  await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 
   if (true === re_add) {
     toast.info('Cleared the item from history, and added it to the new download form.');
@@ -1532,10 +1553,10 @@ const removeFromArchive = async (
   }
 
   if (opts?.remove_history) {
-    await deleteHistoryItems({ ids: [item._id], removeFile: file_delete });
+    await remove({ ids: [item._id], removeFile: file_delete });
   }
 
-  await reloadHistory({ order: 'DESC', perPage: config.app.default_pagination });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const isQueuedAnimation = (item: StoreItem): string => {
@@ -1563,6 +1584,35 @@ const generateNfo = async (item: StoreItem): Promise<void> => {
     toast.success(data.message || 'NFO file generated');
   } catch (error: any) {
     toast.error(`Error: ${error.message}`);
+  }
+};
+
+const renameFile = async (item: StoreItem): Promise<void> => {
+  if (!item.filename) {
+    return;
+  }
+
+  const currentName = item.filename.split('/').pop() || item.filename;
+  const { status, value: newName } = await promptDialog({
+    title: 'Rename File',
+    message: `Enter new name for '${currentName}' (and its sidecars):`,
+    initial: currentName,
+    confirmText: 'Rename',
+    cancelText: 'Cancel',
+  });
+
+  if (!status) {
+    return;
+  }
+
+  const trimmedName = (newName || '').trim();
+  if (!trimmedName || trimmedName === currentName) {
+    return;
+  }
+
+  const success = await rename(item, trimmedName);
+  if (success) {
+    toast.success(`Renamed '${currentName}'.`);
   }
 };
 </script>

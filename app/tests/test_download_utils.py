@@ -40,7 +40,7 @@ class TestPathUtilities:
         result = safe_relative_path(file, base, fallback)
         assert "video.mp4" == result, "Should use fallback path"
 
-    def test_safe_relative_path_no_fallback_returns_absolute(self) -> None:
+    def test_safe_rel_no_fallback(self) -> None:
         base = Path("/wrong/path")
         file = Path("/downloads/video.mp4")
         result = safe_relative_path(file, base)
@@ -73,13 +73,13 @@ class TestPathUtilities:
 
 
 class TestProcessUtilities:
-    def test_wait_for_process_with_timeout_completes_immediately(self) -> None:
+    def test_wait_timeout_done(self) -> None:
         proc = Mock()
         proc.is_alive = Mock(return_value=False)
         result = wait_for_process_with_timeout(proc, timeout=1.0)
         assert result is True, "Should return True when process terminates immediately"
 
-    def test_wait_for_process_with_timeout_completes_after_delay(self) -> None:
+    def test_wait_timeout_delay(self) -> None:
         proc = Mock()
         call_count = [0]
 
@@ -123,7 +123,7 @@ class TestConfigUtilities:
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
             assert 10 == result, "Should cap at max_workers"
 
-    def test_parse_extractor_limit_invalid_env_not_digit(self) -> None:
+    def test_parse_limit_nondigit(self) -> None:
         logger = logging.getLogger("test")
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "abc"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10, logger=logger)
@@ -138,11 +138,11 @@ class TestConfigUtilities:
         result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
         assert 5 == result, "Should use default when no env var set"
 
-    def test_parse_extractor_limit_respects_max_on_default(self) -> None:
+    def test_parse_limit_default_max(self) -> None:
         result = parse_extractor_limit("youtube", default_limit=15, max_workers=10)
         assert 10 == result, "Should cap default at max_workers"
 
-    def test_parse_extractor_limit_logs_warning_on_invalid(self) -> None:
+    def test_parse_limit_warns(self) -> None:
         logger = Mock()
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "invalid"}):
             parse_extractor_limit("youtube", default_limit=5, max_workers=10, logger=logger)
@@ -195,7 +195,7 @@ class TestDataUtilities:
         assert "custom_field" not in result["info_dict"], "Should exclude custom field"
         assert "123" == result["info_dict"]["id"], "Should include id"
 
-    def test_create_debug_safe_dict_filters_none_and_functions(self) -> None:
+    def test_debug_safe_filters_none(self) -> None:
         data = {
             "status": "downloading",
             "info_dict": {"id": "123", "none_value": None, "lambda_value": lambda: None, "title": "Video"},
@@ -212,7 +212,7 @@ class TestDataUtilities:
 
 
 class TestStateUtilities:
-    def test_is_download_stale_terminal_status_finished(self) -> None:
+    def test_stale_finished(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 500, current_status="finished", is_running=False, auto_start=True
         )
@@ -224,19 +224,19 @@ class TestStateUtilities:
         )
         assert result is False, "Error downloads are never stale"
 
-    def test_is_download_stale_terminal_status_cancelled(self) -> None:
+    def test_stale_cancelled(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 500, current_status="cancelled", is_running=False, auto_start=True
         )
         assert result is False, "Cancelled downloads are never stale"
 
-    def test_is_download_stale_terminal_status_downloading(self) -> None:
+    def test_stale_downloading(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 500, current_status="downloading", is_running=False, auto_start=True
         )
         assert result is False, "Downloading status is never stale"
 
-    def test_is_download_stale_terminal_status_postprocessing(self) -> None:
+    def test_stale_postprocessing(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 500, current_status="postprocessing", is_running=False, auto_start=True
         )
@@ -303,7 +303,7 @@ class TestTaskExceptionHandling:
         logger.error.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_handle_task_exception_ignores_successful(self) -> None:
+    async def test_task_exception_success(self) -> None:
         logger = Mock()
 
         async def successful_task():

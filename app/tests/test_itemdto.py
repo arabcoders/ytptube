@@ -43,7 +43,7 @@ class TestItemFormatAndBasics:
         assert item.cli == "--embed-metadata"
 
     @patch("app.features.presets.service.Presets.get_instance")
-    def test_format_raises_for_missing_url_and_invalid_preset(self, mock_presets_get):
+    def test_format_bad_input(self, mock_presets_get):
         # Missing url
         with pytest.raises(ValueError, match="url param is required"):
             Item.format({})
@@ -113,7 +113,7 @@ class TestItemDTO:
     @patch("app.library.ItemDTO.get_archive_id")
     @patch("app.library.ItemDTO.YTDLPOpts")
     @patch("app.library.ItemDTO.archive_read")
-    def test_post_init_does_not_infer_download_skipped_flag(self, mock_read, mock_opts, mock_get_id):
+    def test_post_init_keeps_skipped(self, mock_read, mock_opts, mock_get_id):
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
@@ -128,7 +128,7 @@ class TestItemDTO:
         assert dto.download_skipped is False
 
     @patch("app.library.ItemDTO.archive_read")
-    def test_serialize_triggers_archive_status_when_finished(self, mock_read):
+    def test_serialize_archives_finished(self, mock_read):
         # Given a finished item with archive info
         dto = ItemDTO(id="vid", title="t", url="u", folder="f")
         dto.archive_id = "arch"
@@ -143,7 +143,7 @@ class TestItemDTO:
             assert key not in data
 
     @patch("app.library.ItemDTO.YTDLPOpts")
-    def test_serialize_does_not_recompute_download_skipped(self, mock_opts):
+    def test_serialize_keeps_skipped(self, mock_opts):
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.get_all.return_value = {}
@@ -299,7 +299,7 @@ class TestItemDTO:
         assert result is expected_sidecar
         assert dto.sidecar is expected_sidecar
 
-    def test_get_file_sidecar_returns_existing_when_no_file(self):
+    def test_sidecar_no_file(self):
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="sidecar-none", title="Title", url="u", folder="f")
 
@@ -317,7 +317,7 @@ class TestItemDTO:
         assert result is existing
         assert dto.sidecar is existing
 
-    def test_get_preset_returns_preset_instance(self):
+    def test_get_preset_hit(self):
         """Test ItemDTO.get_preset returns the Preset instance."""
         from app.features.presets.schemas import Preset
 
@@ -335,7 +335,7 @@ class TestItemDTO:
             assert result is mock_preset
             assert result.name == "test-preset"
 
-    def test_get_preset_uses_default_when_no_preset_set(self):
+    def test_get_preset_default(self):
         """Test ItemDTO.get_preset uses 'default' when preset is empty."""
         from app.features.presets.schemas import Preset
 
@@ -352,7 +352,7 @@ class TestItemDTO:
             mock_presets.return_value.get.assert_called_once_with("default")
             assert result is mock_preset
 
-    def test_get_preset_returns_none_when_not_found(self):
+    def test_get_preset_miss(self):
         """Test ItemDTO.get_preset returns None when preset not found."""
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="nonexistent")
@@ -376,7 +376,7 @@ class TestItemAddExtras:
 
         assert item.extras["key1"] == "value1"
 
-    def test_add_extras_when_extras_is_none(self):
+    def test_add_extras_none(self):
         """Test adding extras when extras is None."""
         item = Item(url="https://example.com")
         item.extras = None

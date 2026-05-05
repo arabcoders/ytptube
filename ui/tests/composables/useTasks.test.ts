@@ -85,7 +85,7 @@ describe('useTasks', () => {
   })
 
   describe('loadTasks', () => {
-    it('loads tasks with pagination successfully', async () => {
+    it('load_tasks', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -108,7 +108,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('sorts tasks by name A-Z', async () => {
+    it('sort_name', async () => {
       const items = [
         { ...mockTask, id: 1, name: 'Zebra' },
         { ...mockTask, id: 2, name: 'Alpha' },
@@ -137,7 +137,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('handles empty tasks list', async () => {
+    it('handle_empty_list', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -158,7 +158,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('handles errors during load', async () => {
+    it('store_load_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -171,11 +171,11 @@ describe('useTasks', () => {
       const tasks = useTasks()
       await tasks.loadTasks()
 
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('Server error')
       requestSpy.mockRestore()
     })
 
-    it('respects page and per_page parameters', async () => {
+    it('pass_pagination', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -197,7 +197,7 @@ describe('useTasks', () => {
   })
 
   describe('getTask', () => {
-    it('fetches a single task successfully', async () => {
+    it('get_task', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -215,7 +215,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('handles 404 not found', async () => {
+    it('store_404_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -229,13 +229,13 @@ describe('useTasks', () => {
       const result = await tasks.getTask(999)
 
       expect(result).toBeNull()
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('Task not found')
       requestSpy.mockRestore()
     })
   })
 
   describe('createTask', () => {
-    it('creates a task successfully', async () => {
+    it('create_task', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -258,10 +258,33 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
+    it('store_timer_required_error', async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 400,
+          jsonData: { error: 'Task requires a timer when no supported handler matches the URL.' },
+        }),
+      )
+
+      const tasks = useTasks()
+      const newTask = { ...mockTask }
+      delete (newTask as any).id
+
+      const result = await tasks.createTask(newTask)
+
+      expect(result).toBeNull()
+      expect(tasks.lastError.value).toBe(
+        'Task requires a timer when no supported handler matches the URL.',
+      )
+      requestSpy.mockRestore()
+    })
+
   })
 
   describe('updateTask', () => {
-    it('updates a task successfully', async () => {
+    it('update_task', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -280,7 +303,27 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('removes id field from task before sending', async () => {
+    it('store_update_timer_error', async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 400,
+          jsonData: { error: 'Task requires a timer when the handler is disabled.' },
+        }),
+      )
+
+      const tasks = useTasks()
+      const updated = { ...mockTask, timer: '', handler_enabled: false }
+
+      const result = await tasks.updateTask(1, updated)
+
+      expect(result).toBeNull()
+      expect(tasks.lastError.value).toBe('Task requires a timer when the handler is disabled.')
+      requestSpy.mockRestore()
+    })
+
+    it('strip_update_id', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -301,7 +344,7 @@ describe('useTasks', () => {
   })
 
   describe('patchTask', () => {
-    it('patches a task successfully', async () => {
+    it('patch_task', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -318,10 +361,30 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
+    it('store_patch_timer_error', async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 400,
+          jsonData: { error: 'Task requires a timer when no supported handler matches the URL.' },
+        }),
+      )
+
+      const tasks = useTasks()
+      const result = await tasks.patchTask(1, { timer: '' })
+
+      expect(result).toBeNull()
+      expect(tasks.lastError.value).toBe(
+        'Task requires a timer when no supported handler matches the URL.',
+      )
+      requestSpy.mockRestore()
+    })
+
   })
 
   describe('deleteTask', () => {
-    it('deletes a task successfully', async () => {
+    it('delete_task', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -344,7 +407,7 @@ describe('useTasks', () => {
   })
 
   describe('inspectTaskHandler', () => {
-    it('inspects task handler successfully', async () => {
+    it('inspect_handler', async () => {
       const inspectResponse: TaskInspectResponse = {
         matched: true,
         handler: 'YoutubeHandler',
@@ -383,7 +446,7 @@ describe('useTasks', () => {
       fetchSpy.mockRestore()
     })
 
-    it('handles handler not supported', async () => {
+    it('handle_unsupported_handler', async () => {
       const inspectResponse: TaskInspectResponse = {
         matched: false,
         handler: null,
@@ -411,7 +474,7 @@ describe('useTasks', () => {
       fetchSpy.mockRestore()
     })
 
-    it('handles inspect errors', async () => {
+    it('store_inspect_error', async () => {
       const fetchSpy = spyOn(globalThis, 'fetch')
       fetchSpy.mockRejectedValueOnce(new Error('Network error'))
 
@@ -421,13 +484,13 @@ describe('useTasks', () => {
       })
 
       expect(result).toBeNull()
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('Network error')
       fetchSpy.mockRestore()
     })
   })
 
   describe('markTaskItems', () => {
-    it('marks all items as downloaded successfully', async () => {
+    it('mark_items', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -445,7 +508,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('handles mark errors', async () => {
+    it('store_mark_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -459,13 +522,13 @@ describe('useTasks', () => {
       const result = await tasks.markTaskItems(999)
 
       expect(result).toBeNull()
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('Task not found')
       requestSpy.mockRestore()
     })
   })
 
   describe('unmarkTaskItems', () => {
-    it('unmarks items successfully', async () => {
+    it('unmark_items', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -483,7 +546,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('handles unmark errors', async () => {
+    it('store_unmark_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -497,13 +560,13 @@ describe('useTasks', () => {
       const result = await tasks.unmarkTaskItems(999)
 
       expect(result).toBeNull()
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('Task not found')
       requestSpy.mockRestore()
     })
   })
 
   describe('generateTaskMetadata', () => {
-    it('generates metadata successfully', async () => {
+    it('generate_metadata', async () => {
       const metadataResponse: TaskMetadataResponse = {
         status: 'success',
         generated: ['tvshow.nfo', 'info.json', 'poster.jpg'],
@@ -527,7 +590,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('handles metadata generation errors', async () => {
+    it('store_metadata_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -541,13 +604,13 @@ describe('useTasks', () => {
       const result = await tasks.generateTaskMetadata(1)
 
       expect(result).toBeNull()
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('Failed to generate metadata')
       requestSpy.mockRestore()
     })
   })
 
   describe('error handling', () => {
-    it('throws when throwInstead is true', async () => {
+    it('throw_on_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -564,7 +627,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('clears error on clearError call', async () => {
+    it('clear_error', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -579,7 +642,7 @@ describe('useTasks', () => {
 
       await tasks.loadTasks()
 
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('Server error')
 
       tasks.clearError()
 
@@ -587,7 +650,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('parses API validation errors correctly', async () => {
+    it('parse_validation_errors', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -611,7 +674,7 @@ describe('useTasks', () => {
       const result = await tasks.createTask(newTask)
 
       expect(result).toBeNull()
-      expect(tasks.lastError.value).toBeTruthy()
+      expect(tasks.lastError.value).toBe('name: Field required, url: Invalid URL format')
       expect(tasks.lastError.value).toContain('name: Field required')
       expect(tasks.lastError.value).toContain('url: Invalid URL format')
       requestSpy.mockRestore()
@@ -619,7 +682,7 @@ describe('useTasks', () => {
   })
 
   describe('addInProgress state', () => {
-    it('sets addInProgress during create operation', async () => {
+    it('set_add_in_progress', async () => {
       let inProgressDuringCall = false
 
       const requestSpy = spyOn(utils, 'request')
@@ -644,7 +707,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('resets addInProgress on error', async () => {
+    it('reset_add_in_progress', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -666,7 +729,7 @@ describe('useTasks', () => {
   })
 
   describe('isLoading state', () => {
-    it('sets isLoading during loadTasks operation', async () => {
+    it('set_loading', async () => {
       let loadingDuringCall = false
 
       const requestSpy = spyOn(utils, 'request')
@@ -693,7 +756,7 @@ describe('useTasks', () => {
   })
 
   describe('task list updates', () => {
-    it('updates existing task in list', async () => {
+    it('update_list_item', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
@@ -727,7 +790,7 @@ describe('useTasks', () => {
       requestSpy.mockRestore()
     })
 
-    it('removes deleted task from list', async () => {
+    it('remove_list_item', async () => {
       const requestSpy = spyOn(utils, 'request')
       requestSpy.mockResolvedValueOnce(
         createMockResponse({

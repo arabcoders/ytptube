@@ -57,7 +57,7 @@ class TestEncoder:
         result = self.encoder.default(obj)
         assert result == {"name": "test", "value": 42}
 
-    def test_object_without_dict_fallback_to_default(self):
+    def test_object_default(self):
         """Test that objects without __dict__ fall back to default JSONEncoder."""
         # This should raise TypeError since complex is not JSON serializable
         with pytest.raises(TypeError):

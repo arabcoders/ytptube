@@ -184,7 +184,7 @@ class TestScheduler:
 
     @pytest.mark.asyncio
     @patch("app.library.Scheduler.Cron", new=DummyCron)
-    async def test_attach_registers_shutdown_and_handles_schedule_add_event(self) -> None:
+    async def test_attach_registers_events(self) -> None:
         from aiohttp import web
 
         app = web.Application()
@@ -224,7 +224,7 @@ class TestScheduler:
         assert kwargs["id"] == "evt-job"
 
     @patch("app.library.Scheduler.Cron")
-    def test_add_executes_function_when_cron_runs(self, cron_patch) -> None:
+    def test_add_executes_on_start(self, cron_patch) -> None:
         # Cron stub that auto-runs the function on creation when start=True
         class AutoRunCron(DummyCron):
             def __init__(

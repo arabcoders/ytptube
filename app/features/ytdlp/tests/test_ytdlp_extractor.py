@@ -20,7 +20,7 @@ class TestProcessPoolConfiguration:
         assert kwargs == {"mp_context": context}
         get_context.assert_called_once_with("fork")
 
-    def test_uses_default_context_when_not_frozen_linux(self, monkeypatch):
+    def test_default_context_linux(self, monkeypatch):
         monkeypatch.setattr("app.features.ytdlp.extractor.sys.platform", "linux")
         monkeypatch.delattr("app.features.ytdlp.extractor.sys.frozen", raising=False)
 
@@ -30,7 +30,7 @@ class TestProcessPoolConfiguration:
         assert _get_process_pool_kwargs() == {}
         get_context.assert_not_called()
 
-    def test_initializes_process_pool_with_context_kwargs(self, monkeypatch):
+    def test_init_pool_kwargs(self, monkeypatch):
         context = object()
         monkeypatch.setattr("app.features.ytdlp.extractor._get_process_pool_kwargs", lambda: {"mp_context": context})
 

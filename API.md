@@ -24,6 +24,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/history](#delete-apihistory)
     - [POST /api/history/{id}](#post-apihistoryid)
     - [GET /api/history/{id}](#get-apihistoryid)
+    - [POST /api/history/{id}/rename](#post-apihistoryidrename)
     - [GET /api/history](#get-apihistory)
     - [GET /api/history/live](#get-apihistorylive)
     - [POST /api/history/start](#post-apihistorystart)
@@ -55,6 +56,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/player/m3u8/{mode}/{file:.\*}.m3u8](#get-apiplayerm3u8modefilem3u8)
     - [GET /api/player/segments/{segment}/{file:.\*}.ts](#get-apiplayersegmentssegmentfilets)
     - [GET /api/player/subtitle/{file:.\*}.vtt](#get-apiplayersubtitlefilevtt)
+    - [GET /api/player/subtitles/manifest/{file:.\*}](#get-apiplayersubtitlesmanifestfile)
+    - [GET /api/player/subtitles/{source\_format}/{file:.\*}](#get-apiplayersubtitlessource_formatfile)
     - [GET /api/thumbnail](#get-apithumbnail)
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
@@ -98,6 +101,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/system/configuration](#get-apisystemconfiguration)
     - [GET /api/system/limits](#get-apisystemlimits)
     - [POST /api/system/terminal](#post-apisystemterminal)
+    - [GET /api/system/terminal](#get-apisystemterminal)
     - [GET /api/system/terminal/active](#get-apisystemterminalactive)
     - [GET /api/system/terminal/{session\_id}](#get-apisystemterminalsession_id)
     - [DELETE /api/system/terminal/{session\_id}](#delete-apisystemterminalsession_id)
@@ -526,6 +530,41 @@ or an error:
 - `200 OK` If the item exists and is returned.
 - `404 Not Found` if the item doesn’t exist.
 - `400 Bad Request` if id is missing.
+
+---
+
+### POST /api/history/{id}/rename
+**Purpose**: Rename a downloaded history file and its sidecars.
+
+**Path Parameter**:
+- `id` = Unique history item ID.
+
+**Body**:
+```json
+{
+  "new_name": "renamed_video.mp4"
+}
+```
+
+**Response**:
+```json
+{
+  "_id": "<uuid>",
+  "title": "Video Title",
+  "url": "https://youtube.com/watch?v=...",
+  ....
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if `id` or `new_name` is missing, or the item has no downloaded file.
+- `404 Not Found` if the item does not exist.
+- `409 Conflict` if the rename destination already exists.
+- `500 Internal Server Error` if the filesystem rename fails unexpectedly.
+
+**Notes**:
+- Uses the same file rename behavior as the file browser actions.
+- Renames matching sidecar files together with the main media file.
 
 ---
 
@@ -1550,6 +1589,51 @@ Binary TS data (`Content-Type: video/mpegts`).
 
 ---
 
+### GET /api/player/subtitles/manifest/{file:.*}
+**Purpose**: Returns subtitle track metadata for a local media file.  
+
+**Path Parameter**:
+- `file` = Relative path of the media file within the `download_path`.
+
+**Response**:
+```json
+{
+  "subtitles": [
+    {
+      "lang": "en",
+      "name": "VTT (0) - en",
+      "source_format": "vtt",
+      "delivery_format": "vtt",
+      "renderer": "native",
+      "url": "/api/player/subtitles/vtt/path/to/video.en.vtt"
+    },
+    {
+      "lang": "en",
+      "name": "ASS (1) - en",
+      "source_format": "ass",
+      "delivery_format": "ass",
+      "renderer": "assjs",
+      "url": "/api/player/subtitles/ass/path/to/video.en.ass"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/player/subtitles/{source_format}/{file:.*}
+**Purpose**: Delivers a subtitle file using its preferred playback format.  
+
+**Path Parameters**:
+- `source_format` = `vtt`, `srt`, or `ass`.
+- `file` = Relative path of the subtitle file.
+
+**Response**:
+- `text/vtt; charset=UTF-8` for `vtt` and `srt` sources.
+- `text/x-ssa; charset=UTF-8` for `ass` sources.
+
+---
+
 ### GET /api/thumbnail
 **Purpose**: Proxy/fetch a remote thumbnail image.  
 
@@ -1593,21 +1677,16 @@ Binary image data with the appropriate `Content-Type`.
   },
   "mimetype": "video/mp4",
   "sidecar": {
-    "subtitles": [
+    "subtitle": [
       {
-        "file": "filename.xxx.vtt",
+        "file": "filename.xxx.ass",
         "lang": "xxx",
-        "name": "VTT 0 - XXX|end",
+        "name": "ASS (0) - xxx"
       },
       ...
-      }
     ],
-    "video": [],
-    "audio": [],
     "image": [],
-    "text": [],
-    "metadata": [],
-    ...
+    "text": []
   }
 }
 ```
@@ -2579,6 +2658,36 @@ or an error:
 
 ---
 
+### GET /api/system/terminal
+**Purpose**: List recent terminal sessions.
+
+**Response**:
+```json
+{
+  "items": [
+    {
+      "session_id": "3a8c5f7e2d3b4a8f9c0d1e2f3a4b5c6d",
+      "command": "--help",
+      "status": "completed",
+      "created_at": 1713000000.0,
+      "started_at": 1713000000.0,
+      "finished_at": 1713000004.0,
+      "expires_at": 1713086404.0,
+      "available_until": 1713086404.0,
+      "exit_code": 0,
+      "last_sequence": 15
+    }
+  ]
+}
+```
+
+**Notes**:
+- Expired sessions are removed automatically later.
+
+- `403 Forbidden` if console is disabled.
+
+---
+
 ### GET /api/system/terminal/active
 **Purpose**: Return the currently active terminal session metadata, or `null` if no session is active.
 
@@ -2606,7 +2715,7 @@ or
 ---
 
 ### GET /api/system/terminal/{session_id}
-**Purpose**: Return metadata for a specific terminal session while it is active or still within the replay/drain window.
+**Purpose**: Return metadata for a specific terminal session.
 
 **Response**:
 ```json
@@ -2617,7 +2726,7 @@ or
   "created_at": 1713000000.0,
   "started_at": 1713000000.0,
   "finished_at": 1713000004.0,
-  "expires_at": 1713000034.0,
+  "expires_at": 1713086404.0,
   "exit_code": 0,
   "last_sequence": 15
 }
@@ -2641,8 +2750,7 @@ or
 
 **Notes**:
 - This only applies to the currently active session.
-- The client should stay attached to the stream to receive the final `close` event and refreshed terminal status.
-- Cancelled sessions finalize as `interrupted` and remain replayable until the drain window expires.
+- Cancelled sessions are marked as `interrupted`.
 
 - `403 Forbidden` if console is disabled.
 - `404 Not Found` if the session does not exist or has already expired.
@@ -2673,10 +2781,6 @@ If both `since` and `Last-Event-ID` are present, the larger value is used.
 ```json
 { "exitcode": 0 }
 ```
-
-**Notes**:
-- Replay/restore works while the session is still running or until the finished session expires.
-- Finished sessions are removed lazily after the transcript drain window elapses.
 
 - `403 Forbidden` if console is disabled.
 - `400 Bad Request` if the replay cursor is invalid.

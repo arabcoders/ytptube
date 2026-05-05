@@ -84,13 +84,11 @@ class TestFFProbe:
 
                 # First call should execute the function
                 result1 = await ffprobe(str(self.test_file))
-                assert result1 is not None
                 assert isinstance(result1.metadata, dict)
                 first_call_count = call_count
 
                 # Second call with same argument should use cached result
                 result2 = await ffprobe(str(self.test_file))
-                assert result2 is not None
                 assert isinstance(result2.metadata, dict)
 
                 assert call_count == first_call_count, (
@@ -119,7 +117,7 @@ class TestFFProbe:
 
                 # Test with Path object
                 result = await ffprobe(self.test_file)
-                assert result is not None
+                assert result.metadata == {"duration": "10.0"}
 
     def test_ffprobe_result_properties(self):
         """Test FFProbeResult object properties."""

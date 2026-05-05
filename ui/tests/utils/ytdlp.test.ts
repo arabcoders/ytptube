@@ -6,7 +6,7 @@ function normalize(filters: string[]): Set<string> {
 }
 
 describe("MatchFilterParser", () => {
-  it("handles simple AND", () => {
+  it("handle_simple_and", () => {
     const parser = new MatchFilterParser("filesize>1000000 & duration<600");
 
     expect(parser.evaluate({ filesize: 2_000_000, duration: 200 })).toBe(true);
@@ -14,7 +14,7 @@ describe("MatchFilterParser", () => {
     expect(parser.evaluate({ filesize: 2_000_000, duration: 800 })).toBe(false);
   });
 
-  it("handles OR", () => {
+  it("handle_or", () => {
     const parser = new MatchFilterParser("uploader='BBC' || uploader='NHK'");
 
     expect(parser.evaluate({ uploader: "BBC" })).toBe(true);
@@ -22,7 +22,7 @@ describe("MatchFilterParser", () => {
     expect(parser.evaluate({ uploader: "CNN" })).toBe(false);
   });
 
-  it("handles grouping", () => {
+  it("handle_grouping", () => {
     const parser = new MatchFilterParser("(filesize>1000000 & duration<600) || uploader='BBC'");
 
     expect(parser.evaluate({ filesize: 2_000_000, duration: 200 })).toBe(true);
@@ -30,14 +30,14 @@ describe("MatchFilterParser", () => {
     expect(parser.evaluate({ filesize: 500_000, duration: 200, uploader: "CNN" })).toBe(false);
   });
 
-  it("handles unary presence", () => {
+  it("handle_unary_presence", () => {
     expect(new MatchFilterParser("duration").evaluate({ duration: 100 })).toBe(true);
     expect(new MatchFilterParser("duration").evaluate({})).toBe(false);
     expect(new MatchFilterParser("!duration").evaluate({})).toBe(true);
     expect(new MatchFilterParser("!duration").evaluate({ duration: 100 })).toBe(false);
   });
 
-  it("parses duration with numeric values", () => {
+  it("parse_duration", () => {
     expect(new MatchFilterParser("duration<120").evaluate({ duration: 30 })).toBe(true);
     expect(new MatchFilterParser("duration<120").evaluate({ duration: 200 })).toBe(false);
 
@@ -48,7 +48,7 @@ describe("MatchFilterParser", () => {
     expect(new MatchFilterParser("duration<3600").evaluate({ duration: 3700 })).toBe(false);
   });
 
-  it("parses filesize with numeric values", () => {
+  it("parse_filesize", () => {
     expect(new MatchFilterParser("filesize>1000000").evaluate({ filesize: 2_000_000 })).toBe(true);
     expect(new MatchFilterParser("filesize>1000000").evaluate({ filesize: 500_000 })).toBe(false);
 
@@ -56,7 +56,7 @@ describe("MatchFilterParser", () => {
     expect(new MatchFilterParser("filesize>=1073741824").evaluate({ filesize: 1000000 })).toBe(false);
   });
 
-  it("handles string operators", () => {
+  it("handle_string_operators", () => {
     const d = { uploader: "BBC News Channel" };
 
     expect(new MatchFilterParser("uploader*='News'").evaluate(d)).toBe(true);
@@ -70,7 +70,7 @@ describe("MatchFilterParser", () => {
     expect(new MatchFilterParser("uploader~='News\\s+Network'").evaluate(d)).toBe(false);
   });
 
-  it("handles spaces around operators", () => {
+  it("handle_operator_spaces", () => {
     const d = {
       "channel_id": "UC-7oMv6E4Uz2tF51w5Sj49w",
       "uploader": "BBC"
@@ -85,7 +85,7 @@ describe("MatchFilterParser", () => {
     expect(new MatchFilterParser("channel_id = 'UCfmrcEdes7yDtEISGPM1T-A' & availability = subscriber_only").evaluate(d)).toBe(false);
   });
 
-  it("reproduces original bug report", () => {
+  it("reproduce_bug_report", () => {
     const testData = {
       "age_limit": 0,
       "comment_count": 6,
@@ -102,7 +102,7 @@ describe("MatchFilterParser", () => {
     expect(new MatchFilterParser("channel_id = 'UC-7oMv6E4Uz2tF51w5Sj49w'").evaluate(testData)).toBe(true);
   });
 
-  it("tests OR operator precedence", () => {
+  it("or_precedence", () => {
     const testData = {
       "age_limit": 0,
       "fps": 120,
@@ -134,7 +134,7 @@ describe("MatchFilterParser", () => {
     expect(new MatchFilterParser(expr2).evaluate(testDataEdge)).toBe(true);
   });
 
-  it("tests complex OR precedence scenarios", () => {
+  it("handle_chained_or", () => {
     const testDataOrOnly = {
       "age_limit": 1,
       "fps": 60,
@@ -163,7 +163,7 @@ describe("MatchFilterParser", () => {
     expect(new MatchFilterParser(exprChain).evaluate(testDataOnlyOr)).toBe(true);
   });
 
-  it("exports filters correctly", () => {
+  it("export_filters", () => {
     const simpleParser = new MatchFilterParser("filesize>1000000 & duration<600");
     const simpleExported = simpleParser.export();
     expect(simpleExported).toEqual(["filesize>1000000&duration<600"]);
@@ -177,12 +177,6 @@ describe("MatchFilterParser", () => {
     expect(normalize(complexExported)).toEqual(normalize(["filesize>1000000&duration<600", "uploader='BBC'"]));
 
     const testData = { filesize: 2000000, duration: 300 };
-    for (const filter of complexExported) {
-      const filterParser = new MatchFilterParser(filter);
-      if (filterParser.evaluate(testData)) {
-        expect(true).toBe(true);
-        break;
-      }
-    }
+    expect(complexExported.some((filter) => new MatchFilterParser(filter).evaluate(testData))).toBe(true);
   });
 });

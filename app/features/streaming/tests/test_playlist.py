@@ -99,7 +99,7 @@ async def test_make_playlist_with_subtitles(tmp_path: Path, monkeypatch: pytest.
 
 
 @pytest.mark.asyncio
-async def test_make_playlist_raises_without_duration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_make_playlist_no_duration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     base = tmp_path / "downloads"
     base.mkdir()
     media = base / "file.mp4"

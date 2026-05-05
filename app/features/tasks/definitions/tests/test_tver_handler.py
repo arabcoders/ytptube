@@ -142,7 +142,7 @@ async def test_tver_handler_extract(monkeypatch):
 
 
 @pytest.mark.parametrize(("url", "should_match"), TverHandler.tests())
-def test_tver_handler_parse(url: str, should_match: bool):
+def test_parse(url: str, should_match: bool):
     """Test tver URL parsing."""
     result = TverHandler.parse(url)
     if should_match:
@@ -153,7 +153,7 @@ def test_tver_handler_parse(url: str, should_match: bool):
 
 
 @pytest.mark.asyncio
-async def test_tver_handler_can_handle():
+async def test_can_handle():
     """Test tver handler can_handle method."""
     task_valid = HandleTask(id=1, name="Test", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
     task_invalid = HandleTask(id=2, name="Test", url="https://youtube.com/watch?v=123", preset="default")

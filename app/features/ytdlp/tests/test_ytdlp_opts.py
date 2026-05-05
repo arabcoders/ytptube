@@ -25,7 +25,7 @@ class TestYTDLPOpts:
             assert opts._item_cli == []
             assert opts._preset_cli == ""
 
-    def test_get_instance_returns_reset_instance(self):
+    def test_get_instance(self):
         """Test that get_instance returns a reset YTDLPOpts instance."""
         with patch("app.features.ytdlp.ytdlp_opts.Config"):
             opts = YTDLPOpts.get_instance()
@@ -51,7 +51,7 @@ class TestYTDLPOpts:
             assert "--format best" in opts._item_cli
             mock_converter.assert_called_once_with(args="--format best", level=False)
 
-    def test_add_cli_with_invalid_args_raises_error(self):
+    def test_add_cli_invalid(self):
         """Test that invalid CLI arguments raise ValueError."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config"),
@@ -63,7 +63,7 @@ class TestYTDLPOpts:
             with pytest.raises(ValueError, match="Invalid command options for yt-dlp were given"):
                 opts.add_cli("--invalid-arg", from_user=True)
 
-    def test_add_cli_with_empty_args_returns_self(self):
+    def test_add_cli_empty(self):
         """Test that empty or invalid args return self without processing."""
         with patch("app.features.ytdlp.ytdlp_opts.Config"):
             opts = YTDLPOpts()
@@ -95,7 +95,7 @@ class TestYTDLPOpts:
             assert opts._item_opts["format"] == "best"
             assert opts._item_opts["quality"] == "720p"
 
-    def test_add_with_user_config_filters_bad_options(self):
+    def test_add_filters_bad_options(self):
         """Test that user config filters out dangerous options."""
         with patch("app.features.ytdlp.ytdlp_opts.Config"):
             opts = YTDLPOpts()
@@ -211,7 +211,7 @@ class TestYTDLPOpts:
             assert opts._preset_opts["cookiefile"] == expected_path
             mock_preset.get_cookies_file.assert_called_once_with(config=mock_config_instance)
 
-    def test_preset_with_invalid_cli_raises_error(self):
+    def test_preset_invalid_cli(self):
         """Test that preset with invalid CLI raises ValueError."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config"),
@@ -289,7 +289,7 @@ class TestYTDLPOpts:
             expected_cli = "--quality 720p\n--format best"
             mock_converter.assert_called_once_with(args=expected_cli, level=True)
 
-    def test_get_all_handles_format_special_cases(self):
+    def test_get_all_format_cases(self):
         """Test get_all handles special format values correctly."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
@@ -325,7 +325,7 @@ class TestYTDLPOpts:
             result = opts.get_all(keep=True)
             assert result["format"] == "best"
 
-    def test_get_all_with_invalid_cli_raises_error(self):
+    def test_get_all_invalid_cli(self):
         """Test get_all raises error for invalid CLI arguments."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
@@ -578,7 +578,7 @@ class TestARGSMerger:
         assert "--output" in merger.args
         assert "--socket-timeout" in merger.args
 
-    def test_add_filters_complex_commented_extractor_args(self):
+    def test_add_complex_comments(self):
         """Test filtering of complex real-world commented extractor-args."""
         from app.features.ytdlp.ytdlp_opts import ARGSMerger
 
@@ -631,7 +631,7 @@ class TestARGSMerger:
         assert "--format" in merger.args
         assert "bestvideo[height<=1080]+bestaudio/best" in merger.args
 
-    def test_add_empty_string_returns_self(self):
+    def test_add_empty(self):
         """Test that adding empty string returns self without modifying args."""
         from app.features.ytdlp.ytdlp_opts import ARGSMerger
 
@@ -641,7 +641,7 @@ class TestARGSMerger:
         assert result is merger
         assert merger.args == []
 
-    def test_add_short_string_returns_self(self):
+    def test_add_short(self):
         """Test that adding short string (len < 2) returns self without modifying args."""
         from app.features.ytdlp.ytdlp_opts import ARGSMerger
 
@@ -651,7 +651,7 @@ class TestARGSMerger:
         assert result is merger
         assert merger.args == []
 
-    def test_add_non_string_returns_self(self):
+    def test_add_non_string(self):
         """Test that adding non-string returns self without modifying args."""
         from app.features.ytdlp.ytdlp_opts import ARGSMerger
 
@@ -769,7 +769,7 @@ class TestYTDLPCli:
         assert cli.item is item
         assert cli._config is mock_config_instance
 
-    def test_constructor_with_invalid_type_raises_error(self):
+    def test_constructor_invalid_item(self):
         """Test YTDLPCli constructor raises error with non-Item type."""
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
