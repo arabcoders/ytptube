@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "8f436a7afbab5f22c4331ea68e499424b94a7b25",
-    "date": "2026-05-05T20:01:50+00:00",
+    "full_sha": "71f9a7bda41294db6892eef1bb9126886f088f9b",
+    "date": "2026-05-06T20:07:49+00:00",
     "commits": [
+      {
+        "sha": "71f9a7bd",
+        "full_sha": "71f9a7bda41294db6892eef1bb9126886f088f9b",
+        "message": "fix: show add button on same row",
+        "author": "arabcoders",
+        "date": "2026-05-06T20:07:49+00:00"
+      },
       {
         "sha": "8f436a7a",
         "full_sha": "8f436a7afbab5f22c4331ea68e499424b94a7b25",
