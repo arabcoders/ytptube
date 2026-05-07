@@ -375,6 +375,9 @@ async def fetch_info(
                 timeout=extractor_config.timeout,
             )
 
+        except TimeoutError:
+            raise
+
         except Exception as exc:
             LOG.exception(exc)
             LOG.warning("extract_info process pool failed, falling back to thread pool url=%s error=%s", url, exc)
