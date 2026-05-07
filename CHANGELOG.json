@@ -1,9 +1,37 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "71f9a7bda41294db6892eef1bb9126886f088f9b",
-    "date": "2026-05-06T20:07:49+00:00",
+    "full_sha": "9b3cc8b3102acfd1174d00ca95c981c03d7781ba",
+    "date": "2026-05-07T18:35:40+00:00",
     "commits": [
+      {
+        "sha": "9b3cc8b3",
+        "full_sha": "9b3cc8b3102acfd1174d00ca95c981c03d7781ba",
+        "message": "fix: respect sleep-requests arg in specific code paths.",
+        "author": "arabcoders",
+        "date": "2026-05-07T18:35:40+00:00"
+      },
+      {
+        "sha": "ac3c666d",
+        "full_sha": "ac3c666d32368c96f01304d3a2c050039d42a92f",
+        "message": "fix: handle TimeoutError in fetch_info function to prevent double wait",
+        "author": "arabcoders",
+        "date": "2026-05-07T16:09:31+00:00"
+      },
+      {
+        "sha": "691e37d2",
+        "full_sha": "691e37d2791caf641c4d11e9981146e41076e4b6",
+        "message": "fix: move dns lookup to thread",
+        "author": "arabcoders",
+        "date": "2026-05-07T15:34:50+00:00"
+      },
+      {
+        "sha": "5951837a",
+        "full_sha": "5951837ab992987c7c81e46fc8d6e91aeb20e6f9",
+        "message": "fix: automatic fallback to hls.js",
+        "author": "arabcoders",
+        "date": "2026-05-07T15:01:05+00:00"
+      },
       {
         "sha": "71f9a7bd",
         "full_sha": "71f9a7bda41294db6892eef1bb9126886f088f9b",
