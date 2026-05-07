@@ -38,6 +38,7 @@ Example of the Simple mode interface.
 * Conditions feature to apply custom options based on `yt-dlp` returned info.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
 * A bundled executable version for Windows, macOS and Linux. `MacOS version is untested`.
+* Use playwright or selenium for extractors that require a browser. see [related FAQ](FAQ.md#how-to-use-the-browser-extractor).
 
 Please read the [FAQ](FAQ.md) for more information.
 

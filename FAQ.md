@@ -37,6 +37,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_YTDLP_AUTO_UPDATE           | Whether to enable the auto update for yt-dlp                        | `true`                |
 | YTP_YTDLP_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package     | `false`               |
 | YTP_YTDLP_VERSION               | The version of yt-dlp to use. Defaults to latest version            | `(not_set)`           |
+| YTP_BROWSER_URL                 | Remote browser endpoint for the bundled `browser` extractor         | `(not_set)`           |
 | YTP_FLARESOLVERR_URL            | FlareSolverr endpoint URL.                                          | `(not_set)`           |
 | YTP_FLARESOLVERR_MAX_TIMEOUT    | Max FlareSolverr challenge timeout in seconds                       | `120`                 |
 | YTP_FLARESOLVERR_CLIENT_TIMEOUT | HTTP client timeout (seconds) when calling FlareSolverr             | `120`                 |
@@ -614,3 +615,114 @@ services:
 ```
 
 For more information please visit [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) project.
+
+# How to use the browser extractor?
+
+YTPTube ships with a bundled `browser` extractor plugin for `yt-dlp`. It opens the target page in a remote browser,
+waits for the page network activity, then tries to extract media urls from the captured requests and media elements.
+
+This is mainly useful for sites where the regular extractor or generic page parsing does not expose the final media url,
+but a real browser session does.
+
+## Environment variables
+
+You can define the remote browser endpoint globally with the following environment variable.
+
+### Selenium example
+
+```env
+YTP_BROWSER_URL=selenium+http://selenium:4444/wd/hub
+```
+
+### Playwright example
+
+For a native Playwright server, point to the Playwright websocket endpoint:
+
+```env
+YTP_BROWSER_URL=playwright+ws://playwright:3000/
+```
+
+### Playwright CDP example
+
+To connect Playwright over the Chrome DevTools Protocol, use either the shorthand `playwright+cdp://` form or an explicit transport form:
+
+```env
+YTP_BROWSER_URL=playwright+cdp://chrome:9222/
+# same as playwright+cdp+http://chrome:9222/
+```
+
+- `YTP_BROWSER_URL` is the full backend selector and endpoint in one value.
+- Supported forms are:
+  - `selenium+http://...`
+  - `selenium+https://...`
+  - `playwright+ws://...`
+  - `playwright+wss://...`
+  - `playwright+cdp://...` which is treated as `playwright+cdp+http://...`
+  - `playwright+cdp+http://...`
+  - `playwright+cdp+https://...`
+  - `playwright+cdp+ws://...`
+  - `playwright+cdp+wss://...`
+
+## yt-dlp usage
+
+To enable the extractor for a preset or task, add the following to the `Command options for yt-dlp` field:
+
+```bash
+--use-extractors "browser,default"
+```
+
+If you want to set the browser extractor options directly on the yt-dlp side, you can also use `--extractor-args` with `browser:url=...`:
+
+### Selenium example
+
+```bash
+--use-extractors "browser,default" --extractor-args "browser:url=selenium+http://selenium:4444/wd/hub"
+```
+
+### Playwright example
+
+```bash
+--use-extractors "browser,default" --extractor-args "browser:url=playwright+ws://playwright:3000/"
+```
+
+### Playwright CDP example
+
+```bash
+--use-extractors "browser,default" --extractor-args "browser:url=playwright+cdp://chrome:9222/"
+```
+
+The explicit `--extractor-args` value takes priority over `YTP_BROWSER_URL`.
+
+## Example compose setup
+
+```yaml
+services:
+  ytptube:
+    user: "${UID:-1000}:${UID:-1000}"
+    image: ghcr.io/arabcoders/ytptube:latest
+    container_name: ytptube
+    restart: unless-stopped
+    environment:
+      - YTP_BROWSER_URL=selenium+http://selenium:4444/wd/hub # or playwright+ws://playwright:3000/ or playwright+cdp://chrome:9222/
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./config:/config:rw
+      - ./downloads:/downloads:rw
+
+  selenium:
+    image: selenium/standalone-chrome:latest
+    container_name: selenium
+    restart: unless-stopped
+    shm_size: 2gb
+    
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.59.0-noble
+    container_name: playwright
+    restart: unless-stopped
+    command: /bin/sh -c "npx -y playwright@1.59.0 run-server --port 3000 --host 0.0.0.0"
+```
+
+> [!NOTE]
+> The browser extractor is slower than the normal extractor flow and should only be used when a site actually needs a real browser session.
+> playwright require same version for both the server and the client, so make sure to use the same version in the container and in your local environment if you want to test it locally.

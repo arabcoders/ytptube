@@ -165,3 +165,62 @@ class TestConditionIgnorePropagation:
         assert captured["extras"]["playlist"] == "Playlist"
         assert "source_name" not in captured["extras"]
         queue.add.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_playlist_keeps_child_urls(self) -> None:
+        class FakeItem:
+            def __init__(self) -> None:
+                self.extras = {}
+
+            def get_ytdlp_opts(self):
+                return Mock(get_all=Mock(return_value={}))
+
+            def new_with(self, **kwargs):
+                return SimpleNamespace(extras=kwargs["extras"], url=kwargs["url"])
+
+        queue = Mock(add=AsyncMock(return_value={"status": "ok"}))
+        entry = {
+            "_type": "playlist",
+            "id": "playlist-1",
+            "title": "Playlist",
+            "webpage_url": "https://example.com/page",
+            "original_url": "https://example.com/page",
+            "entries": [
+                {
+                    "_type": "video",
+                    "id": "video-1",
+                    "title": "Video 1",
+                    "url": "https://cdn.example/1.mp3",
+                    "webpage_url": "https://cdn.example/1.mp3",
+                    "original_url": "https://cdn.example/1.mp3",
+                    "formats": [{"url": "https://cdn.example/1.mp3", "ext": "mp3"}],
+                },
+                {
+                    "_type": "video",
+                    "id": "video-2",
+                    "title": "Video 2",
+                    "url": "https://cdn.example/2.mp3",
+                    "webpage_url": "https://cdn.example/2.mp3",
+                    "original_url": "https://cdn.example/2.mp3",
+                    "formats": [{"url": "https://cdn.example/2.mp3", "ext": "mp3"}],
+                },
+            ],
+        }
+
+        with patch("app.library.downloads.playlist_processor.ytdlp_reject", return_value=(True, "")):
+            result = await process_playlist(queue=queue, entry=entry, item=FakeItem())
+
+        assert result == {"status": "ok"}
+        assert queue.add.await_count == 2
+        assert [call.kwargs["item"].url for call in queue.add.await_args_list] == [
+            "https://cdn.example/1.mp3",
+            "https://cdn.example/2.mp3",
+        ]
+        assert [call.kwargs["entry"]["webpage_url"] for call in queue.add.await_args_list] == [
+            "https://cdn.example/1.mp3",
+            "https://cdn.example/2.mp3",
+        ]
+        assert [call.kwargs["entry"]["original_url"] for call in queue.add.await_args_list] == [
+            "https://cdn.example/1.mp3",
+            "https://cdn.example/2.mp3",
+        ]

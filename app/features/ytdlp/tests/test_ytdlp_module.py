@@ -1,6 +1,8 @@
+import importlib
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from yt_dlp.globals import extractors as ytdlp_extractors
 
 from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import patch_windows_popen_wait

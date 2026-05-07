@@ -1,11 +1,12 @@
 import base64
+import os
 import re
 import time
 import urllib.parse
 from typing import Any
 
 from yt_dlp.extractor.generic import GenericIE
-from yt_dlp.utils import ExtractorError, determine_ext, mimetype2ext, traverse_obj
+from yt_dlp.utils import ExtractorError, determine_ext, make_archive_id, mimetype2ext, traverse_obj
 from yt_dlp.utils._utils import _request_dump_filename
 
 MEDIA_EXTENSIONS: set[str] = {
@@ -97,6 +98,16 @@ _MEDIA_ELEMENT_JS = """() => {
     return mediaUrls;
 }"""
 
+_PLAYWRIGHT_PREFIXES: tuple[str, ...] = (
+    "playwright+ws://",
+    "playwright+wss://",
+    "playwright+cdp://",
+    "playwright+cdp+http://",
+    "playwright+cdp+https://",
+    "playwright+cdp+ws://",
+    "playwright+cdp+wss://",
+)
+
 
 def _has_possible_media(requests_list: list[dict]) -> bool:
     for req in requests_list:
@@ -186,10 +197,24 @@ class PlaywrightDriver:
 
         p = sync_playwright().start()
 
-        if ws_url.startswith("pw+"):
-            browser = p.chromium.connect(ws_url[3:], timeout=timeout or 30000)
+        if ws_url.startswith("playwright+ws://"):
+            browser_url = f"ws://{ws_url.removeprefix('playwright+ws://')}"
+            browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
+        elif ws_url.startswith("playwright+wss://"):
+            browser_url = f"wss://{ws_url.removeprefix('playwright+wss://')}"
+            browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
+        elif ws_url.startswith("playwright+cdp://"):
+            browser_url = f"http://{ws_url.removeprefix('playwright+cdp://')}"
+            browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
+        elif ws_url.startswith("playwright+cdp+"):
+            browser_url = ws_url.removeprefix("playwright+cdp+")
+            browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
         else:
-            browser = p.chromium.connect_over_cdp(ws_url, timeout=timeout or 30000)
+            msg = (
+                "Invalid Playwright browser URL. Use playwright+ws://, playwright+wss://, "
+                "playwright+cdp://, or playwright+cdp+http(s|ws|wss)://"
+            )
+            raise ValueError(msg)
 
         context = browser.new_context()
         page = context.new_page()
@@ -401,35 +426,43 @@ class SeleniumDriver:
         return Session()
 
 
-DRIVERS: list[type] = [PlaywrightDriver, SeleniumDriver]
-
-
 class GenericBrowserIE(GenericIE, plugin_name="browser"):
     _WORKING = True
     _failed: bool = False
     _remote_browser_failures: dict[str, str] = {}
     _url: str = ""
 
+    def _get_config(self, name: str, env_name: str) -> str | None:
+        value = self._configuration_arg(name, [None])[0]
+        if value is None:
+            value = os.environ.get(env_name)
+
+        if isinstance(value, str):
+            value = value.strip() or None
+
+        return value
+
     def _real_extract(self, url: str) -> dict[str, Any]:
         self._url = url
-        preferred_driver: str | None = self._configuration_arg("driver", [None])[0]
 
-        if not (remote_browser := self._configuration_arg("remote_browser", [None])[0]) or self._failed:
+        if not (browser_url := self._get_config("url", "YTP_BROWSER_URL")) or self._failed:
             return self.__wrapped__._real_extract(self, url)
 
         video_id: str = self._generic_id(url)
         timeout: int | None = self._get_timeout_ms()
+        self.to_screen(f"Using remote browser for {url}")
 
-        if not (driver := self._select_driver(preferred_driver, remote_browser)):
-            available: list[str] = [d.__name__ for d in DRIVERS if d.isAvailable()]
+        if not (driver := self._select_driver(browser_url)):
             msg: str = (
-                f"No browser driver available. Install playwright or selenium. "
-                f"Available drivers: {available if available else 'none'}"
+                "No matching browser driver available for the configured browser URL. "
+                "Install playwright or selenium as needed."
             )
             raise ExtractorError(msg)
 
+        self.write_debug(f"Selected driver {driver.__name__} for {browser_url}")
+
         try:
-            session = driver.connect(remote_browser, timeout)
+            session = driver.connect(browser_url, timeout)
         except Exception as e:
             message = str(e)
             self._failed = True
@@ -438,6 +471,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
 
         try:
             self.report_extraction(url)
+            self.write_debug(f"Loading page {url}")
             session.goto(url)
 
             session.wait_for_network_idle(
@@ -448,6 +482,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
 
             webpage = session.content()
             requests = self._merge_requests(session.get_requests(), session.get_media_requests())
+            self.write_debug(f"Captured {len(requests)} network requests")
 
             if self._downloader.params.get("dump_intermediate_pages"):
                 self.to_screen(f"Browser content dump for: {url}")
@@ -483,35 +518,51 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 thumbnail = self._og_search_thumbnail(webpage, default=None)
                 if thumbnail:
                     info_dict["thumbnail"] = thumbnail
+            elif webpage:
+                self.write_debug(f"Page content did not look like HTML for {url}")
+                self.write_debug(webpage)
 
             network_info = self._extract_network_formats(requests, video_id, info_dict)
             if network_info:
+                self.write_debug(f"Resolved media from browser requests for {url}")
                 if network_info.get("_type") == "playlist" and network_info.get("entries"):
                     return self.playlist_result(network_info["entries"], **info_dict)
                 info_dict.update(network_info)
 
             return info_dict
+        except Exception as e:
+            self.report_warning(
+                "Browser extractor session failed for url=%r browser_url=%r driver=%s error=%s",
+                url,
+                browser_url,
+                driver.__name__,
+                e,
+            )
+            raise
         finally:
-            session.close()
+            try:
+                session.close()
+            except Exception as e:
+                self.report_warning(
+                    "Browser session close failed for url=%r browser_url=%r driver=%s error=%s",
+                    url,
+                    browser_url,
+                    driver.__name__,
+                    e,
+                )
 
-    def _select_driver(self, preferred: str | None, ws_url: str):
-        if preferred:
-            for driver in DRIVERS:
-                if driver.__name__.lower().startswith(preferred.lower()):
-                    if driver.isAvailable():
-                        return driver
+    def _select_driver(self, ws_url: str):
+        if ws_url.startswith(("selenium+http://", "selenium+https://")):
+            return SeleniumDriver if SeleniumDriver.is_available() else None
 
-                    self.report_warning(f"Preferred driver {driver.__name__} not available")
-                    return None
+        if ws_url.startswith(_PLAYWRIGHT_PREFIXES):
+            return PlaywrightDriver if PlaywrightDriver.is_available() else None
 
-        if ws_url.startswith("pw+") and PlaywrightDriver.is_available():
-            return PlaywrightDriver
-
-        for driver in DRIVERS:
-            if driver.isAvailable():
-                return driver
-
-        return None
+        msg = (
+            "Invalid browser URL. Use selenium+http(s)://, playwright+ws(s)://, "
+            "playwright+cdp://, or playwright+cdp+http(s|ws|wss)://"
+        )
+        raise ExtractorError(msg)
 
     def _extract_network_formats(
         self, requests: list[dict], video_id: str, base_info: dict[str, Any]
@@ -588,6 +639,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 source_counts["direct"] = source_counts.get("direct", 0) + 1
 
         if not formats:
+            self.write_debug(f"No media formats found in {len(requests)} browser request(s)")
             self.report_warning(
                 "Generic browser extractor found no media formats. falling back to generic extractor.", video_id
             )
@@ -597,14 +649,20 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             base_title = (base_info.get("title") or "").strip() or video_id
             entries = []
             for index, fmt in enumerate(direct_formats, start=1):
+                entry_url = fmt.get("url")
+                entry_id = f"{video_id}-{index}"
                 entries.append(
                     {
-                        "id": f"{video_id}-{index}",
+                        "id": entry_id,
                         "title": f"{base_title} ({index})",
+                        "_old_archive_ids": [make_archive_id("generic", entry_id)],
                         "formats": [fmt],
-                        "url": fmt.get("url"),
+                        "url": entry_url,
+                        "webpage_url": entry_url,
+                        "original_url": entry_url,
                         "ext": fmt.get("ext"),
                         "protocol": fmt.get("protocol"),
+                        "direct": True,
                     }
                 )
             return {"_type": "playlist", "entries": entries}
