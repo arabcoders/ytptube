@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -469,7 +470,7 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
     static_only: bool = data.get("static_only", False) if isinstance(data, dict) else False
     if not static_only:
         try:
-            validate_url(url, allow_internal=config.allow_internal_urls)
+            await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
         except ValueError as e:
             return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
@@ -710,7 +711,7 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                         continue
 
                     try:
-                        validate_url(url, allow_internal=config.allow_internal_urls)
+                        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
                     except ValueError:
                         LOG.warning(f"Invalid thumbnail url '{url}'")
                         continue

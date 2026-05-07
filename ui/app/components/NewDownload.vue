@@ -17,7 +17,7 @@
                 </span>
               </template>
 
-              <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
+              <div class="flex flex-row gap-2 items-start">
                 <div class="min-w-0 flex-1">
                   <UTextarea
                     v-if="isMultiLineInput"

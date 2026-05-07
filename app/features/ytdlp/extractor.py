@@ -49,6 +49,17 @@ class ExtractorConfig:
         self.wait_threshold = wait_threshold
 
 
+def _sleep_timeout(config: dict[str, Any], timeout: float, budget_sleep: bool) -> float:
+    if not budget_sleep:
+        return timeout
+
+    sleep_requests = config.get("sleep_interval_requests")
+    if not isinstance(sleep_requests, int | float) or sleep_requests <= 0:
+        return timeout
+
+    return timeout + min(float(sleep_requests) * 20, 300.0)
+
+
 class ExtractorPool(metaclass=Singleton):
     """
     Manages process pool and semaphore for video information extraction.
@@ -312,6 +323,7 @@ async def fetch_info(
     sanitize_info: bool = False,
     capture_logs: int | None = None,
     extractor_config: ExtractorConfig | None = None,
+    budget_sleep: bool = False,
     **kwargs,
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     """
@@ -329,6 +341,7 @@ async def fetch_info(
         sanitize_info: Sanitize the extracted information
         capture_logs: If provided (e.g., logging.WARNING), capture logs
         extractor_config: Configuration for the extractor
+        budget_sleep: Whether to add extra timeout budget for request-sleep-heavy extraction
         **kwargs: Additional arguments
 
     Returns:
@@ -352,6 +365,7 @@ async def fetch_info(
     loop = asyncio.get_running_loop()
 
     safe_config = _sanitize_config(config)
+    timeout = _sleep_timeout(safe_config, extractor_config.timeout, budget_sleep)
 
     try:
         try:
@@ -372,8 +386,11 @@ async def fetch_info(
                         **kwargs,
                     ),
                 ),
-                timeout=extractor_config.timeout,
+                timeout=timeout,
             )
+
+        except TimeoutError:
+            raise
 
         except Exception as exc:
             LOG.exception(exc)
@@ -393,7 +410,7 @@ async def fetch_info(
                         **kwargs,
                     ),
                 ),
-                timeout=extractor_config.timeout,
+                timeout=timeout,
             )
     finally:
         semaphore.release()

@@ -185,6 +185,7 @@ class RssGenericHandler(BaseHandler):
                         url=url,
                         no_archive=True,
                         no_log=True,
+                        budget_sleep=True,
                     )
 
                     if not info:

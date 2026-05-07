@@ -792,6 +792,7 @@ async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
             url=item.info.url,
             no_archive=True,
             follow_redirect=True,
+            budget_sleep=True,
         )
 
         if not info_dict:

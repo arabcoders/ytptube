@@ -208,6 +208,7 @@ async def add(
                 no_archive=False,
                 follow_redirect=True,
                 capture_logs=logging.WARNING,
+                budget_sleep=True,
             )
 
         if not entry:

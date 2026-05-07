@@ -1119,10 +1119,6 @@ async function src_error(event: Event) {
     return;
   }
 
-  if (videoElement.value?.paused && !active.value) {
-    return;
-  }
-
   console.warn('Source failed to load, attempting HLS fallback via hls.js...', event);
   attach_hls(currentPlaybackUrl('m3u8', true));
 }
