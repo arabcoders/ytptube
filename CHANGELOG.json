@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "9b3cc8b3102acfd1174d00ca95c981c03d7781ba",
-    "date": "2026-05-07T18:35:40+00:00",
+    "full_sha": "928ddd5b9ad01af226f506a936c569d539872780",
+    "date": "2026-05-07T22:08:08+00:00",
     "commits": [
+      {
+        "sha": "928ddd5b",
+        "full_sha": "928ddd5b9ad01af226f506a936c569d539872780",
+        "message": "feat: add generic browser extractor",
+        "author": "arabcoders",
+        "date": "2026-05-07T22:08:08+00:00"
+      },
       {
         "sha": "9b3cc8b3",
         "full_sha": "9b3cc8b3102acfd1174d00ca95c981c03d7781ba",
