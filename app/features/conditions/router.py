@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections import OrderedDict
 from typing import Any
@@ -85,7 +86,7 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         return web.json_response({"error": "condition is required."}, status=web.HTTPBadRequest.status_code)
 
     try:
-        validate_url(url, allow_internal=config.allow_internal_urls)
+        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
     except ValueError as e:
         return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
 

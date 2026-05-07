@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import time
@@ -301,7 +302,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         )
 
     try:
-        validate_url(url, allow_internal=config.allow_internal_urls)
+        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
     except ValueError as e:
         return web.json_response(
             data={"status": False, "message": str(e), "error": str(e)},
@@ -453,7 +454,7 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
     for i, url in enumerate(data):
         dct = {"index": i, "url": url}
         try:
-            validate_url(url, allow_internal=config.allow_internal_urls)
+            await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
             dct.update(get_archive_id(url))
         except ValueError as e:
             dct.update({"id": None, "ie_key": None, "archive_id": None, "error": str(e)})

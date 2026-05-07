@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import random
 import time
@@ -39,7 +40,7 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
         return web.json_response(data={"error": "URL is required."}, status=web.HTTPForbidden.status_code)
 
     try:
-        validate_url(url, allow_internal=config.allow_internal_urls)
+        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
     except ValueError as e:
         return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
 
@@ -59,6 +60,7 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
             url=url,
             follow_redirects=True,
             headers=request_headers,
+            timeout=10.0,
         )
 
         if response.status_code != web.HTTPOk.status_code:
