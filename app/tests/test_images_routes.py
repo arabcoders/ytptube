@@ -18,7 +18,7 @@ def reset_config() -> Generator[None, None, None]:
     Config._reset_singleton()
 
 
-class _Response:
+class _Resp:
     def __init__(self, *, status_code: int = 200, content: bytes = b"img", content_type: str = "image/jpeg") -> None:
         self.status_code = status_code
         self.content = content
@@ -26,25 +26,25 @@ class _Response:
 
 
 @pytest.mark.asyncio
-async def test_thumbnail_validate_off_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_thumb_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     config = Config.get_instance()
     req = make_mocked_request("GET", "/api/thumbnail?url=https://example.com/a.jpg")
     req._rel_url = req._rel_url.with_query({"url": "https://example.com/a.jpg"})
 
-    called = {"to_thread": False, "validate": False}
+    seen = {"to_thread": False, "validate": False}
 
     def fake_validate_url(url: str, allow_internal: bool = False) -> bool:
-        called["validate"] = True
+        seen["validate"] = True
         assert url == "https://example.com/a.jpg"
         assert allow_internal is config.allow_internal_urls
         return True
 
     async def fake_to_thread(func, *args, **kwargs):
-        called["to_thread"] = True
+        seen["to_thread"] = True
         return func(*args, **kwargs)
 
     client = AsyncMock()
-    client.request.return_value = _Response()
+    client.request.return_value = _Resp()
 
     monkeypatch.setattr(images, "validate_url", fake_validate_url)
     monkeypatch.setattr(images.asyncio, "to_thread", fake_to_thread)
@@ -70,13 +70,13 @@ async def test_thumbnail_validate_off_thread(monkeypatch: pytest.MonkeyPatch) ->
     response = await images.get_thumbnail(req, config)
 
     assert response.status == web.HTTPOk.status_code
-    assert called["to_thread"] is True
-    assert called["validate"] is True
+    assert seen["to_thread"] is True
+    assert seen["validate"] is True
     client.request.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_thumbnail_validate_rejects(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_thumb_reject(monkeypatch: pytest.MonkeyPatch) -> None:
     config = Config.get_instance()
     req = make_mocked_request("GET", "/api/thumbnail?url=https://bad.example/a.jpg")
     req._rel_url = req._rel_url.with_query({"url": "https://bad.example/a.jpg"})
