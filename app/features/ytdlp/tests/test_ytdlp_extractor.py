@@ -1,6 +1,13 @@
+import logging
 from unittest.mock import MagicMock, patch
 
-from app.features.ytdlp.extractor import ExtractorConfig, ExtractorPool, _get_process_pool_kwargs, extract_info_sync
+from app.features.ytdlp.extractor import (
+    ExtractorConfig,
+    ExtractorPool,
+    _get_process_pool_kwargs,
+    _ytdlp_logger,
+    extract_info_sync,
+)
 
 
 class TestProcessPoolConfiguration:
@@ -76,3 +83,90 @@ class TestExtractInfo:
         (result, logs) = extract_info_sync(config, url, debug=True)
         assert isinstance(result, dict), "Result should be a dictionary"
         assert isinstance(logs, list), "Logs should be a list"
+
+    @patch("app.features.ytdlp.extractor.YTDLP")
+    def test_extract_info_mirrors_debug_to_console(self, mock_ytdlp_class):
+        seen: list[tuple[int, str]] = []
+
+        def fake_extract_info(url, download=False):  # noqa: ARG001
+            logger = mock_ytdlp_class.call_args.kwargs["params"]["logger"]
+            logger.debug("[generic_browser] Using remote browser for https://example.com/video")
+            logger.debug("[debug] [generic_browser] Loading page https://example.com/video")
+            logger.warning("[generic_browser] Browser fallback warning")
+            return {"title": "Test Video", "id": "test123"}
+
+        mock_ytdlp = MagicMock()
+        mock_ytdlp.extract_info.side_effect = fake_extract_info
+        mock_ytdlp_class.return_value = mock_ytdlp
+
+        logger = logging.getLogger("yt-dlp.extract_info")
+        with patch.object(
+            logger, "info", side_effect=lambda msg, *a, **k: seen.append((logging.INFO, msg % a if a else msg))
+        ):
+            with patch.object(
+                logger,
+                "debug",
+                side_effect=lambda msg, *a, **k: seen.append((logging.DEBUG, msg % a if a else msg)),
+            ):
+                with patch.object(
+                    logger,
+                    "log",
+                    side_effect=lambda level, msg, *a, **k: seen.append((level, msg % a if a else msg)),
+                ):
+                    (result, logs) = extract_info_sync(
+                        {}, "https://example.com/video", debug=True, capture_logs=logging.WARNING
+                    )
+
+        assert result["id"] == "test123"
+        assert logs == ["[generic_browser] Browser fallback warning"]
+        assert (logging.INFO, "[generic_browser] Using remote browser for https://example.com/video") in seen
+        assert (logging.DEBUG, "[generic_browser] Loading page https://example.com/video") in seen
+        assert (logging.WARNING, "[generic_browser] Browser fallback warning") in seen
+
+    @patch("app.features.ytdlp.extractor.YTDLP")
+    def test_extract_info_mirrors_screen_logs_without_debug(self, mock_ytdlp_class):
+        seen: list[tuple[int, str]] = []
+
+        def fake_extract_info(url, download=False):  # noqa: ARG001
+            logger = mock_ytdlp_class.call_args.kwargs["params"]["logger"]
+            logger.debug("[generic_browser] Using remote browser for https://example.com/video")
+            logger.warning("[generic_browser] Browser fallback warning")
+            return {"title": "Test Video", "id": "test123"}
+
+        mock_ytdlp = MagicMock()
+        mock_ytdlp.extract_info.side_effect = fake_extract_info
+        mock_ytdlp_class.return_value = mock_ytdlp
+
+        logger = logging.getLogger("yt-dlp.extract_info")
+        with patch.object(
+            logger, "info", side_effect=lambda msg, *a, **k: seen.append((logging.INFO, msg % a if a else msg))
+        ):
+            with patch.object(
+                logger,
+                "log",
+                side_effect=lambda level, msg, *a, **k: seen.append((level, msg % a if a else msg)),
+            ):
+                (result, logs) = extract_info_sync(
+                    {}, "https://example.com/video", debug=False, capture_logs=logging.WARNING
+                )
+
+        assert result["id"] == "test123"
+        assert logs == ["[generic_browser] Browser fallback warning"]
+        assert (logging.INFO, "[generic_browser] Using remote browser for https://example.com/video") in seen
+        assert (logging.WARNING, "[generic_browser] Browser fallback warning") in seen
+
+
+class TestYtdlpLogger:
+    def test_debug_prefix_uses_debug(self) -> None:
+        logger = MagicMock()
+
+        _ytdlp_logger(logger)(logging.DEBUG, "[debug] hello")
+
+        logger.debug.assert_called_once_with("hello")
+
+    def test_screen_style_debug_uses_info(self) -> None:
+        logger = MagicMock()
+
+        _ytdlp_logger(logger)(logging.DEBUG, "screen line")
+
+        logger.info.assert_called_once_with("screen line")

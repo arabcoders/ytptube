@@ -18,6 +18,21 @@ from app.library.Singleton import Singleton
 LOG: logging.Logger = logging.getLogger("downloads.extractor")
 
 
+def _ytdlp_logger(target: logging.Logger):
+    def _log(level: int, msg: str, *args: Any, **kwargs: Any) -> None:
+        if level <= logging.DEBUG and isinstance(msg, str) and msg.startswith("[debug] "):
+            target.debug(msg.removeprefix("[debug] "), *args, **kwargs)
+            return
+
+        if level <= logging.DEBUG:
+            target.info(msg, *args, **kwargs)
+            return
+
+        target.log(level, msg, *args, **kwargs)
+
+    return _log
+
+
 def _get_process_pool_kwargs() -> dict[str, Any]:
     """Use a fork-based pool for frozen Linux builds."""
     if sys.platform == "linux" and getattr(sys, "frozen", False):
@@ -254,64 +269,69 @@ def extract_info_sync(
     log_wrapper = LogWrapper()
     id_dict: dict[str, str | None] = get_archive_id(url=url)
     archive_id: str | None = f".{id_dict['id']}" if id_dict.get("id") else None
-
-    log_wrapper.add_target(
-        target=logging.getLogger(f"yt-dlp{archive_id or '.extract_info'}"),
-        level=logging.DEBUG if debug else logging.WARNING,
-    )
-
-    captured_logs: list[str] = kwargs.get("captured_logs", [])
-    if capture_logs is not None:
-        log_wrapper.add_target(
-            target=lambda _, msg: captured_logs.append(msg),
-            level=capture_logs,
-            name="log-capture",
-        )
-
-    if log_wrapper.has_targets():
-        if "logger" in params:
-            log_wrapper.add_target(target=params["logger"], level=logging.DEBUG)
-
-        params["logger"] = log_wrapper
-
-    if kwargs.get("no_log", False):
-        params["logger"] = LogWrapper()
-        params["quiet"] = True
-        params["no_warnings"] = True
-
-    if no_archive and "download_archive" in params:
-        del params["download_archive"]
-
-    data: dict[str, Any] | None = YTDLP(params=params).extract_info(url, download=False)
-
-    if data and follow_redirect and "_type" in data and "url" == data["_type"]:
-        return extract_info_sync(
-            config,
-            data["url"],
-            debug=debug,
-            no_archive=no_archive,
-            follow_redirect=follow_redirect,
-            sanitize_info=sanitize_info,
-            capture_logs=capture_logs,
-            captured_logs=captured_logs,
-            **kwargs,
-        )
-
-    if not data:
-        return (data, captured_logs)
+    logger_name: str = f"yt-dlp{archive_id or '.extract_info'}"
 
     try:
-        from app.features.ytdlp.mini_filter import match_str
+        log_wrapper.add_target(
+            target=_ytdlp_logger(logging.getLogger(logger_name)),
+            level=logging.DEBUG,
+            name=logger_name,
+        )
 
-        data["is_premiere"] = match_str("media_type=video & duration & is_live", data)
-        if not data["is_premiere"]:
-            data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
-    except ImportError:
-        pass
+        captured_logs: list[str] = kwargs.get("captured_logs", [])
+        if capture_logs is not None:
+            log_wrapper.add_target(
+                target=lambda _, msg: captured_logs.append(msg),
+                level=capture_logs,
+                name="log-capture",
+            )
 
-    result = YTDLP.sanitize_info(data, remove_private_keys=True) if sanitize_info else data
+        if log_wrapper.has_targets():
+            if "logger" in params:
+                log_wrapper.add_target(target=params["logger"], level=logging.DEBUG)
 
-    return (result, captured_logs)
+            params["logger"] = log_wrapper
+
+        if kwargs.get("no_log", False):
+            params["logger"] = LogWrapper()
+            params["quiet"] = True
+            params["no_warnings"] = True
+
+        if no_archive and "download_archive" in params:
+            del params["download_archive"]
+
+        data: dict[str, Any] | None = YTDLP(params=params).extract_info(url, download=False)
+
+        if data and follow_redirect and "_type" in data and "url" == data["_type"]:
+            return extract_info_sync(
+                config,
+                data["url"],
+                debug=debug,
+                no_archive=no_archive,
+                follow_redirect=follow_redirect,
+                sanitize_info=sanitize_info,
+                capture_logs=capture_logs,
+                captured_logs=captured_logs,
+                **kwargs,
+            )
+
+        if not data:
+            return (data, captured_logs)
+
+        try:
+            from app.features.ytdlp.mini_filter import match_str
+
+            data["is_premiere"] = match_str("media_type=video & duration & is_live", data)
+            if not data["is_premiere"]:
+                data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
+        except ImportError:
+            pass
+
+        result = YTDLP.sanitize_info(data, remove_private_keys=True) if sanitize_info else data
+
+        return (result, captured_logs)
+    finally:
+        logging.Logger.manager.loggerDict.pop(logger_name, None)
 
 
 async def fetch_info(

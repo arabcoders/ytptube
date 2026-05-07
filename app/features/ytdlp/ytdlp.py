@@ -1,8 +1,10 @@
 # flake8: noqa: F401, RUF100, W291, I001
+import logging
 import sys
 from typing import Any
 
 import yt_dlp
+from yt_dlp.globals import extractors as ytdlp_extractors
 from yt_dlp.utils import make_archive_id
 
 from app.features.ytdlp.outtmpl import rewrite_outtmpl
@@ -56,6 +58,17 @@ class YTDLP(yt_dlp.YoutubeDL):
     def __init__(self, params=None, auto_init=True):
         apply_ytdlp_patches()
 
+        if not YTDLP._registered:
+            try:
+                from app.yt_dlp_plugins.extractor import generic_browser
+                from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
+                from yt_dlp.postprocessor import postprocessors
+
+                postprocessors.value.update({"NFOMakerPP": NFOMakerPP})
+                YTDLP._registered = True
+            except Exception:
+                logging.getLogger("ytdlp.wrapper").exception("Failed to register yt-dlp plugins")
+
         # Avoid yt-dlp preloading the archive file by stripping the param first
         orig_file = None
         patched_params: dict[str, Any] | None = None
@@ -80,15 +93,6 @@ class YTDLP(yt_dlp.YoutubeDL):
         self._ytptube_outtmpl_info: dict[str, Any] | None = None
         self._ytptube_outtmpl_cache: dict[str, Any] = {}
         self.archive = _ArchiveProxy(orig_file)
-        if not YTDLP._registered:
-            try:
-                from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
-                from yt_dlp.postprocessor import postprocessors
-
-                postprocessors.value.update({"NFOMakerPP": NFOMakerPP})
-                YTDLP._registered = True
-            except Exception:
-                pass
 
     def _delete_downloaded_files(self, *args, **kwargs) -> None:
         if self._interrupted:
