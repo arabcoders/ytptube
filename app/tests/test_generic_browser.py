@@ -184,6 +184,38 @@ def test_log_non_html(monkeypatch: pytest.MonkeyPatch) -> None:
     ie.write_debug.assert_any_call("plain text body")
 
 
+def test_html_meta(monkeypatch: pytest.MonkeyPatch) -> None:
+    ie = _make_ie()
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    ie._looks_like_html = lambda webpage: True
+    ie._generic_title = generic_browser.GenericIE._generic_title.__get__(ie, generic_browser.GenericBrowserIE)
+
+    session = Mock()
+    session.content.return_value = (
+        '<html><head><meta property="og:title" content="OG Title">'
+        '<meta name="description" content="Meta Desc">'
+        '<meta property="og:image" content="https://img.example/thumb.jpg">'
+        "</head><body><title>Page Title</title></body></html>"
+    )
+    session.get_requests.return_value = []
+    session.get_media_requests.return_value = []
+
+    class FakeDriver:
+        __name__ = "FakeDriver"
+
+        @staticmethod
+        def connect(ws_url: str, timeout: int | None = None):
+            return session
+
+    monkeypatch.setattr(generic_browser.GenericBrowserIE, "_select_driver", lambda self, ws_url: FakeDriver)
+
+    result = ie._real_extract("https://example.com/watch")
+
+    assert result["title"] == "OG Title"
+    assert result["description"] == "Meta Desc"
+    assert result["thumbnail"] == "https://img.example/thumb.jpg"
+
+
 def test_no_media() -> None:
     ie = _make_ie()
     ie.__wrapped__ = Mock()

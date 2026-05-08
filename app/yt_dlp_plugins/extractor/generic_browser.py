@@ -542,8 +542,10 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             }
 
             if webpage and self._looks_like_html(webpage):
-                info_dict["title"] = self._get_title(webpage) or self._generic_title(url, webpage)
-                info_dict["description"] = self._get_desc(webpage)
+                info_dict["title"] = self._generic_title(url, webpage)
+                info_dict["description"] = self._og_search_description(webpage, default=None) or self._html_search_meta(
+                    "description", webpage, default=None
+                )
                 thumbnail = self._og_search_thumbnail(webpage, default=None)
                 if thumbnail:
                     info_dict["thumbnail"] = thumbnail
@@ -775,34 +777,6 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 re.IGNORECASE,
             )
         )
-
-    def _get_title(self, webpage: str) -> str | None:
-        return self._extract_from_html(
-            webpage,
-            [
-                r"<title>([^<]+)</title>",
-                r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']',
-                r'<meta[^>]+name=["\']title["\'][^>]+content=["\']([^"\']+)["\']',
-                r"<h1[^>]*>([^<]+)</h1>",
-            ],
-        )
-
-    def _get_desc(self, webpage: str) -> str | None:
-        return self._extract_from_html(
-            webpage,
-            [
-                r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)["\']',
-                r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)["\']',
-                r'<p[^>]*class=["\']description["\'][^>]*>([^<]+)</p>',
-            ],
-        )
-
-    def _extract_from_html(self, webpage: str, patterns: list[str]) -> str | None:
-        for pattern in patterns:
-            match = re.search(pattern, webpage, re.IGNORECASE)
-            if match and match.group(1):
-                return match.group(1).strip()
-        return None
 
     def _get_timeout_ms(self) -> int | None:
         socket_timeout = self._downloader.params.get("socket_timeout")
