@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app.features.tasks.definitions.handlers.twitch import TwitchHandler
@@ -22,7 +24,7 @@ class DummyOpts:
 
 
 @pytest.mark.asyncio
-async def test_twitch_handler_inspect(monkeypatch):
+async def test_twitch_handler_inspect(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     feed = """
     <rss><channel>
       <item>
@@ -39,8 +41,10 @@ async def test_twitch_handler_inspect(monkeypatch):
     async def fake_request(**kwargs):  # noqa: ARG001
         return DummyResponse(feed)
 
+    archive_path = tmp_path / "archive.txt"
+
     monkeypatch.setattr(TwitchHandler, "request", staticmethod(fake_request))
-    monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+    monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": str(archive_path)}))  # noqa: ARG005
 
     task = HandleTask(
         id=1,

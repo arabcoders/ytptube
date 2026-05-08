@@ -7,6 +7,10 @@ import pytest
 from app.library.ItemDTO import Item, ItemDTO
 
 
+def _archive_path(tmp_path: Path) -> str:
+    return str(tmp_path / "archive.txt")
+
+
 class TestItemFormatAndBasics:
     @patch("app.features.presets.service.Presets.get_instance")
     def test_format_validates_and_normalizes(self, mock_presets_get):
@@ -71,8 +75,9 @@ class TestItemFormatAndBasics:
         assert json.loads(item.json())["url"] == "https://example.com"
 
     @patch("app.library.ItemDTO.get_archive_id")
-    def test_item_archive_id_and_is_archived(self, mock_get_id):
+    def test_item_archive_id_and_is_archived(self, mock_get_id, tmp_path: Path):
         mock_get_id.return_value = {"archive_id": "x", "id": "x", "ie_key": "k"}
+        file = _archive_path(tmp_path)
 
         # get_archive_id
         item = Item(url="https://example.com")
@@ -85,7 +90,7 @@ class TestItemFormatAndBasics:
         ):
             mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
             mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
-            mock_opts.get_instance.return_value.get_all.return_value = {"download_archive": "/tmp/archive.txt"}
+            mock_opts.get_instance.return_value.get_all.return_value = {"download_archive": file}
             mock_read.return_value = ["x"]
 
             assert item.is_archived() is True
@@ -95,30 +100,32 @@ class TestItemDTO:
     @patch("app.library.ItemDTO.get_archive_id")
     @patch("app.library.ItemDTO.YTDLPOpts")
     @patch("app.library.ItemDTO.archive_read")
-    def test_post_init_sets_archive_flags(self, mock_read, mock_opts, mock_get_id):
+    def test_post_init_sets_archive_flags(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
         # Setup archive id and archive file
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
-        mock_opts.get_instance.return_value.get_all.return_value = {"download_archive": "/tmp/a.txt"}
+        file = _archive_path(tmp_path)
+        mock_opts.get_instance.return_value.get_all.return_value = {"download_archive": file}
         mock_read.return_value = ["arch"]
 
         dto = ItemDTO(id="vid", title="t", url="u", folder="f")
 
         assert dto.archive_id == "arch"
-        assert dto._archive_file == "/tmp/a.txt"
+        assert dto._archive_file == file
         assert dto.is_archivable is True
         assert dto.is_archived is True
 
     @patch("app.library.ItemDTO.get_archive_id")
     @patch("app.library.ItemDTO.YTDLPOpts")
     @patch("app.library.ItemDTO.archive_read")
-    def test_post_init_keeps_skipped(self, mock_read, mock_opts, mock_get_id):
+    def test_post_init_keeps_skipped(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
+        file = _archive_path(tmp_path)
         mock_opts.get_instance.return_value.get_all.return_value = {
-            "download_archive": "/tmp/a.txt",
+            "download_archive": file,
             "skip_download": True,
         }
         mock_read.return_value = ["arch"]
@@ -128,11 +135,11 @@ class TestItemDTO:
         assert dto.download_skipped is False
 
     @patch("app.library.ItemDTO.archive_read")
-    def test_serialize_archives_finished(self, mock_read):
+    def test_serialize_archives_finished(self, mock_read, tmp_path: Path):
         # Given a finished item with archive info
         dto = ItemDTO(id="vid", title="t", url="u", folder="f")
         dto.archive_id = "arch"
-        dto._archive_file = "/tmp/a.txt"
+        dto._archive_file = _archive_path(tmp_path)
         dto.status = "finished"
         mock_read.return_value = ["arch"]
 
@@ -186,7 +193,7 @@ class TestItemDTO:
 
         # Set up to allow add
         dto.archive_id = "arch"
-        dto._archive_file = "/tmp/a.txt"
+        dto._archive_file = "var/tests/archive.txt"
         dto.is_archivable = True
         dto.is_archived = False
 

@@ -1,5 +1,6 @@
 """Tests for YTDLPOpts class."""
 
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -912,7 +913,7 @@ class TestYTDLPCli:
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.create_cookies_file")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_with_cookies_from_user(self, mock_config, mock_create_cookies, mock_presets):
+    def test_build_with_cookies_from_user(self, mock_config, mock_create_cookies, mock_presets, tmp_path: Path):
         """Test build with cookies from user."""
         from app.library.ItemDTO import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
@@ -920,11 +921,13 @@ class TestYTDLPCli:
         mock_config_instance = Mock()
         mock_config_instance.download_path = "/downloads"
         mock_config_instance.output_template = "%(title)s.%(ext)s"
+        mock_config_instance.temp_path = str(tmp_path)
         mock_config_instance.get_replacers.return_value = {}
         mock_config.get_instance.return_value = mock_config_instance
 
         mock_cookie_path = Mock()
-        mock_cookie_path.__str__ = Mock(return_value="/tmp/cookies.txt")
+        cookie_path = tmp_path / "cookies.txt"
+        mock_cookie_path.__str__ = Mock(return_value=str(cookie_path))
         mock_create_cookies.return_value = mock_cookie_path
 
         mock_presets.get_instance.return_value.get.return_value = None
@@ -936,8 +939,8 @@ class TestYTDLPCli:
 
         mock_create_cookies.assert_called_once_with("session_id=abc123")
         assert "--cookies" in command
-        assert "/tmp/cookies.txt" in command
-        assert info["merged"]["cookie_file"] == "/tmp/cookies.txt"
+        assert str(cookie_path) in command
+        assert info["merged"]["cookie_file"] == str(cookie_path)
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
@@ -950,6 +953,7 @@ class TestYTDLPCli:
         mock_config_instance = Mock()
         mock_config_instance.download_path = "/downloads"
         mock_config_instance.output_template = "%(title)s.%(ext)s"
+        mock_config_instance.temp_path = "/tmp"
         mock_config_instance.get_replacers.return_value = {}
         mock_config.get_instance.return_value = mock_config_instance
 

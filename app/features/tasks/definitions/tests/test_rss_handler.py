@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app.features.tasks.definitions.handlers.rss import RssGenericHandler
@@ -19,6 +21,10 @@ class DummyOpts:
 
     def get_all(self):
         return self._data
+
+
+def _opts(tmp_path: Path) -> DummyOpts:
+    return DummyOpts({"download_archive": str(tmp_path / "archive.txt")})
 
 
 class TestRssHandlerParsing:
@@ -47,7 +53,7 @@ class TestRssHandlerExtraction:
     """Test RSS feed extraction and parsing."""
 
     @pytest.mark.asyncio
-    async def test_rss_atom_feed_extraction(self, monkeypatch):
+    async def test_rss_atom_feed_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Test extraction from Atom feed."""
         atom_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
@@ -69,7 +75,7 @@ class TestRssHandlerExtraction:
             return DummyResponse(atom_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
 
         task = HandleTask(
             id=1,
@@ -89,7 +95,7 @@ class TestRssHandlerExtraction:
         assert result.metadata["entry_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_rss_feed_extraction(self, monkeypatch):
+    async def test_rss_feed_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Test extraction from RSS feed."""
         rss_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -113,7 +119,7 @@ class TestRssHandlerExtraction:
             return DummyResponse(rss_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
 
         task = HandleTask(
             id=1,
@@ -133,7 +139,7 @@ class TestRssHandlerExtraction:
         assert result.metadata["entry_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_can_handle(self, monkeypatch):
+    async def test_can_handle(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Test can_handle method."""
         atom_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
@@ -147,7 +153,7 @@ class TestRssHandlerExtraction:
             return DummyResponse(atom_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
 
         task = HandleTask(
             id=1,
@@ -172,7 +178,7 @@ class TestRssHandlerEdgeCases:
     """Test edge cases in RSS handling."""
 
     @pytest.mark.asyncio
-    async def test_empty_feed(self, monkeypatch):
+    async def test_empty_feed(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Test handling of empty feed."""
         empty_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -186,7 +192,7 @@ class TestRssHandlerEdgeCases:
             return DummyResponse(empty_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
 
         task = HandleTask(
             id=1,
@@ -202,7 +208,7 @@ class TestRssHandlerEdgeCases:
         assert result.metadata["entry_count"] == 0
 
     @pytest.mark.asyncio
-    async def test_invalid_feed_url(self, monkeypatch):
+    async def test_invalid_feed_url(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Test handling of invalid feed URL."""
         from app.features.tasks.definitions.results import TaskFailure
 
@@ -211,7 +217,7 @@ class TestRssHandlerEdgeCases:
             raise Exception(msg)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
 
         task = HandleTask(
             id=1,
@@ -225,7 +231,7 @@ class TestRssHandlerEdgeCases:
         assert isinstance(result, TaskFailure)
 
     @pytest.mark.asyncio
-    async def test_missing_urls_in_feed(self, monkeypatch):
+    async def test_missing_urls_in_feed(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Test handling of entries missing URLs."""
         feed = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -245,7 +251,7 @@ class TestRssHandlerEdgeCases:
             return DummyResponse(feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
 
         task = HandleTask(
             id=1,
