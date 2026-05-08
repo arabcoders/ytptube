@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a0b50ac3517d20c61dae0802950c6dc37a83787b",
-    "date": "2026-05-08T18:39:12+00:00",
+    "full_sha": "56dbf6fc2d9897380a8b77b5ad43001e8a7e13aa",
+    "date": "2026-05-08T18:56:41+00:00",
     "commits": [
+      {
+        "sha": "56dbf6fc",
+        "full_sha": "56dbf6fc2d9897380a8b77b5ad43001e8a7e13aa",
+        "message": "refactor: update test functions to use tmp_path for archive file handling",
+        "author": "arabcoders",
+        "date": "2026-05-08T18:56:41+00:00"
+      },
       {
         "sha": "a0b50ac3",
         "full_sha": "a0b50ac3517d20c61dae0802950c6dc37a83787b",
