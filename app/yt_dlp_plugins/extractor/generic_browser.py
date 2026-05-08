@@ -65,7 +65,10 @@ REQUEST_RESOURCE_TYPES: set[str] = {
 
 API_RESOURCE_TYPES: set[str] = {"fetch", "xhr"}
 
-_MEDIA_CANDIDATE_EXTS = [
+POST_MEDIA_POLL_INTERVAL_MS = 250
+POST_MEDIA_POLL_ATTEMPTS = 8
+
+MEDIA_CANDIDATE_EXTS: list[str] = [
     "m3u8",
     "mpd",
     "mp4",
@@ -78,7 +81,7 @@ _MEDIA_CANDIDATE_EXTS = [
     "ogg",
 ]
 
-_MEDIA_ELEMENT_JS = """() => {
+MEDIA_ELEMENT_JS: str = """() => {
     const mediaUrls = [];
     const seen = new Set();
     const addUrl = (url, type) => {
@@ -98,7 +101,7 @@ _MEDIA_ELEMENT_JS = """() => {
     return mediaUrls;
 }"""
 
-_PLAYWRIGHT_PREFIXES: tuple[str, ...] = (
+PLAYWRIGHT_PREFIXES: tuple[str, ...] = (
     "playwright+ws://",
     "playwright+wss://",
     "playwright+cdp://",
@@ -112,7 +115,7 @@ _PLAYWRIGHT_PREFIXES: tuple[str, ...] = (
 def _has_possible_media(requests_list: list[dict]) -> bool:
     for req in requests_list:
         url_lower = req.get("url", "").lower()
-        for ext in _MEDIA_CANDIDATE_EXTS:
+        for ext in MEDIA_CANDIDATE_EXTS:
             if f".{ext}" in url_lower or f".{ext}?" in url_lower:
                 return True
         ct = (req.get("response", {}).get("headers", {}).get("content-type", "")).lower()
@@ -141,6 +144,12 @@ def _wait_for_network_idle(
             raise Exception(msg)
         return max(1, min(requested_ms, remaining_ms))
 
+    def wait_for_late_media() -> None:
+        for _ in range(POST_MEDIA_POLL_ATTEMPTS):
+            if _has_possible_media(requests_list):
+                return
+            time.sleep(bounded_timeout_ms(POST_MEDIA_POLL_INTERVAL_MS) / 1000)
+
     wait_fn(bounded_timeout_ms(idle_timeout))
 
     for _ in range(api_poll_attempts):
@@ -156,6 +165,7 @@ def _wait_for_network_idle(
         return
 
     wait_for_media_fn(bounded_timeout_ms(10000))
+    wait_for_late_media()
 
 
 def _build_media_requests(requests_list: list[dict], media_elements: list[dict]) -> list[dict]:
@@ -313,7 +323,7 @@ class PlaywrightDriver:
                 return list(requests_list)
 
             def get_media_requests(self) -> list[dict]:
-                return _build_media_requests(requests_list, page.evaluate(_MEDIA_ELEMENT_JS))
+                return _build_media_requests(requests_list, page.evaluate(MEDIA_ELEMENT_JS))
 
             def close(self):
                 context.close()
@@ -416,7 +426,7 @@ class SeleniumDriver:
 
             def get_media_requests(self) -> list[dict]:
                 try:
-                    return _build_media_requests(requests_list, driver.execute_script(_MEDIA_ELEMENT_JS))
+                    return _build_media_requests(requests_list, driver.execute_script(MEDIA_ELEMENT_JS))
                 except Exception:
                     return []
 
@@ -442,11 +452,30 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
 
         return value
 
+    def _safe_url(self, browser_url: str) -> str:
+        try:
+            parsed = urllib.parse.urlsplit(browser_url)
+        except Exception:
+            return browser_url
+
+        netloc = parsed.netloc
+        if parsed.username or parsed.password:
+            host = parsed.hostname or ""
+            if parsed.port:
+                host = f"{host}:{parsed.port}"
+            netloc = f"***:***@{host}" if host else "***:***"
+
+        query = "***" if parsed.query else ""
+        fragment = "***" if parsed.fragment else ""
+        return urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, query, fragment))
+
     def _real_extract(self, url: str) -> dict[str, Any]:
         self._url = url
 
         if not (browser_url := self._get_config("url", "YTP_BROWSER_URL")) or self._failed:
             return self.__wrapped__._real_extract(self, url)
+
+        safe_url = self._safe_url(browser_url)
 
         video_id: str = self._generic_id(url)
         timeout: int | None = self._get_timeout_ms()
@@ -459,7 +488,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             )
             raise ExtractorError(msg)
 
-        self.write_debug(f"Selected driver {driver.__name__} for {browser_url}")
+        self.write_debug(f"Selected driver {driver.__name__} for {safe_url}")
 
         try:
             session = driver.connect(browser_url, timeout)
@@ -534,7 +563,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             self.report_warning(
                 "Browser extractor session failed for url=%r browser_url=%r driver=%s error=%s",
                 url,
-                browser_url,
+                safe_url,
                 driver.__name__,
                 e,
             )
@@ -546,7 +575,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 self.report_warning(
                     "Browser session close failed for url=%r browser_url=%r driver=%s error=%s",
                     url,
-                    browser_url,
+                    safe_url,
                     driver.__name__,
                     e,
                 )
@@ -555,7 +584,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         if ws_url.startswith(("selenium+http://", "selenium+https://")):
             return SeleniumDriver if SeleniumDriver.is_available() else None
 
-        if ws_url.startswith(_PLAYWRIGHT_PREFIXES):
+        if ws_url.startswith(PLAYWRIGHT_PREFIXES):
             return PlaywrightDriver if PlaywrightDriver.is_available() else None
 
         msg = (

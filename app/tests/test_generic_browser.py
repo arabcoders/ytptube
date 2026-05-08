@@ -44,6 +44,15 @@ def test_cfg_arg_wins(monkeypatch: pytest.MonkeyPatch) -> None:
     assert ie._get_config("url", "YTP_BROWSER_URL") == "selenium+http://arg:4444/wd/hub"
 
 
+def test_safe_url() -> None:
+    ie = _make_ie()
+
+    assert (
+        ie._safe_url("playwright+ws://user:pass@10.0.0.6:9222/chrome/playwright?token=abc#frag")
+        == "playwright+ws://***:***@10.0.0.6:9222/chrome/playwright?***#***"
+    )
+
+
 def test_real_extract_env(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
 
@@ -62,7 +71,7 @@ def test_real_extract_invalid_url(monkeypatch: pytest.MonkeyPatch) -> None:
         ie._real_extract("https://example.com/watch")
 
 
-def test_real_extract_logs_connect_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_log_connect_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     ie.__wrapped__ = Mock()
     ie.__wrapped__._real_extract = Mock(return_value={"id": "fallback"})
@@ -87,9 +96,9 @@ def test_real_extract_logs_connect_failure(monkeypatch: pytest.MonkeyPatch) -> N
     ie.to_screen.assert_called_once_with("Using remote browser for https://example.com/watch")
 
 
-def test_real_extract_logs_session_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_log_session_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser/path?token=secret")
 
     session = Mock()
     session.goto.side_effect = RuntimeError("page crashed")
@@ -110,15 +119,45 @@ def test_real_extract_logs_session_failure(monkeypatch: pytest.MonkeyPatch) -> N
     ie.report_warning.assert_called_once_with(
         "Browser extractor session failed for url=%r browser_url=%r driver=%s error=%s",
         "https://example.com/watch",
-        "playwright+ws://browser",
+        "playwright+ws://browser/path?***",
         "FakeDriver",
         session.goto.side_effect,
     )
-    ie.write_debug.assert_any_call("Selected driver FakeDriver for playwright+ws://browser")
+    ie.write_debug.assert_any_call("Selected driver FakeDriver for playwright+ws://browser/path?***")
     ie.write_debug.assert_any_call("Loading page https://example.com/watch")
 
 
-def test_real_extract_logs_non_html_page(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_log_close_fail(monkeypatch: pytest.MonkeyPatch) -> None:
+    ie = _make_ie()
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser/path?token=secret")
+
+    session = Mock()
+    session.content.return_value = ""
+    session.get_requests.return_value = []
+    session.get_media_requests.return_value = []
+    session.close.side_effect = RuntimeError("close failed")
+
+    class FakeDriver:
+        __name__ = "FakeDriver"
+
+        @staticmethod
+        def connect(ws_url: str, timeout: int | None = None):
+            return session
+
+    monkeypatch.setattr(generic_browser.GenericBrowserIE, "_select_driver", lambda self, ws_url: FakeDriver)
+
+    ie._real_extract("https://example.com/watch")
+
+    ie.report_warning.assert_called_once_with(
+        "Browser session close failed for url=%r browser_url=%r driver=%s error=%s",
+        "https://example.com/watch",
+        "playwright+ws://browser/path?***",
+        "FakeDriver",
+        session.close.side_effect,
+    )
+
+
+def test_log_non_html(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
 
@@ -145,7 +184,7 @@ def test_real_extract_logs_non_html_page(monkeypatch: pytest.MonkeyPatch) -> Non
     ie.write_debug.assert_any_call("plain text body")
 
 
-def test_extract_network_formats_logs_no_media() -> None:
+def test_no_media() -> None:
     ie = _make_ie()
     ie.__wrapped__ = Mock()
     ie.__wrapped__._real_extract = Mock(return_value={"id": "fallback"})
