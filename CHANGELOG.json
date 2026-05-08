@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "12eb4de83d98790373c8d91243461d7036c16482",
-    "date": "2026-05-08T17:54:41+00:00",
+    "full_sha": "a0b50ac3517d20c61dae0802950c6dc37a83787b",
+    "date": "2026-05-08T18:39:12+00:00",
     "commits": [
+      {
+        "sha": "a0b50ac3",
+        "full_sha": "a0b50ac3517d20c61dae0802950c6dc37a83787b",
+        "message": "fix: use yt-dlp meta extractors methods instead of local rolled ones",
+        "author": "arabcoders",
+        "date": "2026-05-08T18:39:12+00:00"
+      },
       {
         "sha": "12eb4de8",
         "full_sha": "12eb4de83d98790373c8d91243461d7036c16482",
