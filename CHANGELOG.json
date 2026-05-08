@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "12eb4de83d98790373c8d91243461d7036c16482",
+    "date": "2026-05-08T17:54:41+00:00",
+    "commits": [
+      {
+        "sha": "12eb4de8",
+        "full_sha": "12eb4de83d98790373c8d91243461d7036c16482",
+        "message": "fix: update extractor options  and improve media polling logic",
+        "author": "arabcoders",
+        "date": "2026-05-08T17:54:41+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.0",
     "full_sha": "d3a3b5d95f7fc5d157138d90c876ab7acdfde267",
     "date": "2026-05-07T22:15:59+00:00",
