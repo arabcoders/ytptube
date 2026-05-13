@@ -3,6 +3,8 @@ import re
 from typing import TYPE_CHECKING, Any
 from xml.etree.ElementTree import Element
 
+import httpx
+
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
 
@@ -98,6 +100,8 @@ class YoutubeHandler(BaseHandler):
 
         try:
             feed_url, items, real_count = await YoutubeHandler._get(task, params, parsed)
+        except httpx.HTTPError as exc:
+            return TaskFailure(message="Failed to fetch YouTube feed.", error=str(exc))
         except Exception as exc:
             LOG.exception(exc)
             return TaskFailure(message="Failed to fetch YouTube feed.", error=str(exc))

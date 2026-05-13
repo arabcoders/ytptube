@@ -1,6 +1,8 @@
 import logging
 import re
 
+import httpx
+
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
 
@@ -151,6 +153,8 @@ class TverHandler(BaseHandler):
 
         try:
             feed_url, items, has_items = await TverHandler._collect_feed(task, params, series_id)
+        except httpx.HTTPError as exc:
+            return TaskFailure(message="Failed to fetch Tver feed.", error=str(exc))
         except Exception as exc:
             LOG.exception(exc)
             return TaskFailure(message="Failed to fetch Tver feed.", error=str(exc))

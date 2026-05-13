@@ -3,6 +3,8 @@ import re
 from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element
 
+import httpx
+
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
 
@@ -83,6 +85,8 @@ class TwitchHandler(BaseHandler):
 
         try:
             feed_url, items, has_items = await TwitchHandler._collect_feed(task, params, handle_name)
+        except httpx.HTTPError as exc:
+            return TaskFailure(message="Failed to fetch Twitch feed.", error=str(exc))
         except Exception as exc:
             LOG.exception(exc)
             return TaskFailure(message="Failed to fetch Twitch feed.", error=str(exc))
