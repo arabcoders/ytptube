@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "56dbf6fc2d9897380a8b77b5ad43001e8a7e13aa",
-    "date": "2026-05-08T18:56:41+00:00",
+    "full_sha": "34e99951fc8d8e7f54f08debdd5c7a4234f533c4",
+    "date": "2026-05-13T03:58:43+00:00",
     "commits": [
+      {
+        "sha": "34e99951",
+        "full_sha": "34e99951fc8d8e7f54f08debdd5c7a4234f533c4",
+        "message": "fix: tasks handler summary should reflect correct status.",
+        "author": "arabcoders",
+        "date": "2026-05-13T03:58:43+00:00"
+      },
       {
         "sha": "56dbf6fc",
         "full_sha": "56dbf6fc2d9897380a8b77b5ad43001e8a7e13aa",
