@@ -1,4 +1,5 @@
 import importlib
+from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -10,8 +11,12 @@ from app.features.ytdlp.utils import _DATA
 from app.features.ytdlp.ytdlp import YTDLP, _ArchiveProxy, ytdlp_options
 
 
+def _archive_path(tmp_path: Path) -> str:
+    return str(tmp_path / "archive.txt")
+
+
 class TestArchiveProxy:
-    def test_bool_and_falsey_cases(self) -> None:
+    def test_bool_and_falsey_cases(self, tmp_path: Path) -> None:
         # No file path means proxy is falsey and operations return False
         p = _ArchiveProxy(file=None)
         assert bool(p) is False
@@ -19,22 +24,24 @@ class TestArchiveProxy:
         assert p.add("id") is False
 
         # Empty item also returns False
-        p2 = _ArchiveProxy(file="/tmp/archive.txt")
+        p2 = _ArchiveProxy(file=_archive_path(tmp_path))
         assert bool(p2) is True
         assert ("" in p2) is False
         assert p2.add("") is False
 
     @patch("app.features.ytdlp.archiver.Archiver.get_instance")
-    def test_delegates_to_archiver(self, mock_get_instance) -> None:
+    def test_delegates_to_archiver(self, mock_get_instance, tmp_path: Path) -> None:
         arch = MagicMock()
         mock_get_instance.return_value = arch
 
-        p = _ArchiveProxy(file="/tmp/archive.txt")
+        file = _archive_path(tmp_path)
+
+        p = _ArchiveProxy(file=file)
 
         # contains -> read(file, [item]) and check membership
         arch.read.return_value = ["abc"]
         assert ("abc" in p) is True
-        arch.read.assert_called_with("/tmp/archive.txt", ["abc"])
+        arch.read.assert_called_with(file, ["abc"])
 
         arch.read.return_value = []
         assert ("xyz" in p) is False
@@ -42,7 +49,7 @@ class TestArchiveProxy:
         # add -> add(file, [item]) returns boolean
         arch.add.return_value = True
         assert p.add("abc") is True
-        arch.add.assert_called_with("/tmp/archive.txt", ["abc"])
+        arch.add.assert_called_with(file, ["abc"])
 
         arch.add.return_value = False
         assert p.add("xyz") is False
@@ -96,11 +103,12 @@ class TestYTDLP:
             return ytdlp
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
-    def test_init_archive_param(self, mock_super_init) -> None:
+    def test_init_archive_param(self, mock_super_init, tmp_path: Path) -> None:
         """Test that __init__ removes download_archive before calling super, then restores it."""
         mock_super_init.return_value = None
 
-        params = {"download_archive": "/tmp/archive.txt", "quiet": True}
+        file = _archive_path(tmp_path)
+        params = {"download_archive": file, "quiet": True}
 
         ytdlp = YTDLP(params=params, auto_init=True)
         # Set params as it would be after super().__init__
@@ -114,13 +122,13 @@ class TestYTDLP:
         assert call_kwargs["auto_init"] is True
 
         # Our __init__ code manually sets these after super()
-        ytdlp.params["download_archive"] = "/tmp/archive.txt"
+        ytdlp.params["download_archive"] = file
 
-        assert ytdlp.params["download_archive"] == "/tmp/archive.txt", "Verify download_archive was restored to params"
+        assert ytdlp.params["download_archive"] == file, "Verify download_archive was restored to params"
 
         # Verify archive proxy was set up
         assert isinstance(ytdlp.archive, _ArchiveProxy)
-        assert ytdlp.archive._file == "/tmp/archive.txt"
+        assert ytdlp.archive._file == file
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
     def test_init_no_archive(self, mock_super_init) -> None:
@@ -251,9 +259,9 @@ class TestYTDLP:
         # Should not interact with archive
         ytdlp.archive.add.assert_not_called()
 
-    def test_record_archive_adds_id(self) -> None:
+    def test_record_archive_adds_id(self, tmp_path: Path) -> None:
         """Test record_download_archive adds the archive ID."""
-        ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
+        ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.write_debug = Mock()
         ytdlp.archive = Mock()
         ytdlp._make_archive_id = Mock(return_value="youtube test123")
@@ -269,9 +277,9 @@ class TestYTDLP:
         ytdlp.archive.add.assert_called_once_with("youtube test123")
         ytdlp.write_debug.assert_called_with("Adding to archive: youtube test123")
 
-    def test_record_archive_old_ids(self) -> None:
+    def test_record_archive_old_ids(self, tmp_path: Path) -> None:
         """Test record_download_archive adds _old_archive_ids when present."""
-        ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
+        ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.write_debug = Mock()
         ytdlp.archive = Mock()
         ytdlp._make_archive_id = Mock(return_value="youtube new123")
@@ -296,9 +304,9 @@ class TestYTDLP:
         # Should not add duplicate (youtube new123 appears only once)
         assert calls.count("youtube new123") == 1
 
-    def test_record_archive_empty_old_ids(self) -> None:
+    def test_record_archive_empty_old_ids(self, tmp_path: Path) -> None:
         """Test record_download_archive handles empty or invalid _old_archive_ids."""
-        ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
+        ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.write_debug = Mock()
         ytdlp.archive = Mock()
         ytdlp._make_archive_id = Mock(return_value="youtube test123")
@@ -322,9 +330,9 @@ class TestYTDLP:
         ytdlp.record_download_archive(info_dict)
         assert ytdlp.archive.add.call_count == 1  # Only main ID
 
-    def test_record_archive_empty_id(self) -> None:
+    def test_record_archive_empty_id(self, tmp_path: Path) -> None:
         """Test record_download_archive returns early when _make_archive_id returns empty."""
-        ytdlp = self._create_ytdlp(params={"download_archive": "/tmp/archive.txt"})
+        ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.archive = Mock()
         ytdlp._make_archive_id = Mock(return_value=None)
 

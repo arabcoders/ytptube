@@ -665,30 +665,24 @@ YTP_BROWSER_URL=playwright+cdp://chrome:9222/
 
 ## yt-dlp usage
 
-To enable the extractor for a preset or task, add the following to the `Command options for yt-dlp` field:
-
-```bash
---use-extractors "browser,default"
-```
-
-If you want to set the browser extractor options directly on the yt-dlp side, you can also use `--extractor-args` with `browser:url=...`:
+If you want to set the browser extractor options directly on the yt-dlp side, you can also use `--extractor-args` with `generic:url=...`:
 
 ### Selenium example
 
 ```bash
---use-extractors "browser,default" --extractor-args "browser:url=selenium+http://selenium:4444/wd/hub"
+--use-extractors "generic" --extractor-args "generic:url=selenium+http://selenium:4444/wd/hub"
 ```
 
 ### Playwright example
 
 ```bash
---use-extractors "browser,default" --extractor-args "browser:url=playwright+ws://playwright:3000/"
+--use-extractors "generic" --extractor-args "generic:url=playwright+ws://playwright:3000/"
 ```
 
 ### Playwright CDP example
 
 ```bash
---use-extractors "browser,default" --extractor-args "browser:url=playwright+cdp://chrome:9222/"
+--use-extractors "generic" --extractor-args "generic:url=playwright+cdp://chrome:9222/"
 ```
 
 The explicit `--extractor-args` value takes priority over `YTP_BROWSER_URL`.

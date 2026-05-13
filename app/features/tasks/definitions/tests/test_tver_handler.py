@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app.features.tasks.definitions.handlers.tver import TverHandler
@@ -25,7 +27,7 @@ class DummyOpts:
 
 
 @pytest.mark.asyncio
-async def test_tver_handler_extract(monkeypatch):
+async def test_tver_handler_extract(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Test tver handler extraction of episodes from series."""
     session_response = {
         "result": {
@@ -118,8 +120,10 @@ async def test_tver_handler_extract(monkeypatch):
         msg = f"Unexpected URL: {url}"
         raise RuntimeError(msg)
 
+    archive_path = tmp_path / "archive.txt"
+
     monkeypatch.setattr(TverHandler, "request", staticmethod(fake_request))
-    monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda _: DummyOpts({"download_archive": "/tmp/archive"}))
+    monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda _: DummyOpts({"download_archive": str(archive_path)}))
 
     task = HandleTask(id=1, name="Test Tver Series", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
 
@@ -142,7 +146,7 @@ async def test_tver_handler_extract(monkeypatch):
 
 
 @pytest.mark.parametrize(("url", "should_match"), TverHandler.tests())
-def test_parse(url: str, should_match: bool):
+def test_parse(url: str, should_match: bool) -> None:
     """Test tver URL parsing."""
     result = TverHandler.parse(url)
     if should_match:
@@ -153,7 +157,7 @@ def test_parse(url: str, should_match: bool):
 
 
 @pytest.mark.asyncio
-async def test_can_handle():
+async def test_can_handle() -> None:
     """Test tver handler can_handle method."""
     task_valid = HandleTask(id=1, name="Test", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
     task_invalid = HandleTask(id=2, name="Test", url="https://youtube.com/watch?v=123", preset="default")

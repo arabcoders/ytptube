@@ -12,6 +12,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
+import httpx
 import jmespath
 from parsel import Selector
 
@@ -31,7 +32,6 @@ from ._base_handler import BaseHandler
 if TYPE_CHECKING:
     from pathlib import Path
 
-    import httpx
     from parsel.selector import SelectorList
 
 LOG: logging.Logger = logging.getLogger("handlers.generic")
@@ -140,6 +140,8 @@ class GenericTaskHandler(BaseHandler):
             body_text, json_data = await GenericTaskHandler._fetch_content(
                 url=target_url, definition=definition, ytdlp_opts=ytdlp_opts
             )
+        except httpx.HTTPError as exc:
+            return TaskFailure(message="Failed to fetch target URL.", error=str(exc))
         except Exception as exc:
             LOG.exception(exc)
             return TaskFailure(message="Failed to fetch target URL.", error=str(exc))

@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -67,9 +68,9 @@ class TestConditionIgnoreMatching:
 
 class TestConditionIgnorePropagation:
     @pytest.mark.asyncio
-    async def test_add_passes_ignore(self) -> None:
+    async def test_add_passes_ignore(self, tmp_path: Path) -> None:
         queue = Mock()
-        queue.config = Mock(temp_path="/tmp", ignore_archived_items=False, ytdlp_debug=False)
+        queue.config = Mock(temp_path=str(tmp_path), ignore_archived_items=False, ytdlp_debug=False)
         queue._notify = Mock()
 
         item = Item(
@@ -102,9 +103,9 @@ class TestConditionIgnorePropagation:
         assert result == {"status": "ok"}
 
     @pytest.mark.asyncio
-    async def test_add_coerces_ignore(self) -> None:
+    async def test_add_coerces_ignore(self, tmp_path: Path) -> None:
         queue = Mock()
-        queue.config = Mock(temp_path="/tmp", ignore_archived_items=False, ytdlp_debug=False)
+        queue.config = Mock(temp_path=str(tmp_path), ignore_archived_items=False, ytdlp_debug=False)
         queue._notify = Mock()
 
         item = Item(
