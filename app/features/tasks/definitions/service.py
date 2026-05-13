@@ -70,6 +70,7 @@ class TaskHandle:
         s: dict[str, list[str]] = {"h": [], "d": [], "u": [], "f": []}
 
         handler_groups: dict[str, list[tuple[HandleTask, type]]] = {}
+        dispatches: list[tuple[HandleTask, type, asyncio.Task[TaskResult | TaskFailure | None]]] = []
 
         tasks: list[TaskModel] = await self._repo.list()
 
@@ -95,7 +96,6 @@ class TaskHandle:
                 if handler_name not in handler_groups:
                     handler_groups[handler_name] = []
                 handler_groups[handler_name].append((task, handler))
-                s["h"].append(task.name)
             except Exception as e:
                 LOG.error(f"Failed to handle task '{task.name}'. '{e!s}'.")
                 s["f"].append(task.name)
@@ -112,8 +112,27 @@ class TaskHandle:
                         name=f"taskHandler-{task.id}",
                     )
                     t.add_done_callback(lambda fut, t=task: self._handle_exception(fut, t))
+                    dispatches.append((task, handler, t))
                 except Exception as e:
                     LOG.error(f"Failed to dispatch task '{task.name}'. '{e!s}'.")
+                    s["f"].append(task.name)
+
+        if dispatches:
+            results = await asyncio.gather(*(t for _, _, t in dispatches), return_exceptions=True)
+
+            for (task, handler, _), result in zip(dispatches, results, strict=True):
+                if isinstance(result, TaskResult):
+                    s["h"].append(task.name)
+                    continue
+
+                if isinstance(result, TaskFailure):
+                    s["f"].append(task.name)
+                    continue
+
+                if result is None:
+                    LOG.error(f"Handler '{handler.__name__}' returned no result for task '{task.name}'.")
+
+                s["f"].append(task.name)
 
         if len(tasks) > 0:
             LOG.info(
@@ -193,7 +212,11 @@ class TaskHandle:
             raise
 
         if isinstance(extraction, TaskFailure):
-            LOG.error(f"Handler '{handler.__name__}' failed to extract items: {extraction.message}")
+            msg: str = extraction.message
+            if extraction.error and extraction.error != extraction.message:
+                msg = f"{msg} {extraction.error}"
+
+            LOG.error(f"Handler '{handler.__name__}' failed to extract items for task '{task.name}': {msg}")
             return extraction
 
         if not isinstance(extraction, TaskResult):
@@ -226,7 +249,7 @@ class TaskHandle:
 
         for item in raw_items:
             if not isinstance(item, TaskItem):
-                LOG.warning("Handler '{handler.__name__}' produced non-TaskItem entry: {item!r}")
+                LOG.warning(f"Handler '{handler.__name__}' returned unexpected result: {item!r}")
                 continue
 
             url: str = item.url
