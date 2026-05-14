@@ -330,8 +330,8 @@ import Hls from 'hls.js';
 import {
   disableOpacity,
   enableOpacity,
-  encodePath,
   formatPageTitle,
+  getRemoteImage,
   makeDownload,
   request,
   uri,
@@ -594,6 +594,14 @@ function handlePosterError(event: Event) {
     return;
   }
 
+  const fallback = getRemoteImage(props.item, false);
+  if (fallback && poster.value !== fallback) {
+    poster.value = fallback;
+    hasPoster.value = true;
+    target.src = uri(fallback);
+    return;
+  }
+
   poster.value = '/images/placeholder.png';
   hasPoster.value = false;
   target.src = uri('/images/placeholder.png');
@@ -803,31 +811,17 @@ function bindMediaSessionListeners(el: HTMLVideoElement) {
   const onTimeUpdate = (event: Event) => updateMediaSessionPosition(event.currentTarget);
   const onRateChange = (event: Event) => updateMediaSessionPosition(event.currentTarget);
   const onSeeked = (event: Event) => updateMediaSessionPosition(event.currentTarget);
-  const onPause = async (event: Event) => {
-    const target = (event.currentTarget as HTMLVideoElement) ?? null;
-    if (!target || destroyed.value) {
-      return;
-    }
-    const dataUrl = await captureFrame(target);
-    if (dataUrl) {
-      poster.value = dataUrl;
-      hasPoster.value = true;
-      applyMediaSessionMetadata();
-    }
-  };
 
   el.addEventListener('loadedmetadata', onLoadedMetadata);
   el.addEventListener('timeupdate', onTimeUpdate);
   el.addEventListener('ratechange', onRateChange);
   el.addEventListener('seeked', onSeeked);
-  el.addEventListener('pause', onPause);
 
   return () => {
     el.removeEventListener('loadedmetadata', onLoadedMetadata);
     el.removeEventListener('timeupdate', onTimeUpdate);
     el.removeEventListener('ratechange', onRateChange);
     el.removeEventListener('seeked', onSeeked);
-    el.removeEventListener('pause', onPause);
   };
 }
 
@@ -850,65 +844,6 @@ function updateMediaSessionPosition(target: EventTarget | null) {
       position: el.currentTime,
     });
   } catch {}
-}
-
-async function captureFrame(el: HTMLVideoElement): Promise<string> {
-  if (!el || destroyed.value) {
-    return '';
-  }
-  if (el.videoWidth === 0 || el.videoHeight === 0) {
-    return '';
-  }
-
-  const width = el.videoWidth;
-  const height = el.videoHeight;
-
-  try {
-    if ('OffscreenCanvas' in window) {
-      const canvas = new (window as any).OffscreenCanvas(width, height);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        return '';
-      }
-      ctx.drawImage(el, 0, 0, width, height);
-      const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.86 });
-      return await new Promise<string>((resolve) => {
-        const fileReader = new FileReader();
-        fileReader.onload = () => resolve(String(fileReader.result));
-        fileReader.readAsDataURL(blob);
-      });
-    }
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      return '';
-    }
-    ctx.drawImage(el, 0, 0, width, height);
-    return canvas.toDataURL('image/jpeg', 0.86);
-  } catch {
-    return '';
-  }
-}
-
-async function captureFirstFramePoster(el: HTMLVideoElement): Promise<void> {
-  if (!el || destroyed.value || hasPoster.value) {
-    return;
-  }
-  if (el.videoWidth === 0 || el.videoHeight === 0) {
-    return;
-  }
-
-  const dataUrl = await captureFrame(el);
-  if (!dataUrl) {
-    return;
-  }
-
-  poster.value = dataUrl;
-  hasPoster.value = true;
-  applyMediaSessionMetadata();
 }
 
 async function restoreDefaultTextTrack() {
@@ -1018,11 +953,14 @@ async function loadPlayerInfo() {
   poster.value = '/images/placeholder.png';
   hasPoster.value = false;
 
-  if (props.item.extras?.thumbnail) {
-    poster.value = `/api/thumbnail?url=${encodePath(props.item.extras.thumbnail)}`;
+  if (props.item._id && props.item.filename) {
+    poster.value = `/api/history/${encodeURIComponent(props.item._id)}/thumbnail`;
     hasPoster.value = true;
   } else if (response.sidecar?.image?.[0]?.file) {
     poster.value = makeDownload(config, { filename: response.sidecar.image[0].file });
+    hasPoster.value = true;
+  } else if (props.item.extras?.thumbnail) {
+    poster.value = getRemoteImage(props.item);
     hasPoster.value = true;
   }
 
@@ -1096,17 +1034,6 @@ function prepareVideoPlayer() {
 
   applyMediaState(videoElement.value);
   restoreDefaultTextTrack();
-
-  if (hasVideo.value) {
-    if ('requestVideoFrameCallback' in videoElement.value) {
-      (videoElement.value as any).requestVideoFrameCallback(() =>
-        captureFirstFramePoster(videoElement.value!),
-      );
-    } else {
-      const tryOnce = () => captureFirstFramePoster(videoElement.value!);
-      (videoElement.value as any).addEventListener('loadeddata', tryOnce, { once: true });
-    }
-  }
 }
 
 async function src_error(event: Event) {
@@ -1151,19 +1078,6 @@ function attach_hls(link: string, resume = readResumeState(videoElement.value)) 
   hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     await restoreDefaultTextTrack();
-  });
-
-  hls.on(Hls.Events.LEVEL_LOADED, () => {
-    if (videoElement.value) {
-      if ('requestVideoFrameCallback' in videoElement.value) {
-        (videoElement.value as any).requestVideoFrameCallback(() =>
-          captureFirstFramePoster(videoElement.value!),
-        );
-      } else {
-        const once = () => captureFirstFramePoster(videoElement.value!);
-        (videoElement.value as any).addEventListener('loadeddata', once, { once: true });
-      }
-    }
   });
 
   hls.loadSource(link);

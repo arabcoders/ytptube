@@ -259,7 +259,7 @@
                           :alt="item.title || 'Video thumbnail'"
                           loading="lazy"
                           class="aspect-video h-full w-full object-cover"
-                          @error="onImgError"
+                          @error="onImgError($event, item)"
                         />
                       </span>
 
@@ -269,7 +269,7 @@
                         :alt="item.title || 'Video thumbnail'"
                         loading="lazy"
                         class="aspect-video h-full w-full object-cover"
-                        @error="onImgError"
+                        @error="onImgError($event, item)"
                       />
 
                       <span
@@ -465,7 +465,7 @@
                           :alt="item.title || 'Video thumbnail'"
                           loading="lazy"
                           class="aspect-video h-full w-full object-cover"
-                          @error="onImgError"
+                          @error="onImgError($event, item)"
                         />
                       </span>
 
@@ -475,7 +475,7 @@
                         :alt="item.title || 'Video thumbnail'"
                         loading="lazy"
                         class="aspect-video h-full w-full object-cover"
-                        @error="onImgError"
+                        @error="onImgError($event, item)"
                       />
 
                       <span
@@ -676,7 +676,9 @@ import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import {
   ag,
   formatTime,
+  getHistoryImage,
   getImage,
+  getRemoteImage,
   isDownloadSkipped,
   makeDownload,
   request,
@@ -1019,6 +1021,10 @@ const resolveThumbnail = (item: StoreItem): string => {
     return '/images/placeholder.png';
   }
 
+  if (historyEntries.value.some((entry) => entry._id === item._id)) {
+    return getHistoryImage(item);
+  }
+
   return getImage(configStore.app.download_path, item);
 };
 
@@ -1295,10 +1301,20 @@ const showMessage = (item: StoreItem): boolean => {
   return (item.msg?.length || 0) > 0;
 };
 
-const onImgError = (event: Event): void => {
+const onImgError = (event: Event, item: StoreItem): void => {
   const target = event.target as HTMLImageElement;
+  const currentSrc = target.getAttribute('src') || '';
+
   if (target.src.endsWith('/images/placeholder.png')) {
     return;
+  }
+
+  if (item) {
+    const fallback = getRemoteImage(item, false);
+    if (fallback && currentSrc !== fallback) {
+      target.src = fallback;
+      return;
+    }
   }
 
   target.src = '/images/placeholder.png';

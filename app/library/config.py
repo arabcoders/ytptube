@@ -120,6 +120,15 @@ class Config(metaclass=Singleton):
     extract_info_concurrency: int = 4
     """The number of concurrent extract_info calls allowed."""
 
+    thumb_concurrency: int = 2
+    """The number of concurrent ffmpeg thumbnail generations allowed."""
+
+    thumb_generate: bool = True
+    """Enable ffmpeg thumbnail generation when no local thumbnail exists."""
+
+    thumb_sidecar: bool = False
+    """Save generated thumbnails next to the media file instead of temp cache."""
+
     db_file: str = "{config_path}{os_sep}ytptube.db"
     """The path to the database file."""
 
@@ -267,6 +276,7 @@ class Config(metaclass=Singleton):
         "auto_clear_history_days",
         "default_pagination",
         "extract_info_concurrency",
+        "thumb_concurrency",
         "flaresolverr_max_timeout",
         "flaresolverr_client_timeout",
         "flaresolverr_cache_ttl",
@@ -292,6 +302,8 @@ class Config(metaclass=Singleton):
         "simple_mode",
         "ignore_archived_items",
         "check_for_updates",
+        "thumb_generate",
+        "thumb_sidecar",
     )
     "The variables that are booleans."
 

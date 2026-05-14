@@ -240,6 +240,7 @@
                               v-if="showThumbnails && getListImage(item)"
                               :src="getListImage(item)"
                               class="max-h-56 w-full rounded-md object-cover"
+                              @error="onImgError($event, item)"
                             />
 
                             <div
@@ -469,7 +470,7 @@
                     v-if="getGridImage(item)"
                     :src="getGridImage(item)"
                     @load="pImg"
-                    @error="onImgError"
+                    @error="onImgError($event, item)"
                   />
                   <img v-else src="/images/placeholder.png" />
                 </span>
@@ -486,7 +487,7 @@
                     v-if="getGridImage(item)"
                     :src="getGridImage(item)"
                     @load="pImg"
-                    @error="onImgError"
+                    @error="onImgError($event, item)"
                   />
                   <img v-else src="/images/placeholder.png" />
                 </span>
@@ -496,7 +497,7 @@
                     v-if="getGridImage(item)"
                     :src="getGridImage(item)"
                     @load="pImg"
-                    @error="onImgError"
+                    @error="onImgError($event, item)"
                   />
                   <img v-else src="/images/placeholder.png" />
                 </template>
@@ -778,7 +779,8 @@ import {
   deepIncludes,
   formatBytes,
   formatTime,
-  getImage,
+  getHistoryImage,
+  getRemoteImage,
   getPath,
   isDownloadSkipped,
   makeDownload,
@@ -977,9 +979,8 @@ const toggleMasterSelection = (): void => {
 };
 
 const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
-const getListImage = (item: StoreItem): string =>
-  getImage(config.app.download_path, item, false) || '';
-const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';
+const getListImage = (item: StoreItem): string => getHistoryImage(item, false) || '';
+const getGridImage = (item: StoreItem): string => getHistoryImage(item) || '';
 const showRetryAction = (item: StoreItem): boolean => !item.filename && !isDownloadSkipped(item);
 
 const hasIncomplete = computed(() => historyItems.value.some((item) => item.status !== 'finished'));
@@ -1395,10 +1396,17 @@ const pImg = (event: Event): void => {
   }
 };
 
-const onImgError = (event: Event): void => {
+const onImgError = (event: Event, item: StoreItem): void => {
   const target = event.target as HTMLImageElement;
+  const fallback = item ? getRemoteImage(item, false) || '' : '';
+  const currentSrc = target.getAttribute('src') || '';
 
   if (target.src.endsWith('/images/placeholder.png')) {
+    return;
+  }
+
+  if (fallback && currentSrc !== uri(fallback)) {
+    target.src = uri(fallback);
     return;
   }
 

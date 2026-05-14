@@ -871,6 +871,22 @@ const getPath = (basePath: string, item: StoreItem): string => {
   );
 };
 
+const getRemoteImage = (item: StoreItem, fallback: boolean = true): string => {
+  if (item?.extras?.thumbnail) {
+    return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail));
+  }
+
+  return fallback ? uri('/images/placeholder.png') : '';
+};
+
+const getHistoryImage = (item: StoreItem, fallback: boolean = true): string => {
+  if (item._id && item.filename) {
+    return uri(`/api/history/${encodeURIComponent(item._id)}/thumbnail`);
+  }
+
+  return getRemoteImage(item, fallback);
+};
+
 const getImage = (basePath: string, item: StoreItem, fallback: boolean = true): string => {
   if (item.sidecar?.image && item.sidecar.image.length > 0) {
     return uri(
@@ -878,11 +894,7 @@ const getImage = (basePath: string, item: StoreItem, fallback: boolean = true): 
     );
   }
 
-  if (item?.extras?.thumbnail) {
-    return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail));
-  }
-
-  return fallback ? uri('/images/placeholder.png') : '';
+  return getRemoteImage(item, fallback);
 };
 
 const parse_list_response = async <T>(json: unknown): Promise<Paginated<T>> => {
@@ -1028,6 +1040,8 @@ export {
   deepIncludes,
   getPath,
   getImage,
+  getHistoryImage,
+  getRemoteImage,
   parse_list_response,
   parse_api_response,
   parse_api_error,

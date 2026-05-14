@@ -1,15 +1,18 @@
 import json
-from pathlib import Path
 from types import SimpleNamespace
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from aiohttp import web
 
 from app.library.DataStore import StoreType
+from app.library.cache import Cache
 from app.library.ItemDTO import ItemDTO
 from app.library.encoder import Encoder
-from app.routes.api.history import item_rename, items_delete
+from app.routes.api import history
+from app.routes.api.history import item_rename, item_thumbnail, items_delete
 from app.tests.helpers import temporary_test_dir
 
 
@@ -188,3 +191,107 @@ async def test_item_rename_conflict() -> None:
         assert body == {"error": "Destination 'renamed.mp4' already exists"}
         queue.done.put.assert_not_awaited()
         notify.emit.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_item_thumbnail_sidecar() -> None:
+    with temporary_test_dir("history-thumb-sidecar") as temp_dir:
+        media = temp_dir / "video.mp4"
+        image = temp_dir / "video.jpg"
+        media.write_text("video")
+        image.write_text("image")
+
+        request = _FakeRequest()
+        request.match_info["id"] = "item-1"
+        item = _make_download(filename="video.mp4", download_dir=str(temp_dir))
+        queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item)))
+        config = SimpleNamespace(download_path=str(temp_dir), temp_path=str(temp_dir / "tmp"))
+
+        response = await item_thumbnail(request, queue, config)
+
+        assert isinstance(response, web.FileResponse)
+        assert response.status == 200
+        assert response._path == image
+
+
+@pytest.mark.asyncio
+async def test_item_thumbnail_generated(monkeypatch: pytest.MonkeyPatch) -> None:
+    with temporary_test_dir("history-thumb-gen") as temp_dir:
+        media = temp_dir / "video.mp4"
+        media.write_text("video")
+        cache_dir = temp_dir / "tmp"
+        generated = cache_dir / "thumbnails" / "gen.jpg"
+
+        request = _FakeRequest()
+        request.match_info["id"] = "item-1"
+        item = _make_download(filename="video.mp4", download_dir=str(temp_dir))
+        queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item)))
+        config = SimpleNamespace(download_path=str(temp_dir), temp_path=str(cache_dir))
+
+        monkeypatch.setattr(history, "pick_local_thumb", lambda _file: None)
+
+        called = {"count": 0}
+
+        async def fake_ensure_thumb(_file: Path, _cache_root: Path) -> Path:
+            called["count"] += 1
+            generated.parent.mkdir(parents=True, exist_ok=True)
+            generated.write_text("generated")
+            return generated
+
+        monkeypatch.setattr(history, "ensure_thumb", fake_ensure_thumb)
+
+        response = await item_thumbnail(request, queue, config)
+
+        assert isinstance(response, web.FileResponse)
+        assert response.status == 200
+        assert response._path == generated
+        assert called["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_item_thumbnail_no_thumb(monkeypatch: pytest.MonkeyPatch) -> None:
+    with temporary_test_dir("history-thumb-miss") as temp_dir:
+        media = temp_dir / "video.mp4"
+        media.write_text("video")
+
+        request = _FakeRequest()
+        request.match_info["id"] = "item-1"
+        item = _make_download(filename="video.mp4", download_dir=str(temp_dir))
+        queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item)))
+        config = SimpleNamespace(download_path=str(temp_dir), temp_path=str(temp_dir / "tmp"))
+
+        monkeypatch.setattr(history, "pick_local_thumb", lambda _file: None)
+        monkeypatch.setattr(history, "ensure_thumb", AsyncMock(return_value=None))
+
+        response = await item_thumbnail(request, queue, config)
+
+        assert response.status == 404
+        body = json.loads(response.body.decode("utf-8"))
+        assert body == {"error": "thumbnail not found."}
+
+
+@pytest.mark.asyncio
+async def test_item_thumbnail_missing_cache() -> None:
+    Cache.get_instance().clear()
+
+    request = _FakeRequest()
+    request.match_info["id"] = "item-1"
+
+    item = _make_download(filename="video.mp4", download_dir="/downloads")
+    seen = {"count": 0}
+
+    def fake_get_file(download_path=None):
+        del download_path
+        seen["count"] += 1
+        return None
+
+    item.info.get_file = fake_get_file
+    queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item)))
+    config = SimpleNamespace(download_path="/downloads", temp_path="/tmp")
+
+    first = await item_thumbnail(request, queue, config)
+    second = await item_thumbnail(request, queue, config)
+
+    assert first.status == 404
+    assert second.status == 404
+    assert seen["count"] == 1
