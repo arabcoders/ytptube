@@ -24,6 +24,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/history](#delete-apihistory)
     - [POST /api/history/{id}](#post-apihistoryid)
     - [GET /api/history/{id}](#get-apihistoryid)
+    - [GET /api/history/{id}/thumbnail](#get-apihistoryidthumbnail)
     - [POST /api/history/{id}/rename](#post-apihistoryidrename)
     - [GET /api/history](#get-apihistory)
     - [GET /api/history/live](#get-apihistorylive)
@@ -530,6 +531,26 @@ or an error:
 - `200 OK` If the item exists and is returned.
 - `404 Not Found` if the item doesn’t exist.
 - `400 Bad Request` if id is missing.
+
+---
+
+### GET /api/history/{id}/thumbnail
+**Purpose**: Return thumbnail for a downloaded item.
+
+**Path Parameter**:
+- `id` = item ID.
+
+**Behavior**:
+- Returns an existing local sidecar or artwork image when available.
+- Otherwise generates a representative frame thumbnail with `ffmpeg` and caches it if enabled.
+
+**Response**:
+- `200 OK` with an image file response.
+- `404 Not Found` if the item, downloaded file, or local thumbnail is not available.
+- `400 Bad Request` if `id` is missing.
+
+**Notes**:
+- Audio-only files return `404` unless a local image sidecar already exists.
 
 ---
 

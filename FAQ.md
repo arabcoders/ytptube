@@ -57,6 +57,9 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_IGNORE_ARCHIVED_ITEMS       | Don't report archived items in the download history.                | `false`               |
 | YTP_CHECK_FOR_UPDATES           | Whether to check for application updates.                           | `true`                |
 | YTP_EXTRACT_INFO_CONCURRENCY    | The number of concurrent extract info operations.                   | `4`                   |
+| YTP_THUMB_CONCURRENCY           | The number of concurrent ffmpeg thumbnail generations allowed.      | `2`                   |
+| YTP_THUMB_GENERATE              | Enable ffmpeg thumbnail generation when no local thumbnail exists.  | `true`                |
+| YTP_THUMB_SIDECAR               | Save generated thumbnails next to media instead of temp cache.      | `false`               |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
