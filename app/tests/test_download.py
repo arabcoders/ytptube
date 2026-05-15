@@ -3,6 +3,7 @@ import os
 import signal
 from multiprocessing.reduction import ForkingPickler
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -1204,6 +1205,28 @@ class TestStatusTracker:
 
 
 class TestQueueManager:
+    @pytest.mark.asyncio
+    async def test_cleanup_thumbnails(self, tmp_path: Path) -> None:
+        from app.library.downloads.monitors import cleanup_thumbnails
+
+        queue_manager = object.__new__(DownloadQueue)
+        queue_manager.config = SimpleNamespace(temp_path=str(tmp_path), thumb_sidecar=False)
+        queue_manager.done = Mock()
+
+        cache_root = tmp_path / "thumbnails"
+        cache_root.mkdir(parents=True, exist_ok=True)
+        keep = cache_root / "keep-id.jpg"
+        drop = cache_root / "drop-id.jpg"
+        keep.write_text("keep")
+        drop.write_text("drop")
+
+        queue_manager.done.get_by_id = AsyncMock(side_effect=lambda item_id: item_id == "keep-id")
+
+        await cleanup_thumbnails(queue_manager)
+
+        assert keep.exists()
+        assert not drop.exists()
+
     @pytest.mark.asyncio
     async def test_cancel_running_live_item_defers_close(self) -> None:
         queue_manager = object.__new__(DownloadQueue)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 import os
 import subprocess
@@ -12,7 +11,7 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.Utils import FILES_TYPE, get_file_sidecar
 
-LOG: logging.Logger = logging.getLogger("streaming.thumbnail")
+LOG: logging.Logger = logging.getLogger("player.thumbnail")
 
 IMAGE_TYPES: tuple[str, ...] = (".jpg", ".jpeg", ".png", ".webp")
 FOLDER_IMAGE_ORDER: tuple[str, ...] = ("thumbnail", "poster", "artwork", "cover", "fanart")
@@ -75,12 +74,6 @@ def pick_local_thumb(media_file: Path) -> Path | None:
             return image_file
 
     return None
-
-
-def _cache_key(media_file: Path) -> str:
-    stat = media_file.stat()
-    payload: str = f"{media_file.resolve()}:{stat.st_size}:{stat.st_mtime_ns}"
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _seek_seconds(ff_info) -> float | None:
@@ -198,20 +191,21 @@ async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
     raise OSError(last_error)
 
 
-async def ensure_thumb(media_file: Path, cache_root: Path) -> Path | None:
+async def ensure_thumb(media_file: Path, cache_root: Path, item_id: str | None = None) -> Path | None:
     config: Config = Config.get_instance()
     cache: Cache = Cache.get_instance()
     if bool(config.thumb_generate) is not True:
         return None
 
-    key: str = _cache_key(media_file)
-    cache_file: Path = (
-        media_file.with_name(f"{media_file.name}.thumb.jpg")
-        if bool(config.thumb_sidecar)
-        else cache_root / f"{key}.jpg"
-    )
+    sidecar: bool = bool(config.thumb_sidecar)
+    if not sidecar and not item_id:
+        msg = "item_id is required when thumbnail sidecar is disabled."
+        raise ValueError(msg)
 
-    miss_key: str = f"thumbnail-miss:{key}"
+    thumb_id: str = str(media_file.resolve()) if sidecar else str(item_id)
+    cache_file: Path = media_file.with_name(f"{media_file.name}.jpg") if sidecar else cache_root / f"{item_id}.jpg"
+
+    miss_key: str = f"thumbnail-miss:{thumb_id}"
 
     if cache_file.exists() and cache_file.stat().st_size > 0:
         cache.delete(miss_key)
@@ -228,12 +222,12 @@ async def ensure_thumb(media_file: Path, cache_root: Path) -> Path | None:
         if cache.has(miss_key):
             return None
 
-        task = _IN_PROCESS.get(key)
+        task = _IN_PROCESS.get(thumb_id)
         if task is not None and not task.done():
             LOG.debug(f"Waiting for thumbnail generation for '{media_file}'.")
         else:
-            task = asyncio.create_task(_run_ffmpeg(media_file, cache_file), name=f"thumb-{key[:8]}")
-            _IN_PROCESS[key] = task
+            task = asyncio.create_task(_run_ffmpeg(media_file, cache_file), name=f"thumb-{item_id or media_file.stem}")
+            _IN_PROCESS[thumb_id] = task
             LOG.debug(f"Starting thumbnail generation task for '{media_file}' -> '{cache_file}'.")
 
     try:
@@ -248,6 +242,6 @@ async def ensure_thumb(media_file: Path, cache_root: Path) -> Path | None:
         raise
     finally:
         async with _LOCK:
-            current = _IN_PROCESS.get(key)
+            current = _IN_PROCESS.get(thumb_id)
             if current is task and task.done():
-                _IN_PROCESS.pop(key, None)
+                _IN_PROCESS.pop(thumb_id, None)

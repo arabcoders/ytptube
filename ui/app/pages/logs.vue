@@ -57,11 +57,11 @@
           size="sm"
           icon="i-lucide-wrap-text"
           :aria-pressed="textWrap"
-          :title="textWrap ? 'Wrap lines enabled' : 'Wrap lines disabled'"
+          :title="textWrap ? 'Text wrap enabled' : 'Text wrap disabled'"
           :class="['transition-all', textWrap ? '-translate-y-px ring ring-default shadow-xs' : '']"
           @click="textWrap = !textWrap"
         >
-          Wrap lines
+          Wrap
         </UButton>
 
         <UInput

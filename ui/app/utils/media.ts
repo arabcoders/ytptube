@@ -1,6 +1,53 @@
-type ResumeState = {
-  time: number;
-  shouldPlay: boolean;
+import { useLocalCache } from '~/utils/cache';
+
+const KEY = 'video:';
+const cache = useLocalCache();
+
+const read = (id: string | null | undefined): number => {
+  if (!id) {
+    return 0;
+  }
+
+  try {
+    const time = Number(cache.get<number>(`${KEY}${id}`));
+    return Number.isFinite(time) && time > 0 ? time : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const save = (id: string | null | undefined, time: number): void => {
+  if (!id || !Number.isFinite(time) || time <= 0) {
+    return;
+  }
+
+  cache.set(`${KEY}${id}`, time, 3600 * 24);
+};
+
+const clear = (id: string | null | undefined): void => {
+  if (!id) {
+    return;
+  }
+
+  cache.remove(`${KEY}${id}`);
+};
+
+const nearEnd = (
+  target: Pick<HTMLMediaElement, 'currentTime' | 'duration'> | null,
+  pad: number = 5,
+): boolean => {
+  if (!target) {
+    return false;
+  }
+
+  const duration = target.duration;
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return false;
+  }
+
+  const time =
+    Number.isFinite(target.currentTime) && target.currentTime > 0 ? target.currentTime : 0;
+  return duration - time <= pad;
 };
 
 const clampResumeTime = (
@@ -31,38 +78,4 @@ const clampResumeTime = (
 
   return time;
 };
-
-const readResumeState = (target: HTMLMediaElement | null): ResumeState => {
-  if (!target) {
-    return { time: 0, shouldPlay: false };
-  }
-
-  const time =
-    Number.isFinite(target.currentTime) && target.currentTime > 0 ? target.currentTime : 0;
-  return {
-    time,
-    shouldPlay: !target.paused && !target.ended,
-  };
-};
-
-const resumeMedia = async (target: HTMLMediaElement | null, state: ResumeState): Promise<void> => {
-  if (!target) {
-    return;
-  }
-
-  const nextTime = clampResumeTime(target, state.time);
-  if (nextTime > 0) {
-    try {
-      target.currentTime = nextTime;
-    } catch {}
-  }
-
-  if (state.shouldPlay) {
-    try {
-      await target.play();
-    } catch {}
-  }
-};
-
-export { clampResumeTime, readResumeState, resumeMedia };
-export type { ResumeState };
+export { clampResumeTime, clear, nearEnd, read, save };

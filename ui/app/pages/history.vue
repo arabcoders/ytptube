@@ -718,11 +718,11 @@
 
     <UModal
       v-if="video_item"
-      :open="Boolean(video_item)"
+      :open="videoOpen"
       :dismissible="true"
       :title="video_item?.title || 'Player'"
       :ui="{ content: lightsOut ? 'sm:max-w-5xl shadow-2xl' : 'sm:max-w-5xl', body: 'p-0' }"
-      @update:open="(open) => !open && closeVideo()"
+      @update:open="handleVideoOpenChange"
     >
       <template #body>
         <VideoPlayer
@@ -732,7 +732,7 @@
           :isControls="true"
           :item="video_item"
           class="w-full"
-          @closeModel="closeVideo()"
+          @closeModel="() => void requestCloseVideo()"
           @error="async (error: string) => await box.alert(error)"
           @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
@@ -768,6 +768,7 @@ import { toRaw } from 'vue';
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import { useConfirm } from '~/composables/useConfirm';
+import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { useDialog } from '~/composables/useDialog';
 import { useAppSocket } from '~/composables/useAppSocket';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
@@ -843,6 +844,16 @@ const contentStyle = computed<'grid' | 'list'>(() =>
 );
 const showThumbnails = computed(() => show_thumbnail.value && !hideThumbnail.value);
 const lightsOut = computed(() => Boolean(video_item.value && playingNow.value));
+const videoOpen = computed<boolean>({
+  get: () => Boolean(video_item.value),
+  set: (value: boolean) => {
+    if (value) {
+      return;
+    }
+
+    closeVideo();
+  },
+});
 const paginationInfo = computed(() => ({
   ...pagination.value,
   isLoading: isLoading.value,
@@ -893,6 +904,18 @@ const closeVideo = (): void => {
   playingNow.value = false;
   video_item.value = null;
 };
+
+const { handleOpenChange: handleVideoOpenChange, requestClose: requestCloseVideo } =
+  useDirtyCloseGuard(videoOpen, {
+    dirty: playingNow,
+    title: 'Close player?',
+    message: 'Playback is active. Do you want to close the player?',
+    confirmText: 'Close player',
+    cancelText: 'Keep playing',
+    onDiscard: async () => {
+      closeVideo();
+    },
+  });
 
 const view_info = (
   url: string,

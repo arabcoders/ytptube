@@ -51,6 +51,14 @@ def _get_ignored_conditions(extras: dict | None) -> list[str]:
     return ignored
 
 
+def _task_ignored_logs(item: "Item") -> list[str] | None:
+    extras = item.extras if isinstance(item.extras, dict) else {}
+    if not extras.get("source_handler"):
+        return None
+
+    return ["has already been recorded in the archive"]
+
+
 async def add_item(
     queue: "DownloadQueue",
     entry: dict,
@@ -209,6 +217,7 @@ async def add(
                 follow_redirect=True,
                 capture_logs=logging.WARNING,
                 budget_sleep=True,
+                suppress_logs=_task_ignored_logs(item),
             )
 
         if not entry:

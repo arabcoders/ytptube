@@ -86,8 +86,9 @@ class LogTarget:
 
 
 class LogWrapper:
-    def __init__(self):
+    def __init__(self, suppress: list[str] | tuple[str, ...] | None = None):
         self.targets: list[LogTarget] = []
+        self.suppress: tuple[str, ...] = tuple(value for value in (suppress or ()) if isinstance(value, str) and value)
 
     def add_target(self, target: logging.Logger | Callable, level: int = logging.DEBUG, name: str | None = None):
         """
@@ -118,7 +119,13 @@ class LogWrapper:
     def has_targets(self):
         return len(self.targets) > 0
 
+    def _skip(self, msg: Any) -> bool:
+        return isinstance(msg, str) and any(value in msg for value in self.suppress)
+
     def _log(self, level, msg, *args, **kwargs):
+        if self._skip(msg):
+            return
+
         for target in self.targets:
             if level < target.level:
                 continue

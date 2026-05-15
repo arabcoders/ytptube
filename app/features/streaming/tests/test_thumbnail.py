@@ -30,11 +30,13 @@ async def test_singleflight(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.features.streaming.library import thumbnail
 
     thumbnail._IN_PROCESS.clear()
+    thumbnail.Cache.get_instance().clear()
 
     with temporary_test_dir("thumb-singleflight") as temp_dir:
         media = temp_dir / "video.mp4"
         cache_root = temp_dir / "cache"
         media.write_text("video")
+        item_id = "item-1"
 
         calls = {"count": 0}
 
@@ -48,8 +50,8 @@ async def test_singleflight(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(thumbnail, "_run_ffmpeg", fake_run_ffmpeg)
 
         first, second = await asyncio.gather(
-            thumbnail.ensure_thumb(media, cache_root),
-            thumbnail.ensure_thumb(media, cache_root),
+            thumbnail.ensure_thumb(media, cache_root, item_id=item_id),
+            thumbnail.ensure_thumb(media, cache_root, item_id=item_id),
         )
 
         assert first == second
@@ -63,13 +65,15 @@ async def test_cache_hit(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.features.streaming.library import thumbnail
 
     thumbnail._IN_PROCESS.clear()
+    thumbnail.Cache.get_instance().clear()
 
     with temporary_test_dir("thumb-cache") as temp_dir:
         media = temp_dir / "video.mp4"
         cache_root = temp_dir / "cache"
         media.write_text("video")
+        item_id = "item-1"
 
-        cache_file = cache_root / f"{thumbnail._cache_key(media)}.jpg"
+        cache_file = cache_root / f"{item_id}.jpg"
         cache_file.parent.mkdir(parents=True, exist_ok=True)
         cache_file.write_text("image")
 
@@ -78,7 +82,7 @@ async def test_cache_hit(monkeypatch: pytest.MonkeyPatch) -> None:
 
         monkeypatch.setattr(thumbnail, "_run_ffmpeg", fake_run_ffmpeg)
 
-        result = await thumbnail.ensure_thumb(media, cache_root)
+        result = await thumbnail.ensure_thumb(media, cache_root, item_id=item_id)
 
         assert result == cache_file
 
@@ -88,6 +92,7 @@ async def test_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.features.streaming.library import thumbnail
 
     thumbnail._IN_PROCESS.clear()
+    thumbnail.Cache.get_instance().clear()
 
     with temporary_test_dir("thumb-disabled") as temp_dir:
         media = temp_dir / "video.mp4"
@@ -99,7 +104,7 @@ async def test_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
             staticmethod(lambda: type("Cfg", (), {"thumb_generate": False, "thumb_sidecar": False})()),
         )
 
-        result = await thumbnail.ensure_thumb(media, temp_dir / "cache")
+        result = await thumbnail.ensure_thumb(media, temp_dir / "cache", item_id="item-1")
 
         assert result is None
 
@@ -111,12 +116,13 @@ async def test_sidecar_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     thumbnail._IN_PROCESS.clear()
     thumbnail._SEM = None
     thumbnail._SEM_LIMIT = None
+    thumbnail.Cache.get_instance().clear()
 
     with temporary_test_dir("thumb-sidecar") as temp_dir:
         media = temp_dir / "video.mp4"
         media.write_text("video")
 
-        sidecar = media.with_name(f"{media.name}.thumb.jpg")
+        sidecar = media.with_name(f"{media.name}.jpg")
 
         monkeypatch.setattr(
             thumbnail.Config,
@@ -152,6 +158,7 @@ async def test_miss_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     with temporary_test_dir("thumb-miss") as temp_dir:
         media = temp_dir / "video.mp4"
         media.write_text("video")
+        item_id = "item-1"
 
         monkeypatch.setattr(
             thumbnail.Config,
@@ -173,8 +180,8 @@ async def test_miss_cache(monkeypatch: pytest.MonkeyPatch) -> None:
 
         monkeypatch.setattr(thumbnail, "_run_ffmpeg", fake_run_ffmpeg)
 
-        first = await thumbnail.ensure_thumb(media, temp_dir / "cache")
-        second = await thumbnail.ensure_thumb(media, temp_dir / "cache")
+        first = await thumbnail.ensure_thumb(media, temp_dir / "cache", item_id=item_id)
+        second = await thumbnail.ensure_thumb(media, temp_dir / "cache", item_id=item_id)
 
         assert first is None
         assert second is None
@@ -220,13 +227,37 @@ def test_seek_bounds() -> None:
 
 
 @pytest.mark.asyncio
+async def test_cache_name_uses_item_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.features.streaming.library import thumbnail
+
+    thumbnail._IN_PROCESS.clear()
+    thumbnail.Cache.get_instance().clear()
+
+    with temporary_test_dir("thumb-id-name") as temp_dir:
+        media = temp_dir / "video.mp4"
+        cache_root = temp_dir / "cache"
+        media.write_text("video")
+
+        async def fake_run_ffmpeg(_file: Path, output_file: Path) -> Path:
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            output_file.write_text("image")
+            return output_file
+
+        monkeypatch.setattr(thumbnail, "_run_ffmpeg", fake_run_ffmpeg)
+
+        result = await thumbnail.ensure_thumb(media, cache_root, item_id="item-1")
+
+        assert result == cache_root / "item-1.jpg"
+
+
+@pytest.mark.asyncio
 async def test_retry_no_seek(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.features.streaming.library.ffprobe import FFProbeResult
     from app.features.streaming.library import thumbnail
 
     with temporary_test_dir("thumb-retry") as temp_dir:
         media = temp_dir / "video.mp4"
-        output = temp_dir / "thumb.jpg"
+        output = temp_dir / ".jpg"
         media.write_text("video")
 
         ff_info = FFProbeResult()
