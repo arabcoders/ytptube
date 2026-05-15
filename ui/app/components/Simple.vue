@@ -618,14 +618,14 @@
 
     <UModal
       v-if="videoItem"
-      :open="Boolean(videoItem)"
+      :open="videoOpen"
       title="Video"
       :dismissible="true"
       :ui="{
         content: lightsOut ? 'w-full sm:max-w-5xl shadow-2xl' : 'w-full sm:max-w-5xl',
         body: 'p-0',
       }"
-      @update:open="(open) => !open && closePlayer()"
+      @update:open="handleVideoOpenChange"
     >
       <template #body>
         <VideoPlayer
@@ -635,7 +635,7 @@
           :isControls="true"
           :item="videoItem"
           class="w-full"
-          @closeModel="closePlayer"
+          @closeModel="() => void requestCloseVideo()"
           @error="async (error: string) => await box.alert(error)"
           @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
@@ -667,6 +667,7 @@ import { useStorage } from '@vueuse/core';
 import type { item_request } from '~/types/item';
 import type { ItemStatus, StoreItem } from '~/types/store';
 import { useConfirm } from '~/composables/useConfirm';
+import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { usePresetOptions } from '~/composables/usePresetOptions';
@@ -733,6 +734,16 @@ const embedUrl = ref('');
 const videoItem = ref<StoreItem | null>(null);
 const playingNow = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
+const videoOpen = computed<boolean>({
+  get: () => Boolean(videoItem.value),
+  set: (value: boolean) => {
+    if (value) {
+      return;
+    }
+
+    closePlayer();
+  },
+});
 
 const formUrl = ref('');
 const formPreset = ref(app.value.default_preset || '');
@@ -1049,6 +1060,18 @@ const closePlayer = (): void => {
   embedUrl.value = '';
   videoItem.value = null;
 };
+
+const { handleOpenChange: handleVideoOpenChange, requestClose: requestCloseVideo } =
+  useDirtyCloseGuard(videoOpen, {
+    dirty: playingNow,
+    title: 'Close player?',
+    message: 'Playback is active. Do you want to close the player?',
+    confirmText: 'Close player',
+    cancelText: 'Keep playing',
+    onDiscard: async () => {
+      closePlayer();
+    },
+  });
 
 const getDescription = (item: StoreItem): string => {
   const direct = (item.description ?? '').toString().trim();

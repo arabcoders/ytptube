@@ -492,11 +492,11 @@
 
     <UModal
       v-if="model_item"
-      :open="Boolean(model_item)"
+      :open="previewOpen"
       :title="previewTitle"
       :dismissible="true"
       :ui="previewModalUi"
-      @update:open="(open) => !open && closeModel()"
+      @update:open="handlePreviewOpenChange"
     >
       <template #body>
         <VideoPlayer
@@ -507,7 +507,7 @@
           :isControls="true"
           :item="model_item"
           class="w-full"
-          @closeModel="closeModel"
+          @closeModel="() => void requestClosePreview()"
           @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
 
@@ -533,6 +533,7 @@
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
+import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { FileItem } from '~/types/filebrowser';
 import { formatPageTitle } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
@@ -628,6 +629,16 @@ const isUpdating = ref(false);
 
 const model_item = ref<any | null>(null);
 const playingNow = ref(false);
+const previewOpen = computed<boolean>({
+  get: () => Boolean(model_item.value),
+  set: (value: boolean) => {
+    if (value) {
+      return;
+    }
+
+    closeModel();
+  },
+});
 
 const previewTitle = computed(() => {
   if (!model_item.value) {
@@ -745,6 +756,18 @@ const closeModel = (): void => {
   playingNow.value = false;
   model_item.value = null;
 };
+
+const { handleOpenChange: handlePreviewOpenChange, requestClose: requestClosePreview } =
+  useDirtyCloseGuard(previewOpen, {
+    dirty: computed(() => Boolean(model_item.value?.type === 'video' && playingNow.value)),
+    title: 'Close player?',
+    message: 'Playback is active. Do you want to close the player?',
+    confirmText: 'Close player',
+    cancelText: 'Keep playing',
+    onDiscard: async () => {
+      closeModel();
+    },
+  });
 
 const clearFilter = (): void => {
   localSearch.value = '';

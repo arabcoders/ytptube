@@ -346,7 +346,7 @@ import {
   requestElementFullscreen,
 } from '~/utils/fullscreen';
 import { clampMediaVolume } from '~/utils/keyboard';
-import { readResumeState, resumeMedia } from '~/utils/media';
+import { clear, clampResumeTime, nearEnd, read, save } from '~/utils/media';
 import { nextTapVisible } from '~/utils/playerControls';
 
 import type { StoreItem } from '~/types/store';
@@ -407,10 +407,13 @@ let controlsHideTimeout = 0;
 let pendingVideoClickTimeout = 0;
 let unbindMediaSession: null | (() => void) = null;
 let hls: Hls | null = null;
-let pendingResume: null | { time: number; shouldPlay: boolean } = null;
+let pendingSeek: number | null = null;
+let pendingPlay = false;
+let lastSaveAt = 0;
 
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
 const mediaFile = computed(() => props.item.filename || '');
+const id = computed(() => props.item._id || '');
 const subtitleManifestUrl = computed(() => currentPlaybackUrl('api/player/subtitles/manifest'));
 const canPlay = computed(() => Boolean(mediaFile.value && !loadingError.value));
 const shouldRender = computed(() => active.value && !loading.value);
@@ -525,12 +528,17 @@ function handleVideoLoadedMetadata() {
     updateMediaSessionPosition(videoElement.value);
   }
 
-  if (pendingResume) {
-    void resumeMedia(videoElement.value, pendingResume).finally(() => {
-      pendingResume = null;
+  if (pendingSeek !== null) {
+    const time = pendingSeek;
+    const play = pendingPlay;
+    pendingSeek = null;
+    pendingPlay = false;
+    void restoreSwitch(time, play).finally(() => {
       syncVideoState();
       showControls();
     });
+  } else {
+    restoreStoredProgress();
   }
 }
 
@@ -539,6 +547,8 @@ function handleVideoTimeUpdate() {
   if (videoElement.value) {
     updateMediaSessionPosition(videoElement.value);
   }
+
+  persistProgress(false);
 }
 
 function handleVideoPlay() {
@@ -552,6 +562,7 @@ function handleVideoPause() {
   syncVideoState();
   clearControlsHideTimeout();
   controlsVisible.value = true;
+  persistProgress(true);
   emitter('playback-state-change', false);
 }
 
@@ -622,6 +633,85 @@ function handleMediaVolumeChange(event: Event) {
 
   syncVideoState();
   updateMediaSessionPosition(target);
+}
+
+function restoreStoredProgress() {
+  if (!id.value || !videoElement.value) {
+    return;
+  }
+
+  const saved = read(id.value);
+  if (saved <= 0) {
+    return;
+  }
+
+  void seekTo(saved).finally(() => {
+    syncVideoState();
+  });
+}
+
+function readSwitchTime() {
+  const video = videoElement.value;
+  if (!video) {
+    return 0;
+  }
+
+  return Number.isFinite(video.currentTime) && video.currentTime > 0 ? video.currentTime : 0;
+}
+
+function isPlaying() {
+  const video = videoElement.value;
+  return Boolean(video && !video.paused && !video.ended);
+}
+
+async function seekTo(time: number) {
+  const video = videoElement.value;
+  if (!video) {
+    return;
+  }
+
+  const nextTime = clampResumeTime(video, time);
+  if (nextTime > 0) {
+    try {
+      video.currentTime = nextTime;
+    } catch {}
+  }
+}
+
+async function restoreSwitch(time: number, play: boolean) {
+  await seekTo(time);
+
+  if (play) {
+    try {
+      await videoElement.value?.play();
+    } catch {}
+  }
+}
+
+function persistProgress(force: boolean) {
+  const video = videoElement.value;
+  if (!id.value || !video) {
+    return;
+  }
+
+  if (nearEnd(video)) {
+    clear(id.value);
+    lastSaveAt = 0;
+    return;
+  }
+
+  const time = Number.isFinite(video.currentTime) && video.currentTime > 0 ? video.currentTime : 0;
+  if (time <= 0) {
+    return;
+  }
+
+  const now = Date.now();
+  if (!force && now - lastSaveAt < 1000) {
+    return;
+  }
+
+  save(id.value, time);
+  lastSaveAt = now;
 }
 
 function handlePointerMove(event: PointerEvent) {
@@ -721,6 +811,12 @@ function syncVideoState() {
   duration.value = nextDuration;
   currentTime.value = nextTime;
   paused.value = video.paused;
+
+  if (video.ended || nearEnd(video)) {
+    clear(id.value);
+    lastSaveAt = 0;
+  }
+
   emitter('playback-state-change', !video.paused);
 }
 
@@ -1050,12 +1146,17 @@ async function src_error(event: Event) {
   attach_hls(currentPlaybackUrl('m3u8', true));
 }
 
-function attach_hls(link: string, resume = readResumeState(videoElement.value)) {
+function attach_hls(
+  link: string,
+  time = pendingSeek ?? readSwitchTime(),
+  play = pendingPlay || isPlaying(),
+) {
   if (!videoElement.value) {
     return;
   }
 
-  pendingResume = resume;
+  pendingSeek = time;
+  pendingPlay = play;
 
   if (hls) {
     hls.destroy();
@@ -1160,6 +1261,7 @@ onBeforeUnmount(() => {
   }
 
   if (videoElement.value) {
+    persistProgress(true);
     destroyed.value = true;
     try {
       videoElement.value.pause();
