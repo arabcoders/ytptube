@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "ee8218764fbd78b9c6487c5d028811f76dbaedb5",
-    "date": "2026-05-15T15:45:56+00:00",
+    "full_sha": "2146e51368af20e2a55b2d578977c1e8e8c80952",
+    "date": "2026-05-15T16:00:06+00:00",
     "commits": [
+      {
+        "sha": "2146e513",
+        "full_sha": "2146e51368af20e2a55b2d578977c1e8e8c80952",
+        "message": "fix: flakey test",
+        "author": "arabcoders",
+        "date": "2026-05-15T16:00:06+00:00"
+      },
+      {
+        "sha": "98dd77f0",
+        "full_sha": "98dd77f004b1f897d5a69cb1081802af4f9e618f",
+        "message": "refactor: rename button",
+        "author": "arabcoders",
+        "date": "2026-05-15T15:47:43+00:00"
+      },
       {
         "sha": "ee821876",
         "full_sha": "ee8218764fbd78b9c6487c5d028811f76dbaedb5",
