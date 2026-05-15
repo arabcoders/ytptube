@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "ee8218764fbd78b9c6487c5d028811f76dbaedb5",
+    "date": "2026-05-15T15:45:56+00:00",
+    "commits": [
+      {
+        "sha": "ee821876",
+        "full_sha": "ee8218764fbd78b9c6487c5d028811f76dbaedb5",
+        "message": "fix: suppress task related archive logs",
+        "author": "arabcoders",
+        "date": "2026-05-15T15:45:56+00:00"
+      },
+      {
+        "sha": "73b8d867",
+        "full_sha": "73b8d867a03d411bc98514c9dc5a5ea374de2512",
+        "message": "feat: add resume for videos",
+        "author": "arabcoders",
+        "date": "2026-05-15T15:24:52+00:00"
+      },
+      {
+        "sha": "734ef1c5",
+        "full_sha": "734ef1c53c2aaad5e56d78b2352163f58714174d",
+        "message": "refactor: use item guid as thumbnail name for easier cleanup",
+        "author": "arabcoders",
+        "date": "2026-05-15T13:50:13+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.1",
     "full_sha": "cee3bcf48d4766494c6d05cc0e839c3a9c8ec852",
     "date": "2026-05-14T20:34:00+00:00",
