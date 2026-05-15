@@ -375,13 +375,12 @@ const deleteTask = async (
  * @returns Inspect result or null on error
  */
 const inspectTaskHandler = async (
-  request: TaskInspectRequest,
+  payload: TaskInspectRequest,
 ): Promise<TaskInspectResponse | null> => {
   try {
-    const response = await fetch('/api/tasks/inspect', {
+    const response = await request('/api/tasks/inspect', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
+      body: JSON.stringify(payload),
     });
 
     const json = await response.json();

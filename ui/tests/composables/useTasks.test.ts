@@ -426,8 +426,8 @@ describe('useTasks', () => {
         },
       }
 
-      const fetchSpy = spyOn(globalThis, 'fetch')
-      fetchSpy.mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -436,14 +436,17 @@ describe('useTasks', () => {
       )
 
       const tasks = useTasks()
-      const result = await tasks.inspectTaskHandler({
-        url: 'https://www.youtube.com/channel/UCtest123',
-      })
+      try {
+        const result = await tasks.inspectTaskHandler({
+          url: 'https://www.youtube.com/channel/UCtest123',
+        })
 
-      expect(result).toEqual(inspectResponse)
-      expect(result?.matched).toBe(true)
-      expect(result?.handler).toBe('YoutubeHandler')
-      fetchSpy.mockRestore()
+        expect(result).toEqual(inspectResponse)
+        expect(result?.matched).toBe(true)
+        expect(result?.handler).toBe('YoutubeHandler')
+      } finally {
+        requestSpy.mockRestore()
+      }
     })
 
     it('handle_unsupported_handler', async () => {
@@ -455,8 +458,8 @@ describe('useTasks', () => {
         metadata: null,
       }
 
-      const fetchSpy = spyOn(globalThis, 'fetch')
-      fetchSpy.mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -465,27 +468,33 @@ describe('useTasks', () => {
       )
 
       const tasks = useTasks()
-      const result = await tasks.inspectTaskHandler({
-        url: 'https://unsupported.com',
-      })
+      try {
+        const result = await tasks.inspectTaskHandler({
+          url: 'https://unsupported.com',
+        })
 
-      expect(result?.supported).toBe(false)
-      expect(result?.matched).toBe(false)
-      fetchSpy.mockRestore()
+        expect(result?.supported).toBe(false)
+        expect(result?.matched).toBe(false)
+      } finally {
+        requestSpy.mockRestore()
+      }
     })
 
     it('store_inspect_error', async () => {
-      const fetchSpy = spyOn(globalThis, 'fetch')
-      fetchSpy.mockRejectedValueOnce(new Error('Network error'))
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockRejectedValueOnce(new Error('Network error'))
 
       const tasks = useTasks()
-      const result = await tasks.inspectTaskHandler({
-        url: 'invalid',
-      })
+      try {
+        const result = await tasks.inspectTaskHandler({
+          url: 'invalid',
+        })
 
-      expect(result).toBeNull()
-      expect(tasks.lastError.value).toBe('Network error')
-      fetchSpy.mockRestore()
+        expect(result).toBeNull()
+        expect(tasks.lastError.value).toBe('Network error')
+      } finally {
+        requestSpy.mockRestore()
+      }
     })
   })
 
