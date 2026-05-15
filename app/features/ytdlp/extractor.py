@@ -266,7 +266,12 @@ def extract_info_sync(
         params["verbose"] = True
         params.pop("quiet", None)
 
-    log_wrapper = LogWrapper()
+    suppress: tuple[str, ...] = ()
+    patterns = kwargs.get("suppress_logs")
+    if isinstance(patterns, list | tuple):
+        suppress = tuple(value for value in patterns if isinstance(value, str) and value)
+
+    log_wrapper = LogWrapper(suppress=suppress)
     id_dict: dict[str, str | None] = get_archive_id(url=url)
     archive_id: str | None = f".{id_dict['id']}" if id_dict.get("id") else None
     logger_name: str = f"yt-dlp{archive_id or '.extract_info'}"
