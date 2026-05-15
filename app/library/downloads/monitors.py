@@ -2,6 +2,7 @@
 
 import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.library.ag_utils import ag
@@ -171,3 +172,36 @@ async def delete_old_history(queue: "DownloadQueue") -> None:
 
     if titles:
         LOG.info(f"Automatically cleared '{', '.join(titles)}' from download history due to age.")
+
+
+async def cleanup_thumbnails(queue: "DownloadQueue") -> None:
+    """
+    Remove cached generated thumbnails whose history item no longer exists.
+
+    Args:
+        queue: DownloadQueue instance.
+
+    """
+    if queue.config.thumb_sidecar:
+        return
+
+    cache_root = Path(queue.config.temp_path) / "thumbnails"
+    if not cache_root.exists() or not cache_root.is_dir():
+        return
+
+    removed = 0
+    for thumb in cache_root.glob("*.jpg"):
+        if not thumb.is_file():
+            continue
+
+        if await queue.done.get_by_id(thumb.stem):
+            continue
+
+        try:
+            thumb.unlink(missing_ok=True)
+            removed += 1
+        except OSError as exc:
+            LOG.warning(f"Failed to remove orphaned thumbnail '{thumb}'. {exc!s}")
+
+    if removed > 0:
+        LOG.info(f"Removed '{removed}' orphaned cached thumbnails.")

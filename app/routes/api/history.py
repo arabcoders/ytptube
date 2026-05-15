@@ -312,8 +312,8 @@ async def item_thumbnail(request: Request, queue: DownloadQueue, config: Config)
     if not (id := request.match_info.get("id")):
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
-    miss_key = f"history-thumb-missing:{id}"
-    cache = Cache.get_instance()
+    miss_key: str = f"thumb_missing:{id}"
+    cache: Cache = Cache.get_instance()
 
     item: Download | None = await queue.done.get_by_id(id)
     if not item or not item.info:
@@ -322,19 +322,21 @@ async def item_thumbnail(request: Request, queue: DownloadQueue, config: Config)
     if cache.has(miss_key):
         return web.json_response(data={"error": "thumbnail not found."}, status=web.HTTPNotFound.status_code)
 
-    filepath = item.info.get_file(download_path=Path(config.download_path))
+    filepath: Path | None = item.info.get_file(download_path=Path(config.download_path))
     if not filepath or not filepath.exists() or not filepath.is_file():
         cache.set(miss_key, value=True, ttl=30.0)
         return web.json_response(data={"error": "thumbnail not found."}, status=web.HTTPNotFound.status_code)
 
     cache.delete(miss_key)
 
-    local_thumb = pick_local_thumb(filepath)
+    local_thumb: Path | None = pick_local_thumb(filepath)
     if local_thumb and local_thumb.exists() and local_thumb.is_file():
         return web.FileResponse(path=str(local_thumb))
 
     try:
-        generated = await ensure_thumb(filepath, Path(config.temp_path) / "thumbnails")
+        generated: Path | None = await ensure_thumb(
+            filepath, Path(config.temp_path) / "thumbnails", item_id=item.info._id
+        )
     except OSError as e:
         LOG.warning(f"Failed to generate thumbnail for '{filepath}'. {e!s}")
         generated = None

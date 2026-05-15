@@ -220,11 +220,11 @@ async def test_item_thumbnail_generated(monkeypatch: pytest.MonkeyPatch) -> None
         media = temp_dir / "video.mp4"
         media.write_text("video")
         cache_dir = temp_dir / "tmp"
-        generated = cache_dir / "thumbnails" / "gen.jpg"
+        generated = cache_dir / "thumbnails" / "item-1.jpg"
 
         request = _FakeRequest()
-        request.match_info["id"] = "item-1"
         item = _make_download(filename="video.mp4", download_dir=str(temp_dir))
+        request.match_info["id"] = item.info._id
         queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item)))
         config = SimpleNamespace(download_path=str(temp_dir), temp_path=str(cache_dir))
 
@@ -232,8 +232,9 @@ async def test_item_thumbnail_generated(monkeypatch: pytest.MonkeyPatch) -> None
 
         called = {"count": 0}
 
-        async def fake_ensure_thumb(_file: Path, _cache_root: Path) -> Path:
+        async def fake_ensure_thumb(_file: Path, _cache_root: Path, item_id: str | None = None) -> Path:
             called["count"] += 1
+            assert item_id == request.match_info["id"]
             generated.parent.mkdir(parents=True, exist_ok=True)
             generated.write_text("generated")
             return generated
