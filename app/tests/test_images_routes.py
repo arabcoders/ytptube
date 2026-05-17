@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Generator
 from unittest.mock import AsyncMock
 
@@ -95,3 +96,48 @@ async def test_thumb_reject(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert response.status == web.HTTPForbidden.status_code
     assert response.text == '{"error": "Invalid hostname."}'
+
+
+@pytest.mark.asyncio
+async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    config = Config.get_instance()
+    config.pictures_backends = ["https://user:pass@example.com/bg.jpg?apitoken=secret#frag"]
+    req = make_mocked_request("GET", "/api/random/background")
+
+    class DummyCache:
+        def has(self, _key: str) -> bool:
+            return False
+
+        async def aset(self, **_kwargs) -> None:
+            return None
+
+    client = AsyncMock()
+    client.request.side_effect = RuntimeError("boom")
+
+    monkeypatch.setattr(images, "get_async_client", lambda **_kwargs: client)
+    monkeypatch.setattr(images, "resolve_curl_transport", lambda: False)
+    monkeypatch.setattr(images, "build_request_headers", lambda **_kwargs: {})
+    monkeypatch.setattr(images.Globals, "get_random_agent", staticmethod(lambda: "agent"))
+    monkeypatch.setattr(
+        images.YTDLPOpts,
+        "get_instance",
+        staticmethod(
+            lambda: type(
+                "Opts",
+                (),
+                {
+                    "preset": lambda self, name: self,
+                    "get_all": lambda self: {},
+                },
+            )()
+        ),
+    )
+
+    with caplog.at_level(logging.ERROR):
+        response = await images.get_background(req, config, DummyCache())
+
+    assert response.status == web.HTTPInternalServerError.status_code
+    logs = caplog.text
+    assert "apitoken=secret" not in logs
+    assert "user:pass@" not in logs
+    assert "https://redacted:redacted@example.com/bg.jpg?redacted#redacted" in logs

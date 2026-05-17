@@ -2602,7 +2602,6 @@ or an error:
 {
   "downloads": {
     "paused": false,
-    "live_bypasses_limits": true,
     "global": {
       "limit": 20,
       "active": 3,

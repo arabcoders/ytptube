@@ -1,17 +1,14 @@
 <template>
-  <div class="w-full min-w-0 max-w-full space-y-5 p-4 sm:p-5">
+  <div class="w-full min-w-0 max-w-full space-y-5">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0 space-y-2">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-lucide-gauge" class="size-4 text-toned" />
-          <span>Queue capacity overview</span>
+          <span>Queue overview</span>
         </div>
 
         <p class="max-w-3xl text-sm text-toned">
-          Snapshot is based on the current queue state and configured backend limits.
-          <template v-if="limits">
-            {{ ' ' + queueLimitDescription }}
-          </template>
+          Data is based on the current queue state and configured limits.
         </p>
       </div>
 
@@ -37,7 +34,7 @@
 
         <div class="space-y-1">
           <p class="text-sm font-medium text-default">Loading limits</p>
-          <p class="text-xs">Fetching current queue capacity and runtime rules.</p>
+          <p class="text-xs">Fetching current queue state and runtime rules.</p>
         </div>
       </div>
     </div>
@@ -166,7 +163,7 @@
               <span>Per extractor</span>
             </div>
 
-            <p class="text-sm text-toned">
+            <p class="text-sm text-toned" v-if="trackedExtractorCount">
               Extractor-specific usage and overrides currently in effect.
             </p>
           </div>
@@ -174,12 +171,19 @@
           <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
             <span class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1">
               <UIcon name="i-lucide-gauge" class="size-3.5 shrink-0" />
-              <span>{{ limits.downloads.per_extractor.default_limit }} default per extractor</span>
+              <span
+                ><span class="font-semibold">{{
+                  limits.downloads.per_extractor.default_limit
+                }}</span
+                >/slots per extractor</span
+              >
             </span>
 
             <span class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1">
               <UIcon name="i-lucide-list" class="size-3.5 shrink-0" />
-              <span>{{ trackedExtractorCount }} tracked</span>
+              <span
+                ><span class="font-semibold">{{ trackedExtractorCount }}</span> tracked</span
+              >
             </span>
           </div>
         </div>
@@ -189,8 +193,8 @@
           color="info"
           variant="soft"
           icon="i-lucide-info"
-          title="No extractor-specific activity"
-          description="Overrides and extractor usage appear here once downloads have active or queued work."
+          title="No activity"
+          description="Overrides and extractor usage appear here once activity is detected."
         />
 
         <div
@@ -285,14 +289,6 @@ const extractorSourceIcon = (source: string): string => {
   return source === 'env_override' ? 'i-lucide-settings-2' : 'i-lucide-circle-check-big';
 };
 
-const queueLimitDescription = computed(() => {
-  if (limits.value?.downloads.live_bypasses_limits === false) {
-    return 'Regular worker slots apply to all downloads, including live downloads.';
-  }
-
-  return 'Regular worker slots apply only to non-live downloads.';
-});
-
 const capacityRows = computed<Array<DetailRow>>(() => {
   if (!limits.value) {
     return [];
@@ -304,23 +300,21 @@ const capacityRows = computed<Array<DetailRow>>(() => {
   return [
     {
       label: 'Regular workers',
-      description: 'Slots available for non-live downloads.',
+      description: 'Slots available.',
       value: `${global.active}/${global.limit}`,
       meta: `${global.available} available`,
     },
     {
       label: 'Waiting queue',
-      description: 'Downloads waiting for a regular worker slot.',
+      description: 'Downloads waiting for worker slot.',
       value: `${global.queued}`,
-      meta: global.queued === 1 ? 'item queued' : 'items queued',
+      meta: 'items queued',
     },
     {
       label: 'Live downloads',
-      description: downloads.live_bypasses_limits
-        ? 'Live downloads bypass the regular worker limit.'
-        : 'Live downloads count toward the regular worker limit.',
+      description: 'Streams bypass the worker slots limits.',
       value: `${global.live_active}`,
-      meta: global.live_active === 1 ? 'live item active' : 'live items active',
+      meta: 'live items',
     },
   ];
 });

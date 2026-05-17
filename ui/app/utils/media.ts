@@ -1,7 +1,15 @@
 import { useLocalCache } from '~/utils/cache';
 
 const KEY = 'video:';
-const cache = useLocalCache();
+let cache: ReturnType<typeof useLocalCache> | null = null;
+
+const getCache = (): ReturnType<typeof useLocalCache> => {
+  if (!cache) {
+    cache = useLocalCache();
+  }
+
+  return cache;
+};
 
 const read = (id: string | null | undefined): number => {
   if (!id) {
@@ -9,7 +17,7 @@ const read = (id: string | null | undefined): number => {
   }
 
   try {
-    const time = Number(cache.get<number>(`${KEY}${id}`));
+    const time = Number(getCache().get<number>(`${KEY}${id}`));
     return Number.isFinite(time) && time > 0 ? time : 0;
   } catch {
     return 0;
@@ -21,7 +29,7 @@ const save = (id: string | null | undefined, time: number): void => {
     return;
   }
 
-  cache.set(`${KEY}${id}`, time, 3600 * 24);
+  getCache().set(`${KEY}${id}`, time, 3600 * 24);
 };
 
 const clear = (id: string | null | undefined): void => {
@@ -29,7 +37,7 @@ const clear = (id: string | null | undefined): void => {
     return;
   }
 
-  cache.remove(`${KEY}${id}`);
+  getCache().remove(`${KEY}${id}`);
 };
 
 const nearEnd = (

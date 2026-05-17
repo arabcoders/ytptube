@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <div class="flex flex-wrap gap-2 xl:justify-end">
+      <div class="flex flex-wrap justify-end gap-2 xl:justify-end">
         <UButton
           color="neutral"
           variant="outline"

@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
         <UButton
           v-if="!autoScroll"
           color="neutral"
@@ -38,7 +38,7 @@
           icon="i-lucide-arrow-down"
           @click="scrollToBottom(false)"
         >
-          Scroll to bottom
+          Bottom
         </UButton>
 
         <UButton
@@ -82,7 +82,7 @@
         <div class="overflow-hidden rounded-sm border border-default bg-default shadow-sm">
           <div
             ref="logContainer"
-            class="logbox overflow-x-auto overflow-y-auto bg-elevated/30 font-mono text-sm text-default overscroll-x-contain"
+            class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-x-auto overflow-y-auto bg-transparent font-mono text-sm text-default overscroll-x-contain"
             @scroll.passive="handleScroll"
           >
             <div
@@ -90,8 +90,9 @@
               class="flex justify-center border-b border-default/40 px-4 py-3"
             >
               <div
-                class="rounded-full border border-default bg-elevated/40 px-3 py-1 text-[11px] text-toned"
+                class="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-[11px] font-medium text-warning"
               >
+                <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />
                 No older lines remain in this file.
               </div>
             </div>
@@ -102,19 +103,25 @@
                 :key="entry.log.id"
                 :class="logRowClass(entry, index)"
               >
-                <div class="log-timestamp" :title="logTimeTitle(entry.log.datetime)">
-                  {{ logTimeLabel(entry.log.datetime) }}
-                </div>
-
                 <div
-                  class="log-content"
-                  :class="textWrap ? 'log-content--wrap' : 'log-content--nowrap'"
+                  :class="[
+                    'flex min-w-0 flex-1 items-start gap-[0.65rem] px-3 py-[0.65rem] leading-[1.6]',
+                    textWrap ? 'w-full' : 'w-max min-w-full',
+                  ]"
                 >
                   <span
-                    class="log-tone-dot"
-                    :class="`log-tone-dot--${detectLogTone(entry.log.line)}`"
+                    :class="[
+                      'mt-[0.45rem] inline-flex size-2 shrink-0 rounded-full',
+                      logLevelDotClass(entry.level),
+                    ]"
                   />
-                  <p class="log-line" :class="textWrap ? 'log-line--wrap' : 'log-line--nowrap'">
+                  <p :class="logLineClass(entry.level)">
+                    <span
+                      class="mr-2 inline text-[11px] font-semibold text-toned cursor-pointer"
+                      :title="logTimeTitle(entry.log.datetime)"
+                    >
+                      {{ logTimeLabel(entry.log.datetime) }}
+                    </span>
                     {{ entry.log.line }}
                   </p>
                 </div>
@@ -162,13 +169,30 @@ import { requirePageShell } from '~/utils/topLevelNavigation';
 
 type FilteredLogEntry = {
   log: log_line;
+  level: LogLevel;
   isMatch: boolean;
   isContext: boolean;
 };
 
-type LogTone = 'default' | 'info' | 'warning' | 'error';
+type LogLevel = 'debug' | 'info' | 'warning' | 'error';
 
 const FILTER_CONTEXT_REGEX = /context:(\d+)/;
+const LOG_LEVEL_PREFIX =
+  /^\s*(?:\[(debug|info|warning|warn|error|critical|fatal)(?:[.\]])|(debug|info|warning|warn|error|critical|fatal)\b(?::|\s|-))/i;
+const LOG_ROW_CLASS =
+  'flex min-w-0 border-b border-default/40 bg-transparent transition-colors duration-150 last:border-b-0 hover:bg-elevated/70';
+const LOG_LEVEL_DOT_CLASS: Record<LogLevel, string> = {
+  debug: 'bg-muted',
+  info: 'bg-info',
+  warning: 'bg-warning',
+  error: 'bg-error',
+};
+const LOG_LEVEL_TEXT_CLASS: Record<LogLevel, string> = {
+  debug: 'text-toned',
+  info: 'text-info',
+  warning: 'text-warning',
+  error: 'text-error',
+};
 
 let scrollTimeout: NodeJS.Timeout | null = null;
 
@@ -242,7 +266,12 @@ watch(
 
 const filteredLogs = computed<FilteredLogEntry[]>(() => {
   if (!hasActiveFilter.value) {
-    return logs.value.map((log) => ({ log, isMatch: false, isContext: false }));
+    return logs.value.map((log) => ({
+      log,
+      level: detectLogLevel(log.line),
+      isMatch: false,
+      isContext: false,
+    }));
   }
 
   const result: Array<FilteredLogEntry> = [];
@@ -266,8 +295,11 @@ const filteredLogs = computed<FilteredLogEntry[]>(() => {
   Array.from(visibleIndexes)
     .sort((a, b) => a - b)
     .forEach((index) => {
+      const log = logs.value[index] as log_line;
+
       result.push({
-        log: logs.value[index] as log_line,
+        log,
+        level: detectLogLevel(log.line),
         isMatch: matchedIndexes.has(index),
         isContext: !matchedIndexes.has(index),
       });
@@ -440,44 +472,59 @@ const startLogStream = async (): Promise<void> => {
 };
 
 const logTimeLabel = (value?: string): string =>
-  value ? moment(value).format('HH:mm:ss') : '--:--:--';
+  value ? moment(value).format('HH:mm:ss') : '00:00:00';
 
 const logTimeTitle = (value?: string): string =>
   value ? moment(value).format('YYYY-MM-DD HH:mm:ss Z') : 'No timestamp';
 
-const detectLogTone = (line: string): LogTone => {
-  const normalized = line.toLowerCase();
-
-  if (/error|failed|exception|traceback|fatal/.test(normalized)) {
-    return 'error';
+const getLogLevel = (level: string): LogLevel => {
+  switch (level.toLowerCase()) {
+    case 'info':
+      return 'info';
+    case 'warning':
+    case 'warn':
+      return 'warning';
+    case 'error':
+    case 'critical':
+    case 'fatal':
+      return 'error';
+    default:
+      return 'debug';
   }
-
-  if (/warn|deprecated|retry/.test(normalized)) {
-    return 'warning';
-  }
-
-  if (/info|started|connected|listening|ready/.test(normalized)) {
-    return 'info';
-  }
-
-  return 'default';
 };
 
+const detectLogLevel = (line: string): LogLevel => {
+  const match = line.match(LOG_LEVEL_PREFIX);
+  const level = match?.[1] ?? match?.[2];
+
+  return level ? getLogLevel(level) : 'debug';
+};
+
+const logLevelDotClass = (level: LogLevel): string => LOG_LEVEL_DOT_CLASS[level];
+
+const logLineClass = (level: LogLevel): string[] => [
+  'flex-1',
+  textWrap.value
+    ? 'min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]'
+    : 'min-w-max whitespace-pre',
+  LOG_LEVEL_TEXT_CLASS[level],
+];
+
 const logRowClass = (entry: FilteredLogEntry, index: number): string[] => {
-  const classes = ['log-row', `log-row--${detectLogTone(entry.log.line)}`];
+  const classes = [LOG_ROW_CLASS];
 
   if (entry.isMatch) {
-    classes.push('log-row--match');
+    classes.push('bg-warning/10');
     return classes;
   }
 
   if (entry.isContext) {
-    classes.push('log-row--context');
+    classes.push('bg-muted/30');
     return classes;
   }
 
   if (index % 2 === 1) {
-    classes.push('log-row--alt');
+    classes.push('bg-elevated/40');
   }
 
   return classes;
@@ -502,132 +549,3 @@ onBeforeUnmount(() => {
   }
 });
 </script>
-
-<style scoped>
-.logbox {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  min-height: 55vh;
-  max-height: 60vh;
-  background: transparent;
-}
-
-.log-row {
-  display: flex;
-  min-width: 0;
-  border-bottom: 1px solid color-mix(in oklab, var(--ui-border) 40%, transparent);
-  box-sizing: border-box;
-  background: transparent;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.log-row:last-child {
-  border-bottom: 0;
-}
-
-.log-row--alt {
-  background: color-mix(in oklab, var(--ui-bg-elevated) 40%, transparent);
-}
-
-.log-row--match {
-  background: color-mix(in oklab, var(--ui-warning) 10%, var(--ui-bg-elevated) 90%);
-}
-
-.log-row--context {
-  background: color-mix(in oklab, var(--ui-bg-muted) 30%, transparent);
-}
-
-.log-row:hover {
-  background: color-mix(in oklab, var(--ui-bg-elevated) 70%, var(--ui-bg-muted) 30%);
-}
-
-.log-timestamp {
-  display: flex;
-  width: 5.5rem;
-  min-width: 5.5rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: flex-end;
-  border-right: 1px solid color-mix(in oklab, var(--ui-border) 40%, transparent);
-  background: color-mix(in oklab, var(--ui-bg-elevated) 55%, transparent);
-  padding: 0.65rem 0.75rem;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ui-text-toned);
-}
-
-.log-content {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: flex-start;
-  gap: 0.65rem;
-  padding: 0.65rem 0.75rem;
-  line-height: 1.6;
-}
-
-.log-content--nowrap {
-  width: max-content;
-  min-width: calc(100% - 5.5rem);
-}
-
-.log-tone-dot {
-  display: inline-flex;
-  width: 0.5rem;
-  min-width: 0.5rem;
-  height: 0.5rem;
-  margin-top: 0.45rem;
-  border-radius: 9999px;
-}
-
-.log-tone-dot--default {
-  background: color-mix(in oklab, var(--ui-text-toned) 55%, transparent);
-}
-
-.log-tone-dot--info {
-  background: var(--ui-info);
-}
-
-.log-tone-dot--warning {
-  background: var(--ui-warning);
-}
-
-.log-tone-dot--error {
-  background: var(--ui-error);
-}
-
-.log-line {
-  flex: 1;
-  min-width: 0;
-}
-
-.log-line--wrap {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.log-line--nowrap {
-  min-width: max-content;
-  white-space: pre;
-}
-
-.log-row--default .log-line {
-  color: var(--ui-text-highlighted);
-}
-
-.log-row--info .log-line {
-  color: color-mix(in oklab, var(--ui-info) 55%, var(--ui-text-highlighted) 45%);
-}
-
-.log-row--warning .log-line {
-  color: color-mix(in oklab, var(--ui-warning) 60%, var(--ui-text-highlighted) 40%);
-}
-
-.log-row--error .log-line {
-  color: color-mix(in oklab, var(--ui-error) 70%, var(--ui-text-highlighted) 30%);
-}
-</style>
