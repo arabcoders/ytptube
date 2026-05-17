@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "3bd2a7bee7ac64223f5d30575508d708cd3a2d55",
+    "date": "2026-05-17T17:21:58+00:00",
+    "commits": [
+      {
+        "sha": "3bd2a7be",
+        "full_sha": "3bd2a7bee7ac64223f5d30575508d708cd3a2d55",
+        "message": "refactor: minor ui cleanup",
+        "author": "arabcoders",
+        "date": "2026-05-17T17:21:58+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.2",
     "full_sha": "f65cdddbfeb93ad6922b7147932a5eab78f031cd",
     "date": "2026-05-15T16:40:35+00:00",
