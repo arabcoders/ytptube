@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "88db357b7fed5b2097ef893b8bc368ba48d07170",
-    "date": "2026-05-18T09:28:06+00:00",
+    "full_sha": "3b3c8120b89a09fdce951c233b1703840622a395",
+    "date": "2026-05-18T19:12:13+00:00",
     "commits": [
+      {
+        "sha": "3b3c8120",
+        "full_sha": "3b3c8120b89a09fdce951c233b1703840622a395",
+        "message": "fix: recent change made fetch_info unpicklable",
+        "author": "arabcoders",
+        "date": "2026-05-18T19:12:13+00:00"
+      },
       {
         "sha": "88db357b",
         "full_sha": "88db357b7fed5b2097ef893b8bc368ba48d07170",
