@@ -59,7 +59,6 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/player/subtitle/{file:.\*}.vtt](#get-apiplayersubtitlefilevtt)
     - [GET /api/player/subtitles/manifest/{file:.\*}](#get-apiplayersubtitlesmanifestfile)
     - [GET /api/player/subtitles/{source\_format}/{file:.\*}](#get-apiplayersubtitlessource_formatfile)
-    - [GET /api/thumbnail](#get-apithumbnail)
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
     - [GET /api/file/browser/{path:.\*}](#get-apifilebrowserpath)
@@ -1652,17 +1651,6 @@ Binary TS data (`Content-Type: video/mpegts`).
 **Response**:
 - `text/vtt; charset=UTF-8` for `vtt` and `srt` sources.
 - `text/x-ssa; charset=UTF-8` for `ass` sources.
-
----
-
-### GET /api/thumbnail
-**Purpose**: Proxy/fetch a remote thumbnail image.  
-
-**Query Parameter**:
-- `?url=<remote-thumbnail-url>`
-
-**Response**:  
-Binary image data with the appropriate `Content-Type`.
 
 ---
 

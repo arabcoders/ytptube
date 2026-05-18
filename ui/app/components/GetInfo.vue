@@ -1,201 +1,124 @@
 <template>
-  <UModal
-    v-if="!externalModel"
-    :open="true"
-    :title="resolvedTitle"
-    :dismissible="true"
-    :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0 overflow-hidden' }"
-    @update:open="(open) => !open && emitter('closeModel')"
-  >
+  <UModal v-model:open="modalOpen" :title="resolvedTitle" :ui="modalUi">
     <template #description>
       <span class="sr-only">{{ modalDescription }}</span>
     </template>
 
     <template #body>
-      <div class="flex h-[75vh] min-h-96 min-w-0 flex-col">
-        <div
-          class="flex flex-wrap items-center justify-between gap-3 border-b border-default bg-muted/20 px-4 py-3"
-        >
-          <div class="min-w-0 space-y-1">
-            <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-              <UIcon :name="contentIcon" class="size-4 text-toned" />
-              <span>{{ contentLabel }}</span>
-              <UBadge color="neutral" variant="soft" size="sm">
-                {{ isStructuredData ? 'JSON' : 'Text' }}
-              </UBadge>
-            </div>
-            <p class="truncate text-xs text-toned">{{ sourceSummary }}</p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <UButton
-              type="button"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              :disabled="isLoading || !hasDisplayText"
-              @click="wrapText = !wrapText"
-            >
-              {{ wrapText ? 'No wrap' : 'Wrap text' }}
-            </UButton>
-
-            <UButton
-              type="button"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-copy"
-              :disabled="isLoading || !hasDisplayText"
-              @click="copyData"
-            >
-              Copy
-            </UButton>
-          </div>
+      <div class="space-y-4">
+        <div v-if="isLoading" class="flex min-h-80 items-center justify-center">
+          <UIcon name="i-lucide-loader-circle" class="size-16 animate-spin text-primary" />
         </div>
 
-        <div class="flex-1 min-h-0 p-4 sm:p-5">
-          <div v-if="isLoading" class="flex h-full min-h-64 items-center justify-center">
-            <div class="flex flex-col items-center gap-3 text-center text-toned">
-              <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-info" />
-              <span class="text-sm">Loading information...</span>
-            </div>
-          </div>
+        <UAlert
+          v-else-if="errorMessage"
+          color="error"
+          variant="soft"
+          icon="i-lucide-triangle-alert"
+          title="Unable to load information"
+          :description="errorMessage"
+        />
 
-          <div v-else-if="errorMessage" class="flex h-full min-h-64 items-center justify-center">
-            <div class="w-full max-w-2xl space-y-4">
-              <UAlert
-                color="error"
-                variant="soft"
-                icon="i-lucide-triangle-alert"
-                title="Unable to load information"
-                :description="errorMessage"
-              />
+        <div v-else class="space-y-3">
+          <UInput
+            v-model="query"
+            type="search"
+            placeholder="Filter text"
+            icon="i-lucide-filter"
+            size="sm"
+            class="w-full"
+          />
 
-              <div class="flex justify-end">
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-rotate-ccw"
-                  @click="() => void loadInfo()"
-                >
-                  Retry
-                </UButton>
-              </div>
-            </div>
-          </div>
+          <UAlert
+            v-if="query && 0 === filteredLineCount"
+            color="warning"
+            variant="soft"
+            icon="i-lucide-filter"
+            title="No matching lines"
+          >
+            <template #description>
+              <p class="text-sm text-default">
+                No lines match this filter: <u>{{ query }}</u>
+              </p>
+            </template>
+          </UAlert>
 
-          <div v-else-if="!hasDisplayText" class="flex h-full min-h-64 items-center justify-center">
-            <UAlert
-              color="neutral"
-              variant="soft"
-              icon="i-lucide-info"
-              title="No content returned"
-              description="The request completed successfully but did not return any visible content."
-              class="w-full max-w-2xl"
+          <UAlert
+            v-else-if="!hasDisplayText"
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-info"
+            title="No content returned"
+            description="The request completed successfully but did not return any visible content."
+          />
+
+          <div v-else class="overflow-hidden rounded-md border border-default bg-elevated/30">
+            <code
+              ref="contentView"
+              class="block max-h-[55vh] overflow-auto p-4 font-mono text-sm leading-6 text-default whitespace-pre-wrap wrap-break-word"
+              v-text="displayedText"
             />
           </div>
-
-          <pre :class="preClasses"><code class="block min-w-full" v-text="displayText" /></pre>
         </div>
       </div>
     </template>
-  </UModal>
 
-  <div v-else class="flex h-[75vh] min-h-96 min-w-0 flex-col">
-    <div
-      class="flex flex-wrap items-center justify-between gap-3 border-b border-default bg-muted/20 px-4 py-3"
-    >
-      <div class="min-w-0 space-y-1">
-        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-          <UIcon :name="contentIcon" class="size-4 text-toned" />
-          <span>{{ contentLabel }}</span>
-          <UBadge color="neutral" variant="soft" size="sm">
-            {{ isStructuredData ? 'JSON' : 'Text' }}
-          </UBadge>
-        </div>
-        <p class="truncate text-xs text-toned">{{ sourceSummary }}</p>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :disabled="isLoading || !hasDisplayText"
-          @click="wrapText = !wrapText"
-        >
-          {{ wrapText ? 'No wrap' : 'Wrap text' }}
-        </UButton>
-
+    <template #footer>
+      <div class="flex w-full flex-wrap items-center justify-end gap-2">
         <UButton
           type="button"
           color="neutral"
           variant="outline"
           size="sm"
           icon="i-lucide-copy"
-          :disabled="isLoading || !hasDisplayText"
+          :disabled="isLoading || !hasVisibleText"
           @click="copyData"
         >
           Copy
         </UButton>
-      </div>
-    </div>
 
-    <div class="flex-1 min-h-0 p-4 sm:p-5">
-      <div v-if="isLoading" class="flex h-full min-h-64 items-center justify-center">
-        <div class="flex flex-col items-center gap-3 text-center text-toned">
-          <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-info" />
-          <span class="text-sm">Loading information...</span>
-        </div>
-      </div>
-
-      <div v-else-if="errorMessage" class="flex h-full min-h-64 items-center justify-center">
-        <div class="w-full max-w-2xl space-y-4">
-          <UAlert
-            color="error"
-            variant="soft"
-            icon="i-lucide-triangle-alert"
-            title="Unable to load information"
-            :description="errorMessage"
-          />
-
-          <div class="flex justify-end">
-            <UButton
-              type="button"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-rotate-ccw"
-              @click="() => void loadInfo()"
-            >
-              Retry
-            </UButton>
-          </div>
-        </div>
-      </div>
-
-      <div v-else-if="!hasDisplayText" class="flex h-full min-h-64 items-center justify-center">
-        <UAlert
+        <UButton
+          type="button"
           color="neutral"
-          variant="soft"
-          icon="i-lucide-info"
-          title="No content returned"
-          description="The request completed successfully but did not return any visible content."
-          class="w-full max-w-2xl"
-        />
-      </div>
+          variant="outline"
+          size="sm"
+          icon="i-lucide-arrow-down"
+          :disabled="isLoading || !hasVisibleText"
+          @click="scrollContent('end')"
+        >
+          Go down
+        </UButton>
 
-      <pre :class="preClasses"><code class="block min-w-full" v-text="displayText" /></pre>
-    </div>
-  </div>
+        <UButton
+          type="button"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :disabled="!link"
+          :loading="isLoading"
+          @click="() => void loadInfo()"
+        >
+          Reload
+        </UButton>
+
+        <UButton
+          type="button"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-arrow-up"
+          :disabled="isLoading || !hasVisibleText"
+          @click="scrollContent('start')"
+        >
+          Go up
+        </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core';
-
 const toast = useNotification();
 const emitter = defineEmits<{ (e: 'closeModel'): void }>();
 
@@ -205,24 +128,36 @@ const props = withDefaults(
     preset?: string;
     cli?: string;
     useUrl?: boolean;
-    externalModel?: boolean;
-    code_classes?: string;
   }>(),
   {
     link: '',
     preset: '',
     cli: '',
     useUrl: false,
-    externalModel: false,
-    code_classes: '',
   },
 );
 
 const isLoading = ref(true);
 const data = ref<unknown>(null);
 const errorMessage = ref('');
-const wrapText = useStorage<boolean>('get_info_wrap_text', false);
+const query = ref('');
+const contentView = ref<HTMLElement | null>(null);
 let latestRequestId = 0;
+
+const modalUi = {
+  content: 'w-full sm:max-w-5xl',
+  body: 'p-4 sm:p-5',
+  footer: 'px-4 pb-4 sm:px-5 sm:pb-5',
+} as const;
+
+const modalOpen = computed({
+  get: () => true,
+  set: (value: boolean) => {
+    if (!value) {
+      emitter('closeModel');
+    }
+  },
+});
 
 const resolvedTitle = computed(() => {
   if (props.useUrl && props.link.startsWith('/api/history/')) {
@@ -264,44 +199,29 @@ const displayText = computed(() => {
   }
 });
 
+const lines = computed<Array<string>>(() => {
+  if (!displayText.value) {
+    return [];
+  }
+
+  return displayText.value.split('\n');
+});
+
+const filteredLines = computed<Array<string>>(() => {
+  if (!query.value) {
+    return lines.value;
+  }
+
+  const needle = query.value.toLowerCase();
+  return lines.value.filter((line) => line.toLowerCase().includes(needle));
+});
+
+const filteredLineCount = computed(() => filteredLines.value.length);
+const displayedText = computed(() =>
+  query.value ? filteredLines.value.join('\n') : displayText.value,
+);
 const hasDisplayText = computed(() => displayText.value.length > 0);
-
-const isStructuredData = computed(() => {
-  return data.value !== null && data.value !== undefined && typeof data.value !== 'string';
-});
-
-const contentIcon = computed(() => {
-  return isStructuredData.value ? 'i-lucide-braces' : 'i-lucide-file-text';
-});
-
-const contentLabel = computed(() => {
-  return isStructuredData.value ? 'Structured output' : 'Plain text output';
-});
-
-const sourceSummary = computed(() => {
-  if (props.useUrl) {
-    return props.link || 'Direct response source';
-  }
-
-  const details = [];
-
-  if (props.preset) {
-    details.push(`Preset: ${props.preset}`);
-  }
-
-  if (props.cli) {
-    details.push('Custom yt-dlp args applied');
-  }
-
-  return details.join(' | ') || 'yt-dlp response payload';
-});
-
-const preClasses = computed(() => [
-  'h-full max-h-full overflow-auto rounded-xl border border-default bg-elevated/40 p-4 text-sm text-default',
-  'font-mono leading-6',
-  wrapText.value ? 'whitespace-pre-wrap break-words' : 'whitespace-pre',
-  props.code_classes,
-]);
+const hasVisibleText = computed(() => displayedText.value.length > 0);
 
 const buildRequestUrl = (): string => {
   if (props.useUrl) {
@@ -348,6 +268,7 @@ const loadInfo = async (): Promise<void> => {
   latestRequestId += 1;
   const requestId = latestRequestId;
 
+  query.value = '';
   isLoading.value = true;
   errorMessage.value = '';
   data.value = null;
@@ -388,12 +309,31 @@ const loadInfo = async (): Promise<void> => {
 };
 
 const copyData = (): void => {
-  if (!displayText.value) {
+  if (!displayedText.value) {
     return;
   }
 
-  copyText(displayText.value);
+  copyText(displayedText.value, false);
 };
+
+const scrollContent = (dir: 'start' | 'end'): void => {
+  if (!contentView.value) {
+    return;
+  }
+
+  contentView.value.scrollTo({
+    top: 'start' === dir ? 0 : contentView.value.scrollHeight,
+    behavior: 'smooth',
+  });
+};
+
+watch(query, () => {
+  if (!contentView.value) {
+    return;
+  }
+
+  contentView.value.scrollTo({ top: 0 });
+});
 
 watch(
   () => [props.link, props.preset, props.cli, props.useUrl],

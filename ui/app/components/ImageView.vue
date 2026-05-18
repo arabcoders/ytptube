@@ -8,24 +8,40 @@ img {
 </style>
 
 <template>
-  <div>
-    <div v-if="isLoading" class="flex min-h-[50vh] items-center justify-center">
+  <div class="relative min-h-[50vh]">
+    <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center">
       <UIcon name="i-lucide-loader-circle" class="size-20 animate-spin text-toned sm:size-24" />
     </div>
-    <div v-else>
-      <img :src="image" />
+
+    <div v-else-if="hasError" class="flex min-h-[50vh] items-center justify-center">
+      <UAlert
+        color="error"
+        variant="soft"
+        icon="i-lucide-triangle-alert"
+        title="Unable to load image"
+        description="The preview could not be loaded."
+        class="w-full max-w-2xl"
+      />
     </div>
+
+    <img
+      v-if="link"
+      :src="link"
+      alt="Image preview"
+      :class="{ invisible: isLoading || hasError }"
+      @load="handle_load"
+      @error="handle_error"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { disableOpacity, enableOpacity } from '~/utils';
 
-const toast = useNotification();
 const emitter = defineEmits(['closeModel']);
 
-const isLoading = ref<boolean>(false);
-const image = ref<string>('');
+const isLoading = ref<boolean>(true);
+const hasError = ref<boolean>(false);
 
 const props = defineProps({
   link: {
@@ -41,36 +57,28 @@ const handle_event = (e: KeyboardEvent) => {
   emitter('closeModel');
 };
 
-onMounted(async () => {
+const handle_load = () => {
+  isLoading.value = false;
+  hasError.value = false;
+};
+
+const handle_error = () => {
+  isLoading.value = false;
+  hasError.value = true;
+};
+
+onMounted(() => {
   disableOpacity();
   document.addEventListener('keydown', handle_event);
 
-  const url = props.link.startsWith('/')
-    ? props.link
-    : '/api/thumbnail?url=' + encodePath(props.link);
-
-  try {
-    isLoading.value = true;
-
-    const imgRequest = await request(url);
-    if (200 !== imgRequest.status) {
-      return;
-    }
-
-    image.value = URL.createObjectURL(await imgRequest.blob());
-  } catch (e: any) {
-    console.error(e);
-    toast.error(`Error: ${e.message}`);
-  } finally {
+  if (!props.link) {
+    hasError.value = true;
     isLoading.value = false;
   }
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handle_event);
-  if (image.value) {
-    URL.revokeObjectURL(image.value);
-  }
   enableOpacity();
 });
 </script>

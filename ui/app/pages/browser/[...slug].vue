@@ -491,7 +491,7 @@
     </div>
 
     <UModal
-      v-if="model_item"
+      v-if="model_item && model_item.type !== 'text'"
       :open="previewOpen"
       :title="previewTitle"
       :dismissible="true"
@@ -511,14 +511,6 @@
           @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
 
-        <GetInfo
-          v-else-if="model_item?.type === 'text'"
-          :link="model_item.filename"
-          :useUrl="true"
-          :externalModel="true"
-          @closeModel="closeModel"
-        />
-
         <ImageView
           v-else-if="model_item?.type === 'image'"
           :link="model_item.filename"
@@ -526,6 +518,13 @@
         />
       </template>
     </UModal>
+
+    <GetInfo
+      v-if="model_item?.type === 'text'"
+      :link="model_item.filename"
+      :useUrl="true"
+      @closeModel="closeModel"
+    />
   </div>
 </template>
 
