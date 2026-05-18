@@ -142,7 +142,9 @@
                   ]"
                 >
                   <p :class="logLineClass()">
-                    <span class="inline-flex items-center gap-2 align-middle">
+                    <span
+                      class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle"
+                    >
                       <UTooltip :text="logTimeTitle(entry.log.datetime)">
                         <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
                           {{ logTimeLabel(entry.log.datetime) }}
@@ -169,7 +171,8 @@
                       </span>
                       <span
                         v-if="entry.log.logger"
-                        class="inline text-[11px] font-semibold text-toned"
+                        :title="entry.log.logger"
+                        class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
                         >[{{ entry.log.logger }}]</span
                       >
                     </span>
@@ -223,8 +226,15 @@
                 />
                 {{ getLogLevel(selectedLog.level) }}
               </UBadge>
-              <UBadge v-if="selectedLog.logger" color="neutral" variant="soft" size="sm">
-                {{ selectedLog.logger }}
+              <UBadge
+                v-if="selectedLog.logger"
+                color="neutral"
+                variant="soft"
+                size="sm"
+                class="max-w-full min-w-0"
+                :title="selectedLog.logger"
+              >
+                <span class="min-w-0 max-w-full truncate">{{ selectedLog.logger }}</span>
               </UBadge>
               <span class="text-xs text-toned">{{ logTimeTitle(selectedLog.datetime) }}</span>
             </div>

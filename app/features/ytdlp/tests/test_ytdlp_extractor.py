@@ -1,13 +1,16 @@
 import logging
+import pickle
 from unittest.mock import MagicMock, patch
 
 from app.features.ytdlp.extractor import (
     ExtractorConfig,
     ExtractorPool,
+    _LogCapture,
     _get_process_pool_kwargs,
     _ytdlp_logger,
     extract_info_sync,
 )
+from app.features.ytdlp.utils import LogWrapper
 
 
 class TestProcessPoolConfiguration:
@@ -170,3 +173,18 @@ class TestYtdlpLogger:
         _ytdlp_logger(logger)(logging.DEBUG, "screen line")
 
         logger.info.assert_called_once_with("screen line", stacklevel=4)
+
+    def test_targets_are_picklable(self) -> None:
+        logs: list[str] = []
+        wrapper = LogWrapper()
+        wrapper.add_target(_ytdlp_logger(logging.getLogger("yt-dlp.test")), level=logging.DEBUG, name="yt-dlp.test")
+        wrapper.add_target(_LogCapture(logs), level=logging.WARNING, name="log-capture")
+
+        pickle.dumps(wrapper)
+
+    def test_capture_formats_args(self) -> None:
+        logs: list[str] = []
+
+        _LogCapture(logs)(logging.WARNING, "hello %s", "world")
+
+        assert logs == ["hello world"]

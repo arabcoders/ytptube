@@ -19,19 +19,32 @@ LOG: logging.Logger = logging.getLogger("downloads.extractor")
 
 
 def _ytdlp_logger(target: logging.Logger):
-    def _log(level: int, msg: str, *args: Any, **kwargs: Any) -> None:
+    return _YTDLPLogger(target)
+
+
+class _YTDLPLogger:
+    def __init__(self, target: logging.Logger) -> None:
+        self.target = target
+
+    def __call__(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
         kwargs.setdefault("stacklevel", 4)
         if level <= logging.DEBUG and isinstance(msg, str) and msg.startswith("[debug] "):
-            target.debug(msg.removeprefix("[debug] "), *args, **kwargs)
+            self.target.debug(msg.removeprefix("[debug] "), *args, **kwargs)
             return
 
         if level <= logging.DEBUG:
-            target.info(msg, *args, **kwargs)
+            self.target.info(msg, *args, **kwargs)
             return
 
-        target.log(level, msg, *args, **kwargs)
+        self.target.log(level, msg, *args, **kwargs)
 
-    return _log
+
+class _LogCapture:
+    def __init__(self, logs: list[str]) -> None:
+        self.logs = logs
+
+    def __call__(self, _: int, msg: str, *args: Any, **__: Any) -> None:
+        self.logs.append(msg % args if args else msg)
 
 
 def _get_process_pool_kwargs() -> dict[str, Any]:
@@ -243,7 +256,7 @@ def extract_info_sync(
     sanitize_info: bool = False,
     capture_logs: int | None = None,
     **kwargs,
-) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+) -> tuple[dict[str, Any] | None, list[str]]:
     """
     Extract video information from a URL.
 
@@ -258,7 +271,7 @@ def extract_info_sync(
         **kwargs: Additional arguments
 
     Returns:
-        tuple[dict | None, list[dict]]: Extracted information and captured logs.
+        tuple[dict | None, list[str]]: Extracted information and captured logs.
 
     """
     params: dict[str, Any] = {**config, **_DATA.YTDLP_PARAMS, "simulate": True}
@@ -287,7 +300,7 @@ def extract_info_sync(
         captured_logs: list[str] = kwargs.get("captured_logs", [])
         if capture_logs is not None:
             log_wrapper.add_target(
-                target=lambda _, msg: captured_logs.append(msg),
+                target=_LogCapture(captured_logs),
                 level=capture_logs,
                 name="log-capture",
             )
@@ -351,7 +364,7 @@ async def fetch_info(
     extractor_config: ExtractorConfig | None = None,
     budget_sleep: bool = False,
     **kwargs,
-) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+) -> tuple[dict[str, Any] | None, list[str]]:
     """
     Extract video information from a URL.
 
@@ -371,7 +384,7 @@ async def fetch_info(
         **kwargs: Additional arguments
 
     Returns:
-        tuple[dict | None, list[dict]]: Extracted information and captured logs.
+        tuple[dict | None, list[str]]: Extracted information and captured logs.
 
     """
     if extractor_config is None:
