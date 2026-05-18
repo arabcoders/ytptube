@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "854f5f4b420d827f7ac978e7f66798ac40387952",
-    "date": "2026-05-18T06:44:29+00:00",
+    "full_sha": "88db357b7fed5b2097ef893b8bc368ba48d07170",
+    "date": "2026-05-18T09:28:06+00:00",
     "commits": [
+      {
+        "sha": "88db357b",
+        "full_sha": "88db357b7fed5b2097ef893b8bc368ba48d07170",
+        "message": "refactor: removed thumbnail proxying",
+        "author": "arabcoders",
+        "date": "2026-05-18T09:28:06+00:00"
+      },
       {
         "sha": "854f5f4b",
         "full_sha": "854f5f4b420d827f7ac978e7f66798ac40387952",
