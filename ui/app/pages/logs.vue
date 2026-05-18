@@ -72,7 +72,7 @@
           multiple
           size="sm"
           icon="i-lucide-list-filter"
-          class="order-last w-full sm:order-0 sm:w-48"
+          class="w-44 shrink-0 sm:w-48"
           :ui="{ content: 'min-w-48' }"
         >
           <template #default>
