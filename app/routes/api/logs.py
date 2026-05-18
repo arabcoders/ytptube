@@ -1,7 +1,7 @@
 import asyncio
+import json
 import logging
 import os
-import re
 from pathlib import Path
 
 from aiohttp import web
@@ -13,8 +13,38 @@ from app.library.router import route
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
-"Match ISO8601."
+
+def _parse_jsonl_line(line: bytes | str) -> dict | None:
+    raw: str = line.decode(errors="replace") if isinstance(line, bytes) else line
+    raw = raw.rstrip("\r\n")
+
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+
+    required = ("id", "datetime", "level", "logger", "message")
+    if any(not payload.get(key) for key in required):
+        return None
+
+    result: dict = {
+        "id": str(payload["id"]),
+        "datetime": str(payload["datetime"]),
+        "level": str(payload["level"]),
+        "logger": str(payload["logger"]),
+        "message": str(payload["message"]).strip(),
+    }
+
+    for key in ("levelno", "source", "process", "thread", "fields", "exception", "exception_message", "stack"):
+        if key not in payload:
+            continue
+
+        result[key] = payload[key]
+
+    return result
 
 
 async def _read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
@@ -33,8 +63,6 @@ async def _read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
             - end_is_reached: True if there are no older logs.
 
     """
-    from hashlib import sha256
-
     from anyio import open_file
 
     if not file.exists():
@@ -68,17 +96,8 @@ async def _read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
                 next_offset = None
                 end_is_reached = True
 
-            for line in lines[-(offset + limit) : -offset] if offset else lines[-limit:]:
-                line_bytes: bytes | str = line if isinstance(line, bytes) else line.encode()
-                msg: str = line.decode(errors="replace")
-                dt_match: re.Match[str] | None = DT_PATTERN.match(msg)
-                result.append(
-                    {
-                        "id": sha256(line_bytes).hexdigest(),
-                        "line": msg[dt_match.end() :] if dt_match else msg,
-                        "datetime": dt_match.group(1) if dt_match else None,
-                    }
-                )
+            selected = lines[-(offset + limit) : -offset] if offset else lines[-limit:]
+            result.extend(log for line in selected if (log := _parse_jsonl_line(line)))
 
             return {"logs": result, "next_offset": next_offset, "end_is_reached": end_is_reached}
     except Exception:
@@ -95,8 +114,6 @@ async def _tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
         sleep_time (float): The time to sleep between reads.
 
     """
-    from hashlib import sha256
-
     from anyio import open_file
 
     if not file.exists():
@@ -111,16 +128,8 @@ async def _tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
                     await asyncio.sleep(sleep_time)
                     continue
 
-                msg: str = line.decode(errors="replace")
-                dt_match: re.Match[str] | None = DT_PATTERN.match(msg)
-
-                await emitter(
-                    {
-                        "id": sha256(line if isinstance(line, bytes) else line.encode()).hexdigest(),
-                        "line": msg[dt_match.end() :] if dt_match else msg,
-                        "datetime": dt_match.group(1) if dt_match else None,
-                    }
-                )
+                if log := _parse_jsonl_line(line):
+                    await emitter(log)
     except Exception as e:
         LOG.error(f"Error while tailing log file '{file!s}': {e!s}")
         return
@@ -149,7 +158,7 @@ async def logs(request: Request, config: Config, encoder: Encoder) -> Response:
         limit = 50
 
     logs_data = await _read_logfile(
-        file=Path(config.config_path) / "logs" / "app.log",
+        file=Path(config.config_path) / "logs" / "app.jsonl",
         offset=offset,
         limit=limit,
     )
@@ -175,7 +184,7 @@ async def stream_logs(request: Request, config: Config, encoder: Encoder) -> Res
             status=web.HTTPNotFound.status_code,
         )
 
-    log_file = Path(config.config_path) / "logs" / "app.log"
+    log_file = Path(config.config_path) / "logs" / "app.jsonl"
     if not log_file.exists():
         return web.json_response(
             data={"error": "Log file is not available."},

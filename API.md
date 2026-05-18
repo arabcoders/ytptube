@@ -2325,12 +2325,22 @@ Binary image data with appropriate headers
 {
   "logs": [
     {
-      "timestamp": "2023-01-01T12:00:00Z",
-      "level": "INFO",
-      "message": "...",
-      ...
-    },
-    ...
+      "id": "<uuid>",
+      "datetime": "2026-05-18T12:00:00.000+00:00",
+      "level": "info",
+      "levelno": 20,
+      "logger": "downloads.queue",
+      "message": "Download started",
+      "exception_message": null,
+      "source": {
+        "path": "/app/library/downloads/queue_manager.py",
+        "file": "queue_manager.py",
+        "module": "queue_manager",
+        "function": "start",
+        "line": 123
+      },
+      "fields": {}
+    }
   ],
   "offset": 0,
   "limit": 100,
@@ -2339,6 +2349,7 @@ Binary image data with appropriate headers
 }
 ```
 - Returns `404 Not Found` if file logging is not enabled.
+- `fields` contains scalar `logging.extra` values only. Exceptions are returned in `exception` when present.
 
 ---
 
@@ -2352,9 +2363,21 @@ Binary image data with appropriate headers
 **Event Payload**:
 ```json
 {
-  "id": "<sha256>",
-  "line": "<log line>",
-  "datetime": "2024-01-01T12:00:00.000000+00:00"
+  "id": "<uuid>",
+  "datetime": "2026-05-18T12:00:00.000+00:00",
+  "level": "info",
+  "levelno": 20,
+  "logger": "downloads.queue",
+  "message": "Download started",
+  "exception_message": null,
+  "source": {
+    "path": "/app/library/downloads/queue_manager.py",
+    "file": "queue_manager.py",
+    "module": "queue_manager",
+    "function": "start",
+    "line": 123
+  },
+  "fields": {}
 }
 ```
 

@@ -20,6 +20,7 @@ LOG: logging.Logger = logging.getLogger("downloads.extractor")
 
 def _ytdlp_logger(target: logging.Logger):
     def _log(level: int, msg: str, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("stacklevel", 4)
         if level <= logging.DEBUG and isinstance(msg, str) and msg.startswith("[debug] "):
             target.debug(msg.removeprefix("[debug] "), *args, **kwargs)
             return

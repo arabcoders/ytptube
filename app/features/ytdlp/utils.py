@@ -131,7 +131,9 @@ class LogWrapper:
                 continue
 
             if target.logger:
-                target.target.log(level, msg, *args, **kwargs)
+                log_kwargs = {**kwargs}
+                log_kwargs.setdefault("stacklevel", 3)
+                target.target.log(level, msg, *args, **log_kwargs)
             else:
                 target.target(level, msg, *args, **kwargs)
 

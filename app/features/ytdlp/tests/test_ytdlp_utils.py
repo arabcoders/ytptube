@@ -90,6 +90,7 @@ class TestLogWrapper:
         assert len(cap.records) == 1
         assert cap.records[0].levelno == logging.INFO
         assert cap.records[0].getMessage() == "hello X"
+        assert cap.records[0].funcName == "test_level_filtering_and_dispatch"
         assert len(calls) == 0
 
         # WARNING hits both

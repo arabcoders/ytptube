@@ -2,6 +2,7 @@ import base64
 import copy
 import glob
 import ipaddress
+import json
 import logging
 import os
 import re
@@ -38,6 +39,67 @@ TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 class FileLogFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
+
+
+LOG_RECORD_ATTRS: set[str] = set(logging.makeLogRecord({}).__dict__) | {"asctime", "message"}
+
+
+class JsonLogFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        data: dict[str, Any] = {
+            "id": str(uuid.uuid4()),
+            "datetime": self.formatTime(record),
+            "level": record.levelname.lower(),
+            "levelno": record.levelno,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "source": {
+                "path": record.pathname,
+                "file": record.filename,
+                "module": record.module,
+                "function": record.funcName,
+                "line": record.lineno,
+            },
+            "process": {"id": record.process, "name": record.processName},
+            "thread": {"id": record.thread, "name": record.threadName},
+            "fields": self._extra(record),
+        }
+
+        if record.exc_info:
+            data["exception"] = self.formatException(record.exc_info)
+            data["exception_message"] = self._exception_message(record.exc_info)
+
+        if record.stack_info:
+            data["stack"] = self.formatStack(record.stack_info)
+
+        return json.dumps(data, ensure_ascii=False, default=str)
+
+    def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
+        return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
+
+    @staticmethod
+    def _extra(record: logging.LogRecord) -> dict[str, Any]:
+        extra: dict[str, Any] = {}
+        for key, value in record.__dict__.items():
+            if key in LOG_RECORD_ATTRS or key.startswith("_"):
+                continue
+
+            if isinstance(value, str | int | float | bool) or value is None:
+                extra[key] = value
+
+        return extra
+
+    @staticmethod
+    def _exception_message(
+        exc_info: tuple[type[BaseException], BaseException, Any] | tuple[None, None, None],
+    ) -> str | None:
+        exc = exc_info[1]
+        if exc is None:
+            return None
+
+        name = exc.__class__.__name__
+        msg = str(exc).strip()
+        return f"{name}: {msg}" if msg else name
 
 
 def timed_lru_cache(ttl_seconds: int, max_size: int = 128):

@@ -162,11 +162,11 @@ class TestYtdlpLogger:
 
         _ytdlp_logger(logger)(logging.DEBUG, "[debug] hello")
 
-        logger.debug.assert_called_once_with("hello")
+        logger.debug.assert_called_once_with("hello", stacklevel=4)
 
     def test_screen_style_debug_uses_info(self) -> None:
         logger = MagicMock()
 
         _ytdlp_logger(logger)(logging.DEBUG, "screen line")
 
-        logger.info.assert_called_once_with("screen line")
+        logger.info.assert_called_once_with("screen line", stacklevel=4)
