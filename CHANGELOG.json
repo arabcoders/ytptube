@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "3b3c8120b89a09fdce951c233b1703840622a395",
-    "date": "2026-05-18T19:12:13+00:00",
+    "full_sha": "ca7227ffc5160847dde5bead60a443feb3f6775b",
+    "date": "2026-05-18T19:20:31+00:00",
     "commits": [
+      {
+        "sha": "ca7227ff",
+        "full_sha": "ca7227ffc5160847dde5bead60a443feb3f6775b",
+        "message": "refactor: adjust width and shrink behavior of filter input",
+        "author": "arabcoders",
+        "date": "2026-05-18T19:20:31+00:00"
+      },
       {
         "sha": "3b3c8120",
         "full_sha": "3b3c8120b89a09fdce951c233b1703840622a395",
