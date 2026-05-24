@@ -2315,11 +2315,25 @@ Binary image data with appropriate headers
     {
       "id": "<uuid>",
       "datetime": "2026-05-18T12:00:00.000+00:00",
-      "level": "info",
-      "levelno": 20,
+      "level": "error",
+      "levelno": 40,
       "logger": "downloads.queue",
-      "message": "Download started",
-      "exception_message": null,
+      "message": "Download failed",
+      "exception": {
+        "type": "ValueError",
+        "message": "bad",
+        "file": "/app/library/downloads/queue_manager.py",
+        "line": 123,
+        "stack": [
+          {
+            "path": "/app/library/downloads/queue_manager.py",
+            "file": "queue_manager.py",
+            "module": "queue_manager",
+            "function": "start",
+            "line": 123
+          }
+        ]
+      },
       "source": {
         "path": "/app/library/downloads/queue_manager.py",
         "file": "queue_manager.py",
@@ -2337,7 +2351,6 @@ Binary image data with appropriate headers
 }
 ```
 - Returns `404 Not Found` if file logging is not enabled.
-- `fields` contains scalar `logging.extra` values only. Exceptions are returned in `exception` when present.
 
 ---
 
@@ -2353,11 +2366,25 @@ Binary image data with appropriate headers
 {
   "id": "<uuid>",
   "datetime": "2026-05-18T12:00:00.000+00:00",
-  "level": "info",
-  "levelno": 20,
+  "level": "error",
+  "levelno": 40,
   "logger": "downloads.queue",
-  "message": "Download started",
-  "exception_message": null,
+  "message": "Download failed",
+  "exception": {
+    "type": "ValueError",
+    "message": "bad",
+    "file": "/app/library/downloads/queue_manager.py",
+    "line": 123,
+    "stack": [
+      {
+        "path": "/app/library/downloads/queue_manager.py",
+        "file": "queue_manager.py",
+        "module": "queue_manager",
+        "function": "start",
+        "line": 123
+      }
+    ]
+  },
   "source": {
     "path": "/app/library/downloads/queue_manager.py",
     "file": "queue_manager.py",

@@ -16,6 +16,22 @@ type log_thread = {
   name?: string;
 };
 
+type log_exception_frame = {
+  path?: string;
+  file?: string;
+  module?: string;
+  function?: string;
+  line?: number;
+};
+
+type log_exception = {
+  type: string;
+  message?: string;
+  file?: string;
+  line?: number;
+  stack?: Array<log_exception_frame>;
+};
+
 type log_line = {
   id: string;
   message: string;
@@ -27,9 +43,7 @@ type log_line = {
   process?: log_process;
   thread?: log_thread;
   fields?: Record<string, unknown>;
-  exception?: string | null;
-  exception_message?: string | null;
-  stack?: string | null;
+  exception?: log_exception | null;
 };
 
-export type { log_line, log_process, log_source, log_thread };
+export type { log_exception, log_exception_frame, log_line, log_process, log_source, log_thread };

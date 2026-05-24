@@ -177,8 +177,8 @@
                       >
                     </span>
                     <span class="ml-2">{{ entry.log.message }}</span>
-                    <span v-if="entry.log.exception_message" class="ml-1 text-error/90">
-                      : {{ entry.log.exception_message }}
+                    <span v-if="exceptionSummary(entry.log)" class="ml-1 text-error/90">
+                      : {{ exceptionSummary(entry.log) }}
                     </span>
                   </p>
                 </div>
@@ -266,11 +266,11 @@
               </p>
 
               <UAlert
-                v-if="selectedLog.exception_message"
+                v-if="exceptionSummary(selectedLog)"
                 color="error"
                 variant="soft"
                 icon="i-lucide-badge-alert"
-                :title="selectedLog.exception_message"
+                :title="exceptionSummary(selectedLog)"
                 class="w-full"
               />
             </div>
@@ -292,20 +292,7 @@
             <pre
               v-if="exceptionOpen"
               class="max-h-72 overflow-auto rounded-sm border border-error/30 bg-error/5 p-3 text-xs whitespace-pre-wrap text-error"
-              >{{ selectedLog.exception }}</pre
-            >
-          </section>
-
-          <section v-if="selectedLog.stack" class="space-y-2">
-            <h3
-              class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned"
-            >
-              <UIcon name="i-lucide-layers" class="size-4 text-toned" />
-              Stack
-            </h3>
-            <pre
-              class="max-h-72 overflow-auto rounded-sm border border-default bg-elevated/50 p-3 text-xs whitespace-pre-wrap text-default"
-              >{{ selectedLog.stack }}</pre
+              >{{ exceptionText(selectedLog) }}</pre
             >
           </section>
 
@@ -816,13 +803,27 @@ const logTimeTitle = (value?: string): string =>
 
 const logRaw = (log: log_line): string => JSON.stringify(log, null, 2);
 
+const exceptionSummary = (log: log_line): string => {
+  const type = log.exception?.type?.trim() ?? '';
+  const message = log.exception?.message?.trim() ?? '';
+
+  if (type && message) {
+    return `${type}: ${message}`;
+  }
+
+  return type || message;
+};
+
+const exceptionText = (log: log_line): string =>
+  log.exception ? JSON.stringify(log.exception, null, 2) : '';
+
 const searchableLog = (log: log_line): string =>
   [
     log.message,
     log.level,
     log.logger,
-    log.exception,
-    log.stack,
+    exceptionSummary(log),
+    log.exception ? JSON.stringify(log.exception) : '',
     log.source ? JSON.stringify(log.source) : '',
     log.process ? JSON.stringify(log.process) : '',
     log.thread ? JSON.stringify(log.thread) : '',

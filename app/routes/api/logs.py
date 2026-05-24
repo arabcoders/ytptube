@@ -38,7 +38,7 @@ def _parse_jsonl_line(line: bytes | str) -> dict | None:
         "message": str(payload["message"]).strip(),
     }
 
-    for key in ("levelno", "source", "process", "thread", "fields", "exception", "exception_message", "stack"):
+    for key in ("levelno", "source", "process", "thread", "fields", "exception"):
         if key not in payload:
             continue
 

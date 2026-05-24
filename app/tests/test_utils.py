@@ -310,8 +310,32 @@ class TestJsonLogFormatter:
         data = json.loads(formatter.format(record))
 
         assert data["message"] == "failed"
-        assert data["exception_message"] == "ValueError: bad"
-        assert "ValueError: bad" in data["exception"]
+        assert data["exception"] == {
+            "type": "ValueError",
+            "message": "bad",
+            "file": __file__,
+            "line": data["exception"]["line"],
+            "stack": data["exception"]["stack"],
+        }
+        assert data["exception"]["line"] > 0
+        assert data["exception"]["stack"][-1] == {
+            "path": __file__,
+            "file": Path(__file__).name,
+            "module": Path(__file__).stem,
+            "function": "test_exception",
+            "line": data["exception"]["line"],
+        }
+        assert data["source"] == data["exception"]["stack"][-1]
+        assert "exception_message" not in data
+
+    def test_no_raw_stack(self):
+        formatter = JsonLogFormatter()
+        record = logging.LogRecord("test", logging.ERROR, __file__, 1, "failed", (), None)
+        record.stack_info = 'Stack (most recent call last):\n  File "x", line 1, in y'
+
+        data = json.loads(formatter.format(record))
+
+        assert "stack" not in data
 
 
 class TestCalcDownloadPath:
@@ -1581,6 +1605,21 @@ class TestReadLogfile:
                 "level": "error",
                 "logger": "test",
                 "message": "line 3",
+                "exception": {
+                    "type": "ValueError",
+                    "message": "bad",
+                    "file": "/tmp/test.py",
+                    "line": 3,
+                    "stack": [
+                        {
+                            "path": "/tmp/test.py",
+                            "file": "test.py",
+                            "module": "test",
+                            "function": "run",
+                            "line": 3,
+                        }
+                    ],
+                },
             },
         ]
         self.log_file.write_text("\n".join(json.dumps(line) for line in lines) + "\n")
@@ -1593,6 +1632,7 @@ class TestReadLogfile:
             assert all("line" not in line for line in result["logs"])
             assert [line["message"] for line in result["logs"]] == ["line 2", "line 3"]
             assert result["logs"][0]["level"] == "warning"
+            assert result["logs"][1]["exception"]["type"] == "ValueError"
             assert result["next_offset"] == 2
             assert result["end_is_reached"] is False
 
