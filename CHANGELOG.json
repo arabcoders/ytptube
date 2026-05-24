@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "ca7227ffc5160847dde5bead60a443feb3f6775b",
-    "date": "2026-05-18T19:20:31+00:00",
+    "full_sha": "2e9684de5dd6cd967a385c787574b956cebfb0c5",
+    "date": "2026-05-24T18:19:25+00:00",
     "commits": [
+      {
+        "sha": "2e9684de",
+        "full_sha": "2e9684de5dd6cd967a385c787574b956cebfb0c5",
+        "message": "refactor: standardize JSONL structure.",
+        "author": "arabcoders",
+        "date": "2026-05-24T18:19:25+00:00"
+      },
       {
         "sha": "ca7227ff",
         "full_sha": "ca7227ffc5160847dde5bead60a443feb3f6775b",
