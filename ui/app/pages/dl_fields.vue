@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
         <UButton
           v-if="items.length > 0"
           color="neutral"

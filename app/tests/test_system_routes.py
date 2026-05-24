@@ -151,7 +151,6 @@ class TestSystemLimitsEndpoint:
 
         body = json.loads(response.body.decode("utf-8"))
         assert body["downloads"]["paused"] is False
-        assert body["downloads"]["live_bypasses_limits"] is True
         assert body["downloads"]["global"] == {
             "limit": 10,
             "active": 2,

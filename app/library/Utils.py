@@ -2,11 +2,13 @@ import base64
 import copy
 import glob
 import ipaddress
+import json
 import logging
 import os
 import re
 import socket
 import time
+import traceback
 import uuid
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache, wraps
@@ -38,6 +40,139 @@ TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 class FileLogFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
+
+
+LOG_RECORD_ATTRS: set[str] = set(logging.makeLogRecord({}).__dict__) | {"asctime", "message"}
+
+
+class JsonLogFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        source = {
+            "path": record.pathname,
+            "file": record.filename,
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+        data: dict[str, Any] = {
+            "id": str(uuid.uuid4()),
+            "datetime": self.formatTime(record),
+            "level": record.levelname.lower(),
+            "levelno": record.levelno,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "source": source,
+            "process": {"id": record.process, "name": record.processName},
+            "thread": {"id": record.thread, "name": record.threadName},
+            "fields": self._extra(record),
+        }
+
+        if record.exc_info:
+            exception = self._exception(record.exc_info)
+            if exception is not None:
+                data["exception"] = exception
+                data["source"].update(self._exception_source(exception))
+
+        return json.dumps(data, ensure_ascii=False, default=str)
+
+    def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
+        return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
+
+    @staticmethod
+    def _extra(record: logging.LogRecord) -> dict[str, Any]:
+        extra: dict[str, Any] = {}
+        for key, value in record.__dict__.items():
+            if key in LOG_RECORD_ATTRS or key.startswith("_"):
+                continue
+
+            if isinstance(value, str | int | float | bool) or value is None:
+                extra[key] = value
+
+        return extra
+
+    @staticmethod
+    def _exception(
+        exc_info: tuple[type[BaseException], BaseException, Any] | tuple[None, None, None],
+    ) -> dict[str, Any] | None:
+        exc = exc_info[1]
+        if exc is None:
+            return None
+
+        stack = JsonLogFormatter._exception_stack(exc_info)
+        data: dict[str, Any] = {"type": JsonLogFormatter._exception_type(exc)}
+
+        message = str(exc).strip()
+        if message:
+            data["message"] = message
+
+        if stack:
+            origin = stack[-1]
+            data["file"] = origin["path"]
+            data["line"] = origin["line"]
+            data["stack"] = stack
+
+        return data
+
+    @staticmethod
+    def _exception_type(exc: BaseException) -> str:
+        module = exc.__class__.__module__
+        name = exc.__class__.__qualname__
+        return name if module == "builtins" else f"{module}.{name}"
+
+    @staticmethod
+    def _exception_stack(
+        exc_info: tuple[type[BaseException], BaseException, Any] | tuple[None, None, None],
+    ) -> list[dict[str, Any]]:
+        exc = exc_info[1]
+        tb = exc_info[2] if len(exc_info) > 2 else None
+        if tb is None and exc is not None:
+            tb = exc.__traceback__
+
+        if tb is None:
+            return []
+
+        return [JsonLogFormatter._frame(frame) for frame in traceback.extract_tb(tb)]
+
+    @staticmethod
+    def _frame(frame: traceback.FrameSummary) -> dict[str, Any]:
+        path = frame.filename
+        file_path = Path(path)
+        return {
+            "path": path,
+            "file": file_path.name,
+            "module": file_path.stem,
+            "function": frame.name,
+            "line": frame.lineno,
+        }
+
+    @staticmethod
+    def _exception_source(exception: dict[str, Any]) -> dict[str, Any]:
+        source: dict[str, Any] = {}
+
+        path = exception.get("file")
+        if isinstance(path, str) and path:
+            file_path = Path(path)
+            source["path"] = path
+            source["file"] = file_path.name
+            source["module"] = file_path.stem
+
+        line = exception.get("line")
+        if isinstance(line, int):
+            source["line"] = line
+
+        stack = exception.get("stack")
+        if isinstance(stack, list) and stack:
+            frame = stack[-1]
+            if isinstance(frame, dict):
+                function = frame.get("function")
+                if isinstance(function, str) and function:
+                    source["function"] = function
+
+                module = frame.get("module")
+                if isinstance(module, str) and module:
+                    source["module"] = module
+
+        return source
 
 
 def timed_lru_cache(ttl_seconds: int, max_size: int = 128):

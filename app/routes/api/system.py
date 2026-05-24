@@ -464,7 +464,6 @@ async def system_limits(queue: DownloadQueue, config: Config, encoder: Encoder) 
         data={
             "downloads": {
                 "paused": queue.is_paused(),
-                "live_bypasses_limits": True,
                 "global": {
                     "limit": config.max_workers,
                     "active": len(active_non_live),

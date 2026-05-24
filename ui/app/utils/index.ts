@@ -873,7 +873,7 @@ const getPath = (basePath: string, item: StoreItem): string => {
 
 const getRemoteImage = (item: StoreItem, fallback: boolean = true): string => {
   if (item?.extras?.thumbnail) {
-    return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail));
+    return uri(item.extras.thumbnail);
   }
 
   return fallback ? uri('/images/placeholder.png') : '';

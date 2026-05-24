@@ -59,7 +59,6 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/player/subtitle/{file:.\*}.vtt](#get-apiplayersubtitlefilevtt)
     - [GET /api/player/subtitles/manifest/{file:.\*}](#get-apiplayersubtitlesmanifestfile)
     - [GET /api/player/subtitles/{source\_format}/{file:.\*}](#get-apiplayersubtitlessource_formatfile)
-    - [GET /api/thumbnail](#get-apithumbnail)
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
     - [GET /api/file/browser/{path:.\*}](#get-apifilebrowserpath)
@@ -1655,17 +1654,6 @@ Binary TS data (`Content-Type: video/mpegts`).
 
 ---
 
-### GET /api/thumbnail
-**Purpose**: Proxy/fetch a remote thumbnail image.  
-
-**Query Parameter**:
-- `?url=<remote-thumbnail-url>`
-
-**Response**:  
-Binary image data with the appropriate `Content-Type`.
-
----
-
 ### GET /api/file/ffprobe/{file:.*}
 **Purpose**: Return the `ffprobe` data for a local file.  
 
@@ -2325,12 +2313,36 @@ Binary image data with appropriate headers
 {
   "logs": [
     {
-      "timestamp": "2023-01-01T12:00:00Z",
-      "level": "INFO",
-      "message": "...",
-      ...
-    },
-    ...
+      "id": "<uuid>",
+      "datetime": "2026-05-18T12:00:00.000+00:00",
+      "level": "error",
+      "levelno": 40,
+      "logger": "downloads.queue",
+      "message": "Download failed",
+      "exception": {
+        "type": "ValueError",
+        "message": "bad",
+        "file": "/app/library/downloads/queue_manager.py",
+        "line": 123,
+        "stack": [
+          {
+            "path": "/app/library/downloads/queue_manager.py",
+            "file": "queue_manager.py",
+            "module": "queue_manager",
+            "function": "start",
+            "line": 123
+          }
+        ]
+      },
+      "source": {
+        "path": "/app/library/downloads/queue_manager.py",
+        "file": "queue_manager.py",
+        "module": "queue_manager",
+        "function": "start",
+        "line": 123
+      },
+      "fields": {}
+    }
   ],
   "offset": 0,
   "limit": 100,
@@ -2352,9 +2364,35 @@ Binary image data with appropriate headers
 **Event Payload**:
 ```json
 {
-  "id": "<sha256>",
-  "line": "<log line>",
-  "datetime": "2024-01-01T12:00:00.000000+00:00"
+  "id": "<uuid>",
+  "datetime": "2026-05-18T12:00:00.000+00:00",
+  "level": "error",
+  "levelno": 40,
+  "logger": "downloads.queue",
+  "message": "Download failed",
+  "exception": {
+    "type": "ValueError",
+    "message": "bad",
+    "file": "/app/library/downloads/queue_manager.py",
+    "line": 123,
+    "stack": [
+      {
+        "path": "/app/library/downloads/queue_manager.py",
+        "file": "queue_manager.py",
+        "module": "queue_manager",
+        "function": "start",
+        "line": 123
+      }
+    ]
+  },
+  "source": {
+    "path": "/app/library/downloads/queue_manager.py",
+    "file": "queue_manager.py",
+    "module": "queue_manager",
+    "function": "start",
+    "line": 123
+  },
+  "fields": {}
 }
 ```
 
@@ -2602,7 +2640,6 @@ or an error:
 {
   "downloads": {
     "paused": false,
-    "live_bypasses_limits": true,
     "global": {
       "limit": 20,
       "active": 3,

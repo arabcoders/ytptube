@@ -168,7 +168,7 @@ const NavItems: Array<NavDefinition> = [
     group: 'tools',
     label: 'Logs',
     pageLabel: 'Logs',
-    description: 'Scroll near the top to load older logs.',
+    description: 'Scroll up to load older logs.',
     icon: 'i-lucide-file-text',
     to: '/logs',
     matchPath: '/logs',

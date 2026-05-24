@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Generator
 from unittest.mock import AsyncMock
 
@@ -26,28 +27,21 @@ class _Resp:
 
 
 @pytest.mark.asyncio
-async def test_thumb_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     config = Config.get_instance()
-    req = make_mocked_request("GET", "/api/thumbnail?url=https://example.com/a.jpg")
-    req._rel_url = req._rel_url.with_query({"url": "https://example.com/a.jpg"})
+    config.pictures_backends = ["https://user:pass@example.com/bg.jpg?apitoken=secret#frag"]
+    req = make_mocked_request("GET", "/api/random/background")
 
-    seen = {"to_thread": False, "validate": False}
+    class DummyCache:
+        def has(self, _key: str) -> bool:
+            return False
 
-    def fake_validate_url(url: str, allow_internal: bool = False) -> bool:
-        seen["validate"] = True
-        assert url == "https://example.com/a.jpg"
-        assert allow_internal is config.allow_internal_urls
-        return True
-
-    async def fake_to_thread(func, *args, **kwargs):
-        seen["to_thread"] = True
-        return func(*args, **kwargs)
+        async def aset(self, **_kwargs) -> None:
+            return None
 
     client = AsyncMock()
-    client.request.return_value = _Resp()
+    client.request.side_effect = RuntimeError("boom")
 
-    monkeypatch.setattr(images, "validate_url", fake_validate_url)
-    monkeypatch.setattr(images.asyncio, "to_thread", fake_to_thread)
     monkeypatch.setattr(images, "get_async_client", lambda **_kwargs: client)
     monkeypatch.setattr(images, "resolve_curl_transport", lambda: False)
     monkeypatch.setattr(images, "build_request_headers", lambda **_kwargs: {})
@@ -67,31 +61,11 @@ async def test_thumb_thread(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
 
-    response = await images.get_thumbnail(req, config)
+    with caplog.at_level(logging.ERROR):
+        response = await images.get_background(req, config, DummyCache())
 
-    assert response.status == web.HTTPOk.status_code
-    assert seen["to_thread"] is True
-    assert seen["validate"] is True
-    client.request.assert_awaited_once()
-
-
-@pytest.mark.asyncio
-async def test_thumb_reject(monkeypatch: pytest.MonkeyPatch) -> None:
-    config = Config.get_instance()
-    req = make_mocked_request("GET", "/api/thumbnail?url=https://bad.example/a.jpg")
-    req._rel_url = req._rel_url.with_query({"url": "https://bad.example/a.jpg"})
-
-    def fake_validate_url(_url: str, allow_internal: bool = False) -> bool:
-        assert allow_internal is config.allow_internal_urls
-        raise ValueError("Invalid hostname.")
-
-    async def fake_to_thread(func, *args, **kwargs):
-        return func(*args, **kwargs)
-
-    monkeypatch.setattr(images, "validate_url", fake_validate_url)
-    monkeypatch.setattr(images.asyncio, "to_thread", fake_to_thread)
-
-    response = await images.get_thumbnail(req, config)
-
-    assert response.status == web.HTTPForbidden.status_code
-    assert response.text == '{"error": "Invalid hostname."}'
+    assert response.status == web.HTTPInternalServerError.status_code
+    logs = caplog.text
+    assert "apitoken=secret" not in logs
+    assert "user:pass@" not in logs
+    assert "https://redacted:redacted@example.com/bg.jpg?redacted#redacted" in logs

@@ -572,7 +572,7 @@ const app_shutdown = ref<boolean>(false);
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
 const show_settings = ref(false);
 const checkingUpdates = ref(false);
-const updateCheckMessage = ref('Up to date - Click to check');
+const updateCheckMessage = ref('Up to date - Check now');
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
 const showLimits = ref(false);
@@ -920,7 +920,7 @@ const checkForUpdates = async () => {
     return;
   }
 
-  const msg = 'Up to date - Click to check';
+  const msg = 'Up to date - Check now';
 
   try {
     checkingUpdates.value = true;

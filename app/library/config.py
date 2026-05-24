@@ -13,7 +13,7 @@ import coloredlogs
 from dotenv import load_dotenv
 
 from .Singleton import Singleton
-from .Utils import FileLogFormatter
+from .Utils import JsonLogFormatter
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 
 if TYPE_CHECKING:
@@ -466,14 +466,14 @@ class Config(metaclass=Singleton):
                 loggingPath.mkdir(parents=True, exist_ok=True)
 
             handler = TimedRotatingFileHandler(
-                filename=loggingPath / "app.log",
+                filename=loggingPath / "app.jsonl",
                 when="midnight",
                 backupCount=3,
                 encoding="utf-8",
             )
 
             handler.setLevel(log_level_file)
-            formatter = FileLogFormatter("%(asctime)s [%(levelname)s.%(name)s]: %(message)s")
+            formatter = JsonLogFormatter()
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
 

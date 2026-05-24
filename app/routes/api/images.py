@@ -1,10 +1,7 @@
-import asyncio
 import logging
 import random
-import time
-from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit, urlunsplit
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -15,76 +12,31 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
 from app.library.router import route
-from app.library.Utils import validate_url
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 IS_REQUESTING_BACKGROUND: bool = False
 
 
-@route("GET", "api/thumbnail/", "get_thumbnail")
-async def get_thumbnail(request: Request, config: Config) -> Response:
-    """
-    Get the thumbnail.
-
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration object.
-
-    Returns:
-        Response: The response object.
-
-    """
-    url: str | None = request.query.get("url")
+def _safe_url(url: str | None) -> str:
     if not url:
-        return web.json_response(data={"error": "URL is required."}, status=web.HTTPForbidden.status_code)
+        return ""
 
     try:
-        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
-    except ValueError as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
+        parsed = urlsplit(url)
+    except Exception:
+        return str(url)
 
-    try:
-        ytdlp_args: dict = YTDLPOpts.get_instance().preset(name=config.default_preset).get_all()
-        use_curl = resolve_curl_transport()
-        request_headers = build_request_headers(
-            user_agent=request.headers.get("User-Agent", ytdlp_args.get("user_agent", Globals.get_random_agent())),
-            use_curl=use_curl,
-        )
-        proxy = ytdlp_args.get("proxy")
+    netloc: str = parsed.netloc
+    if parsed.username or parsed.password:
+        host: str = parsed.hostname or ""
+        if parsed.port:
+            host: str = f"{host}:{parsed.port}"
+        netloc: str = f"redacted:redacted@{host}" if host else "redacted:redacted"
 
-        client = get_async_client(proxy=proxy, use_curl=use_curl)
-        LOG.debug(f"Fetching thumbnail from '{url}'.")
-        response = await client.request(
-            method="GET",
-            url=url,
-            follow_redirects=True,
-            headers=request_headers,
-            timeout=10.0,
-        )
-
-        if response.status_code != web.HTTPOk.status_code:
-            LOG.error(f"Failed to fetch thumbnail from '{url}'. Status code: {response.status_code}.")
-            return web.json_response(data={"error": "failed to retrieve the thumbnail."}, status=response.status_code)
-
-        return web.Response(
-            body=response.content,
-            headers={
-                "Content-Type": response.headers.get("Content-Type"),
-                "Pragma": "public",
-                "Access-Control-Allow-Origin": "*",
-                "Cache-Control": f"public, max-age={time.time() + 31536000}",
-                "Expires": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT",
-                    datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple(),
-                ),
-            },
-        )
-    except Exception as e:
-        LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'.")
-        return web.json_response(
-            data={"error": "failed to retrieve the thumbnail."}, status=web.HTTPInternalServerError.status_code
-        )
+    query: str = "redacted" if parsed.query else ""
+    fragment: str = "redacted" if parsed.fragment else ""
+    return urlunsplit((parsed.scheme, netloc, parsed.path, query, fragment))
 
 
 @route("GET", "api/random/background/", "get_background")
@@ -110,7 +62,8 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
 
     try:
         IS_REQUESTING_BACKGROUND = True
-        backend = random.choice(config.pictures_backends)
+        backend: str = random.choice(config.pictures_backends)
+        safe_backend: str = _safe_url(backend)
         CACHE_KEY_BING = "random_background_bing"
         CACHE_KEY = "random_background"
 
@@ -135,12 +88,12 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 )
 
         ytdlp_args: dict = YTDLPOpts.get_instance().preset(name=config.default_preset).get_all()
-        use_curl = resolve_curl_transport()
-        request_headers = build_request_headers(
+        use_curl: bool = resolve_curl_transport()
+        request_headers: dict = build_request_headers(
             user_agent=request.headers.get("User-Agent", ytdlp_args.get("user_agent", Globals.get_random_agent())),
             use_curl=use_curl,
         )
-        proxy = ytdlp_args.get("proxy")
+        proxy: str | None = ytdlp_args.get("proxy")
 
         client = get_async_client(proxy=proxy, use_curl=use_curl)
         if backend.startswith("https://www.bing.com/HPImageArchive.aspx"):
@@ -159,10 +112,12 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                         status=web.HTTPInternalServerError.status_code,
                     )
 
-                backend = f"https://www.bing.com{img_url}"
+                backend: str = f"https://www.bing.com{img_url}"
+                safe_backend: str = _safe_url(backend)
                 await cache.aset(key=CACHE_KEY_BING, value=backend, ttl=3600 * 24)
             else:
                 backend = await cache.aget(CACHE_KEY_BING)
+                safe_backend = _safe_url(backend if isinstance(backend, str) else None)
 
         if not isinstance(backend, str) or not backend:
             return web.json_response(
@@ -170,7 +125,7 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 status=web.HTTPInternalServerError.status_code,
             )
 
-        LOG.debug(f"Requesting random picture from '{backend!s}'.")
+        LOG.debug(f"Requesting random picture from '{safe_backend}'.")
 
         response = await client.request(
             method="GET",
@@ -198,7 +153,7 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
 
         await cache.aset(key=CACHE_KEY, value=data, ttl=3600)
 
-        LOG.debug(f"Random background image from '{backend!s}' cached.")
+        LOG.debug(f"Random background image from '{safe_backend}' cached.")
 
         return web.Response(
             body=data.get("content"),
@@ -210,7 +165,7 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
             },
         )
     except Exception as e:
-        LOG.error(f"Failed to request random background image from '{backend!s}'.'. '{e!s}'.")
+        LOG.error(f"Failed to request random background image from '{safe_backend}'. '{e!s}'.")
         return web.json_response(
             data={"error": "failed to retrieve the random background image."},
             status=web.HTTPInternalServerError.status_code,

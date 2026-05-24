@@ -10,7 +10,6 @@ export type SystemLimitsExtractor = {
 export type SystemLimitsResponse = {
   downloads: {
     paused: boolean;
-    live_bypasses_limits: boolean;
     global: {
       limit: number;
       active: number;

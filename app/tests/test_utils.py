@@ -1,8 +1,11 @@
 import asyncio
 import copy
 import importlib
+import json
+import logging
 import re
 import shutil
+import sys
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -14,6 +17,7 @@ import pytest
 from app.features.ytdlp.utils import arg_converter
 from app.library.Utils import (
     FileLogFormatter,
+    JsonLogFormatter,
     calc_download_path,
     check_id,
     clean_item,
@@ -276,6 +280,62 @@ class TestFileLogFormatter:
         """Test that FileLogFormatter can be created."""
         formatter = FileLogFormatter()
         assert isinstance(formatter, FileLogFormatter)
+
+
+class TestJsonLogFormatter:
+    def test_basic(self):
+        formatter = JsonLogFormatter()
+        record = logging.LogRecord("test.logger", logging.WARNING, __file__, 123, "hello %s", ("world",), None)
+        record.download_id = "abc"
+        record.payload = {"ignored": True}
+
+        data = json.loads(formatter.format(record))
+
+        assert uuid.UUID(data["id"])
+        assert data["level"] == "warning"
+        assert data["levelno"] == logging.WARNING
+        assert data["logger"] == "test.logger"
+        assert data["message"] == "hello world"
+        assert data["fields"] == {"download_id": "abc"}
+        assert data["source"]["line"] == 123
+
+    def test_exception(self):
+        formatter = JsonLogFormatter()
+
+        try:
+            raise ValueError("bad")
+        except ValueError:
+            record = logging.LogRecord("test", logging.ERROR, __file__, 1, "failed", (), sys.exc_info())
+
+        data = json.loads(formatter.format(record))
+
+        assert data["message"] == "failed"
+        assert data["exception"] == {
+            "type": "ValueError",
+            "message": "bad",
+            "file": __file__,
+            "line": data["exception"]["line"],
+            "stack": data["exception"]["stack"],
+        }
+        assert data["exception"]["line"] > 0
+        assert data["exception"]["stack"][-1] == {
+            "path": __file__,
+            "file": Path(__file__).name,
+            "module": Path(__file__).stem,
+            "function": "test_exception",
+            "line": data["exception"]["line"],
+        }
+        assert data["source"] == data["exception"]["stack"][-1]
+        assert "exception_message" not in data
+
+    def test_no_raw_stack(self):
+        formatter = JsonLogFormatter()
+        record = logging.LogRecord("test", logging.ERROR, __file__, 1, "failed", (), None)
+        record.stack_info = 'Stack (most recent call last):\n  File "x", line 1, in y'
+
+        data = json.loads(formatter.format(record))
+
+        assert "stack" not in data
 
 
 class TestCalcDownloadPath:
@@ -1524,12 +1584,84 @@ class TestReadLogfile:
 
     def test_read_logfile_with_content(self):
         """Test reading log file with content."""
-        self.log_file.write_text("line 1\nline 2\nline 3\n")
+        lines = [
+            {
+                "id": "log-1",
+                "datetime": "2026-01-01T00:00:01.000+00:00",
+                "level": "info",
+                "logger": "test",
+                "message": "line 1",
+            },
+            {
+                "id": "log-2",
+                "datetime": "2026-01-01T00:00:02.000+00:00",
+                "level": "warning",
+                "logger": "test",
+                "message": "line 2",
+            },
+            {
+                "id": "log-3",
+                "datetime": "2026-01-01T00:00:03.000+00:00",
+                "level": "error",
+                "logger": "test",
+                "message": "line 3",
+                "exception": {
+                    "type": "ValueError",
+                    "message": "bad",
+                    "file": "/tmp/test.py",
+                    "line": 3,
+                    "stack": [
+                        {
+                            "path": "/tmp/test.py",
+                            "file": "test.py",
+                            "module": "test",
+                            "function": "run",
+                            "line": 3,
+                        }
+                    ],
+                },
+            },
+        ]
+        self.log_file.write_text("\n".join(json.dumps(line) for line in lines) + "\n")
 
         async def test():
             result = await _read_logfile(self.log_file, limit=2)
             assert isinstance(result, dict)
             assert "logs" in result
+            assert [line["id"] for line in result["logs"]] == ["log-2", "log-3"]
+            assert all("line" not in line for line in result["logs"])
+            assert [line["message"] for line in result["logs"]] == ["line 2", "line 3"]
+            assert result["logs"][0]["level"] == "warning"
+            assert result["logs"][1]["exception"]["type"] == "ValueError"
+            assert result["next_offset"] == 2
+            assert result["end_is_reached"] is False
+
+        asyncio.run(test())
+
+    def test_read_logfile_malformed(self):
+        self.log_file.write_text("not-json\n")
+
+        async def test():
+            result = await _read_logfile(self.log_file, limit=1)
+            assert result["logs"] == []
+
+        asyncio.run(test())
+
+    def test_read_logfile_missing_id(self):
+        self.log_file.write_text(json.dumps({"message": "ignored"}) + "\n")
+
+        async def test():
+            result = await _read_logfile(self.log_file, limit=1)
+            assert result["logs"] == []
+
+        asyncio.run(test())
+
+    def test_read_logfile_missing_required(self):
+        self.log_file.write_text(json.dumps({"id": "ignored", "message": "ignored"}) + "\n")
+
+        async def test():
+            result = await _read_logfile(self.log_file, limit=1)
+            assert result["logs"] == []
 
         asyncio.run(test())
 
@@ -1563,6 +1695,40 @@ class TestTailLog:
                 pass  # Expected for non-existent file
 
         asyncio.run(test())
+
+    def test_tail_log_jsonl(self):
+        self.log_file.write_text("")
+        emitted_lines = []
+
+        async def emitter(line):
+            emitted_lines.append(line)
+            raise asyncio.CancelledError
+
+        async def test():
+            task = asyncio.create_task(_tail_log(self.log_file, emitter, sleep_time=0.01))
+            await asyncio.sleep(0.02)
+            self.log_file.write_text(
+                json.dumps(
+                    {
+                        "id": "tail-1",
+                        "datetime": "2026-01-01T00:00:00.000+00:00",
+                        "level": "info",
+                        "logger": "tail",
+                        "message": "live line",
+                    }
+                )
+                + "\n"
+            )
+
+            with pytest.raises(asyncio.CancelledError):
+                await asyncio.wait_for(task, timeout=1)
+
+        asyncio.run(test())
+
+        assert emitted_lines[0]["message"] == "live line"
+        assert emitted_lines[0]["id"] == "tail-1"
+        assert "line" not in emitted_lines[0]
+        assert emitted_lines[0]["level"] == "info"
 
 
 class TestLoadCookies:

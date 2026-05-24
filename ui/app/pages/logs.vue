@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
         <UButton
           v-if="!autoScroll"
           color="neutral"
@@ -38,7 +38,7 @@
           icon="i-lucide-arrow-down"
           @click="scrollToBottom(false)"
         >
-          Scroll to bottom
+          Bottom
         </UButton>
 
         <UButton
@@ -64,6 +64,22 @@
           Wrap
         </UButton>
 
+        <USelect
+          v-model="selectedLevels"
+          :items="levelFilterItems"
+          value-key="value"
+          label-key="label"
+          multiple
+          size="sm"
+          icon="i-lucide-list-filter"
+          class="w-44 shrink-0 sm:w-48"
+          :ui="{ content: 'min-w-48' }"
+        >
+          <template #default>
+            {{ levelFilterLabel }}
+          </template>
+        </USelect>
+
         <UInput
           v-if="toggleFilter || query"
           id="filter"
@@ -82,7 +98,7 @@
         <div class="overflow-hidden rounded-sm border border-default bg-default shadow-sm">
           <div
             ref="logContainer"
-            class="logbox overflow-x-auto overflow-y-auto bg-elevated/30 font-mono text-sm text-default overscroll-x-contain"
+            class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-x-auto overflow-y-auto bg-transparent font-mono text-sm text-default overscroll-x-contain"
             @scroll.passive="handleScroll"
           >
             <div
@@ -90,10 +106,27 @@
               class="flex justify-center border-b border-default/40 px-4 py-3"
             >
               <div
-                class="rounded-full border border-default bg-elevated/40 px-3 py-1 text-[11px] text-toned"
+                class="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-[11px] font-medium text-warning"
               >
+                <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />
                 No older lines remain in this file.
               </div>
+            </div>
+
+            <div
+              v-if="canLoadFilteredHistory"
+              class="flex justify-center border-b border-default/40 px-4 py-3"
+            >
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="xs"
+                icon="i-lucide-history"
+                :loading="loading"
+                @click="fetchLogs(true)"
+              >
+                Load older lines into filter
+              </UButton>
             </div>
 
             <template v-if="filteredLogs.length > 0">
@@ -102,20 +135,51 @@
                 :key="entry.log.id"
                 :class="logRowClass(entry, index)"
               >
-                <div class="log-timestamp" :title="logTimeTitle(entry.log.datetime)">
-                  {{ logTimeLabel(entry.log.datetime) }}
-                </div>
-
                 <div
-                  class="log-content"
-                  :class="textWrap ? 'log-content--wrap' : 'log-content--nowrap'"
+                  :class="[
+                    'flex min-w-0 flex-1 items-start gap-[0.65rem] px-3 py-[0.65rem] leading-[1.6]',
+                    textWrap ? 'w-full' : 'w-max min-w-full',
+                  ]"
                 >
-                  <span
-                    class="log-tone-dot"
-                    :class="`log-tone-dot--${detectLogTone(entry.log.line)}`"
-                  />
-                  <p class="log-line" :class="textWrap ? 'log-line--wrap' : 'log-line--nowrap'">
-                    {{ entry.log.line }}
+                  <p :class="logLineClass()">
+                    <span
+                      class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle"
+                    >
+                      <UTooltip :text="logTimeTitle(entry.log.datetime)">
+                        <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
+                          {{ logTimeLabel(entry.log.datetime) }}
+                        </span>
+                      </UTooltip>
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="xs"
+                        icon="i-lucide-panel-right-open"
+                        aria-label="Open log details"
+                        class="inline-flex align-[-0.2em] opacity-70 hover:opacity-100"
+                        @click="openLogDetails(entry.log)"
+                      />
+                      <span
+                        :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
+                        @click="openLogDetails(entry.log)"
+                      >
+                        <UIcon
+                          :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]"
+                          class="size-3"
+                        />
+                        {{ getLogLevel(entry.log.level) }}
+                      </span>
+                      <span
+                        v-if="entry.log.logger"
+                        :title="entry.log.logger"
+                        class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
+                        >[{{ entry.log.logger }}]</span
+                      >
+                    </span>
+                    <span class="ml-2">{{ entry.log.message }}</span>
+                    <span v-if="exceptionSummary(entry.log)" class="ml-1 text-error/90">
+                      : {{ exceptionSummary(entry.log) }}
+                    </span>
                   </p>
                 </div>
               </article>
@@ -126,21 +190,17 @@
               class="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 py-8 text-center font-sans"
             >
               <UIcon
-                :name="query ? 'i-lucide-filter-x' : 'i-lucide-circle-off'"
+                :name="hasActiveFilter ? 'i-lucide-filter-x' : 'i-lucide-circle-off'"
                 class="size-6 text-toned"
               />
 
               <div class="space-y-1">
                 <p class="text-sm font-medium text-default">
-                  {{ query ? 'No logs match this query' : 'No log lines available' }}
+                  {{ emptyStateTitle }}
                 </p>
 
                 <p class="text-sm text-toned">
-                  {{
-                    query
-                      ? `No log lines found for the query: ${query}. Please try a different search term.`
-                      : 'No log lines are available yet.'
-                  }}
+                  {{ emptyStateDescription }}
                 </p>
               </div>
             </div>
@@ -148,6 +208,176 @@
         </div>
       </template>
     </UPageCard>
+
+    <UModal v-model:open="detailsOpen" title="Log details" :ui="detailsModalUi">
+      <template #body>
+        <div v-if="selectedLog" class="space-y-5">
+          <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+            <div class="flex min-w-0 flex-wrap items-center gap-2">
+              <UBadge
+                :color="LOG_LEVEL_COLOR[getLogLevel(selectedLog.level)]"
+                variant="soft"
+                size="sm"
+                class="uppercase"
+              >
+                <UIcon
+                  :name="LOG_LEVEL_ICON[getLogLevel(selectedLog.level)]"
+                  class="mr-1 size-3.5"
+                />
+                {{ getLogLevel(selectedLog.level) }}
+              </UBadge>
+              <UBadge
+                v-if="selectedLog.logger"
+                color="neutral"
+                variant="soft"
+                size="sm"
+                class="max-w-full min-w-0"
+                :title="selectedLog.logger"
+              >
+                <span class="min-w-0 max-w-full truncate">{{ selectedLog.logger }}</span>
+              </UBadge>
+              <span class="text-xs text-toned">{{ logTimeTitle(selectedLog.datetime) }}</span>
+            </div>
+
+            <div class="flex shrink-0 flex-wrap justify-end gap-2">
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="xs"
+                icon="i-lucide-copy"
+                @click="copyLogMessage(selectedLog)"
+              >
+                Message
+              </UButton>
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="xs"
+                icon="i-lucide-braces"
+                @click="copyLogRaw(selectedLog)"
+              >
+                JSON
+              </UButton>
+            </div>
+
+            <div class="min-w-0 space-y-2 sm:col-span-2">
+              <p class="wrap-break-word w-full font-mono text-sm text-default">
+                {{ selectedLog.message }}
+              </p>
+
+              <UAlert
+                v-if="exceptionSummary(selectedLog)"
+                color="error"
+                variant="soft"
+                icon="i-lucide-badge-alert"
+                :title="exceptionSummary(selectedLog)"
+                class="w-full"
+              />
+            </div>
+          </div>
+
+          <section v-if="selectedLog.exception" class="space-y-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+              @click="exceptionOpen = !exceptionOpen"
+            >
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="['size-4 transition-transform', exceptionOpen ? 'rotate-90' : '']"
+              />
+              <UIcon name="i-lucide-bug" class="size-4 text-error" />
+              Exception
+            </button>
+            <pre
+              v-if="exceptionOpen"
+              class="max-h-72 overflow-auto rounded-sm border border-error/30 bg-error/5 p-3 text-xs whitespace-pre-wrap text-error"
+              >{{ exceptionText(selectedLog) }}</pre
+            >
+          </section>
+
+          <section v-if="detailRows(selectedLog).length > 0" class="space-y-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+              @click="sourceOpen = !sourceOpen"
+            >
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="['size-4 transition-transform', sourceOpen ? 'rotate-90' : '']"
+              />
+              <UIcon name="i-lucide-file-code" class="size-4 text-info" />
+              Source
+            </button>
+            <dl v-if="sourceOpen" class="grid gap-2 sm:grid-cols-2">
+              <div
+                v-for="row in detailRows(selectedLog)"
+                :key="row.label"
+                class="rounded-sm border border-default bg-elevated/40 p-3"
+              >
+                <dt
+                  class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-toned"
+                >
+                  <UIcon :name="row.icon" class="size-3.5" />
+                  <span>{{ row.label }}</span>
+                </dt>
+                <dd class="mt-1 wrap-break-word font-mono text-xs text-default">{{ row.value }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section v-if="fieldRows(selectedLog).length > 0" class="space-y-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+              @click="fieldsOpen = !fieldsOpen"
+            >
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="['size-4 transition-transform', fieldsOpen ? 'rotate-90' : '']"
+              />
+              <UIcon name="i-lucide-tags" class="size-4 text-primary" />
+              Fields
+            </button>
+            <dl v-if="fieldsOpen" class="grid gap-2 sm:grid-cols-2">
+              <div
+                v-for="row in fieldRows(selectedLog)"
+                :key="row.label"
+                class="rounded-sm border border-default bg-elevated/40 p-3"
+              >
+                <dt
+                  class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-toned"
+                >
+                  <UIcon :name="row.icon" class="size-3.5" />
+                  <span>{{ row.label }}</span>
+                </dt>
+                <dd class="mt-1 wrap-break-word font-mono text-xs text-default">{{ row.value }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="space-y-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+              @click="rawJsonOpen = !rawJsonOpen"
+            >
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="['size-4 transition-transform', rawJsonOpen ? 'rotate-90' : '']"
+              />
+              <UIcon name="i-lucide-braces" class="size-4 text-toned" />
+              RAW DATA
+            </button>
+            <pre
+              v-if="rawJsonOpen"
+              class="max-h-96 overflow-auto rounded-sm border border-default bg-elevated/50 p-3 text-xs whitespace-pre-wrap text-default"
+              >{{ logRaw(selectedLog) }}</pre
+            >
+          </section>
+        </div>
+      </template>
+    </UModal>
   </main>
 </template>
 
@@ -157,18 +387,44 @@ import type { EventSourceMessage } from '@microsoft/fetch-event-source';
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { log_line } from '~/types/logs';
-import { parse_api_error, request, uri } from '~/utils';
+import { copyText, parse_api_error, request, uri } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 type FilteredLogEntry = {
   log: log_line;
+  level: LogLevel;
   isMatch: boolean;
   isContext: boolean;
 };
 
-type LogTone = 'default' | 'info' | 'warning' | 'error';
+type LogLevel = 'debug' | 'info' | 'warning' | 'error';
+type LogLevelColor = 'neutral' | 'info' | 'warning' | 'error';
+type DetailRow = {
+  label: string;
+  value: string;
+  icon: string;
+};
+type LevelFilterItem = {
+  label: string;
+  value: LogLevel;
+};
 
 const FILTER_CONTEXT_REGEX = /context:(\d+)/;
+const LOG_LEVELS: LogLevel[] = ['debug', 'info', 'warning', 'error'];
+const LOG_ROW_CLASS =
+  'flex min-w-0 border-b border-default/40 bg-transparent transition-colors duration-150 last:border-b-0 hover:bg-elevated/70';
+const LOG_LEVEL_COLOR: Record<LogLevel, LogLevelColor> = {
+  debug: 'neutral',
+  info: 'info',
+  warning: 'warning',
+  error: 'error',
+};
+const LOG_LEVEL_ICON: Record<LogLevel, string> = {
+  debug: 'i-lucide-terminal',
+  info: 'i-lucide-info',
+  warning: 'i-lucide-triangle-alert',
+  error: 'i-lucide-circle-x',
+};
 
 let scrollTimeout: NodeJS.Timeout | null = null;
 
@@ -179,19 +435,30 @@ const pageShell = requirePageShell('logs');
 
 const logContainer = useTemplateRef<HTMLDivElement>('logContainer');
 const textWrap = useStorage<boolean>('logs_wrap', true);
+const exceptionOpen = useStorage<boolean>('logs_exception_open', false);
+const fieldsOpen = useStorage<boolean>('logs_fields_open', true);
+const rawJsonOpen = useStorage<boolean>('logs_raw_json_open', false);
+const sourceOpen = useStorage<boolean>('logs_source_open', true);
+const selectedLevels = useStorage<LogLevel[]>('logs_level_filter', [...LOG_LEVELS]);
 const sseController = ref<AbortController | null>(null);
 
 const logs = ref<Array<log_line>>([]);
+const selectedLog = ref<log_line | null>(null);
 const offset = ref(0);
 const loading = ref(false);
 const autoScroll = ref(true);
 const reachedEnd = ref(false);
+const detailsOpen = ref(false);
 
 const pageCardUi = {
   root: 'w-full min-w-0 max-w-full bg-transparent',
   container: 'w-full min-w-0 max-w-full p-4 sm:p-5',
   wrapper: 'w-full min-w-0 items-stretch',
   body: 'w-full min-w-0 max-w-full overflow-hidden',
+};
+const detailsModalUi = {
+  content: 'max-w-5xl',
+  body: 'max-h-[75vh] overflow-y-auto',
 };
 
 const query = ref<string>(
@@ -216,12 +483,75 @@ const query = ref<string>(
 const toggleFilter = ref(Boolean(query.value));
 
 const normalizedQuery = computed(() => query.value.trim().toLowerCase());
+const selectedLevelSet = computed(
+  () => new Set(LOG_LEVELS.filter((level) => selectedLevels.value.includes(level))),
+);
+const hasLevelFilter = computed(() => selectedLevelSet.value.size !== LOG_LEVELS.length);
 const filterContext = computed(() => {
   const match = normalizedQuery.value.match(FILTER_CONTEXT_REGEX);
   return match ? parseInt(match[1] ?? '0', 10) : 0;
 });
 const searchTerm = computed(() => normalizedQuery.value.replace(FILTER_CONTEXT_REGEX, '').trim());
-const hasActiveFilter = computed(() => Boolean(searchTerm.value));
+const hasTextFilter = computed(() => Boolean(searchTerm.value));
+const hasActiveFilter = computed(() => hasTextFilter.value || hasLevelFilter.value);
+const canLoadFilteredHistory = computed(
+  () => hasActiveFilter.value && !reachedEnd.value && logs.value.length > 0,
+);
+const levelCounts = computed<Record<LogLevel, number>>(() => {
+  const counts: Record<LogLevel, number> = {
+    debug: 0,
+    info: 0,
+    warning: 0,
+    error: 0,
+  };
+
+  logs.value.forEach((log) => {
+    const level = getLogLevel(log.level);
+    counts[level] += 1;
+  });
+
+  return counts;
+});
+const levelFilterItems = computed<LevelFilterItem[]>(() => [
+  ...LOG_LEVELS.map((level) => ({
+    label: `${level.charAt(0).toUpperCase()}${level.slice(1)} (${levelCounts.value[level]})`,
+    value: level,
+  })),
+]);
+const levelFilterLabel = computed(() => {
+  if (selectedLevelSet.value.size === LOG_LEVELS.length) {
+    return `All levels (${logs.value.length})`;
+  }
+
+  if (selectedLevelSet.value.size === 0) {
+    return 'No levels selected';
+  }
+
+  return LOG_LEVELS.filter((level) => selectedLevelSet.value.has(level)).join(', ');
+});
+const activeFilterLabel = computed(() => {
+  const parts: string[] = [];
+  if (hasTextFilter.value) {
+    parts.push(`query "${searchTerm.value}"`);
+  }
+
+  if (hasLevelFilter.value) {
+    const levels = LOG_LEVELS.filter((level) => selectedLevelSet.value.has(level));
+    parts.push(levels.length ? `levels ${levels.join(', ')}` : 'no selected levels');
+  }
+
+  return parts.join(' and ');
+});
+const emptyStateTitle = computed(() =>
+  hasActiveFilter.value ? 'No logs match these filters' : 'No log lines available',
+);
+const emptyStateDescription = computed(() => {
+  if (!hasActiveFilter.value) {
+    return 'No log lines are available yet.';
+  }
+
+  return `No loaded log lines match ${activeFilterLabel.value}. Adjust filters or load older lines.`;
+});
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
     query.value = '';
@@ -240,9 +570,20 @@ watch(
   },
 );
 
+watch(detailsOpen, (open) => {
+  if (!open) {
+    selectedLog.value = null;
+  }
+});
+
 const filteredLogs = computed<FilteredLogEntry[]>(() => {
   if (!hasActiveFilter.value) {
-    return logs.value.map((log) => ({ log, isMatch: false, isContext: false }));
+    return logs.value.map((log) => ({
+      log,
+      level: getLogLevel(log.level),
+      isMatch: false,
+      isContext: false,
+    }));
   }
 
   const result: Array<FilteredLogEntry> = [];
@@ -250,7 +591,16 @@ const filteredLogs = computed<FilteredLogEntry[]>(() => {
   const matchedIndexes = new Set<number>();
 
   logs.value.forEach((log, index) => {
-    if (log.line.toLowerCase().includes(searchTerm.value)) {
+    if (!selectedLevelSet.value.has(getLogLevel(log.level))) {
+      return;
+    }
+
+    if (!hasTextFilter.value) {
+      visibleIndexes.add(index);
+      return;
+    }
+
+    if (searchableLog(log).includes(searchTerm.value)) {
       matchedIndexes.add(index);
 
       for (
@@ -266,8 +616,14 @@ const filteredLogs = computed<FilteredLogEntry[]>(() => {
   Array.from(visibleIndexes)
     .sort((a, b) => a - b)
     .forEach((index) => {
+      const log = logs.value[index] as log_line;
+      if (!selectedLevelSet.value.has(getLogLevel(log.level))) {
+        return;
+      }
+
       result.push({
-        log: logs.value[index] as log_line,
+        log,
+        level: getLogLevel(log.level),
         isMatch: matchedIndexes.has(index),
         isContext: !matchedIndexes.has(index),
       });
@@ -289,10 +645,10 @@ const scrollLogContainerToBottom = async (behavior: ScrollBehavior = 'auto'): Pr
   });
 };
 
-const fetchLogs = async (): Promise<void> => {
+const fetchLogs = async (force = false): Promise<void> => {
   loading.value = true;
 
-  if (reachedEnd.value || (hasActiveFilter.value && logs.value.length > 0)) {
+  if (reachedEnd.value || (!force && hasActiveFilter.value && logs.value.length > 0)) {
     loading.value = false;
     return;
   }
@@ -440,47 +796,169 @@ const startLogStream = async (): Promise<void> => {
 };
 
 const logTimeLabel = (value?: string): string =>
-  value ? moment(value).format('HH:mm:ss') : '--:--:--';
+  value ? moment(value).format('HH:mm:ss') : '00:00:00';
 
 const logTimeTitle = (value?: string): string =>
   value ? moment(value).format('YYYY-MM-DD HH:mm:ss Z') : 'No timestamp';
 
-const detectLogTone = (line: string): LogTone => {
-  const normalized = line.toLowerCase();
+const logRaw = (log: log_line): string => JSON.stringify(log, null, 2);
 
-  if (/error|failed|exception|traceback|fatal/.test(normalized)) {
-    return 'error';
+const exceptionSummary = (log: log_line): string => {
+  const type = log.exception?.type?.trim() ?? '';
+  const message = log.exception?.message?.trim() ?? '';
+
+  if (type && message) {
+    return `${type}: ${message}`;
   }
 
-  if (/warn|deprecated|retry/.test(normalized)) {
-    return 'warning';
-  }
-
-  if (/info|started|connected|listening|ready/.test(normalized)) {
-    return 'info';
-  }
-
-  return 'default';
+  return type || message;
 };
 
+const exceptionText = (log: log_line): string =>
+  log.exception ? JSON.stringify(log.exception, null, 2) : '';
+
+const searchableLog = (log: log_line): string =>
+  [
+    log.message,
+    log.level,
+    log.logger,
+    exceptionSummary(log),
+    log.exception ? JSON.stringify(log.exception) : '',
+    log.source ? JSON.stringify(log.source) : '',
+    log.process ? JSON.stringify(log.process) : '',
+    log.thread ? JSON.stringify(log.thread) : '',
+    log.fields ? JSON.stringify(log.fields) : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+const getLogLevel = (level: string): LogLevel => {
+  switch (level.toLowerCase()) {
+    case 'info':
+      return 'info';
+    case 'warning':
+    case 'warn':
+      return 'warning';
+    case 'error':
+    case 'critical':
+    case 'fatal':
+      return 'error';
+    default:
+      return 'debug';
+  }
+};
+
+const logLevelBadgeClass = (level: LogLevel): string[] => [
+  'inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-pointer',
+  level === 'debug' ? 'bg-muted/40 text-muted' : '',
+  level === 'info' ? 'bg-info/10 text-info' : '',
+  level === 'warning' ? 'bg-warning/10 text-warning' : '',
+  level === 'error' ? 'bg-error/10 text-error' : '',
+];
+
+const logLineClass = (): string[] => [
+  'flex-1',
+  textWrap.value
+    ? 'min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]'
+    : 'min-w-max whitespace-pre',
+  'text-default',
+];
+
 const logRowClass = (entry: FilteredLogEntry, index: number): string[] => {
-  const classes = ['log-row', `log-row--${detectLogTone(entry.log.line)}`];
+  const classes = [LOG_ROW_CLASS];
 
   if (entry.isMatch) {
-    classes.push('log-row--match');
+    classes.push('bg-warning/10');
     return classes;
   }
 
   if (entry.isContext) {
-    classes.push('log-row--context');
+    classes.push('bg-muted/30');
     return classes;
   }
 
   if (index % 2 === 1) {
-    classes.push('log-row--alt');
+    classes.push('bg-elevated/40');
   }
 
   return classes;
+};
+
+const openLogDetails = (log: log_line): void => {
+  selectedLog.value = log;
+  detailsOpen.value = true;
+};
+
+const formatDetailValue = (value: unknown): string => {
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  return JSON.stringify(value);
+};
+
+const compactRows = (rows: Array<{ label: string; value: unknown; icon: string }>): DetailRow[] =>
+  rows
+    .map((row) => ({
+      label: row.label,
+      value: formatDetailValue(row.value),
+      icon: row.icon,
+    }))
+    .filter((row) => Boolean(row.value));
+
+const formatNameId = (name: unknown, id: unknown): string => {
+  const nameValue = formatDetailValue(name);
+  const idValue = formatDetailValue(id);
+  if (nameValue && idValue) {
+    return `${nameValue} / ${idValue}`;
+  }
+
+  return nameValue || idValue;
+};
+
+const detailRows = (log: log_line): DetailRow[] =>
+  compactRows([
+    { label: 'File', value: log.source?.file, icon: 'i-lucide-file' },
+    { label: 'Line', value: log.source?.line, icon: 'i-lucide-hash' },
+    { label: 'Function', value: log.source?.function, icon: 'i-lucide-code-2' },
+    { label: 'Module', value: log.source?.module, icon: 'i-lucide-box' },
+    { label: 'Path', value: log.source?.path, icon: 'i-lucide-folder-tree' },
+    {
+      label: 'Process / ID',
+      value: formatNameId(log.process?.name, log.process?.id),
+      icon: 'i-lucide-cpu',
+    },
+    {
+      label: 'Thread / ID',
+      value: formatNameId(log.thread?.name, log.thread?.id),
+      icon: 'i-lucide-git-branch',
+    },
+  ]);
+
+const fieldRows = (log: log_line): DetailRow[] =>
+  compactRows(
+    Object.entries(log.fields ?? {}).map(([label, value]) => ({
+      label,
+      value,
+      icon: 'i-lucide-tag',
+    })),
+  );
+
+const copyLogMessage = (log: log_line): void => {
+  copyText(log.message);
+};
+
+const copyLogRaw = (log: log_line): void => {
+  copyText(logRaw(log));
 };
 
 onMounted(async () => {
@@ -502,132 +980,3 @@ onBeforeUnmount(() => {
   }
 });
 </script>
-
-<style scoped>
-.logbox {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  min-height: 55vh;
-  max-height: 60vh;
-  background: transparent;
-}
-
-.log-row {
-  display: flex;
-  min-width: 0;
-  border-bottom: 1px solid color-mix(in oklab, var(--ui-border) 40%, transparent);
-  box-sizing: border-box;
-  background: transparent;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.log-row:last-child {
-  border-bottom: 0;
-}
-
-.log-row--alt {
-  background: color-mix(in oklab, var(--ui-bg-elevated) 40%, transparent);
-}
-
-.log-row--match {
-  background: color-mix(in oklab, var(--ui-warning) 10%, var(--ui-bg-elevated) 90%);
-}
-
-.log-row--context {
-  background: color-mix(in oklab, var(--ui-bg-muted) 30%, transparent);
-}
-
-.log-row:hover {
-  background: color-mix(in oklab, var(--ui-bg-elevated) 70%, var(--ui-bg-muted) 30%);
-}
-
-.log-timestamp {
-  display: flex;
-  width: 5.5rem;
-  min-width: 5.5rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: flex-end;
-  border-right: 1px solid color-mix(in oklab, var(--ui-border) 40%, transparent);
-  background: color-mix(in oklab, var(--ui-bg-elevated) 55%, transparent);
-  padding: 0.65rem 0.75rem;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ui-text-toned);
-}
-
-.log-content {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: flex-start;
-  gap: 0.65rem;
-  padding: 0.65rem 0.75rem;
-  line-height: 1.6;
-}
-
-.log-content--nowrap {
-  width: max-content;
-  min-width: calc(100% - 5.5rem);
-}
-
-.log-tone-dot {
-  display: inline-flex;
-  width: 0.5rem;
-  min-width: 0.5rem;
-  height: 0.5rem;
-  margin-top: 0.45rem;
-  border-radius: 9999px;
-}
-
-.log-tone-dot--default {
-  background: color-mix(in oklab, var(--ui-text-toned) 55%, transparent);
-}
-
-.log-tone-dot--info {
-  background: var(--ui-info);
-}
-
-.log-tone-dot--warning {
-  background: var(--ui-warning);
-}
-
-.log-tone-dot--error {
-  background: var(--ui-error);
-}
-
-.log-line {
-  flex: 1;
-  min-width: 0;
-}
-
-.log-line--wrap {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.log-line--nowrap {
-  min-width: max-content;
-  white-space: pre;
-}
-
-.log-row--default .log-line {
-  color: var(--ui-text-highlighted);
-}
-
-.log-row--info .log-line {
-  color: color-mix(in oklab, var(--ui-info) 55%, var(--ui-text-highlighted) 45%);
-}
-
-.log-row--warning .log-line {
-  color: color-mix(in oklab, var(--ui-warning) 60%, var(--ui-text-highlighted) 40%);
-}
-
-.log-row--error .log-line {
-  color: color-mix(in oklab, var(--ui-error) 70%, var(--ui-text-highlighted) 30%);
-}
-</style>

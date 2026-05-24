@@ -450,7 +450,7 @@ class DownloadQueue(metaclass=Singleton):
         summary = ", ".join(deleted_titles[:5])
         if deleted_count > 5:
             summary += ", ..."
-        LOG.info(f"Bulk cleared {deleted_count} history item(s): {summary}")
+        LOG.info(f"Cleared '{deleted_count}' items. {summary}")
 
         return {"deleted": deleted_count}
 
@@ -469,7 +469,7 @@ class DownloadQueue(metaclass=Singleton):
                 title="History Cleared",
                 message=f"Cleared {deleted_count} item{'s' if deleted_count != 1 else ''} from history.",
             )
-            LOG.info(f"Bulk cleared {deleted_count} history item(s) by status '{status_filter}'.")
+            LOG.info(f"Cleared '{deleted_count}' items. Filter '{status_filter}'.")
             return {"deleted": deleted_count}
 
         items = await self.done.get_many_by_status(status_filter)
