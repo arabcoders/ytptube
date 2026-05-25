@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "64fdcac0f7e2099e3cc9303ba2b2d2152f887fad",
+    "date": "2026-05-25T17:06:34+00:00",
+    "commits": [
+      {
+        "sha": "64fdcac0",
+        "full_sha": "64fdcac0f7e2099e3cc9303ba2b2d2152f887fad",
+        "message": "refactor: implement re-extraction logic and process-safe handling for non-picklable objects.",
+        "author": "arabcoders",
+        "date": "2026-05-25T17:06:34+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.3",
     "full_sha": "8e14258c7a5751f2eec9915d923a3f8f0cc0508e",
     "date": "2026-05-24T19:07:41+00:00",
