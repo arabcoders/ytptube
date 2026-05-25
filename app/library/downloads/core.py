@@ -21,7 +21,7 @@ from app.library.config import Config
 from app.library.Events import EventBus, Events
 from app.library.Utils import create_cookies_file
 
-from ...features.ytdlp.extractor import extract_info_sync
+from ...features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
 from .hooks import HookHandlers, NestedLogger
 from .process_manager import ProcessManager
 from .status_tracker import StatusTracker
@@ -147,11 +147,16 @@ class Download:
                     raise ValueError(err_msg) from e
 
             if self.info_dict and isinstance(self.info_dict, dict):
-                if self.info_dict.get("extractor_key") in GENERIC_EXTRACTORS and self.info.get_preset().default:
+                if self.info_dict.get(REEXTRACT_INFO_KEY):
+                    self.logger.info(
+                        f"Info dict for '{self.info.url}' marked for re-extraction, ignoring pre-extracted info."
+                    )
+                    self.info_dict = None
+                elif self.info_dict.get("extractor_key") in GENERIC_EXTRACTORS and self.info.get_preset().default:
                     self.logger.debug(f"Removing 'download_archive' for generic extractor. url={self.info.url}")
                     params.pop("download_archive", None)
 
-                if self.download_info_expires > 0:
+                if self.info_dict and self.download_info_expires > 0:
                     _ts: int | None = self.info_dict.get("epoch", self.info_dict.get("timestamp", None))
                     _ts_dt = datetime.fromtimestamp(_ts, tz=UTC) if _ts else None
                     if not _ts_dt or (datetime.now(tz=UTC) - _ts_dt).total_seconds() > self.download_info_expires:

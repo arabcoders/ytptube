@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
 from typing import TYPE_CHECKING
 
+from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, needs_reextract
 from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
 from app.library.downloads import Download
 from app.library.Events import Events
@@ -125,12 +126,13 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
     )
 
     try:
-        dlInfo: Download = Download(info=dl, info_dict=entry if item.auto_start else None, logs=logs)
+        _reextract: bool = bool(entry.get(REEXTRACT_INFO_KEY) or needs_reextract(entry))
+        dlInfo: Download = Download(info=dl, info_dict=entry if item.auto_start and not _reextract else None, logs=logs)
         nEvent: str | None = None
         nTitle: str | None = None
         nMessage: str | None = None
         nStore: str = "queue"
-        hasFormats: bool = len(entry.get("formats", [])) > 0 or entry.get("url")
+        hasFormats: bool = _reextract or bool(entry.get("formats") or entry.get("url"))
 
         text_logs: str = ""
         if filtered_logs := extract_ytdlp_logs(logs):

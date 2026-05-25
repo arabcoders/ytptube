@@ -5,8 +5,10 @@ from unittest.mock import MagicMock, patch
 from app.features.ytdlp.extractor import (
     ExtractorConfig,
     ExtractorPool,
+    REEXTRACT_INFO_KEY,
     _LogCapture,
     _get_process_pool_kwargs,
+    _process_safe_info,
     _ytdlp_logger,
     extract_info_sync,
 )
@@ -157,6 +159,44 @@ class TestExtractInfo:
         assert logs == ["[generic_browser] Browser fallback warning"]
         assert (logging.INFO, "[generic_browser] Using remote browser for https://example.com/video") in seen
         assert (logging.WARNING, "[generic_browser] Browser fallback warning") in seen
+
+    def test_process_safe_live(self) -> None:
+        data = {
+            "id": "live-id",
+            "is_live": True,
+            "formats": [{"format_id": "dash", "fragments": ({"url": "https://example.test/sq/1"} for _ in range(1))}],
+            "requested_formats": [{"format_id": "dash"}],
+        }
+
+        result = _process_safe_info(data)
+
+        assert result[REEXTRACT_INFO_KEY] is True
+        assert "formats" not in result
+        assert "requested_formats" not in result
+        pickle.dumps(result)
+
+    def test_process_safe_post_live(self) -> None:
+        data = {
+            "id": "post-live-id",
+            "live_status": "post_live",
+            "formats": [{"format_id": "dash", "fragments": ({"url": "https://example.test/sq/1"} for _ in range(1))}],
+        }
+
+        result = _process_safe_info(data)
+
+        assert result[REEXTRACT_INFO_KEY] is True
+        assert "formats" not in result
+        pickle.dumps(result)
+
+    def test_process_safe_lazy(self) -> None:
+        from yt_dlp.utils import LazyList
+
+        data = {"id": "video-id", "formats": LazyList({"format_id": str(i)} for i in range(2))}
+
+        result = _process_safe_info(data)
+
+        assert result["formats"] == [{"format_id": "0"}, {"format_id": "1"}]
+        pickle.dumps(result)
 
 
 class TestYtdlpLogger:

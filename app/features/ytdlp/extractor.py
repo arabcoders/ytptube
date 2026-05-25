@@ -17,6 +17,9 @@ from app.library.Singleton import Singleton
 
 LOG: logging.Logger = logging.getLogger("downloads.extractor")
 
+LIVE_REEXTRACT_STATUSES: set[str] = {"is_live", "post_live"}
+REEXTRACT_INFO_KEY = "_ytptube_reextract"
+
 
 def _ytdlp_logger(target: logging.Logger):
     return _YTDLPLogger(target)
@@ -247,6 +250,23 @@ def _sanitize_config(config: dict[str, Any]) -> dict[str, Any]:
     return sanitized
 
 
+def needs_reextract(info: dict[str, Any]) -> bool:
+    return bool(info.get("is_live") or info.get("live_status") in LIVE_REEXTRACT_STATUSES)
+
+
+def _process_safe_info(info: dict[str, Any]) -> dict[str, Any]:
+    if needs_reextract(info):
+        info = dict(info)
+        info[REEXTRACT_INFO_KEY] = True
+        for key in ("formats", "requested_formats", "requested_downloads", "fragments"):
+            info.pop(key, None)
+
+    if _is_picklable(info):
+        return info
+
+    return YTDLP.sanitize_info(info, remove_private_keys=False)
+
+
 def extract_info_sync(
     config: dict[str, Any],
     url: str,
@@ -255,6 +275,7 @@ def extract_info_sync(
     follow_redirect: bool = False,
     sanitize_info: bool = False,
     capture_logs: int | None = None,
+    process_safe: bool = False,
     **kwargs,
 ) -> tuple[dict[str, Any] | None, list[str]]:
     """
@@ -268,6 +289,7 @@ def extract_info_sync(
         follow_redirect: Follow URL redirects
         sanitize_info: Sanitize the extracted information
         capture_logs: If provided (e.g., logging.WARNING), capture logs at this level.
+        process_safe: Strip non-pickleable data for safe inter-process communication.
         **kwargs: Additional arguments
 
     Returns:
@@ -330,6 +352,7 @@ def extract_info_sync(
                 follow_redirect=follow_redirect,
                 sanitize_info=sanitize_info,
                 capture_logs=capture_logs,
+                process_safe=process_safe,
                 captured_logs=captured_logs,
                 **kwargs,
             )
@@ -347,6 +370,9 @@ def extract_info_sync(
             pass
 
         result = YTDLP.sanitize_info(data, remove_private_keys=True) if sanitize_info else data
+
+        if process_safe and isinstance(result, dict):
+            result = _process_safe_info(result)
 
         return (result, captured_logs)
     finally:
@@ -404,6 +430,8 @@ async def fetch_info(
     loop = asyncio.get_running_loop()
 
     safe_config = _sanitize_config(config)
+    safe_kwargs = _sanitize_picklable(kwargs)
+    safe_kwargs.pop("process_safe", None)
     timeout = _sleep_timeout(safe_config, extractor_config.timeout, budget_sleep)
 
     try:
@@ -422,7 +450,8 @@ async def fetch_info(
                         follow_redirect=follow_redirect,
                         sanitize_info=sanitize_info,
                         capture_logs=capture_logs,
-                        **kwargs,
+                        process_safe=True,
+                        **safe_kwargs,
                     ),
                 ),
                 timeout=timeout,
