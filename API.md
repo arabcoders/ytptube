@@ -99,6 +99,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
     - [GET /api/system/configuration](#get-apisystemconfiguration)
+    - [GET /api/system/diagnostics](#get-apisystemdiagnostics)
     - [GET /api/system/limits](#get-apisystemlimits)
     - [POST /api/system/terminal](#post-apisystemterminal)
     - [GET /api/system/terminal](#get-apisystemterminal)
@@ -2629,6 +2630,54 @@ or an error:
 - This endpoint combines multiple data sources into a single response for efficient initialization
 - The `folders` array includes available download folders up to the configured depth limit
 - The `queue` array contains active download items
+
+---
+
+### GET /api/system/diagnostics
+**Purpose**: View system information.
+
+**Response**:
+```json
+{
+  "status": "error",
+  "generated_at": 1713000000,
+  "summary": {
+    "total": 10,
+    "pass": 5,
+    "fail": 2,
+    "warn": 1,
+    "skip": 2,
+    "required_failed": 2
+  },
+  "runtime": {
+    "app_version": "1.0.0",
+    "app_branch": "main",
+    "app_commit_sha": "abcdef12",
+    "app_build_date": "20260526",
+    "started": 1712999900,
+    "uptime_seconds": 100,
+    "platform": "linux",
+    "platform_release": "6.8.0",
+    "platform_machine": "x86_64",
+    "python_version": "3.13.1",
+    "python_minimum": "3.13",
+    "is_native": false,
+    "console_enabled": false
+  },
+  "requirements": {
+    "python": {
+      "current": "3.13.1",
+      "required": "3.13",
+      "supported": true,
+      "note": ""
+    }
+  },
+  "checks": []
+}
+```
+
+**Notes**:
+- Unexpected collection errors are returned as an `error`.
 
 ---
 

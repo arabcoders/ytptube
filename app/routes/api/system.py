@@ -10,7 +10,9 @@ from aiohttp.web_runner import GracefulExit
 
 from app.features.dl_fields.service import DLFields
 from app.features.presets.service import Presets
+from app.library.cache import Cache
 from app.library.config import Config
+from app.library.diagnostics import collect_diagnostics, diagnostics_error_report
 from app.library.downloads import DownloadQueue
 from app.library.downloads.core import Download
 from app.library.encoder import Encoder
@@ -21,6 +23,8 @@ from app.library.UpdateChecker import UpdateChecker
 from app.library.Utils import list_folders
 
 LOG: logging.Logger = logging.getLogger(__name__)
+DIAGNOSTICS_CACHE_KEY = "system:diagnostics"
+DIAGNOSTICS_CACHE_TTL = 5.0
 
 
 @route("GET", "api/system/configuration", "system.configuration")
@@ -223,6 +227,29 @@ async def check_updates(config: Config, encoder: Encoder, update_checker: Update
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )
+
+
+@route("GET", "api/system/diagnostics", "system.diagnostics")
+async def system_diagnostics(
+    config: Config, encoder: Encoder, request: Request | None = None, cache: Cache | None = None
+) -> Response:
+    """Return user-facing runtime diagnostics for standalone installs."""
+    cache_key = "system:diagnostics"
+    cache = cache or Cache.get_instance()
+    use_cache: bool = request is None or request.query.get("refresh") not in {"1", "true", "yes"}
+
+    if use_cache and (data := cache.get(cache_key)) is not None:
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+    try:
+        data = await collect_diagnostics(config)
+    except Exception:
+        LOG.exception("Diagnostics collection failed.")
+        data = diagnostics_error_report(config)
+    else:
+        cache.set(cache_key, data, ttl=60)
+
+    return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 async def _validate_terminal_command_request(request: Request) -> str | Response:

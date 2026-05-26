@@ -1,13 +1,15 @@
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.library.config import Config
+from app.library.cache import Cache
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
-from app.routes.api.system import check_updates, system_limits
+from app.routes.api.system import check_updates, system_diagnostics, system_limits
 
 
 @dataclass
@@ -193,3 +195,203 @@ class TestSystemLimitsEndpoint:
             config = Config.get_instance()
 
         assert config.prevent_live_premiere is False
+
+
+class TestSystemDiagnosticsEndpoint:
+    def setup_method(self):
+        Config._reset_singleton()
+        Cache.get_instance().clear()
+
+    @pytest.mark.asyncio
+    async def test_diagnostics_always_200(self, tmp_path: Path):
+        config = Config.get_instance()
+        config.config_path = str(tmp_path / "config")
+        config.download_path = str(tmp_path / "downloads")
+        config.temp_path = str(tmp_path / "tmp")
+        config.db_file = str(tmp_path / "config" / "ytptube.db")
+        config.console_enabled = False
+
+        Path(config.config_path).mkdir(parents=True)
+        Path(config.download_path).mkdir(parents=True)
+        Path(config.temp_path).mkdir(parents=True)
+        Path(config.db_file).touch()
+
+        encoder = Encoder()
+
+        with (
+            patch("app.library.diagnostics.Config._ytdlp_version", return_value="2026.01.01"),
+            patch("app.library.diagnostics.shutil.which") as mock_which,
+            patch("app.library.diagnostics._run_command", new_callable=AsyncMock) as mock_run,
+        ):
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in {"ffmpeg", "ffprobe", "deno"} else None
+            mock_run.side_effect = [
+                (0, "ffmpeg version 7.0", ""),
+                (0, "ffprobe version 7.0", ""),
+                (0, "deno 2.3.0", ""),
+            ]
+
+            response = await system_diagnostics(config, encoder)
+
+        assert 200 == response.status
+        body = json.loads(response.body.decode("utf-8"))
+        assert body["status"] == "ok"
+        assert body["summary"]["required_failed"] == 0
+
+        checks = {item["id"]: item for item in body["checks"]}
+        assert checks["deno"]["status"] == "pass"
+        assert checks["deno"]["details"]["version"] == "2.3.0"
+        assert checks["yt_dlp_cli"]["status"] == "skip"
+
+    @pytest.mark.asyncio
+    async def test_diagnostics_error_payload(self):
+        config = Config.get_instance()
+        encoder = Encoder()
+
+        with patch("app.routes.api.system.collect_diagnostics", new_callable=AsyncMock) as mock_collect:
+            mock_collect.side_effect = RuntimeError("boom")
+
+            response = await system_diagnostics(config, encoder)
+
+        assert 200 == response.status
+        body = json.loads(response.body.decode("utf-8"))
+        assert body["status"] == "error"
+        assert body["summary"]["required_failed"] >= 1
+        assert len(body["checks"]) == 1
+        assert body["checks"][0]["status"] == "fail"
+
+    def test_distribution_package_detection(self):
+        from app.library.diagnostics import _check_pot_provider_package
+
+        with patch("app.library.diagnostics._package_version", return_value="1.3.1"):
+            check = _check_pot_provider_package()
+
+        assert check.status == "pass"
+        assert check.details["version"] == "1.3.1"
+        assert "description" not in check.details
+
+    def test_safe_details(self):
+        from app.library.diagnostics import _safe_url
+
+        assert _safe_url("https://user:pass@example.test/token/path?x=1#frag") == (
+            "https://***:***@example.test/***?***#***"
+        )
+
+    @pytest.mark.asyncio
+    async def test_binary_timeout(self):
+        from app.library.diagnostics import _check_binary
+
+        with (
+            patch("app.library.diagnostics.shutil.which", return_value="/usr/local/bin/deno"),
+            patch("app.library.diagnostics._run_command", new_callable=AsyncMock) as mock_run,
+        ):
+            mock_run.side_effect = TimeoutError
+
+            check = await _check_binary("deno", check_id="deno", label="deno", required=True)
+
+        assert check.status == "fail"
+        assert check.details["command"] == "deno"
+
+    @pytest.mark.asyncio
+    async def test_diagnostics_marks_required_missing(self, tmp_path: Path):
+        config = Config.get_instance()
+        config.config_path = str(tmp_path / "config")
+        config.download_path = str(tmp_path / "downloads")
+        config.temp_path = str(tmp_path / "tmp")
+        config.db_file = str(tmp_path / "config" / "ytptube.db")
+        config.console_enabled = True
+
+        Path(config.config_path).mkdir(parents=True)
+        Path(config.download_path).mkdir(parents=True)
+        Path(config.temp_path).mkdir(parents=True)
+        Path(config.db_file).touch()
+
+        encoder = Encoder()
+
+        with (
+            patch("app.library.diagnostics.Config._ytdlp_version", return_value="2026.01.01"),
+            patch("app.library.diagnostics.shutil.which") as mock_which,
+            patch("app.library.diagnostics._run_command", new_callable=AsyncMock) as mock_run,
+        ):
+            mock_which.side_effect = lambda cmd: (
+                "/usr/bin/ffprobe" if cmd == "ffprobe" else "/usr/bin/yt-dlp" if cmd == "yt-dlp" else None
+            )
+            mock_run.side_effect = [
+                (0, "ffprobe version 7.0", ""),
+                (0, "yt-dlp 2026.01.01", ""),
+            ]
+
+            response = await system_diagnostics(config, encoder)
+
+        assert 200 == response.status
+        body = json.loads(response.body.decode("utf-8"))
+        assert body["status"] == "error"
+        assert body["summary"]["required_failed"] >= 1
+
+        checks = {item["id"]: item for item in body["checks"]}
+        assert checks["ffmpeg"]["status"] == "fail"
+        assert checks["deno"]["status"] == "fail"
+        assert checks["yt_dlp_cli"]["status"] == "pass"
+        assert checks["aria2c"]["status"] == "skip"
+        assert checks["mkvpropedit"]["status"] == "skip"
+        assert checks["mkvextract"]["status"] == "skip"
+        assert checks["mp4box"]["status"] == "skip"
+
+    @pytest.mark.asyncio
+    async def test_alias_fallback_mp4box(self):
+        from app.library.diagnostics import _check_binary
+
+        with (
+            patch("app.library.diagnostics.shutil.which") as mock_which,
+            patch("app.library.diagnostics._run_command", new_callable=AsyncMock) as mock_run,
+        ):
+            mock_which.side_effect = lambda cmd: "/usr/bin/mp4box" if cmd == "mp4box" else None
+            mock_run.return_value = (0, "MP4Box 2.2.1", "")
+
+            check = await _check_binary(
+                "MP4Box",
+                check_id="mp4box",
+                label="MP4Box",
+                required=False,
+                missing_status="skip",
+                aliases=("mp4box",),
+            )
+
+        assert check.status == "pass"
+        assert check.details["command"] == "mp4box"
+        assert check.details["version"] == "MP4Box 2.2.1"
+
+    @pytest.mark.asyncio
+    async def test_optional_binary_present(self):
+        from app.library.diagnostics import _check_binary
+
+        with (
+            patch("app.library.diagnostics.shutil.which", return_value="/usr/bin/aria2c"),
+            patch("app.library.diagnostics._run_command", new_callable=AsyncMock) as mock_run,
+        ):
+            mock_run.return_value = (0, "aria2 version 1.37.0", "")
+
+            check = await _check_binary(
+                "aria2c",
+                check_id="aria2c",
+                label="aria2c",
+                required=False,
+                missing_status="skip",
+            )
+
+        assert check.status == "pass"
+        assert check.details["version"] == "1.37.0"
+
+    @pytest.mark.asyncio
+    async def test_optional_binary_missing_skip(self):
+        from app.library.diagnostics import _check_binary
+
+        with patch("app.library.diagnostics.shutil.which", return_value=None):
+            check = await _check_binary(
+                "mkvpropedit",
+                check_id="mkvpropedit",
+                label="mkvpropedit",
+                required=False,
+                missing_status="skip",
+            )
+
+        assert check.status == "skip"
