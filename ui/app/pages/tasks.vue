@@ -672,6 +672,13 @@
             must resolve inside <code>{{ config.app.download_path }}</code
             >.
           </li>
+          <li>
+            It's pretty normal for youtube rss feeds to return 404 from around
+            <span class="text-error">00:00 UTC</span> to around
+            <span class="text-error">06:00 UTC</span>. This is because youtube updates the feeds
+            around that time The tasks will automatically recover once the feeds are available
+            again.
+          </li>
         </ul>
       </template>
     </UAlert>
