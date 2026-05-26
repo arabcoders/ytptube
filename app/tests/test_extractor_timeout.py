@@ -92,3 +92,30 @@ async def test_pool_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     assert loop.calls == [pool.executor, None]
     assert seen == [130, 130]
     assert not pool.semaphore.locked()
+
+
+@pytest.mark.asyncio
+async def test_pool_process_safe(monkeypatch: pytest.MonkeyPatch) -> None:
+    pool = _Pool()
+    loop = _Loop()
+    expected = ({"id": "ok"}, [])
+    sync = Mock(return_value=expected)
+
+    async def fake_wait_for(*, fut, timeout):  # noqa: ARG001
+        return fut()
+
+    monkeypatch.setattr(extractor.ExtractorPool, "get_instance", classmethod(lambda cls: pool))
+    monkeypatch.setattr(extractor.asyncio, "get_running_loop", lambda: loop)
+    monkeypatch.setattr(extractor.asyncio, "wait_for", fake_wait_for)
+    monkeypatch.setattr(extractor, "extract_info_sync", sync)
+
+    result = await extractor.fetch_info(
+        config={},
+        url="https://example.com",
+        extractor_config=extractor.ExtractorConfig(concurrency=1, timeout=70),
+    )
+
+    assert result == expected
+    assert loop.calls == [pool.executor]
+    assert sync.call_args.kwargs["process_safe"] is True
+    assert not pool.semaphore.locked()

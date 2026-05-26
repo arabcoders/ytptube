@@ -1,6 +1,7 @@
 import logging
 import os
 import signal
+import time
 from multiprocessing.reduction import ForkingPickler
 from pathlib import Path
 from types import SimpleNamespace
@@ -17,6 +18,7 @@ from app.library.downloads.process_manager import ProcessManager
 from app.library.downloads.queue_manager import DownloadQueue
 from app.library.downloads.status_tracker import StatusTracker
 from app.library.downloads.temp_manager import TempManager
+from app.library.downloads.video_processor import add_video
 from app.library.ItemDTO import ItemDTO
 
 
@@ -292,7 +294,12 @@ class TestDownloadFlow:
 
         download = Download(
             info=make_item(),
-            info_dict={"id": "test-id", "url": "http://u", "formats": [{"format_id": "18"}]},
+            info_dict={
+                "id": "test-id",
+                "url": "http://u",
+                "formats": [{"format_id": "18"}],
+                "epoch": int(time.time()),
+            },
         )
         download.status_queue = cast(Any, DummyQueue())
         download._hook_handlers = Mock(
@@ -326,6 +333,7 @@ class TestDownloadFlow:
 
         queue = cast(DummyQueue, download.status_queue)
         assert queue.items[0]["download_skipped"] is True
+        assert queue.items[1]["status"] == "finished"
         assert queue.items[1]["download_skipped"] is True
 
     def test_playlist_extras(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1205,6 +1213,88 @@ class TestStatusTracker:
 
 
 class TestQueueManager:
+    @staticmethod
+    def _video_queue() -> Mock:
+        async def put(item):
+            return item
+
+        queue_manager = Mock()
+        queue_manager.config = Mock(
+            download_path="/tmp",
+            temp_path="/tmp",
+            output_template="%(title)s.%(ext)s",
+            output_template_chapter="%(title)s.%(ext)s",
+            prevent_live_premiere=False,
+        )
+        queue_manager.done.get = AsyncMock(side_effect=KeyError)
+        queue_manager.queue.get = AsyncMock(side_effect=KeyError)
+        queue_manager.done.put = AsyncMock(side_effect=put)
+        queue_manager.queue.put = AsyncMock(side_effect=put)
+        queue_manager.pool.trigger_download = Mock()
+        queue_manager._notify.emit = Mock()
+        return queue_manager
+
+    @staticmethod
+    def _video_item() -> SimpleNamespace:
+        return SimpleNamespace(
+            extras={},
+            folder="",
+            preset="default",
+            cookies=None,
+            template=None,
+            cli=[],
+            auto_start=True,
+        )
+
+    @pytest.mark.asyncio
+    async def test_live_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen: list[dict | None] = []
+
+        def fake_download(*, info, info_dict, logs):
+            seen.append(info_dict)
+            return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
+
+        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+
+        result = await add_video(
+            queue=self._video_queue(),
+            item=self._video_item(),
+            entry={
+                "id": "live-id",
+                "title": "Live stream",
+                "webpage_url": "https://example.test/live",
+                "is_live": True,
+                "live_status": "is_live",
+                "_ytptube_reextract": True,
+            },
+        )
+
+        assert result == {"status": "ok"}
+        assert seen == [None]
+
+    @pytest.mark.asyncio
+    async def test_regular_reuses_info(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen: list[dict | None] = []
+
+        def fake_download(*, info, info_dict, logs):
+            seen.append(info_dict)
+            return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
+
+        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+
+        entry = {
+            "id": "video-id",
+            "title": "Video",
+            "webpage_url": "https://example.test/video",
+            "live_status": "not_live",
+            "formats": [{"format_id": "18"}],
+        }
+
+        result = await add_video(queue=self._video_queue(), item=self._video_item(), entry=entry)
+
+        assert result == {"status": "ok"}
+        assert seen == [entry]
+
     @pytest.mark.asyncio
     async def test_cleanup_thumbnails(self, tmp_path: Path) -> None:
         from app.library.downloads.monitors import cleanup_thumbnails

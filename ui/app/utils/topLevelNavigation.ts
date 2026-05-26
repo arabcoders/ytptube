@@ -186,6 +186,17 @@ const NavItems: Array<NavDefinition> = [
     matchPath: '/console',
     requires: 'console_enabled',
   },
+  {
+    id: 'diagnostics',
+    section: 'tools',
+    group: 'tools',
+    label: 'Diagnostics',
+    pageLabel: 'Diagnostics',
+    description: 'View system information.',
+    icon: 'i-lucide-stethoscope',
+    to: '/diagnostics',
+    matchPath: '/diagnostics',
+  },
   ...DOCS_ENTRIES.map<NavDefinition>((entry) => ({
     id: entry.id,
     section: 'docs',
