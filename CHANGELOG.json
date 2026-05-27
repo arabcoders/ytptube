@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "434d3e981de3aee50a01453bff044bde4aac1fce",
-    "date": "2026-05-26T16:22:36+00:00",
+    "full_sha": "cf90db3b4c09663bb8c4a1e533b7a80674804623",
+    "date": "2026-05-27T20:53:42+00:00",
     "commits": [
+      {
+        "sha": "cf90db3b",
+        "full_sha": "cf90db3b4c09663bb8c4a1e533b7a80674804623",
+        "message": "refactor: update log mesages to take advantage of JSONL",
+        "author": "arabcoders",
+        "date": "2026-05-27T20:53:42+00:00"
+      },
       {
         "sha": "434d3e98",
         "full_sha": "434d3e981de3aee50a01453bff044bde4aac1fce",
