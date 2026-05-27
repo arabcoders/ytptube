@@ -73,22 +73,30 @@ class Main:
         for folder in folders:
             folder = Path(folder)
             try:
-                LOG.debug(f"Checking folder at '{folder}'.")
+                LOG.debug("Checking folder '%s'.", folder, extra={"folder": str(folder)})
                 if not folder.exists():
-                    LOG.info(f"Creating folder at '{folder}'.")
+                    LOG.info("Creating folder '%s'.", folder, extra={"folder": str(folder)})
                     folder.mkdir(parents=True, exist_ok=True)
-            except OSError:
-                LOG.error(f"Could not create folder at '{folder}'.")
+            except OSError as e:
+                LOG.exception(
+                    "Failed to create folder '%s'.",
+                    folder,
+                    extra={"folder": str(folder), "exception_type": type(e).__name__},
+                )
                 raise
 
         try:
             db_file = Path(self._config.db_file)
-            LOG.debug(f"Checking database file at '{db_file}'.")
+            LOG.debug("Checking database file '%s'.", db_file, extra={"db_file": str(db_file)})
             if not db_file.exists():
-                LOG.info(f"Creating database file at '{db_file}'.")
+                LOG.info("Creating database file '%s'.", db_file, extra={"db_file": str(db_file)})
                 db_file.touch(exist_ok=True)
         except OSError as e:
-            LOG.error(f"Could not create database file at '{self._config.db_file}'. {e!s}")
+            LOG.exception(
+                "Failed to create database file at '%s'.",
+                self._config.db_file,
+                extra={"db_file": str(self._config.db_file), "exception_type": type(e).__name__},
+            )
             raise
 
     async def on_shutdown(self, _: web.Application):
@@ -143,8 +151,21 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(f"YTPTube {self._config.app_version} - started on http://{host}:{port}{self._config.base_path}")
-            LOG.info(f"Download path: {self._config.download_path}")
+            LOG.info(
+                "YTPTube %s started on %s.",
+                self._config.app_version,
+                f"http://{host}:{port}{self._config.base_path}",
+                extra={
+                    "app_version": self._config.app_version,
+                    "listen_url": f"http://{host}:{port}{self._config.base_path}",
+                    "host": host,
+                    "port": port,
+                    "base_path": self._config.base_path,
+                },
+            )
+            LOG.info(
+                "Download path: %s", self._config.download_path, extra={"download_path": self._config.download_path}
+            )
             if self._config.is_native:
                 LOG.info("Running in native mode.")
             LOG.info("=" * 40)

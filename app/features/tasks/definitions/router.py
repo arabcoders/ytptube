@@ -95,7 +95,11 @@ async def task_definitions_create(request: Request, encoder: Encoder, notify: Ev
     except ValueError as exc:
         return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
     except Exception as exc:
-        LOG.exception(exc)
+        LOG.exception(
+            "Failed to create task definition '%s'.",
+            getattr(definition_input, "name", None),
+            extra={"definition": getattr(definition_input, "name", None), "exception_type": type(exc).__name__},
+        )
         return web.json_response(
             data={"error": "Failed to create task definition."},
             status=web.HTTPInternalServerError.status_code,
@@ -144,7 +148,15 @@ async def task_definitions_update(request: Request, encoder: Encoder, notify: Ev
     except ValueError as exc:
         return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
     except Exception as exc:
-        LOG.exception(exc)
+        LOG.exception(
+            "Failed to update task definition '%s'.",
+            definition_input.name,
+            extra={
+                "definition_id": identifier,
+                "definition": definition_input.name,
+                "exception_type": type(exc).__name__,
+            },
+        )
         return web.json_response(
             data={"error": "Failed to update task definition."},
             status=web.HTTPInternalServerError.status_code,
@@ -202,7 +214,11 @@ async def task_definitions_patch(request: Request, encoder: Encoder, notify: Eve
     except ValueError as exc:
         return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
     except Exception as exc:
-        LOG.exception(exc)
+        LOG.exception(
+            "Failed to patch task definition '%s'.",
+            identifier,
+            extra={"definition_id": identifier, "exception_type": type(exc).__name__},
+        )
         return web.json_response(
             data={"error": "Failed to patch task definition."},
             status=web.HTTPInternalServerError.status_code,
@@ -228,7 +244,11 @@ async def task_definitions_delete(request: Request, encoder: Encoder, notify: Ev
     except KeyError as exc:
         return web.json_response(data={"error": str(exc)}, status=web.HTTPNotFound.status_code)
     except Exception as exc:
-        LOG.exception(exc)
+        LOG.exception(
+            "Failed to delete task definition '%s'.",
+            identifier,
+            extra={"definition_id": identifier, "exception_type": type(exc).__name__},
+        )
         return web.json_response(
             data={"error": "Failed to delete task definition."},
             status=web.HTTPInternalServerError.status_code,

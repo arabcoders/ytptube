@@ -75,9 +75,6 @@ class Config(metaclass=Singleton):
     log_level: str = "info"
     """The log level to use for the application."""
 
-    log_level_file: str = "info"
-    """The log level to use for the file logging."""
-
     base_path: str = "/"
     """The base path to use for the application."""
 
@@ -440,11 +437,18 @@ class Config(metaclass=Singleton):
                 import debugpy
 
                 debugpy.listen(("0.0.0.0", self.debugpy_port), in_process_debug_adapter=True)
-                LOG.info(f"starting debugpy server on '0.0.0.0:{self.debugpy_port}'.")
+                LOG.info(
+                    "Starting debugpy server on '0.0.0.0:%s'.",
+                    self.debugpy_port,
+                    extra={"host": "0.0.0.0", "port": self.debugpy_port},
+                )
             except ImportError:
-                LOG.error("debugpy package not found, install it with 'uv sync'.")
+                LOG.exception("debugpy package not found; install it with 'uv sync'.")
             except Exception as e:
-                LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
+                LOG.exception(
+                    "Failed to start debugpy server.",
+                    extra={"host": "0.0.0.0", "port": self.debugpy_port, "exception_type": type(e).__name__},
+                )
 
         if (Path(self.config_path) / "ytdlp.cli").exists():
             LOG.error("Support for ./ytdlp.cli file is removed, migrate to presets and remove the file.")
@@ -453,12 +457,16 @@ class Config(metaclass=Singleton):
             LOG.warning("Keep temp files option is enabled.")
 
         if self.auth_password and self.auth_username:
-            LOG.info(f"Authentication enabled with username '{self.auth_username}'.")
+            LOG.info(
+                "Authentication enabled with username '%s'.",
+                self.auth_username,
+                extra={"auth_username": self.auth_username},
+            )
 
         if self.file_logging:
-            log_level_file: int | None = getattr(logging, self.log_level_file.upper(), None)
-            if not isinstance(log_level_file, int):
-                msg = f"Invalid file log level '{self.log_level_file}' specified."
+            file_log_level: int | None = getattr(logging, self.log_level.upper(), None)
+            if not isinstance(file_log_level, int):
+                msg = f"Invalid log level '{self.log_level}' specified."
                 raise TypeError(msg)
 
             loggingPath: Path = Path(self.config_path) / "logs"
@@ -472,7 +480,7 @@ class Config(metaclass=Singleton):
                 encoding="utf-8",
             )
 
-            handler.setLevel(log_level_file)
+            handler.setLevel(file_log_level)
             formatter = JsonLogFormatter()
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
@@ -495,6 +503,7 @@ class Config(metaclass=Singleton):
             ("apprise", logging.WARNING),
             ("httpcore", logging.INFO),
             ("aiosqlite", logging.INFO),
+            ("asyncio", logging.INFO),
         )
         for _tool, _level in _log_levels:
             logging.getLogger(_tool).setLevel(_level)

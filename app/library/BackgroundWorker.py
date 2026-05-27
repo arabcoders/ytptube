@@ -39,19 +39,22 @@ class BackgroundWorker(metaclass=Singleton):
         Services.get_instance().add("background_worker", self)
         app.on_shutdown.append(self.on_shutdown)
 
-        LOG.debug("Starting background worker...")
+        LOG.debug("Starting background worker thread.")
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
     async def on_shutdown(self, _: web.Application):
         self.running = False
         try:
-            LOG.debug("Shutting down background worker...")
+            LOG.debug("Shutting down background worker thread...")
             self.queue.put((CloseThread, (), {}))
             self.thread.join(timeout=5)
-            LOG.debug("Background worker has been shut down.")
+            LOG.debug("Background worker thread has been shut down.")
         except Exception as e:
-            LOG.error(f"Failed to shut down background worker: {e}")
+            LOG.exception(
+                "Failed to shut down background worker thread.",
+                extra={"exception_type": type(e).__name__},
+            )
 
     def _run(self):
         asyncio.set_event_loop(asyncio.new_event_loop())
@@ -79,8 +82,16 @@ class BackgroundWorker(metaclass=Singleton):
                     if inspect.iscoroutine(result):
                         loop.call_soon_threadsafe(loop.create_task, result)
                 except Exception as e:
-                    LOG.exception(e)
-                    LOG.error(f"Failed to run '{fn.__name__}'. {e!s}")
+                    function = getattr(fn, "__name__", fn.__class__.__name__)
+                    LOG.exception(
+                        "Failed to run background worker function '%s'.",
+                        function,
+                        extra={
+                            "function": function,
+                            "thread_name": threading.current_thread().name,
+                            "exception_type": type(e).__name__,
+                        },
+                    )
             except Empty:
                 continue
 
@@ -90,7 +101,10 @@ class BackgroundWorker(metaclass=Singleton):
             loop.close()
             LOG.debug("Event loop has been stopped and closed.")
         except Exception as e:
-            LOG.error(f"Failed to stop the event loop: {e!s}")
+            LOG.exception(
+                "Failed to stop background worker event loop.",
+                extra={"thread_name": loop_thread.name, "exception_type": type(e).__name__},
+            )
 
     def submit(self, fn, *args, **kwargs):
         self.queue.put((fn, args, kwargs))

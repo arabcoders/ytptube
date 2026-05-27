@@ -175,4 +175,8 @@ class Cache(metaclass=ThreadSafe):
                 del self._cache[key]
 
             if expired_keys:
-                LOG.debug(f"Cleaned up {len(expired_keys)} expired cache entries.")
+                LOG.debug(
+                    "Cleaned up %s expired cache entries.",
+                    len(expired_keys),
+                    extra={"expired_count": len(expired_keys)},
+                )

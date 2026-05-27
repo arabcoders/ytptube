@@ -170,7 +170,13 @@ class Segments:
 
         stderr_task: asyncio.Task[None] = asyncio.create_task(_drain_stderr())
 
-        LOG.debug(f"Streaming '{file}' segment '{self.index}'. ffmpeg: {' '.join(args)}")
+        LOG.debug(
+            "Streaming '%s' segment '%s'. ffmpeg: %s",
+            file,
+            self.index,
+            " ".join(args),
+            extra={"file": str(file), "segment_index": self.index, "ffmpeg_args": args},
+        )
 
         try:
             while True:
@@ -191,7 +197,7 @@ class Segments:
             try:
                 await asyncio.wait_for(proc.wait(), timeout=5)
             except TimeoutError:
-                LOG.error("ffmpeg process did not terminate in time. Killing it.")
+                LOG.warning("ffmpeg process did not terminate in time. Killing it.")
                 proc.kill()
             raise
         except ConnectionResetError:
@@ -204,7 +210,7 @@ class Segments:
                 try:
                     rc: int = await asyncio.wait_for(proc.wait(), timeout=5)
                 except TimeoutError:
-                    LOG.error("ffmpeg process did not terminate in time after disconnect. Killing it.")
+                    LOG.warning("ffmpeg process did not terminate in time after disconnect. Killing it.")
                     proc.kill()
                     try:
                         rc = await asyncio.wait_for(proc.wait(), timeout=5)
@@ -215,7 +221,7 @@ class Segments:
                 try:
                     rc = await asyncio.wait_for(proc.wait(), timeout=30)
                 except TimeoutError:
-                    LOG.error("ffmpeg process wait timed out. Killing it.")
+                    LOG.warning("ffmpeg process wait timed out. Killing it.")
                     proc.kill()
                     try:
                         rc = await asyncio.wait_for(proc.wait(), timeout=5)
@@ -233,7 +239,7 @@ class Segments:
         if not codec or codec not in SUPPORTED_CODECS:
             codec: str = select_encoder(self.vcodec or "")
 
-        LOG.debug(f"Selected video codec '{codec}' for segment streaming.")
+        LOG.debug("Selected video codec '%s' for segment streaming.", codec, extra={"codec": codec})
 
         if Segments._cached_vcodec and Segments._cache_initialized:
             codecs: list[str] = [Segments._cached_vcodec]
@@ -259,7 +265,12 @@ class Segments:
 
                 if 0 != rc:
                     err: str = stderr_text[:500] if stderr_text else "no error output"
-                    LOG.warning(f"transcoding has failed (cmd={ffmpeg_args}) (rc={rc}): {err}. Trying fallbacks.")
+                    LOG.warning(
+                        "Hardware encoder failed (rc=%s): %s. Trying fallbacks.",
+                        rc,
+                        err,
+                        extra={"ffmpeg_args": ffmpeg_args, "returncode": rc, "stderr": err, "codec": s_codec},
+                    )
                     self.attempted.add(s_codec)
         finally:
             if stream_input.is_symlink():

@@ -43,8 +43,12 @@ async def download_file(request: Request, config: Config, app: web.Application) 
 
         if web.HTTPNotFound.status_code == status:
             return web.json_response(data={"error": "File not found"}, status=status)
-    except Exception as e:
-        LOG.exception("Error retrieving file '%s': %s", filename, str(e))
+    except Exception:
+        LOG.exception(
+            "Failed to retrieve download file '%s'.",
+            filename,
+            extra={"route": "download_static", "file_path": filename},
+        )
         return web.json_response(
             data={"error": "Internal server error."},
             status=web.HTTPInternalServerError.status_code,

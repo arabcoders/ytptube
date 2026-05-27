@@ -65,7 +65,8 @@ async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pyte
         response = await images.get_background(req, config, DummyCache())
 
     assert response.status == web.HTTPInternalServerError.status_code
-    logs = caplog.text
-    assert "apitoken=secret" not in logs
-    assert "user:pass@" not in logs
-    assert "https://redacted:redacted@example.com/bg.jpg?redacted#redacted" in logs
+    record = next(record for record in caplog.records if record.name == images.LOG.name)
+    assert "apitoken=secret" not in record.getMessage()
+    assert "user:pass@" not in record.getMessage()
+    assert record.url == "https://redacted:redacted@example.com/bg.jpg?redacted#redacted"
+    assert record.exception_type == "RuntimeError"

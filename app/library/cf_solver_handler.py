@@ -215,7 +215,7 @@ class CFSolverRH(RequestHandler, ABC):
     def _send(self, request: Request) -> Response:
         host: str = self._get_host(request.url)
         if host and (cached := CACHE.get(host)):
-            LOG.info(f"Injecting cached Cloudflare cookies for '{host}'.")
+            LOG.info("Injecting cached Cloudflare cookies for '%s'.", host, extra={"host": host})
             self._apply_solution(cached, request.url, request.headers, self._get_cookiejar(request))
 
         director: RequestDirector = self._build_fallback()

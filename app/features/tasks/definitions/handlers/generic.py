@@ -69,7 +69,10 @@ class GenericTaskHandler(BaseHandler):
             cls._definitions = [model_to_schema(model) for model in models]
             return cls._definitions
         except Exception as exc:
-            LOG.error(f"Failed to load task definitions from database: {exc}")
+            LOG.exception(
+                "Failed to load generic task definitions.",
+                extra={"error": str(exc), "exception_type": type(exc).__name__},
+            )
             return []
 
     @classmethod
@@ -102,7 +105,15 @@ class GenericTaskHandler(BaseHandler):
                     if pattern_str and re.match(pattern_str, url):
                         return definition
             except Exception as exc:
-                LOG.error(f"Error while matching definition '{definition.name}': {exc}")
+                LOG.exception(
+                    "Failed to match a generic task definition.",
+                    extra={
+                        "definition": definition.name,
+                        "url": url,
+                        "error": str(exc),
+                        "exception_type": type(exc).__name__,
+                    },
+                )
 
         return None
 
@@ -120,7 +131,11 @@ class GenericTaskHandler(BaseHandler):
         """
         definition: TaskDefinition | None = await GenericTaskHandler._find_definition(task.url)
         if definition:
-            LOG.debug(f"'{task.name}': Matched generic task definition '{definition.name}'.")
+            LOG.debug(
+                "Task '%s' matched a generic task definition.",
+                task.name,
+                extra={"task_name": task.name, "url": task.url, "definition": definition.name},
+            )
             return True
 
         return False
@@ -134,7 +149,16 @@ class GenericTaskHandler(BaseHandler):
         ytdlp_opts: dict[str, Any] = task.get_ytdlp_opts().get_all()
         target_url: str = definition.definition.request.url or task.url
 
-        LOG.debug(f"{task.name!r}: Fetching '{target_url}' using engine '{definition.definition.engine.type}'.")
+        LOG.debug(
+            "Fetching content for task '%s'.",
+            task.name,
+            extra={
+                "task_name": task.name,
+                "definition": definition.name,
+                "url": target_url,
+                "engine": definition.definition.engine.type,
+            },
+        )
 
         try:
             body_text, json_data = await GenericTaskHandler._fetch_content(
@@ -143,7 +167,16 @@ class GenericTaskHandler(BaseHandler):
         except httpx.HTTPError as exc:
             return TaskFailure(message="Failed to fetch target URL.", error=str(exc))
         except Exception as exc:
-            LOG.exception(exc)
+            LOG.exception(
+                "Failed to fetch content for task '%s'.",
+                task.name,
+                extra={
+                    "task_name": task.name,
+                    "definition": definition.name,
+                    "url": target_url,
+                    "exception_type": type(exc).__name__,
+                },
+            )
             return TaskFailure(message="Failed to fetch target URL.", error=str(exc))
 
         if "json" == definition.definition.response.type and json_data is None:
@@ -181,7 +214,9 @@ class GenericTaskHandler(BaseHandler):
                         continue
                 else:
                     LOG.warning(
-                        f"[{definition.name}]: '{task.name}': Unable to generate static archive id for '{url}' in feed. Doing real request to fetch yt-dlp archive id."
+                        "Task '%s' could not generate a static archive ID. Fetching it with yt-dlp.",
+                        task.name,
+                        extra={"definition": definition.name, "task_name": task.name, "url": url},
                     )
 
                     (info, _) = await fetch_info(
@@ -194,14 +229,18 @@ class GenericTaskHandler(BaseHandler):
 
                     if not info:
                         LOG.error(
-                            f"[{definition.name}]: '{task.name}': Failed to extract info for URL '{url}' to generate archive ID. Skipping."
+                            "Task '%s' failed to extract info to generate an archive ID. Skipping item.",
+                            task.name,
+                            extra={"definition": definition.name, "task_name": task.name, "url": url},
                         )
                         CACHE.set(cache_key, None)
                         continue
 
                     if not info.get("id") or not info.get("extractor_key"):
                         LOG.error(
-                            f"[{definition.name}]: '{task.name}': Incomplete info extracted for URL '{url}' to generate archive ID. Skipping."
+                            "Task '%s' returned incomplete info while generating an archive ID. Skipping item.",
+                            task.name,
+                            extra={"definition": definition.name, "task_name": task.name, "url": url},
                         )
                         CACHE.set(cache_key, None)
                         continue
@@ -297,7 +336,17 @@ class GenericTaskHandler(BaseHandler):
             try:
                 json_data: dict[str, Any] = response.json()
             except Exception as exc:
-                LOG.error(f"Failed to decode JSON response from '{url}': {exc}")
+                LOG.exception(
+                    "Task definition '%s' returned invalid JSON for '%s'.",
+                    definition.name,
+                    url,
+                    extra={
+                        "definition": definition.name,
+                        "url": url,
+                        "error": str(exc),
+                        "exception_type": type(exc).__name__,
+                    },
+                )
                 return response.text, None
 
             return response.text, json_data
@@ -327,7 +376,11 @@ class GenericTaskHandler(BaseHandler):
             from selenium.webdriver.support import expected_conditions as EC
             from selenium.webdriver.support.ui import WebDriverWait
         except ImportError as exc:
-            LOG.error(f"Selenium engine requested but selenium is not installed: {exc!s}.")
+            LOG.exception(
+                "Task definition '%s' requested Selenium, but Selenium is not installed.",
+                definition.name,
+                extra={"definition": definition.name, "error": str(exc), "exception_type": type(exc).__name__},
+            )
             return (None, None)
 
         options_map: dict[str, Any] = definition.definition.engine.options
@@ -340,7 +393,12 @@ class GenericTaskHandler(BaseHandler):
         browser: str = str(options_map.get("browser", "chrome")).lower()
 
         if "chrome" != browser:
-            LOG.error(f"Unsupported selenium browser '{browser}'. Only 'chrome' is supported.")
+            LOG.error(
+                "Task definition '%s' requested unsupported Selenium browser '%s'.",
+                definition.name,
+                browser,
+                extra={"definition": definition.name, "browser": browser},
+            )
             return (None, None)
 
         arguments: list[str] | str = options_map.get("arguments", ["--headless", "--disable-gpu"])
@@ -422,7 +480,9 @@ class GenericTaskHandler(BaseHandler):
 
         link_values: list[str] = extracted.get("link", [])
         if not link_values:
-            LOG.debug(f"Definition '{definition.name}' produced no link values.")
+            LOG.debug(
+                "Definition '%s' produced no link values.", definition.name, extra={"definition": definition.name}
+            )
             return []
 
         total_items: int = len(link_values)
@@ -457,7 +517,11 @@ class GenericTaskHandler(BaseHandler):
         base_url: str,
     ) -> list[dict[str, str]]:
         if json_data is None:
-            LOG.debug(f"Definition '{definition.name}' expects JSON but no data was parsed.")
+            LOG.debug(
+                "Definition '%s' expects JSON but no data was parsed.",
+                definition.name,
+                extra={"definition": definition.name},
+            )
             return []
 
         if definition.definition.parse.get("items"):
@@ -496,7 +560,11 @@ class GenericTaskHandler(BaseHandler):
         container_type = container.get("type", "css")
         container_selector = container.get("selector") or container.get("expression") or ""
         if not container_selector:
-            LOG.error(f"Container missing selector/expression. Definition '{definition.name}'.")
+            LOG.error(
+                "Container missing selector/expression. Definition '%s'.",
+                definition.name,
+                extra={"definition": definition.name},
+            )
             return []
         container_fields = container.get("fields", {})
 
@@ -550,7 +618,11 @@ class GenericTaskHandler(BaseHandler):
         container_fields = container.get("fields", {})
 
         if "jsonpath" != container_type:
-            LOG.error(f"JSON response requires container selector type 'jsonpath'. Definition '{definition.name}'.")
+            LOG.error(
+                "JSON response requires container selector type 'jsonpath'. Definition '%s'.",
+                definition.name,
+                extra={"definition": definition.name, "container_type": container_type},
+            )
             return []
 
         nodes: Any = GenericTaskHandler._json_search(json_data, container_selector)
@@ -606,7 +678,16 @@ class GenericTaskHandler(BaseHandler):
             try:
                 pattern: re.Pattern[str] = re.compile(rule.expression, re.MULTILINE | re.DOTALL)
             except re.error as exc:
-                LOG.error(f"Invalid regex expression '{rule.expression}': {exc}")
+                LOG.exception(
+                    "Invalid regex expression '%s'.",
+                    rule.expression,
+                    extra={
+                        "field": field,
+                        "expression": rule.expression,
+                        "error": str(exc),
+                        "exception_type": type(exc).__name__,
+                    },
+                )
                 return values
 
             for match in pattern.finditer(target):
@@ -617,7 +698,12 @@ class GenericTaskHandler(BaseHandler):
 
             return values
 
-        LOG.error(f"Unsupported extraction type '{rule.type}' for JSON data in field '{field}'.")
+        LOG.error(
+            "Unsupported extraction type '%s' for JSON data in field '%s'.",
+            rule.type,
+            field,
+            extra={"field": field, "rule_type": rule.type},
+        )
         return values
 
     @staticmethod
@@ -625,7 +711,11 @@ class GenericTaskHandler(BaseHandler):
         try:
             return jmespath.search(expression, data)
         except Exception as exc:
-            LOG.error(f"JSONPath search failed for expression '{expression}': {exc}")
+            LOG.exception(
+                "JSONPath search failed for expression '%s'.",
+                expression,
+                extra={"expression": expression, "error": str(exc), "exception_type": type(exc).__name__},
+            )
             return None
 
     @staticmethod
@@ -660,7 +750,16 @@ class GenericTaskHandler(BaseHandler):
             try:
                 pattern: re.Pattern[str] = re.compile(rule.expression, re.MULTILINE | re.DOTALL)
             except re.error as exc:
-                LOG.error(f"Invalid regex expression '{rule.expression}': {exc}")
+                LOG.exception(
+                    "Invalid regex expression '%s'.",
+                    rule.expression,
+                    extra={
+                        "field": field,
+                        "expression": rule.expression,
+                        "error": str(exc),
+                        "exception_type": type(exc).__name__,
+                    },
+                )
                 return values
 
             for match in pattern.finditer(html):
@@ -704,7 +803,12 @@ class GenericTaskHandler(BaseHandler):
             try:
                 return match.group(attribute)
             except (IndexError, KeyError):
-                LOG.debug(f"Regex group '{attribute}' not found in pattern '{match.re.pattern}'.")
+                LOG.debug(
+                    "Regex group '%s' not found in pattern '%s'.",
+                    attribute,
+                    match.re.pattern,
+                    extra={"attribute": attribute, "pattern": match.re.pattern},
+                )
                 return None
 
         if match.groupdict():

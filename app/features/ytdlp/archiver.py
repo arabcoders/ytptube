@@ -169,12 +169,21 @@ class Archiver(metaclass=ThreadSafe):
                             continue
                         ids.add(s)
             except OSError as e:
-                LOG.error(f"Failed to read archive file '{key}': {e!s}")
+                LOG.exception(
+                    "Failed to read archive file '%s'.",
+                    key,
+                    extra={"archive_file": key, "operation": "read", "exception_type": type(e).__name__},
+                )
                 ids = set()
 
             try:
                 elapsed_ms: float = (time.perf_counter() - start) * 1000.0
-                LOG.debug(f"_ensure_loaded took {elapsed_ms:.2f}ms (loaded={len(ids)})")
+                LOG.debug(
+                    "_ensure_loaded took %.2fms (loaded=%s)",
+                    elapsed_ms,
+                    len(ids),
+                    extra={"archive_file": key, "elapsed_ms": round(elapsed_ms, 2), "loaded_count": len(ids)},
+                )
             except Exception:
                 pass
 
@@ -283,7 +292,17 @@ class Archiver(metaclass=ThreadSafe):
                         f.write("".join(f"{x}\n" for x in new_ids))
 
             except OSError as e:
-                LOG.error(f"Failed to write to archive file '{key}': {e!s}")
+                LOG.exception(
+                    "Failed to write %s item(s) to archive file '%s'.",
+                    len(new_ids),
+                    key,
+                    extra={
+                        "archive_file": key,
+                        "operation": "add",
+                        "item_count": len(new_ids),
+                        "exception_type": type(e).__name__,
+                    },
+                )
                 return False
 
             entry.ids.update(new_ids)
@@ -335,7 +354,17 @@ class Archiver(metaclass=ThreadSafe):
                             continue
                         kept_lines.append(line)
             except OSError as e:
-                LOG.error(f"Failed reading archive for delete '{key}': {e!s}")
+                LOG.exception(
+                    "Failed to read archive file '%s' before deleting %s item(s).",
+                    key,
+                    len(remove_ids),
+                    extra={
+                        "archive_file": key,
+                        "operation": "delete_read",
+                        "item_count": len(remove_ids),
+                        "exception_type": type(e).__name__,
+                    },
+                )
                 return False
 
             if not changed:
@@ -351,7 +380,17 @@ class Archiver(metaclass=ThreadSafe):
                     with path.open("w", encoding="utf-8") as f:
                         f.writelines(kept_lines)
             except OSError as e:
-                LOG.error(f"Failed writing archive after delete '{key}': {e!s}")
+                LOG.exception(
+                    "Failed to write archive file '%s' after deleting %s item(s).",
+                    key,
+                    len(remove_ids),
+                    extra={
+                        "archive_file": key,
+                        "operation": "delete_write",
+                        "item_count": len(remove_ids),
+                        "exception_type": type(e).__name__,
+                    },
+                )
                 return False
 
             if entry.loaded:

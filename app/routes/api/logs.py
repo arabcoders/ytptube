@@ -130,8 +130,8 @@ async def _tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
 
                 if log := _parse_jsonl_line(line):
                     await emitter(log)
-    except Exception as e:
-        LOG.error(f"Error while tailing log file '{file!s}': {e!s}")
+    except Exception:
+        LOG.exception("Failed to tail log file '%s'.", file, extra={"route": "logs.stream", "file_path": str(file)})
         return
 
 

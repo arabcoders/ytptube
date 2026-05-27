@@ -244,7 +244,7 @@ async def system_diagnostics(
     try:
         data = await collect_diagnostics(config)
     except Exception:
-        LOG.exception("Diagnostics collection failed.")
+        LOG.exception("Failed to collect system diagnostics.")
         data = diagnostics_error_report(config)
     else:
         cache.set(cache_key, data, ttl=60)

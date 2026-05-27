@@ -145,17 +145,29 @@ class Conditions(metaclass=Singleton):
                 continue
 
             if not item.filter:
-                LOG.error(f"Filter is empty for '{item.name}'.")
+                LOG.error(
+                    "Filter is empty for '%s'.", item.name, extra={"condition_id": item.id, "condition_name": item.name}
+                )
                 continue
 
             try:
                 if not match_str(item.filter, info):
                     continue
 
-                LOG.debug(f"Matched '{item.id}: {item.name}' with filter '{item.filter}'.")
+                LOG.debug(
+                    "Matched '%s: %s' with filter '%s'.",
+                    item.id,
+                    item.name,
+                    item.filter,
+                    extra={"condition_id": item.id, "condition_name": item.name, "filter": item.filter},
+                )
                 return item
             except Exception as e:
-                LOG.error(f"Failed to evaluate '{item.id}: {item.name}'. '{e!s}'.")
+                LOG.exception(
+                    "Failed to evaluate condition '%s'.",
+                    item.name,
+                    extra={"condition_id": item.id, "condition_name": item.name, "exception_type": type(e).__name__},
+                )
                 continue
 
         return None

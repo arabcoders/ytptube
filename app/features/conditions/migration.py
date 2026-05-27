@@ -36,7 +36,11 @@ class Migration(FeatureMigration):
         try:
             items: list[dict] | None = json.loads(self._source_file.read_text())
         except Exception as exc:
-            LOG.exception("Failed to read %s: %s. Ignoring", self._source_file, exc)
+            LOG.exception(
+                "Failed to read conditions migration file '%s'. Ignoring.",
+                self._source_file,
+                extra={"file_path": str(self._source_file), "exception_type": type(exc).__name__},
+            )
             await self._move_file(self._source_file)
             return
 
@@ -54,7 +58,11 @@ class Migration(FeatureMigration):
                 await self._repo.create(normalized)
                 inserted += 1
             except Exception as exc:
-                LOG.exception("Failed to insert condition '%s': %s", normalized.name, exc)
+                LOG.exception(
+                    "Failed to insert condition '%s'.",
+                    normalized.name,
+                    extra={"condition_name": normalized.name, "exception_type": type(exc).__name__},
+                )
 
         LOG.info("Migrated %s condition(s) from %s.", inserted, self._source_file)
         await self._move_file(self._source_file)

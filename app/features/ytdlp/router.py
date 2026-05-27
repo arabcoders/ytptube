@@ -37,7 +37,11 @@ def _get_preset_archive(preset: str) -> str | None:
     try:
         opts: dict = YTDLPOpts.get_instance().preset(preset).get_all()
     except Exception as e:
-        LOG.error(f"Failed to build yt-dlp opts for preset '{preset}'. {e!s}")
+        LOG.exception(
+            "Failed to build yt-dlp options for preset '%s'.",
+            preset,
+            extra={"preset": preset, "exception_type": type(e).__name__},
+        )
         return None
 
     if not (archive_file := opts.get("download_archive")):
@@ -125,7 +129,18 @@ async def archiver_get(request: Request) -> Response:
             data={"file": archive_file, "items": data, "count": len(data)}, status=web.HTTPOk.status_code
         )
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to read archive file '%s' for preset '%s'.",
+            archive_file,
+            preset,
+            extra={
+                "route": "api/archiver/",
+                "action": "read_archive",
+                "preset": preset,
+                "archive_file": archive_file,
+                "ids": ids,
+            },
+        )
         return web.json_response(
             data={"error": f"Failed to read archive file for preset '{preset}'.", "message": str(e)},
             status=web.HTTPInternalServerError.status_code,
@@ -171,7 +186,20 @@ async def archiver_add(request: Request) -> Response:
             status=web.HTTPOk.status_code if status else web.HTTPNotModified.status_code,
         )
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to add %s item(s) to archive file '%s' for preset '%s'.",
+            len(items),
+            archive_file,
+            preset,
+            extra={
+                "route": "api/archiver/",
+                "action": "add_archive_items",
+                "preset": preset,
+                "archive_file": archive_file,
+                "item_count": len(items),
+                "skip_check": skip_check,
+            },
+        )
         return web.json_response(
             data={"error": f"Failed to add items to archive for preset '{preset}'.", "message": str(e)},
             status=web.HTTPInternalServerError.status_code,
@@ -215,7 +243,19 @@ async def archiver_delete(request: Request) -> Response:
             status=web.HTTPOk.status_code if status else web.HTTPNotModified.status_code,
         )
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to delete %s item(s) from archive file '%s' for preset '%s'.",
+            len(items),
+            archive_file,
+            preset,
+            extra={
+                "route": "api/archiver/",
+                "action": "delete_archive_items",
+                "preset": preset,
+                "archive_file": archive_file,
+                "item_count": len(items),
+            },
+        )
         return web.json_response(
             data={"error": f"Failed to delete items from archive for preset '{preset}'.", "message": str(e)},
             status=web.HTTPInternalServerError.status_code,
@@ -407,8 +447,18 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
 
         return web.json_response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(f"Error encountered while getting video info for '{url}'. '{e!s}'.")
+        LOG.exception(
+            "Failed to get video info for '%s'.",
+            url,
+            extra={
+                "route": "api/yt-dlp/url/info/",
+                "action": "get_video_info",
+                "url": url,
+                "preset": preset,
+                "cache_key": key if "key" in locals() else None,
+                "has_cli_args": bool(cli_args),
+            },
+        )
         return web.json_response(
             data={
                 "error": "failed to get video info.",
@@ -496,7 +546,18 @@ async def make_command(request: Request, config: Config, encoder: Encoder) -> Re
     try:
         command, info = YTDLPCli(item=it, config=config).build()
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to build yt-dlp command for '%s'.",
+            it.url,
+            extra={
+                "route": "api/yt-dlp/command/",
+                "action": "build_command",
+                "url": it.url,
+                "preset": it.preset,
+                "has_cookies": bool(it.cookies),
+                "exception_type": type(e).__name__,
+            },
+        )
         return web.json_response(
             data={"error": "Failed to build CLI command"},
             status=web.HTTPBadRequest.status_code,

@@ -462,8 +462,12 @@ def get_archive_id(url: str) -> dict[str, str | None]:
             idDict["archive_id"] = make_archive_id(_ie, temp_id)
             break
         except Exception as e:
-            LOG.exception(e)
-            LOG.error(f"Error getting archive ID: {e}")
+            LOG.exception(
+                "Failed to get archive ID for '%s' with extractor '%s'.",
+                url,
+                key,
+                extra={"url": url, "extractor": key, "exception_type": type(e).__name__},
+            )
 
     return idDict
 

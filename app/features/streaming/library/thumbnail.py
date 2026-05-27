@@ -35,7 +35,7 @@ def _get_semaphore() -> asyncio.Semaphore:
     if _SEM is None or _SEM_LIMIT != limit:
         _SEM = asyncio.Semaphore(limit)
         _SEM_LIMIT = limit
-        LOG.info(f"Configured thumbnail generation concurrency limit: {limit}")
+        LOG.info("Thumbnail generation concurrency limit: %s", limit, extra={"limit": limit})
 
     return _SEM
 
@@ -129,7 +129,11 @@ def _build_ffmpeg_args(media_file: Path, output_file: Path, *, seek_seconds: flo
 async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
     ff_info = await ffprobe(media_file)
     if not ff_info.has_video():
-        LOG.debug(f"Skipping thumbnail generation for '{media_file}' because no video stream exists.")
+        LOG.debug(
+            "Skipping thumbnail generation for '%s' because no video stream exists.",
+            media_file,
+            extra={"media_file": str(media_file)},
+        )
         return None
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -146,7 +150,12 @@ async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
     sem = _get_semaphore()
     if sem.locked():
         limit = _SEM_LIMIT or 1
-        LOG.debug(f"Waiting for thumbnail generation slot for '{media_file}'. limit={limit}")
+        LOG.debug(
+            "Waiting for a thumbnail generation slot for '%s' (limit=%s).",
+            media_file,
+            limit,
+            extra={"media_file": str(media_file), "limit": limit},
+        )
 
     async with sem:
         last_error: str = "ffmpeg produced an empty thumbnail file"
@@ -154,7 +163,17 @@ async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
             temp_file.unlink(missing_ok=True)
             args: list[str] = _build_ffmpeg_args(media_file, temp_file, seek_seconds=attempt_seek)
             LOG.debug(
-                f"Generating thumbnail for '{media_file}'. attempt={idx}/{len(attempts)} seek={'none' if attempt_seek is None else f'{attempt_seek:.3f}s'}"
+                "Generating thumbnail for '%s'. attempt=%s/%s seek=%s",
+                media_file,
+                idx,
+                len(attempts),
+                "none" if attempt_seek is None else f"{attempt_seek:.3f}s",
+                extra={
+                    "media_file": str(media_file),
+                    "attempt": idx,
+                    "attempt_count": len(attempts),
+                    "seek": "none" if attempt_seek is None else f"{attempt_seek:.3f}s",
+                },
             )
 
             try:
@@ -171,7 +190,12 @@ async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
             stdout, stderr = await proc.communicate()
             if 0 == proc.returncode and temp_file.exists() and temp_file.stat().st_size > 0:
                 temp_file.replace(output_file)
-                LOG.info(f"Generated thumbnail '{output_file}' for '{media_file}'.")
+                LOG.info(
+                    "Generated thumbnail '%s' for '%s'.",
+                    output_file,
+                    media_file,
+                    extra={"media_file": str(media_file), "output_file": str(output_file)},
+                )
                 return output_file
 
             if 0 != proc.returncode:
@@ -184,7 +208,13 @@ async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
                 last_error: str = "ffmpeg produced an empty thumbnail file"
 
             LOG.debug(
-                f"Thumbnail generation attempt failed for '{media_file}'. seek={'none' if attempt_seek is None else f'{attempt_seek:.3f}s'}"
+                "Thumbnail generation attempt failed for '%s'. seek=%s",
+                media_file,
+                "none" if attempt_seek is None else f"{attempt_seek:.3f}s",
+                extra={
+                    "media_file": str(media_file),
+                    "seek": "none" if attempt_seek is None else f"{attempt_seek:.3f}s",
+                },
             )
 
     temp_file.unlink(missing_ok=True)
@@ -224,11 +254,16 @@ async def ensure_thumb(media_file: Path, cache_root: Path, item_id: str | None =
 
         task = _IN_PROCESS.get(thumb_id)
         if task is not None and not task.done():
-            LOG.debug(f"Waiting for thumbnail generation for '{media_file}'.")
+            LOG.debug("Waiting for thumbnail generation for '%s'.", media_file, extra={"media_file": str(media_file)})
         else:
             task = asyncio.create_task(_run_ffmpeg(media_file, cache_file), name=f"thumb-{item_id or media_file.stem}")
             _IN_PROCESS[thumb_id] = task
-            LOG.debug(f"Starting thumbnail generation task for '{media_file}' -> '{cache_file}'.")
+            LOG.debug(
+                "Starting thumbnail generation for '%s' -> '%s'.",
+                media_file,
+                cache_file,
+                extra={"media_file": str(media_file), "cache_file": str(cache_file)},
+            )
 
     try:
         result: Path | None = await task

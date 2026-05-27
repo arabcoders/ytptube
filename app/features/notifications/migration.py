@@ -37,7 +37,11 @@ class Migration(FeatureMigration):
         try:
             items: list[dict] | None = json.loads(self._source_file.read_text())
         except Exception as exc:
-            LOG.exception("Failed to read %s: %s. Ignoring", self._source_file, exc)
+            LOG.exception(
+                "Failed to read notifications migration file '%s'. Ignoring.",
+                self._source_file,
+                extra={"file_path": str(self._source_file), "exception_type": type(exc).__name__},
+            )
             await self._move_file(self._source_file)
             return
 
@@ -56,7 +60,11 @@ class Migration(FeatureMigration):
                 await self._repo.create(normalized)
                 inserted += 1
             except Exception as exc:
-                LOG.exception("Failed to insert notification '%s': %s", normalized.get("name"), exc)
+                LOG.exception(
+                    "Failed to insert notification target '%s'.",
+                    normalized.get("name"),
+                    extra={"target_name": normalized.get("name"), "exception_type": type(exc).__name__},
+                )
 
         LOG.info("Migrated %s notification target(s) from %s.", inserted, self._source_file)
         await self._move_file(self._source_file)

@@ -330,7 +330,7 @@ class TestTaskExceptionHandling:
 
         handle_task_exception(task, logger)
         logger.error.assert_called_once()
-        error_msg = logger.error.call_args[0][0]
+        error_msg = logger.error.call_args[0][0] % logger.error.call_args[0][1:]
         assert "test_task" in error_msg, "Should include task name"
         assert "Test error" in error_msg, "Should include exception message"
 
@@ -349,5 +349,5 @@ class TestTaskExceptionHandling:
 
         handle_task_exception(task, logger)
         logger.error.assert_called_once()
-        error_msg = logger.error.call_args[0][0]
+        error_msg = logger.error.call_args[0][0] % logger.error.call_args[0][1:]
         assert "unknown_task" in error_msg or "Task" in error_msg, "Should handle unknown task name"

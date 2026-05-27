@@ -64,19 +64,34 @@ class PackageInstaller:
         current_version: str | None = self._get_installed_version(pkg)
 
         if current_version and version and self.compare_versions(current_version, version):
-            LOG.info(f"'{pkg}' is already installed with the specified version ({version}). Skipping installation.")
+            LOG.info(
+                "Package '%s' is already installed at version '%s'; skipping installation.",
+                pkg,
+                version,
+                extra={"package": pkg, "installed_version": current_version, "requested_version": version},
+            )
             return
 
         if upgrade and current_version and not version:
             latest_version: str | None = self._get_latest_version(pkg)
             if latest_version and parse_version(current_version) >= parse_version(latest_version):
-                LOG.info(f"'{pkg}' is already the latest version ({current_version}). Skipping upgrade.")
+                LOG.info(
+                    "Package '%s' is already at the latest version '%s'; skipping upgrade.",
+                    pkg,
+                    current_version,
+                    extra={"package": pkg, "installed_version": current_version, "latest_version": latest_version},
+                )
                 return
 
         if current_version:
-            LOG.info(f"'{pkg}' is already installed (version: {current_version}). Proceeding with upgrade...")
+            LOG.info(
+                "Package '%s' is installed at '%s'; proceeding with upgrade.",
+                pkg,
+                current_version,
+                extra={"package": pkg, "installed_version": current_version},
+            )
         else:
-            LOG.info(f"'{pkg}' is not installed. Installing...")
+            LOG.info("Package '%s' is not installed; installing it.", pkg, extra={"package": pkg})
 
         self._install_pkg(pkg, version=version)
 
@@ -93,9 +108,20 @@ class PackageInstaller:
                 resp = client.get(url)
                 if 200 == resp.status_code:
                     return resp.json()["info"]["version"]
-                LOG.warning(f"Failed to fetch '{pkg}' info: HTTP {resp.status_code}")
+                LOG.warning(
+                    "Failed to fetch PyPI metadata for '%s': HTTP %s.",
+                    pkg,
+                    resp.status_code,
+                    extra={"package": pkg, "status_code": resp.status_code, "url": url},
+                )
         except Exception as e:
-            LOG.warning(f"Error while querying PyPI for '{pkg}': {e}")
+            LOG.warning(
+                "Failed to query PyPI for '%s': %s",
+                pkg,
+                e,
+                extra={"package": pkg, "url": url, "exception_type": type(e).__name__},
+                exc_info=True,
+            )
         return None
 
     def _install_pkg(self, pkg: str, version: str | None = None) -> bool:
@@ -135,7 +161,12 @@ class PackageInstaller:
 
             return 0 == proc.returncode
         except subprocess.CalledProcessError as e:
-            LOG.error(f"Failed to install '{pkg}' (exit {e.returncode}). {e!s}")
+            LOG.exception(
+                "Failed to install package '%s' (exit %s).",
+                pkg,
+                e.returncode,
+                extra={"package": pkg, "returncode": e.returncode, "exception_type": type(e).__name__},
+            )
             self.out(out=e.stdout, err=e.stderr)
             raise
 
@@ -150,13 +181,20 @@ class PackageInstaller:
         if not pkgs.has_packages() or not self.user_site:
             return
 
-        LOG.info(f"Checking for user pip packages: {', '.join(pkgs.packages)}")
+        LOG.info("Checking user pip packages: %s", ", ".join(pkgs.packages), extra={"packages": pkgs.packages})
         for package in pkgs.packages:
             try:
                 self.action(package, upgrade=pkgs.allow_upgrade())
             except Exception as e:
-                LOG.error(f"Failed to install or upgrade package '{package}'. Error message: {e!s}")
-                LOG.exception(e)
+                LOG.exception(
+                    "Failed to install or upgrade package '%s'.",
+                    package,
+                    extra={
+                        "package": package,
+                        "allow_upgrade": pkgs.allow_upgrade(),
+                        "exception_type": type(e).__name__,
+                    },
+                )
 
     def compare_versions(self, current: str, target: str) -> bool:
         """

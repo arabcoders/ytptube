@@ -2319,7 +2319,7 @@ Binary image data with appropriate headers
       "level": "error",
       "levelno": 40,
       "logger": "downloads.queue",
-      "message": "Download failed",
+      "message": "Failed to download 'Example Video'.",
       "exception": {
         "type": "ValueError",
         "message": "bad",
@@ -2342,7 +2342,17 @@ Binary image data with appropriate headers
         "function": "start",
         "line": 123
       },
-      "fields": {}
+      "fields": {
+        "download": {
+          "download_id": "abc123",
+          "media_id": "video-id",
+          "title": "Example Video",
+          "url": "https://example.test/video",
+          "preset": "default",
+          "status": "error",
+          "has_cookies": false
+        }
+      }
     }
   ],
   "offset": 0,
@@ -2370,7 +2380,7 @@ Binary image data with appropriate headers
   "level": "error",
   "levelno": 40,
   "logger": "downloads.queue",
-  "message": "Download failed",
+  "message": "Failed to download 'Example Video'.",
   "exception": {
     "type": "ValueError",
     "message": "bad",
@@ -2393,7 +2403,17 @@ Binary image data with appropriate headers
     "function": "start",
     "line": 123
   },
-  "fields": {}
+  "fields": {
+    "download": {
+      "download_id": "abc123",
+      "media_id": "video-id",
+      "title": "Example Video",
+      "url": "https://example.test/video",
+      "preset": "default",
+      "status": "error",
+      "has_cookies": false
+    }
+  }
 }
 ```
 

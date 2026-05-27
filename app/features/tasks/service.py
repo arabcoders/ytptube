@@ -59,10 +59,23 @@ class Tasks(metaclass=Singleton):
 
             try:
                 self._scheduler.add(timer=task.timer, func=self._runner, args=(task,), id=f"task-cronjob-{task.id}")
-                LOG.info(f"Task '{task.id}: {task.name}' queued to be executed '{cron_time(task.timer)}'.")
+                LOG.info(
+                    "Queued task '%s' to run at '%s'.",
+                    task.name,
+                    cron_time(task.timer),
+                    extra={"task_id": task.id, "task_name": task.name, "timer": task.timer},
+                )
             except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to queue task '{task.name}'. '{e!s}'.")
+                LOG.exception(
+                    "Failed to queue task '%s'.",
+                    task.name,
+                    extra={
+                        "task_id": task.id,
+                        "task_name": task.name,
+                        "timer": task.timer,
+                        "exception_type": type(e).__name__,
+                    },
+                )
 
     async def _init_handlers_service(self, scheduler) -> None:
         """Initialize the handlers service after migrations."""
@@ -95,7 +108,12 @@ class Tasks(metaclass=Singleton):
 
             if task.timer and task.enabled:
                 self._scheduler.add(timer=task.timer, func=self._runner, args=(task,), id=task_id)
-                LOG.info(f"Task '{task.id}: {task.name}' queued to be executed '{cron_time(task.timer)}'.")
+                LOG.info(
+                    "Queued task '%s' to run at '%s'.",
+                    task.name,
+                    cron_time(task.timer),
+                    extra={"task_id": task.id, "task_name": task.name, "timer": task.timer},
+                )
 
     async def _runner(self, task: TaskModel) -> None:
         """
@@ -113,17 +131,27 @@ class Tasks(metaclass=Singleton):
         from app.library.ItemDTO import Item
 
         timeNow: str = datetime.now(UTC).isoformat()
+        task_id = task.id
+        task_name = task.name
         try:
-            if not (task := await self._repo.get(task.id)):
-                LOG.info(f"Task '{task.name}' no longer exists.")
+            if not (task := await self._repo.get(task_id)):
+                LOG.info("Task '%s' no longer exists.", task_name, extra={"task_id": task_id, "task_name": task_name})
                 return
 
             if not task.enabled:
-                LOG.debug(f"Task '{task.name}' is disabled. Skipping execution.")
+                LOG.debug(
+                    "Task '%s' is disabled. Skipping execution.",
+                    task.name,
+                    extra={"task_id": task.id, "task_name": task.name},
+                )
                 return
 
             if not task.url:
-                LOG.error(f"Failed to dispatch '{task.name}'. No URL found.")
+                LOG.error(
+                    "Failed to dispatch task '%s' because it has no URL.",
+                    task.name,
+                    extra={"task_id": task.id, "task_name": task.name},
+                )
                 return
 
             started: float = time.time()
@@ -156,7 +184,19 @@ class Tasks(metaclass=Singleton):
 
             timeNow = datetime.now(UTC).isoformat()
             ended: float = time.time()
-            LOG.info(f"Task '{task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
+            LOG.info(
+                "Task '%s' completed in %.2f seconds.",
+                task.name,
+                ended - started,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "url": task.url,
+                    "preset": preset,
+                    "elapsed_s": round(ended - started, 2),
+                    "status": status.get("status") if isinstance(status, dict) else None,
+                },
+            )
 
             notify.emit(
                 Events.TASK_DISPATCHED,
@@ -171,7 +211,17 @@ class Tasks(metaclass=Singleton):
                 message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
             )
         except Exception as e:
-            LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
+            LOG.exception(
+                "Failed to execute scheduled task '%s'.",
+                task.name,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "url": task.url,
+                    "time": timeNow,
+                    "exception_type": type(e).__name__,
+                },
+            )
             EventBus.get_instance().emit(
                 Events.LOG_ERROR,
                 data={"preset": task.preset},

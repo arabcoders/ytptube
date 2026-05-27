@@ -68,12 +68,36 @@ class StatusTracker:
         self.info.datetime = str(formatdate(time.time()))
         self.info.filename = safe_relative_path(filepath, Path(self.download_dir))
         self.final_update = True
-        self.logger.debug(f"Final file name: '{filepath}'.")
+        self.logger.debug(
+            "Final download file for '%s' is '%s'.",
+            self.info.title,
+            filepath,
+            extra={
+                "download": {
+                    "download_id": self.id,
+                    "item_id": self.info.id,
+                    "title": self.info.title,
+                    "file_path": str(filepath),
+                }
+            },
+        )
         try:
             filepath.relative_to(self.download_dir)
         except ValueError:
             self.logger.warning(
-                f"Final file '{filepath}' is outside of the intended download directory '{self.download_dir}'."
+                "Final file '%s' for '%s' is outside download directory '%s'.",
+                filepath,
+                self.info.title,
+                self.download_dir,
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "file_path": str(filepath),
+                        "download_dir": self.download_dir,
+                    }
+                },
             )
             self.info.filename = None
             return
@@ -97,8 +121,19 @@ class StatusTracker:
             except Exception as e:
                 self.info.extras["is_video"] = True
                 self.info.extras["is_audio"] = True
-                self.logger.exception(e)
-                self.logger.error(f"Failed to run ffprobe. {e}")
+                self.logger.exception(
+                    "Failed to inspect completed file '%s' with ffprobe.",
+                    filepath,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "file_path": str(filepath),
+                            "exception_type": type(e).__name__,
+                        }
+                    },
+                )
 
     async def process_status_update(self, status: StatusDict) -> None:
         """
@@ -115,11 +150,33 @@ class StatusTracker:
             return
 
         if status.get("id") != self.id or len(status) < 2:
-            self.logger.warning(f"Received invalid status update. {status}")
+            self.logger.warning(
+                "Received invalid status update for '%s'.",
+                self.info.title,
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "status": status,
+                    }
+                },
+            )
             return
 
         if self.debug:
-            self.logger.debug(f"Status Update: _id={self.info._id} status={status}")
+            self.logger.debug(
+                "Received status update for '%s'.",
+                self.info.title,
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "status": status,
+                    }
+                },
+            )
 
         if isinstance(status, str):
             self._notify.emit(Events.ITEM_UPDATED, data=self.info)
@@ -139,7 +196,19 @@ class StatusTracker:
         if self.info.status == "error" and "error" in status:
             self.info.error = status.get("error")
             if self._candidate_filepath and self._candidate_filepath.exists():
-                self.logger.debug(f"Cleaning up partial file: {self._candidate_filepath}")
+                self.logger.debug(
+                    "Cleaning up partial file '%s' for '%s'.",
+                    self._candidate_filepath,
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "file_path": str(self._candidate_filepath),
+                        }
+                    },
+                )
                 await self._finalize_file(self._candidate_filepath)
 
             self._notify.emit(
@@ -203,7 +272,19 @@ class StatusTracker:
 
         for i in range(drain_count):
             if self.final_update:
-                self.logger.info(f"({max_iterations}/{i}) Draining stopped. Final update received.")
+                self.logger.info(
+                    "Stopped draining status queue for '%s' after final update.",
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "max_iterations": max_iterations,
+                            "iteration": i,
+                        }
+                    },
+                )
                 break
 
             try:
@@ -220,7 +301,17 @@ class StatusTracker:
             if self.update_task and not self.update_task.done():
                 self.update_task.cancel()
         except Exception as e:
-            self.logger.error(f"Failed to cancel update task. {e}")
+            self.logger.exception(
+                f"Failed to cancel progress update task for '{self.info.title}'. {e!s}",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
 
     def put_terminator(self) -> None:
         """Put a terminator sentinel in the status queue."""

@@ -145,7 +145,11 @@ class UpdateChecker(metaclass=Singleton):
         strip_v_prefix: bool = False,
     ) -> tuple[str, str | None]:
         try:
-            LOG.info(f"Checking for {name} updates...")
+            LOG.info(
+                "Checking for %s updates...",
+                name,
+                extra={"target_name": name, "api_url": api_url, "current_version": current_version},
+            )
 
             client = get_async_client(use_curl=False)
             response = await client.get(
@@ -155,32 +159,59 @@ class UpdateChecker(metaclass=Singleton):
             )
 
             if 200 != response.status_code:
-                LOG.warning(f"Failed to check for {name} updates: HTTP {response.status_code}")
+                LOG.warning(
+                    "Failed to check for %s updates: HTTP %s",
+                    name,
+                    response.status_code,
+                    extra={"target_name": name, "api_url": api_url, "status_code": response.status_code},
+                )
                 return ("error", None)
 
             data: dict[str, Any] = response.json()
 
             latest_tag: str = data.get("tag_name", "")
             if not latest_tag:
-                LOG.warning(f"No tag_name found in {name} GitHub release data.")
+                LOG.warning(
+                    "No tag_name found in %s GitHub release data.",
+                    name,
+                    extra={"target_name": name, "api_url": api_url},
+                )
                 return ("error", None)
 
             compare_current: str = current_version.lstrip("v") if strip_v_prefix else current_version
             compare_latest: str = latest_tag.lstrip("v") if strip_v_prefix else latest_tag
 
             if self._compare_versions(compare_current, compare_latest):
-                LOG.warning(f"{name} update available: {current_version} -> {latest_tag}")
+                LOG.warning(
+                    "%s update available: %s -> %s",
+                    name,
+                    current_version,
+                    latest_tag,
+                    extra={"target_name": name, "current_version": current_version, "latest_version": latest_tag},
+                )
                 result = ("update_available", latest_tag)
                 await self._cache.aset(cache_key, result, self.CACHE_DURATION)
                 return result
 
-            LOG.info(f"No {name} updates available.")
+            LOG.info(
+                "No %s updates available.",
+                name,
+                extra={"target_name": name, "current_version": current_version},
+            )
             result = ("up_to_date", None)
             await self._cache.aset(cache_key, result, self.CACHE_DURATION)
             return result
         except Exception as e:
-            LOG.exception(e)
-            LOG.error(f"Error checking for {name} updates: {e!s}")
+            LOG.exception(
+                "Failed to check for %s updates.",
+                name,
+                extra={
+                    "target_name": name,
+                    "api_url": api_url,
+                    "cache_key": cache_key,
+                    "exception_type": type(e).__name__,
+                },
+            )
             return ("error", None)
 
     async def _check_app_version(self) -> tuple[str, str | None]:
@@ -238,5 +269,12 @@ class UpdateChecker(metaclass=Singleton):
 
             return parse_version(latest) > parse_version(current)
         except Exception as e:
-            LOG.warning(f"Error comparing versions '{current}' vs '{latest}': {e}")
+            LOG.warning(
+                "Error comparing versions '%s' vs '%s': %s",
+                current,
+                latest,
+                e,
+                extra={"current_version": current, "latest_version": latest, "exception_type": type(e).__name__},
+                exc_info=True,
+            )
             return False

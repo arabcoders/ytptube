@@ -26,7 +26,11 @@ async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
             to=sid,
         )
     except ValueError as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to add URL '%s' from socket request.",
+            url,
+            extra={"route": "socket.add_url", "url": url, "preset": item.preset, "sid": sid},
+        )
         notify.emit(Events.LOG_ERROR, data={"preset": item.preset}, title="Error Adding URL", message=str(e), to=sid)
 
 

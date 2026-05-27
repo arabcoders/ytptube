@@ -125,7 +125,11 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 status=web.HTTPInternalServerError.status_code,
             )
 
-        LOG.debug(f"Requesting random picture from '{safe_backend}'.")
+        LOG.debug(
+            "Requesting random picture from '%s'.",
+            safe_backend,
+            extra={"route": "images.background.random", "url": safe_backend},
+        )
 
         response = await client.request(
             method="GET",
@@ -153,7 +157,11 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
 
         await cache.aset(key=CACHE_KEY, value=data, ttl=3600)
 
-        LOG.debug(f"Random background image from '{safe_backend}' cached.")
+        LOG.debug(
+            "Random background image from '%s' cached.",
+            safe_backend,
+            extra={"route": "images.background.random", "url": safe_backend},
+        )
 
         return web.Response(
             body=data.get("content"),
@@ -164,8 +172,12 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 **response_headers,
             },
         )
-    except Exception as e:
-        LOG.error(f"Failed to request random background image from '{safe_backend}'. '{e!s}'.")
+    except Exception as exc:
+        LOG.exception(
+            "Failed to request random background image from '%s'.",
+            safe_backend,
+            extra={"route": "images.background.random", "url": safe_backend, "exception_type": type(exc).__name__},
+        )
         return web.json_response(
             data={"error": "failed to retrieve the random background image."},
             status=web.HTTPInternalServerError.status_code,

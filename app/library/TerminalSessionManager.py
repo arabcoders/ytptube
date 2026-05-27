@@ -343,7 +343,10 @@ class TerminalSessionManager(metaclass=Singleton):
                 try:
                     os.close(slave_fd)
                 except Exception as exc:
-                    LOG.error("Error closing PTY. '%s'.", str(exc))
+                    LOG.exception(
+                        "Failed to close the PTY slave file descriptor.",
+                        extra={"exception_type": type(exc).__name__},
+                    )
 
             read_task = asyncio.create_task(
                 self._read_process_output(session_id=session_id, proc=proc, use_pty=use_pty, master_fd=master_fd),
@@ -356,8 +359,11 @@ class TerminalSessionManager(metaclass=Singleton):
             final_status = "interrupted"
         except Exception as exc:
             final_status = "failed"
-            LOG.error("CLI execute exception was thrown.")
-            LOG.exception(exc)
+            LOG.exception(
+                "Terminal session '%s' command failed.",
+                session_id,
+                extra={"session_id": session_id, "use_pty": use_pty, "exception_type": type(exc).__name__},
+            )
             await self._append_event(session_id, "output", {"type": "stderr", "line": str(exc)})
         finally:
             final_status = await self._resolve_final_status(session_id=session_id, status=final_status)

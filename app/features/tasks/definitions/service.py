@@ -58,7 +58,16 @@ class TaskHandle:
             CronSim(timer, datetime.now(UTC))
         except Exception as e:
             timer = "15 */1 * * *"
-            LOG.error(f"Invalid timer format. '{e!s}'. Defaulting to '{timer}'.")
+            LOG.error(
+                "Invalid task handler timer '%s'; using default '%s'.",
+                self._config.tasks_handler_timer,
+                timer,
+                extra={
+                    "timer": self._config.tasks_handler_timer,
+                    "default_timer": timer,
+                    "exception_type": type(e).__name__,
+                },
+            )
 
         self._scheduler.add(
             timer=timer,
@@ -82,7 +91,11 @@ class TaskHandle:
                 continue
 
             if not task.get_ytdlp_opts().get_all().get("download_archive"):
-                LOG.debug(f"Task '{task.name}' does not have an archive file configured.")
+                LOG.debug(
+                    "Task '%s' does not have an archive file configured.",
+                    task.name,
+                    extra={"task_id": task.id, "task_name": task.name},
+                )
                 s["f"].append(task.name)
                 continue
 
@@ -97,7 +110,11 @@ class TaskHandle:
                     handler_groups[handler_name] = []
                 handler_groups[handler_name].append((task, handler))
             except Exception as e:
-                LOG.error(f"Failed to handle task '{task.name}'. '{e!s}'.")
+                LOG.exception(
+                    "Failed to find handler for task '%s'.",
+                    task.name,
+                    extra={"task_id": task.id, "task_name": task.name, "exception_type": type(e).__name__},
+                )
                 s["f"].append(task.name)
 
         for tasks_with_handlers in handler_groups.values():
@@ -114,7 +131,17 @@ class TaskHandle:
                     t.add_done_callback(lambda fut, t=task: self._handle_exception(fut, t))
                     dispatches.append((task, handler, t))
                 except Exception as e:
-                    LOG.error(f"Failed to dispatch task '{task.name}'. '{e!s}'.")
+                    LOG.exception(
+                        "Failed to schedule handler '%s' for task '%s'.",
+                        handler.__name__,
+                        task.name,
+                        extra={
+                            "task_id": task.id,
+                            "task_name": task.name,
+                            "handler_name": handler.__name__,
+                            "exception_type": type(e).__name__,
+                        },
+                    )
                     s["f"].append(task.name)
 
         if dispatches:
@@ -130,13 +157,26 @@ class TaskHandle:
                     continue
 
                 if result is None:
-                    LOG.error(f"Handler '{handler.__name__}' returned no result for task '{task.name}'.")
+                    LOG.error(
+                        "Task handler returned no result.",
+                        extra={"task_id": task.id, "task_name": task.name, "handler_name": handler.__name__},
+                    )
 
                 s["f"].append(task.name)
 
         if len(tasks) > 0:
             LOG.info(
-                f"Tasks handler summary: Handled: {len(s['h'])}, Unhandled: {len(s['u'])}, Disabled: {len(s['d'])}, Failed: {len(s['f'])}."
+                "Task handler summary: handled %s, unhandled %s, disabled %s, failed %s.",
+                len(s["h"]),
+                len(s["u"]),
+                len(s["d"]),
+                len(s["f"]),
+                extra={
+                    "handled_count": len(s["h"]),
+                    "unhandled_count": len(s["u"]),
+                    "disabled_count": len(s["d"]),
+                    "failed_count": len(s["f"]),
+                },
             )
 
     async def _dispatch(self, task: HandleTask, handler: type, delay: float) -> TaskResult | TaskFailure | None:
@@ -153,7 +193,12 @@ class TaskHandle:
 
         """
         if delay > 0:
-            LOG.debug(f"Delaying dispatch of task '{task.name}' by {delay:.1f} seconds.")
+            LOG.debug(
+                "Delaying dispatch of task '%s' by %.1f seconds.",
+                task.name,
+                delay,
+                extra={"task_id": task.id, "task_name": task.name, "delay_s": round(delay, 1)},
+            )
             await asyncio.sleep(delay)
         return await self.dispatch(task, handler=handler)
 
@@ -162,7 +207,11 @@ class TaskHandle:
             return
 
         if exc := fut.exception():
-            LOG.error(f"Exception while handling task '{task.name}': {exc}")
+            LOG.exception(
+                "Task handler raised after dispatch.",
+                extra={"task_id": task.id, "task_name": task.name, "exception_type": type(exc).__name__},
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
 
     async def _find_handler(self, task: HandleTask) -> type | None:
         for cls in self._handlers:
@@ -170,7 +219,17 @@ class TaskHandle:
                 if await Services.get_instance().handle_async(handler=cls.can_handle, task=task):
                     return cls
             except Exception as e:
-                LOG.exception(e)
+                LOG.exception(
+                    "Handler '%s' capability check failed for task '%s'.",
+                    cls.__name__,
+                    task.name,
+                    extra={
+                        "task_id": task.id,
+                        "task_name": task.name,
+                        "handler_name": cls.__name__,
+                        "exception_type": type(e).__name__,
+                    },
+                )
                 continue
 
         return None
@@ -204,11 +263,31 @@ class TaskHandle:
             extraction: TaskResult | TaskFailure = await services.handle_async(
                 handler=handler.extract, task=task, config=self._config
             )
-        except NotImplementedError:
-            LOG.error(f"Handler '{handler.__name__}' does not implement extract().")
+        except NotImplementedError as exc:
+            LOG.exception(
+                "Task handler '%s' does not implement extraction for task '%s'.",
+                handler.__name__,
+                task.name,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "handler_name": handler.__name__,
+                    "exception_type": type(exc).__name__,
+                },
+            )
             return TaskFailure(message="Handler does not support extraction.")
         except Exception as exc:
-            LOG.exception(exc)
+            LOG.exception(
+                "Handler '%s' extraction failed for task '%s'.",
+                handler.__name__,
+                task.name,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "handler_name": handler.__name__,
+                    "exception_type": type(exc).__name__,
+                },
+            )
             raise
 
         if isinstance(extraction, TaskFailure):
@@ -216,12 +295,21 @@ class TaskHandle:
             if extraction.error and extraction.error != extraction.message:
                 msg = f"{msg} {extraction.error}"
 
-            LOG.error(f"Handler '{handler.__name__}' failed to extract items for task '{task.name}': {msg}")
+            LOG.error(
+                "Task handler failed to extract items.",
+                extra={"task_id": task.id, "task_name": task.name, "handler_name": handler.__name__, "error": msg},
+            )
             return extraction
 
         if not isinstance(extraction, TaskResult):
             LOG.error(
-                f"Handler '{handler.__name__}' returned unexpected result type '{type(extraction).__name__}'.",
+                "Task handler returned unexpected result type.",
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "handler_name": handler.__name__,
+                    "result_type": type(extraction).__name__,
+                },
             )
             return TaskFailure(
                 message="Handler returned invalid result type.", metadata={"type": type(extraction).__name__}
@@ -249,7 +337,15 @@ class TaskHandle:
 
         for item in raw_items:
             if not isinstance(item, TaskItem):
-                LOG.warning(f"Handler '{handler.__name__}' returned unexpected result: {item!r}")
+                LOG.warning(
+                    "Task handler returned unexpected item type.",
+                    extra={
+                        "task_id": task.id,
+                        "task_name": task.name,
+                        "handler_name": handler.__name__,
+                        "item_type": type(item).__name__,
+                    },
+                )
                 continue
 
             url: str = item.url
@@ -258,7 +354,10 @@ class TaskHandle:
 
             archive_id: str | None = item.archive_id
             if not archive_id:
-                LOG.warning(f"'{task.name}': Item with URL '{url}' is missing an archive ID. Skipping.")
+                LOG.warning(
+                    "Task handler item is missing an archive ID.",
+                    extra={"task_id": task.id, "task_name": task.name, "handler_name": handler.__name__, "url": url},
+                )
                 continue
 
             if archive_id in queued:
@@ -287,12 +386,25 @@ class TaskHandle:
         if not filtered:
             if raw_items:
                 LOG.debug(
-                    f"Handler '{handler.__name__}' produced '{len(raw_items)}' for '{task.name}' items, none queued after filtering."
+                    "Task handler produced items, but none were queued after filtering.",
+                    extra={
+                        "task_id": task.id,
+                        "task_name": task.name,
+                        "handler_name": handler.__name__,
+                        "raw_count": len(raw_items),
+                    },
                 )
             return TaskResult(items=[], metadata=metadata)
 
         LOG.info(
-            f"Handler '{handler.__name__}' Found '{len(filtered)}' new items for '{task.name}' (raw={len(raw_items)})."
+            "Task handler found new items.",
+            extra={
+                "task_id": task.id,
+                "task_name": task.name,
+                "handler_name": handler.__name__,
+                "item_count": len(filtered),
+                "raw_count": len(raw_items),
+            },
         )
 
         base_item = Item.format(
@@ -367,7 +479,12 @@ class TaskHandle:
             try:
                 matched = await services.handle_async(handler=handler_cls.can_handle, task=task)
             except Exception as exc:  # pragma: no cover - defensive
-                LOG.exception(exc)
+                LOG.exception(
+                    "Handler '%s' inspection capability check failed for '%s'.",
+                    handler_cls.__name__,
+                    url,
+                    extra={"handler_name": handler_cls.__name__, "url": url, "exception_type": type(exc).__name__},
+                )
                 message = str(exc)
                 return TaskFailure(
                     message=message,
@@ -405,7 +522,12 @@ class TaskHandle:
                 metadata={**base_metadata, "supported": False},
             )
         except Exception as exc:
-            LOG.exception(exc)
+            LOG.exception(
+                "Handler '%s' manual inspection failed for '%s'.",
+                handler_cls.__name__,
+                url,
+                extra={"handler_name": handler_cls.__name__, "url": url, "exception_type": type(exc).__name__},
+            )
             message = str(exc)
             return TaskFailure(
                 message=message,
@@ -426,7 +548,8 @@ class TaskHandle:
 
         if not isinstance(extraction, TaskResult):
             LOG.error(
-                f"Handler '{handler_cls.__name__}' returned unexpected result type '{type(extraction).__name__}' during inspection.",
+                "Task handler returned unexpected result type during inspection.",
+                extra={"handler_name": handler_cls.__name__, "url": url, "result_type": type(extraction).__name__},
             )
             extraction = TaskResult()
 

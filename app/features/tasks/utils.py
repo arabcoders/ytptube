@@ -12,5 +12,9 @@ def cron_time(timer: str) -> str:
         cs = CronSim(timer, datetime.now(UTC))
         return cs.explain()
     except Exception as exc:
-        LOG.exception(exc)
+        LOG.exception(
+            "Failed to explain task timer '%s'.",
+            timer,
+            extra={"timer": timer, "exception_type": type(exc).__name__},
+        )
         return timer

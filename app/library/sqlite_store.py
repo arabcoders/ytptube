@@ -500,7 +500,11 @@ class SqliteStore(metaclass=ThreadSafe):
                 async with self._lock:
                     await self._apply(op)
             except Exception as ex:
-                LOG.exception(ex)
+                LOG.exception(
+                    "Failed to apply queued SQLite write operation '%s'.",
+                    op.op,
+                    extra={"operation": op.op, "type_value": op.type_value, "exception_type": type(ex).__name__},
+                )
             finally:
                 self._queue.task_done()
                 await asyncio.sleep(self._flush_interval)
@@ -623,11 +627,16 @@ class SqliteStore(metaclass=ThreadSafe):
         self._conn = await self._engine.connect()
 
         if version := await migrate.get_version(self._conn):
-            LOG.debug(f"DB Version: '{version}'.")
+            LOG.debug("DB version: '%s'.", version, extra={"db_version": version})
 
         await migrate.upgrade(self._conn, ROOT_PATH / "migrations")
         if not version:
-            LOG.debug(f"DB Version after initial migration: '{await migrate.get_version(self._conn)}'.")
+            migrated_version = await migrate.get_version(self._conn)
+            LOG.debug(
+                "DB version after initial migration: '%s'.",
+                migrated_version,
+                extra={"db_version": migrated_version},
+            )
 
         await self._conn.execute(text("PRAGMA journal_mode=wal"))
         await self._conn.execute(text("PRAGMA busy_timeout=5000"))

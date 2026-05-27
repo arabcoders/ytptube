@@ -94,7 +94,11 @@ def _offset_timer(timer: str, index: int) -> str:
 
         return f"{minute} {hour} {dom} {month} {dow}"
     except Exception as e:
-        LOG.warning(f"Failed to offset timer '{timer}': {e}")
+        LOG.warning(
+            "Failed to offset task timer.",
+            extra={"timer": timer, "index": index, "error": str(e), "exception_type": type(e).__name__},
+            exc_info=True,
+        )
         return timer
 
 
@@ -137,10 +141,10 @@ async def _get_info(url: str, preset: str) -> tuple[str | None, str | None]:
 
         return (name, converted_url)
     except TimeoutError:
-        LOG.debug(f"Timeout while inferring name from '{url}'")
+        LOG.debug("Timeout while inferring name from '%s'.", url, extra={"url": url, "preset": preset})
         return (None, None)
     except Exception as e:
-        LOG.debug(f"Failed to infer name from '{url}': {e}")
+        LOG.debug("Failed to infer task name from URL.", extra={"url": url, "preset": preset, "error": str(e)})
         return (None, None)
 
 
@@ -234,12 +238,12 @@ async def tasks_add(
 
     for idx, item in enumerate(data):
         if not isinstance(item, dict):
-            LOG.warning(f"Skipping item {idx}: not a dict")
+            LOG.warning("Skipping item %s: not a dict.", idx, extra={"index": idx})
             continue
 
         url = str(item.get("url", "")).strip()
         if not url:
-            LOG.debug(f"Skipping item {idx}: empty URL")
+            LOG.debug("Skipping item %s: empty URL.", idx, extra={"index": idx})
             continue
 
         inferred_name, converted_url = await _get_info(url, item.get("preset", first_task.preset))
@@ -293,7 +297,12 @@ async def tasks_add(
                 data=ConfigEvent(feature=CEFeature.TASKS, action=CEAction.CREATE, data=saved),
             )
         except ValueError as exc:
-            LOG.warning(f"Failed to create task {idx}: {exc}")
+            LOG.warning(
+                "Failed to create task from request item %s.",
+                idx,
+                extra={"index": idx, "error": str(exc), "exception_type": type(exc).__name__},
+                exc_info=True,
+            )
             continue
 
     if len(created_tasks) == 0:
@@ -482,7 +491,16 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
             url=url, preset=preset, handler_name=handler_name, static_only=static_only
         )
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to inspect task handler for '%s'.",
+            url,
+            extra={
+                "handler_name": handler_name,
+                "url": url,
+                "static_only": static_only,
+                "exception_type": type(e).__name__,
+            },
+        )
         return web.json_response(
             {"error": "Failed to inspect handler.", "message": str(e)},
             status=web.HTTPInternalServerError.status_code,
@@ -631,7 +649,11 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                     if not save_path.exists():
                         save_path.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                LOG.warning(f"Failed to resolve final path from outtmpl. '{e!s}'")
+                LOG.warning(
+                    "Failed to resolve task metadata path from output template.",
+                    extra={"task_id": task.id, "task_name": task.name, "error": str(e)},
+                    exc_info=True,
+                )
 
         info = {
             "id": ag(metadata, ["id", "channel_id"]),
@@ -649,7 +671,12 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                 data={"error": "Failed to get title from metadata."}, status=web.HTTPBadRequest.status_code
             )
 
-        LOG.info(f"Generating metadata for task '{task.name}' in '{save_path!s}'")
+        LOG.info(
+            "Generating metadata for task '%s' in '%s'.",
+            task.name,
+            save_path,
+            extra={"task_id": task.id, "task_name": task.name, "save_path": str(save_path)},
+        )
 
         from yt_dlp.utils import sanitize_filename
 
@@ -706,14 +733,20 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                 url: str | None = None
                 try:
                     url = thumbnails.get(key)
-                    LOG.info(f"Fetching thumbnail '{key}' from '{url}'")
+                    LOG.info(
+                        "Fetching task metadata thumbnail.",
+                        extra={"task_id": task.id, "task_name": task.name, "thumbnail": key, "url": url},
+                    )
                     if not url:
                         continue
 
                     try:
                         await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
                     except ValueError:
-                        LOG.warning(f"Invalid thumbnail url '{url}'")
+                        LOG.warning(
+                            "Invalid task metadata thumbnail URL.",
+                            extra={"task_id": task.id, "task_name": task.name, "thumbnail": key, "url": url},
+                        )
                         continue
 
                     resp = await client.request(
@@ -727,11 +760,24 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                     img_file.write_bytes(resp.content)
                     thumbnails[key] = str(img_file.relative_to(config.download_path))
                 except Exception as e:
-                    url_log = url or "unknown"
-                    LOG.warning(f"Failed to fetch thumbnail '{key}' from '{url_log}'. '{e!s}'")
+                    LOG.warning(
+                        "Failed to fetch task metadata thumbnail.",
+                        extra={
+                            "task_id": task.id,
+                            "task_name": task.name,
+                            "thumbnail": key,
+                            "url": url,
+                            "error": str(e),
+                        },
+                        exc_info=True,
+                    )
                     continue
         except Exception as e:
-            LOG.warning(f"Failed to fetch thumbnails. '{e!s}'")
+            LOG.warning(
+                "Failed to fetch task metadata thumbnails.",
+                extra={"task_id": task.id, "task_name": task.name, "error": str(e)},
+                exc_info=True,
+            )
 
         return web.json_response(data=info, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except ValueError as e:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -274,8 +273,17 @@ class Notifications(metaclass=Singleton):
                 msg = "Apprise failed to send notification."
                 raise RuntimeError(msg)  # noqa: TRY301
         except Exception as exc:
-            LOG.exception(exc)
-            LOG.error("Error sending Apprise notification: %s", exc)
+            LOG.exception(
+                "Failed to send Apprise notification for event '%s'.",
+                ev.event,
+                extra={
+                    "event_id": ev.id,
+                    "event": ev.event,
+                    "target_count": len(targets),
+                    "targets": [t.name for t in targets],
+                    "exception_type": type(exc).__name__,
+                },
+            )
             return {"error": str(exc), "event": ev.event, "id": ev.id, "targets": [t.name for t in targets]}
 
         return {}
@@ -335,14 +343,17 @@ class Notifications(metaclass=Singleton):
 
             return resp_data
         except Exception as exc:
-            err_msg = str(exc) or type(exc).__name__
-            tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-            LOG.error(
-                "Error sending notification event '%s: %s' to '%s'. '%s'. %s",
+            LOG.exception(
+                "Failed to send notification event '%s: %s' to '%s'.",
                 ev.event,
                 ev.id,
                 target.name,
-                err_msg,
-                tb,
+                extra={
+                    "event_id": ev.id,
+                    "event": ev.event,
+                    "target_name": target.name,
+                    "url": target.request.url,
+                    "exception_type": type(exc).__name__,
+                },
             )
             return {"url": target.request.url, "status": 500, "text": str(ev)}

@@ -89,7 +89,10 @@ class HttpAPI:
         try:
             app.on_response_prepare.append(on_prepare)
         except Exception as e:
-            LOG.exception(e)
+            LOG.exception(
+                "Failed to register response preparation middleware.",
+                extra={"operation": "register_on_response_prepare", "exception_type": type(e).__name__},
+            )
 
         app.on_shutdown.append(self.on_shutdown)
 
@@ -130,7 +133,13 @@ class HttpAPI:
                 route.path = f"{base_path}/{route.path.lstrip('/')}"
 
             if self.config.debug:
-                LOG.debug(f"Add ({route.name}) {route.method}: {route.path}.")
+                LOG.debug(
+                    "Adding route '%s' %s: %s.",
+                    route.name,
+                    route.method,
+                    route.path,
+                    extra={"route_name": route.name, "method": route.method, "path": route.path},
+                )
 
             app.router.add_route(route.method, route.path, handler=_handle(route.handler), name=route.name)
 
@@ -173,7 +182,14 @@ class HttpAPI:
                             data = base64.b64encode(data.encode()).decode()
                             auth_header = f"Basic {data}"
                     except Exception as e:
-                        LOG.exception(e)
+                        LOG.exception(
+                            "Failed to decrypt authentication cookie.",
+                            extra={
+                                "route": str(request.rel_url),
+                                "method": request.method,
+                                "exception_type": type(e).__name__,
+                            },
+                        )
 
             if auth_header is None:
                 return web.json_response(
@@ -226,7 +242,11 @@ class HttpAPI:
                     samesite="Strict",
                 )
             except Exception as e:
-                LOG.exception(e)
+                LOG.exception(
+                    "Failed to set authentication cookie for '%s'.",
+                    request.rel_url,
+                    extra={"route": str(request.rel_url), "method": request.method, "exception_type": type(e).__name__},
+                )
 
             return response
 
@@ -314,7 +334,16 @@ class HttpAPI:
                 else:
                     response = await Services.get_instance().handle_async(handler, request=request)
             except TypeError as te:
-                LOG.exception(te)
+                LOG.exception(
+                    "Failed to inject route handler dependencies for '%s'.",
+                    getattr(handler, "__name__", handler.__class__.__name__),
+                    extra={
+                        "handler": getattr(handler, "__name__", handler.__class__.__name__),
+                        "route": str(request.rel_url),
+                        "method": request.method,
+                        "exception_type": type(te).__name__,
+                    },
+                )
                 if "missing 1 required positional argument" in str(te) and "request" in str(te):
                     response = await handler(request)
                 else:
@@ -322,7 +351,12 @@ class HttpAPI:
         except web.HTTPException as e:
             return web.json_response(data={"error": str(e)}, status=e.status_code)
         except Exception as e:
-            LOG.exception(e)
+            LOG.exception(
+                "Failed to handle request '%s %s'.",
+                request.method,
+                request.rel_url,
+                extra={"route": str(request.rel_url), "method": request.method, "exception_type": type(e).__name__},
+            )
             response = web.json_response(
                 data={"error": "Internal Server Error"},
                 status=web.HTTPInternalServerError.status_code,

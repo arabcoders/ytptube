@@ -335,7 +335,11 @@ class YTDLPOpts:
                 if file and file.exists():
                     self._preset_opts["cookiefile"] = str(file)
             except ValueError as e:
-                LOG.error(f"Failed to load '{preset.name}' cookies. {e!s}")
+                LOG.exception(
+                    "Failed to load cookies for preset '%s'.",
+                    preset.name,
+                    extra={"preset": preset.name, "has_cookies": True, "exception_type": type(e).__name__},
+                )
 
         if preset.template:
             self._preset_opts["outtmpl"] = {"default": preset.template, "chapter": self._config.output_template_chapter}
@@ -403,7 +407,7 @@ class YTDLPOpts:
                 data["format"] = data["format"][1:]
 
         if self._config.debug:
-            LOG.debug(f"Final yt-dlp options: '{data!s}'.")
+            LOG.debug("Final yt-dlp options", extra={"ytdlp_options": data})
 
         return data
 

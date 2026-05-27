@@ -43,6 +43,7 @@ class FileLogFormatter(logging.Formatter):
 
 
 LOG_RECORD_ATTRS: set[str] = set(logging.makeLogRecord({}).__dict__) | {"asctime", "message"}
+SKIP_LOG_FIELD = object()
 
 
 class JsonLogFormatter(logging.Formatter):
@@ -85,10 +86,42 @@ class JsonLogFormatter(logging.Formatter):
             if key in LOG_RECORD_ATTRS or key.startswith("_"):
                 continue
 
-            if isinstance(value, str | int | float | bool) or value is None:
+            value = JsonLogFormatter._field(value)
+            if value is not SKIP_LOG_FIELD:
                 extra[key] = value
 
         return extra
+
+    @staticmethod
+    def _field(value: Any) -> Any:
+        if isinstance(value, str | int | float | bool) or value is None:
+            return value
+
+        if isinstance(value, Path):
+            return str(value)
+
+        if isinstance(value, dict):
+            data: dict[str, Any] = {}
+            for key, item in value.items():
+                if not isinstance(key, str) or key.startswith("_"):
+                    continue
+
+                item = JsonLogFormatter._field(item)
+                if item is not SKIP_LOG_FIELD:
+                    data[key] = item
+
+            return data
+
+        if isinstance(value, list):
+            data: list[Any] = []
+            for item in value:
+                item = JsonLogFormatter._field(item)
+                if item is not SKIP_LOG_FIELD:
+                    data.append(item)
+
+            return data
+
+        return SKIP_LOG_FIELD
 
     @staticmethod
     def _exception(
@@ -470,7 +503,11 @@ def check_id(file: Path) -> bool | str:
 
             return f.absolute()
     except OSError as e:
-        LOG.error(f"Error checking file '{file}': {e!s}")
+        LOG.exception(
+            "Failed to check for a matching file for '%s'.",
+            file,
+            extra={"file_path": str(file), "operation": "check_id", "exception_type": type(e).__name__},
+        )
         return False
 
     return False
@@ -526,7 +563,11 @@ def validate_url(url: str, allow_internal: bool = False) -> bool:
                 msg = "Access to internal urls or private networks is not allowed."
                 raise ValueError(msg)
         except socket.gaierror as e:
-            LOG.error(f"Error resolving hostname '{hostname}': {e!s}")
+            LOG.exception(
+                "Failed to resolve hostname '%s'.",
+                hostname,
+                extra={"hostname": hostname, "exception_type": type(e).__name__},
+            )
             msg = "Invalid hostname."
             raise ValueError(msg) from e
 
@@ -654,16 +695,46 @@ def rename_file(old_path: Path, new_name: str) -> tuple[Path, list[tuple[Path, P
                 renamed_sidecar: Path = old_sidecar.rename(new_sidecar)
                 renamed_sidecars.append((old_sidecar, renamed_sidecar))
             except OSError as e:
-                LOG.error(f"Failed to rename sidecar '{old_sidecar}': {e}")
+                LOG.exception(
+                    "Failed to rename sidecar '%s' to '%s'.",
+                    old_sidecar,
+                    new_sidecar,
+                    extra={
+                        "old_path": str(old_sidecar),
+                        "new_path": str(new_sidecar),
+                        "operation": "rename_sidecar",
+                        "exception_type": type(e).__name__,
+                    },
+                )
                 try:
                     renamed_main.rename(old_path)
-                except OSError:
-                    LOG.error(f"Failed to rollback main file rename from '{renamed_main}' to '{old_path}'")
+                except OSError as rollback_error:
+                    LOG.exception(
+                        "Failed to roll back main file rename from '%s' to '%s'.",
+                        renamed_main,
+                        old_path,
+                        extra={
+                            "old_path": str(renamed_main),
+                            "new_path": str(old_path),
+                            "operation": "rename_rollback",
+                            "exception_type": type(rollback_error).__name__,
+                        },
+                    )
                 raise
 
         return renamed_main, renamed_sidecars
     except OSError as e:
-        LOG.error(f"Failed to rename '{old_path}' to '{new_path}': {e}")
+        LOG.exception(
+            "Failed to rename '%s' to '%s'.",
+            old_path,
+            new_path,
+            extra={
+                "old_path": str(old_path),
+                "new_path": str(new_path),
+                "operation": "rename",
+                "exception_type": type(e).__name__,
+            },
+        )
         raise
 
 
@@ -721,24 +792,62 @@ def move_file(old_path: Path, target_dir: Path) -> tuple[Path, list[tuple[Path, 
                 moved_sidecar: Path = old_sidecar.rename(new_sidecar)
                 renamed_sidecars.append((old_sidecar, moved_sidecar))
             except OSError as e:
-                LOG.error(f"Failed to move sidecar '{old_sidecar}': {e}")
+                LOG.exception(
+                    "Failed to move sidecar '%s' to '%s'.",
+                    old_sidecar,
+                    new_sidecar,
+                    extra={
+                        "old_path": str(old_sidecar),
+                        "new_path": str(new_sidecar),
+                        "operation": "move_sidecar",
+                        "exception_type": type(e).__name__,
+                    },
+                )
                 try:
                     moved_main.rename(old_path)
                     # Rollback any sidecars that were already moved
                     for rolled_back_old, rolled_back_new in renamed_sidecars:
                         try:
                             rolled_back_new.rename(rolled_back_old)
-                        except OSError:
-                            LOG.error(
-                                f"Failed to rollback sidecar move from '{rolled_back_new}' to '{rolled_back_old}'"
+                        except OSError as rollback_error:
+                            LOG.exception(
+                                "Failed to roll back sidecar move from '%s' to '%s'.",
+                                rolled_back_new,
+                                rolled_back_old,
+                                extra={
+                                    "old_path": str(rolled_back_new),
+                                    "new_path": str(rolled_back_old),
+                                    "operation": "move_sidecar_rollback",
+                                    "exception_type": type(rollback_error).__name__,
+                                },
                             )
-                except OSError:
-                    LOG.error(f"Failed to rollback main file move from '{moved_main}' to '{old_path}'")
+                except OSError as rollback_error:
+                    LOG.exception(
+                        "Failed to roll back main file move from '%s' to '%s'.",
+                        moved_main,
+                        old_path,
+                        extra={
+                            "old_path": str(moved_main),
+                            "new_path": str(old_path),
+                            "operation": "move_rollback",
+                            "exception_type": type(rollback_error).__name__,
+                        },
+                    )
                 raise
 
         return moved_main, renamed_sidecars
     except OSError as e:
-        LOG.error(f"Failed to move '{old_path}' to '{new_path}': {e}")
+        LOG.exception(
+            "Failed to move '%s' to '%s'.",
+            old_path,
+            new_path,
+            extra={
+                "old_path": str(old_path),
+                "new_path": str(new_path),
+                "operation": "move",
+                "exception_type": type(e).__name__,
+            },
+        )
         raise
 
 
@@ -818,7 +927,11 @@ def get_file(download_path: str | Path, file: str | Path) -> tuple[Path, int]:
         if realFile.exists():
             return (realFile, 200)
     except Exception as e:
-        LOG.error(f"Error calculating download path. {e!s}")
+        LOG.exception(
+            "Failed to resolve download file path for '%s'.",
+            file,
+            extra={"file_path": str(file), "download_path": str(download_path), "exception_type": type(e).__name__},
+        )
         return (Path(file), 404)
 
     possibleFile: bool | str = check_id(file=realFile)
@@ -989,21 +1102,41 @@ def get_files(
     try:
         dir_path = dir_path.resolve()
     except OSError as e:
-        LOG.warning(f"Failed to resolve '{dir}' - {e}")
+        LOG.warning(
+            "Failed to resolve '%s': %s",
+            dir,
+            e,
+            extra={"requested_dir": dir, "base_path": str(base_path), "exception_type": type(e).__name__},
+            exc_info=True,
+        )
         return []
 
     try:
         dir_path.relative_to(base_path)
     except ValueError:
-        LOG.warning(f"Invalid path: '{dir_path}' - must be inside '{base_path}'.")
+        LOG.warning(
+            "Invalid path '%s': must be inside '%s'.",
+            dir_path,
+            base_path,
+            extra={"path": str(dir_path), "base_path": str(base_path)},
+        )
         return []
 
     if not str(dir_path).startswith(str(base_path)):
-        LOG.warning(f"Invalid path: '{dir_path}' - must be inside '{base_path}'.")
+        LOG.warning(
+            "Invalid path '%s': must be inside '%s'.",
+            dir_path,
+            base_path,
+            extra={"path": str(dir_path), "base_path": str(base_path)},
+        )
         return []
 
     if not dir_path.is_dir():
-        LOG.warning(f"Invalid path: '{dir_path}' - must be a directory.")
+        LOG.warning(
+            "Invalid path '%s': must be a directory.",
+            dir_path,
+            extra={"path": str(dir_path), "base_path": str(base_path)},
+        )
         return []
 
     contents: list = []
@@ -1017,13 +1150,28 @@ def get_files(
                 test: Path = file.resolve()
                 test.relative_to(base_path)
                 if not str(test).startswith(str(base_path)):
-                    LOG.warning(f"Invalid symlink: '{file}' - must resolve inside '{base_path}'.")
+                    LOG.warning(
+                        "Invalid symlink '%s': must resolve inside '%s'.",
+                        file,
+                        base_path,
+                        extra={"path": str(file), "resolved_path": str(test), "base_path": str(base_path)},
+                    )
                     continue
             except ValueError:
-                LOG.warning(f"Invalid symlink: '{file}' - must resolve inside '{base_path}'.")
+                LOG.warning(
+                    "Invalid symlink '%s': must resolve inside '%s'.",
+                    file,
+                    base_path,
+                    extra={"path": str(file), "base_path": str(base_path)},
+                )
                 continue
-            except OSError:
-                LOG.warning(f"Skipping broken symlink: {file}")
+            except OSError as e:
+                LOG.warning(
+                    "Skipping broken symlink '%s'.",
+                    file,
+                    extra={"path": str(file), "base_path": str(base_path), "exception_type": type(e).__name__},
+                    exc_info=True,
+                )
                 continue
 
         content_type = None
@@ -1213,7 +1361,11 @@ def delete_dir(dir: Path) -> bool:
         dir.rmdir()
         return True
     except Exception as e:
-        LOG.error(f"Failed to delete directory '{dir}': {e}")
+        LOG.exception(
+            "Failed to delete directory '%s'.",
+            dir,
+            extra={"dir": str(dir), "exception_type": type(e).__name__},
+        )
         return False
 
 
@@ -1261,7 +1413,11 @@ def load_modules(root_path: Path, directory: Path):
         try:
             importlib.import_module(full_name)
         except ImportError as e:
-            LOG.error(f"Failed to import module '{full_name}': {e}")
+            LOG.exception(
+                "Failed to import module '%s'.",
+                full_name,
+                extra={"module_name": full_name, "exception_type": type(e).__name__},
+            )
 
 
 def parse_tags(text: str) -> tuple[str, dict[str, str | bool]]:

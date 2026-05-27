@@ -26,7 +26,11 @@ class Migration(abc.ABC):
         try:
             await self.migrate()
         except Exception as exc:
-            LOG.exception("Feature migration '%s' failed: %s", self.name, exc)
+            LOG.exception(
+                "Feature migration '%s' failed.",
+                self.name,
+                extra={"feature": self.name, "exception_type": type(exc).__name__},
+            )
             return False
 
         return True

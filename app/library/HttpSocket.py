@@ -161,7 +161,7 @@ class HttpSocket:
                 return
 
             if not (route := socket_routes.get(event)):
-                LOG.debug(f"Unknown websocket event '{event}'.")
+                LOG.debug("Unknown WebSocket event '%s'.", event, extra={"sid": sid, "event": event})
                 return
 
             data = payload.get("data") if isinstance(payload, dict) else None
@@ -183,7 +183,7 @@ class HttpSocket:
 
             sid: str = gen_random(14)
             self.sio.add(sid, ws)
-            LOG.debug(f"WebSocket client '{sid}' connected.")
+            LOG.debug("WebSocket client '%s' connected.", sid, extra={"sid": sid})
 
             await handle_connect(sid)
 
@@ -192,8 +192,11 @@ class HttpSocket:
                 try:
                     await handle_message(sid, message)
                 except Exception as e:
-                    LOG.exception(e)
-                    LOG.error(f"Error handling WebSocket message from client '{sid}': {e}")
+                    LOG.exception(
+                        "Failed to handle WebSocket message from client '%s'.",
+                        sid,
+                        extra={"sid": sid, "message_size": len(message), "exception_type": type(e).__name__},
+                    )
 
             try:
                 i: int = 0
@@ -202,15 +205,22 @@ class HttpSocket:
                         i = i + 1
                         asyncio.create_task(handle_message_safe(sid, msg.data), name=f"ws_msg_{sid}_{i}")
                     elif msg.type == web.WSMsgType.ERROR:
-                        LOG.error(f"WebSocket connection closed with exception {ws.exception()}")
+                        LOG.error(
+                            "WebSocket connection closed with exception %s",
+                            ws.exception(),
+                            extra={
+                                "sid": sid,
+                                "exception": str(ws.exception()) if ws.exception() else None,
+                            },
+                        )
             finally:
                 await handle_disconnect(sid, getattr(ws, "close_reason", None))
                 self.sio.remove(sid)
-                LOG.debug(f"WebSocket client '{sid}' disconnected.")
+                LOG.debug("WebSocket client '%s' disconnected.", sid, extra={"sid": sid})
 
             return ws
 
         if self.config.debug:
-            LOG.debug(f"Add (ws) GET: {ws_path}.")
+            LOG.debug("Add (ws) GET: %s.", ws_path, extra={"method": "GET", "path": ws_path})
 
         app.router.add_get(ws_path, ws_handler, name="ws")
