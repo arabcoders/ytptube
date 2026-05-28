@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "cf90db3b4c09663bb8c4a1e533b7a80674804623",
-    "date": "2026-05-27T20:53:42+00:00",
+    "full_sha": "39ed3d03618be8e7380e57a4e274697266dcafbe",
+    "date": "2026-05-28T14:56:28+00:00",
     "commits": [
+      {
+        "sha": "39ed3d03",
+        "full_sha": "39ed3d03618be8e7380e57a4e274697266dcafbe",
+        "message": "refactor: add more context to the actual log message.",
+        "author": "arabcoders",
+        "date": "2026-05-28T14:56:28+00:00"
+      },
       {
         "sha": "cf90db3b",
         "full_sha": "cf90db3b4c09663bb8c4a1e533b7a80674804623",
