@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "39ed3d03618be8e7380e57a4e274697266dcafbe",
-    "date": "2026-05-28T14:56:28+00:00",
+    "full_sha": "fa8ba1af34592c54a291958916b4c68a7e38904a",
+    "date": "2026-05-28T18:26:23+00:00",
     "commits": [
+      {
+        "sha": "fa8ba1af",
+        "full_sha": "fa8ba1af34592c54a291958916b4c68a7e38904a",
+        "message": "feat: make log level runtime managable.",
+        "author": "arabcoders",
+        "date": "2026-05-28T18:26:23+00:00"
+      },
+      {
+        "sha": "1267dbaf",
+        "full_sha": "1267dbaf6bcbba503b7c3b65e41fed26cc6a2697",
+        "message": "refactor: use single logger namespace",
+        "author": "arabcoders",
+        "date": "2026-05-28T16:07:11+00:00"
+      },
       {
         "sha": "39ed3d03",
         "full_sha": "39ed3d03618be8e7380e57a4e274697266dcafbe",
