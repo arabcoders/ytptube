@@ -8,6 +8,7 @@ from pathlib import Path
 import anyio
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
+from aiohttp.web_log import AccessLogger
 
 from app.library.log import get_logger
 from app.library.Services import Services
@@ -20,6 +21,32 @@ from .router import RouteType, get_routes
 from .Utils import decrypt_data, encrypt_data, get_file, load_modules
 
 LOG = get_logger("http")
+
+
+class HttpAccessLogger(AccessLogger):
+    def log(self, request: Request, response: Response, time: float) -> None:
+        try:
+            fmt_info = self._format_line(request, response, time)
+
+            values: list[object] = []
+            extra: dict[str, object] = {"elapsed_ms": round(time * 1000.0, 2)}
+            for key, value in fmt_info:
+                values.append(value)
+
+                if isinstance(key, str):
+                    extra[key] = value
+                else:
+                    parent, child = key
+                    group = extra.get(parent, {})
+                    if not isinstance(group, dict):
+                        group = {}
+                    group[child] = value
+                    extra[parent] = group
+
+            message = self._log_format % tuple(values)
+            self.logger.info(message, extra=extra)
+        except Exception:
+            self.logger.exception("Error in logging")
 
 
 class HttpAPI:

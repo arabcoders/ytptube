@@ -33,6 +33,8 @@ const state = reactive<ConfigState>({
     app_env: 'production',
     simple_mode: false,
     default_pagination: 50,
+    log_level: '',
+    runtime_log_level: '',
     check_for_updates: true,
     new_version: '',
     yt_new_version: '',

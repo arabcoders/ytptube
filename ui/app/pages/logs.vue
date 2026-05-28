@@ -80,6 +80,19 @@
           </template>
         </USelect>
 
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-sliders-horizontal"
+          class="shrink-0"
+          :loading="runtimeLogLevelLoading"
+          :disabled="!canApplyRuntimeLogLevel || runtimeLogLevelLoading"
+          @click="applyRuntimeLogLevel"
+        >
+          Apply
+        </UButton>
+
         <UInput
           v-if="toggleFilter || query"
           id="filter"
@@ -170,7 +183,9 @@
                         {{ getLogLevel(entry.log.level) }}
                       </span>
                       <span
-                        v-if="entry.log.logger"
+                        v-if="
+                          entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)
+                        "
                         :title="entry.log.logger"
                         class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
                         >[{{ entry.log.logger }}]</span
@@ -196,11 +211,11 @@
 
               <div class="space-y-1">
                 <p class="text-sm font-medium text-default">
-                  {{ emptyStateTitle }}
+                  {{ hasActiveFilter ? 'No logs match these filters' : 'No log lines available' }}
                 </p>
 
                 <p class="text-sm text-toned">
-                  {{ emptyStateDescription }}
+                  {{ hasActiveFilter ? 'No logs match these filters' : 'No log lines available' }}
                 </p>
               </div>
             </div>
@@ -425,6 +440,10 @@ const LOG_LEVEL_ICON: Record<LogLevel, string> = {
   warning: 'i-lucide-triangle-alert',
   error: 'i-lucide-circle-x',
 };
+const formatLogLevel = (level: LogLevel): string => level.charAt(0).toUpperCase() + level.slice(1);
+const getStoredRuntimeLogLevel = (): LogLevel | null => {
+  return config.app.runtime_log_level ? getLogLevel(config.app.runtime_log_level) : null;
+};
 
 let scrollTimeout: NodeJS.Timeout | null = null;
 
@@ -441,6 +460,8 @@ const rawJsonOpen = useStorage<boolean>('logs_raw_json_open', false);
 const sourceOpen = useStorage<boolean>('logs_source_open', true);
 const selectedLevels = useStorage<LogLevel[]>('logs_level_filter', [...LOG_LEVELS]);
 const sseController = ref<AbortController | null>(null);
+const runtimeLogLevel = ref<LogLevel | null>(null);
+const runtimeLogLevelLoading = ref(false);
 
 const logs = ref<Array<log_line>>([]);
 const selectedLog = ref<log_line | null>(null);
@@ -512,15 +533,39 @@ const levelCounts = computed<Record<LogLevel, number>>(() => {
 
   return counts;
 });
+
 const levelFilterItems = computed<LevelFilterItem[]>(() => [
   ...LOG_LEVELS.map((level) => ({
-    label: `${level.charAt(0).toUpperCase()}${level.slice(1)} (${levelCounts.value[level]})`,
+    label: `${formatLogLevel(level)} (${levelCounts.value[level]})`,
     value: level,
   })),
 ]);
+
+const runtimeLogLevelCandidate = computed<LogLevel | null>(() => {
+  for (const level of LOG_LEVELS) {
+    const thresholdLevels = LOG_LEVELS.slice(LOG_LEVELS.indexOf(level));
+    if (thresholdLevels.length !== selectedLevelSet.value.size) {
+      continue;
+    }
+
+    if (thresholdLevels.every((item) => selectedLevelSet.value.has(item))) {
+      return level;
+    }
+  }
+
+  return null;
+});
+
+const canApplyRuntimeLogLevel = computed(
+  () =>
+    runtimeLogLevelCandidate.value !== null &&
+    runtimeLogLevel.value !== null &&
+    runtimeLogLevelCandidate.value !== runtimeLogLevel.value,
+);
+
 const levelFilterLabel = computed(() => {
   if (selectedLevelSet.value.size === LOG_LEVELS.length) {
-    return `All levels (${logs.value.length})`;
+    return `All levels`;
   }
 
   if (selectedLevelSet.value.size === 0) {
@@ -529,29 +574,7 @@ const levelFilterLabel = computed(() => {
 
   return LOG_LEVELS.filter((level) => selectedLevelSet.value.has(level)).join(', ');
 });
-const activeFilterLabel = computed(() => {
-  const parts: string[] = [];
-  if (hasTextFilter.value) {
-    parts.push(`query "${searchTerm.value}"`);
-  }
 
-  if (hasLevelFilter.value) {
-    const levels = LOG_LEVELS.filter((level) => selectedLevelSet.value.has(level));
-    parts.push(levels.length ? `levels ${levels.join(', ')}` : 'no selected levels');
-  }
-
-  return parts.join(' and ');
-});
-const emptyStateTitle = computed(() =>
-  hasActiveFilter.value ? 'No logs match these filters' : 'No log lines available',
-);
-const emptyStateDescription = computed(() => {
-  if (!hasActiveFilter.value) {
-    return 'No log lines are available yet.';
-  }
-
-  return `No loaded log lines match ${activeFilterLabel.value}. Adjust filters or load older lines.`;
-});
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
     query.value = '';
@@ -716,6 +739,72 @@ const handleScroll = (): void => {
 const scrollToBottom = async (fast = false): Promise<void> => {
   autoScroll.value = true;
   await scrollLogContainerToBottom(fast ? 'auto' : 'smooth');
+};
+
+const loadRuntimeLogLevel = async (): Promise<void> => {
+  try {
+    const response = await request('/api/logs/level');
+    if (!response.ok) {
+      runtimeLogLevel.value = getStoredRuntimeLogLevel();
+      return;
+    }
+
+    const data = await response.json();
+    if (typeof data.conf === 'string' && data.conf) {
+      config.app.log_level = getLogLevel(data.conf);
+    }
+
+    if (!config.app.log_level && getStoredRuntimeLogLevel() === null) {
+      runtimeLogLevel.value = null;
+      return;
+    }
+
+    if (typeof data.active === 'string' && data.active) {
+      const level = getLogLevel(data.active);
+      runtimeLogLevel.value = level;
+      config.app.runtime_log_level = level;
+      return;
+    }
+
+    runtimeLogLevel.value = getStoredRuntimeLogLevel();
+  } catch (error) {
+    runtimeLogLevel.value = getStoredRuntimeLogLevel();
+    console.error('Failed to load runtime log level:', error);
+  }
+};
+
+const applyRuntimeLogLevel = async (): Promise<void> => {
+  const normalized = runtimeLogLevelCandidate.value;
+  if (!normalized || runtimeLogLevel.value === null || normalized === runtimeLogLevel.value) {
+    return;
+  }
+
+  const previous = runtimeLogLevel.value;
+
+  try {
+    runtimeLogLevelLoading.value = true;
+    const response = await request(`/api/logs/level/${normalized}`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      const message = await parse_api_error(data);
+      runtimeLogLevel.value = previous;
+      toast.error(`Failed to change log level. ${message}`);
+      return;
+    }
+
+    runtimeLogLevel.value = normalized;
+    config.app.runtime_log_level = normalized;
+    toast.success('log level updated until next restart.');
+  } catch (error: any) {
+    runtimeLogLevel.value = previous;
+    const message = error?.message || 'Unknown error';
+    toast.error(`Failed to change log level. ${message}`);
+  } finally {
+    runtimeLogLevelLoading.value = false;
+  }
 };
 
 const handleStreamMessage = (event: EventSourceMessage): void => {
@@ -967,6 +1056,8 @@ onMounted(async () => {
     return;
   }
 
+  runtimeLogLevel.value = getStoredRuntimeLogLevel();
+  await loadRuntimeLogLevel();
   await fetchLogs();
   await startLogStream();
 });

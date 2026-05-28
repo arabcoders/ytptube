@@ -88,6 +88,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/conditions/{id}](#delete-apiconditionsid)
     - [GET /api/logs](#get-apilogs)
     - [GET /api/logs/stream](#get-apilogsstream)
+    - [GET /api/logs/level](#get-apilogslevel)
+    - [POST /api/logs/level/{level}](#post-apilogslevellevel)
     - [GET /api/notifications/](#get-apinotifications)
     - [GET /api/notifications/events/](#get-apinotificationsevents)
     - [POST /api/notifications/](#post-apinotifications)
@@ -2418,6 +2420,31 @@ Binary image data with appropriate headers
 ```
 
 - Returns `404 Not Found` if file logging is not enabled or the log file is missing.
+
+---
+
+### GET /api/logs/level
+**Purpose**: Read the active runtime log level.
+
+**Response**:
+```json
+{
+  "conf": "info",
+  "active": "info",
+  "levels": ["debug", "info", "warning", "error"]
+}
+```
+
+---
+
+### POST /api/logs/level/{level}
+**Purpose**: Change the active runtime log level.
+
+**Path Parameter**:
+- `level`: One of `debug`, `info`, `warning`, `error`.
+
+**Response**:
+- `204 No Content` on success.
 
 ---
 

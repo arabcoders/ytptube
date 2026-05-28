@@ -9,6 +9,12 @@ from aiohttp.web import Request, Response
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.log import get_logger
+from app.library.log_control import (
+    SUPPORTED_LOG_LEVELS,
+    get_runtime_log_level,
+    normalize_log_level,
+    set_runtime_log_level,
+)
 from app.library.router import route
 
 LOG = get_logger()
@@ -174,6 +180,40 @@ async def logs(request: Request, config: Config, encoder: Encoder) -> Response:
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )
+
+
+@route("GET", "api/logs/level", "logs.level")
+async def get_logs_level(config: Config, encoder: Encoder) -> Response:
+    configured = normalize_log_level(config.log_level)
+    active = get_runtime_log_level()
+    return web.json_response(
+        data={
+            "conf": configured,
+            "active": active,
+            "levels": list(SUPPORTED_LOG_LEVELS),
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
+
+
+@route("POST", "api/logs/level/{level}", "logs.level.set")
+async def set_logs_level(request: Request) -> Response:
+    if not (level := request.match_info.get("level")):
+        return web.json_response(
+            {"error": "Log level is required."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    try:
+        set_runtime_log_level(level)
+    except ValueError as e:
+        return web.json_response(
+            {"error": f"{e!s} Available levels: {', '.join(SUPPORTED_LOG_LEVELS)}."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    return web.Response(status=web.HTTPNoContent.status_code)
 
 
 @route("GET", "api/logs/stream", "logs.stream")

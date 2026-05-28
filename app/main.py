@@ -30,7 +30,7 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
-from app.library.HttpAPI import HttpAPI
+from app.library.HttpAPI import HttpAccessLogger, HttpAPI
 from app.library.HttpSocket import HttpSocket
 from app.library.httpx_client import close_shared_clients
 from app.library.log import get_logger
@@ -190,12 +190,14 @@ class Main:
                 cb()
 
         HTTP_LOGGER = None
+        HTTP_LOGGER_CLASS = None
         if self._config.access_log:
             from app.library.HttpAPI import LOG as HTTP_LOGGER
 
             HTTP_LOGGER.addFilter(
                 lambda record: f"GET {str(self._app.router['ping'].url_for()).rstrip('/')}" not in record.getMessage()
             )
+            HTTP_LOGGER_CLASS = HttpAccessLogger
 
         web.run_app(
             self._app,
@@ -203,6 +205,7 @@ class Main:
             port=port,
             loop=asyncio.get_event_loop(),
             access_log=HTTP_LOGGER,
+            access_log_class=HTTP_LOGGER_CLASS,
             print=started,
             handle_signals=cb is None,
         )

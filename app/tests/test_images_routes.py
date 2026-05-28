@@ -65,7 +65,12 @@ async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pyte
         response = await images.get_background(req, config, DummyCache())
 
     assert response.status == web.HTTPInternalServerError.status_code
-    record = next(record for record in caplog.records if record.name == images.LOG.name)
+    record = next(
+        record
+        for record in caplog.records
+        if record.name == images.LOG.name
+        and record.getMessage().startswith("Failed to request random background image")
+    )
     assert "apitoken=secret" not in record.getMessage()
     assert "user:pass@" not in record.getMessage()
     assert record.url == "https://redacted:redacted@example.com/bg.jpg?redacted#redacted"
