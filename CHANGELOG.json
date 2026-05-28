@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "fa8ba1af34592c54a291958916b4c68a7e38904a",
-    "date": "2026-05-28T18:26:23+00:00",
+    "full_sha": "ab56a7d8c9a6f9b41cce17e6e6cdf36bac4fd62f",
+    "date": "2026-05-28T19:21:56+00:00",
     "commits": [
+      {
+        "sha": "ab56a7d8",
+        "full_sha": "ab56a7d8c9a6f9b41cce17e6e6cdf36bac4fd62f",
+        "message": "fix: startup crash if access long was turned off",
+        "author": "arabcoders",
+        "date": "2026-05-28T19:21:56+00:00"
+      },
       {
         "sha": "fa8ba1af",
         "full_sha": "fa8ba1af34592c54a291958916b4c68a7e38904a",
