@@ -199,16 +199,18 @@ class Main:
             )
             HTTP_LOGGER_CLASS = HttpAccessLogger
 
-        web.run_app(
-            self._app,
-            host=host,
-            port=port,
-            loop=asyncio.get_event_loop(),
-            access_log=HTTP_LOGGER,
-            access_log_class=HTTP_LOGGER_CLASS,
-            print=started,
-            handle_signals=cb is None,
-        )
+        run_args = {
+            "host": host,
+            "port": port,
+            "loop": asyncio.get_event_loop(),
+            "access_log": HTTP_LOGGER,
+            "print": started,
+            "handle_signals": cb is None,
+        }
+        if HTTP_LOGGER_CLASS is not None:
+            run_args["access_log_class"] = HTTP_LOGGER_CLASS
+
+        web.run_app(self._app, **run_args)
 
 
 if __name__ == "__main__":
