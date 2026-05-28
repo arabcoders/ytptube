@@ -1,16 +1,16 @@
 import asyncio
 import datetime
-import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from app.features.core.utils import gen_random
+from app.library.log import get_logger
 
 from .BackgroundWorker import BackgroundWorker
 from .Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("events")
+LOG = get_logger()
 
 
 class Events:

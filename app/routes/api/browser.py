@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote_plus
@@ -14,10 +13,11 @@ from app.library.config import Config
 from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type, move_file, rename_file
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route("GET", "api/file/ffprobe/{file:.*}", "ffprobe")

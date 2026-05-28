@@ -1,9 +1,10 @@
 import asyncio
-import logging
 import re
 from typing import Any
 
 from aiohttp import web
+
+from app.library.log import get_logger
 
 from .cache import Cache
 from .config import Config
@@ -13,7 +14,7 @@ from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .version import APP_VERSION
 
-LOG: logging.Logger = logging.getLogger("update_checker")
+LOG = get_logger()
 
 
 class UpdateChecker(metaclass=Singleton):

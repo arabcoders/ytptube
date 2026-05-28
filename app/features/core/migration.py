@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import abc
-import logging
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from app.library.log import get_logger
+
 if TYPE_CHECKING:
     from app.library.config import Config
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 class Migration(abc.ABC):

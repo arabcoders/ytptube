@@ -1,6 +1,5 @@
 """Video entry processing."""
 
-import logging
 import time
 from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
@@ -11,6 +10,7 @@ from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
 from app.library.downloads import Download
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
+from app.library.log import get_logger
 from app.library.Utils import calc_download_path, merge_dict, str_to_dt
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.video")
+LOG = get_logger()
 
 
 async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, str]:

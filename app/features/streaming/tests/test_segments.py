@@ -255,7 +255,7 @@ async def test_stream_gpu_fallback(
     # Encourage GPU preference
     seg.vcodec = ""  # empty -> try GPUs first
     resp = _FakeResp()
-    with caplog.at_level(logging.WARNING, logger="player.segments"):
+    with caplog.at_level(logging.WARNING, logger="ytptube"):
         await seg.stream(tmp_path / "file.mp4", resp)
 
     # Ensure fallback path streamed data

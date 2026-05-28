@@ -19,6 +19,7 @@ from app.features.ytdlp.utils import extract_ytdlp_logs
 from app.features.ytdlp.ytdlp import YTDLP
 from app.library.config import Config
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.Utils import create_cookies_file
 
 from ...features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
@@ -64,7 +65,7 @@ class Download:
         self.max_workers = int(config.max_workers)
         self.is_live: bool = bool(info.is_live) or info.live_in is not None
         self.info_dict: dict | None = info_dict
-        self.logger: logging.Logger = logging.getLogger(f"Download.{info.id or info._id}")
+        self.logger: logging.Logger = get_logger()
         self.started_time = 0
         self.queue_time: datetime = datetime.now(tz=UTC)
         self.logs: list[str] = logs or []

@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import time
 from pathlib import Path
@@ -17,12 +16,13 @@ from app.library.downloads import DownloadQueue
 from app.library.downloads.core import Download
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.TerminalSessionManager import TerminalSessionConflictError, TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker
 from app.library.Utils import list_folders
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 DIAGNOSTICS_CACHE_KEY = "system:diagnostics"
 DIAGNOSTICS_CACHE_TTL = 5.0
 

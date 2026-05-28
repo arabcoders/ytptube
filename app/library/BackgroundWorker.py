@@ -1,15 +1,16 @@
 import asyncio
 import inspect
-import logging
 import threading
 from queue import Empty, Queue
 
 from aiohttp import web
 
+from app.library.log import get_logger
+
 from .Services import Services
 from .Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("BackgroundWorker")
+LOG = get_logger()
 
 
 class CloseThread:

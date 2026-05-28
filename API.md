@@ -2318,7 +2318,7 @@ Binary image data with appropriate headers
       "datetime": "2026-05-18T12:00:00.000+00:00",
       "level": "error",
       "levelno": 40,
-      "logger": "downloads.queue",
+      "logger": "ytptube",
       "message": "Failed to download 'Example Video'.",
       "exception": {
         "type": "ValueError",
@@ -2379,7 +2379,7 @@ Binary image data with appropriate headers
   "datetime": "2026-05-18T12:00:00.000+00:00",
   "level": "error",
   "levelno": 40,
-  "logger": "downloads.queue",
+  "logger": "ytptube",
   "message": "Failed to download 'Example Video'.",
   "exception": {
     "type": "ValueError",

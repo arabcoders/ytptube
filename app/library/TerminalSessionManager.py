@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import errno
 import json
-import logging
 import os
 import shlex
 import shutil
@@ -16,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import web
 
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from aiohttp.web import Request
 
-LOG: logging.Logger = logging.getLogger("terminal_manager")
+LOG = get_logger()
 
 ACTIVE_FILE_NAME = "active.json"
 METADATA_FILE_NAME = "metadata.json"

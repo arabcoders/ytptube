@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from app.features.conditions.migration import Migration
@@ -18,8 +17,9 @@ from sqlalchemy import delete, func, or_, select
 
 from app.features.conditions.models import ConditionModel
 from app.features.core.deps import get_session
+from app.library.log import get_logger
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 class ConditionsRepository(metaclass=Singleton):

@@ -1,11 +1,10 @@
-import logging
-
 from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
+from app.library.log import get_logger
 from app.library.router import RouteType, route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route(RouteType.SOCKET, "add_url", "add_url")

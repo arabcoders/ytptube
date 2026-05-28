@@ -1,10 +1,11 @@
-import logging
 import re
 from datetime import UTC, datetime
 
+from app.library.log import get_logger
+
 NAME_WHITESPACE_PATTERN = re.compile(r"\s+")
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 async def seed_defaults(repo) -> None:

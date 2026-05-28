@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import json
-import logging
 import os
 from collections.abc import Iterable
 from dataclasses import fields
@@ -14,6 +13,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection
 
+from app.library.log import get_logger
+
 from .Events import EventBus, Events
 from .ItemDTO import ItemDTO
 from .operations import Operation, matches_condition
@@ -21,7 +22,7 @@ from .Services import Services
 from .Singleton import ThreadSafe
 from .Utils import init_class
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 ITEM_DTO_FIELDS: set[str] = {f.name for f in fields(ItemDTO)}
 

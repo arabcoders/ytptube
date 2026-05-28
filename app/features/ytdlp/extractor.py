@@ -12,10 +12,11 @@ from aiohttp import web
 
 from app.features.ytdlp.utils import _DATA, LogWrapper, get_archive_id
 from app.features.ytdlp.ytdlp import YTDLP
+from app.library.log import get_logger
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("downloads.extractor")
+LOG = get_logger()
 
 LIVE_REEXTRACT_STATUSES: set[str] = {"is_live", "post_live"}
 REEXTRACT_INFO_KEY = "_ytptube_reextract"

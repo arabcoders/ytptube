@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import os
 import subprocess
 from pathlib import Path
@@ -9,9 +8,10 @@ from pathlib import Path
 from app.features.streaming.library.ffprobe import ffprobe
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.Utils import FILES_TYPE, get_file_sidecar
 
-LOG: logging.Logger = logging.getLogger("player.thumbnail")
+LOG = get_logger()
 
 IMAGE_TYPES: tuple[str, ...] = (".jpg", ".jpeg", ".png", ".webp")
 FOLDER_IMAGE_ORDER: tuple[str, ...] = ("thumbnail", "poster", "artwork", "cover", "fanart")

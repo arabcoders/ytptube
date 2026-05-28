@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import importlib
 import inspect
-import logging
 import pkgutil
 import random
 from datetime import UTC, datetime
@@ -15,6 +14,7 @@ from app.features.ytdlp.utils import archive_read
 from app.library.downloads.queue_manager import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
+from app.library.log import get_logger
 from app.library.Services import Services
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from app.library.config import Config
     from app.library.Scheduler import Scheduler
 
-LOG: logging.Logger = logging.getLogger("definitions.service")
+LOG = get_logger()
 
 
 class TaskHandle:

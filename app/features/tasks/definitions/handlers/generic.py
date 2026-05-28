@@ -6,7 +6,6 @@ import asyncio
 import fnmatch
 import hashlib
 import json
-import logging
 import re
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
@@ -26,6 +25,7 @@ from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
+from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from parsel.selector import SelectorList
 
-LOG: logging.Logger = logging.getLogger("handlers.generic")
+LOG = get_logger()
 CACHE: Cache = Cache()
 
 

@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path, PurePosixPath
 
 import magic
@@ -6,11 +5,12 @@ from aiohttp import web
 from aiohttp.web import Request, StreamResponse
 
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.router import add_route
 from app.library.Utils import get_file
 
 MIME = magic.Magic(mime=True)
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 EXT_TO_MIME: dict[str, str] = {
     ".html": "text/html",

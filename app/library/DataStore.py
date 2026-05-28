@@ -1,15 +1,16 @@
 import copy
-import logging
 from collections import OrderedDict
 from collections.abc import Iterable
 from enum import Enum
+
+from app.library.log import get_logger
 
 from .downloads import Download
 from .ItemDTO import ItemDTO
 from .operations import matches_condition
 from .sqlite_store import SqliteStore
 
-LOG = logging.getLogger("datastore")
+LOG = get_logger()
 
 
 class StoreType(str, Enum):

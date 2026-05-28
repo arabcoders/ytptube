@@ -18,10 +18,11 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.ItemDTO import Item
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import validate_url
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 def _get_preset_archive(preset: str) -> str | None:

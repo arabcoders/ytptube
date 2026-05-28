@@ -1,4 +1,3 @@
-import logging
 import shlex
 from pathlib import Path
 from typing import Any
@@ -6,9 +5,10 @@ from typing import Any
 from app.features.presets.schemas import Preset
 from app.features.ytdlp.utils import arg_converter
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.Utils import calc_download_path, create_cookies_file, merge_dict
 
-LOG: logging.Logger = logging.getLogger("ytdlp.ytdlp_opts")
+LOG = get_logger()
 
 
 class ARGSMerger:

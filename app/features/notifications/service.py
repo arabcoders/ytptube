@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -22,6 +21,7 @@ from app.library.encoder import Encoder
 from app.library.Events import Event, EventBus, Events
 from app.library.httpx_client import async_client
 from app.library.ItemDTO import Item, ItemDTO
+from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     import httpx
     from aiohttp import web
 
-LOG: logging.Logger = logging.getLogger("feature.notifications")
+LOG = get_logger()
 
 
 class Notifications(metaclass=Singleton):

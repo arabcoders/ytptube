@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import logging
 import threading
 from dataclasses import dataclass
 from typing import Any, Literal, cast, overload
 
 import httpx
+
+from app.library.log import get_logger
 
 from .cf_solver_shared import is_cf_challenge, solver
 
@@ -21,7 +22,7 @@ __all__: list[str] = [
     "sync_client",
 ]
 
-LOG: logging.Logger = logging.getLogger("httpx_cf")
+LOG = get_logger()
 
 
 class Globals:

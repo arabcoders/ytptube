@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING, Any
 import coloredlogs
 from dotenv import load_dotenv
 
+from app.library.log import get_logger
+
 from .Singleton import Singleton
 from .Utils import JsonLogFormatter
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
@@ -430,7 +432,7 @@ class Config(metaclass=Singleton):
             encoding="utf-8",
         )
 
-        LOG: logging.Logger = logging.getLogger("config")
+        LOG = get_logger()
 
         if self.debug:
             try:

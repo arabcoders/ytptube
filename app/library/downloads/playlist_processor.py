@@ -1,9 +1,9 @@
 """Playlist processing."""
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from app.features.ytdlp.utils import ytdlp_reject
+from app.library.log import get_logger
 from app.library.Utils import merge_dict
 
 if TYPE_CHECKING:
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.playlist")
+LOG = get_logger()
 
 
 async def process_playlist(

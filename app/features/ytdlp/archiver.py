@@ -1,12 +1,12 @@
-import logging
 import os
 import threading
 import time
 from pathlib import Path
 
+from app.library.log import get_logger
 from app.library.Singleton import ThreadSafe
 
-LOG: logging.Logger = logging.getLogger("Archiver")
+LOG = get_logger()
 
 
 class _Entry:

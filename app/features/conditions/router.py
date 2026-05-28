@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from collections import OrderedDict
 from typing import Any
 
@@ -15,10 +14,11 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import validate_url
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 def _model(model: Any) -> Condition:

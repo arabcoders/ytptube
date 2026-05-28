@@ -1,4 +1,3 @@
-import logging
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,10 +11,11 @@ from app.features.streaming.library.segments import Segments
 from app.features.streaming.library.subtitle import Subtitle, get_subtitle_tracks
 from app.features.streaming.types import StreamingError
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import get_file
 
-LOG: logging.Logger = logging.getLogger("streaming")
+LOG = get_logger()
 
 
 @route("GET", "api/player/playlist/{file:.*}.m3u8", "playlist_create")

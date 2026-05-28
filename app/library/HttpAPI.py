@@ -1,7 +1,6 @@
 import base64
 import hmac
 import inspect
-import logging
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -10,6 +9,7 @@ import anyio
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
 
+from app.library.log import get_logger
 from app.library.Services import Services
 
 from .cache import Cache
@@ -19,7 +19,7 @@ from .Events import EventBus
 from .router import RouteType, get_routes
 from .Utils import decrypt_data, encrypt_data, get_file, load_modules
 
-LOG: logging.Logger = logging.getLogger("http_api")
+LOG = get_logger("http")
 
 
 class HttpAPI:

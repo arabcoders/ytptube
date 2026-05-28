@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import os
 from pathlib import Path
 
@@ -9,9 +8,10 @@ from aiohttp.web import Request, Response
 
 from app.library.config import Config
 from app.library.encoder import Encoder
+from app.library.log import get_logger
 from app.library.router import route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 def _parse_jsonl_line(line: bytes | str) -> dict | None:

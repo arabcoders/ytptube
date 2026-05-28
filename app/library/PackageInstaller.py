@@ -1,14 +1,15 @@
 import importlib
 import importlib.metadata
-import logging
 import os
 import subprocess
 import sys
 from pathlib import Path
 
+from app.library.log import get_logger
+
 from .httpx_client import sync_client
 
-LOG: logging.Logger = logging.getLogger("package_installer")
+LOG = get_logger()
 
 
 def parse_version(v: str) -> tuple[int, ...]:

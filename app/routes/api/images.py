@@ -1,4 +1,3 @@
-import logging
 import random
 from typing import Any
 from urllib.parse import urlparse, urlsplit, urlunsplit
@@ -11,9 +10,10 @@ from app.library.ag_utils import ag
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
+from app.library.log import get_logger
 from app.library.router import route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 IS_REQUESTING_BACKGROUND: bool = False
 

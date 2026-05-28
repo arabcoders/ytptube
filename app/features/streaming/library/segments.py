@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import subprocess  # type: ignore
 import sys
@@ -19,6 +18,7 @@ from app.features.streaming.library.segment_encoders import (
     select_encoder,
 )
 from app.library.config import SUPPORTED_CODECS, Config
+from app.library.log import get_logger
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from .ffprobe import FFProbeResult
     from .segment_encoders import EncoderBuilder
 
-LOG: logging.Logger = logging.getLogger("player.segments")
+LOG = get_logger()
 
 
 class Segments:

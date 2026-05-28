@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,9 +8,10 @@ import pysubs2
 from pysubs2.formats.substation import SubstationFormat
 from pysubs2.time import ms_to_times
 
+from app.library.log import get_logger
 from app.library.Utils import ALLOWED_SUBS_EXTENSIONS, get_file_sidecar
 
-LOG: logging.Logger = logging.getLogger("player.subtitle")
+LOG = get_logger()
 
 SOURCE_FORMATS: tuple[str, ...] = ("vtt", "srt", "ass")
 DELIVERY_FORMATS: dict[str, str] = {

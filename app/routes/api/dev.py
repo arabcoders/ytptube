@@ -1,14 +1,14 @@
 import asyncio
-import logging
 
 from aiohttp import web
 from aiohttp.web import Response
 
 from app.library.config import Config
 from app.library.encoder import Encoder
+from app.library.log import get_logger
 from app.library.router import route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route("GET", "api/dev/loop/", "debug_loop")

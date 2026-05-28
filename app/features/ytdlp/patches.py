@@ -1,9 +1,10 @@
-import logging
 import subprocess
 import sys
 from typing import Any
 
-LOG: logging.Logger = logging.getLogger("ytdlp.utils")
+from app.library.log import get_logger
+
+LOG = get_logger()
 
 
 def patch_metadataparser() -> None:

@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Iterable
 from numbers import Number
 
@@ -8,9 +7,10 @@ from app.features.conditions.models import ConditionModel
 from app.features.conditions.repository import ConditionsRepository
 from app.features.ytdlp.mini_filter import match_str
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("feature.conditions")
+LOG = get_logger()
 
 
 def _ignored_identifiers(ignore_conditions: Iterable[str | Number] | None) -> tuple[set[str], bool]:

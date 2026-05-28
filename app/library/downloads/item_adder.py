@@ -14,6 +14,7 @@ from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import archive_add, archive_read, arg_converter, get_extras, ytdlp_reject
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
+from app.library.log import get_logger
 from app.library.Utils import create_cookies_file, merge_dict
 
 from .core import Download
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.add")
+LOG = get_logger()
 
 
 def _get_ignored_conditions(extras: dict | None) -> list[str]:

@@ -12,7 +12,9 @@ from pathlib import Path
 
 from library.PackageInstaller import PackageInstaller, Packages
 
-LOG: logging.Logger = logging.getLogger("upgrader")
+from app.library.log import get_logger
+
+LOG = get_logger()
 
 
 class Upgrader:

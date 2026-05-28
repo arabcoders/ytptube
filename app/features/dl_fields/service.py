@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from app.features.dl_fields.models import DLFieldModel
 from app.features.dl_fields.repository import DLFieldsRepository
 from app.features.dl_fields.schemas import DLField
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
     from aiohttp import web
 
-LOG: logging.Logger = logging.getLogger("feature.dl_fields")
+LOG = get_logger()
 
 
 class DLFields(metaclass=Singleton):

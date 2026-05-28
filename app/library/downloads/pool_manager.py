@@ -1,10 +1,10 @@
 """Download pool management - worker coordination and execution."""
 
 import asyncio
-import logging
 from typing import TYPE_CHECKING
 
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.Utils import calc_download_path
 
 from .core import Download
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.pool")
+LOG = get_logger()
 
 
 class PoolManager:

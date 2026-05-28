@@ -18,7 +18,9 @@ from typing import Any
 
 from Crypto.Cipher import AES
 
-LOG: logging.Logger = logging.getLogger("Utils")
+from app.library.log import get_logger
+
+LOG = get_logger()
 
 ALLOWED_SUBS_EXTENSIONS: set[str] = {".srt", ".vtt", ".ass"}
 "Allowed subtitle file extensions."

@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +16,7 @@ from app.library.downloads.utils import safe_relative_path
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import calc_download_path, get_file_sidecar, rename_file
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from library.downloads import Download
 
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route("GET", r"api/history/", "items_list")

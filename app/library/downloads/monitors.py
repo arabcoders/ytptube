@@ -1,6 +1,5 @@
 """Queue monitoring functions."""
 
-import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -8,12 +7,13 @@ from typing import TYPE_CHECKING
 from app.library.ag_utils import ag
 from app.library.Events import Events
 from app.library.ItemDTO import Item, ItemDTO
+from app.library.log import get_logger
 from app.library.Utils import dt_delta, str_to_dt
 
 if TYPE_CHECKING:
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.monitors")
+LOG = get_logger()
 
 
 async def check_for_stale(queue: "DownloadQueue") -> None:

@@ -2,16 +2,17 @@
 from __future__ import annotations
 
 import json
-import logging
 import time
 import urllib.request
 from typing import Any
 from urllib.parse import urlparse
 
+from app.library.log import get_logger
+
 from .cache import Cache
 
 CACHE: Cache = Cache()
-LOG: logging.Logger = logging.getLogger("cf_solver")
+LOG = get_logger()
 
 
 def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> dict[str, Any] | None:

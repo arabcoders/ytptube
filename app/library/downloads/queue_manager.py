@@ -1,6 +1,5 @@
 import functools
 import glob
-import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -10,6 +9,7 @@ from aiohttp import web
 from app.library.config import Config
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
+from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton
@@ -24,7 +24,7 @@ from .pool_manager import PoolManager
 if TYPE_CHECKING:
     from app.library.DataStore import StoreType
 
-LOG: logging.Logger = logging.getLogger("downloads.queue")
+LOG = get_logger()
 
 
 class DownloadQueue(metaclass=Singleton):

@@ -1,13 +1,12 @@
-import logging
-
 from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import get_file
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route(["GET", "HEAD"], "/api/download/{filename:.+}", "download_static")

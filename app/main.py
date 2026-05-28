@@ -33,13 +33,14 @@ from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAPI
 from app.library.HttpSocket import HttpSocket
 from app.library.httpx_client import close_shared_clients
+from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
 from app.library.TerminalSessionManager import TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker
 
-LOG = logging.getLogger("app")
+LOG = get_logger()
 MIME = magic.Magic(mime=True)
 
 ROOT_PATH: Path = Path(__file__).parent.absolute()

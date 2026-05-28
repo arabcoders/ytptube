@@ -1,5 +1,4 @@
 import hashlib
-import logging
 import re
 from typing import TYPE_CHECKING, Any
 from xml.etree.ElementTree import Element
@@ -10,13 +9,14 @@ from app.features.tasks.definitions.results import HandleTask, TaskFailure, Task
 from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
+from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element
 
-LOG: logging.Logger = logging.getLogger("handlers.rss")
+LOG = get_logger()
 CACHE: Cache = Cache()
 
 

@@ -1,4 +1,3 @@
-import logging
 import re
 from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element
@@ -7,13 +6,14 @@ import httpx
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
+from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element
 
-LOG: logging.Logger = logging.getLogger("handlers.twitch")
+LOG = get_logger()
 
 
 class TwitchHandler(BaseHandler):

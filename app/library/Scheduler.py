@@ -1,13 +1,14 @@
 import asyncio
-import logging
 
 from aiocron import Cron
 from aiohttp import web
 
+from app.library.log import get_logger
+
 from .Events import EventBus, Events
 from .Singleton import Singleton
 
-LOG = logging.getLogger("scheduler")
+LOG = get_logger()
 
 
 class Scheduler(metaclass=Singleton):

@@ -23,11 +23,12 @@ if APP_ROOT not in sys.path:
 
 from app.library.DataStore import StoreType
 from app.library.encoder import Encoder
+from app.library.log import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
-LOG = logging.getLogger("seed_db")
+LOG = get_logger()
 
 USED_IDS: set[str] = set()
 

@@ -1,5 +1,4 @@
 # flake8: noqa: F401, RUF100, W291, I001
-import logging
 import sys
 from typing import Any
 
@@ -10,6 +9,7 @@ from yt_dlp.utils import make_archive_id
 from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import apply_ytdlp_patches
 from app.library.cf_solver_handler import set_cf_handler
+from app.library.log import get_logger
 
 
 class _ArchiveProxy:
@@ -67,7 +67,7 @@ class YTDLP(yt_dlp.YoutubeDL):
                 postprocessors.value.update({"NFOMakerPP": NFOMakerPP})
                 YTDLP._registered = True
             except Exception:
-                logging.getLogger("ytdlp.wrapper").exception("Failed to register yt-dlp plugins")
+                get_logger().exception("Failed to register yt-dlp plugins")
 
         # Avoid yt-dlp preloading the archive file by stripping the param first
         orig_file = None

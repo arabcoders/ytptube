@@ -1,13 +1,13 @@
 import asyncio
 import functools
 import json
-import logging
 from pathlib import Path
 from typing import Any
 
 from aiohttp import web
 
 from app.features.core.utils import gen_random
+from app.library.log import get_logger
 from app.library.router import Route, RouteType, get_routes
 from app.library.Services import Services
 from app.library.Utils import load_modules
@@ -17,7 +17,7 @@ from .encoder import Encoder
 from .Events import Event, EventBus, Events
 from .ItemDTO import Item
 
-LOG: logging.Logger = logging.getLogger("socket_api")
+LOG = get_logger()
 
 
 class WebSocketHub:

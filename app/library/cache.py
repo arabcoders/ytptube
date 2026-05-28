@@ -1,17 +1,17 @@
 import hashlib
-import logging
 import threading
 import time
 from typing import Any
 
 from aiohttp import web
 
+from app.library.log import get_logger
 from app.library.Services import Services
 
 from .Scheduler import Scheduler
 from .Singleton import ThreadSafe
 
-LOG = logging.getLogger("cache")
+LOG = get_logger()
 
 
 class Cache(metaclass=ThreadSafe):

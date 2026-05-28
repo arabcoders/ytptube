@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 from aiohttp import web
@@ -16,9 +15,10 @@ from app.features.tasks.definitions.schemas import (
 from app.features.tasks.definitions.utils import model_to_schema, schema_to_payload
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route("GET", "api/tasks/definitions/", "task_definitions")
