@@ -171,10 +171,9 @@ class Segments:
         stderr_task: asyncio.Task[None] = asyncio.create_task(_drain_stderr())
 
         LOG.debug(
-            "Streaming '%s' segment '%s'. ffmpeg: %s",
-            file,
+            "Streaming segment %s for '%s'.",
             self.index,
-            " ".join(args),
+            file,
             extra={"file": str(file), "segment_index": self.index, "ffmpeg_args": args},
         )
 
@@ -197,7 +196,10 @@ class Segments:
             try:
                 await asyncio.wait_for(proc.wait(), timeout=5)
             except TimeoutError:
-                LOG.warning("ffmpeg process did not terminate in time. Killing it.")
+                LOG.warning(
+                    "Segment stream for '%s' did not stop ffmpeg in time after the client disconnected; killing it.",
+                    file,
+                )
                 proc.kill()
             raise
         except ConnectionResetError:
@@ -210,7 +212,10 @@ class Segments:
                 try:
                     rc: int = await asyncio.wait_for(proc.wait(), timeout=5)
                 except TimeoutError:
-                    LOG.warning("ffmpeg process did not terminate in time after disconnect. Killing it.")
+                    LOG.warning(
+                        "Segment stream for '%s' did not stop ffmpeg in time after the client disconnected; killing it.",
+                        file,
+                    )
                     proc.kill()
                     try:
                         rc = await asyncio.wait_for(proc.wait(), timeout=5)
@@ -221,7 +226,7 @@ class Segments:
                 try:
                     rc = await asyncio.wait_for(proc.wait(), timeout=30)
                 except TimeoutError:
-                    LOG.warning("ffmpeg process wait timed out. Killing it.")
+                    LOG.warning("Segment stream for '%s' did not stop ffmpeg in time; killing the process.", file)
                     proc.kill()
                     try:
                         rc = await asyncio.wait_for(proc.wait(), timeout=5)
@@ -266,8 +271,10 @@ class Segments:
                 if 0 != rc:
                     err: str = stderr_text[:500] if stderr_text else "no error output"
                     LOG.warning(
-                        "Hardware encoder failed (rc=%s): %s. Trying fallbacks.",
-                        rc,
+                        "Retrying segment %s for '%s' because hardware encoder '%s' failed: %s.",
+                        self.index,
+                        file,
+                        s_codec,
                         err,
                         extra={"ffmpeg_args": ffmpeg_args, "returncode": rc, "stderr": err, "codec": s_codec},
                     )

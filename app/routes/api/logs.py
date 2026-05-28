@@ -215,7 +215,6 @@ async def stream_logs(request: Request, config: Config, encoder: Encoder) -> Res
     )
 
     try:
-        LOG.debug("Log streaming connected.")
         while not log_task.done():
             await asyncio.sleep(1.0)
             if request.transport is None or request.transport.is_closing():
@@ -225,7 +224,6 @@ async def stream_logs(request: Request, config: Config, encoder: Encoder) -> Res
     except asyncio.CancelledError:
         pass
     finally:
-        LOG.debug("Log streaming disconnected.")
         try:
             await response.write_eof()
         except ConnectionResetError:

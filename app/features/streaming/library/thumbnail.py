@@ -35,7 +35,7 @@ def _get_semaphore() -> asyncio.Semaphore:
     if _SEM is None or _SEM_LIMIT != limit:
         _SEM = asyncio.Semaphore(limit)
         _SEM_LIMIT = limit
-        LOG.info("Thumbnail generation concurrency limit: %s", limit, extra={"limit": limit})
+        LOG.info("Configured thumbnail generation to run %s job(s) at a time.", limit, extra={"limit": limit})
 
     return _SEM
 

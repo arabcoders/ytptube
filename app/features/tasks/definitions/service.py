@@ -158,7 +158,9 @@ class TaskHandle:
 
                 if result is None:
                     LOG.error(
-                        "Task handler returned no result.",
+                        "Handler '%s' returned no result for task '%s'.",
+                        handler.__name__,
+                        task.name,
                         extra={"task_id": task.id, "task_name": task.name, "handler_name": handler.__name__},
                     )
 
@@ -166,7 +168,7 @@ class TaskHandle:
 
         if len(tasks) > 0:
             LOG.info(
-                "Task handler summary: handled %s, unhandled %s, disabled %s, failed %s.",
+                "Task dispatch finished: %s handled, %s unhandled, %s disabled, %s failed.",
                 len(s["h"]),
                 len(s["u"]),
                 len(s["d"]),
@@ -296,14 +298,20 @@ class TaskHandle:
                 msg = f"{msg} {extraction.error}"
 
             LOG.error(
-                "Task handler failed to extract items.",
+                "Handler '%s' failed to extract items for task '%s' because %s.",
+                handler.__name__,
+                task.name,
+                msg,
                 extra={"task_id": task.id, "task_name": task.name, "handler_name": handler.__name__, "error": msg},
             )
             return extraction
 
         if not isinstance(extraction, TaskResult):
             LOG.error(
-                "Task handler returned unexpected result type.",
+                "Handler '%s' returned unexpected result type '%s' for task '%s'.",
+                handler.__name__,
+                type(extraction).__name__,
+                task.name,
                 extra={
                     "task_id": task.id,
                     "task_name": task.name,
@@ -338,7 +346,10 @@ class TaskHandle:
         for item in raw_items:
             if not isinstance(item, TaskItem):
                 LOG.warning(
-                    "Task handler returned unexpected item type.",
+                    "Handler '%s' returned unexpected item type '%s' for task '%s'.",
+                    handler.__name__,
+                    type(item).__name__,
+                    task.name,
                     extra={
                         "task_id": task.id,
                         "task_name": task.name,
@@ -355,7 +366,10 @@ class TaskHandle:
             archive_id: str | None = item.archive_id
             if not archive_id:
                 LOG.warning(
-                    "Task handler item is missing an archive ID.",
+                    "Handler '%s' skipped '%s' for task '%s' because it has no archive ID.",
+                    handler.__name__,
+                    url,
+                    task.name,
                     extra={"task_id": task.id, "task_name": task.name, "handler_name": handler.__name__, "url": url},
                 )
                 continue
@@ -386,7 +400,10 @@ class TaskHandle:
         if not filtered:
             if raw_items:
                 LOG.debug(
-                    "Task handler produced items, but none were queued after filtering.",
+                    "Handler '%s' found %s item(s) for task '%s', but none were queued.",
+                    handler.__name__,
+                    len(raw_items),
+                    task.name,
                     extra={
                         "task_id": task.id,
                         "task_name": task.name,
@@ -397,7 +414,10 @@ class TaskHandle:
             return TaskResult(items=[], metadata=metadata)
 
         LOG.info(
-            "Task handler found new items.",
+            "Handler '%s' found %s new item(s) for task '%s'.",
+            handler.__name__,
+            len(filtered),
+            task.name,
             extra={
                 "task_id": task.id,
                 "task_name": task.name,
@@ -548,7 +568,10 @@ class TaskHandle:
 
         if not isinstance(extraction, TaskResult):
             LOG.error(
-                "Task handler returned unexpected result type during inspection.",
+                "Handler '%s' returned unexpected result type '%s' while inspecting '%s'.",
+                handler_cls.__name__,
+                type(extraction).__name__,
+                url,
                 extra={"handler_name": handler_cls.__name__, "url": url, "result_type": type(extraction).__name__},
             )
             extraction = TaskResult()

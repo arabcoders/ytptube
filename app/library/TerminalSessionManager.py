@@ -296,7 +296,7 @@ class TerminalSessionManager(metaclass=Singleton):
         master_fd: int | None = None
 
         try:
-            LOG.info("Cli command from client. '%s'", command)
+            LOG.info("Starting terminal session '%s' command.", session_id, extra={"session_id": session_id})
             args = ["yt-dlp", *shlex.split(command, posix=os.name != "nt")]
             env_vars = self._build_env()
 
@@ -377,7 +377,7 @@ class TerminalSessionManager(metaclass=Singleton):
                     try:
                         return_code = await asyncio.wait_for(proc.wait(), timeout=self._shutdown_timeout)
                     except TimeoutError:
-                        LOG.warning("Terminal session '%s' process did not exit cleanly.", session_id)
+                        LOG.warning("Terminal session '%s' did not exit after repeated shutdown attempts.", session_id)
 
             if proc is not None:
                 proc_returncode = getattr(proc, "returncode", None)

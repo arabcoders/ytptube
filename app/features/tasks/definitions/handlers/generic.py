@@ -561,7 +561,7 @@ class GenericTaskHandler(BaseHandler):
         container_selector = container.get("selector") or container.get("expression") or ""
         if not container_selector:
             LOG.error(
-                "Container missing selector/expression. Definition '%s'.",
+                "Task definition '%s' is missing an item container selector.",
                 definition.name,
                 extra={"definition": definition.name},
             )
@@ -771,7 +771,7 @@ class GenericTaskHandler(BaseHandler):
             return values
 
         if "jsonpath" == rule.type:
-            LOG.error("Extraction type 'jsonpath' is only valid for JSON responses.")
+            LOG.error("Field '%s' uses 'jsonpath' on a non-JSON response.", field, extra={"field": field})
             return values
 
         selection: SelectorList[Selector] = (

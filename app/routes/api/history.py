@@ -476,10 +476,9 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
         updated = True
         setattr(item.info, k, v)
         LOG.debug(
-            "Updated '%s' to '%s' for '%s'.",
-            k,
-            v,
+            "Updated history item '%s' field '%s'.",
             item.info.id,
+            k,
             extra={"route": "history.item_update", "item_id": item.info.id, "field": k, "value": v},
         )
 

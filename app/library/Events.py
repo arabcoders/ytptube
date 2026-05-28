@@ -327,7 +327,7 @@ class EventBus(metaclass=Singleton):
 
         if self.debug or event not in Events.only_debug():
             LOG.debug(
-                "Emitting '%s' event to %s listener(s).",
+                "Delivering '%s' event to %s listener(s).",
                 ev.event,
                 len(self._listeners[event]),
                 extra={

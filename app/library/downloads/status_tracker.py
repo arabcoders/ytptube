@@ -166,7 +166,7 @@ class StatusTracker:
 
         if self.debug:
             self.logger.debug(
-                "Received status update for '%s'.",
+                "Received a download status update for '%s'.",
                 self.info.title,
                 extra={
                     "download": {
@@ -302,7 +302,9 @@ class StatusTracker:
                 self.update_task.cancel()
         except Exception as e:
             self.logger.exception(
-                f"Failed to cancel progress update task for '{self.info.title}'. {e!s}",
+                "Failed to cancel the progress update task for '%s' because %s.",
+                self.info.title,
+                e,
                 extra={
                     "download": {
                         "download_id": self.id,

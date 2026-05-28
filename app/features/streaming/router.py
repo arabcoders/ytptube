@@ -129,8 +129,10 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
             text = await cls.make_stream(file=realFile)
     except StreamingError as e:
         LOG.exception(
-            "Failed to create streaming playlist for '%s'.",
+            "Failed to create %s streaming playlist for '%s': %s.",
+            mode,
             file,
+            e,
             extra={"route": "streaming.playlist", "file_path": file, "mode": mode, "exception_type": type(e).__name__},
         )
         return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)

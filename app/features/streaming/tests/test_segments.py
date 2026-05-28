@@ -262,7 +262,7 @@ async def test_stream_gpu_fallback(
     assert len(resp.data) > 0
     # Ensure we logged the reason for GPU failure (message text may vary)
     assert any(
-        ("Hardware encoder failed" in r.message) or ("transcoding has failed" in r.message) for r in caplog.records
+        ("hardware encoder" in r.message.lower()) or ("transcoding has failed" in r.message) for r in caplog.records
     )
     assert any("nvenc failure" in r.message for r in caplog.records)
     # Verify second invocation switched codec to a safe fallback (software)

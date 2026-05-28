@@ -146,7 +146,7 @@ class UpdateChecker(metaclass=Singleton):
     ) -> tuple[str, str | None]:
         try:
             LOG.info(
-                "Checking for %s updates...",
+                "Checking whether %s has an update available.",
                 name,
                 extra={"target_name": name, "api_url": api_url, "current_version": current_version},
             )
@@ -183,7 +183,7 @@ class UpdateChecker(metaclass=Singleton):
 
             if self._compare_versions(compare_current, compare_latest):
                 LOG.warning(
-                    "%s update available: %s -> %s",
+                    "%s has an update available: %s -> %s.",
                     name,
                     current_version,
                     latest_tag,
@@ -194,7 +194,7 @@ class UpdateChecker(metaclass=Singleton):
                 return result
 
             LOG.info(
-                "No %s updates available.",
+                "%s is already up to date.",
                 name,
                 extra={"target_name": name, "current_version": current_version},
             )
@@ -203,7 +203,7 @@ class UpdateChecker(metaclass=Singleton):
             return result
         except Exception as e:
             LOG.exception(
-                "Failed to check for %s updates.",
+                "Failed to check whether %s has an update available.",
                 name,
                 extra={
                     "target_name": name,
@@ -234,7 +234,7 @@ class UpdateChecker(metaclass=Singleton):
     async def _check_ytdlp_version(self) -> tuple[str, str | None]:
         current_version: str = self._config._ytdlp_version()
         if not current_version or "0.0.0" == current_version:
-            LOG.warning("Could not determine yt-dlp version, skipping yt-dlp update check.")
+            LOG.warning("Skipping the yt-dlp update check because the current version could not be determined.")
             return ("error", None)
 
         status, new_version = await self._check_github_version(
@@ -270,7 +270,7 @@ class UpdateChecker(metaclass=Singleton):
             return parse_version(latest) > parse_version(current)
         except Exception as e:
             LOG.warning(
-                "Error comparing versions '%s' vs '%s': %s",
+                "Failed to compare versions '%s' and '%s' because %s.",
                 current,
                 latest,
                 e,

@@ -39,14 +39,14 @@ class BackgroundWorker(metaclass=Singleton):
         Services.get_instance().add("background_worker", self)
         app.on_shutdown.append(self.on_shutdown)
 
-        LOG.debug("Starting background worker thread.")
+        LOG.debug("Started background worker thread.")
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
     async def on_shutdown(self, _: web.Application):
         self.running = False
         try:
-            LOG.debug("Shutting down background worker thread...")
+            LOG.debug("Stopping background worker thread.")
             self.queue.put((CloseThread, (), {}))
             self.thread.join(timeout=5)
             LOG.debug("Background worker thread has been shut down.")
@@ -99,7 +99,7 @@ class BackgroundWorker(metaclass=Singleton):
             loop.call_soon_threadsafe(loop.stop)
             loop_thread.join(timeout=5)
             loop.close()
-            LOG.debug("Event loop has been stopped and closed.")
+            LOG.debug("Stopped background worker event loop.")
         except Exception as e:
             LOG.exception(
                 "Failed to stop background worker event loop.",

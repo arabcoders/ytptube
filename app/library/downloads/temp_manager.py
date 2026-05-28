@@ -136,10 +136,9 @@ class TempManager:
             )
         else:
             self.logger.info(
-                "Temp folder '%s' deletion for '%s' %s.",
+                "Deleted temp folder '%s' for '%s'." if status else "Failed to delete temp folder '%s' for '%s'.",
                 self.temp_path,
                 self.info.title,
-                "succeeded" if status else "failed",
                 extra={
                     "download": {
                         "download_id": self.info._id,

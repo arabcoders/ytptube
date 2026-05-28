@@ -196,7 +196,7 @@ class DownloadQueue(metaclass=Singleton):
             self.pool.pause()
             if not shutdown:
                 paused_at = datetime.now(tz=UTC).isoformat()
-                LOG.warning("Download queue paused at %s.", paused_at, extra={"paused_at": paused_at})
+                LOG.warning("Paused the download queue.", extra={"paused_at": paused_at})
             return True
 
         return False
@@ -212,7 +212,7 @@ class DownloadQueue(metaclass=Singleton):
         if self.pool.is_paused():
             self.pool.resume()
             resumed_at = datetime.now(tz=UTC).isoformat()
-            LOG.warning("Download queue resumed at %s.", resumed_at, extra={"resumed_at": resumed_at})
+            LOG.warning("Resumed the download queue.", extra={"resumed_at": resumed_at})
             return True
 
         return False
@@ -630,7 +630,7 @@ class DownloadQueue(metaclass=Singleton):
         if deleted_count > 5:
             summary += ", ..."
         LOG.info(
-            "Cleared %s history item(s). %s",
+            "Cleared %s history item(s), including %s.",
             deleted_count,
             summary,
             extra={"deleted_count": deleted_count, "removed_files": removed_files, "titles": deleted_titles[:5]},

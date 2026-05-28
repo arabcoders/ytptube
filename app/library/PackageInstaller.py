@@ -181,7 +181,7 @@ class PackageInstaller:
         if not pkgs.has_packages() or not self.user_site:
             return
 
-        LOG.info("Checking user pip packages: %s", ", ".join(pkgs.packages), extra={"packages": pkgs.packages})
+        LOG.info("Checking configured user pip packages.", extra={"packages": pkgs.packages})
         for package in pkgs.packages:
             try:
                 self.action(package, upgrade=pkgs.allow_upgrade())

@@ -336,8 +336,9 @@ class YTDLPOpts:
                     self._preset_opts["cookiefile"] = str(file)
             except ValueError as e:
                 LOG.exception(
-                    "Failed to load cookies for preset '%s'.",
+                    "Failed to load cookies for preset '%s': %s.",
                     preset.name,
+                    e,
                     extra={"preset": preset.name, "has_cookies": True, "exception_type": type(e).__name__},
                 )
 
@@ -407,7 +408,7 @@ class YTDLPOpts:
                 data["format"] = data["format"][1:]
 
         if self._config.debug:
-            LOG.debug("Final yt-dlp options", extra={"ytdlp_options": data})
+            LOG.debug("Prepared final yt-dlp options.", extra={"ytdlp_options": data})
 
         return data
 

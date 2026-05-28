@@ -442,7 +442,7 @@ class TestYTDLPOpts:
             opts = YTDLPOpts()
             opts.get_all(keep=True)
 
-            mock_log.debug.assert_called_once_with("Final yt-dlp options", extra={"ytdlp_options": test_data})
+            mock_log.debug.assert_called_once_with("Prepared final yt-dlp options.", extra={"ytdlp_options": test_data})
 
     def test_cookie_loading_error_handling(self):
         """Test error handling when cookie loading fails."""

@@ -145,7 +145,10 @@ class HttpSocket:
         for route in socket_routes.values():
             if self.config.debug:
                 LOG.debug(
-                    f"Add ({route.name}) {route.method.value if isinstance(route.method, RouteType) else route.method}: {route.path}."
+                    "Registered socket route '%s' for %s %s.",
+                    route.name,
+                    route.method.value if isinstance(route.method, RouteType) else route.method,
+                    route.path,
                 )
 
         async def handle_message(sid: str, message: str) -> None:
@@ -221,6 +224,6 @@ class HttpSocket:
             return ws
 
         if self.config.debug:
-            LOG.debug("Add (ws) GET: %s.", ws_path, extra={"method": "GET", "path": ws_path})
+            LOG.debug("Registered WebSocket endpoint at '%s'.", ws_path, extra={"method": "GET", "path": ws_path})
 
         app.router.add_get(ws_path, ws_handler, name="ws")

@@ -34,7 +34,7 @@ class HookHandlers:
             try:
                 d_safe = create_debug_safe_dict(data)
                 self.logger.debug(
-                    "Received progress hook for download '%s'.",
+                    "Received a yt-dlp progress update for download '%s'.",
                     self.id,
                     extra={"download": {"download_id": self.id, "hook": "progress", "status": d_safe}},
                 )
@@ -73,7 +73,7 @@ class HookHandlers:
                 d_safe = create_debug_safe_dict(data)
                 d_safe["postprocessor"] = data.get("postprocessor")
                 self.logger.debug(
-                    "Received postprocessor hook for download '%s'.",
+                    "Received a yt-dlp post-processing update for download '%s'.",
                     self.id,
                     extra={"download": {"download_id": self.id, "hook": "postprocessor", "status": d_safe}},
                 )

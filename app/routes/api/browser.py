@@ -115,8 +115,9 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
         return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except Exception as e:
         LOG.exception(
-            "Failed to load file info for '%s'.",
+            "Failed to load file info for '%s' because %s.",
             file,
+            e,
             extra={"route": "file_info", "file_path": file},
         )
         return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
@@ -201,8 +202,9 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
         )
     except OSError as e:
         LOG.exception(
-            "Failed to browse file path '%s'.",
+            "Failed to browse file path '%s' because %s.",
             req_path,
+            e,
             extra={"route": "file_browser", "request_path": req_path},
         )
         return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
@@ -236,8 +238,11 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
             return web.json_response(
                 data={"error": "Invalid parameters expecting list of dicts."}, status=web.HTTPBadRequest.status_code
             )
-    except Exception:
-        LOG.exception("Failed to parse file browser actions request.", extra={"route": "browser.file.actions"})
+    except Exception as e:
+        LOG.debug(
+            "Ignoring invalid file browser actions JSON.",
+            extra={"route": "browser.file.actions", "error": str(e)},
+        )
         return web.json_response(data={"error": "Invalid JSON."}, status=web.HTTPBadRequest.status_code)
 
     # validate each action before performing any operations
@@ -338,9 +343,10 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 continue
         except Exception as e:
             LOG.exception(
-                "Failed to resolve file browser action '%s' for path '%s'.",
+                "Failed to resolve file browser action '%s' for path '%s' because %s.",
                 action,
                 req_path,
+                e,
                 extra={"route": "browser.file.actions", "action": action, "request_path": req_path},
             )
             record(req_path, ok=False, error=str(e), action=action, extra={"item": params})
@@ -391,8 +397,9 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 )
             except OSError as e:
                 LOG.exception(
-                    "Failed to create directory '%s'.",
+                    "Failed to create directory '%s' because %s.",
                     new_dir,
+                    e,
                     extra={
                         "route": "browser.file.actions",
                         "action": action,
@@ -438,8 +445,9 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 )
             except OSError as e:
                 LOG.exception(
-                    "Failed to rename file browser path '%s'.",
+                    "Failed to rename file browser path '%s' because %s.",
                     path.relative_to(config.download_path),
+                    e,
                     extra={
                         "route": "browser.file.actions",
                         "action": action,
@@ -487,8 +495,9 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 )
             except OSError as e:
                 LOG.exception(
-                    "Failed to delete file browser path '%s'.",
+                    "Failed to delete file browser path '%s' because %s.",
                     path.relative_to(config.download_path),
+                    e,
                     extra={
                         "route": "browser.file.actions",
                         "action": action,
@@ -566,8 +575,9 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 )
             except OSError as e:
                 LOG.exception(
-                    "Failed to move file browser path '%s'.",
+                    "Failed to move file browser path '%s' because %s.",
                     path.relative_to(config.download_path),
+                    e,
                     extra={
                         "route": "browser.file.actions",
                         "action": action,
@@ -673,16 +683,14 @@ async def stream_zip_download(request: Request, config: Config, cache: Cache) ->
 
     try:
         LOG.info(
-            "Streaming zip download for token '%s' with %d file(s).",
-            token,
+            "Started streaming a ZIP download with %d file(s).",
             len(files),
             extra={"route": "browser.download.stream", "token": token, "file_count": len(files)},
         )
         for chunk in zs:
             if request.transport is None or request.transport.is_closing():
                 LOG.info(
-                    "Client disconnected, aborting zip download for token '%s'.",
-                    token,
+                    "Stopped streaming the ZIP download because the client disconnected.",
                     extra={"route": "browser.download.stream", "token": token},
                 )
                 break
@@ -690,14 +698,12 @@ async def stream_zip_download(request: Request, config: Config, cache: Cache) ->
         await response.write_eof()
     except asyncio.CancelledError:
         LOG.info(
-            "Download cancelled by client for token '%s'.",
-            token,
+            "Stopped streaming the ZIP download because the client cancelled it.",
             extra={"route": "browser.download.stream", "token": token},
         )
     except Exception as e:
         LOG.exception(
-            "Streaming zip download failed for token '%s'.",
-            token,
+            "Failed to stream the ZIP download.",
             extra={
                 "route": "browser.download.stream",
                 "token": token,

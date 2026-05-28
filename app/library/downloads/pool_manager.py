@@ -79,7 +79,7 @@ class PoolManager:
     async def shutdown(self) -> None:
         if self._active:
             LOG.info(
-                "Cancelling %s active download(s).",
+                "Cancelling active downloads (%s item(s)).",
                 len(self._active),
                 extra={"active_count": len(self._active), "download_ids": list(self._active)},
             )
@@ -91,7 +91,7 @@ class PoolManager:
 
         while True:
             while not self.queue.queue.has_downloads():
-                LOG.info("Waiting for item to download.")
+                LOG.info("Waiting for queued downloads.")
                 await self.event.wait()
                 self.event.clear()
                 adaptive_sleep = 0.2
@@ -165,9 +165,8 @@ class PoolManager:
         """
         filePath: str = calc_download_path(base_path=self.config.download_path, folder=entry.info.folder)
         LOG.info(
-            "Downloading '%s' from '%s' to '%s'.",
+            "Started download for '%s' to '%s'.",
             entry.info.title,
-            entry.info.url,
             filePath,
             extra={
                 "download": {
@@ -246,7 +245,11 @@ class PoolManager:
                 message=nMessage,
             )
         else:
-            LOG.warning("Completed download '%s' was not found in queue.", id, extra={"download_id": id})
+            LOG.warning(
+                "Completed download '%s' was not found in the queue.",
+                entry.info.title or id,
+                extra={"download_id": id, "title": entry.info.title},
+            )
 
         if self.event:
             self.event.set()

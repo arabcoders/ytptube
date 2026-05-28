@@ -443,7 +443,7 @@ class Config(metaclass=Singleton):
                     extra={"host": "0.0.0.0", "port": self.debugpy_port},
                 )
             except ImportError:
-                LOG.exception("debugpy package not found; install it with 'uv sync'.")
+                LOG.error("debugpy package not found; install it with 'uv sync'.")
             except Exception as e:
                 LOG.exception(
                     "Failed to start debugpy server.",
@@ -458,7 +458,7 @@ class Config(metaclass=Singleton):
 
         if self.auth_password and self.auth_username:
             LOG.info(
-                "Authentication enabled with username '%s'.",
+                "Basic authentication is enabled for user '%s'.",
                 self.auth_username,
                 extra={"auth_username": self.auth_username},
             )

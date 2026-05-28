@@ -144,7 +144,12 @@ async def _get_info(url: str, preset: str) -> tuple[str | None, str | None]:
         LOG.debug("Timeout while inferring name from '%s'.", url, extra={"url": url, "preset": preset})
         return (None, None)
     except Exception as e:
-        LOG.debug("Failed to infer task name from URL.", extra={"url": url, "preset": preset, "error": str(e)})
+        LOG.debug(
+            "Failed to infer a task name from '%s' because %s.",
+            url,
+            e,
+            extra={"url": url, "preset": preset, "error": str(e)},
+        )
         return (None, None)
 
 
@@ -301,7 +306,6 @@ async def tasks_add(
                 "Failed to create task from request item %s.",
                 idx,
                 extra={"index": idx, "error": str(exc), "exception_type": type(exc).__name__},
-                exc_info=True,
             )
             continue
 
@@ -650,7 +654,8 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                         save_path.mkdir(parents=True, exist_ok=True)
             except Exception as e:
                 LOG.warning(
-                    "Failed to resolve task metadata path from output template.",
+                    "Failed to resolve the metadata output path for task '%s'.",
+                    task.name,
                     extra={"task_id": task.id, "task_name": task.name, "error": str(e)},
                     exc_info=True,
                 )
@@ -734,7 +739,9 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                 try:
                     url = thumbnails.get(key)
                     LOG.info(
-                        "Fetching task metadata thumbnail.",
+                        "Fetching '%s' thumbnail for task '%s'.",
+                        key,
+                        task.name,
                         extra={"task_id": task.id, "task_name": task.name, "thumbnail": key, "url": url},
                     )
                     if not url:
@@ -742,9 +749,12 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
 
                     try:
                         await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
-                    except ValueError:
+                    except ValueError as exc:
                         LOG.warning(
-                            "Invalid task metadata thumbnail URL.",
+                            "Task '%s' has an invalid '%s' thumbnail URL because %s.",
+                            task.name,
+                            key,
+                            exc,
                             extra={"task_id": task.id, "task_name": task.name, "thumbnail": key, "url": url},
                         )
                         continue
@@ -761,7 +771,9 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                     thumbnails[key] = str(img_file.relative_to(config.download_path))
                 except Exception as e:
                     LOG.warning(
-                        "Failed to fetch task metadata thumbnail.",
+                        "Failed to fetch '%s' thumbnail for task '%s'.",
+                        key,
+                        task.name,
                         extra={
                             "task_id": task.id,
                             "task_name": task.name,
@@ -774,7 +786,8 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                     continue
         except Exception as e:
             LOG.warning(
-                "Failed to fetch task metadata thumbnails.",
+                "Failed to fetch metadata thumbnails for task '%s'.",
+                task.name,
                 extra={"task_id": task.id, "task_name": task.name, "error": str(e)},
                 exc_info=True,
             )

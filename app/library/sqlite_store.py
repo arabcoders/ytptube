@@ -627,13 +627,13 @@ class SqliteStore(metaclass=ThreadSafe):
         self._conn = await self._engine.connect()
 
         if version := await migrate.get_version(self._conn):
-            LOG.debug("DB version: '%s'.", version, extra={"db_version": version})
+            LOG.debug("Database schema version is '%s'.", version, extra={"db_version": version})
 
         await migrate.upgrade(self._conn, ROOT_PATH / "migrations")
         if not version:
             migrated_version = await migrate.get_version(self._conn)
             LOG.debug(
-                "DB version after initial migration: '%s'.",
+                "Database schema was initialized at version '%s'.",
                 migrated_version,
                 extra={"db_version": migrated_version},
             )

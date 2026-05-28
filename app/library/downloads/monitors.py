@@ -290,8 +290,9 @@ async def delete_old_history(queue: "DownloadQueue") -> None:
 
     if titles:
         LOG.info(
-            "Automatically cleared %s old history item(s).",
+            "Automatically cleared %s old history item(s), including '%s'.",
             len(titles),
+            titles[0],
             extra={"deleted_count": len(titles), "titles": titles},
         )
 
