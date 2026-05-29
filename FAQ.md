@@ -119,6 +119,30 @@ As this is a simple basic authentication, if your browser doesn't show the promp
 
 `http://username:password@your_ytptube_url:port`
 
+# Security recommendations
+
+YTPTube is designed for LAN and home-lab use behind a firewall or reverse proxy. The web interface and API are
+unauthenticated by default because in a trusted network, auth adds friction without meaningful benefit. However,
+if you expose YTPTube to the internet directly or via port forwarding **YOU MUST enable authentication**.
+
+### Without auth, anyone who can reach the API can:
+
+- Download arbitrary content through your IP and server.
+- Delete or modify your downloaded files and database.
+- Run arbitrary `yt-dlp` options, including `--exec`, which executes shell commands inside the container.
+
+This is not a vulnerability, it's the intended design. The `cli` field passes options directly to `yt-dlp`,
+a tool that by design can execute commands. Auth is the mechanism that controls who gets to use that power.
+
+**If you expose YTPTube to untrusted networks**, do one of the following:
+
+1. **Enable authentication** — set both `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD`.
+2. **Put it behind a reverse proxy** with its own authentication layer (see [Run behind reverse proxy](#run-behind-reverse-proxy)).
+3. **Keep it on a private network** with no public exposure.
+
+YTPTube already gates other powerful features behind explicit opt-in: the built-in terminal, file browser actions and internal
+URL requests for example. The `cli` field is no different, its power is by design, and access control is your responsibility.
+
 # I cant download anything
 
 If you are receiving errors like:
