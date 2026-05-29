@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "ab56a7d8c9a6f9b41cce17e6e6cdf36bac4fd62f",
-    "date": "2026-05-28T19:21:56+00:00",
+    "full_sha": "92591192278a23fa7f51841b2aae7e2ebec3dfb0",
+    "date": "2026-05-29T14:39:29+00:00",
     "commits": [
+      {
+        "sha": "92591192",
+        "full_sha": "92591192278a23fa7f51841b2aae7e2ebec3dfb0",
+        "message": "docs: document security recommendations",
+        "author": "arabcoders",
+        "date": "2026-05-29T14:39:29+00:00"
+      },
       {
         "sha": "ab56a7d8",
         "full_sha": "ab56a7d8c9a6f9b41cce17e6e6cdf36bac4fd62f",
