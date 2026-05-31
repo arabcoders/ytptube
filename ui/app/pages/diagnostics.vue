@@ -79,19 +79,17 @@
         :description="requiredAlertDescription"
       />
 
-      <section class="rounded-md border border-default bg-default shadow-sm">
-        <div class="border-b border-default px-4 py-3 sm:px-5">
-          <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-            <UIcon name="i-lucide-gauge" class="size-4 text-toned" />
-            <span>Overview</span>
-          </div>
+      <section class="space-y-3">
+        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+          <UIcon name="i-lucide-gauge" class="size-4 text-toned" />
+          <span>Overview</span>
         </div>
 
-        <div class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <article
             v-for="item in summaryCards"
             :key="item.label"
-            class="rounded-md border border-default bg-muted/20 px-3 py-3"
+            class="rounded-md border border-default bg-default px-3 py-3 shadow-sm"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -113,35 +111,34 @@
         </div>
       </section>
 
-      <section class="rounded-md border border-default bg-default shadow-sm">
-        <div class="border-b border-default px-4 py-3 sm:px-5">
-          <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-            <UIcon name="i-lucide-server" class="size-4 text-toned" />
-            <span>Runtime</span>
-          </div>
+      <section class="space-y-3">
+        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+          <UIcon name="i-lucide-server" class="size-4 text-toned" />
+          <span>Runtime</span>
         </div>
 
-        <div class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-3">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <article
             v-for="row in runtimeRows"
             :key="row.label"
-            class="rounded-md border border-default bg-muted/20 px-3 py-3"
+            class="rounded-md border border-default bg-default px-3 py-3 shadow-sm"
           >
-            <div class="flex items-start gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-medium uppercase tracking-wide text-toned">
+                  {{ row.label }}
+                </p>
+                <p class="mt-1 text-xs text-toned">{{ row.description }}</p>
+              </div>
+
               <span
                 class="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-default bg-default"
               >
                 <UIcon :name="row.icon" class="size-4 text-toned" />
               </span>
-
-              <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wide text-toned">
-                  {{ row.label }}
-                </p>
-                <p class="mt-2 text-sm font-semibold text-default">{{ row.value }}</p>
-                <p class="mt-1 text-xs text-toned">{{ row.description }}</p>
-              </div>
             </div>
+
+            <p class="mt-4 wrap-break-word text-sm font-semibold text-default">{{ row.value }}</p>
           </article>
         </div>
       </section>
@@ -155,27 +152,19 @@
             </div>
             <p class="text-sm text-toned">{{ section.description }}</p>
           </div>
-
-          <div class="flex flex-wrap gap-2 text-xs text-toned">
-            <span class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1">
-              <span class="font-medium text-default">Checks:</span>
-              <span>{{ section.items.length }}</span>
-            </span>
-            <span class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1">
-              <span class="font-medium text-default">Required fails:</span>
-              <span>{{ requiredFails(section.items) }}</span>
-            </span>
-          </div>
         </div>
 
         <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-          <article v-for="item in section.items" :key="item.id" :class="cardClass(item.status)">
+          <article
+            v-for="item in section.items"
+            :key="item.id"
+            class="rounded-md border border-default bg-default px-4 py-4 shadow-sm"
+          >
             <div class="min-w-0 space-y-3">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <span :class="tagDotClass(item.status)"></span>
                   <p class="text-base font-semibold text-default">{{ item.label }}</p>
-                  <span :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
                   <span
                     class="inline-flex items-center rounded-md border border-default px-2 py-1 text-xs text-toned"
                   >
@@ -334,7 +323,6 @@ const summaryCards = computed<Array<SummaryCard>>(() => {
 
 const runtimeRows = computed<Array<DetailRow>>(() => {
   const runtime = report.value?.runtime;
-  const generatedAt = report.value?.generated_at;
   const python = report.value?.requirements.python;
 
   if (!runtime || !python) {
@@ -359,24 +347,6 @@ const runtimeRows = computed<Array<DetailRow>>(() => {
       description: `${python.note} Minimum ${python.required}+`,
       value: python.current,
       icon: 'i-lucide-square-terminal',
-    },
-    {
-      label: 'Started',
-      description: 'Process start time.',
-      value: runtime.started ? moment.unix(runtime.started).fromNow() : 'Unknown',
-      icon: 'i-lucide-power',
-    },
-    {
-      label: 'Uptime',
-      description: 'Current process uptime.',
-      value: moment.duration(runtime.uptime_seconds, 'seconds').humanize(),
-      icon: 'i-lucide-timer',
-    },
-    {
-      label: 'Snapshot',
-      description: 'Diagnostics timestamp.',
-      value: generatedAt ? moment.unix(generatedAt).fromNow() : 'Unknown',
-      icon: 'i-lucide-clock-3',
     },
   ];
 });
@@ -405,8 +375,6 @@ const shareText = computed(() => {
   );
   lines.push(`- Python: ${current.requirements.python.current}`);
   lines.push(`- Started: ${formatIsoTimestamp(current.runtime.started)}`);
-  lines.push(`- Uptime: ${formatIsoDuration(current.runtime.uptime_seconds)}`);
-  lines.push(`- Snapshot: ${formatIsoTimestamp(current.generated_at)}`);
 
   for (const section of featureSections.value) {
     lines.push('', section.label);
@@ -414,7 +382,7 @@ const shareText = computed(() => {
     for (const item of section.items) {
       const versionSuffix = formatShareVersion(item);
       lines.push(
-        `- ${item.label} (${item.required ? 'Required' : 'Optional'}) (${statusLabel(item.status)})${versionSuffix}`,
+        `- [${statusLabel(item.status)}] ${item.label} (${item.required ? 'Required' : 'Optional'})${versionSuffix}`,
       );
     }
   }
@@ -434,10 +402,6 @@ const copyDiagnostics = (): void => {
   copyText(shareText.value);
 };
 
-const requiredFails = (items: Array<DiagnosticCheck>): number => {
-  return items.filter((item) => item.required && item.status === 'fail').length;
-};
-
 const showMessage = (item: DiagnosticCheck): boolean => {
   if (item.status === 'pass') {
     return false;
@@ -449,30 +413,14 @@ const showMessage = (item: DiagnosticCheck): boolean => {
 const statusLabel = (status: DiagnosticStatus): string => {
   switch (status) {
     case 'pass':
-      return 'Pass';
+      return 'PASS';
     case 'fail':
-      return 'Fail';
+      return 'FAIL';
     case 'warn':
-      return 'Warn';
+      return 'WARN';
     case 'skip':
     default:
-      return 'Skip';
-  }
-};
-
-const cardClass = (status: DiagnosticStatus): string => {
-  const base = 'rounded-md border border-default bg-default px-4 py-4 shadow-sm ring-1 ring-inset';
-
-  switch (status) {
-    case 'pass':
-      return `${base} ring-success/10`;
-    case 'fail':
-      return `${base} ring-error/10`;
-    case 'warn':
-      return `${base} ring-warning/10`;
-    case 'skip':
-    default:
-      return `${base} ring-default/40`;
+      return 'SKIP';
   }
 };
 
@@ -489,22 +437,6 @@ const tagDotClass = (status: DiagnosticStatus): string => {
     case 'skip':
     default:
       return `${base} bg-muted`;
-  }
-};
-
-const badgeClass = (status: DiagnosticStatus): string => {
-  const base = 'inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium';
-
-  switch (status) {
-    case 'pass':
-      return `${base} border-success/30 bg-success/10 text-success`;
-    case 'fail':
-      return `${base} border-error/30 bg-error/10 text-error`;
-    case 'warn':
-      return `${base} border-warning/30 bg-warning/10 text-warning`;
-    case 'skip':
-    default:
-      return `${base} border-default bg-muted/40 text-toned`;
   }
 };
 
@@ -526,14 +458,6 @@ const formatIsoTimestamp = (value: number | undefined): string => {
   }
 
   return moment.unix(value).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
-};
-
-const formatIsoDuration = (value: number | undefined): string => {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return 'Unknown';
-  }
-
-  return moment.duration(value, 'seconds').toISOString();
 };
 
 const formatShareVersion = (item: DiagnosticCheck): string => {
