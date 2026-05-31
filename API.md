@@ -88,6 +88,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/conditions/{id}](#delete-apiconditionsid)
     - [GET /api/logs](#get-apilogs)
     - [GET /api/logs/stream](#get-apilogsstream)
+    - [GET /api/logs/level](#get-apilogslevel)
+    - [POST /api/logs/level/{level}](#post-apilogslevellevel)
     - [GET /api/notifications/](#get-apinotifications)
     - [GET /api/notifications/events/](#get-apinotificationsevents)
     - [POST /api/notifications/](#post-apinotifications)
@@ -2318,8 +2320,8 @@ Binary image data with appropriate headers
       "datetime": "2026-05-18T12:00:00.000+00:00",
       "level": "error",
       "levelno": 40,
-      "logger": "downloads.queue",
-      "message": "Download failed",
+      "logger": "ytptube",
+      "message": "Failed to download 'Example Video'.",
       "exception": {
         "type": "ValueError",
         "message": "bad",
@@ -2342,7 +2344,17 @@ Binary image data with appropriate headers
         "function": "start",
         "line": 123
       },
-      "fields": {}
+      "fields": {
+        "download": {
+          "download_id": "abc123",
+          "media_id": "video-id",
+          "title": "Example Video",
+          "url": "https://example.test/video",
+          "preset": "default",
+          "status": "error",
+          "has_cookies": false
+        }
+      }
     }
   ],
   "offset": 0,
@@ -2369,8 +2381,8 @@ Binary image data with appropriate headers
   "datetime": "2026-05-18T12:00:00.000+00:00",
   "level": "error",
   "levelno": 40,
-  "logger": "downloads.queue",
-  "message": "Download failed",
+  "logger": "ytptube",
+  "message": "Failed to download 'Example Video'.",
   "exception": {
     "type": "ValueError",
     "message": "bad",
@@ -2393,11 +2405,46 @@ Binary image data with appropriate headers
     "function": "start",
     "line": 123
   },
-  "fields": {}
+  "fields": {
+    "download": {
+      "download_id": "abc123",
+      "media_id": "video-id",
+      "title": "Example Video",
+      "url": "https://example.test/video",
+      "preset": "default",
+      "status": "error",
+      "has_cookies": false
+    }
+  }
 }
 ```
 
 - Returns `404 Not Found` if file logging is not enabled or the log file is missing.
+
+---
+
+### GET /api/logs/level
+**Purpose**: Read the active runtime log level.
+
+**Response**:
+```json
+{
+  "conf": "info",
+  "active": "info",
+  "levels": ["debug", "info", "warning", "error"]
+}
+```
+
+---
+
+### POST /api/logs/level/{level}
+**Purpose**: Change the active runtime log level.
+
+**Path Parameter**:
+- `level`: One of `debug`, `info`, `warning`, `error`.
+
+**Response**:
+- `204 No Content` on success.
 
 ---
 

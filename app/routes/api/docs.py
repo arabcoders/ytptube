@@ -1,4 +1,3 @@
-import logging
 import time
 from datetime import UTC, datetime
 
@@ -9,9 +8,10 @@ from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
+from app.library.log import get_logger
 from app.library.router import add_route, route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 STATIC_FILES = ["README.md", "FAQ.md", "API.md", "sc_short.jpg", "sc_simple.jpg"]
 EXT_TO_MIME: dict = {
@@ -57,7 +57,7 @@ async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
 
     cache_key = f"doc:{file}"
     if dct := cache.get(cache_key):
-        LOG.debug(f"Serving doc '{file}' from cache.")
+        LOG.debug("Serving doc '%s' from cache.", file, extra={"doc_file": file, "cache_key": cache_key})
         return web.Response(**dct)
 
     url = f"https://raw.githubusercontent.com/arabcoders/ytptube/refs/heads/dev/{file}"
@@ -72,7 +72,7 @@ async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
         proxy = ytdlp_args.get("proxy")
 
         client = get_async_client(proxy=proxy, use_curl=use_curl)
-        LOG.debug(f"Fetching doc from '{url}'.")
+        LOG.debug("Fetching doc '%s' from '%s'.", file, url, extra={"route": "docs.get", "doc_file": file, "url": url})
         response = await client.request(
             method="GET",
             url=url,
@@ -96,8 +96,13 @@ async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
         cache.set(cache_key, dct, ttl=3600)
 
         return web.Response(**dct)
-    except Exception as e:
-        LOG.error(f"Failed to request doc from '{url}'.'. '{e!s}'.")
+    except Exception:
+        LOG.exception(
+            "Failed to request doc '%s' from '%s'.",
+            file,
+            url,
+            extra={"route": "docs.get", "doc_file": file, "url": url},
+        )
         return web.json_response(data={"error": "Failed to get doc."}, status=web.HTTPInternalServerError.status_code)
 
 

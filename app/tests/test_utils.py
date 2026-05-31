@@ -287,7 +287,14 @@ class TestJsonLogFormatter:
         formatter = JsonLogFormatter()
         record = logging.LogRecord("test.logger", logging.WARNING, __file__, 123, "hello %s", ("world",), None)
         record.download_id = "abc"
-        record.payload = {"ignored": True}
+        record.payload = {
+            "enabled": True,
+            "items": [{"name": "one", "path": Path("downloads/file.mp4")}],
+            "_token": "secret",
+        }
+        record.tags = ["video", {"quality": "720p", "_private": "hidden"}]
+        record._private = "hidden"
+        record.relativeCreated = 123
 
         data = json.loads(formatter.format(record))
 
@@ -296,7 +303,11 @@ class TestJsonLogFormatter:
         assert data["levelno"] == logging.WARNING
         assert data["logger"] == "test.logger"
         assert data["message"] == "hello world"
-        assert data["fields"] == {"download_id": "abc"}
+        assert data["fields"] == {
+            "download_id": "abc",
+            "payload": {"enabled": True, "items": [{"name": "one", "path": "downloads/file.mp4"}]},
+            "tags": ["video", {"quality": "720p"}],
+        }
         assert data["source"]["line"] == 123
 
     def test_exception(self):

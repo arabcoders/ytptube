@@ -1,4 +1,3 @@
-import logging
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,10 +11,11 @@ from app.features.streaming.library.segments import Segments
 from app.features.streaming.library.subtitle import Subtitle, get_subtitle_tracks
 from app.features.streaming.types import StreamingError
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import get_file
 
-LOG: logging.Logger = logging.getLogger("streaming")
+LOG = get_logger()
 
 
 @route("GET", "api/player/playlist/{file:.*}.m3u8", "playlist_create")
@@ -128,7 +128,13 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
         else:
             text = await cls.make_stream(file=realFile)
     except StreamingError as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to create %s streaming playlist for '%s': %s.",
+            mode,
+            file,
+            e,
+            extra={"route": "streaming.playlist", "file_path": file, "mode": mode, "exception_type": type(e).__name__},
+        )
         return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
 
     return web.Response(

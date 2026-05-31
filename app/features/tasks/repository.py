@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func, or_, select
 
 from app.features.core.deps import get_session
 from app.features.tasks.models import TaskModel
+from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 class TasksRepository(metaclass=Singleton):

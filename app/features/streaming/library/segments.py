@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import subprocess  # type: ignore
 import sys
@@ -19,6 +18,7 @@ from app.features.streaming.library.segment_encoders import (
     select_encoder,
 )
 from app.library.config import SUPPORTED_CODECS, Config
+from app.library.log import get_logger
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from .ffprobe import FFProbeResult
     from .segment_encoders import EncoderBuilder
 
-LOG: logging.Logger = logging.getLogger("player.segments")
+LOG = get_logger()
 
 
 class Segments:
@@ -170,7 +170,12 @@ class Segments:
 
         stderr_task: asyncio.Task[None] = asyncio.create_task(_drain_stderr())
 
-        LOG.debug(f"Streaming '{file}' segment '{self.index}'. ffmpeg: {' '.join(args)}")
+        LOG.debug(
+            "Streaming segment %s for '%s'.",
+            self.index,
+            file,
+            extra={"file": str(file), "segment_index": self.index, "ffmpeg_args": args},
+        )
 
         try:
             while True:
@@ -191,7 +196,10 @@ class Segments:
             try:
                 await asyncio.wait_for(proc.wait(), timeout=5)
             except TimeoutError:
-                LOG.error("ffmpeg process did not terminate in time. Killing it.")
+                LOG.warning(
+                    "Segment stream for '%s' did not stop ffmpeg in time after the client disconnected; killing it.",
+                    file,
+                )
                 proc.kill()
             raise
         except ConnectionResetError:
@@ -204,7 +212,10 @@ class Segments:
                 try:
                     rc: int = await asyncio.wait_for(proc.wait(), timeout=5)
                 except TimeoutError:
-                    LOG.error("ffmpeg process did not terminate in time after disconnect. Killing it.")
+                    LOG.warning(
+                        "Segment stream for '%s' did not stop ffmpeg in time after the client disconnected; killing it.",
+                        file,
+                    )
                     proc.kill()
                     try:
                         rc = await asyncio.wait_for(proc.wait(), timeout=5)
@@ -215,7 +226,7 @@ class Segments:
                 try:
                     rc = await asyncio.wait_for(proc.wait(), timeout=30)
                 except TimeoutError:
-                    LOG.error("ffmpeg process wait timed out. Killing it.")
+                    LOG.warning("Segment stream for '%s' did not stop ffmpeg in time; killing the process.", file)
                     proc.kill()
                     try:
                         rc = await asyncio.wait_for(proc.wait(), timeout=5)
@@ -233,7 +244,7 @@ class Segments:
         if not codec or codec not in SUPPORTED_CODECS:
             codec: str = select_encoder(self.vcodec or "")
 
-        LOG.debug(f"Selected video codec '{codec}' for segment streaming.")
+        LOG.debug("Selected video codec '%s' for segment streaming.", codec, extra={"codec": codec})
 
         if Segments._cached_vcodec and Segments._cache_initialized:
             codecs: list[str] = [Segments._cached_vcodec]
@@ -259,7 +270,14 @@ class Segments:
 
                 if 0 != rc:
                     err: str = stderr_text[:500] if stderr_text else "no error output"
-                    LOG.warning(f"transcoding has failed (cmd={ffmpeg_args}) (rc={rc}): {err}. Trying fallbacks.")
+                    LOG.warning(
+                        "Retrying segment %s for '%s' because hardware encoder '%s' failed: %s.",
+                        self.index,
+                        file,
+                        s_codec,
+                        err,
+                        extra={"ffmpeg_args": ffmpeg_args, "returncode": rc, "stderr": err, "codec": s_codec},
+                    )
                     self.attempted.add(s_codec)
         finally:
             if stream_input.is_symlink():

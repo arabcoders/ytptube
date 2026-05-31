@@ -80,7 +80,20 @@ class TempManager:
             and self.info.downloaded_bytes
             and self.info.downloaded_bytes > 0
         ):
-            self.logger.warning(f"Keeping temp folder '{self.temp_path}'. status={self.info.status}")
+            self.logger.warning(
+                "Keeping temp folder '%s' for unfinished download '%s'.",
+                self.temp_path,
+                self.info.title,
+                extra={
+                    "download": {
+                        "download_id": self.info._id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "temp_path": str(self.temp_path),
+                        "status": self.info.status,
+                    }
+                },
+            )
             return
 
         tmp_dir = Path(self.temp_path)
@@ -89,12 +102,50 @@ class TempManager:
             return
 
         if not self.temp_dir or not is_safe_to_delete_dir(tmp_dir, self.temp_dir):
-            self.logger.warning(f"Refusing to delete video temp folder '{self.temp_path}' as it's temp root.")
+            self.logger.warning(
+                "Refusing to delete temp folder '%s' for '%s' because it is not safe.",
+                self.temp_path,
+                self.info.title,
+                extra={
+                    "download": {
+                        "download_id": self.info._id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "temp_path": str(self.temp_path),
+                        "temp_dir": self.temp_dir,
+                    }
+                },
+            )
             return
 
         status: bool = delete_dir(tmp_dir)
         if by_pass:
             tmp_dir.mkdir(parents=True, exist_ok=True)
-            self.logger.info(f"Temp folder '{self.temp_path}' emptied.")
+            self.logger.info(
+                "Emptied temp folder '%s' for '%s'.",
+                self.temp_path,
+                self.info.title,
+                extra={
+                    "download": {
+                        "download_id": self.info._id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "temp_path": str(self.temp_path),
+                    }
+                },
+            )
         else:
-            self.logger.info(f"Temp folder '{self.temp_path}' deletion is {'success' if status else 'failed'}.")
+            self.logger.info(
+                "Deleted temp folder '%s' for '%s'." if status else "Failed to delete temp folder '%s' for '%s'.",
+                self.temp_path,
+                self.info.title,
+                extra={
+                    "download": {
+                        "download_id": self.info._id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "temp_path": str(self.temp_path),
+                        "deleted": status,
+                    }
+                },
+            )

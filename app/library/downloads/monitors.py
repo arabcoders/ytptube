@@ -1,6 +1,5 @@
 """Queue monitoring functions."""
 
-import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -8,12 +7,13 @@ from typing import TYPE_CHECKING
 from app.library.ag_utils import ag
 from app.library.Events import Events
 from app.library.ItemDTO import Item, ItemDTO
+from app.library.log import get_logger
 from app.library.Utils import dt_delta, str_to_dt
 
 if TYPE_CHECKING:
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.monitors")
+LOG = get_logger()
 
 
 async def check_for_stale(queue: "DownloadQueue") -> None:
@@ -31,16 +31,37 @@ async def check_for_stale(queue: "DownloadQueue") -> None:
         return
 
     for _id, item in list(queue.queue.items()):
-        item_ref = f"{_id=} {item.info.id=} {item.info.title=}"
         if not item.is_stale():
             continue
 
         try:
-            LOG.warning(f"Cancelling staled item '{item_ref}' from download queue.")
+            LOG.warning(
+                f"Cancelling stale download '{item.info.title}' from queue.",
+                extra={
+                    "download": {
+                        "download_id": _id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "url": item.info.url,
+                        "status": item.info.status,
+                    }
+                },
+            )
             await queue.cancel([_id])
         except Exception as e:
-            LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
-            LOG.exception(e)
+            LOG.exception(
+                f"Failed to cancel stale download '{item.info.title}'.",
+                extra={
+                    "download": {
+                        "download_id": _id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "url": item.info.url,
+                        "status": item.info.status,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
 
 
 async def check_live(queue: "DownloadQueue") -> None:
@@ -68,9 +89,19 @@ async def check_live(queue: "DownloadQueue") -> None:
         if item.info.status not in status:
             continue
 
-        item_ref: str = f"{id=} {item.info.id=} {item.info.title=}"
         if not item.is_live:
-            LOG.debug(f"Item '{item_ref}' is not a live stream.")
+            LOG.debug(
+                "Skipping history item '%s' because it is not a live stream.",
+                item.info.title,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "status": item.info.status,
+                    }
+                },
+            )
             continue
 
         duration: int | None = item.info.extras.get("duration", None)
@@ -79,7 +110,17 @@ async def check_live(queue: "DownloadQueue") -> None:
         live_in: str | None = item.info.live_in or ag(item.info.extras, ["live_in", "release_in"], None)
         if not live_in:
             LOG.debug(
-                f"Item '{item_ref}' marked as {'premiere video' if is_premiere else 'live stream'}, but no date is set."
+                "Skipping %s '%s' because no start time is set.",
+                "premiere video" if is_premiere else "live stream",
+                item.info.title,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "is_premiere": is_premiere,
+                    }
+                },
             )
             continue
 
@@ -87,24 +128,76 @@ async def check_live(queue: "DownloadQueue") -> None:
         starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
 
         if time_now < (starts_in + timedelta(minutes=1)):
-            LOG.debug(f"Item '{item_ref}' is not yet live. will start at '{dt_delta(starts_in - time_now)}'.")
+            starts_in_text = dt_delta(starts_in - time_now)
+            LOG.debug(
+                "Live item '%s' is not ready yet; starts in %s.",
+                item.info.title,
+                starts_in_text,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "live_in": live_in,
+                        "starts_in": starts_in_text,
+                    }
+                },
+            )
             continue
 
         if queue.config.prevent_live_premiere and is_premiere and duration:
             buffer_time = queue.config.live_premiere_buffer if queue.config.live_premiere_buffer >= 0 else 5
             premiere_ends: datetime = starts_in + timedelta(minutes=buffer_time, seconds=duration)
             if time_now < premiere_ends:
+                start_after = premiere_ends.astimezone().isoformat()
                 LOG.debug(
-                    f"Item '{item_ref}' is premiering, download will start in '{(starts_in + timedelta(minutes=buffer_time, seconds=duration)).astimezone().isoformat()}'"
+                    "Premiere '%s' is still running; download will start after '%s'.",
+                    item.info.title,
+                    start_after,
+                    extra={
+                        "download": {
+                            "download_id": id,
+                            "item_id": item.info.id,
+                            "title": item.info.title,
+                            "is_premiere": is_premiere,
+                            "start_after": start_after,
+                        }
+                    },
                 )
                 continue
 
-        LOG.info(f"Retrying item '{item_ref} {item.info.extras=}' for download.")
+        LOG.info(
+            f"Retrying live download '{item.info.title}' from '{item.info.url}'.",
+            extra={
+                "download": {
+                    "download_id": id,
+                    "item_id": item.info.id,
+                    "title": item.info.title,
+                    "url": item.info.url,
+                    "preset": item.info.preset,
+                    "live_in": live_in,
+                    "is_premiere": is_premiere,
+                }
+            },
+        )
 
         try:
             await queue.clear([item.info._id], remove_file=False)
         except Exception as e:
-            LOG.error(f"Failed to clear item '{item_ref}'. {e!s}")
+            LOG.exception(
+                "Failed to clear live download '%s' before retry.",
+                item.info.title,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "url": item.info.url,
+                        "preset": item.info.preset,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
             continue
 
         try:
@@ -121,8 +214,21 @@ async def check_live(queue: "DownloadQueue") -> None:
             )
         except Exception as e:
             await queue.done.put(item)
-            LOG.exception(e)
-            LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")
+            LOG.exception(
+                "Failed to retry live download '%s' from '%s'.",
+                item.info.title,
+                item.info.url,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "url": item.info.url,
+                        "preset": item.info.preset,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
 
 
 async def delete_old_history(queue: "DownloadQueue") -> None:
@@ -156,7 +262,19 @@ async def delete_old_history(queue: "DownloadQueue") -> None:
             if item_datetime < cutoff_date:
                 items_to_delete.append((key, info))
         except (OSError, ValueError, OverflowError) as e:
-            LOG.error(f"Failed to parse timestamp '{info.timestamp}' for item '{info.title}': {e}")
+            LOG.exception(
+                "Failed to parse timestamp for history item '%s'.",
+                info.title,
+                extra={
+                    "download": {
+                        "download_id": key,
+                        "item_id": info.id,
+                        "title": info.title,
+                        "timestamp": info.timestamp,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
 
     titles: list[str] = []
     for key, info in items_to_delete:
@@ -171,7 +289,12 @@ async def delete_old_history(queue: "DownloadQueue") -> None:
         await queue.done.delete(key)
 
     if titles:
-        LOG.info(f"Automatically cleared '{', '.join(titles)}' from download history due to age.")
+        LOG.info(
+            "Automatically cleared %s old history item(s), including '%s'.",
+            len(titles),
+            titles[0],
+            extra={"deleted_count": len(titles), "titles": titles},
+        )
 
 
 async def cleanup_thumbnails(queue: "DownloadQueue") -> None:
@@ -201,7 +324,11 @@ async def cleanup_thumbnails(queue: "DownloadQueue") -> None:
             thumb.unlink(missing_ok=True)
             removed += 1
         except OSError as exc:
-            LOG.warning(f"Failed to remove orphaned thumbnail '{thumb}'. {exc!s}")
+            LOG.exception(
+                "Failed to remove orphaned thumbnail '%s'.",
+                thumb,
+                extra={"file_path": str(thumb), "exception_type": type(exc).__name__},
+            )
 
     if removed > 0:
-        LOG.info(f"Removed '{removed}' orphaned cached thumbnails.")
+        LOG.info("Removed %s orphaned cached thumbnail(s).", removed, extra={"removed_count": removed})

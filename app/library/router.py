@@ -1,11 +1,12 @@
-import logging
 import re
 from collections.abc import Awaitable, Callable
 from enum import Enum
 from functools import wraps
 from typing import Any
 
-LOG: logging.Logger = logging.getLogger(__name__)
+from app.library.log import get_logger
+
+LOG = get_logger()
 
 
 # make a enum for route types

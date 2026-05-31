@@ -1,11 +1,10 @@
-import logging
-
 from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
+from app.library.log import get_logger
 from app.library.router import RouteType, route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route(RouteType.SOCKET, "add_url", "add_url")
@@ -26,7 +25,11 @@ async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
             to=sid,
         )
     except ValueError as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to add URL '%s' from socket request.",
+            url,
+            extra={"route": "socket.add_url", "url": url, "preset": item.preset, "sid": sid},
+        )
         notify.emit(Events.LOG_ERROR, data={"preset": item.preset}, title="Error Adding URL", message=str(e), to=sid)
 
 

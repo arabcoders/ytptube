@@ -1,14 +1,14 @@
-import logging
 import re
 
 import httpx
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
+from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
 
-LOG: logging.Logger = logging.getLogger("handlers.tver")
+LOG = get_logger()
 
 
 class TverHandler(BaseHandler):
@@ -24,7 +24,11 @@ class TverHandler(BaseHandler):
 
     @staticmethod
     async def can_handle(task: HandleTask) -> bool:
-        LOG.debug(f"Checking if task '{task.name}' is using parsable Tver series URL: {task.url}")
+        LOG.debug(
+            "Checking if task '%s' uses a parsable Tver series URL.",
+            task.name,
+            extra={"task_name": task.name, "url": task.url},
+        )
         return TverHandler.parse(task.url) is not None
 
     @staticmethod
@@ -55,7 +59,11 @@ class TverHandler(BaseHandler):
 
             return {"platform_uid": platform_uid, "platform_token": platform_token}
         except Exception as exc:
-            LOG.warning(f"Failed to create tver session: {exc}")
+            LOG.warning(
+                "Failed to create Tver session.",
+                extra={"error": str(exc), "exception_type": type(exc).__name__},
+                exc_info=True,
+            )
             return None
 
     @staticmethod
@@ -83,7 +91,11 @@ class TverHandler(BaseHandler):
 
         feed_url = TverHandler.SERIES_API.format(id=series_id)
 
-        LOG.debug(f"Fetching '{task.name}' episodes from tver series {series_id}.")
+        LOG.debug(
+            "Fetching Tver episodes for task '%s'.",
+            task.name,
+            extra={"task_name": task.name, "series_id": series_id, "feed_url": feed_url},
+        )
 
         response = await TverHandler.request(
             url=feed_url,
@@ -105,7 +117,11 @@ class TverHandler(BaseHandler):
         try:
             contents = data.get("result", {}).get("contents", [])
             if not contents:
-                LOG.warning(f"No contents found in tver series response for '{task.name}'.")
+                LOG.warning(
+                    "No contents found in Tver series response for '%s'.",
+                    task.name,
+                    extra={"task_name": task.name, "series_id": series_id, "feed_url": feed_url},
+                )
                 return feed_url, items, has_items
 
             season_block = contents[0] if contents else {}
@@ -116,9 +132,13 @@ class TverHandler(BaseHandler):
                     continue
 
                 content = episode_data.get("content", {})
-                episode_id = content.pop("id")
+                episode_id = content.pop("id", None)
                 if not episode_id:
-                    LOG.warning(f"Episode missing ID in '{task.name}' feed. Skipping.")
+                    LOG.warning(
+                        "Episode missing ID in '%s' feed. Skipping.",
+                        task.name,
+                        extra={"task_name": task.name, "series_id": series_id, "feed_url": feed_url},
+                    )
                     continue
 
                 url = f"https://tver.jp/episodes/{episode_id}"
@@ -129,7 +149,9 @@ class TverHandler(BaseHandler):
                 archive_id = id_dict.get("archive_id")
                 if not archive_id:
                     LOG.warning(
-                        f"Could not compute archive ID for episode '{episode_id}' in '{task.name}' feed. Skipping."
+                        "Task '%s' could not compute an archive ID for an episode. Skipping item.",
+                        task.name,
+                        extra={"task_name": task.name, "series_id": series_id, "episode_id": episode_id, "url": url},
                     )
                     continue
 
@@ -139,7 +161,18 @@ class TverHandler(BaseHandler):
                 )
 
         except Exception as exc:
-            LOG.warning(f"Error parsing tver episodes for '{task.name}': {exc}")
+            LOG.warning(
+                "Failed to parse Tver episodes for task '%s'.",
+                task.name,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "series_id": series_id,
+                    "error": str(exc),
+                    "exception_type": type(exc).__name__,
+                },
+                exc_info=True,
+            )
 
         return feed_url, items, has_items
 
@@ -156,7 +189,17 @@ class TverHandler(BaseHandler):
         except httpx.HTTPError as exc:
             return TaskFailure(message="Failed to fetch Tver feed.", error=str(exc))
         except Exception as exc:
-            LOG.exception(exc)
+            LOG.exception(
+                "Failed to fetch Tver feed for task '%s'.",
+                task.name,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "url": task.url,
+                    "series_id": series_id,
+                    "exception_type": type(exc).__name__,
+                },
+            )
             return TaskFailure(message="Failed to fetch Tver feed.", error=str(exc))
 
         task_items: list[TaskItem] = []

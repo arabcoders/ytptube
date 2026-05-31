@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from collections import OrderedDict
 from typing import Any
 
@@ -15,10 +14,11 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import validate_url
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 def _model(model: Any) -> Condition:
@@ -115,7 +115,17 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         else:
             data = cache.get(key)
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to extract video info for condition check '%s'.",
+            cond,
+            extra={
+                "route": "conditions.match",
+                "condition": cond,
+                "url": url,
+                "preset": preset,
+                "exception_type": type(e).__name__,
+            },
+        )
         return web.json_response(
             data={"error": f"Failed to extract video info. '{e!s}'"},
             status=web.HTTPInternalServerError.status_code,
@@ -126,7 +136,17 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
 
         status: bool = match_str(cond, data)
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to evaluate condition '%s'.",
+            cond,
+            extra={
+                "route": "conditions.match",
+                "condition": cond,
+                "url": url,
+                "preset": preset,
+                "exception_type": type(e).__name__,
+            },
+        )
         return web.json_response(
             data={"error": str(e)},
             status=web.HTTPBadRequest.status_code,

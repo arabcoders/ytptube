@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func, or_, select
@@ -10,6 +9,7 @@ from app.features.core.schemas import CEFeature, ConfigEvent
 from app.features.tasks.definitions.migration import Migration
 from app.features.tasks.definitions.models import TaskDefinitionModel
 from app.library.Events import Event, EventBus, Events
+from app.library.log import get_logger
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 class TaskDefinitionsRepository(metaclass=Singleton):

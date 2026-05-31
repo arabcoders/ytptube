@@ -1,16 +1,16 @@
 import asyncio
 import datetime
-import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from app.features.core.utils import gen_random
+from app.library.log import get_logger
 
 from .BackgroundWorker import BackgroundWorker
 from .Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("events")
+LOG = get_logger()
 
 
 class Events:
@@ -242,7 +242,12 @@ class EventBus(metaclass=Singleton):
                 event = Events.frontend()
             else:
                 if event not in all_events:
-                    LOG.error(f"'{name}' attempted to listen on '{event}' which does not exist.")
+                    LOG.error(
+                        "Listener '%s' tried to subscribe to unknown event '%s'.",
+                        name,
+                        event,
+                        extra={"listener": name, "event": event},
+                    )
                     return self
 
                 event = [event]
@@ -252,7 +257,12 @@ class EventBus(metaclass=Singleton):
 
         for e in event:
             if e not in all_events:
-                LOG.error(f"'{name}' attempted to listen on '{e}' which does not exist.")
+                LOG.error(
+                    "Listener '%s' tried to subscribe to unknown event '%s'.",
+                    name,
+                    e,
+                    extra={"listener": name, "event": e},
+                )
                 continue
 
             if e not in self._listeners:
@@ -261,7 +271,7 @@ class EventBus(metaclass=Singleton):
             self._listeners[e] = [(n, listener) for n, listener in self._listeners[e] if n != name]
             self._listeners[e].append((name, EventListener(name, callback)))
 
-        LOG.debug(f"'{name}' subscribed to '{event}'.")
+        LOG.debug("Listener '%s' has subscribed.", name, extra={"listener": name, "events": event})
 
         return self
 
@@ -289,7 +299,7 @@ class EventBus(metaclass=Singleton):
                     events.append(e)
 
         if len(events) > 0:
-            LOG.debug(f"'{name}' unsubscribed from '{events}'.")
+            LOG.debug("Listener '%s' unsubscribed from '%s'.", name, events, extra={"listener": name, "events": events})
 
         return self
 
@@ -316,7 +326,17 @@ class EventBus(metaclass=Singleton):
         ev = Event(event=event, title=title, message=message, data=data)
 
         if self.debug or event not in Events.only_debug():
-            LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
+            LOG.debug(
+                "Delivering '%s' event to %s listener(s).",
+                ev.event,
+                len(self._listeners[event]),
+                extra={
+                    "event_id": ev.id,
+                    "event": ev.event,
+                    "handler_count": len(self._listeners[event]),
+                    "data": data,
+                },
+            )
 
         try:
             loop = asyncio.get_running_loop()
@@ -329,16 +349,35 @@ class EventBus(metaclass=Singleton):
                             if asyncio.iscoroutine(coro):
                                 await coro
                             else:
-                                LOG.warning(f"Expected coroutine from async handler '{handler.name}', got {type(coro)}")
+                                LOG.warning(
+                                    "Async handler '%s' returned '%s' instead of a coroutine.",
+                                    handler.name,
+                                    type(coro).__name__,
+                                    extra={"handler": handler.name, "returned_type": type(coro).__name__},
+                                )
                         else:
                             await self._call(handler, ev, kwargs)
                     except Exception as e:
-                        LOG.exception(e)
-                        LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+                        LOG.exception(
+                            "Failed to emit '%s' event to listener '%s'.",
+                            ev.event,
+                            handler.name,
+                            extra={
+                                "event_id": ev.id,
+                                "event": ev.event,
+                                "handler": handler.name,
+                                "exception_type": type(e).__name__,
+                            },
+                        )
 
             loop.create_task(execute_handlers())
         except RuntimeError:
-            LOG.debug(f"No event loop detected - using BackgroundWorker for {len(self._listeners[event])} handlers")
+            LOG.debug(
+                "No event loop detected; offloading '%s' event to %s background listener(s).",
+                ev.event,
+                len(self._listeners[event]),
+                extra={"event_id": ev.id, "event": ev.event, "handler_count": len(self._listeners[event])},
+            )
             for _, handler in self._listeners[event]:
                 try:
                     if not self._offload:
@@ -346,8 +385,17 @@ class EventBus(metaclass=Singleton):
 
                     self._offload.submit(handler.handle, ev, **kwargs)
                 except Exception as e:
-                    LOG.exception(e)
-                    LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+                    LOG.exception(
+                        "Failed to offload '%s' event to listener '%s'.",
+                        ev.event,
+                        handler.name,
+                        extra={
+                            "event_id": ev.id,
+                            "event": ev.event,
+                            "handler": handler.name,
+                            "exception_type": type(e).__name__,
+                        },
+                    )
 
     def clear(self) -> None:
         """

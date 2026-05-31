@@ -14,6 +14,7 @@ from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import archive_add, archive_read, arg_converter, get_extras, ytdlp_reject
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
+from app.library.log import get_logger
 from app.library.Utils import create_cookies_file, merge_dict
 
 from .core import Download
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.add")
+LOG = get_logger()
 
 
 def _get_ignored_conditions(extras: dict | None) -> list[str]:
@@ -122,7 +123,11 @@ async def add(
         try:
             arg_converter(args=item.cli, level=True)
         except Exception as e:
-            LOG.error(f"Invalid command options for yt-dlp '{item.cli}'. {e!s}")
+            LOG.error(
+                "Invalid yt-dlp command options for '%s'.",
+                item.url,
+                extra={"url": item.url, "preset": item.preset, "exception_type": type(e).__name__},
+            )
             return {"status": "error", "msg": f"Invalid command options for yt-dlp '{item.cli}'. {e!s}"}
 
     if _preset:
@@ -135,12 +140,27 @@ async def add(
     yt_conf = {}
     cookie_file: Path = Path(queue.config.temp_path) / f"c_{uuid.uuid4().hex}.txt"
 
-    LOG.info(f"Adding '{item!r}'.")
+    LOG.info(
+        f"Adding '{item.url}' to downloads.",
+        extra={
+            "download": {
+                "url": item.url,
+                "preset": item.preset,
+                "folder": item.folder,
+                "has_cookies": bool(item.cookies),
+                "auto_start": item.auto_start,
+            }
+        },
+    )
 
     already = set() if already is None else already
 
     if item.url in already:
-        LOG.warning(f"Recursion detected with url '{item.url}' skipping.")
+        LOG.warning(
+            "Skipping recursive download URL '%s'.",
+            item.url,
+            extra={"url": item.url, "preset": item.preset},
+        )
         return {"status": "ok"}
 
     already.add(item.url)
@@ -149,7 +169,16 @@ async def add(
         yt_conf: dict = item.get_ytdlp_opts().get_all()
 
         if yt_conf.get("external_downloader"):
-            LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
+            LOG.warning(
+                "Using external downloader '%s' for '%s'.",
+                yt_conf.get("external_downloader"),
+                item.url,
+                extra={
+                    "url": item.url,
+                    "preset": item.preset,
+                    "external_downloader": yt_conf.get("external_downloader"),
+                },
+            )
             item.extras.update({"external_downloader": True})
 
         archive_id: str | None = item.get_archive_id()
@@ -201,14 +230,45 @@ async def add(
                 yt_conf["cookiefile"] = str(create_cookies_file(item.cookies, cookie_file))
             except Exception as e:
                 msg = f"Failed to create cookie file for '{item.url}'. '{e!s}'."
-                LOG.error(msg)
+                LOG.exception(
+                    msg,
+                    extra={
+                        "download": {
+                            "url": item.url,
+                            "preset": item.preset,
+                            "path": str(cookie_file),
+                            "has_cookies": True,
+                            "exception_type": type(e).__name__,
+                        }
+                    },
+                )
                 return {"status": "error", "msg": msg}
 
         if entry:
-            LOG.info(f"[P] Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
+            LOG.info(
+                f"Processing pre-extracted info for '{item.url}'.",
+                extra={
+                    "download": {
+                        "url": item.url,
+                        "preset": item.preset,
+                        "has_cookies": bool(yt_conf.get("cookiefile")),
+                        "pre_extracted": True,
+                    }
+                },
+            )
 
         if not entry:
-            LOG.info(f"Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
+            LOG.info(
+                f"Extracting info for '{item.url}'.",
+                extra={
+                    "download": {
+                        "url": item.url,
+                        "preset": item.preset,
+                        "has_cookies": bool(yt_conf.get("cookiefile")),
+                        "pre_extracted": False,
+                    }
+                },
+            )
             (entry, logs) = await fetch_info(
                 config=yt_conf,
                 url=item.url,
@@ -221,7 +281,17 @@ async def add(
             )
 
         if not entry:
-            LOG.error(f"Unable to extract info for '{item.url}'. Logs: {logs}")
+            LOG.error(
+                f"Unable to extract info for '{item.url}'.",
+                extra={
+                    "download": {
+                        "url": item.url,
+                        "preset": item.preset,
+                        "has_cookies": bool(yt_conf.get("cookiefile")),
+                        "yt_dlp_logs": logs,
+                    }
+                },
+            )
             return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
 
         # Sometimes playlists or extractor returns different ID than what we get from the make_archive_id()
@@ -293,7 +363,9 @@ async def add(
         ):
             already.pop()
 
-            message = f"Condition '{condition.name}' matched for '{item!r}'."
+            display = str(entry.get("title") or entry.get("webpage_url") or entry.get("url") or item.url)
+
+            message = f"Condition '{condition.name}' matched for '{display}'."
 
             if condition.cli:
                 message += f" Re-queuing with '{condition.cli}'."
@@ -306,8 +378,8 @@ async def add(
                     archive_add(_archive_file, [archive_id])
                     extra_msg = f" and added to archive file '{_archive_file}'"
 
-                _name = entry.get("title", entry.get("id"))
-                log_message = f"Ignoring download of '{_name!r}' as per condition '{condition.name}'{extra_msg}."
+                _name = str(entry.get("title") or entry.get("id") or item.url)
+                log_message = f"Ignoring download of '{_name}' as per condition '{condition.name}'{extra_msg}."
 
                 store_type, dlInfo = await queue.get_item(archive_id=archive_id)
                 if not store_type:
@@ -339,7 +411,10 @@ async def add(
 
             if condition.extras.get("set_preset") and (target_preset := condition.extras.get("set_preset")):
                 if Presets.get_instance().has(target_preset):
-                    log_message: str = f"Switching preset from '{item.preset}' to '{target_preset}' for '{item!r}' as per condition '{condition.name}'."
+                    log_message: str = (
+                        f"Switching preset from '{item.preset}' to '{target_preset}' for '{display}' "
+                        f"as per condition '{condition.name}'."
+                    )
                     LOG.info(log_message)
                     queue._notify.emit(Events.LOG_INFO, data={}, title="Preset Switched", message=log_message)
                     item = item.new_with(preset=target_preset)
@@ -356,15 +431,61 @@ async def add(
             return {"status": "error", "msg": _msg}
 
         end_time = time.perf_counter() - started
-        LOG.debug(f"extract_info: for 'URL: {item.url}' is done in '{end_time:.3f}'. Length: '{len(entry)}/keys'.")
+        LOG.debug(
+            f"Extracted info for '{item.url}' in '{end_time:.3f}' seconds.",
+            extra={
+                "download": {
+                    "url": item.url,
+                    "preset": item.preset,
+                    "has_cookies": bool(yt_conf.get("cookiefile")),
+                    "elapsed_seconds": round(end_time, 3),
+                    "entry_keys": len(entry),
+                }
+            },
+        )
     except yt_dlp.utils.ExistingVideoReached as exc:
-        LOG.error(f"Video has been downloaded already and recorded in archive.log file. '{exc!s}'.")
+        LOG.error(
+            "Video '%s' is already recorded in the download archive.",
+            item.url,
+            extra={
+                "download": {
+                    "url": item.url,
+                    "preset": item.preset,
+                    "status": "skip",
+                    "exception_type": type(exc).__name__,
+                }
+            },
+        )
         return {"status": "error", "msg": "Video has been downloaded already and recorded in archive.log file."}
     except yt_dlp.utils.YoutubeDLError as exc:
-        LOG.error(f"YoutubeDLError: Unable to extract info. '{exc!s}'.")
+        LOG.exception(
+            "Failed to extract media info for '%s'.",
+            item.url,
+            extra={
+                "download": {
+                    "url": item.url,
+                    "preset": item.preset,
+                    "has_cookies": bool(yt_conf.get("cookiefile")),
+                    "exception_type": type(exc).__name__,
+                }
+            },
+        )
         return {"status": "error", "msg": str(exc)}
     except asyncio.exceptions.TimeoutError as exc:
-        LOG.error(f"TimeoutError: Unable to extract info. '{exc!s}'.")
+        LOG.exception(
+            "Timed out extracting media info for '%s' after %s second(s).",
+            item.url,
+            queue.config.extract_info_timeout,
+            extra={
+                "download": {
+                    "url": item.url,
+                    "preset": item.preset,
+                    "has_cookies": bool(yt_conf.get("cookiefile")),
+                    "timeout_seconds": queue.config.extract_info_timeout,
+                    "exception_type": type(exc).__name__,
+                }
+            },
+        )
         return {
             "status": "error",
             "msg": f"TimeoutError: {queue.config.extract_info_timeout}s reached Unable to extract info.",
@@ -375,6 +496,19 @@ async def add(
                 cookie_file.unlink(missing_ok=True)
                 yt_conf.pop("cookiefile", None)
             except Exception as e:
-                LOG.error(f"Failed to remove cookie file '{yt_conf['cookiefile']}'. {e!s}")
+                LOG.exception(
+                    "Failed to remove cookie file for '%s' at '%s'.",
+                    item.url,
+                    yt_conf["cookiefile"],
+                    extra={
+                        "download": {
+                            "url": item.url,
+                            "preset": item.preset,
+                            "path": yt_conf["cookiefile"],
+                            "has_cookies": True,
+                            "exception_type": type(e).__name__,
+                        }
+                    },
+                )
 
     return await add_item(queue=queue, entry=entry, item=item, already=already, logs=logs, yt_params=yt_conf)

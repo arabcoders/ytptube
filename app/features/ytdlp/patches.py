@@ -1,9 +1,10 @@
-import logging
 import subprocess
 import sys
 from typing import Any
 
-LOG: logging.Logger = logging.getLogger("ytdlp.utils")
+from app.library.log import get_logger
+
+LOG = get_logger()
 
 
 def patch_metadataparser() -> None:
@@ -14,7 +15,12 @@ def patch_metadataparser() -> None:
         from yt_dlp.postprocessor.metadataparser import MetadataParserPP
         from yt_dlp.utils import Namespace
     except Exception as exc:
-        LOG.warning(f"Unable to import yt_dlp metadata parser for patching: {exc!s}")
+        LOG.warning(
+            "Unable to import yt-dlp metadata parser for patching: %s",
+            exc,
+            extra={"patch": "metadata_parser", "exception_type": type(exc).__name__},
+            exc_info=True,
+        )
         return
 
     if getattr(MetadataParserPP.Actions, "_ytptube_patched", False):
@@ -61,7 +67,12 @@ def patch_windows_popen_wait() -> None:
     try:
         from yt_dlp.utils import Popen
     except Exception as exc:
-        LOG.warning(f"Unable to import yt_dlp Popen for patching: {exc!s}")
+        LOG.warning(
+            "Unable to import yt-dlp Popen for patching: %s",
+            exc,
+            extra={"patch": "windows_popen_wait", "exception_type": type(exc).__name__},
+            exc_info=True,
+        )
         return
 
     if getattr(Popen, "_ytptube_wait_patched", False):

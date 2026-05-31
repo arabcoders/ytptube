@@ -1,4 +1,3 @@
-import logging
 import re
 from typing import TYPE_CHECKING, Any
 from xml.etree.ElementTree import Element
@@ -7,13 +6,14 @@ import httpx
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
+from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element
 
-LOG: logging.Logger = logging.getLogger("handlers.youtube")
+LOG = get_logger()
 
 
 class YoutubeHandler(BaseHandler):
@@ -29,7 +29,11 @@ class YoutubeHandler(BaseHandler):
 
     @staticmethod
     async def can_handle(task: HandleTask) -> bool:
-        LOG.debug(f"'{task.name}': Checking if task URL is parsable YouTube URL: {task.url}")
+        LOG.debug(
+            "Checking if task '%s' uses a parsable YouTube URL.",
+            task.name,
+            extra={"task_name": task.name, "url": task.url},
+        )
         return YoutubeHandler.parse(task.url) is not None
 
     @staticmethod
@@ -49,7 +53,7 @@ class YoutubeHandler(BaseHandler):
         from defusedxml.ElementTree import fromstring
 
         feed_url: str = YoutubeHandler.FEED.format(type=parsed["type"], id=parsed["id"])
-        LOG.debug(f"'{task.name}': Fetching feed.")
+        LOG.debug("'%s': Fetching feed.", task.name, extra={"task_name": task.name, "feed_url": feed_url})
 
         response = await YoutubeHandler.request(url=feed_url, ytdlp_opts=params)
         response.raise_for_status()
@@ -67,7 +71,11 @@ class YoutubeHandler(BaseHandler):
             vid_elem: Element[str] | None = entry.find("yt:videoId", ns)
             vid: str = vid_elem.text if vid_elem is not None and vid_elem.text else ""
             if not vid:
-                LOG.warning(f"'{task.name}': Entry in the feed is missing a video ID. Skipping.")
+                LOG.warning(
+                    "'%s': Entry in the feed is missing a video ID. Skipping.",
+                    task.name,
+                    extra={"task_name": task.name, "feed_url": feed_url},
+                )
                 continue
 
             url: str = f"https://www.youtube.com/watch?v={vid}"
@@ -75,7 +83,11 @@ class YoutubeHandler(BaseHandler):
             id_dict: dict[str, str | None] = get_archive_id(url)
             archive_id: str | None = id_dict.get("archive_id")
             if not archive_id:
-                LOG.warning(f"'{task.name}': Could not compute archive ID for video '{vid}' in feed. Skipping.")
+                LOG.warning(
+                    "Task '%s' could not compute an archive ID for a YouTube video. Skipping item.",
+                    task.name,
+                    extra={"task_name": task.name, "video_id": vid, "url": url},
+                )
                 continue
 
             title_elem: Element[str] | None = entry.find("atom:title", ns)
@@ -103,7 +115,16 @@ class YoutubeHandler(BaseHandler):
         except httpx.HTTPError as exc:
             return TaskFailure(message="Failed to fetch YouTube feed.", error=str(exc))
         except Exception as exc:
-            LOG.exception(exc)
+            LOG.exception(
+                "Failed to fetch YouTube feed for task '%s'.",
+                task.name,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "url": task.url,
+                    "exception_type": type(exc).__name__,
+                },
+            )
             return TaskFailure(message="Failed to fetch YouTube feed.", error=str(exc))
 
         task_items: list[TaskItem] = []

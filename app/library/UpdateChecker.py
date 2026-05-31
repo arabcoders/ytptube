@@ -1,9 +1,10 @@
 import asyncio
-import logging
 import re
 from typing import Any
 
 from aiohttp import web
+
+from app.library.log import get_logger
 
 from .cache import Cache
 from .config import Config
@@ -13,7 +14,7 @@ from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .version import APP_VERSION
 
-LOG: logging.Logger = logging.getLogger("update_checker")
+LOG = get_logger()
 
 
 class UpdateChecker(metaclass=Singleton):
@@ -145,7 +146,11 @@ class UpdateChecker(metaclass=Singleton):
         strip_v_prefix: bool = False,
     ) -> tuple[str, str | None]:
         try:
-            LOG.info(f"Checking for {name} updates...")
+            LOG.info(
+                "Checking whether %s has an update available.",
+                name,
+                extra={"target_name": name, "api_url": api_url, "current_version": current_version},
+            )
 
             client = get_async_client(use_curl=False)
             response = await client.get(
@@ -155,32 +160,59 @@ class UpdateChecker(metaclass=Singleton):
             )
 
             if 200 != response.status_code:
-                LOG.warning(f"Failed to check for {name} updates: HTTP {response.status_code}")
+                LOG.warning(
+                    "Failed to check for %s updates: HTTP %s",
+                    name,
+                    response.status_code,
+                    extra={"target_name": name, "api_url": api_url, "status_code": response.status_code},
+                )
                 return ("error", None)
 
             data: dict[str, Any] = response.json()
 
             latest_tag: str = data.get("tag_name", "")
             if not latest_tag:
-                LOG.warning(f"No tag_name found in {name} GitHub release data.")
+                LOG.warning(
+                    "No tag_name found in %s GitHub release data.",
+                    name,
+                    extra={"target_name": name, "api_url": api_url},
+                )
                 return ("error", None)
 
             compare_current: str = current_version.lstrip("v") if strip_v_prefix else current_version
             compare_latest: str = latest_tag.lstrip("v") if strip_v_prefix else latest_tag
 
             if self._compare_versions(compare_current, compare_latest):
-                LOG.warning(f"{name} update available: {current_version} -> {latest_tag}")
+                LOG.warning(
+                    "%s has an update available: %s -> %s.",
+                    name,
+                    current_version,
+                    latest_tag,
+                    extra={"target_name": name, "current_version": current_version, "latest_version": latest_tag},
+                )
                 result = ("update_available", latest_tag)
                 await self._cache.aset(cache_key, result, self.CACHE_DURATION)
                 return result
 
-            LOG.info(f"No {name} updates available.")
+            LOG.info(
+                "%s is already up to date.",
+                name,
+                extra={"target_name": name, "current_version": current_version},
+            )
             result = ("up_to_date", None)
             await self._cache.aset(cache_key, result, self.CACHE_DURATION)
             return result
         except Exception as e:
-            LOG.exception(e)
-            LOG.error(f"Error checking for {name} updates: {e!s}")
+            LOG.exception(
+                "Failed to check whether %s has an update available.",
+                name,
+                extra={
+                    "target_name": name,
+                    "api_url": api_url,
+                    "cache_key": cache_key,
+                    "exception_type": type(e).__name__,
+                },
+            )
             return ("error", None)
 
     async def _check_app_version(self) -> tuple[str, str | None]:
@@ -203,7 +235,7 @@ class UpdateChecker(metaclass=Singleton):
     async def _check_ytdlp_version(self) -> tuple[str, str | None]:
         current_version: str = self._config._ytdlp_version()
         if not current_version or "0.0.0" == current_version:
-            LOG.warning("Could not determine yt-dlp version, skipping yt-dlp update check.")
+            LOG.warning("Skipping the yt-dlp update check because the current version could not be determined.")
             return ("error", None)
 
         status, new_version = await self._check_github_version(
@@ -238,5 +270,12 @@ class UpdateChecker(metaclass=Singleton):
 
             return parse_version(latest) > parse_version(current)
         except Exception as e:
-            LOG.warning(f"Error comparing versions '{current}' vs '{latest}': {e}")
+            LOG.warning(
+                "Failed to compare versions '%s' and '%s' because %s.",
+                current,
+                latest,
+                e,
+                extra={"current_version": current, "latest_version": latest, "exception_type": type(e).__name__},
+                exc_info=True,
+            )
             return False

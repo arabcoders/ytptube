@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote_plus
@@ -14,10 +13,11 @@ from app.library.config import Config
 from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type, move_file, rename_file
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route("GET", "api/file/ffprobe/{file:.*}", "ffprobe")
@@ -114,7 +114,12 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
 
         return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to load file info for '%s' because %s.",
+            file,
+            e,
+            extra={"route": "file_info", "file_path": file},
+        )
         return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
 
@@ -196,7 +201,12 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
             dumps=encoder.encode,
         )
     except OSError as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to browse file path '%s' because %s.",
+            req_path,
+            e,
+            extra={"route": "file_browser", "request_path": req_path},
+        )
         return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
 
@@ -229,7 +239,10 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 data={"error": "Invalid parameters expecting list of dicts."}, status=web.HTTPBadRequest.status_code
             )
     except Exception as e:
-        LOG.exception(e)
+        LOG.debug(
+            "Ignoring invalid file browser actions JSON.",
+            extra={"route": "browser.file.actions", "error": str(e)},
+        )
         return web.json_response(data={"error": "Invalid JSON."}, status=web.HTTPBadRequest.status_code)
 
     # validate each action before performing any operations
@@ -329,7 +342,13 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 record(req_path, ok=False, error="Path outside download root.", action=action)
                 continue
         except Exception as e:
-            LOG.exception(e)
+            LOG.exception(
+                "Failed to resolve file browser action '%s' for path '%s' because %s.",
+                action,
+                req_path,
+                e,
+                extra={"route": "browser.file.actions", "action": action, "request_path": req_path},
+            )
             record(req_path, ok=False, error=str(e), action=action, extra={"item": params})
             continue
 
@@ -368,9 +387,26 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
             try:
                 new_path.mkdir(parents=True, exist_ok=True)
                 record(path, ok=True, action=action, extra={"new_dir": new_path.relative_to(config.download_path)})
-                LOG.info(f"Created directory '{new_path.relative_to(config.download_path)}'")
+                LOG.info(
+                    "Created directory '%s'.",
+                    new_path.relative_to(config.download_path),
+                    extra={
+                        "route": "browser.file.actions",
+                        "directory": str(new_path.relative_to(config.download_path)),
+                    },
+                )
             except OSError as e:
-                LOG.exception(e)
+                LOG.exception(
+                    "Failed to create directory '%s' because %s.",
+                    new_dir,
+                    e,
+                    extra={
+                        "route": "browser.file.actions",
+                        "action": action,
+                        "request_path": req_path,
+                        "new_dir": new_dir,
+                    },
+                )
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
 
@@ -389,24 +425,36 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
 
             try:
                 sidecar_count: int = 0
-                sidecar_info: str = ""
                 sidecar_renamed: list[tuple[Path, Path]] = []
                 if path.is_dir():
                     renamed: Path = path.rename(new_path)
                 else:
                     renamed, sidecar_renamed = rename_file(path, new_name)
                     sidecar_count: int = len(sidecar_renamed)
-                    sidecar_info: str = (
-                        f" (with {sidecar_count} sidecar file{'s' if sidecar_count != 1 else ''})"
-                        if sidecar_count > 0
-                        else ""
-                    )
 
                 LOG.info(
-                    f"Renamed '{path.relative_to(config.download_path)}' to '{renamed.relative_to(config.download_path)}'{sidecar_info}"
+                    "Renamed '%s' to '%s'.",
+                    path.relative_to(config.download_path),
+                    renamed.relative_to(config.download_path),
+                    extra={
+                        "route": "browser.file.actions",
+                        "old_path": str(path.relative_to(config.download_path)),
+                        "new_path": str(renamed.relative_to(config.download_path)),
+                        "sidecar_count": sidecar_count,
+                    },
                 )
             except OSError as e:
-                LOG.exception(e)
+                LOG.exception(
+                    "Failed to rename file browser path '%s' because %s.",
+                    path.relative_to(config.download_path),
+                    e,
+                    extra={
+                        "route": "browser.file.actions",
+                        "action": action,
+                        "file_path": str(path.relative_to(config.download_path)),
+                        "new_name": new_name,
+                    },
+                )
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             except ValueError as e:
@@ -440,9 +488,22 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 else:
                     path.unlink(missing_ok=True)
 
-                LOG.info(f"Deleted '{path.relative_to(config.download_path)}'")
+                LOG.info(
+                    "Deleted '%s'.",
+                    path.relative_to(config.download_path),
+                    extra={"route": "browser.file.actions", "file_path": str(path.relative_to(config.download_path))},
+                )
             except OSError as e:
-                LOG.exception(e)
+                LOG.exception(
+                    "Failed to delete file browser path '%s' because %s.",
+                    path.relative_to(config.download_path),
+                    e,
+                    extra={
+                        "route": "browser.file.actions",
+                        "action": action,
+                        "file_path": str(path.relative_to(config.download_path)),
+                    },
+                )
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             else:
@@ -493,7 +554,6 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
             try:
                 sidecar_count: int = 0
                 sidecar_moved: list[tuple[Path, Path]] = []
-                sidecar_info: str = ""
 
                 if path.is_dir():
                     dest: Path = target_dir.joinpath(path.name)
@@ -501,17 +561,30 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 else:
                     moved, sidecar_moved = move_file(path, target_dir)
                     sidecar_count: int = len(sidecar_moved)
-                    sidecar_info: str = (
-                        f" (with {sidecar_count} sidecar file{'s' if sidecar_count != 1 else ''})"
-                        if sidecar_count > 0
-                        else ""
-                    )
 
                 LOG.info(
-                    f"Moved '{path.relative_to(config.download_path)}' to '{moved.relative_to(config.download_path)}'{sidecar_info}"
+                    "Moved '%s' to '%s'.",
+                    path.relative_to(config.download_path),
+                    moved.relative_to(config.download_path),
+                    extra={
+                        "route": "browser.file.actions",
+                        "old_path": str(path.relative_to(config.download_path)),
+                        "new_path": str(moved.relative_to(config.download_path)),
+                        "sidecar_count": sidecar_count,
+                    },
                 )
             except OSError as e:
-                LOG.exception(e)
+                LOG.exception(
+                    "Failed to move file browser path '%s' because %s.",
+                    path.relative_to(config.download_path),
+                    e,
+                    extra={
+                        "route": "browser.file.actions",
+                        "action": action,
+                        "file_path": str(path.relative_to(config.download_path)),
+                        "new_path": raw_new,
+                    },
+                )
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             except ValueError as e:
@@ -609,16 +682,34 @@ async def stream_zip_download(request: Request, config: Config, cache: Cache) ->
     await response.prepare(request)
 
     try:
-        LOG.info(f"Streaming zip download for token: '{token}', files: {len(files)}")
+        LOG.info(
+            "Started streaming a ZIP download with %d file(s).",
+            len(files),
+            extra={"route": "browser.download.stream", "token": token, "file_count": len(files)},
+        )
         for chunk in zs:
             if request.transport is None or request.transport.is_closing():
-                LOG.info("Client disconnected, aborting zip download.")
+                LOG.info(
+                    "Stopped streaming the ZIP download because the client disconnected.",
+                    extra={"route": "browser.download.stream", "token": token},
+                )
                 break
             await response.write(chunk)
         await response.write_eof()
     except asyncio.CancelledError:
-        LOG.info("Download cancelled by client.")
+        LOG.info(
+            "Stopped streaming the ZIP download because the client cancelled it.",
+            extra={"route": "browser.download.stream", "token": token},
+        )
     except Exception as e:
-        LOG.error(f"Streaming zip download error. {type(e).__name__}: {e}")
+        LOG.exception(
+            "Failed to stream the ZIP download.",
+            extra={
+                "route": "browser.download.stream",
+                "token": token,
+                "file_count": len(files),
+                "exception_type": type(e).__name__,
+            },
+        )
 
     return response

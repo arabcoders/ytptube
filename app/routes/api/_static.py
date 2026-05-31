@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path, PurePosixPath
 
 import magic
@@ -6,11 +5,12 @@ from aiohttp import web
 from aiohttp.web import Request, StreamResponse
 
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.router import add_route
 from app.library.Utils import get_file
 
 MIME = magic.Magic(mime=True)
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 EXT_TO_MIME: dict[str, str] = {
     ".html": "text/html",
@@ -59,7 +59,8 @@ def get_root(root_path: Path, config: Config) -> Path | None:
         if path.is_dir():
             return path
 
-    message: str = f"Could not find the frontend assets in '{[str(path) for path in search_paths]=}'."
+    paths = [str(path) for path in search_paths]
+    message: str = f"Could not find frontend assets in any configured search path: {paths}."
     if config.ignore_ui:
         LOG.warning(message)
         return None
@@ -191,4 +192,6 @@ def setup_static_routes(root_path: Path, config: Config) -> None:
 
         add_route(method="GET", path="/", handler=redirect_index, name="index_redirect")
 
-    LOG.info(f"Serving frontend static assets from '{STATIC_STATE.root}'.")
+    LOG.info(
+        "Serving frontend static assets from '%s'.", STATIC_STATE.root, extra={"static_root": str(STATIC_STATE.root)}
+    )

@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Iterable
 from numbers import Number
 
@@ -8,9 +7,10 @@ from app.features.conditions.models import ConditionModel
 from app.features.conditions.repository import ConditionsRepository
 from app.features.ytdlp.mini_filter import match_str
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("feature.conditions")
+LOG = get_logger()
 
 
 def _ignored_identifiers(ignore_conditions: Iterable[str | Number] | None) -> tuple[set[str], bool]:
@@ -145,17 +145,29 @@ class Conditions(metaclass=Singleton):
                 continue
 
             if not item.filter:
-                LOG.error(f"Filter is empty for '{item.name}'.")
+                LOG.error(
+                    "Filter is empty for '%s'.", item.name, extra={"condition_id": item.id, "condition_name": item.name}
+                )
                 continue
 
             try:
                 if not match_str(item.filter, info):
                     continue
 
-                LOG.debug(f"Matched '{item.id}: {item.name}' with filter '{item.filter}'.")
+                LOG.debug(
+                    "Matched '%s: %s' with filter '%s'.",
+                    item.id,
+                    item.name,
+                    item.filter,
+                    extra={"condition_id": item.id, "condition_name": item.name, "filter": item.filter},
+                )
                 return item
             except Exception as e:
-                LOG.error(f"Failed to evaluate '{item.id}: {item.name}'. '{e!s}'.")
+                LOG.exception(
+                    "Failed to evaluate condition '%s'.",
+                    item.name,
+                    extra={"condition_id": item.id, "condition_name": item.name, "exception_type": type(e).__name__},
+                )
                 continue
 
         return None

@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +16,7 @@ from app.library.downloads.utils import safe_relative_path
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import calc_download_path, get_file_sidecar, rename_file
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from library.downloads import Download
 
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route("GET", r"api/history/", "items_list")
@@ -338,10 +338,19 @@ async def item_thumbnail(request: Request, queue: DownloadQueue, config: Config)
             filepath, Path(config.temp_path) / "thumbnails", item_id=item.info._id
         )
     except OSError as e:
-        LOG.warning(f"Failed to generate thumbnail for '{filepath}'. {e!s}")
+        LOG.warning(
+            "Failed to generate thumbnail for file '%s'.",
+            filepath,
+            extra={"route": "history.item.thumbnail", "item_id": id, "file_path": str(filepath), "error": str(e)},
+            exc_info=True,
+        )
         generated = None
-    except Exception as e:
-        LOG.exception(e)
+    except Exception:
+        LOG.exception(
+            "Failed to generate thumbnail for file '%s'.",
+            filepath,
+            extra={"route": "history.item.thumbnail", "item_id": id, "file_path": str(filepath)},
+        )
         generated = None
 
     if generated and generated.exists() and generated.is_file():
@@ -385,7 +394,11 @@ async def item_rename(
     except ValueError as e:
         return web.json_response(data={"error": str(e)}, status=web.HTTPConflict.status_code)
     except OSError as e:
-        LOG.exception(e)
+        LOG.exception(
+            "Failed to rename history item file '%s'.",
+            filepath,
+            extra={"route": "history.item.rename", "item_id": id, "file_path": str(filepath), "new_name": new_name},
+        )
         return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
     item_dir: Path = (
@@ -404,8 +417,18 @@ async def item_rename(
     notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     sidecar_count: int = len(sidecar_renamed)
-    sidecar_msg: str = f" and {sidecar_count} sidecar file/s" if sidecar_count > 0 else ""
-    LOG.info(f"Renamed file '{filepath}' to '{renamed}'{sidecar_msg}")
+    LOG.info(
+        "Renamed file '%s' to '%s'.",
+        filepath,
+        renamed,
+        extra={
+            "route": "history.item.rename",
+            "item_id": id,
+            "old_path": str(filepath),
+            "new_path": str(renamed),
+            "sidecar_count": sidecar_count,
+        },
+    )
 
     return web.json_response(
         data=item.info,
@@ -452,7 +475,12 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
 
         updated = True
         setattr(item.info, k, v)
-        LOG.debug(f"Updated '{k}' to '{v}' for '{item.info.id}'")
+        LOG.debug(
+            "Updated history item '%s' field '%s'.",
+            item.info.id,
+            k,
+            extra={"route": "history.item_update", "item_id": item.info.id, "field": k, "value": v},
+        )
 
     if updated:
         await queue.done.put(item)
@@ -861,7 +889,11 @@ async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
             status=web.HTTPOk.status_code if result["success"] else web.HTTPBadRequest.status_code,
         )
     except Exception as e:
-        LOG.exception(f"Failed to generate NFO for item '{id}': {e}")
+        LOG.exception(
+            "Failed to generate NFO for item '%s'.",
+            id,
+            extra={"route": "history.item.nfo.generate", "item_id": id, "file_path": str(filepath), "mode": mode},
+        )
         return web.json_response(
             data={"error": f"failed to generate NFO: {e!s}"},
             status=web.HTTPInternalServerError.status_code,

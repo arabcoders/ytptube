@@ -128,7 +128,12 @@ def parse_extractor_limit(
         limit: int = min(int(env_limit), max_workers)
     else:
         if env_limit and logger:
-            logger.warning(f"Invalid extractor limit '{env_limit}' for '{extractor}', using default limit.")
+            logger.warning(
+                "Invalid extractor limit '%s' for '%s'; using default limit.",
+                env_limit,
+                extractor,
+                extra={"extractor": extractor, "env_limit": env_limit, "default_limit": default_limit},
+            )
         limit = default_limit
 
     return min(limit, max_workers)
@@ -156,7 +161,12 @@ def get_extractor_limit(
     if extractor not in LIMITS:
         limit = parse_extractor_limit(extractor, max_workers_per_extractor, max_workers, logger)
         LIMITS[extractor] = asyncio.Semaphore(limit)
-        logger.info(f"Created limits container for extractor '{extractor}': {limit}")
+        logger.info(
+            "Created download limit for extractor '%s' with %s worker(s).",
+            extractor,
+            limit,
+            extra={"extractor": extractor, "limit": limit, "max_workers": max_workers},
+        )
 
     return LIMITS[extractor]
 
@@ -247,7 +257,10 @@ def handle_task_exception(task: asyncio.Task, logger: logging.Logger) -> None:
         return
 
     task_name: str = task.get_name() if task.get_name() else "unknown_task"
-    import traceback
-
-    tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    logger.error(f"Unhandled exception in background task '{task_name}': {exc!s}. {tb}")
+    logger.error(
+        "Unhandled exception in background task '%s'. %s",
+        task_name,
+        exc,
+        extra={"task_name": task_name, "exception_type": type(exc).__name__},
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )

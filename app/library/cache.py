@@ -1,17 +1,17 @@
 import hashlib
-import logging
 import threading
 import time
 from typing import Any
 
 from aiohttp import web
 
+from app.library.log import get_logger
 from app.library.Services import Services
 
 from .Scheduler import Scheduler
 from .Singleton import ThreadSafe
 
-LOG = logging.getLogger("cache")
+LOG = get_logger()
 
 
 class Cache(metaclass=ThreadSafe):
@@ -175,4 +175,8 @@ class Cache(metaclass=ThreadSafe):
                 del self._cache[key]
 
             if expired_keys:
-                LOG.debug(f"Cleaned up {len(expired_keys)} expired cache entries.")
+                LOG.debug(
+                    "Cleaned up %s expired cache entries.",
+                    len(expired_keys),
+                    extra={"expired_count": len(expired_keys)},
+                )

@@ -30,16 +30,17 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
-from app.library.HttpAPI import HttpAPI
+from app.library.HttpAPI import HttpAccessLogger, HttpAPI
 from app.library.HttpSocket import HttpSocket
 from app.library.httpx_client import close_shared_clients
+from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
 from app.library.TerminalSessionManager import TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker
 
-LOG = logging.getLogger("app")
+LOG = get_logger()
 MIME = magic.Magic(mime=True)
 
 ROOT_PATH: Path = Path(__file__).parent.absolute()
@@ -73,22 +74,30 @@ class Main:
         for folder in folders:
             folder = Path(folder)
             try:
-                LOG.debug(f"Checking folder at '{folder}'.")
+                LOG.debug("Checking folder '%s'.", folder, extra={"folder": str(folder)})
                 if not folder.exists():
-                    LOG.info(f"Creating folder at '{folder}'.")
+                    LOG.info("Creating folder '%s'.", folder, extra={"folder": str(folder)})
                     folder.mkdir(parents=True, exist_ok=True)
-            except OSError:
-                LOG.error(f"Could not create folder at '{folder}'.")
+            except OSError as e:
+                LOG.exception(
+                    "Failed to create folder '%s'.",
+                    folder,
+                    extra={"folder": str(folder), "exception_type": type(e).__name__},
+                )
                 raise
 
         try:
             db_file = Path(self._config.db_file)
-            LOG.debug(f"Checking database file at '{db_file}'.")
+            LOG.debug("Checking database file '%s'.", db_file, extra={"db_file": str(db_file)})
             if not db_file.exists():
-                LOG.info(f"Creating database file at '{db_file}'.")
+                LOG.info("Creating database file '%s'.", db_file, extra={"db_file": str(db_file)})
                 db_file.touch(exist_ok=True)
         except OSError as e:
-            LOG.error(f"Could not create database file at '{self._config.db_file}'. {e!s}")
+            LOG.exception(
+                "Failed to create database file at '%s'.",
+                self._config.db_file,
+                extra={"db_file": str(self._config.db_file), "exception_type": type(e).__name__},
+            )
             raise
 
     async def on_shutdown(self, _: web.Application):
@@ -143,8 +152,23 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(f"YTPTube {self._config.app_version} - started on http://{host}:{port}{self._config.base_path}")
-            LOG.info(f"Download path: {self._config.download_path}")
+            LOG.info(
+                "YTPTube %s started on %s.",
+                self._config.app_version,
+                f"http://{host}:{port}{self._config.base_path}",
+                extra={
+                    "app_version": self._config.app_version,
+                    "listen_url": f"http://{host}:{port}{self._config.base_path}",
+                    "host": host,
+                    "port": port,
+                    "base_path": self._config.base_path,
+                },
+            )
+            LOG.info(
+                "Using download path '%s'.",
+                self._config.download_path,
+                extra={"download_path": self._config.download_path},
+            )
             if self._config.is_native:
                 LOG.info("Running in native mode.")
             LOG.info("=" * 40)
@@ -166,22 +190,27 @@ class Main:
                 cb()
 
         HTTP_LOGGER = None
+        HTTP_LOGGER_CLASS = None
         if self._config.access_log:
             from app.library.HttpAPI import LOG as HTTP_LOGGER
 
             HTTP_LOGGER.addFilter(
                 lambda record: f"GET {str(self._app.router['ping'].url_for()).rstrip('/')}" not in record.getMessage()
             )
+            HTTP_LOGGER_CLASS = HttpAccessLogger
 
-        web.run_app(
-            self._app,
-            host=host,
-            port=port,
-            loop=asyncio.get_event_loop(),
-            access_log=HTTP_LOGGER,
-            print=started,
-            handle_signals=cb is None,
-        )
+        run_args = {
+            "host": host,
+            "port": port,
+            "loop": asyncio.get_event_loop(),
+            "access_log": HTTP_LOGGER,
+            "print": started,
+            "handle_signals": cb is None,
+        }
+        if HTTP_LOGGER_CLASS is not None:
+            run_args["access_log_class"] = HTTP_LOGGER_CLASS
+
+        web.run_app(self._app, **run_args)
 
 
 if __name__ == "__main__":

@@ -1,13 +1,14 @@
 import asyncio
-import logging
 
 from aiocron import Cron
 from aiohttp import web
 
+from app.library.log import get_logger
+
 from .Events import EventBus, Events
 from .Singleton import Singleton
 
-LOG = logging.getLogger("scheduler")
+LOG = get_logger()
 
 
 class Scheduler(metaclass=Singleton):
@@ -46,10 +47,13 @@ class Scheduler(metaclass=Singleton):
         for job in self._jobs:
             try:
                 self._jobs[job].stop()
-                LOG.debug(f"Stopped job '{job}'.")
+                LOG.debug("Stopped job '%s'.", job, extra={"job_id": job})
             except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to stop job '{job}'. Error message '{e!s}'.")
+                LOG.exception(
+                    "Failed to stop scheduler job '%s'.",
+                    job,
+                    extra={"job_id": job, "exception_type": type(e).__name__},
+                )
 
         self._jobs = {}
 
@@ -127,7 +131,7 @@ class Scheduler(metaclass=Singleton):
 
         self._jobs[job_id] = job
 
-        LOG.debug(f"Added '{job_id}' to the scheduler to run on '{timer}'.")
+        LOG.debug("Added job '%s' to run on '%s'.", job_id, timer, extra={"job_id": job_id, "timer": timer})
 
         return job_id
 
@@ -151,12 +155,15 @@ class Scheduler(metaclass=Singleton):
             try:
                 self._jobs[id].stop()
             except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to stop job '{id}'. Error message '{e!s}'.")
+                LOG.exception(
+                    "Failed to stop scheduler job '%s'.",
+                    id,
+                    extra={"job_id": id, "exception_type": type(e).__name__},
+                )
                 return False
 
             del self._jobs[id]
-            LOG.debug(f"Removed job '{id}' from the scheduler.")
+            LOG.debug("Removed job '%s' from the scheduler.", id, extra={"job_id": id})
             return True
 
         return False

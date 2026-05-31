@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import http.cookiejar
-import logging
 from abc import ABC
 from collections.abc import Callable
 from typing import Any, ClassVar
@@ -20,8 +19,9 @@ from yt_dlp.networking.exceptions import HTTPError
 from yt_dlp.utils.networking import clean_headers
 
 from app.library.cf_solver_shared import CACHE, is_cf_challenge, solver
+from app.library.log import get_logger
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 SolverFn = Callable[[Request, Response, RequestHandler], Request | None]
 
@@ -215,7 +215,7 @@ class CFSolverRH(RequestHandler, ABC):
     def _send(self, request: Request) -> Response:
         host: str = self._get_host(request.url)
         if host and (cached := CACHE.get(host)):
-            LOG.info(f"Injecting cached Cloudflare cookies for '{host}'.")
+            LOG.info("Injecting cached Cloudflare cookies for '%s'.", host, extra={"host": host})
             self._apply_solution(cached, request.url, request.headers, self._get_cookiejar(request))
 
         director: RequestDirector = self._build_fallback()

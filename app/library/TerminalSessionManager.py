@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import errno
 import json
-import logging
 import os
 import shlex
 import shutil
@@ -16,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import web
 
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from aiohttp.web import Request
 
-LOG: logging.Logger = logging.getLogger("terminal_manager")
+LOG = get_logger()
 
 ACTIVE_FILE_NAME = "active.json"
 METADATA_FILE_NAME = "metadata.json"
@@ -296,7 +296,7 @@ class TerminalSessionManager(metaclass=Singleton):
         master_fd: int | None = None
 
         try:
-            LOG.info("Cli command from client. '%s'", command)
+            LOG.info("Starting terminal session '%s' command.", session_id, extra={"session_id": session_id})
             args = ["yt-dlp", *shlex.split(command, posix=os.name != "nt")]
             env_vars = self._build_env()
 
@@ -343,7 +343,10 @@ class TerminalSessionManager(metaclass=Singleton):
                 try:
                     os.close(slave_fd)
                 except Exception as exc:
-                    LOG.error("Error closing PTY. '%s'.", str(exc))
+                    LOG.exception(
+                        "Failed to close the PTY slave file descriptor.",
+                        extra={"exception_type": type(exc).__name__},
+                    )
 
             read_task = asyncio.create_task(
                 self._read_process_output(session_id=session_id, proc=proc, use_pty=use_pty, master_fd=master_fd),
@@ -356,8 +359,11 @@ class TerminalSessionManager(metaclass=Singleton):
             final_status = "interrupted"
         except Exception as exc:
             final_status = "failed"
-            LOG.error("CLI execute exception was thrown.")
-            LOG.exception(exc)
+            LOG.exception(
+                "Terminal session '%s' command failed.",
+                session_id,
+                extra={"session_id": session_id, "use_pty": use_pty, "exception_type": type(exc).__name__},
+            )
             await self._append_event(session_id, "output", {"type": "stderr", "line": str(exc)})
         finally:
             final_status = await self._resolve_final_status(session_id=session_id, status=final_status)
@@ -371,7 +377,7 @@ class TerminalSessionManager(metaclass=Singleton):
                     try:
                         return_code = await asyncio.wait_for(proc.wait(), timeout=self._shutdown_timeout)
                     except TimeoutError:
-                        LOG.warning("Terminal session '%s' process did not exit cleanly.", session_id)
+                        LOG.warning("Terminal session '%s' did not exit after repeated shutdown attempts.", session_id)
 
             if proc is not None:
                 proc_returncode = getattr(proc, "returncode", None)

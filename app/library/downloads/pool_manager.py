@@ -1,10 +1,10 @@
 """Download pool management - worker coordination and execution."""
 
 import asyncio
-import logging
 from typing import TYPE_CHECKING
 
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.Utils import calc_download_path
 
 from .core import Download
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.pool")
+LOG = get_logger()
 
 
 class PoolManager:
@@ -78,7 +78,11 @@ class PoolManager:
 
     async def shutdown(self) -> None:
         if self._active:
-            LOG.info(f"Cancelling '{len(self._active)}' active downloads.")
+            LOG.info(
+                "Cancelling active downloads (%s item(s)).",
+                len(self._active),
+                extra={"active_count": len(self._active), "download_ids": list(self._active)},
+            )
             await self.queue.cancel(list(self._active.keys()))
 
     async def _download_pool(self) -> None:
@@ -87,7 +91,7 @@ class PoolManager:
 
         while True:
             while not self.queue.queue.has_downloads():
-                LOG.info("Waiting for item to download.")
+                LOG.info("Waiting for queued downloads.")
                 await self.event.wait()
                 self.event.clear()
                 adaptive_sleep = 0.2
@@ -140,7 +144,11 @@ class PoolManager:
             # No items could be processed, back off a bit to avoid busy-waiting.
             if 0 == items_processed:
                 adaptive_sleep: float = min(adaptive_sleep * 1.5, max_sleep)
-                LOG.debug(f"No download slots available. Backing off for {adaptive_sleep:.2f}s before next attempt.")
+                LOG.debug(
+                    "No download slots available; backing off for %.2f seconds.",
+                    adaptive_sleep,
+                    extra={"backoff_s": round(adaptive_sleep, 2), "active_count": len(self._active)},
+                )
             else:
                 adaptive_sleep = 0.2
 
@@ -156,7 +164,22 @@ class PoolManager:
 
         """
         filePath: str = calc_download_path(base_path=self.config.download_path, folder=entry.info.folder)
-        LOG.info(f"Downloading 'id: {entry.id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' To '{filePath}'.")
+        LOG.info(
+            "Started download for '%s' to '%s'.",
+            entry.info.title,
+            filePath,
+            extra={
+                "download": {
+                    "download_id": entry.id,
+                    "item_id": entry.info.id,
+                    "title": entry.info.title,
+                    "url": entry.info.url,
+                    "download_dir": filePath,
+                    "preset": entry.info.preset,
+                    "is_live": entry.is_live,
+                }
+            },
+        )
 
         try:
             self._active[entry.info._id] = entry
@@ -176,7 +199,18 @@ class PoolManager:
             await entry.close()
 
         if await self.queue.queue.exists(key=id):
-            LOG.debug(f"Download Task '{id}' is completed. Removing from queue.")
+            LOG.debug(
+                "Removing completed download '%s' from queue.",
+                entry.info.title,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": entry.info.id,
+                        "title": entry.info.title,
+                        "status": entry.info.status,
+                    }
+                },
+            )
             await self.queue.queue.delete(key=id)
 
             nTitle: str | None = None
@@ -211,7 +245,11 @@ class PoolManager:
                 message=nMessage,
             )
         else:
-            LOG.warning(f"Download '{id}' not found in queue.")
+            LOG.warning(
+                "Completed download '%s' was not found in the queue.",
+                entry.info.title or id,
+                extra={"download_id": id, "title": entry.info.title},
+            )
 
         if self.event:
             self.event.set()

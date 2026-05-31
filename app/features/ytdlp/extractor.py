@@ -12,10 +12,11 @@ from aiohttp import web
 
 from app.features.ytdlp.utils import _DATA, LogWrapper, get_archive_id
 from app.features.ytdlp.ytdlp import YTDLP
+from app.library.log import get_logger
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("downloads.extractor")
+LOG = get_logger()
 
 LIVE_REEXTRACT_STATUSES: set[str] = {"is_live", "post_live"}
 REEXTRACT_INFO_KEY = "_ytptube_reextract"
@@ -180,7 +181,10 @@ class ExtractorPool(metaclass=Singleton):
                 self._pool.shutdown(wait=False, cancel_futures=False)
                 LOG.debug("Extractor process pool shutdown complete")
             except Exception as exc:
-                LOG.error("Error shutting down extractor process pool: %s", exc)
+                LOG.exception(
+                    "Failed to shut down the extractor process pool.",
+                    extra={"exception_type": type(exc).__name__},
+                )
             else:
                 self._pool = None
 
@@ -461,8 +465,23 @@ async def fetch_info(
             raise
 
         except Exception as exc:
-            LOG.exception(exc)
-            LOG.warning("extract_info process pool failed, falling back to thread pool url=%s error=%s", url, exc)
+            LOG.warning(
+                "yt-dlp extraction for '%s' fell back to the thread pool after the process pool failed.",
+                url,
+                extra={
+                    "url": url,
+                    "timeout": timeout,
+                    "concurrency": extractor_config.concurrency,
+                    "pool": "process",
+                    "fallback": "thread",
+                    "follow_redirect": follow_redirect,
+                    "no_archive": no_archive,
+                    "sanitize_info": sanitize_info,
+                    "capture_logs_level": capture_logs,
+                    "exception_type": type(exc).__name__,
+                },
+                exc_info=True,
+            )
             return await asyncio.wait_for(
                 fut=loop.run_in_executor(
                     None,

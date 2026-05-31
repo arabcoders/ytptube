@@ -1,7 +1,6 @@
 import base64
 import hmac
 import inspect
-import logging
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -9,7 +8,9 @@ from pathlib import Path
 import anyio
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
+from aiohttp.web_log import AccessLogger
 
+from app.library.log import get_logger
 from app.library.Services import Services
 
 from .cache import Cache
@@ -19,7 +20,33 @@ from .Events import EventBus
 from .router import RouteType, get_routes
 from .Utils import decrypt_data, encrypt_data, get_file, load_modules
 
-LOG: logging.Logger = logging.getLogger("http_api")
+LOG = get_logger("http")
+
+
+class HttpAccessLogger(AccessLogger):
+    def log(self, request: Request, response: Response, time: float) -> None:
+        try:
+            fmt_info = self._format_line(request, response, time)
+
+            values: list[object] = []
+            extra: dict[str, object] = {"elapsed_ms": round(time * 1000.0, 2)}
+            for key, value in fmt_info:
+                values.append(value)
+
+                if isinstance(key, str):
+                    extra[key] = value
+                else:
+                    parent, child = key
+                    group = extra.get(parent, {})
+                    if not isinstance(group, dict):
+                        group = {}
+                    group[child] = value
+                    extra[parent] = group
+
+            message = self._log_format % tuple(values)
+            self.logger.info(message, extra=extra)
+        except Exception:
+            self.logger.exception("Error in logging")
 
 
 class HttpAPI:
@@ -89,7 +116,10 @@ class HttpAPI:
         try:
             app.on_response_prepare.append(on_prepare)
         except Exception as e:
-            LOG.exception(e)
+            LOG.exception(
+                "Failed to register response preparation middleware.",
+                extra={"operation": "register_on_response_prepare", "exception_type": type(e).__name__},
+            )
 
         app.on_shutdown.append(self.on_shutdown)
 
@@ -130,7 +160,13 @@ class HttpAPI:
                 route.path = f"{base_path}/{route.path.lstrip('/')}"
 
             if self.config.debug:
-                LOG.debug(f"Add ({route.name}) {route.method}: {route.path}.")
+                LOG.debug(
+                    "Adding route '%s' %s: %s.",
+                    route.name,
+                    route.method,
+                    route.path,
+                    extra={"route_name": route.name, "method": route.method, "path": route.path},
+                )
 
             app.router.add_route(route.method, route.path, handler=_handle(route.handler), name=route.name)
 
@@ -173,7 +209,14 @@ class HttpAPI:
                             data = base64.b64encode(data.encode()).decode()
                             auth_header = f"Basic {data}"
                     except Exception as e:
-                        LOG.exception(e)
+                        LOG.exception(
+                            "Failed to decrypt authentication cookie.",
+                            extra={
+                                "route": str(request.rel_url),
+                                "method": request.method,
+                                "exception_type": type(e).__name__,
+                            },
+                        )
 
             if auth_header is None:
                 return web.json_response(
@@ -226,7 +269,11 @@ class HttpAPI:
                     samesite="Strict",
                 )
             except Exception as e:
-                LOG.exception(e)
+                LOG.exception(
+                    "Failed to set authentication cookie for '%s'.",
+                    request.rel_url,
+                    extra={"route": str(request.rel_url), "method": request.method, "exception_type": type(e).__name__},
+                )
 
             return response
 
@@ -314,7 +361,16 @@ class HttpAPI:
                 else:
                     response = await Services.get_instance().handle_async(handler, request=request)
             except TypeError as te:
-                LOG.exception(te)
+                LOG.exception(
+                    "Failed to inject route handler dependencies for '%s'.",
+                    getattr(handler, "__name__", handler.__class__.__name__),
+                    extra={
+                        "handler": getattr(handler, "__name__", handler.__class__.__name__),
+                        "route": str(request.rel_url),
+                        "method": request.method,
+                        "exception_type": type(te).__name__,
+                    },
+                )
                 if "missing 1 required positional argument" in str(te) and "request" in str(te):
                     response = await handler(request)
                 else:
@@ -322,7 +378,12 @@ class HttpAPI:
         except web.HTTPException as e:
             return web.json_response(data={"error": str(e)}, status=e.status_code)
         except Exception as e:
-            LOG.exception(e)
+            LOG.exception(
+                "Failed to handle request '%s %s'.",
+                request.method,
+                request.rel_url,
+                extra={"route": str(request.rel_url), "method": request.method, "exception_type": type(e).__name__},
+            )
             response = web.json_response(
                 data={"error": "Internal Server Error"},
                 status=web.HTTPInternalServerError.status_code,

@@ -1,10 +1,11 @@
-import logging
 import re
 from datetime import UTC, datetime
 
+from app.library.log import get_logger
+
 NAME_WHITESPACE_PATTERN = re.compile(r"\s+")
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 async def seed_defaults(repo) -> None:
@@ -48,7 +49,11 @@ async def seed_defaults(repo) -> None:
 
             await repo.update(existing.id, payload)
         except Exception as exc:
-            LOG.exception("Failed to seed default preset '%s': %s", preset.get("name"), exc)
+            LOG.exception(
+                "Failed to seed default preset '%s'.",
+                preset.get("name"),
+                extra={"preset": preset.get("name"), "exception_type": type(exc).__name__},
+            )
 
 
 def preset_name(value: str) -> str:

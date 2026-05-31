@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import abc
-import logging
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from app.library.log import get_logger
+
 if TYPE_CHECKING:
     from app.library.config import Config
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 class Migration(abc.ABC):
@@ -26,7 +27,11 @@ class Migration(abc.ABC):
         try:
             await self.migrate()
         except Exception as exc:
-            LOG.exception("Feature migration '%s' failed: %s", self.name, exc)
+            LOG.exception(
+                "Feature migration '%s' failed.",
+                self.name,
+                extra={"feature": self.name, "exception_type": type(exc).__name__},
+            )
             return False
 
         return True

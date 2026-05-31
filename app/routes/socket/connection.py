@@ -1,9 +1,8 @@
-import logging
-
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import RouteType, route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route(RouteType.SOCKET, "connect", "socket_connect")

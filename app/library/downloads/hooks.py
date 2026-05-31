@@ -33,9 +33,19 @@ class HookHandlers:
         if self.debug:
             try:
                 d_safe = create_debug_safe_dict(data)
-                self.logger.debug(f"PG Hook: {d_safe}")
+                self.logger.debug(
+                    "Received a yt-dlp progress update for download '%s'.",
+                    self.id,
+                    extra={"download": {"download_id": self.id, "hook": "progress", "status": d_safe}},
+                )
             except Exception as e:
-                self.logger.debug(f"PG Hook: Error creating debug info: {e}")
+                self.logger.exception(
+                    "Failed to create progress hook debug info for download '%s'.",
+                    self.id,
+                    extra={
+                        "download": {"download_id": self.id, "hook": "progress", "exception_type": type(e).__name__}
+                    },
+                )
 
         self.status_queue.put(
             {
@@ -62,9 +72,23 @@ class HookHandlers:
             try:
                 d_safe = create_debug_safe_dict(data)
                 d_safe["postprocessor"] = data.get("postprocessor")
-                self.logger.debug(f"PP Hook: {d_safe}")
+                self.logger.debug(
+                    "Received a yt-dlp post-processing update for download '%s'.",
+                    self.id,
+                    extra={"download": {"download_id": self.id, "hook": "postprocessor", "status": d_safe}},
+                )
             except Exception as e:
-                self.logger.debug(f"PP Hook: Error creating debug info: {e}")
+                self.logger.exception(
+                    "Failed to create postprocessor hook debug info for download '%s'.",
+                    self.id,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "hook": "postprocessor",
+                            "exception_type": type(e).__name__,
+                        }
+                    },
+                )
 
         self.status_queue.put(status)
 

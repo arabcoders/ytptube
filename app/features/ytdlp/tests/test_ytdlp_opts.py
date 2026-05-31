@@ -442,7 +442,7 @@ class TestYTDLPOpts:
             opts = YTDLPOpts()
             opts.get_all(keep=True)
 
-            mock_log.debug.assert_called_once_with(f"Final yt-dlp options: '{test_data!s}'.")
+            mock_log.debug.assert_called_once_with("Prepared final yt-dlp options.", extra={"ytdlp_options": test_data})
 
     def test_cookie_loading_error_handling(self):
         """Test error handling when cookie loading fails."""
@@ -475,11 +475,12 @@ class TestYTDLPOpts:
             opts = YTDLPOpts()
             opts.preset("cookie_preset")
 
-            # Should log error but not raise
-            mock_log.error.assert_called_once()
-            error_args = mock_log.error.call_args[0][0]
-            assert "Failed to load" in error_args
-            assert "Cookie Preset" in error_args
+            # Should log exception but not raise
+            mock_log.exception.assert_called_once()
+            error_fields = mock_log.exception.call_args.kwargs["extra"]
+            assert error_fields["preset"] == "Cookie Preset"
+            assert error_fields["has_cookies"] is True
+            assert error_fields["exception_type"] == "ValueError"
 
             assert "cookiefile" not in opts._preset_opts, "cookiefile should not be set"
 

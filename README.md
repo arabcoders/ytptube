@@ -44,6 +44,9 @@ Please read the [FAQ](FAQ.md) for more information.
 
 # Installation
 
+> [!IMPORTANT]
+> By default YTPTube runs without authentication. If you expose it to the internet, **enable auth**. See [security recommendations](FAQ.md#security-recommendations).
+
 ## Run using docker command
 
 ```bash

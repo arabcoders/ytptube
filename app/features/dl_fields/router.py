@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 from aiohttp import web
@@ -11,9 +10,10 @@ from app.features.dl_fields.schemas import DLField, DLFieldList, DLFieldPatch
 from app.features.dl_fields.service import DLFields
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.router import route
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 def _model(model: Any) -> DLField:

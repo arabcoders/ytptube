@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 from app.features.core.migration import Migration as FeatureMigration
 from app.features.dl_fields.schemas import DLField
 from app.library.config import Config
+from app.library.log import get_logger
 
 if TYPE_CHECKING:
     from app.features.dl_fields.repository import DLFieldsRepository
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 class Migration(FeatureMigration):
@@ -36,7 +36,11 @@ class Migration(FeatureMigration):
         try:
             items: list[dict[str, Any]] | None = json.loads(self._source_file.read_text())
         except Exception as exc:
-            LOG.exception("Failed to read %s: %s. Ignoring", self._source_file, exc)
+            LOG.exception(
+                "Failed to read download fields migration file '%s'. Ignoring.",
+                self._source_file,
+                extra={"file_path": str(self._source_file), "exception_type": type(exc).__name__},
+            )
             await self._move_file(self._source_file)
             return
 
@@ -54,7 +58,11 @@ class Migration(FeatureMigration):
                 await self._repo.create(normalized)
                 inserted += 1
             except Exception as exc:
-                LOG.exception("Failed to insert dl field '%s': %s", normalized["name"], exc)
+                LOG.exception(
+                    "Failed to insert download field '%s'.",
+                    normalized["name"],
+                    extra={"field_name": normalized["name"], "exception_type": type(exc).__name__},
+                )
 
         LOG.info("Migrated %s dl field(s) from %s.", inserted, self._source_file)
         await self._move_file(self._source_file)

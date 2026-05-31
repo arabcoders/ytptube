@@ -1,12 +1,12 @@
 import inspect
-import logging
 from dataclasses import dataclass
 from typing import Annotated, Any, TypeVar, get_args, get_origin, get_type_hints
 
+from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
 T = TypeVar("T")
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 def _unwrap_annotation(ann: Any) -> Any:

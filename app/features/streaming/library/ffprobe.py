@@ -5,7 +5,6 @@ Python wrapper for ffprobe command line tool. ffprobe must exist in the path.
 import asyncio
 import functools
 import json
-import logging
 import operator
 import os
 import subprocess  # qa: ignore
@@ -14,9 +13,10 @@ from pathlib import Path
 import anyio
 
 from app.features.streaming.types import FFProbeError
+from app.library.log import get_logger
 from app.library.Utils import timed_lru_cache
 
-LOG: logging.Logger = logging.getLogger("streaming.ffprobe")
+LOG = get_logger()
 
 
 class FFStream:

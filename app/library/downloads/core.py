@@ -19,6 +19,7 @@ from app.features.ytdlp.utils import extract_ytdlp_logs
 from app.features.ytdlp.ytdlp import YTDLP
 from app.library.config import Config
 from app.library.Events import EventBus, Events
+from app.library.log import get_logger
 from app.library.Utils import create_cookies_file
 
 from ...features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
@@ -64,7 +65,7 @@ class Download:
         self.max_workers = int(config.max_workers)
         self.is_live: bool = bool(info.is_live) or info.live_in is not None
         self.info_dict: dict | None = info_dict
-        self.logger: logging.Logger = logging.getLogger(f"Download.{info.id or info._id}")
+        self.logger: logging.Logger = get_logger()
         self.started_time = 0
         self.queue_time: datetime = datetime.now(tz=UTC)
         self.logs: list[str] = logs or []
@@ -138,12 +139,32 @@ class Download:
                 try:
                     cookie_file = Path(self._temp_manager.temp_path or self.temp_dir) / f"cookie_{self.info._id}.txt"
                     self.logger.debug(
-                        f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'."
+                        f"Creating cookie file for '{self.info.title}' at '{cookie_file}'.",
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "path": str(cookie_file),
+                                "has_cookies": True,
+                            }
+                        },
                     )
                     params["cookiefile"] = str(create_cookies_file(self.info.cookies, cookie_file))
                 except Exception as e:
                     err_msg: str = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
-                    self.logger.error(err_msg)
+                    self.logger.error(
+                        err_msg,
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "has_cookies": True,
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
                     raise ValueError(err_msg) from e
 
             if self.info_dict and isinstance(self.info_dict, dict):
@@ -153,7 +174,19 @@ class Download:
                     )
                     self.info_dict = None
                 elif self.info_dict.get("extractor_key") in GENERIC_EXTRACTORS and self.info.get_preset().default:
-                    self.logger.debug(f"Removing 'download_archive' for generic extractor. url={self.info.url}")
+                    self.logger.debug(
+                        "Removing download archive option for generic extractor on '%s'.",
+                        self.info.url,
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "url": self.info.url,
+                                "extractor": self.info_dict.get("extractor_key"),
+                            }
+                        },
+                    )
                     params.pop("download_archive", None)
 
                 if self.info_dict and self.download_info_expires > 0:
@@ -161,10 +194,34 @@ class Download:
                     _ts_dt = datetime.fromtimestamp(_ts, tz=UTC) if _ts else None
                     if not _ts_dt or (datetime.now(tz=UTC) - _ts_dt).total_seconds() > self.download_info_expires:
                         self.info_dict = None
-                        self.logger.warning(f"Info for '{self.info.url}' has expired, re-extracting info.")
+                        self.logger.warning(
+                            "Pre-extracted info for '%s' expired; extracting again.",
+                            self.info.url,
+                            extra={
+                                "download": {
+                                    "download_id": self.id,
+                                    "item_id": self.info.id,
+                                    "title": self.info.title,
+                                    "url": self.info.url,
+                                    "expires_s": self.download_info_expires,
+                                }
+                            },
+                        )
 
             if not self.info_dict or not isinstance(self.info_dict, dict):
-                self.logger.info(f"Extracting info for '{self.info.url}'.")
+                self.logger.info(
+                    f"Extracting info for '{self.info.url}'.",
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "preset": self.info.preset,
+                            "has_cookies": bool(params.get("cookiefile")),
+                        }
+                    },
+                )
                 ie_params: dict = params.copy()
 
                 (info, logs) = extract_info_sync(
@@ -188,7 +245,20 @@ class Download:
                         deletedOpts.append(opt)
 
                 if len(deletedOpts) > 0:
-                    self.logger.warning(f"Live stream detected for '{self.info.title}', deleted opts: {deletedOpts}")
+                    self.logger.warning(
+                        "Removed unsupported live stream options before downloading '%s'.",
+                        self.info.title,
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "url": self.info.url,
+                                "removed_options": deletedOpts,
+                                "is_live": self.is_live,
+                            }
+                        },
+                    )
 
             if isinstance(self.info_dict, dict) and not (
                 len(self.info_dict.get("formats", [])) > 0 or self.info_dict.get("url")
@@ -200,11 +270,36 @@ class Download:
                 raise ValueError(msg)  # noqa: TRY301
 
             self.logger.info(
-                f'Download {self.info.name()}, preset="{self.info.preset}", cookies="{bool(params.get("cookiefile"))}" started.'
+                f"Downloading '{self.info.title}' from '{self.info.url}' to '{self.download_dir}'.",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "path": self.download_dir,
+                        "preset": self.info.preset,
+                        "has_cookies": bool(params.get("cookiefile")),
+                        "download_skipped": download_skipped,
+                    }
+                },
             )
 
             if self.debug:
-                self.logger.debug(f"Params before passing to yt-dlp. {params}")
+                self.logger.debug(
+                    "Prepared yt-dlp parameters for '%s'.",
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "option_keys": sorted(str(key) for key in params),
+                            "has_cookies": bool(params.get("cookiefile")),
+                        }
+                    },
+                )
 
             params["logger"] = NestedLogger(self.logger)
 
@@ -239,7 +334,19 @@ class Download:
             self.status_queue.put({"id": self.id, "status": "downloading", "download_skipped": download_skipped})
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
-                self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
+                self.logger.debug(
+                    "Downloading '%s' using pre-extracted info.",
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "preset": self.info.preset,
+                        }
+                    },
+                )
                 _dct: dict = self.info_dict.copy()
                 if isinstance(self.info.extras, dict) and len(self.info.extras) > 0:
                     _dct.update(
@@ -264,7 +371,19 @@ class Download:
                 cls.process_ie_result(ie_result=_dct, download=True)
                 ret: int = cls._download_retcode
             else:
-                self.logger.debug(f"Downloading using url: {self.info.url}")
+                self.logger.debug(
+                    "Downloading '%s' directly from URL.",
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "preset": self.info.preset,
+                        }
+                    },
+                )
                 ret = cls.download(url_list=[self.info.url])
 
             self.status_queue.put(
@@ -275,7 +394,19 @@ class Download:
                 }
             )
         except yt_dlp.utils.ExistingVideoReached as exc:
-            self.logger.error(exc)
+            self.logger.error(
+                f"Skipping already downloaded '{self.info.title}' from '{self.info.url}'. {exc!s}",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "status": "skip",
+                        "exception_type": type(exc).__name__,
+                    }
+                },
+            )
             self.status_queue.put(
                 {
                     "id": self.id,
@@ -285,8 +416,22 @@ class Download:
                 }
             )
         except Exception as exc:
-            self.logger.exception(exc)
-            self.logger.error(exc)
+            self.logger.exception(
+                f"Failed to download '{self.info.title}' from '{self.info.url}'.",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "path": self.download_dir,
+                        "preset": self.info.preset,
+                        "has_cookies": bool(params.get("cookiefile")),
+                        "status": "error",
+                        "exception_type": type(exc).__name__,
+                    }
+                },
+            )
             self.status_queue.put(
                 {
                     "id": self.id,
@@ -301,12 +446,46 @@ class Download:
             if cookie_file and cookie_file.exists():
                 try:
                     cookie_file.unlink()
-                    self.logger.debug(f"Deleted cookie file: {cookie_file}")
+                    self.logger.debug(
+                        f"Deleted cookie file for '{self.info.title}' at '{cookie_file}'.",
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "path": str(cookie_file),
+                                "has_cookies": True,
+                            }
+                        },
+                    )
                 except Exception as e:
-                    self.logger.error(f"Failed to delete cookie file: {cookie_file}. {e}")
+                    self.logger.error(
+                        f"Failed to delete cookie file for '{self.info.title}' at '{cookie_file}'. {e!s}",
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "path": str(cookie_file),
+                                "has_cookies": True,
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
 
         self.logger.info(
-            f'Task {self.info.name()} preset="{self.info.preset}" cookies="{bool(params.get("cookiefile"))}" completed.'
+            f"Download task finished for '{self.info.title}'.",
+            extra={
+                "download": {
+                    "download_id": self.id,
+                    "item_id": self.info.id,
+                    "title": self.info.title,
+                    "url": self.info.url,
+                    "path": self.download_dir,
+                    "preset": self.info.preset,
+                    "has_cookies": bool(params.get("cookiefile")),
+                }
+            },
         )
 
     async def start(self) -> int | None:
@@ -393,8 +572,19 @@ class Download:
 
             return True
         except Exception as e:
-            self.logger.error(f"Failed to close process. {e}")
-            self.logger.exception(e)
+            self.logger.exception(
+                f"Failed to close download process for '{self.info.title}'.",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "status": self.info.status,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
 
         return False
 
@@ -422,12 +612,28 @@ class Download:
 
         """
         if self.started_time < 1:
-            self.logger.debug(f"Download task '{self.info.name()}' not started yet.")
+            self.logger.debug(
+                "Download task for '%s' has not started yet.",
+                self.info.title,
+                extra={"download": {"download_id": self.id, "item_id": self.info.id, "title": self.info.title}},
+            )
             return False
 
         elapsed = int(time.time()) - self.started_time
         if elapsed < 300:
-            self.logger.debug(f"Download task '{self.info.title}: {self.info.id}' started for '{elapsed}' seconds.")
+            self.logger.debug(
+                "Download task for '%s' has been running for %s seconds.",
+                self.info.title,
+                elapsed,
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "elapsed_s": elapsed,
+                    }
+                },
+            )
             return False
 
         status: str = self.info.status or "unknown"

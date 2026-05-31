@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.features.core.migration import Migration as FeatureMigration
 from app.library.config import Config
+from app.library.log import get_logger
 
 if TYPE_CHECKING:
     from app.features.tasks.definitions.repository import TaskDefinitionsRepository
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 class Migration(FeatureMigration):
@@ -48,7 +48,11 @@ class Migration(FeatureMigration):
                 await self._repo.create(normalized)
                 inserted += 1
             except Exception as exc:
-                LOG.exception("Failed to insert task definition '%s': %s", normalized.get("name"), exc)
+                LOG.exception(
+                    "Failed to insert task definition '%s'.",
+                    normalized.get("name"),
+                    extra={"definition": normalized.get("name"), "exception_type": type(exc).__name__},
+                )
             finally:
                 await self._move_file(path)
 
@@ -62,13 +66,21 @@ class Migration(FeatureMigration):
         try:
             content = path.read_text(encoding="utf-8")
         except Exception as exc:
-            LOG.error("Failed to read task definition '%s': %s", path, exc)
+            LOG.exception(
+                "Failed to read task definition '%s'.",
+                path,
+                extra={"path": str(path), "exception_type": type(exc).__name__},
+            )
             return None
 
         try:
             payload = json.loads(content)
         except Exception as exc:
-            LOG.error("Failed to parse JSON for '%s': %s", path, exc)
+            LOG.exception(
+                "Failed to parse JSON for task definition '%s'.",
+                path,
+                extra={"path": str(path), "exception_type": type(exc).__name__},
+            )
             return None
 
         if not isinstance(payload, dict):

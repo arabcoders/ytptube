@@ -1,4 +1,3 @@
-import logging
 import shlex
 from pathlib import Path
 from typing import Any
@@ -6,9 +5,10 @@ from typing import Any
 from app.features.presets.schemas import Preset
 from app.features.ytdlp.utils import arg_converter
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.Utils import calc_download_path, create_cookies_file, merge_dict
 
-LOG: logging.Logger = logging.getLogger("ytdlp.ytdlp_opts")
+LOG = get_logger()
 
 
 class ARGSMerger:
@@ -335,7 +335,12 @@ class YTDLPOpts:
                 if file and file.exists():
                     self._preset_opts["cookiefile"] = str(file)
             except ValueError as e:
-                LOG.error(f"Failed to load '{preset.name}' cookies. {e!s}")
+                LOG.exception(
+                    "Failed to load cookies for preset '%s': %s.",
+                    preset.name,
+                    e,
+                    extra={"preset": preset.name, "has_cookies": True, "exception_type": type(e).__name__},
+                )
 
         if preset.template:
             self._preset_opts["outtmpl"] = {"default": preset.template, "chapter": self._config.output_template_chapter}
@@ -403,7 +408,7 @@ class YTDLPOpts:
                 data["format"] = data["format"][1:]
 
         if self._config.debug:
-            LOG.debug(f"Final yt-dlp options: '{data!s}'.")
+            LOG.debug("Prepared final yt-dlp options.", extra={"ytdlp_options": data})
 
         return data
 

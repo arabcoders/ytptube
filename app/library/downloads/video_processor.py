@@ -1,6 +1,5 @@
 """Video entry processing."""
 
-import logging
 import time
 from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
@@ -11,6 +10,7 @@ from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
 from app.library.downloads import Download
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
+from app.library.log import get_logger
 from app.library.Utils import calc_download_path, merge_dict, str_to_dt
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.video")
+LOG = get_logger()
 
 
 async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, str]:
@@ -58,7 +58,19 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
     else:
         error = entry.get("msg")
 
-    LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
+    entry_url = entry.get("webpage_url") or entry.get("url")
+    LOG.debug(
+        f"Processing extracted entry '{entry.get('title')}' from '{entry_url}'.",
+        extra={
+            "download": {
+                "item_id": entry.get("id"),
+                "title": entry.get("title"),
+                "url": entry_url,
+                "preset": item.preset,
+                "has_cookies": bool(item.cookies),
+            }
+        },
+    )
 
     try:
         _item: Download = await queue.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
@@ -84,7 +96,17 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
     try:
         download_dir: str = calc_download_path(base_path=queue.config.download_path, folder=item.folder)
     except Exception as e:
-        LOG.exception(e)
+        LOG.exception(
+            f"Failed to resolve download path for '{item.url}' in folder '{item.folder}'.",
+            extra={
+                "download": {
+                    "url": item.url,
+                    "folder": item.folder,
+                    "preset": item.preset,
+                    "exception_type": type(e).__name__,
+                }
+            },
+        )
         return {"status": "error", "msg": str(e)}
 
     for field in ("uploader", "channel", "thumbnail"):
@@ -191,7 +213,21 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
                     dlInfo.info.error += f" Download will start at {starts_in.astimezone().isoformat()}."
                     _requeue = False
                 except Exception as e:
-                    LOG.error(f"Failed to parse live_in date '{release_in}'. {e!s}")
+                    LOG.error(
+                        "Failed to parse live start date '%s' for '%s'.",
+                        release_in,
+                        dlInfo.info.title,
+                        extra={
+                            "download": {
+                                "download_id": dlInfo.id,
+                                "item_id": dlInfo.info.id,
+                                "title": dlInfo.info.title,
+                                "url": dlInfo.info.url,
+                                "live_in": release_in,
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
                     dlInfo.info.error += f" Failed to parse live_in date '{release_in}'."
             else:
                 dlInfo.info.error += f" Delaying download by '{300 + dl.extras.get('duration', 0)}' seconds."
@@ -218,7 +254,20 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
             if item.auto_start:
                 queue.pool.trigger_download()
             else:
-                LOG.debug(f"Item {itemDownload.info.name()} is not set to auto-start.")
+                LOG.debug(
+                    "Download '%s' was queued without auto-start.",
+                    itemDownload.info.title,
+                    extra={
+                        "download": {
+                            "download_id": itemDownload.id,
+                            "item_id": itemDownload.info.id,
+                            "title": itemDownload.info.title,
+                            "url": itemDownload.info.url,
+                            "preset": itemDownload.info.preset,
+                            "auto_start": itemDownload.info.auto_start,
+                        }
+                    },
+                )
 
         queue._notify.emit(
             nEvent,
@@ -231,6 +280,18 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
 
         return {"status": "ok"}
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(f"Failed to download item. '{e!s}'")
+        LOG.exception(
+            f"Failed to queue extracted item '{dl.title}' from '{dl.url}'.",
+            extra={
+                "download": {
+                    "item_id": dl.id,
+                    "title": dl.title,
+                    "url": dl.url,
+                    "path": dl.download_dir,
+                    "preset": dl.preset,
+                    "has_cookies": bool(dl.cookies),
+                    "exception_type": type(e).__name__,
+                }
+            },
+        )
         return {"status": "error", "msg": str(e)}

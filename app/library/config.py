@@ -12,9 +12,20 @@ from typing import TYPE_CHECKING, Any
 import coloredlogs
 from dotenv import load_dotenv
 
+from app.library.log import get_logger
+
 from .Singleton import Singleton
 from .Utils import JsonLogFormatter
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
+
+APP_THIRD_PARTY_LOG_LEVELS: tuple[tuple[str, int], ...] = (
+    ("httpx", logging.WARNING),
+    ("urllib3.connectionpool", logging.WARNING),
+    ("apprise", logging.WARNING),
+    ("httpcore", logging.INFO),
+    ("aiosqlite", logging.INFO),
+    ("asyncio", logging.INFO),
+)
 
 if TYPE_CHECKING:
     from subprocess import CompletedProcess
@@ -74,9 +85,6 @@ class Config(metaclass=Singleton):
 
     log_level: str = "info"
     """The log level to use for the application."""
-
-    log_level_file: str = "info"
-    """The log level to use for the file logging."""
 
     base_path: str = "/"
     """The base path to use for the application."""
@@ -313,6 +321,7 @@ class Config(metaclass=Singleton):
     _frontend_vars: tuple = (
         "download_path",
         "keep_archive",
+        "log_level",
         "output_template",
         "started",
         "remove_files",
@@ -360,12 +369,13 @@ class Config(metaclass=Singleton):
 
     def __init__(self, is_native: bool = False):
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
+        LOG = get_logger()
 
         self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or str(Path(baseDefaultPath) / "var" / "config")
         envFile: str = Path(self.config_path) / ".env"
 
         if envFile.exists():
-            logging.info(f"Loading environment variables from '{envFile}'.")
+            LOG.info("Loading environment variables from '%s'.", envFile)
             load_dotenv(envFile)
 
         self.is_native = is_native
@@ -395,7 +405,7 @@ class Config(metaclass=Singleton):
                 for key in re.findall(r"\{.*?\}", v):
                     localKey: str = key[1:-1]
                     if localKey not in self.__dict__:
-                        logging.error(f"Config variable '{k}' had non-existing config reference '{key}'.")
+                        LOG.error("Config variable '%s' had non-existing config reference '%s'.", k, key)
                         sys.exit(1)
 
                     v: str = v.replace(key, str(getattr(self, localKey)))
@@ -433,18 +443,23 @@ class Config(metaclass=Singleton):
             encoding="utf-8",
         )
 
-        LOG: logging.Logger = logging.getLogger("config")
-
         if self.debug:
             try:
                 import debugpy
 
                 debugpy.listen(("0.0.0.0", self.debugpy_port), in_process_debug_adapter=True)
-                LOG.info(f"starting debugpy server on '0.0.0.0:{self.debugpy_port}'.")
+                LOG.info(
+                    "Starting debugpy server on '0.0.0.0:%s'.",
+                    self.debugpy_port,
+                    extra={"host": "0.0.0.0", "port": self.debugpy_port},
+                )
             except ImportError:
-                LOG.error("debugpy package not found, install it with 'uv sync'.")
+                LOG.error("debugpy package not found; install it with 'uv sync'.")
             except Exception as e:
-                LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
+                LOG.exception(
+                    "Failed to start debugpy server.",
+                    extra={"host": "0.0.0.0", "port": self.debugpy_port, "exception_type": type(e).__name__},
+                )
 
         if (Path(self.config_path) / "ytdlp.cli").exists():
             LOG.error("Support for ./ytdlp.cli file is removed, migrate to presets and remove the file.")
@@ -453,12 +468,16 @@ class Config(metaclass=Singleton):
             LOG.warning("Keep temp files option is enabled.")
 
         if self.auth_password and self.auth_username:
-            LOG.info(f"Authentication enabled with username '{self.auth_username}'.")
+            LOG.info(
+                "Basic authentication is enabled for user '%s'.",
+                self.auth_username,
+                extra={"auth_username": self.auth_username},
+            )
 
         if self.file_logging:
-            log_level_file: int | None = getattr(logging, self.log_level_file.upper(), None)
-            if not isinstance(log_level_file, int):
-                msg = f"Invalid file log level '{self.log_level_file}' specified."
+            file_log_level: int | None = getattr(logging, self.log_level.upper(), None)
+            if not isinstance(file_log_level, int):
+                msg = f"Invalid log level '{self.log_level}' specified."
                 raise TypeError(msg)
 
             loggingPath: Path = Path(self.config_path) / "logs"
@@ -472,7 +491,7 @@ class Config(metaclass=Singleton):
                 encoding="utf-8",
             )
 
-            handler.setLevel(log_level_file)
+            handler.setLevel(file_log_level)
             formatter = JsonLogFormatter()
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
@@ -489,14 +508,7 @@ class Config(metaclass=Singleton):
 
         self.started = time.time()
 
-        _log_levels = (
-            ("httpx", logging.WARNING),
-            ("urllib3.connectionpool", logging.WARNING),
-            ("apprise", logging.WARNING),
-            ("httpcore", logging.INFO),
-            ("aiosqlite", logging.INFO),
-        )
-        for _tool, _level in _log_levels:
+        for _tool, _level in APP_THIRD_PARTY_LOG_LEVELS:
             logging.getLogger(_tool).setLevel(_level)
 
         if self.app_env not in ("production", "development"):
@@ -571,6 +583,9 @@ class Config(metaclass=Singleton):
         data: dict[str, Any] = {k: getattr(self, k) for k in self._frontend_vars}
 
         data["ytdlp_version"] = Config._ytdlp_version()
+        from app.library.log_control import get_runtime_log_level
+
+        data["runtime_log_level"] = get_runtime_log_level()
         return data
 
     def get_replacers(self) -> dict[str, str]:
@@ -598,6 +613,7 @@ class Config(metaclass=Singleton):
         Updates the version of the application using git tags.
         This is used to set the version to the latest git tag.
         """
+        LOG = get_logger()
         git_path: str = Path(__file__).parent / ".." / ".." / ".git"
         if not git_path.exists():
             return
@@ -615,12 +631,12 @@ class Config(metaclass=Singleton):
             )
 
             if 0 != branch_result.returncode:
-                logging.error(f"Git rev-parse failed: {branch_result.stderr.strip()}")
+                LOG.error("Git rev-parse failed: %s", branch_result.stderr.strip())
                 return
 
             branch_name: str = branch_result.stdout.strip()
             if not branch_name:
-                logging.warning("Git branch name is empty.")
+                LOG.warning("Git branch name is empty.")
                 return
 
             commit_result: CompletedProcess[str] = subprocess.run(
@@ -633,12 +649,12 @@ class Config(metaclass=Singleton):
             )
 
             if 0 != commit_result.returncode:
-                logging.error(f"Git log failed: {commit_result.stderr.strip()}")
+                LOG.error("Git log failed: %s", commit_result.stderr.strip())
                 return
 
             commit_info: str = commit_result.stdout.strip()
             if not commit_info:
-                logging.warning("Git commit info is empty.")
+                LOG.warning("Git commit info is empty.")
                 return
 
             commit_date, commit_sha = commit_info.split("_", 1)
@@ -654,6 +670,6 @@ class Config(metaclass=Singleton):
                 "commit": self.app_commit_sha,
                 "build_date": self.app_build_date,
             }
-            logging.info(f"Application version info set to '{version_data}'")
+            LOG.info("Application version info set to '%s'", version_data)
         except Exception as e:
-            logging.error(f"Error while getting git version: {e!s}")
+            LOG.error("Error while getting git version: %s", e)

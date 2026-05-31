@@ -1,6 +1,5 @@
 import functools
 import glob
-import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -10,6 +9,7 @@ from aiohttp import web
 from app.library.config import Config
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
+from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton
@@ -24,7 +24,7 @@ from .pool_manager import PoolManager
 if TYPE_CHECKING:
     from app.library.DataStore import StoreType
 
-LOG: logging.Logger = logging.getLogger("downloads.queue")
+LOG = get_logger()
 
 
 class DownloadQueue(metaclass=Singleton):
@@ -113,7 +113,9 @@ class DownloadQueue(metaclass=Singleton):
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
-                LOG.warning(f"Start requested for non-existent item {item_id=}.")
+                LOG.warning(
+                    "Start requested for missing queued download '%s'.", item_id, extra={"download_id": item_id}
+                )
                 continue
 
             if item.info.auto_start:
@@ -156,7 +158,9 @@ class DownloadQueue(metaclass=Singleton):
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
-                LOG.warning(f"Start requested for non-existent item {item_id=}.")
+                LOG.warning(
+                    "Pause requested for missing queued download '%s'.", item_id, extra={"download_id": item_id}
+                )
                 continue
 
             if item.started() or item.is_cancelled():
@@ -191,7 +195,8 @@ class DownloadQueue(metaclass=Singleton):
         if not self.pool.is_paused():
             self.pool.pause()
             if not shutdown:
-                LOG.warning(f"Download paused at. {datetime.now(tz=UTC).isoformat()}")
+                paused_at = datetime.now(tz=UTC).isoformat()
+                LOG.warning("Paused the download queue.", extra={"paused_at": paused_at})
             return True
 
         return False
@@ -206,7 +211,8 @@ class DownloadQueue(metaclass=Singleton):
         """
         if self.pool.is_paused():
             self.pool.resume()
-            LOG.warning(f"Downloading resumed at. {datetime.now(tz=UTC).isoformat()}")
+            resumed_at = datetime.now(tz=UTC).isoformat()
+            LOG.warning("Resumed the download queue.", extra={"resumed_at": resumed_at})
             return True
 
         return False
@@ -258,20 +264,51 @@ class DownloadQueue(metaclass=Singleton):
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
-                LOG.warning(f"Requested cancel for non-existent download {id=}. {e!s}")
+                LOG.warning("Cancel requested for missing queued download '%s'.", id, extra={"download_id": id})
                 continue
 
-            item_ref = f"{id=} {item.info.id=} {item.info.title=}"
-
             if item.running():
-                LOG.debug(f"Canceling {item_ref}")
+                LOG.debug(
+                    "Cancelling running download '%s'.",
+                    item.info.title,
+                    extra={
+                        "download": {
+                            "download_id": id,
+                            "item_id": item.info.id,
+                            "title": item.info.title,
+                            "url": item.info.url,
+                        }
+                    },
+                )
                 item.cancel()
-                LOG.info(f"Cancelled {item_ref}")
+                LOG.info(
+                    "Cancelled running download '%s'.",
+                    item.info.title,
+                    extra={
+                        "download": {
+                            "download_id": id,
+                            "item_id": item.info.id,
+                            "title": item.info.title,
+                            "url": item.info.url,
+                        }
+                    },
+                )
                 if not item.is_live:
                     await item.close()
             else:
                 await item.close()
-                LOG.debug(f"Deleting from queue {item_ref}")
+                LOG.debug(
+                    "Removing cancelled download '%s' from queue.",
+                    item.info.title,
+                    extra={
+                        "download": {
+                            "download_id": id,
+                            "item_id": item.info.id,
+                            "title": item.info.title,
+                            "url": item.info.url,
+                        }
+                    },
+                )
                 await self.queue.delete(id)
                 self._notify.emit(
                     Events.ITEM_CANCELLED,
@@ -287,7 +324,19 @@ class DownloadQueue(metaclass=Singleton):
                     title="Download Cancelled",
                     message=f"Download '{item.info.title}' has been cancelled.",
                 )
-                LOG.info(f"Deleted from queue {item_ref}")
+                LOG.info(
+                    "Moved cancelled download '%s' from queue to history.",
+                    item.info.title,
+                    extra={
+                        "download": {
+                            "download_id": id,
+                            "item_id": item.info.id,
+                            "title": item.info.title,
+                            "url": item.info.url,
+                            "status": item.info.status,
+                        }
+                    },
+                )
 
             status[id] = "ok"
 
@@ -314,17 +363,28 @@ class DownloadQueue(metaclass=Singleton):
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
-                LOG.warning(f"Requested delete for non-existent download {id=}. {e!s}")
+                LOG.warning("Delete requested for missing history download '%s'.", id, extra={"download_id": id})
                 continue
 
-            itemRef: str = f"{id=} {item.info.id=} {item.info.title=}"
             removed_files = 0
             filename: str = ""
 
             if self.config.remove_files is not True:
                 remove_file = False
 
-            LOG.debug(f"{remove_file=} {itemRef} - Removing local files: {item.info.status=}")
+            LOG.debug(
+                "Clearing history download '%s'.",
+                item.info.title,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "status": item.info.status,
+                        "remove_file": remove_file,
+                    }
+                },
+            )
 
             if remove_file and "finished" == item.info.status and item.info.filename:
                 filename = str(item.info.filename)
@@ -344,16 +404,66 @@ class DownloadQueue(metaclass=Singleton):
                             for f in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
                                 if f.is_file() and f.exists() and not f.name.startswith("."):
                                     removed_files += 1
-                                    LOG.debug(f"Removing '{itemRef}' local file '{f.name}'.")
+                                    LOG.debug(
+                                        "Removing local file '%s' for '%s'.",
+                                        f.name,
+                                        item.info.title,
+                                        extra={
+                                            "download": {
+                                                "download_id": id,
+                                                "item_id": item.info.id,
+                                                "title": item.info.title,
+                                                "filename": f.name,
+                                            }
+                                        },
+                                    )
                                     f.unlink(missing_ok=True)
                         else:
-                            LOG.debug(f"Removing '{itemRef}' local file '{rf.name}'.")
+                            LOG.debug(
+                                "Removing local file '%s' for '%s'.",
+                                rf.name,
+                                item.info.title,
+                                extra={
+                                    "download": {
+                                        "download_id": id,
+                                        "item_id": item.info.id,
+                                        "title": item.info.title,
+                                        "filename": rf.name,
+                                    }
+                                },
+                            )
                             rf.unlink(missing_ok=True)
                             removed_files += 1
                     else:
-                        LOG.warning(f"Failed to remove '{itemRef}' local file '{filename}'. File not found.")
+                        LOG.warning(
+                            "Could not remove local file '%s' for '%s' because it was not found.",
+                            filename,
+                            item.info.title,
+                            extra={
+                                "download": {
+                                    "download_id": id,
+                                    "item_id": item.info.id,
+                                    "title": item.info.title,
+                                    "filename": filename,
+                                }
+                            },
+                        )
                 except Exception as e:
-                    LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {e!s}")
+                    LOG.exception(
+                        "Failed to remove local file '%s' for '%s'.",
+                        filename,
+                        item.info.title,
+                        extra={
+                            "download": {
+                                "download_id": id,
+                                "item_id": item.info.id,
+                                "title": item.info.title,
+                                "filename": filename,
+                                "remove_file": remove_file,
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
 
             await self.done.delete(id)
             deleted_ids.append(id)
@@ -366,11 +476,19 @@ class DownloadQueue(metaclass=Singleton):
                 message=f"{_status} '{item.info.title}' from history.",
             )
 
-            msg = f"Deleted completed download '{itemRef}'."
-            if removed_files > 0:
-                msg += f" and removed '{removed_files}' local files."
-
-            LOG.info(msg=msg)
+            LOG.info(
+                "Deleted completed download '%s' from history%s.",
+                item.info.title,
+                f" and removed {removed_files} local file(s)" if removed_files > 0 else "",
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "removed_files": removed_files,
+                    }
+                },
+            )
             status[id] = "ok"
 
         if deleted_ids:
@@ -394,10 +512,21 @@ class DownloadQueue(metaclass=Singleton):
         deleted_titles: list[str] = []
 
         for item_id, item in items:
-            item_ref: str = f"{item_id=} {item.info.id=} {item.info.title=}"
             filename: str = ""
 
-            LOG.debug(f"{remove_file=} {item_ref} - Removing local files: {item.info.status=}")
+            LOG.debug(
+                "Clearing history download '%s'.",
+                item.info.title,
+                extra={
+                    "download": {
+                        "download_id": item_id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "status": item.info.status,
+                        "remove_file": remove_file,
+                    }
+                },
+            )
 
             if remove_file and "finished" == item.info.status and item.info.filename:
                 filename = str(item.info.filename)
@@ -417,16 +546,66 @@ class DownloadQueue(metaclass=Singleton):
                             for file_ref in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
                                 if file_ref.is_file() and file_ref.exists() and not file_ref.name.startswith("."):
                                     removed_files += 1
-                                    LOG.debug(f"Removing '{item_ref}' local file '{file_ref.name}'.")
+                                    LOG.debug(
+                                        "Removing local file '%s' for '%s'.",
+                                        file_ref.name,
+                                        item.info.title,
+                                        extra={
+                                            "download": {
+                                                "download_id": item_id,
+                                                "item_id": item.info.id,
+                                                "title": item.info.title,
+                                                "filename": file_ref.name,
+                                            }
+                                        },
+                                    )
                                     file_ref.unlink(missing_ok=True)
                         else:
-                            LOG.debug(f"Removing '{item_ref}' local file '{rf.name}'.")
+                            LOG.debug(
+                                "Removing local file '%s' for '%s'.",
+                                rf.name,
+                                item.info.title,
+                                extra={
+                                    "download": {
+                                        "download_id": item_id,
+                                        "item_id": item.info.id,
+                                        "title": item.info.title,
+                                        "filename": rf.name,
+                                    }
+                                },
+                            )
                             rf.unlink(missing_ok=True)
                             removed_files += 1
                     else:
-                        LOG.warning(f"Failed to remove '{item_ref}' local file '{filename}'. File not found.")
+                        LOG.warning(
+                            "Could not remove local file '%s' for '%s' because it was not found.",
+                            filename,
+                            item.info.title,
+                            extra={
+                                "download": {
+                                    "download_id": item_id,
+                                    "item_id": item.info.id,
+                                    "title": item.info.title,
+                                    "filename": filename,
+                                }
+                            },
+                        )
                 except Exception as e:
-                    LOG.error(f"Unable to remove '{item_ref}' local file '{filename}'. {e!s}")
+                    LOG.exception(
+                        "Failed to remove local file '%s' for '%s'.",
+                        filename,
+                        item.info.title,
+                        extra={
+                            "download": {
+                                "download_id": item_id,
+                                "item_id": item.info.id,
+                                "title": item.info.title,
+                                "filename": filename,
+                                "remove_file": remove_file,
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
 
             deleted_ids.append(item_id)
             deleted_titles.append(item.info.title or item.info.id or item_id)
@@ -450,7 +629,12 @@ class DownloadQueue(metaclass=Singleton):
         summary = ", ".join(deleted_titles[:5])
         if deleted_count > 5:
             summary += ", ..."
-        LOG.info(f"Cleared '{deleted_count}' items. {summary}")
+        LOG.info(
+            "Cleared %s history item(s), including %s.",
+            deleted_count,
+            summary,
+            extra={"deleted_count": deleted_count, "removed_files": removed_files, "titles": deleted_titles[:5]},
+        )
 
         return {"deleted": deleted_count}
 
@@ -469,7 +653,12 @@ class DownloadQueue(metaclass=Singleton):
                 title="History Cleared",
                 message=f"Cleared {deleted_count} item{'s' if deleted_count != 1 else ''} from history.",
             )
-            LOG.info(f"Cleared '{deleted_count}' items. Filter '{status_filter}'.")
+            LOG.info(
+                "Cleared %s history item(s) with status '%s'.",
+                deleted_count,
+                status_filter,
+                extra={"deleted_count": deleted_count, "status_filter": status_filter},
+            )
             return {"deleted": deleted_count}
 
         items = await self.done.get_many_by_status(status_filter)

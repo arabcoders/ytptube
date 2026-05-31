@@ -1,5 +1,4 @@
 import hashlib
-import logging
 import re
 from typing import TYPE_CHECKING, Any
 from xml.etree.ElementTree import Element
@@ -10,13 +9,14 @@ from app.features.tasks.definitions.results import HandleTask, TaskFailure, Task
 from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
+from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element
 
-LOG: logging.Logger = logging.getLogger("handlers.rss")
+LOG = get_logger()
 CACHE: Cache = Cache()
 
 
@@ -28,7 +28,11 @@ class RssGenericHandler(BaseHandler):
 
     @staticmethod
     async def can_handle(task: HandleTask) -> bool:
-        LOG.debug(f"'{task.name}': Checking if task URL is parsable RSS feed: {task.url}")
+        LOG.debug(
+            "Checking if task '%s' uses a parsable RSS feed.",
+            task.name,
+            extra={"task_name": task.name, "url": task.url},
+        )
         return RssGenericHandler.parse(task.url) is not None
 
     @staticmethod
@@ -52,7 +56,11 @@ class RssGenericHandler(BaseHandler):
         from defusedxml.ElementTree import fromstring
 
         feed_url: str = parsed["url"]
-        LOG.debug(f"'{task.name}': Fetching RSS/Atom feed from {feed_url}")
+        LOG.debug(
+            "Fetching RSS/Atom feed for task '%s'.",
+            task.name,
+            extra={"task_name": task.name, "feed_url": feed_url},
+        )
 
         response = await RssGenericHandler.request(url=feed_url, ytdlp_opts=params)
         response.raise_for_status()
@@ -73,7 +81,12 @@ class RssGenericHandler(BaseHandler):
         # Try to parse as Atom feed first
         entries = root.findall("atom:entry", ns)
         if entries:
-            LOG.debug(f"'{task.name}': Detected Atom feed format with {len(entries)} entries")
+            LOG.debug(
+                "'%s': Detected Atom feed format with %s entries",
+                task.name,
+                len(entries),
+                extra={"task_name": task.name, "feed_url": feed_url, "entry_count": len(entries)},
+            )
             for entry in entries:
                 link_elem: Element | None = entry.find("atom:link[@rel='alternate']", ns)
                 if link_elem is None:
@@ -84,7 +97,11 @@ class RssGenericHandler(BaseHandler):
                     url = link_elem.get("href", "")
 
                 if not url:
-                    LOG.warning(f"'{task.name}': Atom entry missing URL. Skipping.")
+                    LOG.warning(
+                        "'%s': Atom entry missing URL. Skipping.",
+                        task.name,
+                        extra={"task_name": task.name, "feed_url": feed_url},
+                    )
                     continue
 
                 title_elem: Element | None = entry.find("atom:title", ns)
@@ -98,7 +115,12 @@ class RssGenericHandler(BaseHandler):
         else:
             # Try to parse as RSS feed
             rss_items = root.findall(".//item")
-            LOG.debug(f"'{task.name}': Detected RSS feed format with {len(rss_items)} items")
+            LOG.debug(
+                "'%s': Detected RSS feed format with %s items",
+                task.name,
+                len(rss_items),
+                extra={"task_name": task.name, "feed_url": feed_url, "entry_count": len(rss_items)},
+            )
 
             for item in rss_items:
                 # Try different link element names (link, url, media:content)
@@ -119,7 +141,11 @@ class RssGenericHandler(BaseHandler):
                             url = enclosure_elem.get("url", "")
 
                 if not url:
-                    LOG.warning(f"'{task.name}': RSS item missing URL. Skipping.")
+                    LOG.warning(
+                        "'%s': RSS item missing URL. Skipping.",
+                        task.name,
+                        extra={"task_name": task.name, "feed_url": feed_url},
+                    )
                     continue
 
                 title_elem = item.find("title")
@@ -156,7 +182,16 @@ class RssGenericHandler(BaseHandler):
         except httpx.HTTPError as exc:
             return TaskFailure(message="Failed to fetch RSS/Atom feed.", error=str(exc))
         except Exception as exc:
-            LOG.exception(exc)
+            LOG.exception(
+                "Failed to fetch RSS/Atom feed for task '%s'.",
+                task.name,
+                extra={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "url": task.url,
+                    "exception_type": type(exc).__name__,
+                },
+            )
             return TaskFailure(message="Failed to fetch RSS/Atom feed.", error=str(exc))
 
         task_items: list[TaskItem] = []
@@ -176,12 +211,17 @@ class RssGenericHandler(BaseHandler):
                 if CACHE.has(cache_key):
                     archive_id = CACHE.get(cache_key)
                     if not archive_id:
-                        LOG.debug(f"'{task.name}': Cached failure for URL '{url}'. Skipping.")
+                        LOG.debug(
+                            "Task '%s' has a cached archive ID lookup failure. Skipping item.",
+                            task.name,
+                            extra={"task_name": task.name, "url": url},
+                        )
                         continue
                 else:
                     LOG.warning(
-                        f"'{task.name}': Unable to generate static archive ID for '{url}' in feed. "
-                        "Doing real request to fetch yt-dlp archive ID."
+                        "Task '%s' could not generate a static archive ID. Fetching it with yt-dlp.",
+                        task.name,
+                        extra={"task_name": task.name, "url": url},
                     )
 
                     (info, _) = await fetch_info(
@@ -194,14 +234,18 @@ class RssGenericHandler(BaseHandler):
 
                     if not info:
                         LOG.error(
-                            f"'{task.name}': Failed to extract info for URL '{url}' to generate archive ID. Skipping."
+                            "Task '%s' failed to extract info to generate an archive ID. Skipping item.",
+                            task.name,
+                            extra={"task_name": task.name, "url": url},
                         )
                         CACHE.set(cache_key, None)
                         continue
 
                     if not info.get("id") or not info.get("extractor_key"):
                         LOG.error(
-                            f"'{task.name}': Incomplete info extracted for URL '{url}' to generate archive ID. Skipping."
+                            "Task '%s' returned incomplete info while generating an archive ID. Skipping item.",
+                            task.name,
+                            extra={"task_name": task.name, "url": url},
                         )
                         CACHE.set(cache_key, None)
                         continue

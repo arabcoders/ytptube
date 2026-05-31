@@ -2,16 +2,17 @@
 from __future__ import annotations
 
 import json
-import logging
 import time
 import urllib.request
 from typing import Any
 from urllib.parse import urlparse
 
+from app.library.log import get_logger
+
 from .cache import Cache
 
 CACHE: Cache = Cache()
-LOG: logging.Logger = logging.getLogger("cf_solver")
+LOG = get_logger()
 
 
 def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> dict[str, Any] | None:
@@ -63,16 +64,29 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
         method="POST",
     )
 
-    LOG.info(f"Solving Cloudflare challenge for '{host}' via FlareSolverr.")
+    LOG.info(
+        "Solving Cloudflare challenge for '%s' via FlareSolverr.", host, extra={"host": host, "endpoint": endpoint}
+    )
     start_time = time.time()
     with urllib.request.urlopen(req, timeout=float(config.flaresolverr_client_timeout)) as resp:
         result = json.loads(resp.read().decode("utf-8"))
 
     if "ok" != result.get("status"):
-        LOG.error(f"FlareSolverr failed to solve challenge for '{host}': {result.get('message')}")
+        LOG.error(
+            "FlareSolverr failed to solve challenge for '%s': %s",
+            host,
+            result.get("message"),
+            extra={"host": host, "endpoint": endpoint, "solver_message": result.get("message")},
+        )
         return None
 
-    LOG.info(f"FlareSolverr successfully solved challenge for '{host}'. (Took {time.time() - start_time:.2f} seconds)")
+    elapsed_s: float = time.time() - start_time
+    LOG.info(
+        "FlareSolverr solved challenge for '%s' in %.2f seconds.",
+        host,
+        elapsed_s,
+        extra={"host": host, "endpoint": endpoint, "elapsed_s": round(elapsed_s, 2)},
+    )
 
     solution = result.get("solution") or {}
     CACHE.set(

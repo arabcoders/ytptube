@@ -1,9 +1,9 @@
 """Playlist processing."""
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from app.features.ytdlp.utils import ytdlp_reject
+from app.library.log import get_logger
 from app.library.Utils import merge_dict
 
 if TYPE_CHECKING:
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger("downloads.playlist")
+LOG = get_logger()
 
 
 async def process_playlist(
@@ -38,7 +38,17 @@ async def process_playlist(
 
     playlist_name: str = f"{entry.get('id')}: {entry.get('title')}"
 
-    LOG.info(f"Processing '{playlist_name} ({len(entries)})' Playlist.")
+    LOG.info(
+        "Processing playlist '%s' with %s entrie(s).",
+        playlist_name,
+        len(entries),
+        extra={
+            "playlist_id": entry.get("id"),
+            "playlist_title": entry.get("title"),
+            "entry_count": len(entries),
+            "preset": getattr(item, "preset", None),
+        },
+    )
 
     playlistCount = entry.get("playlist_count")
     playlistCount: int = int(playlistCount) if playlistCount else len(entries)
@@ -62,7 +72,18 @@ async def process_playlist(
         item_name: str = (
             f"'{entry.get('title')}: {i}/{playlist_keys['n_entries']}' - '{etr.get('id')}: {etr.get('title')}'"
         )
-        LOG.info(f"Processing '{item_name}'.")
+        LOG.info(
+            "Processing playlist item '%s'.",
+            item_name,
+            extra={
+                "playlist_id": entry.get("id"),
+                "playlist_title": entry.get("title"),
+                "playlist_index": i,
+                "entry_count": playlist_keys["n_entries"],
+                "item_id": etr.get("id"),
+                "title": etr.get("title"),
+            },
+        )
 
         _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
         if not _status:
@@ -110,12 +131,23 @@ async def process_playlist(
 
         results.append(await process_item(i, etr))
 
-    log_msg: str = f"Playlist '{playlist_name}' processing completed with '{len(results)}' entries."
+    skipped = 0
     if max_downloads > 0 and len(entries) > max_downloads:
-        skipped: int = len(entries) - max_downloads
-        log_msg += f" Limited to '{max_downloads}' items, skipped '{skipped}' remaining items."
+        skipped = len(entries) - max_downloads
 
-    LOG.info(log_msg)
+    LOG.info(
+        "Playlist '%s' processing completed with %s item(s).",
+        playlist_name,
+        len(results),
+        extra={
+            "playlist_id": entry.get("id"),
+            "playlist_title": entry.get("title"),
+            "processed_count": len(results),
+            "entry_count": len(entries),
+            "max_downloads": max_downloads,
+            "skipped_count": skipped,
+        },
+    )
 
     if any("error" == res["status"] for res in results):
         return {

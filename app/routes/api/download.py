@@ -1,13 +1,12 @@
-import logging
-
 from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.library.config import Config
+from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import get_file
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG = get_logger()
 
 
 @route(["GET", "HEAD"], "/api/download/{filename:.+}", "download_static")
@@ -43,8 +42,12 @@ async def download_file(request: Request, config: Config, app: web.Application) 
 
         if web.HTTPNotFound.status_code == status:
             return web.json_response(data={"error": "File not found"}, status=status)
-    except Exception as e:
-        LOG.exception("Error retrieving file '%s': %s", filename, str(e))
+    except Exception:
+        LOG.exception(
+            "Failed to retrieve download file '%s'.",
+            filename,
+            extra={"route": "download_static", "file_path": filename},
+        )
         return web.json_response(
             data={"error": "Internal server error."},
             status=web.HTTPInternalServerError.status_code,
