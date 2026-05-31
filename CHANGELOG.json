@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "92591192278a23fa7f51841b2aae7e2ebec3dfb0",
-    "date": "2026-05-29T14:39:29+00:00",
+    "full_sha": "c70b3a46bdda7dd7a2dafc839598856ec4201d28",
+    "date": "2026-05-31T13:15:31+00:00",
     "commits": [
+      {
+        "sha": "c70b3a46",
+        "full_sha": "c70b3a46bdda7dd7a2dafc839598856ec4201d28",
+        "message": "chore: update dependancies",
+        "author": "arabcoders",
+        "date": "2026-05-31T13:15:31+00:00"
+      },
+      {
+        "sha": "10c18ff5",
+        "full_sha": "10c18ff5b99dc93db7762761c1e8a39ad72bba8f",
+        "message": "refactor: minor UI update for diagnostics page",
+        "author": "arabcoders",
+        "date": "2026-05-31T13:08:45+00:00"
+      },
       {
         "sha": "92591192",
         "full_sha": "92591192278a23fa7f51841b2aae7e2ebec3dfb0",
