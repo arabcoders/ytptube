@@ -92,6 +92,8 @@ export default defineNuxtConfig({
         'marked-gfm-heading-id',
         'hls.js',
         'assjs',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
       ],
     },
     server: {
