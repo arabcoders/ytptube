@@ -608,14 +608,6 @@
       </section>
     </Transition>
 
-    <UAlert
-      v-if="historyInitialized && !showSections"
-      color="neutral"
-      variant="soft"
-      icon="i-lucide-inbox"
-      title="No queue or history items"
-    />
-
     <UModal
       v-if="videoItem"
       :open="videoOpen"
