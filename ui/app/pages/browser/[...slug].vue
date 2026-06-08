@@ -323,8 +323,9 @@
       <UCard
         v-for="item in filteredItems"
         :key="item.path"
-        class="flex h-full flex-col border bg-default"
+        class="flex h-full flex-col"
         :ui="{
+          root: 'bg-default border border-default',
           header: 'p-4 pb-3',
           body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
           footer: 'border-t border-default px-4 py-4',

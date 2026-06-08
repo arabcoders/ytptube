@@ -205,7 +205,7 @@
                 <UCard
                   v-for="item in queueItems"
                   :key="`queue-${item._id}`"
-                  class="w-full min-w-0 max-w-full overflow-hidden border bg-default"
+                  class="w-full min-w-0 max-w-full overflow-hidden"
                   :ui="queueCardUi"
                 >
                   <template #header>
@@ -439,7 +439,7 @@
                 <UCard
                   v-for="item in historyEntries"
                   :key="`history-${historyPagination.page}-${item._id}`"
-                  class="w-full min-w-0 max-w-full overflow-hidden border bg-default"
+                  class="w-full min-w-0 max-w-full overflow-hidden"
                   :ui="queueCardUi"
                 >
                   <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
@@ -756,14 +756,14 @@ const fieldUi = {
 };
 
 const formCardUi = {
-  root: 'w-full border bg-default',
+  root: 'w-full border border-default bg-default',
   container: 'w-full p-4 sm:p-5',
   wrapper: 'w-full items-stretch',
   body: 'w-full',
 };
 
 const queueCardUi = {
-  root: 'w-full',
+  root: 'w-full border border-default bg-default',
   header: 'p-4 pb-0',
   body: 'p-4',
 };
