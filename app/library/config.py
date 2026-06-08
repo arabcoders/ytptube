@@ -110,6 +110,9 @@ class Config(metaclass=Singleton):
     auth_password: str | None = None
     """The password to use for basic authentication."""
 
+    disable_exec: bool = False
+    """Strip some dangerous yt-dlp options."""
+
     remove_files: bool = False
     """Remove downloaded files when removing the record."""
 
@@ -312,6 +315,7 @@ class Config(metaclass=Singleton):
         "check_for_updates",
         "thumb_generate",
         "thumb_sidecar",
+        "disable_exec",
     )
     "The variables that are booleans."
 

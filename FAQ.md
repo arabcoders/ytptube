@@ -60,6 +60,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_THUMB_CONCURRENCY           | The number of concurrent ffmpeg thumbnail generations allowed.      | `2`                   |
 | YTP_THUMB_GENERATE              | Enable ffmpeg thumbnail generation when no local thumbnail exists.  | `true`                |
 | YTP_THUMB_SIDECAR               | Save generated thumbnails next to media instead of temp cache.      | `false`               |
+| YTP_DISABLE_EXEC                | Strip some dangerous yt-dlp options.                                | `false`               |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
@@ -142,6 +143,11 @@ a tool that by design can execute commands. Auth is the mechanism that controls 
 
 YTPTube already gates other powerful features behind explicit opt-in: the built-in terminal, file browser actions and internal
 URL requests for example. The `cli` field is no different, its power is by design, and access control is your responsibility.
+
+> [!NOTE]
+> If you choose to run without authentication but still want to reduce at least some impact, you can set
+> `YTP_DISABLE_EXEC=true`. This strips some dangerous options at run time. However, understand that this is not a 
+> substitute for auth an unauthenticated API is still fully open for all other operations.
 
 # I cant download anything
 

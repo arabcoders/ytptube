@@ -397,6 +397,30 @@ class YTDLPOpts:
 
         data: dict = merge_dict(user_cli, merge_dict(self._item_opts, merge_dict(self._preset_opts, default_opts)))
 
+        if self._config.disable_exec:
+            stripped: list[str] = []
+            if data.pop("netrc_cmd", None):
+                stripped.append("netrc_cmd")
+
+            if "postprocessors" in data:
+                exec_pps = [
+                    pp for pp in data["postprocessors"] if isinstance(pp, dict) and pp.get("key", "").startswith("Exec")
+                ]
+                if exec_pps:
+                    stripped.extend(pp.get("key") for pp in exec_pps)
+                    data["postprocessors"] = [
+                        pp
+                        for pp in data["postprocessors"]
+                        if not (isinstance(pp, dict) and pp.get("key", "").startswith("Exec"))
+                    ]
+
+            if stripped:
+                LOG.warning(
+                    "Stripped %d dangerous options from yt-dlp options.",
+                    len(stripped),
+                    extra={"stripped": stripped, "reason": "YTP_DISABLE_EXEC is enabled"},
+                )
+
         if not keep:
             self.reset()
 
