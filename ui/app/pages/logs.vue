@@ -64,21 +64,21 @@
           Wrap
         </UButton>
 
-        <USelect
+        <USelectMenu
           v-model="selectedLevels"
           :items="levelFilterItems"
           value-key="value"
           label-key="label"
+          color="neutral"
           multiple
           size="sm"
           icon="i-lucide-list-filter"
           class="w-44 shrink-0 sm:w-48"
-          :ui="{ content: 'min-w-48' }"
+          :ui="{ content: 'min-w-48', item: 'pl-6' }"
+          :search-input="false"
         >
-          <template #default>
-            {{ levelFilterLabel }}
-          </template>
-        </USelect>
+          {{ levelFilterLabel }}
+        </USelectMenu>
 
         <UButton
           color="neutral"
