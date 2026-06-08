@@ -130,16 +130,18 @@
               v-if="canLoadFilteredHistory"
               class="flex justify-center border-b border-default/40 px-4 py-3"
             >
-              <UButton
-                color="neutral"
-                variant="outline"
-                size="xs"
-                icon="i-lucide-history"
-                :loading="loading"
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-full border border-default/60 bg-elevated/40 px-3 py-1 text-[11px] font-medium text-toned transition-colors hover:border-default hover:text-default disabled:opacity-60"
+                :disabled="loading"
                 @click="fetchLogs(true)"
               >
+                <UIcon
+                  :name="loading ? 'i-lucide-loader-circle' : 'i-lucide-history'"
+                  :class="['size-3.5 shrink-0', loading ? 'animate-spin' : '']"
+                />
                 Load older lines into filter
-              </UButton>
+              </button>
             </div>
 
             <template v-if="filteredLogs.length > 0">
@@ -204,20 +206,29 @@
               v-else
               class="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 py-8 text-center font-sans"
             >
-              <UIcon
-                :name="hasActiveFilter ? 'i-lucide-filter-x' : 'i-lucide-circle-off'"
-                class="size-6 text-toned"
-              />
+              <template v-if="loading">
+                <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-toned" />
+                <div class="space-y-1">
+                  <p class="text-sm font-medium text-default">Loading logs...</p>
+                  <p class="text-sm text-toned">Connecting to log stream.</p>
+                </div>
+              </template>
 
-              <div class="space-y-1">
-                <p class="text-sm font-medium text-default">
-                  {{ hasActiveFilter ? 'No logs match these filters' : 'No log lines available' }}
-                </p>
+              <template v-else-if="hasActiveFilter">
+                <UIcon name="i-lucide-filter-x" class="size-6 text-toned" />
+                <div class="space-y-1">
+                  <p class="text-sm font-medium text-default">No logs match these filters</p>
+                  <p class="text-sm text-toned">Try adjusting or clearing the filters.</p>
+                </div>
+              </template>
 
-                <p class="text-sm text-toned">
-                  {{ hasActiveFilter ? 'No logs match these filters' : 'No log lines available' }}
-                </p>
-              </div>
+              <template v-else>
+                <UIcon name="i-lucide-circle-off" class="size-6 text-toned" />
+                <div class="space-y-1">
+                  <p class="text-sm font-medium text-default">No log lines available</p>
+                  <p class="text-sm text-toned">There are no log entries to display.</p>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -319,16 +330,15 @@ const normalizedQuery = computed(() => query.value.trim().toLowerCase());
 const selectedLevelSet = computed(
   () => new Set(LOG_LEVELS.filter((level) => selectedLevels.value.includes(level))),
 );
-const hasLevelFilter = computed(() => selectedLevelSet.value.size !== LOG_LEVELS.length);
 const filterContext = computed(() => {
   const match = normalizedQuery.value.match(FILTER_CONTEXT_REGEX);
   return match ? parseInt(match[1] ?? '0', 10) : 0;
 });
 const searchTerm = computed(() => normalizedQuery.value.replace(FILTER_CONTEXT_REGEX, '').trim());
 const hasTextFilter = computed(() => Boolean(searchTerm.value));
-const hasActiveFilter = computed(() => hasTextFilter.value || hasLevelFilter.value);
+const hasActiveFilter = computed(() => hasTextFilter.value);
 const canLoadFilteredHistory = computed(
-  () => hasActiveFilter.value && !reachedEnd.value && logs.value.length > 0,
+  () => hasTextFilter.value && !reachedEnd.value && logs.value.length > 0,
 );
 const levelCounts = computed<Record<LogLevel, number>>(() => {
   const counts: Record<LogLevel, number> = {
@@ -413,12 +423,14 @@ watch(detailsOpen, (open) => {
 
 const filteredLogs = computed<FilteredLogEntry[]>(() => {
   if (!hasActiveFilter.value) {
-    return logs.value.map((log) => ({
-      log,
-      level: getLogLevel(log.level),
-      isMatch: false,
-      isContext: false,
-    }));
+    return logs.value
+      .filter((log) => selectedLevelSet.value.has(getLogLevel(log.level)))
+      .map((log) => ({
+        log,
+        level: getLogLevel(log.level),
+        isMatch: false,
+        isContext: false,
+      }));
   }
 
   const result: Array<FilteredLogEntry> = [];
@@ -483,7 +495,7 @@ const scrollLogContainerToBottom = async (behavior: ScrollBehavior = 'auto'): Pr
 const fetchLogs = async (force = false): Promise<void> => {
   loading.value = true;
 
-  if (reachedEnd.value || (!force && hasActiveFilter.value && logs.value.length > 0)) {
+  if (reachedEnd.value || (!force && hasTextFilter.value && logs.value.length > 0)) {
     loading.value = false;
     return;
   }
@@ -525,7 +537,7 @@ const fetchLogs = async (force = false): Promise<void> => {
 };
 
 const handleScroll = (): void => {
-  if (!logContainer.value || hasActiveFilter.value) {
+  if (!logContainer.value || hasTextFilter.value) {
     return;
   }
 
@@ -535,11 +547,11 @@ const handleScroll = (): void => {
 
   autoScroll.value = nearBottom;
 
-  if (nearTop && !loading.value && !scrollTimeout) {
+  if (nearTop && !loading.value && !scrollTimeout && !reachedEnd.value) {
     scrollTimeout = setTimeout(async () => {
       const previousHeight = container.scrollHeight;
       await fetchLogs();
-      nextTick(() => {
+      await nextTick(() => {
         const newHeight = container.scrollHeight;
         container.scrollTop += newHeight - previousHeight;
       });
