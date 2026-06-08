@@ -1,9 +1,65 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "0482df2fec6abb74a990f45ddb982468e7b84f4c",
-    "date": "2026-06-04T06:31:43+00:00",
+    "full_sha": "d6318fca0f53cc328549679caec69d9311833002",
+    "date": "2026-06-08T06:56:21+00:00",
     "commits": [
+      {
+        "sha": "d6318fca",
+        "full_sha": "d6318fca0f53cc328549679caec69d9311833002",
+        "message": "refactor: fix loading older logs",
+        "author": "arabcoders",
+        "date": "2026-06-08T06:56:21+00:00"
+      },
+      {
+        "sha": "4881fabb",
+        "full_sha": "4881fabb15d7be60e92392ab2cb11cbdaef267a7",
+        "message": "feat: add YTP_DISABLE_EXEC to strip dangerous yt-dlp options",
+        "author": "arabcoders",
+        "date": "2026-06-08T06:29:31+00:00"
+      },
+      {
+        "sha": "7a3c41b6",
+        "full_sha": "7a3c41b6bc532453327a4c0ae7beec09c4bd10b0",
+        "message": "refactor: update other uselect to use uselectmenu",
+        "author": "arabcoders",
+        "date": "2026-06-08T06:00:56+00:00"
+      },
+      {
+        "sha": "473e45c5",
+        "full_sha": "473e45c55bdad01de5da32405d56c1277c3b5383",
+        "message": "refactor: use list with filtering for preset menus",
+        "author": "arabcoders",
+        "date": "2026-06-08T05:55:08+00:00"
+      },
+      {
+        "sha": "4319be36",
+        "full_sha": "4319be36f63ddabeba8301af4a3e4668838f3bff",
+        "message": "fix: disable file logging during tests",
+        "author": "arabcoders",
+        "date": "2026-06-08T05:44:25+00:00"
+      },
+      {
+        "sha": "2efc09d5",
+        "full_sha": "2efc09d58769cb2c7753715ba9a78f787b3a85a4",
+        "message": "refactor: improve log details view",
+        "author": "arabcoders",
+        "date": "2026-06-08T05:38:12+00:00"
+      },
+      {
+        "sha": "acca33a7",
+        "full_sha": "acca33a7dccac8c10ffe4f7b83c3e34123616c99",
+        "message": "rerfactor: add page transition toggle",
+        "author": "arabcoders",
+        "date": "2026-06-08T04:53:05+00:00"
+      },
+      {
+        "sha": "e61df14e",
+        "full_sha": "e61df14ec0b17b2efab8ff72785910c411f16d7a",
+        "message": "refactor: improve how cards look",
+        "author": "arabcoders",
+        "date": "2026-06-08T04:11:31+00:00"
+      },
       {
         "sha": "0482df2f",
         "full_sha": "0482df2fec6abb74a990f45ddb982468e7b84f4c",
