@@ -57,7 +57,7 @@ export default defineNuxtConfig({
         { rel: 'apple-touch-startup-image', href: 'images/logo.png' },
       ],
     },
-    pageTransition: { name: 'page' },
+    pageTransition: { name: 'page', mode: 'out-in' },
   },
   modules: ['@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint'],
   icon: {

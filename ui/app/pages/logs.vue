@@ -255,24 +255,17 @@
             </div>
 
             <div class="flex shrink-0 flex-wrap justify-end gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                size="xs"
-                icon="i-lucide-copy"
-                @click="copyLogMessage(selectedLog)"
-              >
-                Message
-              </UButton>
-              <UButton
-                color="neutral"
-                variant="outline"
-                size="xs"
-                icon="i-lucide-braces"
-                @click="copyLogRaw(selectedLog)"
-              >
-                JSON
-              </UButton>
+              <UDropdownMenu :items="copyMenuItems" :content="{ align: 'end' }" :modal="false">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
+                  icon="i-lucide-copy"
+                  trailing-icon="i-lucide-chevron-down"
+                >
+                  Copy
+                </UButton>
+              </UDropdownMenu>
             </div>
 
             <div class="min-w-0 space-y-2 sm:col-span-2">
@@ -354,21 +347,74 @@
               <UIcon name="i-lucide-tags" class="size-4 text-primary" />
               Fields
             </button>
-            <dl v-if="fieldsOpen" class="grid gap-2 sm:grid-cols-2">
+            <div v-if="fieldsOpen" class="space-y-2">
               <div
-                v-for="row in fieldRows(selectedLog)"
-                :key="row.label"
-                class="rounded-sm border border-default bg-elevated/40 p-3"
+                v-for="field in fieldRows(selectedLog)"
+                :key="field.key"
+                class="rounded-sm border border-default bg-elevated/40"
               >
-                <dt
-                  class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-toned"
+                <button
+                  type="button"
+                  class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left"
+                  @click="toggleField(field.key)"
                 >
-                  <UIcon :name="row.icon" class="size-3.5" />
-                  <span>{{ row.label }}</span>
-                </dt>
-                <dd class="mt-1 wrap-break-word font-mono text-xs text-default">{{ row.value }}</dd>
+                  <span class="text-[11px] font-semibold uppercase tracking-wide text-toned">
+                    {{ field.label }}
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <span v-if="field.preview" class="max-w-md truncate text-xs text-toned">
+                      {{ field.preview }}
+                    </span>
+                    <UIcon
+                      name="i-lucide-chevron-right"
+                      :class="[
+                        'size-4 shrink-0 text-toned transition-transform',
+                        fieldOpen(field.key) ? 'rotate-90' : '',
+                      ]"
+                    />
+                  </div>
+                </button>
+
+                <div
+                  v-if="fieldOpen(field.key)"
+                  class="border-t border-default/70 px-3 py-3"
+                >
+                  <div class="mb-3 flex items-center justify-between gap-3">
+                    <UInput
+                      v-if="field.kind !== 'scalar'"
+                      :model-value="fieldFilter(field.key)"
+                      type="search"
+                      icon="i-lucide-filter"
+                      placeholder="Filter field lines"
+                      size="sm"
+                      class="w-full"
+                      @update:model-value="setFieldFilter(field.key, $event)"
+                    />
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="outline"
+                      icon="i-lucide-copy"
+                      @click="copyFieldValue(field)"
+                    >
+                      Copy
+                    </UButton>
+                  </div>
+
+                  <pre
+                    v-if="field.kind === 'json'"
+                    class="max-h-96 overflow-auto rounded-sm border border-default bg-elevated/50 p-3 text-xs whitespace-pre-wrap text-default"
+                  >{{ displayedFieldValue(field) }}</pre>
+                  <pre
+                    v-else-if="field.kind === 'text'"
+                    class="max-h-96 overflow-auto rounded-sm border border-default bg-elevated/50 p-3 text-xs whitespace-pre-wrap text-default"
+                  >{{ displayedFieldValue(field) }}</pre>
+                  <p v-else class="wrap-break-word font-mono text-xs text-default">
+                    {{ field.value }}
+                  </p>
+                </div>
               </div>
-            </dl>
+            </div>
           </section>
 
           <section class="space-y-2">
@@ -419,6 +465,13 @@ type DetailRow = {
   value: string;
   icon: string;
 };
+type LogFieldRow = {
+  key: string;
+  label: string;
+  value: string;
+  preview: string;
+  kind: 'scalar' | 'text' | 'json';
+};
 type LevelFilterItem = {
   label: string;
   value: LogLevel;
@@ -458,6 +511,8 @@ const exceptionOpen = useStorage<boolean>('logs_exception_open', false);
 const fieldsOpen = useStorage<boolean>('logs_fields_open', true);
 const rawJsonOpen = useStorage<boolean>('logs_raw_json_open', false);
 const sourceOpen = useStorage<boolean>('logs_source_open', true);
+const fieldOpenState = ref<Record<string, boolean>>({});
+const fieldFilters = ref<Record<string, string>>({});
 const selectedLevels = useStorage<LogLevel[]>('logs_level_filter', [...LOG_LEVELS]);
 const sseController = ref<AbortController | null>(null);
 const runtimeLogLevel = ref<LogLevel | null>(null);
@@ -481,6 +536,29 @@ const detailsModalUi = {
   content: 'max-w-5xl',
   body: 'max-h-[75vh] overflow-y-auto',
 };
+
+const copyMenuItems = computed(() => [
+  [
+    {
+      label: 'Copy Message',
+      icon: 'i-lucide-message-square-text',
+      onSelect: () => {
+        if (selectedLog.value) {
+          copyText(selectedLog.value.message);
+        }
+      },
+    },
+    {
+      label: 'Copy JSON',
+      icon: 'i-lucide-braces',
+      onSelect: () => {
+        if (selectedLog.value) {
+          copyText(logRaw(selectedLog.value));
+        }
+      },
+    },
+  ],
+]);
 
 const query = ref<string>(
   (() => {
@@ -1033,21 +1111,89 @@ const detailRows = (log: log_line): DetailRow[] =>
     },
   ]);
 
-const fieldRows = (log: log_line): DetailRow[] =>
-  compactRows(
-    Object.entries(log.fields ?? {}).map(([label, value]) => ({
-      label,
+const fieldRows = (log: log_line): LogFieldRow[] => {
+  if (!log.fields) return [];
+  const rows: LogFieldRow[] = [];
+  for (const [key, rawValue] of Object.entries(log.fields)) {
+    if (rawValue === undefined || rawValue === null || rawValue === '') continue;
+    const jsonValue =
+      typeof rawValue === 'string'
+        ? parseJsonContainerString(rawValue)
+        : isJsonContainer(rawValue)
+          ? rawValue
+          : null;
+    const value = jsonValue ? JSON.stringify(jsonValue, null, 2) : formatFieldValue(rawValue);
+    const kind = jsonValue
+      ? 'json'
+      : typeof rawValue === 'string'
+        ? rawValue.includes('\n')
+          ? 'text'
+          : 'scalar'
+        : 'scalar';
+    rows.push({
+      key,
+      label: normalizeFieldLabel(key),
       value,
-      icon: 'i-lucide-tag',
-    })),
-  );
-
-const copyLogMessage = (log: log_line): void => {
-  copyText(log.message);
+      preview: formatFieldValue(rawValue).replaceAll('\n', ' '),
+      kind,
+    });
+  }
+  return rows;
 };
 
-const copyLogRaw = (log: log_line): void => {
-  copyText(logRaw(log));
+const fieldOpen = (key: string) => fieldOpenState.value[key] ?? false;
+
+const toggleField = (key: string) => {
+  fieldOpenState.value = { ...fieldOpenState.value, [key]: !fieldOpen(key) };
+};
+
+const fieldFilter = (key: string) => fieldFilters.value[key] ?? '';
+
+const setFieldFilter = (key: string, value: string | number) => {
+  fieldFilters.value = { ...fieldFilters.value, [key]: String(value ?? '') };
+};
+
+const displayedFieldValue = (field: LogFieldRow): string => {
+  const query = fieldFilter(field.key);
+  if (!query) return field.value;
+  const needle = query.toLowerCase();
+  return field.value.split('\n').filter((line) => line.toLowerCase().includes(needle)).join('\n');
+};
+
+const copyFieldValue = (field: LogFieldRow): void => {
+  copyText(field.value);
+};
+
+const isJsonLike = (value: string): boolean => {
+  const trimmed = value.trim();
+  return (
+    ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))) &&
+    trimmed.length > 1
+  );
+};
+
+const isJsonContainer = (value: unknown): value is Record<string, unknown> | unknown[] =>
+  Array.isArray(value) || (!!value && typeof value === 'object');
+
+const parseJsonContainerString = (value: string): Record<string, unknown> | unknown[] | null => {
+  if (!isJsonLike(value)) return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && typeof parsed === 'object') return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const normalizeFieldLabel = (key: string) => key.replaceAll('_', ' ');
+
+const formatFieldValue = (value: unknown): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value, null, 2);
 };
 
 onMounted(async () => {

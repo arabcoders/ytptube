@@ -45,6 +45,15 @@
               :label="simpleMode ? 'Simple View' : 'Regular View'"
               description="The simple view is ideal for non-technical users and mobile devices."
             />
+
+            <USwitch
+              v-model="page_anims"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="page_anims ? 'Animations On' : 'Animations Off'"
+              description="Enable page transition animations."
+            />
           </template>
         </UPageCard>
 
@@ -307,6 +316,7 @@ const show_popover = useStorage<boolean>('show_popover', true);
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',');
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
+const page_anims = useStorage<boolean>('page_anims', true);
 const queue_auto_refresh = useStorage<boolean>('queue_auto_refresh', true);
 const queue_auto_refresh_delay = useStorage<number>('queue_auto_refresh_delay', 10000);
 const isSecureContext = ref<boolean>(false);
