@@ -122,15 +122,17 @@
                     </span>
                   </template>
 
-                  <USelect
+                  <USelectMenu
                     id="preset"
                     v-model="formPreset"
                     :items="presetItems"
                     value-key="value"
                     label-key="label"
+                    color="neutral"
                     size="lg"
                     class="w-full"
-                    :ui="selectUi"
+                    :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+                    :search-input="{ placeholder: 'Search presets' }"
                     :disabled="isFormDisabled"
                     placeholder="Select preset"
                   />
@@ -771,10 +773,6 @@ const queueCardUi = {
 const urlInputUi = {
   root: 'w-full',
   base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const selectUi = {
-  base: 'w-full',
 };
 
 const historyPagination = computed(() => pagination.value);

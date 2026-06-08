@@ -30,15 +30,17 @@
             </span>
           </template>
 
-          <USelect
+          <USelectMenu
             v-model="selectedPreset"
             :items="importPresetItems"
             placeholder="Select a preset"
             value-key="value"
             label-key="label"
+            color="neutral"
             size="lg"
             class="w-full"
-            :ui="{ base: 'w-full' }"
+            :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+            :search-input="{ placeholder: 'Search presets' }"
             @update:model-value="() => void importExistingPreset()"
           />
         </UFormField>

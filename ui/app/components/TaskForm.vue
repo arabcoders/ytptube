@@ -247,17 +247,19 @@
                   : undefined
               "
             >
-              <USelect
+              <USelectMenu
                 id="preset"
                 v-model="form.preset"
                 :items="presetItems"
                 value-key="value"
                 label-key="label"
+                color="neutral"
                 :disabled="addInProgress || hasFormatInConfig"
                 placeholder="Select preset"
                 size="lg"
                 class="w-full"
-                :ui="{ base: 'w-full' }"
+                :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+                :search-input="{ placeholder: 'Search presets' }"
               />
             </UTooltip>
           </UFormField>

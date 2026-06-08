@@ -29,15 +29,18 @@
           :ui="fieldUi"
           description="Select a preset to apply its settings during inspection. In real scenario, the preset will be based on what is selected when creating the task."
         >
-          <USelect
+          <USelectMenu
             id="preset"
             v-model="preset"
             :items="presetItems"
             placeholder="Select a preset"
             value-key="value"
             label-key="label"
+            color="neutral"
             class="w-full"
-            :ui="inputUi"
+            size="lg"
+            :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+            :search-input="{ placeholder: 'Search presets' }"
             :disabled="loading"
           />
         </UFormField>
