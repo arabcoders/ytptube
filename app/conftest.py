@@ -16,7 +16,10 @@ def pytest_configure(config) -> None:
     if getattr(config.option, "basetemp", None) is None:
         config.option.basetemp = str(get_test_run_root() / "pytest")
 
+    os.environ["YTP_FILE_LOGGING"] = "false"
+
 
 def pytest_unconfigure(config) -> None:
     del config
+    os.environ.pop("YTP_FILE_LOGGING", None)
     cleanup_test_run_root()

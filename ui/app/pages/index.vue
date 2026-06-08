@@ -399,12 +399,12 @@
             class="min-h-0 min-w-0 w-full max-w-full"
           >
             <UCard
-              class="flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden border"
+              class="flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden"
               :ui="{
                 body: 'flex flex-1 flex-col gap-4 p-4',
                 footer: 'border-t border-default px-4 py-4',
                 header: 'p-4 pb-3',
-                root: 'bg-default',
+                root: 'bg-default border border-default',
               }"
             >
               <template #header>

@@ -151,3 +151,19 @@
   --ui-container: 96rem;
   --ui-header-height: 4.25rem;
 }
+
+html:not(.no-page-anim) .page-enter-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+html:not(.no-page-anim) .page-leave-active {
+  transition: opacity 0.1s ease;
+}
+html:not(.no-page-anim) .page-enter-from {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+html:not(.no-page-anim) .page-leave-to {
+  opacity: 0;
+}

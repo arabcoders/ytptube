@@ -17,46 +17,54 @@
       </UFormField>
 
       <UFormField label="Group Filter" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
-        <USelect
+        <USelectMenu
           v-model="filters.group"
           :items="groupItems"
           value-key="value"
           label-key="label"
+          color="neutral"
           class="w-full"
-          :ui="inputUi"
+          :ui="{ content: 'min-w-[13rem]' }"
+          :search-input="{ placeholder: 'Search groups' }"
         />
       </UFormField>
 
       <UFormField label="Display" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
-        <USelect
+        <USelectMenu
           v-model="displayMode"
           :items="displayItems"
           value-key="value"
           label-key="label"
+          color="neutral"
           class="w-full"
-          :ui="inputUi"
+          :ui="{ content: 'min-w-[13rem]' }"
+          :search-input="false"
         />
       </UFormField>
 
       <UFormField label="Sort By" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
-        <USelect
+        <USelectMenu
           v-model="sortBy"
           :items="sortItems"
           value-key="value"
           label-key="label"
+          color="neutral"
           class="w-full"
-          :ui="inputUi"
+          :ui="{ content: 'min-w-[13rem]' }"
+          :search-input="false"
         />
       </UFormField>
 
       <UFormField label="Order" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
-        <USelect
+        <USelectMenu
           v-model="sortDir"
           :items="orderItems"
           value-key="value"
           label-key="label"
+          color="neutral"
           class="w-full"
-          :ui="inputUi"
+          :ui="{ content: 'min-w-[13rem]' }"
+          :search-input="false"
         />
       </UFormField>
 

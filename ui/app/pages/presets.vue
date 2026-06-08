@@ -237,8 +237,9 @@
     <div v-else-if="filteredPresets.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div v-for="item in filteredPresets" :key="item.id" class="min-w-0 w-full max-w-full">
         <UCard
-          class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
+          class="flex h-full min-w-0 w-full max-w-full flex-col"
           :ui="{
+            root: 'bg-default border border-default',
             header: 'p-4 pb-3',
             body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
             footer: 'border-t border-default px-4 py-4',

@@ -122,15 +122,17 @@
                     </span>
                   </template>
 
-                  <USelect
+                  <USelectMenu
                     id="preset"
                     v-model="formPreset"
                     :items="presetItems"
                     value-key="value"
                     label-key="label"
+                    color="neutral"
                     size="lg"
                     class="w-full"
-                    :ui="selectUi"
+                    :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+                    :search-input="{ placeholder: 'Search presets' }"
                     :disabled="isFormDisabled"
                     placeholder="Select preset"
                   />
@@ -205,7 +207,7 @@
                 <UCard
                   v-for="item in queueItems"
                   :key="`queue-${item._id}`"
-                  class="w-full min-w-0 max-w-full overflow-hidden border bg-default"
+                  class="w-full min-w-0 max-w-full overflow-hidden"
                   :ui="queueCardUi"
                 >
                   <template #header>
@@ -439,7 +441,7 @@
                 <UCard
                   v-for="item in historyEntries"
                   :key="`history-${historyPagination.page}-${item._id}`"
-                  class="w-full min-w-0 max-w-full overflow-hidden border bg-default"
+                  class="w-full min-w-0 max-w-full overflow-hidden"
                   :ui="queueCardUi"
                 >
                   <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
@@ -608,14 +610,6 @@
       </section>
     </Transition>
 
-    <UAlert
-      v-if="historyInitialized && !showSections"
-      color="neutral"
-      variant="soft"
-      icon="i-lucide-inbox"
-      title="No queue or history items"
-    />
-
     <UModal
       v-if="videoItem"
       :open="videoOpen"
@@ -764,14 +758,14 @@ const fieldUi = {
 };
 
 const formCardUi = {
-  root: 'w-full border bg-default',
+  root: 'w-full border border-default bg-default',
   container: 'w-full p-4 sm:p-5',
   wrapper: 'w-full items-stretch',
   body: 'w-full',
 };
 
 const queueCardUi = {
-  root: 'w-full',
+  root: 'w-full border border-default bg-default',
   header: 'p-4 pb-0',
   body: 'p-4',
 };
@@ -779,10 +773,6 @@ const queueCardUi = {
 const urlInputUi = {
   root: 'w-full',
   base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const selectUi = {
-  base: 'w-full',
 };
 
 const historyPagination = computed(() => pagination.value);

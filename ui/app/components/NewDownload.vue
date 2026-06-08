@@ -103,15 +103,17 @@
                   />
 
                   <div class="min-w-0 flex-1">
-                    <USelect
+                    <USelectMenu
                       id="preset"
                       v-model="form.preset"
                       :items="presetItems"
                       value-key="value"
                       label-key="label"
+                      color="neutral"
                       class="w-full"
                       size="lg"
-                      :ui="{ base: 'w-full', content: 'min-w-[13rem]' }"
+                      :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+                      :search-input="{ placeholder: 'Search presets' }"
                       :disabled="addInProgress || hasFormatInConfig"
                       placeholder="Select preset"
                     />

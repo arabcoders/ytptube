@@ -87,8 +87,7 @@
                 </div>
 
                 <p class="text-xs text-toned">
-                  Press <code>Enter</code> to run single-line input, <code>Shift+Enter</code> to
-                  switch to multi-line, and <code>Ctrl+Enter</code> to run multi-line input.
+                  <kbd><kbd>Shift</kbd>+<kbd>Enter</kbd></kbd> to switch to multi-line input.
                 </p>
               </div>
             </div>

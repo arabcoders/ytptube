@@ -30,14 +30,16 @@
           </div>
         </template>
 
-        <USelect
+        <USelectMenu
           v-model="selectedExistingValue"
           :items="existingDefinitionItems"
           placeholder="Select a definition"
           value-key="value"
           label-key="label"
+          color="neutral"
           class="w-full"
-          :ui="inputUi"
+          :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+          :search-input="{ placeholder: 'Search definitions' }"
           :disabled="isBusy"
           @update:model-value="importExisting"
         />

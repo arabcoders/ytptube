@@ -568,6 +568,7 @@ const loadedImage = ref();
 const loadingImage = ref(false);
 const bg_enable = useStorage('random_bg', true);
 const bg_opacity = useStorage('random_bg_opacity', 0.95);
+const page_anims = useStorage<boolean>('page_anims', true);
 const app_shutdown = ref<boolean>(false);
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
 const show_settings = ref(false);
@@ -1028,6 +1029,18 @@ watch(bg_opacity, () => {
 
   syncOpacity();
 });
+
+watch(
+  page_anims,
+  (val) => {
+    if (val) {
+      document.documentElement.classList.remove('no-page-anim');
+    } else {
+      document.documentElement.classList.add('no-page-anim');
+    }
+  },
+  { immediate: true },
+);
 
 watch(loadedImage, () => {
   if (false === bg_enable.value) {
