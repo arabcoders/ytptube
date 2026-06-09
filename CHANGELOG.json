@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "3e663bd483e6ad3a8f9d1bc3cf8610c1921fa198",
+    "date": "2026-06-09T15:54:13+00:00",
+    "commits": [
+      {
+        "sha": "3e663bd4",
+        "full_sha": "3e663bd483e6ad3a8f9d1bc3cf8610c1921fa198",
+        "message": "fix: video progress bar on iOS would fail",
+        "author": "arabcoders",
+        "date": "2026-06-09T15:54:13+00:00"
+      },
+      {
+        "sha": "4b723084",
+        "full_sha": "4b7230843e7013bf0df5796a450804bba113b8d1",
+        "message": "docs: update screenshots",
+        "author": "arabcoders",
+        "date": "2026-06-09T15:35:44+00:00"
+      },
+      {
+        "sha": "196d2d4e",
+        "full_sha": "196d2d4e320088bbcdbc20a21fbfa680c97170ad",
+        "message": "feat: add share button",
+        "author": "arabcoders",
+        "date": "2026-06-09T15:30:39+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.4",
     "full_sha": "a194b9bf287c2100b7df19512ac81533860cf3ad",
     "date": "2026-06-08T07:08:19+00:00",
