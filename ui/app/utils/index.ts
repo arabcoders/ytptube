@@ -476,8 +476,7 @@ const makeDownload = (
   }
 
   if (item.folder) {
-    item.folder = item.folder.replace(/#/g, '%23');
-    baseDir += item.folder + '/';
+    baseDir += item.folder.replace(/#/g, '%23') + '/';
   }
 
   if (!item.filename) {

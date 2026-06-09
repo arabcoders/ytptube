@@ -50,17 +50,22 @@ Please read the [FAQ](FAQ.md) for more information.
 ## Run using docker command
 
 ```bash
-mkdir -p ./{config,downloads/files,downloads/tmp} && docker run -itd --rm --user "${UID}:${UID}" --name ytptube \
+mkdir -p ./{config,downloads/{files,tmp}} && docker run -itd --rm --user "${UID}:${UID}" --name ytptube \
 -e YTP_TEMP_PATH=/downloads/tmp -e YTP_DOWNLOAD_PATH=/downloads/files \
 -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
 ghcr.io/arabcoders/ytptube:latest
 ```
 
-Then you can access the WebUI at `http://localhost:8081`.
+## Run using podman
 
-> [!NOTE]
-> If you are using `podman` instead of `docker`, you can use the same command, but you need to change the user to `0:0`
-> it will appears to be running as root, but it will run as the user who started the container.
+```bash
+mkdir -p ./{config,downloads/{files,tmp}} && podman run -itd --rm --userns=keep-id --name ytptube \
+-e YTP_TEMP_PATH=/downloads/tmp -e YTP_DOWNLOAD_PATH=/downloads/files \
+-p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
+arabcoders/ytptube:latest
+```
+
+Then you can access the WebUI at `http://localhost:8081`.
 
 ## Using compose file
 
@@ -70,6 +75,8 @@ The following is an example of a `compose.yaml` file that can be used to run YTP
 services:
   ytptube:
     user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id.
+    # comment out the above line and uncomment the below line if you are using podman-compose.
+    #userns_mode: keep-id
     image: ghcr.io/arabcoders/ytptube:latest
     container_name: ytptube
     restart: unless-stopped
@@ -84,17 +91,13 @@ services:
 ```
 
 > [!IMPORTANT]
-> Make sure to change the `user` line to match your user id and group id.
+> Make sure to change the `user` line to match your user id and group id in docker setups, or use `userns_mode: keep-id` in podman setups.
 
 ```bash
-mkdir -p ./{config,downloads/files,downloads/tmp} && docker compose -f compose.yaml up -d
+mkdir -p ./{config,downloads/{files,tmp}} && docker compose -f compose.yaml up -d
 ```
 
 Then you can access the WebUI at `http://localhost:8081`.
-
-> [!NOTE]
-> you can use podman-compose instead of docker-compose, as it supports the same syntax. However, you should change the 
-> user to `0:0` it will appears to be running as root, but it will run as the user who started the container.
 
 ## Unraid
 
