@@ -99,10 +99,10 @@
       </video>
 
       <button
-        v-if="active && isTouchDevice"
+        v-if="active && isTouchDevice && !controlsVisible"
         type="button"
         class="absolute inset-0 z-10"
-        :aria-label="controlsVisible ? 'Hide controls' : 'Show controls'"
+        aria-label="Show controls"
         @click="toggleControls"
       />
 
@@ -146,9 +146,11 @@
                 min="0"
                 max="1000"
                 step="1"
-                class="h-1.5 w-full accent-white opacity-55 transition-opacity hover:opacity-100"
+                class="h-1.5 w-full accent-white opacity-55 transition-opacity hover:opacity-100 seek-bar"
                 aria-label="Seek video"
                 @input="handleSeekInput"
+                @touchstart.prevent="handleSeekTouch"
+                @touchmove.prevent="handleSeekTouch"
               />
             </div>
             <div class="order-3 flex items-center justify-end sm:order-3 sm:shrink-0">
@@ -740,6 +742,18 @@ function handleSeekInput(event: Event) {
   showControls();
 }
 
+function handleSeekTouch(event: TouchEvent) {
+  const target = event.currentTarget as HTMLInputElement | null;
+  const touch = event.touches[0];
+  if (!target || !touch || !videoElement.value || !duration.value) return;
+
+  const rect = target.getBoundingClientRect();
+  const fraction = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+  videoElement.value.currentTime = fraction * duration.value;
+  syncVideoState();
+  showControls();
+}
+
 function handleVolumeInput(event: Event) {
   const target = event.target as HTMLInputElement | null;
   if (!target || !videoElement.value) return;
@@ -887,6 +901,9 @@ function syncFullscreenState() {
   isFullscreen.value = Boolean(
     fullscreenElement && playerContainer.value && fullscreenElement === playerContainer.value,
   );
+  if (!isFullscreen.value && isTouchDevice.value) {
+    showControls();
+  }
   scheduleAssLayoutRefresh();
 }
 
@@ -1283,5 +1300,9 @@ onBeforeUnmount(() => {
 
 .share-video-element::-webkit-media-controls-fullscreen-button {
   display: none;
+}
+
+.seek-bar {
+  touch-action: none;
 }
 </style>
