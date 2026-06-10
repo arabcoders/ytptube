@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -9,7 +9,7 @@ from app.library.config import Config
 from app.library.cache import Cache
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
-from app.routes.api.system import check_updates, system_diagnostics, system_limits
+from app.routes.api.system import check_updates, system_diagnostics, system_folders, system_limits
 
 
 @dataclass
@@ -395,3 +395,101 @@ class TestSystemDiagnosticsEndpoint:
             )
 
         assert check.status == "skip"
+
+
+class TestSystemFoldersEndpoint:
+    def setup_method(self):
+        Config._reset_singleton()
+        Cache.get_instance().clear()
+
+    @pytest.mark.asyncio
+    async def test_returns_root_children(self, tmp_path: Path) -> None:
+        (tmp_path / "videos").mkdir()
+        (tmp_path / "music").mkdir()
+        (tmp_path / "file.txt").touch()
+
+        config = Config.get_instance()
+        config.download_path = str(tmp_path)
+        encoder = Encoder()
+        cache = Cache.get_instance()
+
+        req = MagicMock()
+        req.query = {}
+
+        response = await system_folders(req, config, encoder, cache)
+
+        assert response.status == 200
+        data = json.loads(response.body.decode("utf-8"))
+        assert data["path"] == ""
+        assert sorted(data["folders"]) == ["music", "videos"]
+
+    @pytest.mark.asyncio
+    async def test_returns_subdir_children(self, tmp_path: Path) -> None:
+        (tmp_path / "videos" / "archive").mkdir(parents=True)
+        (tmp_path / "videos" / "shorts").mkdir()
+
+        config = Config.get_instance()
+        config.download_path = str(tmp_path)
+        encoder = Encoder()
+        cache = Cache.get_instance()
+
+        req = MagicMock()
+        req.query = {"path": "videos"}
+
+        response = await system_folders(req, config, encoder, cache)
+
+        assert response.status == 200
+        data = json.loads(response.body.decode("utf-8"))
+        assert data["path"] == "videos"
+        assert sorted(data["folders"]) == ["archive", "shorts"]
+
+    @pytest.mark.asyncio
+    async def test_rejects_path_traversal(self, tmp_path: Path) -> None:
+        config = Config.get_instance()
+        config.download_path = str(tmp_path)
+        encoder = Encoder()
+        cache = Cache.get_instance()
+
+        req = MagicMock()
+        req.query = {"path": "../../etc"}
+
+        response = await system_folders(req, config, encoder, cache)
+
+        assert response.status == 200
+        data = json.loads(response.body.decode("utf-8"))
+        assert data["folders"] == []
+
+    @pytest.mark.asyncio
+    async def test_nonexistent_path_returns_empty(self, tmp_path: Path) -> None:
+        config = Config.get_instance()
+        config.download_path = str(tmp_path)
+        encoder = Encoder()
+        cache = Cache.get_instance()
+
+        req = MagicMock()
+        req.query = {"path": "no_such_dir"}
+
+        response = await system_folders(req, config, encoder, cache)
+
+        assert response.status == 200
+        data = json.loads(response.body.decode("utf-8"))
+        assert data["folders"] == []
+
+    @pytest.mark.asyncio
+    async def test_caches_result(self, tmp_path: Path) -> None:
+        (tmp_path / "a").mkdir()
+
+        config = Config.get_instance()
+        config.download_path = str(tmp_path)
+        encoder = Encoder()
+        cache = Cache.get_instance()
+
+        req = MagicMock()
+        req.query = {}
+
+        await system_folders(req, config, encoder, cache)
+        (tmp_path / "b").mkdir()
+        response = await system_folders(req, config, encoder, cache)
+
+        data = json.loads(response.body.decode("utf-8"))
+        assert "b" not in data["folders"], "Should serve cached result"

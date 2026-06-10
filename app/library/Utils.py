@@ -1477,35 +1477,6 @@ def str_to_dt(time_str: str, now=None) -> datetime:
     return dt
 
 
-def list_folders(path: Path, base: Path, depth_limit: int) -> list[str]:
-    """
-    List all folders relative to a base path, up to a specified depth limit.
-
-    Args:
-        path (Path): The path to start listing folders from.
-        base (Path): The base path to which the folders should be relative.
-        depth_limit (int): The maximum depth to traverse from the base path.
-
-    Returns:
-        list[str]: A list of folder paths relative to the base path, up to the specified
-
-    """
-    if "/" == str(path):
-        return []
-
-    rel_depth: int = len(path.relative_to(base).parts)
-    if rel_depth > depth_limit:
-        return []
-
-    folders: list[str] = []
-    for entry in path.iterdir():
-        if entry.is_dir():
-            folders.append(str(entry.relative_to(base)))
-            folders.extend(list_folders(entry, base, depth_limit))
-
-    return folders
-
-
 def get_channel_images(thumbnails: list[dict]) -> dict:
     """
     Extract channel images from a list of thumbnail dictionaries.

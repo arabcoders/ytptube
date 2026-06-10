@@ -33,7 +33,6 @@ from app.library.Utils import (
     get_possible_images,
     init_class,
     is_private_address,
-    list_folders,
     load_cookies,
     merge_dict,
     move_file,
@@ -1071,43 +1070,6 @@ class TestDeleteDir:
         nonexistent = Path(self.temp_dir) / "nonexistent"
         result = delete_dir(nonexistent)
         assert result is False
-
-
-class TestListFolders:
-    """Test the list_folders function."""
-
-    def setup_method(self):
-        """Set up test directory structure."""
-        self.temp_dir = str(make_test_temp_dir("list-folders"))
-        self.base = Path(self.temp_dir)
-        (self.base / "folder1").mkdir()
-        (self.base / "folder2").mkdir()
-        (self.base / "folder1" / "subfolder").mkdir()
-        (self.base / "file.txt").write_text("test")
-
-    def teardown_method(self):
-        """Clean up after tests."""
-        import shutil
-
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    def test_list_folders_depth_0(self):
-        """Test listing folders with depth 0."""
-        result = list_folders(self.base, self.base, 0)
-        expected = ["folder1", "folder2"]
-        assert sorted(result) == sorted(expected)
-
-    def test_list_folders_depth_1(self):
-        """Test listing folders with depth 1."""
-        result = list_folders(self.base, self.base, 1)
-        expected = ["folder1", "folder2", "folder1/subfolder"]
-        assert sorted(result) == sorted(expected)
-
-    def test_list_folders_depth_2(self):
-        """Test listing folders with a depth limit."""
-        result = list_folders(self.base, self.base, 2)
-        expected = ["folder1", "folder2", "folder1/subfolder"]
-        assert sorted(result) == sorted(expected)
 
 
 class TestEncryptDecrypt:

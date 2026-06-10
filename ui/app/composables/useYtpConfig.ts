@@ -52,7 +52,6 @@ const state = reactive<ConfigState>({
     },
   ],
   dl_fields: [],
-  folders: [],
   ytdlp_options: [],
   paused: false,
   is_loaded: false,

@@ -47,9 +47,6 @@ class Config(metaclass=Singleton):
     download_path: str = "."
     """The path to the download directory."""
 
-    download_path_depth: int = 2
-    """How many subdirectories to show in auto complete."""
-
     download_info_expires: int = 10800
     """How long (in seconds) the download info is valid before it needs to be re-extracted."""
 
@@ -282,7 +279,6 @@ class Config(metaclass=Singleton):
         "max_workers_per_extractor",
         "extract_info_timeout",
         "debugpy_port",
-        "download_path_depth",
         "download_info_expires",
         "auto_clear_history_days",
         "default_pagination",

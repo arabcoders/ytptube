@@ -101,6 +101,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
     - [GET /api/system/configuration](#get-apisystemconfiguration)
+    - [GET /api/system/folders](#get-apisystemfolders)
     - [GET /api/system/diagnostics](#get-apisystemdiagnostics)
     - [GET /api/system/limits](#get-apisystemlimits)
     - [POST /api/system/terminal](#post-apisystemterminal)
@@ -2628,7 +2629,7 @@ or an error:
 ---
 
 ### GET /api/system/configuration
-**Purpose**: Retrieve comprehensive system configuration including app settings, presets, download fields, queue status, and folder structure.
+**Purpose**: Retrieve system configuration including app settings, presets, download fields, and queue status.
 
 **Response**:
 ```json
@@ -2657,10 +2658,6 @@ or an error:
     }
   ],
   "paused": false,
-  "folders": [
-    {"name": "folder1", "path": "folder1"},
-    {"name": "folder2", "path": "folder2"}
-  ],
   "history_count": 150,
   "queue": [
     {
@@ -2675,8 +2672,28 @@ or an error:
 
 **Notes**:
 - This endpoint combines multiple data sources into a single response for efficient initialization
-- The `folders` array includes available download folders up to the configured depth limit
 - The `queue` array contains active download items
+- Folder listing is available via the separate `/api/system/folders` endpoint
+
+---
+
+### GET /api/system/folders
+**Purpose**: List child directories for a given relative path within the download directory.
+
+**Query Parameters**:
+- `path=<relative-path>` (optional, default: root) - Relative path within the download directory.
+
+**Response**:
+```json
+{
+  "path": "videos",
+  "folders": ["archive", "shorts", "2024"]
+}
+```
+
+**Notes**:
+- Results are cached server-side for a short time.
+- Non-existent paths return an empty folder list.
 
 ---
 
