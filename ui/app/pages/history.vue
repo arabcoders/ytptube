@@ -30,6 +30,16 @@
       <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
         <UButton
           color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="addNewDownload"
+        >
+          <span>Add</span>
+        </UButton>
+
+        <UButton
+          color="neutral"
           :variant="showFilter ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-filter"
@@ -327,6 +337,15 @@
                     </UButton>
 
                     <UButton
+                      v-if="item.filename && canShareUrl"
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-share"
+                      @click="() => shareUrl(item)"
+                    />
+
+                    <UButton
                       v-if="item.filename"
                       color="neutral"
                       variant="outline"
@@ -621,6 +640,17 @@
                 </UButton>
 
                 <UButton
+                  v-if="item.filename && canShareUrl"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-share"
+                  class="w-full justify-center"
+                  @click="() => shareUrl(item)"
+                >
+                  Share
+                </UButton>
+
+                <UButton
                   v-if="item.filename"
                   color="neutral"
                   variant="outline"
@@ -774,6 +804,7 @@ import { useAppSocket } from '~/composables/useAppSocket';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
+import { useWebShare } from '~/composables/useWebShare';
 import type { item_request } from '~/types/item';
 import type { StoreItem } from '~/types/store';
 import {
@@ -798,6 +829,7 @@ const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog, promptDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
+const { canShare, shareUrl } = useWebShare();
 const pendingDownloadFormItem = useState<item_request | Record<string, never>>(
   'pending-download-form-item',
   () => ({}),
@@ -885,6 +917,8 @@ watch(video_item, (value) => {
   document.querySelector('body')?.setAttribute('style', `opacity: ${value ? 1 : bg_opacity.value}`);
 });
 
+const canShareUrl = computed(() => canShare());
+
 watch(embed_url, (value) => {
   if (!bg_enable.value) {
     return;
@@ -931,6 +965,12 @@ const view_info = (
 
 const changeDisplay = (): void => {
   display_style.value = display_style.value === 'grid' ? 'list' : 'grid';
+};
+
+const addNewDownload = async (): Promise<void> => {
+  config.showForm = true;
+  await nextTick();
+  await navigateTo('/');
 };
 
 const toNewDownload = async (item: item_request | Partial<StoreItem>): Promise<void> => {

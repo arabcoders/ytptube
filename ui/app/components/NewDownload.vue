@@ -37,6 +37,7 @@
                       base: 'min-h-[7.25rem] bg-elevated/60 ring-default focus-visible:ring-primary',
                     }"
                     @keydown="handleKeyDown"
+                    autofocus
                   />
                   <UInput
                     v-else
@@ -55,6 +56,7 @@
                     }"
                     @keydown="handleKeyDown"
                     @paste="handlePaste"
+                    autofocus
                   />
                 </div>
 
