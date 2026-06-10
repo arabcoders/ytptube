@@ -425,3 +425,32 @@ class TestItemAddExtras:
         assert item.extras["boolean"] is True
         assert item.extras["list"] == [1, 2, 3]
         assert item.extras["dict"] == {"nested": "data"}
+
+
+@pytest.fixture
+def sample_item() -> ItemDTO:
+    with patch.object(ItemDTO, "__post_init__", lambda _: None):
+        return ItemDTO(id="test", title="Test Video", url="http://example.com/test", folder="/downloads")
+
+
+class TestSerializeForList:
+    def test_excludes_listed_fields(self, sample_item: ItemDTO) -> None:
+        result = sample_item.serialize_for_list()
+        for field in ItemDTO.list_excluded_fields():
+            assert field not in result, f"Field '{field}' should be excluded from serialize_for_list"
+
+    def test_includes_required_ui_fields(self, sample_item: ItemDTO) -> None:
+        result = sample_item.serialize_for_list()
+        for field in ("_id", "url", "title", "status", "download_dir"):
+            assert field in result, f"Field '{field}' should be present in serialize_for_list"
+
+    def test_list_excluded_fields_is_tuple(self) -> None:
+        assert isinstance(ItemDTO.list_excluded_fields(), tuple)
+
+    def test_serialize_for_list_is_subset_of_serialize(self, sample_item: ItemDTO) -> None:
+        full = sample_item.serialize()
+        slim = sample_item.serialize_for_list()
+        for key in slim:
+            assert key in full, f"serialize_for_list key '{key}' not found in full serialize"
+        for excluded in ItemDTO.list_excluded_fields():
+            assert excluded not in slim

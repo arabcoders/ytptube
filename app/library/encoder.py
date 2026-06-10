@@ -23,7 +23,7 @@ class Encoder(json.JSONEncoder):
             return str(o)
 
         if isinstance(o, ItemDTO):
-            return o.serialize()
+            return o.serialize_for_list()
 
         if isinstance(o, object):
             if hasattr(o, "serialize"):
