@@ -190,6 +190,39 @@ class TestItemBatcher:
         assert emitted == []
 
     @pytest.mark.asyncio
+    async def test_custom_key_coalesces_dict_payloads(self) -> None:
+        """A key callable extracts the coalescing key from non-ItemDTO payloads."""
+        emitted: list[list] = []
+
+        async def emit(items: list) -> None:
+            emitted.append(items)
+
+        batcher = ItemBatcher(
+            emit=emit,
+            interval=0.1,
+            key=lambda d: getattr(d.get("item"), "_id", None) if isinstance(d, dict) else None,
+        )
+
+        # Consume the leading-edge slot
+        await batcher.add({"to": "history", "item": make_item("id1")})
+        assert len(emitted) == 1
+
+        # Two moves for the same item within the interval → last wins
+        await batcher.add({"to": "history", "item": make_item("id2", "first")})
+        await batcher.add({"to": "queue", "item": make_item("id2", "second")})
+        await batcher.add({"to": "history", "item": make_item("id3")})
+
+        await asyncio.sleep(0.15)
+
+        assert len(emitted) == 2
+        flush_items = emitted[1]
+        assert len(flush_items) == 2
+        by_id = {moved["item"]._id: moved for moved in flush_items}
+        assert set(by_id) == {"id2", "id3"}
+        assert by_id["id2"]["to"] == "queue"
+        assert by_id["id2"]["item"].title == "second"
+
+    @pytest.mark.asyncio
     async def test_interval_zero_emits_every_add_immediately(self) -> None:
         """interval=0 → every add emits immediately as a single-item list."""
         emitted: list[list] = []

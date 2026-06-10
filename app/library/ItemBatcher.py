@@ -1,6 +1,6 @@
-"""Global coalescing batcher for ITEM_UPDATED WebSocket events.
+"""Global coalescing batcher for high-frequency WebSocket item events.
 
-Collects dirty ItemDTOs keyed by ``_id`` (last write wins) and flushes them
+Collects dirty items keyed per item (last write wins) and flushes them
 as a single list to an async emit callback at most once per *interval* seconds.
 
 Leading-edge semantics: the very first ``add()`` after an idle period fires
@@ -21,19 +21,27 @@ LOG = get_logger()
 
 
 class ItemBatcher:
-    """Coalescing batcher for WebSocket item-updated payloads.
+    """Coalescing batcher for WebSocket item event payloads.
 
     Args:
         emit: Async callable that receives a list of items and delivers them
               to all connected WebSocket clients.
         interval: Flush interval in seconds.  ``0`` or negative disables
                   batching – every ``add()`` emits immediately.
+        key: Optional callable that extracts the coalescing key from an item.
+             Defaults to the item's ``_id`` attribute.
 
     """
 
-    def __init__(self, emit: Callable[[list], Awaitable[None]], interval: float = 0.5) -> None:
+    def __init__(
+        self,
+        emit: Callable[[list], Awaitable[None]],
+        interval: float = 0.5,
+        key: Callable[[Any], str | None] | None = None,
+    ) -> None:
         self._emit = emit
         self._interval = interval
+        self._key = key
         self._pending: dict[str, Any] = {}
         self._handle: asyncio.TimerHandle | None = None
         self._last_flush: float = 0.0  # monotonic
@@ -50,11 +58,11 @@ class ItemBatcher:
         flush.
 
         Args:
-            item: The ItemDTO (or any object with a ``_id`` attribute) to
-                  batch.
+            item: The payload to batch. Without a ``key`` callable, this is
+                  expected to expose a ``_id`` attribute.
 
         """
-        item_id: str = getattr(item, "_id", None) or str(id(item))
+        item_id: str = (self._key(item) if self._key else getattr(item, "_id", None)) or str(id(item))
 
         # interval <= 0  →  always emit immediately, no batching
         if self._interval <= 0:

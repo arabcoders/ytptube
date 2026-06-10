@@ -231,11 +231,15 @@ const moveHandler = (
   shouldHandle: () => boolean = () => isLoaded.value,
 ): ((payload: WSEP['item_moved']) => void) => {
   return (payload: WSEP['item_moved']): void => {
-    if ('history' !== payload.data.to || !shouldHandle()) {
+    if (!shouldHandle()) {
       return;
     }
 
-    upsert(payload.data.item);
+    for (const moved of payload.data) {
+      if ('history' === moved.to) {
+        upsert(moved.item);
+      }
+    }
   };
 };
 

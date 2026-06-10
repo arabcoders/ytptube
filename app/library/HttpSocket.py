@@ -86,20 +86,29 @@ class HttpSocket:
         self.sio = sio or WebSocketHub(encoder=encoder)
         self.rootPath: Path = root_path
 
-        async def _emit_items(items: list) -> None:
-            ev = Event(event=Events.ITEM_UPDATED, data=items)
-            await self.sio.emit(event=Events.ITEM_UPDATED, data=json.loads(encoder.encode(ev)))
+        def _make_emit(event_name: str):
+            async def _emit_items(items: list) -> None:
+                ev = Event(event=event_name, data=items)
+                await self.sio.emit(event=event_name, data=json.loads(encoder.encode(ev)))
 
-        self._batcher = ItemBatcher(emit=_emit_items)
+            return _emit_items
+
+        self._batchers: dict[str, ItemBatcher] = {
+            Events.ITEM_UPDATED: ItemBatcher(emit=_make_emit(Events.ITEM_UPDATED)),
+            Events.ITEM_MOVED: ItemBatcher(
+                emit=_make_emit(Events.ITEM_MOVED),
+                key=lambda d: getattr(d.get("item"), "_id", None) if isinstance(d, dict) else None,
+            ),
+        }
 
         async def event_handler(e: Event, _, **kwargs):
-            if Events.ITEM_UPDATED == e.event and not kwargs:
-                await self._batcher.add(e.data)
-                return
-            if Events.ITEM_UPDATED == e.event and kwargs:
+            if batcher := self._batchers.get(e.event):
+                if not kwargs:
+                    await batcher.add(e.data)
+                    return
                 # Targeted delivery (e.g. to=sid): wrap data in a list so the
-                # wire shape is always an array for item_updated.
-                targeted = Event(event=Events.ITEM_UPDATED, data=[e.data])
+                # wire shape is always an array for batched events.
+                targeted = Event(event=e.event, data=[e.data])
                 payload = json.loads(encoder.encode(targeted))
                 await self.sio.emit(event=e.event, data=payload, **kwargs)
                 return
@@ -138,7 +147,8 @@ class HttpSocket:
 
     async def on_shutdown(self, _: web.Application):
         LOG.debug("Shutting down socket server.")
-        await self._batcher.flush()
+        for batcher in self._batchers.values():
+            await batcher.flush()
         await self.sio.disconnect_all()
         LOG.debug("Socket server shutdown complete.")
 

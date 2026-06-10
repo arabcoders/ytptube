@@ -345,16 +345,18 @@ on('item_updated', (data: WSEP['item_updated']) => {
 
 on('item_moved', (data: WSEP['item_moved']) => {
   const queueState = getQueueState();
-  const to = data.data.to;
-  const id = data.data.item._id;
 
-  if ('queue' === to) {
-    queueState.add(id, data.data.item);
-  }
+  for (const moved of data.data) {
+    const id = moved.item._id;
 
-  if ('history' === to) {
-    if (true === queueState.has(id)) {
-      queueState.remove(id);
+    if ('queue' === moved.to) {
+      queueState.add(id, moved.item);
+    }
+
+    if ('history' === moved.to) {
+      if (true === queueState.has(id)) {
+        queueState.remove(id);
+      }
     }
   }
 });
