@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "8c54ed6c0a92549c11223677ecf0854682d59b02",
+    "date": "2026-06-10T18:46:41+00:00",
+    "commits": [
+      {
+        "sha": "8c54ed6c",
+        "full_sha": "8c54ed6c0a92549c11223677ecf0854682d59b02",
+        "message": "refactor: remove folders from configuration endpoint",
+        "author": "arabcoders",
+        "date": "2026-06-10T18:46:41+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.5",
     "full_sha": "9ada8b5a9104ceefe979e6c8515728499bb2cca2",
     "date": "2026-06-10T13:53:16+00:00",
