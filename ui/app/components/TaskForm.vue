@@ -300,6 +300,7 @@
                 size="lg"
                 class="w-full"
                 :ui="inputUi"
+                @focus="config.loadFolders()"
               />
             </div>
           </UFormField>

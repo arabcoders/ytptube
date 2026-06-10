@@ -151,6 +151,7 @@
                     class="w-full"
                     size="lg"
                     :ui="{ root: 'w-full', base: 'bg-default/90' }"
+                    @focus="config.loadFolders()"
                   />
                 </div>
               </UFormField>

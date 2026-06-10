@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -9,7 +9,7 @@ from app.library.config import Config
 from app.library.cache import Cache
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
-from app.routes.api.system import check_updates, system_diagnostics, system_limits
+from app.routes.api.system import check_updates, system_config, system_diagnostics, system_folders, system_limits
 
 
 @dataclass
@@ -395,3 +395,58 @@ class TestSystemDiagnosticsEndpoint:
             )
 
         assert check.status == "skip"
+
+
+class TestSystemFoldersEndpoint:
+    def setup_method(self):
+        Config._reset_singleton()
+
+    @pytest.mark.asyncio
+    async def test_system_folders_returns_folder_list(self, tmp_path: Path) -> None:
+        """GET /api/system/folders returns the folders list."""
+        config = Config.get_instance()
+        config.download_path = str(tmp_path)
+        config.download_path_depth = 1
+        encoder = Encoder()
+
+        response = await system_folders(config, encoder)
+
+        assert response.status == 200
+        data = json.loads(response.body.decode("utf-8"))
+        assert "folders" in data
+        assert isinstance(data["folders"], list)
+
+
+class TestSystemConfigEndpoint:
+    def setup_method(self):
+        Config._reset_singleton()
+
+    @pytest.mark.asyncio
+    async def test_system_configuration_excludes_queue_and_folders(self, tmp_path: Path) -> None:
+        """GET /api/system/configuration no longer includes queue or folders."""
+        config = Config.get_instance()
+        config.download_path = str(tmp_path)
+        config.download_path_depth = 1
+        encoder = Encoder()
+
+        done_mock = MagicMock()
+        done_mock.get_total_count = AsyncMock(return_value=0)
+        queue = DummyQueue()
+        queue.done = done_mock
+
+        with patch("app.features.dl_fields.service.DLFields.get_instance") as mock_dlfields, \
+             patch("app.features.presets.service.Presets.get_instance") as mock_presets:
+            mock_dlfields_instance = MagicMock()
+            mock_dlfields_instance.get_all_serialized = AsyncMock(return_value=[])
+            mock_dlfields.return_value = mock_dlfields_instance
+
+            mock_presets_instance = MagicMock()
+            mock_presets_instance.get_all.return_value = []
+            mock_presets.return_value = mock_presets_instance
+
+            response = await system_config(queue, config, encoder)
+
+        assert response.status == 200
+        data = json.loads(response.body.decode("utf-8"))
+        assert "queue" not in data, "queue should be removed from config response"
+        assert "folders" not in data, "folders should be moved to /api/system/folders"

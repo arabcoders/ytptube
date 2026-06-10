@@ -9,6 +9,7 @@ import { request } from '~/utils';
 
 let last_reload = 0;
 const CONFIG_TTL = 10;
+let isLoadingFolders = false;
 
 const state = reactive<ConfigState>({
   showForm: useStorage('showForm', true),
@@ -205,6 +206,23 @@ const patch = (feature: ConfigFeature, action: ConfigUpdateAction, data: unknown
   }
 };
 
+const loadFolders = async (): Promise<void> => {
+  if (state.folders.length > 0 || isLoadingFolders) return;
+  isLoadingFolders = true;
+  try {
+    const resp = await request('/api/system/folders', { timeout: 10 });
+    if (!resp.ok) {
+      return;
+    }
+    const data = await resp.json();
+    state.folders = data.folders ?? [];
+  } catch (e: any) {
+    console.error(`Failed to load folders: ${e}`);
+  } finally {
+    isLoadingFolders = false;
+  }
+};
+
 const ytpConfigApi = proxyRefs({
   ...toRefs(state),
   add,
@@ -215,6 +233,7 @@ const ytpConfigApi = proxyRefs({
   isLoaded,
   patch,
   loadConfig,
+  loadFolders,
 });
 
 export const useYtpConfig = () => ytpConfigApi;
