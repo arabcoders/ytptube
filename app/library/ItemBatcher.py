@@ -1,4 +1,5 @@
-"""Global coalescing batcher for high-frequency WebSocket item events.
+"""
+Global coalescing batcher for high-frequency WebSocket item events.
 
 Collects dirty items keyed per item (last write wins) and flushes them
 as a single list to an async emit callback at most once per *interval* seconds.
@@ -12,22 +13,25 @@ from __future__ import annotations
 
 import asyncio
 import time
-from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.library.log import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 LOG = get_logger()
 
 
 class ItemBatcher:
-    """Coalescing batcher for WebSocket item event payloads.
+    """
+    Coalescing batcher for WebSocket item event payloads.
 
     Args:
         emit: Async callable that receives a list of items and delivers them
               to all connected WebSocket clients.
         interval: Flush interval in seconds.  ``0`` or negative disables
-                  batching – every ``add()`` emits immediately.
+                  batching - every ``add()`` emits immediately.
         key: Optional callable that extracts the coalescing key from an item.
              Defaults to the item's ``_id`` attribute.
 
@@ -51,7 +55,8 @@ class ItemBatcher:
     # ------------------------------------------------------------------
 
     async def add(self, item: Any) -> None:
-        """Add (or coalesce) an item into the pending batch.
+        """
+        Add (or coalesce) an item into the pending batch.
 
         If the batcher is idle and the leading-edge condition is met the item
         is emitted immediately; otherwise it is queued for the next trailing
@@ -88,7 +93,8 @@ class ItemBatcher:
             self._handle = loop.call_later(remaining, lambda: loop.create_task(self._flush_pending()))
 
     async def flush(self) -> None:
-        """Cancel any scheduled flush and immediately emit all pending items.
+        """
+        Cancel any scheduled flush and immediately emit all pending items.
 
         Intended for use during shutdown so that the last batch reaches clients
         before the WebSocket is torn down.
@@ -105,7 +111,8 @@ class ItemBatcher:
     # ------------------------------------------------------------------
 
     async def _flush_pending(self) -> None:
-        """Emit everything that has accumulated in ``_pending``.
+        """
+        Emit everything that has accumulated in ``_pending``.
 
         State is cleared **before** awaiting the emit so that a slow or
         failing send can never wedge the batcher.
