@@ -36,7 +36,7 @@ class DownloadQueue(metaclass=Singleton):
         "Configuration instance."
         self._notify: EventBus = EventBus.get_instance()
         "Event bus instance."
-        self.done = DataStore(type=StoreType.HISTORY, connection=SqliteStore.get_instance())
+        self.done = DataStore(type=StoreType.HISTORY, connection=SqliteStore.get_instance(), max_history=self.config.max_history)
         "DataStore for the completed downloads."
         self.queue = DataStore(type=StoreType.QUEUE, connection=SqliteStore.get_instance())
         "DataStore for the download queue."

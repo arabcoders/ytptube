@@ -49,15 +49,22 @@ def _strip_transient_fields(item: ItemDTO) -> ItemDTO:
 
 
 class DataStore:
-    def __init__(self, type: StoreType, connection: SqliteStore):
+    def __init__(self, type: StoreType, connection: SqliteStore, max_history: int = 0):
         self._type = type
         self._connection: SqliteStore = connection
         self._dict: OrderedDict[str, Download] = OrderedDict()
+        self._max_history: int = max_history
 
     async def load(self) -> None:
         saved = await self._connection.fetch_saved(str(self._type))
         for key, item in saved:
             self._dict[key] = Download(info=item)
+
+        if self._type == StoreType.HISTORY and self._max_history > 0 and len(self._dict) > self._max_history:
+            excess_keys = list(self._dict.keys())[: len(self._dict) - self._max_history]
+            for key in excess_keys:
+                self._dict.pop(key)
+            await self._connection.enqueue_bulk_delete(str(self._type), excess_keys)
 
     async def saved_items(self) -> list[tuple[str, ItemDTO]]:
         return await self._connection.fetch_saved(str(self._type))
@@ -170,6 +177,13 @@ class DataStore:
         _ = no_notify
         self._dict[value.info._id] = value
         await self._connection.enqueue_upsert(str(self._type), _strip_transient_fields(value.info))
+
+        if self._type == StoreType.HISTORY and self._max_history > 0:
+            while len(self._dict) > self._max_history:
+                oldest_key, _ = next(iter(self._dict.items()))
+                self._dict.pop(oldest_key)
+                await self._connection.enqueue_delete(str(self._type), oldest_key)
+
         return self._dict[value.info._id]
 
     async def delete(self, key: str) -> None:

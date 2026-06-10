@@ -227,6 +227,9 @@ class Config(metaclass=Singleton):
     auto_clear_history_days: int = 0
     """Number of days after which completed download history is automatically cleared. 0 to disable."""
 
+    max_history: int = 0
+    """Maximum number of history items to keep. 0 means unlimited."""
+
     default_pagination: int = 50
     """The default number of items per page for pagination."""
 
@@ -285,6 +288,7 @@ class Config(metaclass=Singleton):
         "download_path_depth",
         "download_info_expires",
         "auto_clear_history_days",
+        "max_history",
         "default_pagination",
         "extract_info_concurrency",
         "thumb_concurrency",

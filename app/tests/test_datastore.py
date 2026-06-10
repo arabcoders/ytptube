@@ -1153,3 +1153,74 @@ class TestDataStoreOperations:
         result = await store.get_item(nonexistent_field=(Operation.CONTAIN, "value"))
         assert result is None
         await db.close()
+
+
+class TestMaxHistory:
+    @pytest.mark.asyncio
+    async def test_put_evicts_oldest_when_over_limit(self) -> None:
+        db = await make_db()
+        store = DataStore(StoreType.HISTORY, db, max_history=3)
+
+        items = []
+        for i in range(4):
+            item = make_item(id=f"id{i}", url=f"http://u/{i}")
+            item._id = f"id{i}"
+            items.append(StubDownload(info=item))
+        for item in items:
+            await store.put(item)
+
+        assert len(store._dict) == 3, "Should keep only 3 items"
+        assert "id0" not in store._dict, "Oldest item should be evicted"
+        assert "id3" in store._dict, "Newest item should be kept"
+        await db.flush()
+        await db.close()
+
+    @pytest.mark.asyncio
+    async def test_put_evicts_multiple_when_already_over_limit(self) -> None:
+        db = await make_db()
+        store = DataStore(StoreType.HISTORY, db, max_history=2)
+
+        for i in range(5):
+            item = make_item(id=f"id{i}", url=f"http://u/{i}")
+            item._id = f"id{i}"
+            await store.put(StubDownload(info=item))
+
+        assert len(store._dict) == 2
+        assert "id3" in store._dict
+        assert "id4" in store._dict
+        await db.flush()
+        await db.close()
+
+    @pytest.mark.asyncio
+    async def test_put_no_eviction_when_max_history_zero(self) -> None:
+        db = await make_db()
+        store = DataStore(StoreType.HISTORY, db, max_history=0)
+
+        for i in range(5):
+            await store.put(StubDownload(info=make_item(id=f"id{i}", url=f"http://u/{i}")))
+
+        assert len(store._dict) == 5, "max_history=0 means unlimited"
+        await db.flush()
+        await db.close()
+
+    @pytest.mark.asyncio
+    async def test_put_queue_type_not_affected_by_max_history(self) -> None:
+        db = await make_db()
+        store = DataStore(StoreType.QUEUE, db, max_history=2)
+
+        for i in range(5):
+            await store.put(StubDownload(info=make_item(id=f"id{i}", url=f"http://u/{i}")))
+
+        assert len(store._dict) == 5, "max_history should not apply to QUEUE type"
+        await db.flush()
+        await db.close()
+
+    @pytest.mark.asyncio
+    async def test_load_trims_on_startup_when_over_limit(self) -> None:
+        db = await make_db(data=5)
+        store = DataStore(StoreType.HISTORY, db, max_history=3)
+        await store.load()
+
+        assert len(store._dict) == 3, "load() should trim to max_history on startup"
+        await db.flush()
+        await db.close()
