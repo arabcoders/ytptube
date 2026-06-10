@@ -22,7 +22,7 @@ export type WSEP = {
   connect_error: { message?: string };
   connected: EventPayload<{ sid: string }>;
   item_added: EventPayload<StoreItem>;
-  item_updated: EventPayload<StoreItem>;
+  item_updated: EventPayload<StoreItem[]>;
   item_cancelled: EventPayload<StoreItem>;
   item_deleted: EventPayload<StoreItem>;
   item_bulk_deleted: EventPayload<{ count: number; status?: string; ids?: string[] }>;

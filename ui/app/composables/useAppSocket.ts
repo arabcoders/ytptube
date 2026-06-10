@@ -336,10 +336,10 @@ on('item_deleted', (data: WSEP['item_deleted']) => {
 
 on('item_updated', (data: WSEP['item_updated']) => {
   const queueState = getQueueState();
-  const id = data.data._id;
-
-  if (true === queueState.has(id)) {
-    queueState.update(id, data.data);
+  for (const item of data.data) {
+    if (true === queueState.has(item._id)) {
+      queueState.update(item._id, item);
+    }
   }
 });
 

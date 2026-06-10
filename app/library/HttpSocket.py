@@ -15,6 +15,7 @@ from app.library.Utils import load_modules
 from .config import Config
 from .encoder import Encoder
 from .Events import Event, EventBus, Events
+from .ItemBatcher import ItemBatcher
 from .ItemDTO import Item
 
 LOG = get_logger()
@@ -85,7 +86,23 @@ class HttpSocket:
         self.sio = sio or WebSocketHub(encoder=encoder)
         self.rootPath: Path = root_path
 
+        async def _emit_items(items: list) -> None:
+            ev = Event(event=Events.ITEM_UPDATED, data=items)
+            await self.sio.emit(event=Events.ITEM_UPDATED, data=json.loads(encoder.encode(ev)))
+
+        self._batcher = ItemBatcher(emit=_emit_items)
+
         async def event_handler(e: Event, _, **kwargs):
+            if Events.ITEM_UPDATED == e.event and not kwargs:
+                await self._batcher.add(e.data)
+                return
+            if Events.ITEM_UPDATED == e.event and kwargs:
+                # Targeted delivery (e.g. to=sid): wrap data in a list so the
+                # wire shape is always an array for item_updated.
+                targeted = Event(event=Events.ITEM_UPDATED, data=[e.data])
+                payload = json.loads(encoder.encode(targeted))
+                await self.sio.emit(event=e.event, data=payload, **kwargs)
+                return
             payload = json.loads(encoder.encode(e))
             await self.sio.emit(event=e.event, data=payload, **kwargs)
 
@@ -121,6 +138,7 @@ class HttpSocket:
 
     async def on_shutdown(self, _: web.Application):
         LOG.debug("Shutting down socket server.")
+        await self._batcher.flush()
         await self.sio.disconnect_all()
         LOG.debug("Socket server shutdown complete.")
 
