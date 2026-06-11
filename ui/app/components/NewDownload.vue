@@ -144,14 +144,11 @@
                     {{ shortPath(config.app.download_path) }}
                   </span>
 
-                  <UInput
+                  <FolderInput
                     id="folder"
                     v-model="form.folder"
                     :placeholder="getDefault('folder', '/')"
                     :disabled="addInProgress"
-                    list="folders"
-                    class="w-full"
-                    size="lg"
                     :ui="{ root: 'w-full', base: 'bg-default/90' }"
                   />
                 </div>
@@ -491,10 +488,6 @@
         </template>
       </UPageCard>
     </form>
-
-    <datalist v-if="config?.folders" id="folders">
-      <option v-for="dir in config.folders" :key="dir" :value="dir" />
-    </datalist>
 
     <UModal
       v-if="showOptions"

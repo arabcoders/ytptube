@@ -290,15 +290,11 @@
                 </div>
               </UTooltip>
 
-              <UInput
+              <FolderInput
                 id="folder"
                 v-model="form.folder"
-                type="text"
-                list="folders"
                 :placeholder="getDefault('folder', '/')"
                 :disabled="addInProgress"
-                size="lg"
-                class="w-full"
                 :ui="inputUi"
               />
             </div>
@@ -483,10 +479,6 @@
         Save
       </UButton>
     </div>
-
-    <datalist v-if="config?.folders" id="folders">
-      <option v-for="dir in config.folders" :key="dir" :value="dir" />
-    </datalist>
 
     <UModal
       v-if="showOptions"

@@ -20,17 +20,14 @@ from app.library.log import get_logger
 from app.library.router import route
 from app.library.TerminalSessionManager import TerminalSessionConflictError, TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker
-from app.library.Utils import list_folders
 
 LOG = get_logger()
-DIAGNOSTICS_CACHE_KEY = "system:diagnostics"
-DIAGNOSTICS_CACHE_TTL = 5.0
 
 
 @route("GET", "api/system/configuration", "system.configuration")
 async def system_config(queue: DownloadQueue, config: Config, encoder: Encoder) -> Response:
     """
-    Pause non-active downloads.
+    Get the system configuration.
 
     Args:
         queue (DownloadQueue): The download queue instance.
@@ -47,17 +44,60 @@ async def system_config(queue: DownloadQueue, config: Config, encoder: Encoder) 
             "presets": Presets.get_instance().get_all(),
             "dl_fields": await DLFields.get_instance().get_all_serialized(),
             "paused": queue.is_paused(),
-            "folders": list_folders(
-                path=Path(config.download_path),
-                base=Path(config.download_path),
-                depth_limit=config.download_path_depth - 1,
-            ),
             "history_count": await queue.done.get_total_count(),
             "queue": (await queue.get("queue"))["queue"],
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )
+
+
+@route("GET", "api/system/folders", "system.folders")
+async def system_folders(request: Request, config: Config, encoder: Encoder, cache: Cache) -> Response:
+    """
+    List child directories for a given relative path.
+
+    Query params:
+        path: Relative path within the download directory (default: root).
+
+    Returns:
+        Response: The response object.
+
+    """
+    raw_path: str = request.query.get("path", "").strip().lstrip("/")
+    base: Path = Path(config.download_path).resolve()
+    target: Path = (base / raw_path).resolve()
+
+    if not target.is_relative_to(base):
+        return web.json_response(
+            data={"path": raw_path, "folders": []},
+            status=web.HTTPOk.status_code,
+            dumps=encoder.encode,
+        )
+
+    cache_key = f"folders:{target!s}"
+    if (cached := cache.get(cache_key)) is not None:
+        return web.json_response(data=cached, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+    folders: list[str] = []
+    if target.is_dir():
+        try:
+            folders.extend(
+                entry.name
+                for entry in sorted(target.iterdir())
+                if entry.is_dir() and entry.resolve().is_relative_to(base)
+            )
+        except PermissionError:
+            pass
+
+    resolved_rel: str = str(target.relative_to(base)) if target != base else ""
+    if resolved_rel == ".":
+        resolved_rel = ""
+
+    data: dict[str, str | list[str]] = {"path": resolved_rel, "folders": folders}
+    cache.set(cache_key, data, ttl=30.0)
+
+    return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("POST", "api/system/pause", "system.pause")
@@ -247,7 +287,7 @@ async def system_diagnostics(
         LOG.exception("Failed to collect system diagnostics.")
         data = diagnostics_error_report(config)
     else:
-        cache.set(cache_key, data, ttl=60)
+        cache.set(cache_key, data, ttl=60.0)
 
     return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
 

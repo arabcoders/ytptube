@@ -343,6 +343,15 @@ on('item_updated', (data: WSEP['item_updated']) => {
   }
 });
 
+on('item_progress', (data: WSEP['item_progress']) => {
+  const queueState = getQueueState();
+  const id = data.data._id;
+
+  if (true === queueState.has(id)) {
+    queueState.patch(id, data.data as Partial<StoreItem>);
+  }
+});
+
 on('item_moved', (data: WSEP['item_moved']) => {
   const queueState = getQueueState();
   const to = data.data.to;

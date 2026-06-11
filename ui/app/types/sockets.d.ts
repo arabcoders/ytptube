@@ -1,4 +1,15 @@
-import type { StoreItem } from './store';
+import type { ItemStatus, StoreItem } from './store';
+
+export type ItemProgress = {
+  _id: string;
+  status: ItemStatus;
+  percent?: number | null;
+  speed?: string | null;
+  eta?: string | null;
+  downloaded_bytes?: number | null;
+  total_bytes?: number | null;
+  msg?: string | null;
+};
 
 export type Event = {
   id: string;
@@ -23,6 +34,7 @@ export type WSEP = {
   connected: EventPayload<{ sid: string }>;
   item_added: EventPayload<StoreItem>;
   item_updated: EventPayload<StoreItem>;
+  item_progress: EventPayload<ItemProgress>;
   item_cancelled: EventPayload<StoreItem>;
   item_deleted: EventPayload<StoreItem>;
   item_bulk_deleted: EventPayload<{ count: number; status?: string; ids?: string[] }>;

@@ -81,6 +81,9 @@ class YTDLP(yt_dlp.YoutubeDL):
             except Exception:
                 patched_params = params
 
+        self._ytptube_outtmpl_info: dict[str, Any] | None = None
+        self._ytptube_outtmpl_cache: dict[str, Any] = {}
+
         super().__init__(params=patched_params, auto_init=auto_init)
 
         # Restore param and replace upstream archive set with our proxy
@@ -90,8 +93,6 @@ class YTDLP(yt_dlp.YoutubeDL):
             except Exception:
                 pass
 
-        self._ytptube_outtmpl_info: dict[str, Any] | None = None
-        self._ytptube_outtmpl_cache: dict[str, Any] = {}
         self.archive = _ArchiveProxy(orig_file)
 
     def _delete_downloaded_files(self, *args, **kwargs) -> None:
@@ -105,14 +106,14 @@ class YTDLP(yt_dlp.YoutubeDL):
         self._ytptube_outtmpl_info = None
         self._ytptube_outtmpl_cache = {}
 
-    def prepare_outtmpl(self, outtmpl, info_dict, sanitize=False):
+    def prepare_outtmpl(self, outtmpl, info_dict, sanitize=False, *, _exec=False):
         if self._ytptube_outtmpl_info is not info_dict:
             self._ytptube_outtmpl_info = info_dict
             self._ytptube_outtmpl_cache = {}
 
         outtmpl, enriched = rewrite_outtmpl(outtmpl, info_dict, cache=self._ytptube_outtmpl_cache)
 
-        return super().prepare_outtmpl(outtmpl, enriched, sanitize=sanitize)
+        return super().prepare_outtmpl(outtmpl, enriched, sanitize=sanitize, _exec=_exec)
 
     def process_info(self, info_dict):
         try:

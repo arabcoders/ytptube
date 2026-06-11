@@ -47,7 +47,6 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_LIVE_PREMIERE_BUFFER        | buffer time in minutes to add to video duration                     | `5`                   |
 | YTP_TASKS_HANDLER_TIMER         | The cron expression for the tasks handler timer                     | `15 */1 * * *`        |
 | YTP_TEMP_DISABLED               | Disable temp files handling.                                        | `false`               |
-| YTP_DOWNLOAD_PATH_DEPTH         | How many subdirectories to show in auto complete.                   | `1`                   |
 | YTP_ALLOW_INTERNAL_URLS         | Allow requests to internal URLs                                     | `false`               |
 | YTP_SIMPLE_MODE                 | Switch default interface to Simple mode.                            | `false`               |
 | YTP_STATIC_UI_PATH              | Path to custom static UI files.                                     | `(not_set)`           |

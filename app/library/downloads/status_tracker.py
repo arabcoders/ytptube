@@ -56,6 +56,36 @@ class StatusTracker:
         self._terminator_sent: bool = False
         self._candidate_filepath: Path | None = None
         self.update_task: asyncio.Task | None = None
+        self._last_progress_time: float = 0.0
+        self._pending_progress: bool = False
+        self._progress_interval: float = 0.5
+
+    def _progress_payload(self) -> dict:
+        return {
+            "_id": self.info._id,
+            "status": self.info.status,
+            "percent": self.info.percent,
+            "speed": self.info.speed,
+            "eta": self.info.eta,
+            "downloaded_bytes": self.info.downloaded_bytes,
+            "total_bytes": self.info.total_bytes,
+            "msg": self.info.msg,
+        }
+
+    def _emit_progress(self) -> None:
+        now = time.monotonic()
+        if (now - self._last_progress_time) >= self._progress_interval:
+            self._notify.emit(Events.ITEM_PROGRESS, data=self._progress_payload())
+            self._last_progress_time = now
+            self._pending_progress = False
+        else:
+            self._pending_progress = True
+
+    def _flush_progress(self) -> None:
+        if self._pending_progress:
+            self._notify.emit(Events.ITEM_PROGRESS, data=self._progress_payload())
+            self._pending_progress = False
+            self._last_progress_time = time.monotonic()
 
     async def _finalize_file(self, filepath: Path) -> None:
         """
@@ -184,6 +214,7 @@ class StatusTracker:
 
         self.tmpfilename = status.get("tmpfilename")
 
+        old_status = self.info.status
         self.info.status = status.get("status", self.info.status)
         if "download_skipped" in status:
             self.info.download_skipped = bool(status.get("download_skipped"))
@@ -235,7 +266,11 @@ class StatusTracker:
             await self._finalize_file(Path(final_name))
             self.info.status = "finished"
 
-        self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+        if self.info.status != old_status or self.final_update:
+            self._flush_progress()
+            self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+        else:
+            self._emit_progress()
 
     async def progress_update(self) -> None:
         """
@@ -248,9 +283,11 @@ class StatusTracker:
                 self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
                 status = await self.update_task
                 if status is None or isinstance(status, Terminator):
+                    self._flush_progress()
                     return
                 await self.process_status_update(status)
             except (asyncio.CancelledError, OSError, FileNotFoundError, EOFError, BrokenPipeError, ConnectionError):
+                self._flush_progress()
                 return
 
     async def drain_queue(self, max_iterations: int = 50) -> None:
@@ -294,6 +331,8 @@ class StatusTracker:
                 await self.process_status_update(next_status)
             except (queue.Empty, BrokenPipeError, ConnectionRefusedError, EOFError, OSError):
                 continue
+
+        self._flush_progress()
 
     def cancel_update_task(self) -> None:
         """Cancel the progress update task if it's running."""

@@ -64,8 +64,6 @@ type ConfigState = {
   presets: Array<Preset>;
   /** List of custom download fields */
   dl_fields: Array<DLField>;
-  /** List of folders where files can be saved */
-  folders: Array<string>;
   /** List of yt-dlp options */
   ytdlp_options: Array<YTDLPOption>;
   /** Indicates if downloads are currently paused */

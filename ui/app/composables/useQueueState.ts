@@ -21,6 +21,12 @@ const update = (key: KeyType, value: StoreItem): void => {
   state.queue[key] = value;
 };
 
+const patch = (key: KeyType, fields: Partial<StoreItem>): void => {
+  if (state.queue[key]) {
+    Object.assign(state.queue[key], fields);
+  }
+};
+
 const remove = (key: KeyType): void => {
   if (!state.queue[key]) {
     return;
@@ -227,6 +233,7 @@ const queueStateApi = proxyRefs({
   ...toRefs(state),
   add,
   update,
+  patch,
   remove,
   get,
   has,

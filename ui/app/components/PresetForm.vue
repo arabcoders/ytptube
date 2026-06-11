@@ -156,15 +156,11 @@
             </div>
           </UTooltip>
 
-          <UInput
+          <FolderInput
             id="folder"
             v-model="form.folder"
-            type="text"
-            list="folders"
             placeholder="Leave empty to use default download path"
-            size="lg"
             :disabled="addInProgress"
-            class="w-full"
             :ui="inputUi"
           />
         </div>
@@ -327,10 +323,6 @@
         Save
       </UButton>
     </div>
-
-    <datalist v-if="config?.folders" id="folders">
-      <option v-for="dir in config.folders" :key="dir" :value="dir" />
-    </datalist>
 
     <UModal
       v-if="showOptions"
