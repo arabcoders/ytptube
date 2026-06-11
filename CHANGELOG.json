@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "c7fbe6b4848e3d7af46a920bc60d7439eeed37a6",
-    "date": "2026-06-11T05:18:08+00:00",
+    "full_sha": "4f5ac8d8a0cdc8c0166d60f0d597d353365bd3b4",
+    "date": "2026-06-11T14:51:30+00:00",
     "commits": [
+      {
+        "sha": "4f5ac8d8",
+        "full_sha": "4f5ac8d8a0cdc8c0166d60f0d597d353365bd3b4",
+        "message": "fix: breaking change between yt-dlp 2026.03.17 -> 2026.06.09 due to CVE related to exec",
+        "author": "arabcoders",
+        "date": "2026-06-11T14:51:30+00:00"
+      },
       {
         "sha": "c7fbe6b4",
         "full_sha": "c7fbe6b4848e3d7af46a920bc60d7439eeed37a6",
