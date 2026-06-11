@@ -349,6 +349,14 @@ class TestYTDLP:
         assert len(result) == 8
         assert result.isalnum()
 
+    def test_exec_init(self) -> None:
+        YTDLP(
+            params={
+                "compat_opts": set(),
+                "postprocessors": [{"key": "Exec", "exec_cmd": "echo %(title)q"}],
+            }
+        )
+
     def test_outtmpl_reuses_value(self) -> None:
         ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
 
