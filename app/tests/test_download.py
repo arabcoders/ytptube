@@ -1211,6 +1211,92 @@ class TestStatusTracker:
         assert 1 == len(queue.items), "Should add terminator to queue"
         assert isinstance(queue.items[0], Terminator), "Should add Terminator instance"
 
+    @pytest.mark.asyncio
+    async def test_progress_emits_item_progress(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        st.info.status = "downloading"
+        calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: calls.append((a, kw)))
+
+        await st.process_status_update(
+            {"id": "test-id", "status": "downloading", "downloaded_bytes": 50, "total_bytes": 100}
+        )
+
+        progress_calls = [c for c in calls if c[0][0] == Events.ITEM_PROGRESS]
+        updated_calls = [c for c in calls if c[0][0] == Events.ITEM_UPDATED]
+        assert len(progress_calls) == 1
+        assert len(updated_calls) == 0
+        payload = progress_calls[0][1]["data"]
+        assert payload["_id"] == st.info._id
+        assert payload["percent"] == 50.0
+        assert "options" not in payload
+
+    @pytest.mark.asyncio
+    async def test_status_change_emits_item_updated(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        st.info.status = "started"
+        calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: calls.append((a, kw)))
+
+        await st.process_status_update(
+            {"id": "test-id", "status": "downloading", "downloaded_bytes": 10, "total_bytes": 100}
+        )
+
+        updated_calls = [c for c in calls if c[0][0] == Events.ITEM_UPDATED]
+        assert len(updated_calls) == 1
+        assert updated_calls[0][1]["data"] is st.info
+
+    @pytest.mark.asyncio
+    async def test_progress_throttled(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        st.info.status = "downloading"
+        st._progress_interval = 0.5
+        calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: calls.append((a, kw)))
+
+        await st.process_status_update(
+            {"id": "test-id", "status": "downloading", "downloaded_bytes": 10, "total_bytes": 100}
+        )
+        await st.process_status_update(
+            {"id": "test-id", "status": "downloading", "downloaded_bytes": 20, "total_bytes": 100}
+        )
+        await st.process_status_update(
+            {"id": "test-id", "status": "downloading", "downloaded_bytes": 30, "total_bytes": 100}
+        )
+
+        progress_calls = [c for c in calls if c[0][0] == Events.ITEM_PROGRESS]
+        assert len(progress_calls) == 1, "Rapid ticks should be throttled to one emission"
+        assert st._pending_progress is True
+
+    @pytest.mark.asyncio
+    async def test_flush_on_status_change(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        st.info.status = "downloading"
+        st._progress_interval = 10.0
+        calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: calls.append((a, kw)))
+
+        await st.process_status_update(
+            {"id": "test-id", "status": "downloading", "downloaded_bytes": 10, "total_bytes": 100}
+        )
+        await st.process_status_update(
+            {"id": "test-id", "status": "downloading", "downloaded_bytes": 50, "total_bytes": 100}
+        )
+
+        assert st._pending_progress is True
+
+        await st.process_status_update({"id": "test-id", "status": "error", "error": "fail"})
+
+        progress_calls = [c for c in calls if c[0][0] == Events.ITEM_PROGRESS]
+        updated_calls = [c for c in calls if c[0][0] == Events.ITEM_UPDATED]
+        assert len(progress_calls) == 2, "Pending progress should be flushed before status change"
+        assert len(updated_calls) == 1
+        assert st._pending_progress is False
+
 
 class TestQueueManager:
     @staticmethod

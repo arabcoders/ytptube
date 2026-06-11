@@ -34,6 +34,7 @@ class Events:
 
     ITEM_ADDED: str = "item_added"
     ITEM_UPDATED: str = "item_updated"
+    ITEM_PROGRESS: str = "item_progress"
     ITEM_COMPLETED: str = "item_completed"
     ITEM_CANCELLED: str = "item_cancelled"
     ITEM_DELETED: str = "item_deleted"
@@ -86,6 +87,7 @@ class Events:
             Events.LOG_SUCCESS,
             Events.ITEM_ADDED,
             Events.ITEM_UPDATED,
+            Events.ITEM_PROGRESS,
             Events.ITEM_CANCELLED,
             Events.ITEM_DELETED,
             Events.ITEM_BULK_DELETED,
@@ -103,7 +105,7 @@ class Events:
             list: The list of debug events.
 
         """
-        return [Events.ITEM_UPDATED]
+        return [Events.ITEM_UPDATED, Events.ITEM_PROGRESS]
 
 
 @dataclass(kw_only=True)
