@@ -12,7 +12,7 @@ from app.library.cache import Cache
 from app.library.ItemDTO import ItemDTO
 from app.library.encoder import Encoder
 from app.routes.api import history
-from app.routes.api.history import item_rename, item_thumbnail, items_delete
+from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_live
 from app.tests.helpers import temporary_test_dir
 
 
@@ -82,6 +82,60 @@ async def test_items_delete_ids() -> None:
     queue.clear_bulk.assert_awaited_once_with(["a", "b"], remove_file=False)
     body = json.loads(response.body.decode("utf-8"))
     assert body == {"items": {}, "deleted": 2}
+
+
+@pytest.mark.asyncio
+async def test_items_live_metadata() -> None:
+    request = _FakeRequest()
+    request.query = {}
+    queue = Mock()
+    queue.live_queue = Mock(
+        return_value={"queue": {"a": {"title": "A"}}, "queue_count": 3, "queue_loaded": 1, "queue_limit": 1}
+    )
+    queue.done.get_total_count = AsyncMock(return_value=7)
+    encoder = Encoder()
+    config = SimpleNamespace(queue_display_limit=1)
+
+    response = await items_live(request, queue, encoder, config)
+
+    assert response.status == 200
+    queue.live_queue.assert_called_once_with(1)
+    body = json.loads(response.body.decode("utf-8"))
+    assert body["queue_count"] == 3
+    assert body["queue_loaded"] == 1
+    assert body["queue_limit"] == 1
+    assert body["history_count"] == 7
+
+
+@pytest.mark.asyncio
+async def test_items_live_limit_query() -> None:
+    request = _FakeRequest()
+    request.query = {"limit": "25"}
+    queue = Mock()
+    queue.live_queue = Mock(return_value={"queue": {}, "queue_count": 0, "queue_loaded": 0, "queue_limit": 25})
+    queue.done.get_total_count = AsyncMock(return_value=0)
+    encoder = Encoder()
+    config = SimpleNamespace(queue_display_limit=1)
+
+    response = await items_live(request, queue, encoder, config)
+
+    assert response.status == 200
+    queue.live_queue.assert_called_once_with(25)
+
+
+@pytest.mark.asyncio
+async def test_items_live_bad_limit() -> None:
+    request = _FakeRequest()
+    request.query = {"limit": "many"}
+    queue = Mock()
+    queue.live_queue = Mock()
+    encoder = Encoder()
+    config = SimpleNamespace(queue_display_limit=1)
+
+    response = await items_live(request, queue, encoder, config)
+
+    assert response.status == 400
+    queue.live_queue.assert_not_called()
 
 
 @pytest.mark.asyncio

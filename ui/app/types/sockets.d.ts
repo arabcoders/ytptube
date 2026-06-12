@@ -38,7 +38,11 @@ export type WSEP = {
   item_cancelled: EventPayload<StoreItem>;
   item_deleted: EventPayload<StoreItem>;
   item_bulk_deleted: EventPayload<{ count: number; status?: string; ids?: string[] }>;
-  item_moved: EventPayload<{ to: 'queue' | 'history'; item: StoreItem }>;
+  item_moved: EventPayload<{
+    from?: 'queue' | 'history';
+    to: 'queue' | 'history';
+    item: StoreItem;
+  }>;
   item_status: EventPayload<{ status?: string; msg?: string; preset?: string }>;
   paused: EventPayload<{ paused?: boolean }>;
   resumed: EventPayload<{ paused?: boolean }>;

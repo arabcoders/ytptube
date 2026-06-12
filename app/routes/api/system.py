@@ -45,7 +45,6 @@ async def system_config(queue: DownloadQueue, config: Config, encoder: Encoder) 
             "dl_fields": await DLFields.get_instance().get_all_serialized(),
             "paused": queue.is_paused(),
             "history_count": await queue.done.get_total_count(),
-            "queue": (await queue.get("queue"))["queue"],
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,

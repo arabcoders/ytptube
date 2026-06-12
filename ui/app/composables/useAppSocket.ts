@@ -19,6 +19,20 @@ const getRuntimeConfig = () => useRuntimeConfig();
 const getConfig = () => useYtpConfig();
 const getQueueState = () => useQueueState();
 const getToast = () => useNotification();
+let queueReloadTimer: ReturnType<typeof setTimeout> | null = null;
+
+const scheduleQueueBackfill = (): void => {
+  const queueState = getQueueState();
+
+  if (!queueState.needsBackfill() || queueReloadTimer) {
+    return;
+  }
+
+  queueReloadTimer = setTimeout(() => {
+    queueReloadTimer = null;
+    queueState.loadQueue(queueState.limit || undefined);
+  }, 500);
+};
 
 const socket = ref<WebSocket | null>(null);
 const isConnected = ref<boolean>(false);
@@ -278,8 +292,11 @@ on('item_added', (data: WSEP['item_added']) => {
   const queueState = getQueueState();
   const toast = getToast();
 
-  queueState.add(data.data._id, data.data);
-  toast.success(`Item queued: ${ag(queueState.get(data.data._id, {} as StoreItem), 'title')}`);
+  if (queueState.isLoaded()) {
+    queueState.add(data.data._id, data.data);
+  }
+
+  toast.success(`Item queued: ${ag(data.data, 'title')}`);
 });
 
 on(
@@ -314,33 +331,39 @@ on('item_cancelled', (data: WSEP['item_cancelled']) => {
   const toast = getToast();
   const id = data.data._id;
 
+  if (!queueState.isLoaded()) {
+    return;
+  }
+
   if (true !== queueState.has(id)) {
     return;
   }
 
   toast.warning(`Download cancelled: ${ag(queueState.get(id, {} as StoreItem), 'title')}`);
-
-  if (true === queueState.has(id)) {
-    queueState.remove(id);
-  }
 });
 
 on('item_deleted', (data: WSEP['item_deleted']) => {
   const queueState = getQueueState();
   const id = data.data._id;
 
+  if (!queueState.isLoaded()) {
+    return;
+  }
+
   if (true === queueState.has(id)) {
     queueState.remove(id);
+    scheduleQueueBackfill();
   }
 });
 
 on('item_updated', (data: WSEP['item_updated']) => {
   const queueState = getQueueState();
-  const id = data.data._id;
 
-  if (true === queueState.has(id)) {
-    queueState.update(id, data.data);
+  if (!queueState.isLoaded()) {
+    return;
   }
+
+  queueState.update(data.data._id, data.data);
 });
 
 on('item_progress', (data: WSEP['item_progress']) => {
@@ -357,13 +380,24 @@ on('item_moved', (data: WSEP['item_moved']) => {
   const to = data.data.to;
   const id = data.data.item._id;
 
+  if (!queueState.isLoaded()) {
+    return;
+  }
+
   if ('queue' === to) {
     queueState.add(id, data.data.item);
   }
 
   if ('history' === to) {
+    if ('queue' === data.data.from) {
+      queueState.drop(id);
+      scheduleQueueBackfill();
+      return;
+    }
+
     if (true === queueState.has(id)) {
       queueState.remove(id);
+      scheduleQueueBackfill();
     }
   }
 });

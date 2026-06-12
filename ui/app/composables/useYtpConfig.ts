@@ -4,7 +4,6 @@ import type { ConfigState } from '~/types/config';
 import type { DLField } from '~/types/dl_fields';
 import type { Preset } from '~/types/presets';
 import type { ConfigFeature, ConfigUpdateAction } from '~/types/sockets';
-import { useQueueState } from '~/composables/useQueueState';
 import { request } from '~/utils';
 
 let last_reload = 0;
@@ -33,6 +32,7 @@ const state = reactive<ConfigState>({
     app_env: 'production',
     simple_mode: false,
     default_pagination: 50,
+    queue_display_limit: 100,
     log_level: '',
     runtime_log_level: '',
     check_for_updates: true,
@@ -79,15 +79,9 @@ const loadConfig = async (force: boolean = false) => {
       return;
     }
     const data = await resp.json();
-    const queueState = useQueueState();
 
     if ('number' === typeof data.history_count) {
       delete data.history_count;
-    }
-
-    if (data.queue) {
-      queueState.addAll(data.queue);
-      delete data.queue;
     }
 
     setAll(data);

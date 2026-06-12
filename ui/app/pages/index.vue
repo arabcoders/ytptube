@@ -38,7 +38,7 @@
           variant="outline"
           size="sm"
           icon="i-lucide-pause"
-          @click="() => void pauseDownload()"
+          @click="() => pauseDownload()"
         >
           <span>Pause</span>
         </UButton>
@@ -49,7 +49,7 @@
           variant="outline"
           size="sm"
           icon="i-lucide-play"
-          @click="() => void resumeDownload()"
+          @click="() => resumeDownload()"
         >
           <span>Resume</span>
         </UButton>
@@ -114,7 +114,7 @@
             size="sm"
             icon="i-lucide-refresh-cw"
             :loading="isRefreshing"
-            @click="() => void refreshQueue()"
+            @click="() => refreshQueue()"
           >
             Refresh
           </UButton>
@@ -156,9 +156,20 @@
             <UBadge color="neutral" variant="soft" size="sm">
               <span class="inline-flex items-center gap-1.5">
                 <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                <span>Total: {{ stateStore.count() }}</span>
+                <span>{{ queueCountLabel }}</span>
               </span>
             </UBadge>
+
+            <UButton
+              v-if="stateStore.hasMore()"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              :loading="isRefreshing"
+              @click="() => loadMoreQueue()"
+            >
+              Show more
+            </UButton>
           </div>
         </div>
 
@@ -355,7 +366,7 @@
                         variant="outline"
                         size="xs"
                         icon="i-lucide-circle-play"
-                        @click="() => void startItem(item)"
+                        @click="() => startItem(item)"
                       >
                         Start
                       </UButton>
@@ -366,7 +377,7 @@
                         variant="outline"
                         size="xs"
                         icon="i-lucide-pause"
-                        @click="() => void pauseItem(item)"
+                        @click="() => pauseItem(item)"
                       >
                         Pause
                       </UButton>
@@ -618,7 +629,7 @@
                     variant="outline"
                     icon="i-lucide-circle-play"
                     class="w-full justify-center"
-                    @click="() => void startItem(item)"
+                    @click="() => startItem(item)"
                   >
                     Start
                   </UButton>
@@ -629,7 +640,7 @@
                     variant="outline"
                     icon="i-lucide-pause"
                     class="w-full justify-center"
-                    @click="() => void pauseItem(item)"
+                    @click="() => pauseItem(item)"
                   >
                     Pause
                   </UButton>
@@ -780,6 +791,7 @@ const masterSelectAll = ref(false);
 const embed_url = ref('');
 const isRefreshing = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
+const hadSocketDisconnect = ref(false);
 
 const hasQueueContent = computed(() => stateStore.count() > 0 || query.value.trim().length > 0);
 const contentStyle = computed<'grid' | 'list'>(() =>
@@ -796,6 +808,14 @@ const displayedItems = computed<StoreItem[]>(() => {
   }
 
   return items.filter((item) => deepIncludes(item, normalizedQuery, new WeakSet()));
+});
+
+const queueCountLabel = computed(() => {
+  if (stateStore.hasMore()) {
+    return `Queued: ${stateStore.shown()} displayed / ${stateStore.count()} total`;
+  }
+
+  return `Queued: ${stateStore.count()}`;
 });
 
 const hasItems = computed(() => displayedItems.value.length > 0);
@@ -822,6 +842,22 @@ const refreshQueue = async (): Promise<void> => {
     await stateStore.loadQueue();
   } catch {
     toast.error('Failed to refresh queue');
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
+const loadMoreQueue = async (): Promise<void> => {
+  if (isRefreshing.value) {
+    return;
+  }
+
+  isRefreshing.value = true;
+
+  try {
+    await stateStore.loadMore();
+  } catch {
+    toast.error('Failed to load more queue items');
   } finally {
     isRefreshing.value = false;
   }
@@ -867,6 +903,8 @@ onMounted(async () => {
     pendingDownloadFormItem.value = {};
   }
 
+  await refreshQueue();
+
   if (!socket.isConnected && autoRefreshEnabled.value) {
     startAutoRefresh();
   }
@@ -885,8 +923,16 @@ watch(
   (connected) => {
     if (connected) {
       stopAutoRefresh();
+
+      if (hadSocketDisconnect.value) {
+        hadSocketDisconnect.value = false;
+        void refreshQueue();
+      }
+
       return;
     }
+
+    hadSocketDisconnect.value = true;
 
     if (autoRefreshEnabled.value) {
       startAutoRefresh();
@@ -1041,7 +1087,7 @@ const bulkActionGroups = computed(() => {
       label: 'Start',
       icon: 'i-lucide-circle-play',
       disabled: !hasSelected.value,
-      onSelect: () => void startItems(),
+      onSelect: () => startItems(),
     });
   }
 
@@ -1050,7 +1096,7 @@ const bulkActionGroups = computed(() => {
       label: 'Pause',
       icon: 'i-lucide-pause',
       disabled: !hasSelected.value,
-      onSelect: () => void pauseSelected(),
+      onSelect: () => pauseSelected(),
     });
   }
 
@@ -1058,7 +1104,7 @@ const bulkActionGroups = computed(() => {
     label: selectedLiveOnly ? 'Stop' : 'Cancel',
     icon: 'i-lucide-circle-off',
     disabled: !hasSelected.value,
-    onSelect: () => void cancelSelected(),
+    onSelect: () => cancelSelected(),
   });
 
   return groups;
@@ -1081,14 +1127,14 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
   primaryActions.push({
     label: item.is_live ? 'Stop Stream' : 'Cancel Download',
     icon: 'i-lucide-circle-off',
-    onSelect: () => void confirmCancel(item),
+    onSelect: () => confirmCancel(item),
   });
 
   if (canStartItem(item)) {
     primaryActions.push({
       label: 'Start Download',
       icon: 'i-lucide-circle-play',
-      onSelect: () => void startItem(item),
+      onSelect: () => startItem(item),
     });
   }
 
@@ -1096,7 +1142,7 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
     primaryActions.push({
       label: 'Pause Download',
       icon: 'i-lucide-pause',
-      onSelect: () => void pauseItem(item),
+      onSelect: () => pauseItem(item),
     });
   }
 
@@ -1351,7 +1397,7 @@ const cancelItems = (item: string | string[]): void => {
     return;
   }
 
-  void stateStore.cancelItems(items);
+  stateStore.cancelItems(items);
 };
 
 const startItem = async (item: StoreItem): Promise<void> => await stateStore.startItems([item._id]);

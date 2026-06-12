@@ -43,6 +43,8 @@ type AppConfig = {
   app_env: 'production' | 'development';
   /** Default number of items per page for pagination */
   default_pagination: number;
+  /** Maximum number of queued downloads loaded into the UI. 0 means unlimited. */
+  queue_display_limit: number;
   /** Configured default log level */
   log_level: 'debug' | 'info' | 'warning' | 'error' | '';
   /** Active runtime log level */

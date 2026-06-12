@@ -320,7 +320,7 @@ class DownloadQueue(metaclass=Singleton):
                 await self.done.put(item)
                 self._notify.emit(
                     Events.ITEM_MOVED,
-                    data={"to": "history", "preset": item.info.preset, "item": item.info},
+                    data={"from": "queue", "to": "history", "preset": item.info.preset, "item": item.info},
                     title="Download Cancelled",
                     message=f"Download '{item.info.title}' has been cancelled.",
                 )
@@ -724,6 +724,32 @@ class DownloadQueue(metaclass=Singleton):
                 items["done"][k] = v.info
 
         return items
+
+    def live_queue(self, limit: int = 0) -> dict[str, int | dict[str, ItemDTO]]:
+        """Return a display-limited live queue snapshot with total metadata."""
+        limit = max(0, int(limit or 0))
+        items: dict[str, ItemDTO] = {}
+        active = self.pool.get_active_downloads()
+
+        for key, download in active.items():
+            if key in self.queue:
+                items[key] = download.info
+
+        for key, download in self.queue.items():
+            if limit > 0 and len(items) >= limit:
+                break
+
+            if key in items:
+                continue
+
+            items[key] = active[key].info if key in active else download.info
+
+        return {
+            "queue": items,
+            "queue_count": len(self.queue),
+            "queue_loaded": len(items),
+            "queue_limit": limit,
+        }
 
     async def get_item(self, **kwargs) -> tuple["StoreType", Download] | tuple[None, None]:
         """

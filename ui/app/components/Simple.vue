@@ -193,7 +193,20 @@
               <span>Queue</span>
             </button>
 
-            <UBadge color="info" variant="soft" size="sm">{{ queueItems.length }} items</UBadge>
+            <div class="flex flex-wrap items-center gap-2">
+              <UBadge color="info" variant="soft" size="sm">{{ queueCountLabel }}</UBadge>
+
+              <UButton
+                v-if="stateStore.hasMore()"
+                color="neutral"
+                variant="outline"
+                size="xs"
+                :loading="isRefreshing"
+                @click="() => loadMoreQueue()"
+              >
+                Show more
+              </UButton>
+            </div>
           </div>
 
           <Transition name="section-collapse">
@@ -629,7 +642,7 @@
           :isControls="true"
           :item="videoItem"
           class="w-full"
-          @closeModel="() => void requestCloseVideo()"
+          @closeModel="() => requestCloseVideo()"
           @error="async (error: string) => await box.alert(error)"
           @playback-state-change="(playing: boolean) => (playingNow = playing)"
         />
@@ -728,6 +741,7 @@ const embedUrl = ref('');
 const videoItem = ref<StoreItem | null>(null);
 const playingNow = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
+const hadSocketDisconnect = ref(false);
 const videoOpen = computed<boolean>({
   get: () => Boolean(videoItem.value),
   set: (value: boolean) => {
@@ -778,6 +792,13 @@ const urlInputUi = {
 const historyPagination = computed(() => pagination.value);
 const historyIsLoading = computed(() => isLoading.value);
 const queueItems = computed<StoreItem[]>(() => Object.values(stateStore.queue));
+const queueCountLabel = computed(() => {
+  if (stateStore.hasMore()) {
+    return `${stateStore.shown()} displayed / ${stateStore.count()} queued`;
+  }
+
+  return `${stateStore.count()} queued`;
+});
 const historyEntries = computed<StoreItem[]>(() => historyItems.value);
 const hasAnyItems = computed(() => queueItems.value.length > 0 || historyEntries.value.length > 0);
 const showSections = computed(() => hasAnyItems.value || historyIsLoading.value);
@@ -858,6 +879,23 @@ const refreshQueue = async (): Promise<void> => {
   } catch (error) {
     console.error('Failed to refresh queue:', error);
     toast.error('Failed to refresh queue');
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
+const loadMoreQueue = async (): Promise<void> => {
+  if (isRefreshing.value) {
+    return;
+  }
+
+  isRefreshing.value = true;
+
+  try {
+    await stateStore.loadMore();
+  } catch (error) {
+    console.error('Failed to load more queue items:', error);
+    toast.error('Failed to load more queue items');
   } finally {
     isRefreshing.value = false;
   }
@@ -1343,7 +1381,10 @@ onMounted(async () => {
   await normalizeSimpleRoute();
   historyInitialized.value = true;
   socketStore.on('item_moved', handleHistoryItemMoved);
-  await load(1, { order: 'DESC', perPage: configStore.app.default_pagination });
+  await Promise.allSettled([
+    refreshQueue(),
+    load(1, { order: 'DESC', perPage: configStore.app.default_pagination }),
+  ]);
 
   if (!socketStore.isConnected && autoRefreshEnabled.value) {
     startAutoRefresh();
@@ -1374,7 +1415,7 @@ watch(
   () => route.path,
   () => {
     if (simpleMode.value) {
-      void normalizeSimpleRoute();
+      normalizeSimpleRoute();
     }
   },
 );
@@ -1384,8 +1425,16 @@ watch(
   (connected) => {
     if (connected) {
       stopAutoRefresh();
+
+      if (hadSocketDisconnect.value) {
+        hadSocketDisconnect.value = false;
+        refreshQueue();
+      }
+
       return;
     }
+
+    hadSocketDisconnect.value = true;
 
     if (autoRefreshEnabled.value) {
       startAutoRefresh();
@@ -1429,7 +1478,7 @@ watch(
       return;
     }
 
-    void load(1, { order: 'DESC', perPage: configStore.app.default_pagination });
+    load(1, { order: 'DESC', perPage: configStore.app.default_pagination });
   },
 );
 </script>

@@ -227,6 +227,9 @@ class Config(metaclass=Singleton):
     default_pagination: int = 50
     """The default number of items per page for pagination."""
 
+    queue_display_limit: int = 100
+    """Maximum number of queued downloads returned to the UI. 0 means unlimited."""
+
     task_handler_random_delay: float = 60.0
     """The maximum random delay in seconds before starting a task handler."""
 
@@ -282,6 +285,7 @@ class Config(metaclass=Singleton):
         "download_info_expires",
         "auto_clear_history_days",
         "default_pagination",
+        "queue_display_limit",
         "extract_info_concurrency",
         "thumb_concurrency",
         "flaresolverr_max_timeout",
@@ -342,6 +346,7 @@ class Config(metaclass=Singleton):
         "app_build_date",
         "app_branch",
         "default_pagination",
+        "queue_display_limit",
         "check_for_updates",
         "new_version",
         "yt_new_version",
