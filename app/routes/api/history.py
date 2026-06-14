@@ -123,23 +123,29 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
 
 
 @route("GET", "api/history/live", "items_live")
-async def items_live(queue: DownloadQueue, encoder: Encoder) -> Response:
+async def items_live(request: Request, queue: DownloadQueue, encoder: Encoder, config: Config) -> Response:
     """
     Get live queue data
 
     Args:
+        request (Request): The request object.
         queue (DownloadQueue): The download queue instance.
         encoder (Encoder): The encoder instance.
+        config (Config): The configuration instance.
 
     Returns:
         Response: The response object with live queue items.
 
     """
+    try:
+        limit = int(request.query.get("limit", config.queue_display_limit))
+    except ValueError:
+        return web.json_response(
+            data={"error": "limit must be a valid integer."}, status=web.HTTPBadRequest.status_code
+        )
+
     return web.json_response(
-        data={
-            "queue": (await queue.get("queue"))["queue"],
-            "history_count": await queue.done.get_total_count(),
-        },
+        data={**queue.live_queue(limit), "history_count": await queue.done.get_total_count()},
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )

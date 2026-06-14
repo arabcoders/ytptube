@@ -1299,6 +1299,19 @@ class TestStatusTracker:
 
 
 class TestQueueManager:
+    class LiveStore:
+        def __init__(self, items: dict[str, Download]) -> None:
+            self._items = items
+
+        def items(self):
+            return self._items.items()
+
+        def __contains__(self, key: str) -> bool:
+            return key in self._items
+
+        def __len__(self) -> int:
+            return len(self._items)
+
     @staticmethod
     def _video_queue() -> Mock:
         async def put(item):
@@ -1331,6 +1344,37 @@ class TestQueueManager:
             cli=[],
             auto_start=True,
         )
+
+    def test_live_queue_caps_visible_items(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        items = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
+        queue_manager.queue = self.LiveStore(items)
+        queue_manager.pool = Mock()
+        queue_manager.pool.get_active_downloads.return_value = {}
+
+        snapshot = DownloadQueue.live_queue(queue_manager, limit=2)
+
+        assert list(snapshot["queue"].keys()) == ["id0", "id1"]
+        assert snapshot["queue_count"] == 5
+        assert snapshot["queue_loaded"] == 2
+        assert snapshot["queue_limit"] == 2
+
+    def test_live_queue_keeps_active(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        items = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
+        queue_manager.queue = self.LiveStore(items)
+        queue_manager.pool = Mock()
+        queue_manager.pool.get_active_downloads.return_value = {
+            "id3": Mock(info=make_item(id="id3", title="Active 3")),
+            "id4": Mock(info=make_item(id="id4", title="Active 4")),
+        }
+
+        snapshot = DownloadQueue.live_queue(queue_manager, limit=1)
+
+        assert list(snapshot["queue"].keys()) == ["id3", "id4"]
+        assert snapshot["queue_count"] == 5
+        assert snapshot["queue_loaded"] == 2
+        assert snapshot["queue_limit"] == 1
 
     @pytest.mark.asyncio
     async def test_live_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1501,7 +1545,11 @@ class TestQueueManager:
         done_store.bulk_delete.assert_awaited_once_with(["done-id-1", "done-id-2"])
         queue_manager._notify.emit.assert_called_once()
         assert queue_manager._notify.emit.call_args.args[0] == Events.ITEM_BULK_DELETED
-        assert queue_manager._notify.emit.call_args.kwargs["data"] == {"ids": ["done-id-1", "done-id-2"], "count": 2}
+        assert queue_manager._notify.emit.call_args.kwargs["data"]["count"] == 2
+        assert queue_manager._notify.emit.call_args.kwargs["data"]["removed_files"] == 0
+        assert len(queue_manager._notify.emit.call_args.kwargs["data"]["items"]) == 2
+        assert queue_manager._notify.emit.call_args.kwargs["data"]["items"][0]["id"] == "done-id-1"
+        assert queue_manager._notify.emit.call_args.kwargs["data"]["items"][1]["id"] == "done-id-2"
 
     @pytest.mark.asyncio
     async def test_clear_status_fetches(self) -> None:
@@ -1509,19 +1557,25 @@ class TestQueueManager:
         queue_manager.config = Mock(remove_files=False, download_path="/tmp")
         queue_manager._notify = Mock()
 
+        item = Mock()
+        item.info = make_item(id="done-id", title="Cleared clip")
+
         done_store = Mock()
         done_store.bulk_delete_by_status = AsyncMock(return_value=1)
-        done_store.get_many_by_status = AsyncMock()
+        done_store.get_many_by_status = AsyncMock(return_value=[("done-id", item)])
         queue_manager.done = done_store
 
         result = await DownloadQueue.clear_by_status(queue_manager, "finished", remove_file=False)
 
         assert result == {"deleted": 1}
+        done_store.get_many_by_status.assert_awaited_once_with("finished")
         done_store.bulk_delete_by_status.assert_awaited_once_with("finished")
-        done_store.get_many_by_status.assert_not_called()
         queue_manager._notify.emit.assert_called_once()
         assert queue_manager._notify.emit.call_args.args[0] == Events.ITEM_BULK_DELETED
-        assert queue_manager._notify.emit.call_args.kwargs["data"] == {"count": 1, "status": "finished"}
+        assert queue_manager._notify.emit.call_args.kwargs["data"]["count"] == 1
+        assert queue_manager._notify.emit.call_args.kwargs["data"]["status"] == "finished"
+        assert len(queue_manager._notify.emit.call_args.kwargs["data"]["items"]) == 1
+        assert queue_manager._notify.emit.call_args.kwargs["data"]["items"][0]["id"] == "done-id"
 
     @pytest.mark.asyncio
     async def test_clear_status_files_fetch(self) -> None:

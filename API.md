@@ -700,10 +700,16 @@ GET /api/history?type=queue&status=pending&order=ASC
 
 This endpoint returns the current state of active downloads from memory.
 
+**Query Parameters**:
+- `limit` (optional): Override the configured queue display limit for this request. `0` means unlimited.
+
 **Response**:
 ```json
 {
     "history_count": 0, // total number of completed items in history
+    "queue_count": 250, // total number of queued items
+    "queue_loaded": 100, // number of queued items included in this response
+    "queue_limit": 100, // effective display limit, 0 means unlimited
     "queue":{
       "id": "abc123",
       "url": "https://example.com/video",
@@ -2629,51 +2635,18 @@ or an error:
 ---
 
 ### GET /api/system/configuration
-**Purpose**: Retrieve system configuration including app settings, presets, download fields, and queue status.
+**Purpose**: Retrieve system configuration.
 
 **Response**:
 ```json
 {
-  "app": {
-    "version": "...",
-    "download_path": "/path/to/downloads",
-    "base_path": "/",
-    ...
-  },
-  "presets": [
-    {
-      "id": 1,
-      "name": "default",
-      "description": "...",
-      ...
-    }
-  ],
-  "dl_fields": [
-    {
-      "id": 1,
-      "name": "Title",
-      "field": "title",
-      "kind": "text",
-      ...
-    }
-  ],
+  "app": {...},
+  "presets": [...],
+  "dl_fields": [...],
   "paused": false,
-  "history_count": 150,
-  "queue": [
-    {
-      "id": "abc123",
-      "url": "https://example.com/video",
-      "status": "pending",
-      ...
-    }
-  ]
+  "history_count": 150
 }
 ```
-
-**Notes**:
-- This endpoint combines multiple data sources into a single response for efficient initialization
-- The `queue` array contains active download items
-- Folder listing is available via the separate `/api/system/folders` endpoint
 
 ---
 
@@ -3495,7 +3468,7 @@ Emitted when a download item is moved between queue and history.
   "data": {
     "id": "abc123",
     "from": "queue",
-    "to": "done"
+    "to": "history"
   }
 }
 ```

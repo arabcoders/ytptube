@@ -166,6 +166,12 @@ class DataStore:
     def items(self):
         return self._dict.items()
 
+    def __contains__(self, key: str) -> bool:
+        return key in self._dict
+
+    def __len__(self) -> int:
+        return len(self._dict)
+
     async def put(self, value: Download, no_notify: bool = False) -> Download:
         _ = no_notify
         self._dict[value.info._id] = value

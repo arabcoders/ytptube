@@ -9,7 +9,7 @@ from app.library.config import Config
 from app.library.cache import Cache
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
-from app.routes.api.system import check_updates, system_diagnostics, system_folders, system_limits
+from app.routes.api.system import check_updates, system_config, system_diagnostics, system_folders, system_limits
 
 
 @dataclass
@@ -116,6 +116,38 @@ class TestCheckUpdatesEndpoint:
             body = response.body.decode("utf-8")
             assert "v1.0.5" in body, "Response should include new version"
             assert "update_available" in body, "Response should include update_available status"
+
+
+class TestSystemConfigEndpoint:
+    def setup_method(self):
+        Config._reset_singleton()
+
+    @pytest.mark.asyncio
+    async def test_excludes_queue(self) -> None:
+        config = Config.get_instance()
+        encoder = Encoder()
+        queue = MagicMock()
+        queue.is_paused.return_value = False
+        queue.done.get_total_count = AsyncMock(return_value=0)
+
+        with (
+            patch("app.features.dl_fields.service.DLFields.get_instance") as mock_dlfields,
+            patch("app.features.presets.service.Presets.get_instance") as mock_presets,
+        ):
+            dl_fields = MagicMock()
+            dl_fields.get_all_serialized = AsyncMock(return_value=[])
+            mock_dlfields.return_value = dl_fields
+
+            presets = MagicMock()
+            presets.get_all.return_value = []
+            mock_presets.return_value = presets
+
+            response = await system_config(queue, config, encoder)
+
+        assert response.status == 200
+        body = json.loads(response.body.decode("utf-8"))
+        assert "queue" not in body
+        queue.get.assert_not_called()
 
 
 class TestSystemLimitsEndpoint:

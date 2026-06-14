@@ -240,7 +240,7 @@ class PoolManager:
             await self.queue.done.put(entry)
             self._notify.emit(
                 Events.ITEM_MOVED,
-                data={"to": "history", "preset": entry.info.preset, "item": entry.info},
+                data={"from": "queue", "to": "history", "preset": entry.info.preset, "item": entry.info},
                 title=nTitle,
                 message=nMessage,
             )

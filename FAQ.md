@@ -44,6 +44,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_FLARESOLVERR_CACHE_TTL      | The cache TTL (in seconds) for FlareSolverr solutions               | `600`                 |
 | YTP_BASE_PATH                   | Set this if you are serving YTPTube from sub-folder                 | `/`                   |
 | YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial youtube premiere stream from being downloaded  | `false`               |
+| YTP_QUEUE_DISPLAY_LIMIT         | Max queued downloads returned to the UI. `0` = unlimited            | `100`                 |
 | YTP_LIVE_PREMIERE_BUFFER        | buffer time in minutes to add to video duration                     | `5`                   |
 | YTP_TASKS_HANDLER_TIMER         | The cron expression for the tasks handler timer                     | `15 */1 * * *`        |
 | YTP_TEMP_DISABLED               | Disable temp files handling.                                        | `false`               |
