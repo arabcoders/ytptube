@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "36319472342d6704e4627a6e4bbef7741c8a3c4e",
-    "date": "2026-06-14T15:35:03+00:00",
+    "full_sha": "13424d1bcfb7834a1b2bd8e929b8d2fe1acaac43",
+    "date": "2026-06-14T15:41:03+00:00",
     "commits": [
+      {
+        "sha": "13424d1b",
+        "full_sha": "13424d1bcfb7834a1b2bd8e929b8d2fe1acaac43",
+        "message": "ci: bump node version to 22 for eslint compatibility",
+        "author": "arabcoders",
+        "date": "2026-06-14T15:41:03+00:00"
+      },
       {
         "sha": "36319472",
         "full_sha": "36319472342d6704e4627a6e4bbef7741c8a3c4e",
