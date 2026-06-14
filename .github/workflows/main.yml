@@ -29,7 +29,7 @@ env:
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
   BUN_VERSION: latest
-  NODE_VERSION: 20
+  NODE_VERSION: 22
   PYTHON_VERSION: "3.13"
 
 jobs:
