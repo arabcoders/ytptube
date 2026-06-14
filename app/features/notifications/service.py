@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.features.notifications.models import NotificationModel
 from app.features.notifications.repository import NotificationsRepository
@@ -64,10 +64,10 @@ class Notifications(metaclass=Singleton):
             await self._repo.run_migrations()
 
         EventBus.get_instance().subscribe(Events.STARTED, handle_event, "NotificationsRepository.run_migrations")
-        EventBus.get_instance().subscribe(NotificationEvents.events(), self.emit, f"{__class__.__name__}.emit")
+        EventBus.get_instance().subscribe(NotificationEvents.events(), self.emit, f"{type(self).__name__}.emit")
 
-    async def list(self) -> list[NotificationModel]:
-        return await self._repo.list()
+    async def all(self) -> list[NotificationModel]:
+        return await self._repo.all()
 
     async def list_paginated(self, page: int, per_page: int) -> tuple[list[NotificationModel], int, int, int]:
         return await self._repo.list_paginated(page, per_page)
@@ -92,8 +92,8 @@ class Notifications(metaclass=Singleton):
     async def delete(self, identifier: int | str) -> NotificationModel:
         return await self._repo.delete(identifier)
 
-    async def send(self, ev: Event, wait: bool = True) -> list[dict] | list[Awaitable[dict]]:
-        targets = await self._repo.list()
+    async def send(self, ev: Event, wait: bool = True) -> list[dict | Awaitable[dict]]:
+        targets = await self._repo.all()
         if len(targets) < 1:
             return []
 
@@ -126,7 +126,7 @@ class Notifications(metaclass=Singleton):
         if wait:
             return await asyncio.gather(*tasks)
 
-        return tasks
+        return cast("list[dict | Awaitable[dict]]", tasks)
 
     def emit(self, e: Event, _, **__) -> None:
         if not NotificationEvents.is_valid(e.event):
@@ -271,7 +271,7 @@ class Notifications(metaclass=Singleton):
 
             if not status:
                 msg = "Apprise failed to send notification."
-                raise RuntimeError(msg)  # noqa: TRY301
+                self._raise_apprise_error(msg)
         except Exception as exc:
             LOG.exception(
                 "Failed to send Apprise notification for event '%s'.",
@@ -287,6 +287,10 @@ class Notifications(metaclass=Singleton):
             return {"error": str(exc), "event": ev.event, "id": ev.id, "targets": [t.name for t in targets]}
 
         return {}
+
+    @staticmethod
+    def _raise_apprise_error(msg: str) -> None:
+        raise RuntimeError(msg)
 
     async def _send(self, target: Notification, ev: Event) -> dict:
         try:

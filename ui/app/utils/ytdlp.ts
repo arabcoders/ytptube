@@ -147,9 +147,7 @@ function _match_one(filterPart: string, dct: Record<string, any>): boolean {
       return false;
     }
 
-    let numeric: number | null = null;
-    // Try to convert comparison value to numeric first
-    numeric = Number(processedValue);
+    let numeric: number | null = Number(processedValue);
     if (Number.isNaN(numeric)) {
       numeric =
         parse_filesize(processedValue) ??

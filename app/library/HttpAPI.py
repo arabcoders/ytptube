@@ -1,14 +1,17 @@
 import base64
 import hmac
 import inspect
-from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any, cast
 
 import anyio
 from aiohttp import web
-from aiohttp.web import Request, RequestHandler, Response
+from aiohttp.typedefs import Handler, Middleware
+from aiohttp.web import Request, Response
 from aiohttp.web_log import AccessLogger
+from aiohttp.web_request import BaseRequest
+from aiohttp.web_response import StreamResponse
 
 from app.library.log import get_logger
 from app.library.Services import Services
@@ -24,12 +27,12 @@ LOG = get_logger("http")
 
 
 class HttpAccessLogger(AccessLogger):
-    def log(self, request: Request, response: Response, time: float) -> None:
+    def log(self, request: BaseRequest, response: StreamResponse, time: float) -> None:
         try:
             fmt_info = self._format_line(request, response, time)
 
             values: list[object] = []
-            extra: dict[str, object] = {"elapsed_ms": round(time * 1000.0, 2)}
+            extra: dict[str, Any] = {"elapsed_ms": round(time * 1000.0, 2)}
             for key, value in fmt_info:
                 values.append(value)
 
@@ -37,7 +40,7 @@ class HttpAccessLogger(AccessLogger):
                     extra[key] = value
                 else:
                     parent, child = key
-                    group = extra.get(parent, {})
+                    group: dict[str, Any] = extra.get(parent, {})  # type: ignore[assignment]
                     if not isinstance(group, dict):
                         group = {}
                     group[child] = value
@@ -177,7 +180,7 @@ class HttpAPI:
             registered_options.append(route.path)
 
     @staticmethod
-    def basic_auth(username: str, password: str) -> Awaitable:
+    def basic_auth(username: str, password: str) -> Middleware:
         """
         Middleware to handle basic authentication.
 
@@ -191,7 +194,7 @@ class HttpAPI:
         """
 
         @web.middleware
-        async def auth_handler(request: Request, handler: RequestHandler) -> Response:
+        async def auth_handler(request: Request, handler: Handler) -> StreamResponse:
             # if OPTIONS request, skip auth
             if "OPTIONS" == request.method:
                 return await handler(request)
@@ -204,7 +207,7 @@ class HttpAPI:
                 auth_cookie = request.cookies.get("auth")
                 if auth_cookie is not None:
                     try:
-                        data = decrypt_data(auth_cookie, key=Config.get_instance().secret_key)
+                        data = decrypt_data(auth_cookie, key=cast("bytes", Config.get_instance().secret_key))
                         if data is not None:
                             data = base64.b64encode(data.encode()).decode()
                             auth_header = f"Basic {data}"
@@ -250,7 +253,7 @@ class HttpAPI:
                     },
                 )
 
-            response: Response = await handler(request)
+            response: StreamResponse = await handler(request)
 
             contentType: str | None = response.headers.get("content-type", None)
             if contentType and not contentType.startswith("text/html"):
@@ -261,7 +264,7 @@ class HttpAPI:
                     "auth",
                     encrypt_data(
                         f"{user_name}:{user_password}",
-                        key=Config.get_instance().secret_key,
+                        key=cast("bytes", Config.get_instance().secret_key),
                     ),
                     max_age=60 * 60 * 24 * 7,
                     expires=(datetime.now(UTC) + timedelta(days=7)).strftime("%a, %d %b %Y %H:%M:%S GMT"),
@@ -280,9 +283,9 @@ class HttpAPI:
         return auth_handler
 
     @staticmethod
-    def middle_wares(app: web.Application, base_path: str, download_path: str) -> Awaitable:
+    def middle_wares(app: web.Application, base_path: str, download_path: str) -> Middleware:
         @web.middleware
-        async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+        async def middleware_handler(request: Request, handler: Handler) -> StreamResponse:
             static_path = str(app.router["download_static"].url_for(filename=""))
             if request.path.startswith(static_path):
                 realFile, status = get_file(
@@ -301,12 +304,13 @@ class HttpAPI:
                         },
                     )
 
-            response: Response = await handler(request)
+            response: StreamResponse = await handler(request)
 
             contentType: str = str(response.headers.get("content-type", ""))
             if contentType.startswith("text/html") and getattr(response, "_path", None):
                 rewrite_path: str = base_path.rstrip("/")
-                async with await anyio.open_file(response._path, "rb") as f:
+                response_path = cast("Any", response)._path
+                async with await anyio.open_file(response_path, "rb") as f:
                     content = await f.read()
                     content: str = (
                         content.decode("utf-8")
@@ -339,7 +343,7 @@ class HttpAPI:
 
         return middleware_handler
 
-    async def _handle(self, handler: RequestHandler, request: Request) -> Response:
+    async def _handle(self, handler: Handler, request: Request) -> StreamResponse:
         """
         Call the handler with the request and return the response.
 

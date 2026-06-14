@@ -80,7 +80,7 @@ class UpdateChecker(metaclass=Singleton):
         self._notify.subscribe(
             event=Events.STARTED,
             callback=event_handler,
-            name=f"{__class__.__name__}.{__class__.attach.__name__}",
+            name=f"{UpdateChecker.__name__}.{type(self).attach.__name__}",
         )
 
         self._schedule_check()
@@ -108,7 +108,7 @@ class UpdateChecker(metaclass=Singleton):
         self._job_id = self._scheduler.add(
             timer=timer,
             func=lambda: asyncio.create_task(self.check_for_updates()),
-            id=f"{__class__.__name__}.{self.check_for_updates.__name__}",
+            id=f"{UpdateChecker.__name__}.{self.check_for_updates.__name__}",
         )
 
     async def check_for_updates(self) -> tuple[tuple[str, str | None], tuple[str, str | None]]:

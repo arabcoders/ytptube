@@ -116,8 +116,9 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 safe_backend: str = _safe_url(backend)
                 await cache.aset(key=CACHE_KEY_BING, value=backend, ttl=3600 * 24)
             else:
-                backend = await cache.aget(CACHE_KEY_BING)
-                safe_backend = _safe_url(backend if isinstance(backend, str) else None)
+                cached_backend = await cache.aget(CACHE_KEY_BING)
+                backend = cached_backend if isinstance(cached_backend, str) else ""
+                safe_backend = _safe_url(backend)
 
         if not isinstance(backend, str) or not backend:
             return web.json_response(

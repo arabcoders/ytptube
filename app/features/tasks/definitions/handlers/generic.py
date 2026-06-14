@@ -64,7 +64,7 @@ class GenericTaskHandler(BaseHandler):
             from app.features.tasks.definitions.utils import model_to_schema
 
             repo = TaskDefinitionsRepository.get_instance()
-            models = await repo.list()
+            models = await repo.all()
 
             cls._definitions = [model_to_schema(model) for model in models]
             return cls._definitions
@@ -141,7 +141,8 @@ class GenericTaskHandler(BaseHandler):
         return False
 
     @staticmethod
-    async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:  # noqa: ARG004
+    async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
+        _ = config
         definition: TaskDefinition | None = await GenericTaskHandler._find_definition(task.url)
         if not definition:
             return TaskFailure(message="No generic task definition matched the provided URL.")

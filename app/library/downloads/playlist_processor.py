@@ -121,8 +121,8 @@ async def process_playlist(
 
     max_downloads: int = -1
     ytdlp_opts: dict[str, Any] = item.get_ytdlp_opts().get_all()
-    if ytdlp_opts.get("max_downloads") and isinstance(ytdlp_opts.get("max_downloads"), int):
-        max_downloads: int = ytdlp_opts.get("max_downloads")
+    if isinstance(ytdlp_opts.get("max_downloads"), int):
+        max_downloads = ytdlp_opts["max_downloads"]
 
     results: list[dict[str, str]] = []
     for i, etr in enumerate(entries, start=1):

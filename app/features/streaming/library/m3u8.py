@@ -39,7 +39,7 @@ class M3u8:
         m3u8.append("#EXT-X-MEDIA-SEQUENCE:0")
         m3u8.append("#EXT-X-PLAYLIST-TYPE:VOD")
 
-        segmentSize: float = f"{self.duration:.6f}"
+        segmentSize: str = f"{self.duration:.6f}"
         splits: int = math.ceil(duration / self.duration)
 
         segmentParams: dict = {}

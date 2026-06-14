@@ -101,12 +101,12 @@ class LogWrapper:
             name (str|None): The name of the logging target. Defaults to None.
 
         """
-        if not isinstance(target, logging.Logger | Callable):
+        if not isinstance(target, logging.Logger) and not callable(target):
             msg = "Target must be a logging.Logger instance or a callable."
             raise TypeError(msg)
 
         if name is None:
-            name = target.name if isinstance(target, logging.Logger) else target.__name__
+            name = target.name if isinstance(target, logging.Logger) else getattr(target, "__name__", "callable")
 
         self.targets.append(
             LogTarget(
@@ -134,8 +134,9 @@ class LogWrapper:
             if target.logger:
                 log_kwargs = {**kwargs}
                 log_kwargs.setdefault("stacklevel", 3)
+            if isinstance(target.target, logging.Logger):
                 target.target.log(level, msg, *args, **log_kwargs)
-            else:
+            elif callable(target.target):
                 target.target(level, msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
@@ -179,13 +180,17 @@ def arg_converter(
 
     create_parser = yt_dlp.options.create_parser
 
-    def _default_opts(args: str):
+    def _default_opts(args: str | list[str]):
         patched_parser = create_parser()
+
+        def patched_create_parser():
+            return patched_parser
+
         try:
-            yt_dlp.options.create_parser = lambda: patched_parser
+            yt_dlp.options.__dict__["create_parser"] = patched_create_parser
             return yt_dlp.parse_options(args)
         finally:
-            yt_dlp.options.create_parser = create_parser
+            yt_dlp.options.__dict__["create_parser"] = create_parser
 
     apply_ytdlp_patches()
 
@@ -238,7 +243,7 @@ def arg_converter(
     return diff
 
 
-def extract_ytdlp_logs(logs: list[str], filters: list[str | re.Pattern] = None) -> list[str]:
+def extract_ytdlp_logs(logs: list[str], filters: list[str | re.Pattern[str]] | None = None) -> list[str]:
     """
     Extract yt-dlp log lines matching built-in filters plus any extras.
 
@@ -332,7 +337,7 @@ def get_ytdlp(params: dict | None = None) -> YTDLP:
     return _DATA.YTDLP_INFO_CLS
 
 
-def get_thumbnail(thumbnails: list) -> str | None:
+def get_thumbnail(thumbnails: list) -> dict | None:
     """
     Extract thumbnail URL from a yt-dlp entry.
 
@@ -340,7 +345,7 @@ def get_thumbnail(thumbnails: list) -> str | None:
         thumbnails (list): The list of thumbnail dictionaries from yt-dlp entry.
 
     Returns:
-        str | None: The thumbnail URL if available, otherwise None.
+        dict | None: The best thumbnail dict if available, otherwise None.
 
     """
     if not thumbnails or not isinstance(thumbnails, list):
@@ -381,7 +386,7 @@ def get_extras(entry: dict, kind: str = "video") -> dict:
                 extras[f"playlist_{property}"] = val
 
     if thumbnail := get_thumbnail(entry.get("thumbnails", [])):
-        extras["thumbnail"] = thumbnail.get("url")
+        extras["thumbnail"] = thumbnail.get("url") if isinstance(thumbnail, dict) else thumbnail
     elif thumbnail := entry.get("thumbnail"):
         extras["thumbnail"] = thumbnail
 
@@ -439,7 +444,7 @@ def get_archive_id(url: str) -> dict[str, str | None]:
         }
 
     """
-    idDict: dict[str, None] = {
+    idDict: dict[str, str | None] = {
         "id": None,
         "ie_key": None,
         "archive_id": None,

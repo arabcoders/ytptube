@@ -1,4 +1,5 @@
 import inspect
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Annotated, Any, TypeVar, get_args, get_origin, get_type_hints
 
@@ -117,7 +118,7 @@ class Services(metaclass=Singleton):
 
         return candidates[0]
 
-    def _build_call_args(self, handler: callable, overrides: dict[str, Any]) -> dict[str, Any]:
+    def _build_call_args(self, handler: Callable[..., Any], overrides: dict[str, Any]) -> dict[str, Any]:
         sig: inspect.Signature = inspect.signature(handler)
 
         try:
@@ -169,10 +170,10 @@ class Services(metaclass=Singleton):
 
         return resolved
 
-    async def handle_async(self, handler: callable, **kwargs) -> Any:
+    async def handle_async(self, handler: Callable[..., Any], **kwargs) -> Any:
         resolved: dict[str, Any] = self._build_call_args(handler, kwargs)
         return await handler(**resolved)
 
-    def handle_sync(self, handler: callable, **kwargs) -> Any:
+    def handle_sync(self, handler: Callable[..., Any], **kwargs) -> Any:
         resolved: dict[str, Any] = self._build_call_args(handler, kwargs)
         return handler(**resolved)

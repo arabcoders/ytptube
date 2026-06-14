@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 APP_ROOT = str((Path(__file__).parent / ".." / "..").resolve())
 if APP_ROOT not in sys.path:
@@ -69,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-async def connect_db(db_file: str) -> AsyncConnection:
+async def connect_db(db_file: Path) -> tuple[AsyncConnection, AsyncEngine]:
     """Create async SQLAlchemy connection."""
     engine = create_async_engine(f"sqlite+aiosqlite:///{db_file}")
     conn = await engine.connect()

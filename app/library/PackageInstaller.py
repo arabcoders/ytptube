@@ -17,7 +17,7 @@ def parse_version(v: str) -> tuple[int, ...]:
 
 
 class Packages:
-    def __init__(self, env: str | None, file: str | None, upgrade: bool = False):
+    def __init__(self, env: str | None, file: str | Path | None, upgrade: bool = False):
         from_env: list[str] = env.split() if env else []
         from_file = []
 

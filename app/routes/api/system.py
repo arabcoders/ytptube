@@ -2,6 +2,7 @@ import asyncio
 import os
 import time
 from pathlib import Path
+from typing import Any
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -489,7 +490,7 @@ async def system_limits(queue: DownloadQueue, config: Config, encoder: Encoder) 
 
     for download in [*active_non_live, *queued_non_live]:
         extractor = (download.info.get_extractor() or "unknown").lower()
-        entry = per_extractor.setdefault(
+        entry: dict[str, Any] = per_extractor.setdefault(
             extractor,
             {
                 "name": extractor,

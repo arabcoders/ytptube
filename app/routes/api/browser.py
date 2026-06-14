@@ -35,7 +35,7 @@ async def get_ffprobe(request: Request, config: Config, encoder: Encoder, app: w
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
+    file: str | None = request.match_info.get("file")
     if not file:
         return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
 
@@ -76,7 +76,7 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
+    file: str | None = request.match_info.get("file")
     if not file:
         return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
 
@@ -137,7 +137,7 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
         Response: The response object.
 
     """
-    req_path: str = request.match_info.get("path")
+    req_path: str | None = request.match_info.get("path")
     req_path: str = "/" if not req_path else unquote_plus(req_path)
 
     raw_req: str = (req_path or "").strip()
@@ -461,7 +461,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             else:
-                extra_info: dict[str, Path] = {"new_path": renamed}
+                extra_info: dict[str, Any] = {"new_path": renamed}
                 if sidecar_renamed:
                     extra_info["sidecar_count"] = len(sidecar_renamed)
                 record(path, ok=True, action=action, extra=extra_info)
@@ -591,7 +591,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             else:
-                extra_info: dict[str, Path] = {"new_path": moved}
+                extra_info: dict[str, Any] = {"new_path": moved}
                 if sidecar_moved:
                     extra_info["sidecar_count"] = len(sidecar_moved)
 
@@ -617,7 +617,7 @@ async def prepare_zip_file(request: Request, config: Config, cache: Cache):
     if not json or not isinstance(json, list):
         return web.json_response({"error": "Invalid parameters."}, status=400)
 
-    files: list[str] = []
+    files: list[Path] = []
     for f in json:
         if not isinstance(f, str):
             continue
@@ -627,12 +627,10 @@ async def prepare_zip_file(request: Request, config: Config, cache: Cache):
             continue
         files.append(ref)
 
-        sc: list[dict] = get_file_sidecar(ref)
+        sc: dict[str, list[dict[str, Any]]] = get_file_sidecar(ref)
         if sc:
-            for side in sc:
-                for scf in sc[side]:
-                    if isinstance(scf, dict) and "file" in scf:
-                        files.append(scf["file"])  # noqa: PERF401
+            for value in sc.values():
+                files.extend(scf["file"] for scf in value if isinstance(scf, dict) and "file" in scf)
 
     if not files:
         return web.json_response({"error": "No valid files."}, status=400)

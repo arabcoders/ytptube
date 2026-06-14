@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 import pytest_asyncio
@@ -41,13 +42,13 @@ def patch_get_info(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _json_request(method: str, path: str, payload: object, *, match_info: dict[str, str] | None = None) -> web.Request:
-    request = make_mocked_request(method, path, match_info=match_info or {}, app=SimpleNamespace())
+    mock_request: Any = make_mocked_request(method, path, match_info=match_info or {}, app=SimpleNamespace())
 
     async def _json() -> object:
         return payload
 
-    request.json = _json  # type: ignore[attr-defined]
-    return request
+    mock_request.json = _json
+    return mock_request
 
 
 class _Notify:
@@ -85,7 +86,7 @@ async def test_add_requires_timer_without_handler(repo) -> None:
 
     assert response.status == web.HTTPBadRequest.status_code
     assert b"requires a timer" in response.body
-    assert await repo.list() == []
+    assert await repo.all() == []
 
 
 @pytest.mark.asyncio
@@ -109,7 +110,7 @@ async def test_add_all_or_nothing(repo) -> None:
 
     assert response.status == web.HTTPBadRequest.status_code
     assert b"requires a timer" in response.body
-    assert await repo.list() == []
+    assert await repo.all() == []
 
 
 @pytest.mark.asyncio
@@ -123,7 +124,7 @@ async def test_add_allows_handler_only(repo) -> None:
     response = await router.tasks_add(request, repo, Encoder(), _Notify(), _Handler(matched=True))
 
     assert response.status == web.HTTPOk.status_code
-    items = await repo.list()
+    items = await repo.all()
     assert len(items) == 1
     assert items[0].name == "Handler Only"
 

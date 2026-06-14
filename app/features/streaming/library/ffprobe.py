@@ -10,8 +10,6 @@ import os
 import subprocess  # qa: ignore
 from pathlib import Path
 
-import anyio
-
 from app.features.streaming.types import FFProbeError
 from app.library.log import get_logger
 from app.library.Utils import timed_lru_cache
@@ -39,21 +37,26 @@ class FFStream:
 
     def __repr__(self):
         if "codec_long_name" not in self.__dict__:
-            self.codec_long_name = self.__dict__.get("codec_name", "")
+            self.__dict__["codec_long_name"] = self.__dict__.get("codec_name", "")
+
+        index = self.__dict__.get("index", "?")
+        codec_type = self.__dict__.get("codec_type", "unknown")
+        codec_long_name = self.__dict__.get("codec_long_name", "")
 
         if self.is_video():
-            return f"<Stream: #{self.index} [{self.codec_type}] {self.codec_long_name}, {self.framerate}, ({self.width}x{self.height})>"
+            return f"<Stream: #{index} [{codec_type}] {codec_long_name}, {self.__dict__.get('framerate')}, ({self.__dict__.get('width')}x{self.__dict__.get('height')})>"
 
         if self.is_audio():
             return (
-                f"<Stream: #{self.index} [{self.codec_type}] {self.codec_long_name}, channels: {self.channels} ({self.channel_layout}), "
-                "{sample_rate}Hz> "
+                f"<Stream: #{index} [{codec_type}] {codec_long_name}, "
+                f"channels: {self.__dict__.get('channels')} ({self.__dict__.get('channel_layout')}), "
+                f"{self.__dict__.get('sample_rate')}Hz> "
             )
 
         if self.is_subtitle() or self.is_attachment():
-            return f"<Stream: #{self.index} [{self.codec_type}] {self.codec_long_name}>"
+            return f"<Stream: #{index} [{codec_type}] {codec_long_name}>"
 
-        return f"<Stream: #{self.index} [{self.codec_type}]>"
+        return f"<Stream: #{index} [{codec_type}]>"
 
     def is_audio(self):
         """
@@ -252,14 +255,14 @@ async def ffprobe(file: Path | str) -> FFProbeResult:
         raise OSError(msg)
 
     try:
-        async with await anyio.open_file(os.devnull, "w") as tempf:
-            await asyncio.create_subprocess_exec(
-                "ffprobe",
-                "-h",
-                stdout=tempf,
-                stderr=tempf,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-            )
+        proc = await asyncio.create_subprocess_exec(
+            "ffprobe",
+            "-h",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+        await proc.wait()
     except FileNotFoundError as e:
         msg = "ffprobe not found."
         raise OSError(msg) from e

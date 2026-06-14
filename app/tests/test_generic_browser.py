@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -7,7 +8,7 @@ import pytest
 from app.yt_dlp_plugins.extractor import generic_browser
 
 
-def _make_ie(config: dict[str, str | None] | None = None) -> generic_browser.GenericBrowserIE:
+def _make_ie(config: dict[str, str | None] | None = None) -> Any:
     ie = object.__new__(generic_browser.GenericBrowserIE)
     values = config or {}
     ie._configuration_arg = lambda name, default: [values.get(name)]
@@ -250,6 +251,7 @@ def test_extract_network_formats_playlist_entries_keep_own_urls() -> None:
         {"title": "Title", "webpage_url": "https://example.com/page", "original_url": "https://example.com/page"},
     )
 
+    assert result is not None
     assert result["_type"] == "playlist"
     assert result["entries"][0]["url"] == "https://cdn.example/1.mp3"
     assert result["entries"][0]["webpage_url"] == "https://cdn.example/1.mp3"

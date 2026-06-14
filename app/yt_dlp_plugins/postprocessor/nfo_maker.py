@@ -119,7 +119,8 @@ class NFOMakerPP(PostProcessor):
     def pp_key(cls) -> str:
         return "NFOMaker"
 
-    def run(self, info: dict | None = None) -> tuple[list, dict]:
+    def run(self, information: Any) -> tuple[list, dict[str, Any]]:
+        info = information
         if "fail" == self.mode:
             msg = "Intentionally failing due to mode=fail."
             raise Exception(msg)

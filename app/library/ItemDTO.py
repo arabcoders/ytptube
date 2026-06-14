@@ -93,7 +93,7 @@ class Item:
             bool: True if the item has extras, False otherwise.
 
         """
-        return self.extras and len(self.extras) > 0
+        return bool(self.extras and len(self.extras) > 0)
 
     def add_extras(self, key: str, value: Any) -> None:
         """
@@ -117,7 +117,7 @@ class Item:
             bool: True if the item has command options for yt, False otherwise.
 
         """
-        return self.cli and len(self.cli) > 2
+        return bool(self.cli and len(self.cli) > 2)
 
     @staticmethod
     def _default_preset() -> str:
@@ -161,7 +161,7 @@ class Item:
             Item: The formatted item.
 
         """
-        url: str = item.get("url")
+        url = item.get("url")
 
         if not url or not isinstance(url, str):
             msg = "url param is required."
@@ -173,7 +173,7 @@ class Item:
         if len(url) >= 11 and re.fullmatch(r"[A-Za-z0-9_-]{11}", url):
             url = f"https://www.youtube.com/watch?v={url}"
 
-        data: dict[str, str] = {"url": url}
+        data: dict[str, Any] = {"url": url}
 
         preset: str | None = item.get("preset")
         if preset and isinstance(preset, str) and preset != Item._default_preset():
@@ -185,24 +185,28 @@ class Item:
 
             data["preset"] = preset
 
-        if item.get("folder") and isinstance(item.get("folder"), str):
-            data["folder"] = item.get("folder")
+        folder = item.get("folder")
+        if isinstance(folder, str) and folder:
+            data["folder"] = folder
 
-        if item.get("cookies") and isinstance(item.get("cookies"), str):
-            data["cookies"] = item.get("cookies")
+        cookies = item.get("cookies")
+        if isinstance(cookies, str) and cookies:
+            data["cookies"] = cookies
 
-        if item.get("template") and isinstance(item.get("template"), str):
-            data["template"] = item.get("template")
+        template = item.get("template")
+        if isinstance(template, str) and template:
+            data["template"] = template
 
-        if "auto_start" in item and isinstance(item.get("auto_start"), bool):
-            data["auto_start"] = bool(item.get("auto_start"))
+        if isinstance(item.get("auto_start"), bool):
+            data["auto_start"] = item["auto_start"]
 
         extras: dict | None = item.get("extras")
-        if extras and isinstance(extras, dict) and len(extras) > 0:
+        if isinstance(extras, dict) and len(extras) > 0:
             data["extras"] = extras
 
-        if item.get("requeued") and isinstance(item.get("requeued"), bool):
-            data["requeued"] = item.get("requeued")
+        requeued = item.get("requeued")
+        if isinstance(requeued, bool):
+            data["requeued"] = requeued
 
         cli: str | None = item.get("cli")
         if cli and len(cli) > 2:
@@ -574,8 +578,10 @@ class ItemDTO:
         self.is_archivable = bool(self._archive_file)
         if not self.is_archivable:
             self.is_archived = False
-        else:
+        elif self.archive_id and self._archive_file:
             self.is_archived = len(archive_read(self._archive_file, [self.archive_id])) > 0
+        else:
+            self.is_archived = False
 
     def get_archive_file(self) -> str | None:
         """

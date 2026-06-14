@@ -39,6 +39,14 @@ if TYPE_CHECKING:
 class Download:
     update_task: asyncio.Task | None = None
 
+    @staticmethod
+    def _raise_no_formats(msg: str) -> None:
+        raise ValueError(msg)
+
+    @staticmethod
+    def _raise_interrupted() -> None:
+        raise SystemExit(130)
+
     def __init__(self, info: ItemDTO, info_dict: dict | None = None, logs: list[str] | None = None):
         """
         Initialize download task.
@@ -51,7 +59,7 @@ class Download:
         """
         config: Config = Config.get_instance()
 
-        self.download_dir: str = info.download_dir
+        self.download_dir: str = info.download_dir or ""
         self.temp_dir: str | None = info.temp_dir
         self.template: str | None = info.template
         self.template_chapter: str | None = info.template_chapter
@@ -98,6 +106,16 @@ class Download:
         params: dict[str, Any] = {}
         download_skipped = False
 
+        hook_handlers = self._hook_handlers
+        if hook_handlers is None:
+            msg = "_hook_handlers must be initialized before _download(). Call start() first."
+            raise RuntimeError(msg)
+
+        status_queue = self.status_queue
+        if status_queue is None:
+            msg = "status_queue must be initialized before _download(). Call start() first."
+            raise RuntimeError(msg)
+
         try:
             params = (
                 self.info.get_ytdlp_opts()
@@ -125,9 +143,9 @@ class Download:
 
             params.update(
                 {
-                    "progress_hooks": [self._hook_handlers.progress_hook],
-                    "postprocessor_hooks": [self._hook_handlers.postprocessor_hook],
-                    "post_hooks": [self._hook_handlers.post_hook],
+                    "progress_hooks": [hook_handlers.progress_hook],
+                    "postprocessor_hooks": [hook_handlers.postprocessor_hook],
+                    "post_hooks": [hook_handlers.post_hook],
                 }
             )
 
@@ -137,7 +155,10 @@ class Download:
 
             if self.info.cookies:
                 try:
-                    cookie_file = Path(self._temp_manager.temp_path or self.temp_dir) / f"cookie_{self.info._id}.txt"
+                    cookie_file = (
+                        Path(self._temp_manager.temp_path or self.temp_dir or self.download_dir)
+                        / f"cookie_{self.info._id}.txt"
+                    )
                     self.logger.debug(
                         f"Creating cookie file for '{self.info.title}' at '{cookie_file}'.",
                         extra={
@@ -173,7 +194,9 @@ class Download:
                         f"Info dict for '{self.info.url}' marked for re-extraction, ignoring pre-extracted info."
                     )
                     self.info_dict = None
-                elif self.info_dict.get("extractor_key") in GENERIC_EXTRACTORS and self.info.get_preset().default:
+                elif self.info_dict.get("extractor_key") in GENERIC_EXTRACTORS and (
+                    (preset := self.info.get_preset()) is not None and preset.default
+                ):
                     self.logger.debug(
                         "Removing download archive option for generic extractor on '%s'.",
                         self.info.url,
@@ -267,7 +290,7 @@ class Download:
                 if filtered_logs := extract_ytdlp_logs(self.logs):
                     msg += " " + ", ".join(filtered_logs)
 
-                raise ValueError(msg)  # noqa: TRY301
+                self._raise_no_formats(msg)
 
             self.logger.info(
                 f"Downloading '{self.info.title}' from '{self.info.url}' to '{self.download_dir}'.",
@@ -327,11 +350,11 @@ class Download:
                 def mark_cancelled(*_) -> None:
                     cls._interrupted = True
                     cls.to_screen("[info] Interrupt received, exiting cleanly...")
-                    raise SystemExit(130)  # noqa: TRY301
+                    self._raise_interrupted()
 
                 signal.signal(signal.SIGUSR1, mark_cancelled)
 
-            self.status_queue.put({"id": self.id, "status": "downloading", "download_skipped": download_skipped})
+            status_queue.put({"id": self.id, "status": "downloading", "download_skipped": download_skipped})
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(
@@ -386,7 +409,7 @@ class Download:
                 )
                 ret = cls.download(url_list=[self.info.url])
 
-            self.status_queue.put(
+            status_queue.put(
                 {
                     "id": self.id,
                     "status": "finished" if 0 == ret else "error",
@@ -407,7 +430,7 @@ class Download:
                     }
                 },
             )
-            self.status_queue.put(
+            status_queue.put(
                 {
                     "id": self.id,
                     "status": "skip",
@@ -432,7 +455,7 @@ class Download:
                     }
                 },
             )
-            self.status_queue.put(
+            status_queue.put(
                 {
                     "id": self.id,
                     "status": "error",
@@ -442,7 +465,7 @@ class Download:
                 }
             )
         finally:
-            self.status_queue.put(Terminator())
+            status_queue.put(Terminator())
             if cookie_file and cookie_file.exists():
                 try:
                     cookie_file.unlink()
@@ -499,24 +522,24 @@ class Download:
             Process exit code or None
 
         """
-        self.status_queue = Config.get_manager().Queue()
+        status_queue: Any = Config.get_manager().Queue()
+        self.status_queue = status_queue
 
-        if temp_path := self._temp_manager.create_temp_path():
-            self.info.temp_path = str(temp_path)
+        temp_path = self._temp_manager.create_temp_path()
 
         self._status_tracker = StatusTracker(
             info=self.info,
             download_id=self.id,
             download_dir=self.download_dir,
             temp_path=temp_path,
-            status_queue=self.status_queue,
+            status_queue=status_queue,
             logger=self.logger,
             debug=self.debug,
         )
 
         self._hook_handlers = HookHandlers(
             download_id=self.id,
-            status_queue=self.status_queue,
+            status_queue=status_queue,
             logger=self.logger,
             debug=self.debug,
         )
@@ -529,7 +552,8 @@ class Download:
         EventBus.get_instance().emit(Events.ITEM_UPDATED, data=self.info)
         asyncio.create_task(self._status_tracker.progress_update(), name=f"update-{self.id}")
 
-        ret = await asyncio.get_running_loop().run_in_executor(None, self._process_manager.proc.join)
+        proc = self._process_manager.proc
+        ret = await asyncio.get_running_loop().run_in_executor(None, proc.join) if proc else None
 
         if self._status_tracker.final_update:
             return ret

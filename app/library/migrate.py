@@ -1,4 +1,3 @@
-# flake8: noqa: S608
 """
 This module is a fork of the Caribou library
 (https://pypi.org/project/caribou/) modified to work for our specific use case.
@@ -9,10 +8,11 @@ import datetime
 import glob
 import os.path
 import traceback
-from collections.abc import AsyncIterator, Iterable, Sequence
+from collections.abc import AsyncIterator, Iterable, Mapping, Sequence
 from importlib.machinery import ModuleSpec, SourceFileLoader
 from importlib.util import module_from_spec, spec_from_loader
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -44,7 +44,9 @@ class InvalidNameError(Error):
 
 
 @contextlib.asynccontextmanager
-async def execute(conn: AsyncConnection, sql: str, params: Sequence[object] | None = None) -> AsyncIterator:
+async def execute(
+    conn: AsyncConnection, sql: str, params: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None
+) -> AsyncIterator:
     params = {} if params is None else params
     result = await conn.execute(text(sql), params)
     try:
@@ -126,12 +128,12 @@ class Database:
 
         self.version_table: str = version_table
 
-        self._owns_connection = bool(isinstance(db_url, str))
-        if self._owns_connection:
+        self._owns_connection = isinstance(db_url, str)
+        if isinstance(db_url, str):
             self.conn: AsyncConnection | None = None
             self.db_url: str = db_url
         else:
-            self.conn: AsyncConnection = db_url
+            self.conn = db_url
 
     async def __aenter__(self):
         if self._owns_connection and self.conn is None:
@@ -183,7 +185,8 @@ class Database:
     async def downgrade(self, migrations: list[Migration], target_version: str | int) -> None:
         assert self.conn
         if target_version not in (0, "0"):
-            _assert_migration_exists(migrations, target_version)
+            _assert_migration_exists(migrations, str(target_version))
+        target = str(target_version)
 
         migrations.sort(key=lambda x: x.get_version(), reverse=True)
         database_version: str | None = await self.get_version()
@@ -192,7 +195,7 @@ class Database:
             current_version: str = migration.get_version()
             if database_version is not None and current_version > database_version:
                 continue
-            if current_version <= target_version:
+            if current_version <= target:
                 break
             await migration.downgrade(self.conn)
             next_version: str | int = 0
@@ -210,14 +213,14 @@ class Database:
         assert self.conn
         if not await self.is_version_controlled():
             return None
-        sql: str = f"SELECT version FROM {self.version_table}"
+        sql: str = f"SELECT version FROM {self.version_table}"  # noqa: S608
         async with execute(self.conn, sql) as result:
             rows = result.fetchall()
             return rows[0][0] if rows else "0"
 
     async def update_version(self, version: str) -> None:
         assert self.conn
-        sql: str = f"UPDATE {self.version_table} SET version = :version"
+        sql: str = f"UPDATE {self.version_table} SET version = :version"  # noqa: S608
         async with transaction(self.conn):
             await self.conn.execute(text(sql), {"version": version})
 
@@ -226,7 +229,7 @@ class Database:
         sql: str = f"""CREATE TABLE IF NOT EXISTS {self.version_table} ( version TEXT ) """
         async with transaction(self.conn):
             await self.conn.execute(text(sql))
-            await self.conn.execute(text(f"INSERT INTO {self.version_table} VALUES (:version)"), {"version": "0"})
+            await self.conn.execute(text(f"INSERT INTO {self.version_table} VALUES (:version)"), {"version": "0"})  # noqa: S608
 
     def __repr__(self) -> str:
         return f'Database("{self.db_url if self._owns_connection else "external_connection"}")'
@@ -238,7 +241,7 @@ def _assert_migration_exists(migrations: Iterable[Migration], version: str | int
         raise Error(msg)
 
 
-def load_migrations(directory: str) -> list[Migration]:
+def load_migrations(directory: str | Path) -> list[Migration]:
     """Return the migrations contained in the given directory."""
     directory = str(directory)
     if not os.path.exists(directory) or not os.path.isdir(directory):
@@ -247,7 +250,7 @@ def load_migrations(directory: str) -> list[Migration]:
     return [Migration(f) for f in glob.glob(os.path.join(directory, "*.py"))]
 
 
-async def upgrade(db_url: AsyncConnection | str, migration_dir: str, version: str | None = None) -> None:
+async def upgrade(db_url: AsyncConnection | str, migration_dir: str | Path, version: str | None = None) -> None:
     """
     Upgrade the given database with the migrations contained in the
     migrations directory. If a version is not specified, upgrade
@@ -260,7 +263,7 @@ async def upgrade(db_url: AsyncConnection | str, migration_dir: str, version: st
         await db.upgrade(load_migrations(migration_dir), version)
 
 
-async def downgrade(db_url: str | AsyncConnection, migration_dir: str, version: str) -> None:
+async def downgrade(db_url: str | AsyncConnection, migration_dir: str | Path, version: str) -> None:
     """
     Downgrade the database to the given version with the migrations
     contained in the given migration directory.

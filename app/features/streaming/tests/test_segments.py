@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from aiohttp import web
 
 from app.features.streaming.library.segments import Segments
 from app.tests.helpers import get_test_system_temp_root
@@ -148,18 +149,18 @@ class _FakeProc:
         self.killed = True
 
 
-class _FakeResp:
-    def __init__(self, fail_with: Exception | None = None) -> None:
+class _FakeResp(web.StreamResponse):
+    def __init__(self, fail_with: BaseException | None = None) -> None:
         self.data: bytearray = bytearray()
         self.eof = False
         self._exc = fail_with
 
-    async def write(self, data: bytes) -> None:
+    async def write(self, data: bytes | bytearray | memoryview, *_args: Any, **_kwargs: Any) -> None:
         if self._exc:
             raise self._exc
         self.data.extend(data)
 
-    async def write_eof(self) -> None:
+    async def write_eof(self, *_args: Any, **_kwargs: Any) -> None:
         self.eof = True
 
 

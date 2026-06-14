@@ -1,5 +1,6 @@
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -24,7 +25,7 @@ class TestConditionIgnoreMatching:
         second = SimpleNamespace(id=2, name="Fallback", enabled=True, filter="duration > 0", priority=10)
 
         service = Conditions.get_instance()
-        service._repo = Mock(list=AsyncMock(return_value=[first, second]))
+        service._repo = Mock(all=AsyncMock(return_value=[first, second]))
 
         matched = await service.match(info={"duration": 60}, ignore_conditions=["Primary"])
 
@@ -36,7 +37,7 @@ class TestConditionIgnoreMatching:
         second = SimpleNamespace(id=124, name="Fallback", enabled=True, filter="duration > 0", priority=10)
 
         service = Conditions.get_instance()
-        service._repo = Mock(list=AsyncMock(return_value=[first, second]))
+        service._repo = Mock(all=AsyncMock(return_value=[first, second]))
 
         matched = await service.match(info={"duration": 60}, ignore_conditions=["123"])
 
@@ -48,7 +49,7 @@ class TestConditionIgnoreMatching:
         second = SimpleNamespace(id=124, name="Fallback", enabled=True, filter="duration > 0", priority=10)
 
         service = Conditions.get_instance()
-        service._repo = Mock(list=AsyncMock(return_value=[first, second]))
+        service._repo = Mock(all=AsyncMock(return_value=[first, second]))
 
         matched = await service.match(info={"duration": 60}, ignore_conditions=[123])
 
@@ -59,7 +60,7 @@ class TestConditionIgnoreMatching:
         first = SimpleNamespace(id=1, name="Primary", enabled=True, filter="duration > 0", priority=20)
 
         service = Conditions.get_instance()
-        service._repo = Mock(list=AsyncMock(return_value=[first]))
+        service._repo = Mock(all=AsyncMock(return_value=[first]))
 
         matched = await service.match(info={"duration": 60}, ignore_conditions=["*"])
 
@@ -78,10 +79,11 @@ class TestConditionIgnorePropagation:
             preset="default",
             extras={"ignore_conditions": [" 123 ", "Primary", "", " * "]},
         )
-        item.get_ytdlp_opts = Mock(return_value=Mock(get_all=Mock(return_value={})))
-        item.get_archive_id = Mock(return_value=None)
-        item.get_archive_file = Mock(return_value=None)
-        item.is_archived = Mock(return_value=False)
+        mock_item: Any = item
+        mock_item.get_ytdlp_opts = Mock(return_value=Mock(get_all=Mock(return_value={})))
+        mock_item.get_archive_id = Mock(return_value=None)
+        mock_item.get_archive_file = Mock(return_value=None)
+        mock_item.is_archived = Mock(return_value=False)
 
         matcher = Mock(match=AsyncMock(return_value=None))
         entry = {"id": "video-1", "duration": 60}
@@ -113,10 +115,11 @@ class TestConditionIgnorePropagation:
             preset="default",
             extras={"ignore_conditions": [123, "Primary", True, " * "]},
         )
-        item.get_ytdlp_opts = Mock(return_value=Mock(get_all=Mock(return_value={})))
-        item.get_archive_id = Mock(return_value=None)
-        item.get_archive_file = Mock(return_value=None)
-        item.is_archived = Mock(return_value=False)
+        mock_item: Any = item
+        mock_item.get_ytdlp_opts = Mock(return_value=Mock(get_all=Mock(return_value={})))
+        mock_item.get_archive_id = Mock(return_value=None)
+        mock_item.get_archive_file = Mock(return_value=None)
+        mock_item.is_archived = Mock(return_value=False)
 
         matcher = Mock(match=AsyncMock(return_value=None))
         entry = {"id": "video-1", "duration": 60}
@@ -135,7 +138,7 @@ class TestConditionIgnorePropagation:
 
     @pytest.mark.asyncio
     async def test_playlist_keeps_parent_ignore(self) -> None:
-        captured: dict[str, object] = {}
+        captured: dict[str, Any] = {}
 
         class FakeItem:
             def __init__(self) -> None:
@@ -158,7 +161,8 @@ class TestConditionIgnorePropagation:
         }
 
         with patch("app.library.downloads.playlist_processor.ytdlp_reject", return_value=(True, "")):
-            result = await process_playlist(queue=queue, entry=entry, item=FakeItem())
+            fake: Any = FakeItem()
+            result = await process_playlist(queue=queue, entry=entry, item=fake)
 
         assert result == {"status": "ok"}
         assert captured["url"] == "https://example.com/v/1"
@@ -209,7 +213,8 @@ class TestConditionIgnorePropagation:
         }
 
         with patch("app.library.downloads.playlist_processor.ytdlp_reject", return_value=(True, "")):
-            result = await process_playlist(queue=queue, entry=entry, item=FakeItem())
+            fake: Any = FakeItem()
+            result = await process_playlist(queue=queue, entry=entry, item=fake)
 
         assert result == {"status": "ok"}
         assert queue.add.await_count == 2

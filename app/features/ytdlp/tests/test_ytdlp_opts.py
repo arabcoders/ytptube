@@ -776,7 +776,7 @@ class TestYTDLPCli:
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
         with pytest.raises(ValueError, match="Expected Item instance"):
-            YTDLPCli(item="not an item")  # type: ignore
+            YTDLPCli(item="not an item")
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")

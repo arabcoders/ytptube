@@ -1,5 +1,6 @@
 import importlib
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -219,7 +220,8 @@ class TestYTDLP:
         """Test _delete_downloaded_files skips cleanup when _interrupted is True."""
         with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params={})
-            ytdlp.to_screen = Mock()
+            mock_obj: Any = ytdlp
+            mock_obj.to_screen = Mock()
 
             # Set interrupted flag
             ytdlp._interrupted = True
@@ -229,7 +231,7 @@ class TestYTDLP:
             # Should not call super method
             mock_super_delete.assert_not_called()
             # Should show message
-            ytdlp.to_screen.assert_called_once_with("[info] Cancelled — skipping temp cleanup.")
+            mock_obj.to_screen.assert_called_once_with("[info] Cancelled — skipping temp cleanup.")
             # Should return None
             assert result is None
 

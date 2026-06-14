@@ -286,7 +286,7 @@ async def convert(request: Request) -> Response:
         return web.json_response(data={"error": "args param is required."}, status=web.HTTPBadRequest.status_code)
 
     try:
-        response = {"opts": {}, "output_template": None, "download_path": None}
+        response: dict[str, Any] = {"opts": {}, "output_template": None, "download_path": None}
 
         data = arg_converter(args, dumps=True)
 
@@ -384,6 +384,8 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
 
         if cache.has(key) and not request.query.get("force", False):
             data: Any | None = cache.get(key)
+            if data is None:
+                data = {}
             data["_cached"] = {
                 "status": "hit",
                 "preset": preset,
@@ -393,7 +395,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
                 "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
                 "expires": data.get("_cached", {}).get("expires", time.time() + 300),
             }
-            return web.json_response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
+            return web.json_response(text=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
 
         ytdlp_opts: dict = opts.get_all()
 
@@ -450,7 +452,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
 
         cache.set(key=key, value=data, ttl=300)
 
-        return web.json_response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
+        return web.json_response(text=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
     except Exception as e:
         LOG.exception(
             "Failed to get video info for '%s': %s.",
@@ -486,7 +488,7 @@ async def get_options() -> Response:
     """
     from app.features.ytdlp.ytdlp import ytdlp_options
 
-    return web.json_response(body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code)
+    return web.json_response(text=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code)
 
 
 @route("POST", "api/yt-dlp/archive_id/", "get_archive_ids")
@@ -508,7 +510,11 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
     response = []
 
     for i, url in enumerate(data):
-        dct = {"index": i, "url": url}
+        dct: dict[str, Any] = {"index": i, "url": url}
+        if not isinstance(url, str):
+            dct.update({"id": None, "ie_key": None, "archive_id": None, "error": "URL must be a string."})
+            response.append(dct)
+            continue
         try:
             await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
             dct.update(get_archive_id(url))

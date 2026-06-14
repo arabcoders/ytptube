@@ -9,6 +9,7 @@ from app.features.tasks.definitions.results import HandleTask, TaskFailure, Task
 from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
+from app.library.config import Config
 from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
@@ -160,12 +161,14 @@ class RssGenericHandler(BaseHandler):
         return feed_url, items, real_count
 
     @staticmethod
-    async def extract(task: HandleTask) -> TaskResult | TaskFailure:
+    async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
+        _ = config
         """
         Extract items from an RSS/Atom feed.
 
         Args:
             task (Task): The task containing the feed URL.
+            config (Config | None): Optional handler configuration.
 
         Returns:
             TaskResult | TaskFailure: Extraction result with parsed items or failure information.

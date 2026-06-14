@@ -2,14 +2,16 @@ import asyncio
 import contextlib
 import json
 import os
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import fields
 from datetime import UTC, datetime
 from email.utils import formatdate
+from typing import Any
 from urllib.parse import quote_plus
 
 from aiohttp import web
 from sqlalchemy import text
+from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection
 
@@ -36,13 +38,13 @@ def _memory_db_url(db_path: str) -> str:
     return f"sqlite+aiosqlite:///file:{quoted_name}?mode=memory&cache=shared&uri=true"
 
 
-def _decode_row(row: dict) -> ItemDTO:
-    row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
+def _decode_row(row: Mapping[str, Any] | RowMapping) -> ItemDTO:
+    row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     data = json.loads(row["data"])
     data.pop("_id", None)
     item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
     item._id = row["id"]
-    item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
+    item.datetime = formatdate(row_date.timestamp())
     return item
 
 
@@ -149,8 +151,8 @@ class SqliteStore(metaclass=ThreadSafe):
         return self._sessionmaker
 
     async def fetch_saved(self, type_value: str) -> list[tuple[str, ItemDTO]]:
-        await self.get_connection()
-        result = await self._conn.execute(
+        conn = await self.get_connection()
+        result = await conn.execute(
             text(
                 'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value ORDER BY "created_at" ASC'
             ),
@@ -163,12 +165,12 @@ class SqliteStore(metaclass=ThreadSafe):
     async def exists(self, type_value: str, key: str | None = None, url: str | None = None) -> bool:
         return await self.get(type_value, key=key, url=url) is not None
 
-    async def get(self, type_value: str, key: str | None = None, url: str | None = None) -> bool:
+    async def get(self, type_value: str, key: str | None = None, url: str | None = None) -> ItemDTO | None:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
 
-        await self.get_connection()
+        conn = await self.get_connection()
 
         clauses: list[str] = []
         params: dict[str, str] = {"type_value": type_value}
@@ -186,7 +188,7 @@ class SqliteStore(metaclass=ThreadSafe):
             f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value AND ({where_clause}) LIMIT 1'  # noqa: S608
         )
 
-        result = await self._conn.execute(text(query), params)
+        result = await conn.execute(text(query), params)
         row = result.mappings().first()
 
         if not row:
@@ -195,8 +197,8 @@ class SqliteStore(metaclass=ThreadSafe):
         return _decode_row(row)
 
     async def get_by_id(self, type_value: str, id: str) -> ItemDTO | None:
-        await self.get_connection()
-        result = await self._conn.execute(
+        conn = await self.get_connection()
+        result = await conn.execute(
             text('SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value AND "id" = :id'),
             {"type_value": type_value, "id": id},
         )
@@ -212,24 +214,24 @@ class SqliteStore(metaclass=ThreadSafe):
         if not ids_list:
             return []
 
-        await self.get_connection()
+        conn = await self.get_connection()
         placeholders = ", ".join(f":id_{index}" for index in range(len(ids_list)))
         params: dict[str, str] = {"type_value": type_value}
         params.update({f"id_{index}": item_id for index, item_id in enumerate(ids_list)})
 
-        result = await self._conn.execute(
+        result = await conn.execute(
             text(
                 f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value AND "id" IN ({placeholders})'  # noqa: S608
             ),
             params,
         )
-        rows = result.mappings().all()
+        rows = list(result.mappings().all())
         order = {item_id: index for index, item_id in enumerate(ids_list)}
         rows.sort(key=lambda row: order.get(row["id"], len(ids_list)))
         return [(row["id"], _decode_row(row)) for row in rows]
 
     async def get_many_by_status(self, type_value: str, status_filter: str) -> list[tuple[str, ItemDTO]]:
-        await self.get_connection()
+        conn = await self.get_connection()
         params: dict[str, str] = {"type_value": type_value}
         where_clauses = ['"type" = :type_value']
 
@@ -239,7 +241,7 @@ class SqliteStore(metaclass=ThreadSafe):
             params.update(status_params)
 
         query = f'SELECT "id", "data", "created_at" FROM "history" WHERE {" AND ".join(where_clauses)} ORDER BY "created_at" DESC'  # noqa: S608
-        result = await self._conn.execute(text(query), params)
+        result = await conn.execute(text(query), params)
         rows = result.mappings().all()
         return [(row["id"], _decode_row(row)) for row in rows]
 
@@ -254,7 +256,7 @@ class SqliteStore(metaclass=ThreadSafe):
         if not kwargs:
             return None
 
-        await self.get_connection()
+        conn = await self.get_connection()
 
         clauses: list[str] = []
         params: dict[str, str | float | int] = {"type_value": type_value}
@@ -321,7 +323,7 @@ class SqliteStore(metaclass=ThreadSafe):
         where_clause: str = " OR ".join(f"({clause})" for clause in clauses)
         query: str = f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value AND ({where_clause}) ORDER BY "created_at" ASC LIMIT 1'  # noqa: S608
 
-        result = await self._conn.execute(text(query), params)
+        result = await conn.execute(text(query), params)
         row = result.mappings().first()
 
         if not row:
@@ -332,7 +334,7 @@ class SqliteStore(metaclass=ThreadSafe):
         return item if any(matches_condition(k, v, item.__dict__) for k, v in kwargs.items()) else None
 
     async def count(self, type_value: str, status_filter: str | None = None) -> int:
-        await self.get_connection()
+        conn = await self.get_connection()
         where_clauses: list[str] = ['"type" = :type_value']
         params: dict[str, str] = {"type_value": type_value}
 
@@ -344,7 +346,7 @@ class SqliteStore(metaclass=ThreadSafe):
         where_clause: str = " AND ".join(where_clauses)
         count_query: str = f'SELECT COUNT(*) as count FROM "history" WHERE {where_clause}'  # noqa: S608
 
-        result = await self._conn.execute(text(count_query), params)
+        result = await conn.execute(text(count_query), params)
         row = result.mappings().first()
 
         return row["count"] if row else 0
@@ -357,7 +359,7 @@ class SqliteStore(metaclass=ThreadSafe):
         order: str,
         status_filter: str | None = None,
     ) -> tuple[list[tuple[str, ItemDTO]], int, int, int]:
-        await self.get_connection()
+        conn = await self.get_connection()
         where_clauses: list[str] = ['"type" = :type_value']
         params: dict[str, str | int] = {"type_value": type_value}
 
@@ -369,7 +371,7 @@ class SqliteStore(metaclass=ThreadSafe):
         where_clause: str = " AND ".join(where_clauses)
         count_query: str = f'SELECT COUNT(*) as count FROM "history" WHERE {where_clause}'  # noqa: S608
 
-        result = await self._conn.execute(text(count_query), params)
+        result = await conn.execute(text(count_query), params)
         count_row = result.mappings().first()
 
         total_items = count_row["count"] if count_row else 0
@@ -384,7 +386,7 @@ class SqliteStore(metaclass=ThreadSafe):
 
         query: str = f'SELECT "id", "data", "created_at" FROM "history" WHERE {where_clause} ORDER BY "created_at" {order} LIMIT :limit OFFSET :offset'  # noqa: S608
 
-        result = await self._conn.execute(text(query), params)
+        result = await conn.execute(text(query), params)
         rows = result.mappings().all()
 
         items = [(row["id"], _decode_row(row)) for row in rows]
@@ -396,15 +398,15 @@ class SqliteStore(metaclass=ThreadSafe):
         await self._upsert_now(type_value, item)
 
     async def delete(self, type_value: str, key: str) -> None:
-        await self.get_connection()
-        await self._conn.execute(
+        conn = await self.get_connection()
+        await conn.execute(
             text('DELETE FROM "history" WHERE "type" = :type_value AND "id" = :key'),
             {"type_value": type_value, "key": key},
         )
-        await self._conn.commit()
+        await conn.commit()
 
     async def bulk_delete(self, type_value: str, keys: Iterable[str]) -> int:
-        await self.get_connection()
+        conn = await self.get_connection()
         keys_list: list[str] = list(keys)
         if not keys_list:
             return 0
@@ -412,15 +414,15 @@ class SqliteStore(metaclass=ThreadSafe):
         params: dict[str, str] = {"type_value": type_value}
         params.update({f"key_{i}": key for i, key in enumerate(keys_list)})
 
-        result = await self._conn.execute(
+        result = await conn.execute(
             text(f'DELETE FROM "history" WHERE "type" = :type_value AND "id" IN ({placeholders})'),  # noqa: S608
             params,
         )
-        await self._conn.commit()
+        await conn.commit()
         return result.rowcount if result else 0
 
     async def bulk_delete_by_status(self, type_value: str, status_filter: str) -> int:
-        await self.get_connection()
+        conn = await self.get_connection()
         params: dict[str, str] = {"type_value": type_value}
         where_clauses = ['"type" = :type_value']
 
@@ -429,11 +431,11 @@ class SqliteStore(metaclass=ThreadSafe):
             where_clauses.append(status_clause)
             params.update(status_params)
 
-        result = await self._conn.execute(
+        result = await conn.execute(
             text(f'DELETE FROM "history" WHERE {" AND ".join(where_clauses)}'),  # noqa: S608
             params,
         )
-        await self._conn.commit()
+        await conn.commit()
         return result.rowcount if result else 0
 
     async def enqueue_upsert(self, type_value: str, item: ItemDTO) -> None:
@@ -484,6 +486,9 @@ class SqliteStore(metaclass=ThreadSafe):
 
     async def _enqueue(self, op: _Op) -> None:
         self._ensure_worker()
+        if self._queue is None:
+            msg = "Queue was not initialized by _ensure_worker."
+            raise RuntimeError(msg)
         await self._queue.put(op)
 
     def _ensure_worker(self) -> None:
@@ -492,10 +497,14 @@ class SqliteStore(metaclass=ThreadSafe):
             self._task = asyncio.create_task(self._writer(), name="sqlite-store-writer")
 
     async def _writer(self) -> None:
+        queue = self._queue
+        if queue is None:
+            msg = "Writer started before queue was initialized."
+            raise RuntimeError(msg)
         while True:
-            op = await self._queue.get()
+            op = await queue.get()
             if isinstance(op.op, Terminator):
-                self._queue.task_done()
+                queue.task_done()
                 break
             try:
                 async with self._lock:
@@ -507,34 +516,34 @@ class SqliteStore(metaclass=ThreadSafe):
                     extra={"operation": op.op, "type_value": op.type_value, "exception_type": type(ex).__name__},
                 )
             finally:
-                self._queue.task_done()
+                queue.task_done()
                 await asyncio.sleep(self._flush_interval)
 
     async def _apply(self, op: _Op) -> None:
-        await self.get_connection()
+        conn = await self.get_connection()
         if op.op == "upsert" and op.item:
-            await self._upsert_now_conn(self._conn, op.type_value, op.item)
-            await self._conn.commit()
+            await self._upsert_now_conn(conn, op.type_value, op.item)
+            await conn.commit()
         elif op.op == "delete" and op.key:
-            await self._conn.execute(
+            await conn.execute(
                 text('DELETE FROM "history" WHERE "type" = :type_value AND "id" = :key'),
                 {"type_value": op.type_value, "key": op.key},
             )
-            await self._conn.commit()
+            await conn.commit()
         elif op.op == "bulk_delete" and op.keys:
             placeholders = ",".join(f":key_{i}" for i in range(len(op.keys)))
             params: dict[str, str] = {"type_value": op.type_value}
             params.update({f"key_{i}": key for i, key in enumerate(op.keys)})
-            await self._conn.execute(
+            await conn.execute(
                 text(f'DELETE FROM "history" WHERE "type" = :type_value AND "id" IN ({placeholders})'),  # noqa: S608
                 params,
             )
-            await self._conn.commit()
+            await conn.commit()
 
     async def _upsert_now(self, type_value: str, item: ItemDTO) -> None:
-        await self.get_connection()
-        await self._upsert_now_conn(self._conn, type_value, item)
-        await self._conn.commit()
+        conn = await self.get_connection()
+        await self._upsert_now_conn(conn, type_value, item)
+        await conn.commit()
 
     async def _upsert_now_conn(self, conn, type_value: str, item: ItemDTO) -> None:
         """Helper to upsert using an existing connection."""
@@ -560,7 +569,7 @@ class SqliteStore(metaclass=ThreadSafe):
 
     async def execute_raw(self, query: str, params: dict | tuple | None = None) -> None:
         """Execute raw SQL query (for testing purposes)."""
-        await self.get_connection()
+        conn = await self.get_connection()
         if isinstance(params, tuple):
             # Convert positional params to dict for SQLAlchemy
             # Assuming queries use ? placeholders, we need to count them
@@ -575,16 +584,16 @@ class SqliteStore(metaclass=ThreadSafe):
             # Replace ? with :p0, :p1, etc.
             for i in range(len(params)):
                 query = query.replace("?", f":p{i}", 1)
-            await self._conn.execute(text(query), param_dict)
+            await conn.execute(text(query), param_dict)
         elif isinstance(params, dict):
-            await self._conn.execute(text(query), params)
+            await conn.execute(text(query), params)
         else:
-            await self._conn.execute(text(query))
-        await self._conn.commit()
+            await conn.execute(text(query))
+        await conn.commit()
 
     async def fetch_raw(self, query: str, params: dict | tuple | None = None):
         """Fetch results from raw SQL query (for testing purposes)."""
-        await self.get_connection()
+        conn = await self.get_connection()
         if isinstance(params, tuple):
             # Convert positional params to dict for SQLAlchemy
             placeholders = query.count("?")
@@ -596,11 +605,11 @@ class SqliteStore(metaclass=ThreadSafe):
             param_dict = {f"p{i}": params[i] for i in range(len(params))}
             for i in range(len(params)):
                 query = query.replace("?", f":p{i}", 1)
-            result = await self._conn.execute(text(query), param_dict)
+            result = await conn.execute(text(query), param_dict)
         elif isinstance(params, dict):
-            result = await self._conn.execute(text(query), params)
+            result = await conn.execute(text(query), params)
         else:
-            result = await self._conn.execute(text(query))
+            result = await conn.execute(text(query))
         return result.mappings().all()
 
     async def get_connection(self) -> AsyncConnection:

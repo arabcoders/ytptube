@@ -73,5 +73,5 @@ async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pyte
     )
     assert "apitoken=secret" not in record.getMessage()
     assert "user:pass@" not in record.getMessage()
-    assert record.url == "https://redacted:redacted@example.com/bg.jpg?redacted#redacted"
-    assert record.exception_type == "RuntimeError"
+    assert getattr(record, "url", None) == "https://redacted:redacted@example.com/bg.jpg?redacted#redacted"
+    assert getattr(record, "exception_type", None) == "RuntimeError"

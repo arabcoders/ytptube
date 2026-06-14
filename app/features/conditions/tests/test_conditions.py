@@ -6,6 +6,7 @@ import pytest
 import pytest_asyncio
 from types import SimpleNamespace
 import pytest
+from typing import Any
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 
@@ -39,13 +40,13 @@ async def repo():
 
 
 def _json_request(path: str, payload: object) -> web.Request:
-    request = make_mocked_request("POST", path)
+    mock_request: Any = make_mocked_request("POST", path)
 
     async def _json() -> object:
         return payload
 
-    request.json = _json  # type: ignore[attr-defined]
-    return request
+    mock_request.json = _json
+    return mock_request
 
 
 class TestAllowInternalUrlsScope:
@@ -208,7 +209,7 @@ class TestConditionsRepository:
         await repo.create({"name": "A", "filter": "test", "priority": 1})
         await repo.create({"name": "C", "filter": "test", "priority": 2})
 
-        items = await repo.list()
+        items = await repo.all()
 
         assert items[0].name == "C", "Highest priority should be first"
         assert items[1].name == "A", "Same priority sorted alphabetically"
@@ -240,6 +241,6 @@ class TestConditionsRepository:
 
         assert len(result) == 2, "Should create 2 new conditions"
 
-        all_items = await repo.list()
+        all_items = await repo.all()
         assert len(all_items) == 2, "Should only have new conditions"
         assert all_items[0].name in ["New 1", "New 2"], "Should only have new items"

@@ -386,7 +386,7 @@ class TestItemAddExtras:
     def test_add_extras_none(self):
         """Test adding extras when extras is None."""
         item = Item(url="https://example.com")
-        item.extras = None
+        setattr(item, "extras", None)
 
         item.add_extras("key1", "value1")
 

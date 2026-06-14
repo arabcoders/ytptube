@@ -1,4 +1,6 @@
 import asyncio
+from collections.abc import Callable
+from typing import Any
 
 from aiocron import Cron
 from aiohttp import web
@@ -66,7 +68,7 @@ class Scheduler(metaclass=Singleton):
             if data and data.data:
                 self.add(**data.data)
 
-        EventBus.get_instance().subscribe(Events.SCHEDULE_ADD, event_handler, f"{__class__.__name__}.add")
+        EventBus.get_instance().subscribe(Events.SCHEDULE_ADD, event_handler, f"{type(self).__name__}.add")
 
     def get_all(self) -> dict[str, Cron]:
         """Return the jobs."""
@@ -99,7 +101,7 @@ class Scheduler(metaclass=Singleton):
         return id in self._jobs
 
     def add(
-        self, timer: str, func: callable, args: tuple = (), kwargs: dict | None = None, id: str | None = None
+        self, timer: str, func: Callable[..., Any], args: tuple = (), kwargs: dict | None = None, id: str | None = None
     ) -> str:
         """
         Add a job to the schedule.

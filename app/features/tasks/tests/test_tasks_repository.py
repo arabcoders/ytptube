@@ -260,7 +260,7 @@ class TestTasksRepository:
         await repo.create({"name": "Alice", "url": "https://example.com"})
         await repo.create({"name": "Bob", "url": "https://example.com"})
 
-        items = await repo.list()
+        items = await repo.all()
 
         assert items[0].name == "Alice", "Should be alphabetically first"
         assert items[1].name == "Bob", "Should be alphabetically second"

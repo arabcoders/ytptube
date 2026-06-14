@@ -307,7 +307,8 @@ class TestDownloadFlow:
             postprocessor_hook=Mock(),
             post_hook=Mock(),
         )
-        download.info.get_ytdlp_opts = Mock(
+        download_any: Any = download.info
+        download_any.get_ytdlp_opts = Mock(
             return_value=Mock(
                 add=Mock(
                     return_value=Mock(
@@ -379,7 +380,8 @@ class TestDownloadFlow:
             postprocessor_hook=Mock(),
             post_hook=Mock(),
         )
-        download.info.get_ytdlp_opts = Mock(
+        download_any2: Any = download.info
+        download_any2.get_ytdlp_opts = Mock(
             return_value=Mock(add=Mock(return_value=Mock(get_all=Mock(return_value={}))))
         )
 
@@ -481,7 +483,8 @@ class TestDownloadFlow:
             )
             queue.put(Terminator())
 
-        download._download = fake_download
+        download_mock: Any = download
+        download_mock._download = fake_download
 
         class InlineProcess:
             def __init__(self, target):
@@ -578,7 +581,8 @@ class TestDownloadFlow:
             queue.put({"id": download.id, "status": "finished", "final_name": str(final_file)})
             queue.put(Terminator())
 
-        download._download = fake_download
+        download_mock: Any = download
+        download_mock._download = fake_download
 
         class InlineProcess:
             def __init__(self, target):
@@ -1028,7 +1032,7 @@ class TestStatusTracker:
             "debug": False,
         }
 
-    def test_init_sets_attributes(self, mock_config: dict) -> None:
+    def test_init_sets_attributes(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         assert st.id == "test-id", "Should set download ID"
         assert st.info == mock_config["info"], "Should set info reference"
@@ -1036,7 +1040,7 @@ class TestStatusTracker:
         assert st.final_update is False, "Should initialize final_update as False"
 
     @pytest.mark.asyncio
-    async def test_status_ignores_bad_id(self, mock_config: dict) -> None:
+    async def test_status_ignores_bad_id(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "wrong-id", "status": "downloading"}
 
@@ -1044,14 +1048,14 @@ class TestStatusTracker:
         assert st.info.status != "downloading", "Should not update status for wrong ID"
 
     @pytest.mark.asyncio
-    async def test_status_ignores_short(self, mock_config: dict) -> None:
+    async def test_status_ignores_short(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id"}
 
         await st.process_status_update(status)
 
     @pytest.mark.asyncio
-    async def test_process_status_update_sets_status(self, mock_config: dict) -> None:
+    async def test_process_status_update_sets_status(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id", "status": "downloading", "downloaded_bytes": 1000}
 
@@ -1059,7 +1063,7 @@ class TestStatusTracker:
         assert st.info.status == "downloading", "Should update info status"
 
     @pytest.mark.asyncio
-    async def test_status_sets_skipped(self, mock_config: dict) -> None:
+    async def test_status_sets_skipped(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id", "status": "downloading", "download_skipped": True}
 
@@ -1067,7 +1071,7 @@ class TestStatusTracker:
         assert st.info.download_skipped is True, "Should update download_skipped from status queue"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_sets_tmpfilename(self, mock_config: dict) -> None:
+    async def test_process_status_update_sets_tmpfilename(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id", "status": "downloading", "tmpfilename": "/tmp/file.part"}
 
@@ -1075,7 +1079,7 @@ class TestStatusTracker:
         assert st.tmpfilename == "/tmp/file.part", "Should update tmpfilename"
 
     @pytest.mark.asyncio
-    async def test_status_sets_percent(self, mock_config: dict) -> None:
+    async def test_status_sets_percent(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {
             "id": "test-id",
@@ -1090,7 +1094,7 @@ class TestStatusTracker:
         assert st.info.percent == 50.0, "Should calculate percent correctly"
 
     @pytest.mark.asyncio
-    async def test_status_uses_estimate(self, mock_config: dict) -> None:
+    async def test_status_uses_estimate(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {
             "id": "test-id",
@@ -1104,7 +1108,7 @@ class TestStatusTracker:
         assert st.info.percent == 30.0, "Should calculate percent from estimate"
 
     @pytest.mark.asyncio
-    async def test_status_percent(self, mock_config: dict) -> None:
+    async def test_status_percent(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {
             "id": "test-id",
@@ -1117,7 +1121,7 @@ class TestStatusTracker:
         assert st.info.percent == 50.0, "Should calculate percent correctly with valid total"
 
     @pytest.mark.asyncio
-    async def test_status_sets_speed_eta(self, mock_config: dict) -> None:
+    async def test_status_sets_speed_eta(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id", "status": "downloading", "speed": 1024000, "eta": 60}
 
@@ -1126,7 +1130,7 @@ class TestStatusTracker:
         assert st.info.eta == 60, "Should set eta"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_sets_error(self, mock_config: dict) -> None:
+    async def test_process_status_update_sets_error(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {"id": "test-id", "status": "error", "error": "Download failed"}
 
@@ -1135,7 +1139,7 @@ class TestStatusTracker:
         assert st.info.error == "Download failed", "Should set error message"
 
     @pytest.mark.asyncio
-    async def test_process_status_update_sets_final_update(self, tmp_path: Path, mock_config: dict) -> None:
+    async def test_process_status_update_sets_final_update(self, tmp_path: Path, mock_config: dict[str, Any]) -> None:
         test_file = tmp_path / "test.mp4"
         test_file.write_text("test content")
 
@@ -1148,20 +1152,20 @@ class TestStatusTracker:
         assert st.info.filename == "test.mp4", "Should set relative filename"
 
     @pytest.mark.asyncio
-    async def test_drain_queue_processes_remaining_updates(self, mock_config: dict) -> None:
+    async def test_drain_queue_processes_remaining_updates(self, mock_config: dict[str, Any]) -> None:
         queue = DummyQueue()
         queue.put({"id": "test-id", "status": "downloading", "downloaded_bytes": 100})
         queue.put({"id": "test-id", "status": "downloading", "downloaded_bytes": 200})
         queue.put(Terminator())
 
-        config = {**mock_config, "status_queue": queue}
+        config: dict[str, Any] = {**mock_config, "status_queue": queue}
         st = StatusTracker(**config)
 
         await st.drain_queue(max_iterations=10)
         assert st.info.downloaded_bytes == 200, "Should process all queued updates"
 
     @pytest.mark.asyncio
-    async def test_drain_queue_stops_on_final_update(self, tmp_path: Path, mock_config: dict) -> None:
+    async def test_drain_queue_stops_on_final_update(self, tmp_path: Path, mock_config: dict[str, Any]) -> None:
         test_file = tmp_path / "test.mp4"
         test_file.write_text("test content")
 
@@ -1169,25 +1173,25 @@ class TestStatusTracker:
         queue.put({"id": "test-id", "status": "finished", "final_name": str(test_file)})
         queue.put({"id": "test-id", "status": "downloading", "downloaded_bytes": 999})
 
-        config = {**mock_config, "status_queue": queue, "download_dir": str(tmp_path)}
+        config: dict[str, Any] = {**mock_config, "status_queue": queue, "download_dir": str(tmp_path)}
         st = StatusTracker(**config)
 
         await st.drain_queue(max_iterations=10)
         assert st.final_update is True, "Should stop draining after final update"
 
     @pytest.mark.asyncio
-    async def test_drain_queue_skips_invalid(self, mock_config: dict) -> None:
+    async def test_drain_queue_skips_invalid(self, mock_config: dict[str, Any]) -> None:
         queue = DummyQueue()
         queue.put({"id": "test-id", "status": "downloading"})
         queue.put(None)
 
-        config = {**mock_config, "status_queue": queue}
+        config: dict[str, Any] = {**mock_config, "status_queue": queue}
         st = StatusTracker(**config)
 
         await st.drain_queue(max_iterations=5)
         assert st.info.status == "downloading", "valid updates should still be processed"
 
-    def test_cancel_update_task(self, mock_config: dict) -> None:
+    def test_cancel_update_task(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         st.update_task = Mock()
         st.update_task.done = Mock(return_value=False)
@@ -1196,15 +1200,15 @@ class TestStatusTracker:
         st.cancel_update_task()
         st.update_task.cancel.assert_called_once()
 
-    def test_cancel_update_task_noop(self, mock_config: dict) -> None:
+    def test_cancel_update_task_noop(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
 
         st.cancel_update_task()
         assert st.update_task is None, "missing tasks should be ignored"
 
-    def test_put_terminator_adds_to_queue(self, mock_config: dict) -> None:
+    def test_put_terminator_adds_to_queue(self, mock_config: dict[str, Any]) -> None:
         queue = DummyQueue()
-        config = {**mock_config, "status_queue": queue}
+        config: dict[str, Any] = {**mock_config, "status_queue": queue}
         st = StatusTracker(**config)
 
         st.put_terminator()
@@ -1212,7 +1216,7 @@ class TestStatusTracker:
         assert isinstance(queue.items[0], Terminator), "Should add Terminator instance"
 
     @pytest.mark.asyncio
-    async def test_progress_emits_item_progress(self, mock_config: dict) -> None:
+    async def test_progress_emits_item_progress(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         st.info.status = "downloading"
         calls: list = []
@@ -1233,7 +1237,7 @@ class TestStatusTracker:
         assert "options" not in payload
 
     @pytest.mark.asyncio
-    async def test_status_change_emits_item_updated(self, mock_config: dict) -> None:
+    async def test_status_change_emits_item_updated(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         st.info.status = "started"
         calls: list = []
@@ -1249,7 +1253,7 @@ class TestStatusTracker:
         assert updated_calls[0][1]["data"] is st.info
 
     @pytest.mark.asyncio
-    async def test_progress_throttled(self, mock_config: dict) -> None:
+    async def test_progress_throttled(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         st.info.status = "downloading"
         st._progress_interval = 0.5
@@ -1272,7 +1276,7 @@ class TestStatusTracker:
         assert st._pending_progress is True
 
     @pytest.mark.asyncio
-    async def test_flush_on_status_change(self, mock_config: dict) -> None:
+    async def test_flush_on_status_change(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         st.info.status = "downloading"
         st._progress_interval = 10.0
@@ -1345,23 +1349,29 @@ class TestQueueManager:
             auto_start=True,
         )
 
+    @staticmethod
+    def _any_video_item() -> Any:
+        return TestQueueManager._video_item()
+
     def test_live_queue_caps_visible_items(self) -> None:
         queue_manager = object.__new__(DownloadQueue)
-        items = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
+        items: dict[str, Any] = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
         queue_manager.queue = self.LiveStore(items)
         queue_manager.pool = Mock()
         queue_manager.pool.get_active_downloads.return_value = {}
 
         snapshot = DownloadQueue.live_queue(queue_manager, limit=2)
 
-        assert list(snapshot["queue"].keys()) == ["id0", "id1"]
+        queue_view = snapshot["queue"]
+        assert isinstance(queue_view, dict)
+        assert list(queue_view.keys()) == ["id0", "id1"]
         assert snapshot["queue_count"] == 5
         assert snapshot["queue_loaded"] == 2
         assert snapshot["queue_limit"] == 2
 
     def test_live_queue_keeps_active(self) -> None:
         queue_manager = object.__new__(DownloadQueue)
-        items = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
+        items: dict[str, Any] = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
         queue_manager.queue = self.LiveStore(items)
         queue_manager.pool = Mock()
         queue_manager.pool.get_active_downloads.return_value = {
@@ -1371,7 +1381,9 @@ class TestQueueManager:
 
         snapshot = DownloadQueue.live_queue(queue_manager, limit=1)
 
-        assert list(snapshot["queue"].keys()) == ["id3", "id4"]
+        queue_view = snapshot["queue"]
+        assert isinstance(queue_view, dict)
+        assert list(queue_view.keys()) == ["id3", "id4"]
         assert snapshot["queue_count"] == 5
         assert snapshot["queue_loaded"] == 2
         assert snapshot["queue_limit"] == 1
@@ -1388,7 +1400,7 @@ class TestQueueManager:
 
         result = await add_video(
             queue=self._video_queue(),
-            item=self._video_item(),
+            item=self._any_video_item(),
             entry={
                 "id": "live-id",
                 "title": "Live stream",
@@ -1420,7 +1432,7 @@ class TestQueueManager:
             "formats": [{"format_id": "18"}],
         }
 
-        result = await add_video(queue=self._video_queue(), item=self._video_item(), entry=entry)
+        result = await add_video(queue=self._video_queue(), item=self._any_video_item(), entry=entry)
 
         assert result == {"status": "ok"}
         assert seen == [entry]

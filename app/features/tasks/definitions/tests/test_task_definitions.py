@@ -69,7 +69,7 @@ class TestTaskDefinitionsRepository:
         await repo.create(_sample_definition("Alpha", priority=2))
         await repo.create(_sample_definition("Beta", priority=1))
 
-        items = await repo.list()
+        items = await repo.all()
         assert len(items) == 2, "Should return two task definitions"
         assert [item.name for item in items] == ["Beta", "Alpha"], "Should sort by priority then name"
 

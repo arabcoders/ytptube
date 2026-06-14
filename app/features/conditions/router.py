@@ -131,6 +131,12 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
             status=web.HTTPInternalServerError.status_code,
         )
 
+    if not isinstance(data, dict):
+        return web.json_response(
+            data={"error": "Failed to extract video info."},
+            status=web.HTTPInternalServerError.status_code,
+        )
+
     try:
         from app.features.ytdlp.mini_filter import match_str
 

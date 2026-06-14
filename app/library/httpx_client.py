@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import importlib.util
 import threading
 from dataclasses import dataclass
 from typing import Any, Literal, cast, overload
@@ -98,12 +99,7 @@ def _normalize_proxy(proxy: str | dict[str, str] | None) -> str | None:
 
 @functools.lru_cache(maxsize=1)
 def _curl_available() -> bool:
-    try:
-        import httpx_curl_cffi  # noqa: F401
-
-        return True
-    except Exception:
-        return False
+    return importlib.util.find_spec("httpx_curl_cffi") is not None
 
 
 def resolve_curl_transport(use_curl: bool = True) -> bool:
@@ -121,7 +117,7 @@ def _build_async_curl_transport(
     from httpx_curl_cffi import AsyncCurlTransport
 
     return AsyncCurlTransport(
-        impersonate=curl_impersonate,
+        impersonate=cast("Any", curl_impersonate),
         default_headers=curl_default_headers,
     )
 
@@ -308,10 +304,7 @@ def get_async_client(
             curl_default_headers=curl_default_headers,
         )
         client = httpx.AsyncClient(
-            transport=cast(
-                "httpx.AsyncBaseTransport",
-                _get_transport(enable_cf, is_async=True, transport=transport),
-            ),
+            transport=_get_transport(enable_cf, is_async=True, transport=transport),
             proxy=cast("Any", proxy),
         )
         Globals.SHARED_ASYNC_CLIENTS[key] = client
@@ -330,10 +323,7 @@ def get_sync_client(
             return Globals.SHARED_SYNC_CLIENTS[key]
 
         client = httpx.Client(
-            transport=cast(
-                "httpx.BaseTransport",
-                _get_transport(enable_cf, is_async=False, transport=None),
-            ),
+            transport=_get_transport(enable_cf, is_async=False, transport=None),
             proxy=cast("Any", proxy),
         )
         Globals.SHARED_SYNC_CLIENTS[key] = client

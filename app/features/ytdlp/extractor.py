@@ -120,7 +120,7 @@ class ExtractorPool(metaclass=Singleton):
     def attach(self, app: web.Application) -> None:
         """Attach the extractor pool to the application (no-op for now)."""
         app.on_shutdown.append(self.shutdown)
-        Services.get_instance().add(__class__.__name__, self)
+        Services.get_instance().add(type(self).__name__, self)
 
     def _ensure_initialized(self, config: ExtractorConfig) -> None:
         """

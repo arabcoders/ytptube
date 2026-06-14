@@ -4,6 +4,7 @@ import httpx
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
+from app.library.config import Config
 from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
@@ -177,7 +178,8 @@ class TverHandler(BaseHandler):
         return feed_url, items, has_items
 
     @staticmethod
-    async def extract(task: HandleTask) -> TaskResult | TaskFailure:
+    async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
+        _ = config
         series_id: str | None = TverHandler.parse(task.url)
         if not series_id:
             return TaskFailure(message="Unrecognized Tver series URL.")
@@ -208,10 +210,11 @@ class TverHandler(BaseHandler):
             if not (url := entry.get("url")):
                 continue
 
-            archive_id: str = entry.get("archive_id")
-            task_items.append(
-                TaskItem(url=url, title=entry.get("title"), archive_id=archive_id, metadata=entry.get("metadata", {}))
-            )
+            archive_id: str | None = entry.get("archive_id")
+            metadata = entry.get("metadata", {})
+            if not isinstance(metadata, dict):
+                metadata = {}
+            task_items.append(TaskItem(url=url, title=entry.get("title"), archive_id=archive_id, metadata=metadata))
 
         return TaskResult(items=task_items, metadata={"feed_url": feed_url, "has_entries": has_items})
 

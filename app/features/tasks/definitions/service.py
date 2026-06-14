@@ -8,6 +8,7 @@ import random
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+from app.features.tasks.definitions.handlers._base_handler import BaseHandler
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.models import TaskModel
 from app.features.ytdlp.utils import archive_read
@@ -27,7 +28,7 @@ LOG = get_logger()
 
 class TaskHandle:
     def __init__(self, scheduler: Scheduler, tasks: TasksRepository, config: Config) -> None:
-        self._handlers: list[type] = []
+        self._handlers: list[type[BaseHandler]] = []
         "The available handlers."
         self._repo: TasksRepository = tasks
         "The tasks manager."
@@ -35,7 +36,7 @@ class TaskHandle:
         "The scheduler."
         self._config: Config = config
         "The configuration."
-        self._task_name: str = f"{__class__.__name__}._dispatcher"
+        self._task_name: str = f"{TaskHandle.__name__}._dispatcher"
         "The task name for the scheduler."
         self._queued: dict[str, set[str]] = {}
         "Queued archive IDs per handler."
@@ -45,11 +46,11 @@ class TaskHandle:
         EventBus.get_instance().subscribe(
             Events.ITEM_ERROR,
             self._handle_item_error,
-            f"{__class__.__name__}.item_error",
+            f"{TaskHandle.__name__}.item_error",
         )
 
     def load(self) -> None:
-        self._handlers: list[type] = self._discover()
+        self._handlers: list[type[BaseHandler]] = self._discover()
 
         timer: str = self._config.tasks_handler_timer
         try:
@@ -72,16 +73,16 @@ class TaskHandle:
         self._scheduler.add(
             timer=timer,
             func=lambda: asyncio.create_task(self._dispatcher(), name="task-handler-dispatcher"),
-            id=f"{__class__.__name__}._dispatcher",
+            id=f"{TaskHandle.__name__}._dispatcher",
         )
 
     async def _dispatcher(self):
         s: dict[str, list[str]] = {"h": [], "d": [], "u": [], "f": []}
 
-        handler_groups: dict[str, list[tuple[HandleTask, type]]] = {}
-        dispatches: list[tuple[HandleTask, type, asyncio.Task[TaskResult | TaskFailure | None]]] = []
+        handler_groups: dict[str, list[tuple[HandleTask, type[BaseHandler]]]] = {}
+        dispatches: list[tuple[HandleTask, type[BaseHandler], asyncio.Task[TaskResult | TaskFailure | None]]] = []
 
-        tasks: list[TaskModel] = await self._repo.list()
+        tasks: list[TaskModel] = await self._repo.all()
 
         for task_model in tasks:
             task: HandleTask = HandleTask.model_validate(task_model)
@@ -100,7 +101,7 @@ class TaskHandle:
                 continue
 
             try:
-                handler: type | None = await self._find_handler(task)
+                handler: type[BaseHandler] | None = await self._find_handler(task)
                 if handler is None:
                     s["u"].append(task.name)
                     continue
@@ -181,7 +182,9 @@ class TaskHandle:
                 },
             )
 
-    async def _dispatch(self, task: HandleTask, handler: type, delay: float) -> TaskResult | TaskFailure | None:
+    async def _dispatch(
+        self, task: HandleTask, handler: type[BaseHandler], delay: float
+    ) -> TaskResult | TaskFailure | None:
         """
         Dispatch a task after a random delay to avoid rate limiting.
 
@@ -215,7 +218,7 @@ class TaskHandle:
                 exc_info=(type(exc), exc, exc.__traceback__),
             )
 
-    async def _find_handler(self, task: HandleTask) -> type | None:
+    async def _find_handler(self, task: HandleTask) -> type[BaseHandler] | None:
         for cls in self._handlers:
             try:
                 if await Services.get_instance().handle_async(handler=cls.can_handle, task=task):
@@ -239,9 +242,10 @@ class TaskHandle:
     async def dispatch(
         self,
         task: HandleTask,
-        handler: type | None = None,
-        **kwargs,  # noqa: ARG002
+        handler: type[BaseHandler] | None = None,
+        **kwargs,
     ) -> TaskResult | TaskFailure | None:
+        _ = kwargs
         """
         Dispatch a task to the appropriate handler.
 
@@ -582,11 +586,11 @@ class TaskHandle:
 
         return TaskResult(items=list(extraction.items), metadata=combined_metadata)
 
-    def _discover(self) -> list[type]:
+    def _discover(self) -> list[type[BaseHandler]]:
         """Discover all available task handlers."""
         import app.features.tasks.definitions.handlers as handlers_pkg
 
-        handlers: list[type] = []
+        handlers: list[type[BaseHandler]] = []
 
         for _, module_name, _ in pkgutil.iter_modules(handlers_pkg.__path__):
             if module_name.startswith("_"):

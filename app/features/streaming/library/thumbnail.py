@@ -24,6 +24,8 @@ THUMBNAIL_MISS_TTL = 3600.0
 
 _LOCK = asyncio.Lock()
 _IN_PROCESS: dict[str, asyncio.Task[Path | None]] = {}
+
+
 _SEM: asyncio.Semaphore | None = None
 _SEM_LIMIT: int | None = None
 

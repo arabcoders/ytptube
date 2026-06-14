@@ -11,20 +11,39 @@ from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import Callable
+    from contextlib import AbstractAsyncContextManager
 
     from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
 
+    SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
 LOG = get_logger()
 
 
+def _model_from_payload(payload: dict[str, Any]) -> NotificationModel:
+    model = NotificationModel()
+    for key, value in payload.items():
+        if not hasattr(model, key):
+            msg = f"'{key}' is an invalid keyword argument for NotificationModel"
+            raise TypeError(msg)
+        setattr(model, key, value)
+    return model
+
+
+def _coerce_model(payload: NotificationModel | dict[str, Any]) -> NotificationModel:
+    if isinstance(payload, NotificationModel):
+        return payload
+    return _model_from_payload(payload)
+
+
 class NotificationsRepository(metaclass=Singleton):
-    def __init__(self, session: AsyncGenerator[AsyncSession] | None = None) -> None:
+    def __init__(self, session: SessionFactory | None = None) -> None:
         self._migrated = False
-        self.session: AsyncGenerator[AsyncSession] = session or get_session
+        self.session: SessionFactory = session or get_session
 
     async def run_migrations(self) -> None:
         if self._migrated:
@@ -37,7 +56,7 @@ class NotificationsRepository(metaclass=Singleton):
     def get_instance() -> NotificationsRepository:
         return NotificationsRepository()
 
-    async def list(self) -> list[NotificationModel]:
+    async def all(self) -> list[NotificationModel]:
         async with self.session() as session:
             result: Result[tuple[NotificationModel]] = await session.execute(
                 select(NotificationModel).order_by(NotificationModel.name.asc())
@@ -92,11 +111,11 @@ class NotificationsRepository(metaclass=Singleton):
             result: Result[tuple[NotificationModel]] = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
-    async def create(self, payload: NotificationModel | dict) -> NotificationModel:
+    async def create(self, payload: NotificationModel | dict[str, Any]) -> NotificationModel:
         async with self.session() as session:
-            model: NotificationModel = NotificationModel(**payload) if isinstance(payload, dict) else payload
+            model = _coerce_model(payload)
             if model.id is not None:
-                model.id = None
+                model.id = None  # ty: ignore
 
             if await self.get_by_name(name=model.name) is not None:
                 msg: str = f"Notification target with name '{model.name}' already exists."

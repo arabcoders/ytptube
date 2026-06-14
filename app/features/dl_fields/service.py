@@ -33,10 +33,10 @@ class DLFields(metaclass=Singleton):
         EventBus.get_instance().subscribe(Events.STARTED, handle_event, "DLFieldsRepository.run_migrations")
 
     async def get_all(self) -> list[DLFieldModel]:
-        return await self._repo.list()
+        return await self._repo.all()
 
     async def get_all_serialized(self) -> list[dict[str, Any]]:
-        items = await self._repo.list()
+        items = await self._repo.all()
         return [DLField.model_validate(item).model_dump() for item in items]
 
     async def save(self, item: DLField | dict) -> DLFieldModel:

@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -91,7 +92,7 @@ class TestAgSet:
 
     def test_ag_set_error_on_non_dict_final(self):
         """Test error when final target is not a dict."""
-        data = "not_a_dict"
+        data: Any = "not_a_dict"
         with pytest.raises(RuntimeError, match="Cannot set value at path 'key'"):
             ag_set(data, "key", "value")
 

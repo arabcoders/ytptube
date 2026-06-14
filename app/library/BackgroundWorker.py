@@ -29,7 +29,7 @@ class BackgroundWorker(metaclass=Singleton):
         "The queue to hold the tasks."
         self.running = True
         "Whether the background worker is running or not."
-        self.thread: threading.Thread = None
+        self.thread: threading.Thread | None = None
         "The thread that runs the background worker."
 
     @staticmethod
@@ -49,7 +49,8 @@ class BackgroundWorker(metaclass=Singleton):
         try:
             LOG.debug("Stopping background worker thread.")
             self.queue.put((CloseThread, (), {}))
-            self.thread.join(timeout=5)
+            if self.thread:
+                self.thread.join(timeout=5)
             LOG.debug("Background worker thread has been shut down.")
         except Exception as e:
             LOG.exception(

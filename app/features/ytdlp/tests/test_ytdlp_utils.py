@@ -46,7 +46,8 @@ class TestLogWrapper:
     def test_add_target_type_validation(self) -> None:
         lw = LogWrapper()
         with pytest.raises(TypeError, match=r"Target must be a logging\.Logger instance or a callable"):
-            lw.add_target(123)  # type: ignore[arg-type]
+            bad: Any = 123
+            lw.add_target(bad)
 
     def test_add_target_names(self) -> None:
         lw = LogWrapper()
@@ -128,7 +129,7 @@ class TestExtractYtdlpLogs:
     def test_extract_ytdlp_logs_with_filters(self):
         """Test log extraction with filters."""
         logs = ["INFO: Downloading", "ERROR: Failed", "WARNING: Deprecated"]
-        filters = [re.compile(r"ERROR")]
+        filters: list[str | re.Pattern[str]] = [re.compile(r"ERROR")]
         result = extract_ytdlp_logs(logs, filters)
         assert result == ["ERROR: Failed"]
 
@@ -312,9 +313,12 @@ class TestGetThumbnail:
     def test_non_list(self):
         """Test that None is returned for non-list input."""
 
-        assert get_thumbnail(None) is None
-        assert get_thumbnail("not a list") is None
-        assert get_thumbnail({"not": "list"}) is None
+        bad_none: Any = None
+        bad_str: Any = "not a list"
+        bad_dict: Any = {"not": "list"}
+        assert get_thumbnail(bad_none) is None
+        assert get_thumbnail(bad_str) is None
+        assert get_thumbnail(bad_dict) is None
 
     def test_thumbnail_preference(self):
         """Test that the thumbnail with highest preference is returned."""
@@ -349,6 +353,7 @@ class TestGetThumbnail:
         ]
 
         result = get_thumbnail(thumbnails)
+        assert result is not None
         assert result["url"] == "with_pref.jpg"
 
     def test_all_equal(self):
@@ -365,12 +370,15 @@ class TestGetThumbnail:
 class TestGetExtras:
     def test_none(self):
         """Test that empty dict is returned for None input."""
-        assert get_extras(None) == {}
+        bad: Any = None
+        assert get_extras(bad) == {}
 
     def test_non_dict(self):
         """Test that empty dict is returned for non-dict input."""
-        assert get_extras("not a dict") == {}
-        assert get_extras([]) == {}
+        bad_str: Any = "not a dict"
+        bad_list: Any = []
+        assert get_extras(bad_str) == {}
+        assert get_extras(bad_list) == {}
 
     def test_extracts_video_information(self):
         """Test extracting information from a video entry."""

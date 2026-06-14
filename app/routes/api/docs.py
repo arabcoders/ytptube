@@ -95,7 +95,7 @@ async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
 
         cache.set(cache_key, dct, ttl=3600)
 
-        return web.Response(**dct)
+        return web.Response(body=dct["body"], headers=dct["headers"])
     except Exception:
         LOG.exception(
             "Failed to request doc '%s' from '%s'.",

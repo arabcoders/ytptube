@@ -4,7 +4,7 @@ import time
 import uuid
 from numbers import Number
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yt_dlp.utils
 
@@ -67,7 +67,7 @@ async def add_item(
     already=None,
     logs: list | None = None,
     yt_params: dict | None = None,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """
     Route an entry to the appropriate processor based on type.
 
@@ -102,7 +102,7 @@ async def add_item(
 
 async def add(
     queue: "DownloadQueue", item: "Item", already: set | None = None, entry: dict | None = None
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """
     Add an item to the download queue.
 
@@ -204,7 +204,7 @@ async def add(
                 )
 
                 if archive_file := dlInfo.info.get_ytdlp_opts().get_all().get("download_archive"):
-                    dlInfo.info.msg += f" Found in archive '{archive_file}'."
+                    dlInfo.info.msg = (dlInfo.info.msg or "") + f" Found in archive '{archive_file}'."
 
                 await queue.done.put(dlInfo)
 
@@ -306,9 +306,12 @@ async def add(
             new_archive_id: str | None = None
 
             if entry.get("extractor_key") and entry.get("id"):
-                new_archive_id: str = f"{entry.get('extractor_key').lower()} {entry.get('id')}"
-                if new_archive_id != archive_id:
-                    extra_ids.append(new_archive_id)
+                _extractor_key = entry.get("extractor_key")
+                _entry_id = entry.get("id")
+                if isinstance(_extractor_key, str) and _entry_id is not None:
+                    new_archive_id = f"{_extractor_key.lower()} {_entry_id!s}"
+                    if new_archive_id != archive_id:
+                        extra_ids.append(new_archive_id)
 
             if len(extra_ids) > 0:
                 archive_ids: list[str] = archive_read(_archive_file, extra_ids)
@@ -336,7 +339,7 @@ async def add(
                             )
                         )
 
-                        dlInfo.info.msg += f" Found in archive '{_archive_file}'."
+                        dlInfo.info.msg = (dlInfo.info.msg or "") + f" Found in archive '{_archive_file}'."
                         await queue.done.put(dlInfo)
 
                         queue._notify.emit(
@@ -374,7 +377,7 @@ async def add(
 
             if condition.extras.get("ignore_download", False):
                 extra_msg: str = ""
-                if _archive_file and not condition.extras.get("no_archive", False):
+                if _archive_file and not condition.extras.get("no_archive", False) and archive_id:
                     archive_add(_archive_file, [archive_id])
                     extra_msg = f" and added to archive file '{_archive_file}'"
 
@@ -385,7 +388,7 @@ async def add(
                 if not store_type:
                     dlInfo = Download(
                         info=ItemDTO(
-                            id=entry.get("id"),
+                            id=str(entry.get("id") or item.url),
                             title=_name,
                             url=item.url,
                             preset=item.preset,
@@ -401,6 +404,9 @@ async def add(
 
                 LOG.info(log_message)
                 queue._notify.emit(Events.LOG_INFO, data={}, title="Ignored Download", message=log_message)
+                if dlInfo is None:
+                    msg = "Download info is not available."
+                    raise RuntimeError(msg)
                 queue._notify.emit(
                     Events.ITEM_MOVED,
                     data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},

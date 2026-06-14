@@ -8,6 +8,7 @@ from app.features.tasks.definitions.results import TaskFailure, TaskResult
 from app.features.tasks.definitions.schemas import (
     Definition,
     EngineConfig,
+    Parse,
     RequestConfig,
     ResponseConfig,
     TaskDefinition,
@@ -30,10 +31,12 @@ def test_build_def_payload():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "link": {"type": "css", "expression": ".article a.link::attr(href)"},
-                "title": {"type": "css", "expression": ".article .title", "attribute": "text"},
-            },
+            parse=Parse.model_validate(
+                {
+                    "link": {"type": "css", "expression": ".article a.link::attr(href)"},
+                    "title": {"type": "css", "expression": ".article .title", "attribute": "text"},
+                }
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(),
@@ -54,15 +57,17 @@ def test_build_def_container():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "items": {
-                    "selector": ".cards .card",
-                    "fields": {
-                        "link": {"type": "css", "expression": ".card-header a", "attribute": "href"},
-                        "title": {"type": "css", "expression": ".card-header a", "attribute": "text"},
-                    },
+            parse=Parse.model_validate(
+                {
+                    "items": {
+                        "selector": ".cards .card",
+                        "fields": {
+                            "link": {"type": "css", "expression": ".card-header a", "attribute": "href"},
+                            "title": {"type": "css", "expression": ".card-header a", "attribute": "text"},
+                        },
+                    }
                 }
-            },
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(),
@@ -82,16 +87,18 @@ def test_build_def_json():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "items": {
-                    "type": "jsonpath",
-                    "selector": "items",
-                    "fields": {
-                        "link": {"type": "jsonpath", "expression": "url"},
-                        "title": {"type": "jsonpath", "expression": "title"},
-                    },
+            parse=Parse.model_validate(
+                {
+                    "items": {
+                        "type": "jsonpath",
+                        "selector": "items",
+                        "fields": {
+                            "link": {"type": "jsonpath", "expression": "url"},
+                            "title": {"type": "jsonpath", "expression": "title"},
+                        },
+                    }
                 }
-            },
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(type="json"),
@@ -112,11 +119,13 @@ def test_parse_items_basic():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "link": {"type": "css", "expression": ".article a.link::attr(href)", "attribute": None},
-                "title": {"type": "css", "expression": ".article .title", "attribute": "text"},
-                "id": {"type": "css", "expression": ".article", "attribute": "data-id"},
-            },
+            parse=Parse.model_validate(
+                {
+                    "link": {"type": "css", "expression": ".article a.link::attr(href)", "attribute": None},
+                    "title": {"type": "css", "expression": ".article .title", "attribute": "text"},
+                    "id": {"type": "css", "expression": ".article", "attribute": "data-id"},
+                }
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(),
@@ -154,34 +163,36 @@ def test_parse_items_cards():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "items": {
-                    "type": "css",
-                    "selector": ".columns .card",
-                    "fields": {
-                        "link": {
-                            "type": "css",
-                            "expression": ".card-header a[href]",
-                            "attribute": "href",
+            parse=Parse.model_validate(
+                {
+                    "items": {
+                        "type": "css",
+                        "selector": ".columns .card",
+                        "fields": {
+                            "link": {
+                                "type": "css",
+                                "expression": ".card-header a[href]",
+                                "attribute": "href",
+                            },
+                            "title": {
+                                "type": "css",
+                                "expression": ".card-header a[href]",
+                                "attribute": "text",
+                            },
+                            "poet": {
+                                "type": "css",
+                                "expression": "footer .card-footer-item:first-child a",
+                                "attribute": "text",
+                            },
+                            "category": {
+                                "type": "css",
+                                "expression": "footer .card-footer-item:nth-child(2) a",
+                                "attribute": "text",
+                            },
                         },
-                        "title": {
-                            "type": "css",
-                            "expression": ".card-header a[href]",
-                            "attribute": "text",
-                        },
-                        "poet": {
-                            "type": "css",
-                            "expression": "footer .card-footer-item:first-child a",
-                            "attribute": "text",
-                        },
-                        "category": {
-                            "type": "css",
-                            "expression": "footer .card-footer-item:nth-child(2) a",
-                            "attribute": "text",
-                        },
-                    },
+                    }
                 }
-            },
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(),
@@ -249,17 +260,19 @@ def test_parse_items_json():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "items": {
-                    "type": "jsonpath",
-                    "selector": "entries",
-                    "fields": {
-                        "link": {"type": "jsonpath", "expression": "url"},
-                        "title": {"type": "jsonpath", "expression": "title"},
-                        "id": {"type": "jsonpath", "expression": "id"},
-                    },
+            parse=Parse.model_validate(
+                {
+                    "items": {
+                        "type": "jsonpath",
+                        "selector": "entries",
+                        "fields": {
+                            "link": {"type": "jsonpath", "expression": "url"},
+                            "title": {"type": "jsonpath", "expression": "title"},
+                            "id": {"type": "jsonpath", "expression": "id"},
+                        },
+                    }
                 }
-            },
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(type="json"),
@@ -297,16 +310,18 @@ async def test_generic_task_handler_inspect(monkeypatch):
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "items": {
-                    "type": "jsonpath",
-                    "selector": "items",
-                    "fields": {
-                        "link": {"type": "jsonpath", "expression": "url"},
-                        "title": {"type": "jsonpath", "expression": "title"},
-                    },
+            parse=Parse.model_validate(
+                {
+                    "items": {
+                        "type": "jsonpath",
+                        "selector": "items",
+                        "fields": {
+                            "link": {"type": "jsonpath", "expression": "url"},
+                            "title": {"type": "jsonpath", "expression": "title"},
+                        },
+                    }
                 }
-            },
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(type="json"),
@@ -351,16 +366,18 @@ def test_parse_items_json_list():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         definition=Definition(
-            parse={
-                "items": {
-                    "type": "jsonpath",
-                    "selector": "[]",
-                    "fields": {
-                        "link": {"type": "jsonpath", "expression": "url"},
-                        "title": {"type": "jsonpath", "expression": "title"},
-                    },
+            parse=Parse.model_validate(
+                {
+                    "items": {
+                        "type": "jsonpath",
+                        "selector": "[]",
+                        "fields": {
+                            "link": {"type": "jsonpath", "expression": "url"},
+                            "title": {"type": "jsonpath", "expression": "title"},
+                        },
+                    }
                 }
-            },
+            ),
             engine=EngineConfig(),
             request=RequestConfig(),
             response=ResponseConfig(type="json"),

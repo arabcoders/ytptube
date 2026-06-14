@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import delete, func, or_, select
 
@@ -11,20 +11,39 @@ from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Iterable
+    from collections.abc import Callable, Iterable
+    from contextlib import AbstractAsyncContextManager
 
     from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
 
+    SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
 LOG = get_logger()
 
 
+def _model_from_payload(payload: dict[str, Any]) -> DLFieldModel:
+    model = DLFieldModel()
+    for key, value in payload.items():
+        if not hasattr(model, key):
+            msg = f"'{key}' is an invalid keyword argument for DLFieldModel"
+            raise TypeError(msg)
+        setattr(model, key, value)
+    return model
+
+
+def _coerce_model(payload: DLFieldModel | dict[str, Any]) -> DLFieldModel:
+    if isinstance(payload, DLFieldModel):
+        return payload
+    return _model_from_payload(payload)
+
+
 class DLFieldsRepository(metaclass=Singleton):
-    def __init__(self, session: AsyncGenerator[AsyncSession] | None = None) -> None:
+    def __init__(self, session: SessionFactory | None = None) -> None:
         self._migrated = False
-        self.session: AsyncGenerator[AsyncSession] = session or get_session
+        self.session: SessionFactory = session or get_session
 
     async def run_migrations(self) -> None:
         if self._migrated:
@@ -37,7 +56,7 @@ class DLFieldsRepository(metaclass=Singleton):
     def get_instance() -> DLFieldsRepository:
         return DLFieldsRepository()
 
-    async def list(self) -> list[DLFieldModel]:
+    async def all(self) -> list[DLFieldModel]:
         async with self.session() as session:
             result: Result[tuple[DLFieldModel]] = await session.execute(
                 select(DLFieldModel).order_by(DLFieldModel.order.asc(), DLFieldModel.name.asc())
@@ -90,9 +109,9 @@ class DLFieldsRepository(metaclass=Singleton):
             result: Result[tuple[DLFieldModel]] = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
-    async def create(self, payload: DLFieldModel | dict) -> DLFieldModel:
+    async def create(self, payload: DLFieldModel | dict[str, Any]) -> DLFieldModel:
         async with self.session() as session:
-            model: DLFieldModel = DLFieldModel(**payload) if isinstance(payload, dict) else payload
+            model = _coerce_model(payload)
 
             if await self.get_by_name(name=model.name) is not None:
                 msg: str = f"DL field with name '{model.name}' already exists."
@@ -153,13 +172,16 @@ class DLFieldsRepository(metaclass=Singleton):
             await session.commit()
             return model
 
-    async def replace_all(self, items: Iterable[dict | DLFieldModel]) -> list[DLFieldModel]:
+    async def replace_all(self, items: Iterable[dict[str, Any] | DLFieldModel]) -> list[DLFieldModel]:
         async with self.session() as session:
             try:
                 await session.execute(delete(DLFieldModel))
-                models: list[DLFieldModel] = [
-                    DLFieldModel(**item) if isinstance(item, dict) else item for item in items
-                ]
+                models: list[DLFieldModel] = []
+                for item in items:
+                    if isinstance(item, dict):
+                        models.append(DLFieldModel(**cast("dict[str, Any]", item)))
+                    else:
+                        models.append(item)
                 session.add_all(models)
                 await session.commit()
             except Exception:

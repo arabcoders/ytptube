@@ -99,15 +99,19 @@ class ProcessManager:
         if not self.running():
             return False
 
-        procId: int | None = self.proc.ident
+        proc = self.proc
+        if proc is None:
+            return False
+
+        procId: int | None = proc.ident
         try:
             self.logger.info(
                 "Stopping download process PID=%s.",
-                self.proc.pid,
+                proc.pid,
                 extra={
                     "download": {
                         "download_id": self.download_id,
-                        "process_id": self.proc.pid,
+                        "process_id": proc.pid,
                         "process_ident": procId,
                         "is_live": self.is_live,
                     }
@@ -117,25 +121,25 @@ class ProcessManager:
             if self.is_live:
                 self.logger.debug(
                     "Requesting graceful live cancellation for PID=%s.",
-                    self.proc.pid,
+                    proc.pid,
                     extra={
                         "download": {
                             "download_id": self.download_id,
-                            "process_id": self.proc.pid,
+                            "process_id": proc.pid,
                             "is_live": self.is_live,
                         }
                     },
                 )
                 self.cancel_event.set()
 
-                if wait_for_process_with_timeout(self.proc, 10):
+                if wait_for_process_with_timeout(proc, 10):
                     self.logger.debug(
                         "Download process PID=%s stopped gracefully.",
-                        self.proc.pid,
+                        proc.pid,
                         extra={
                             "download": {
                                 "download_id": self.download_id,
-                                "process_id": self.proc.pid,
+                                "process_id": proc.pid,
                                 "is_live": self.is_live,
                             }
                         },
@@ -143,43 +147,43 @@ class ProcessManager:
                     return True
                 self.logger.warning(
                     "Download process PID=%s did not respond to live cancellation; forcing termination.",
-                    self.proc.pid,
+                    proc.pid,
                     extra={
                         "download": {
                             "download_id": self.download_id,
-                            "process_id": self.proc.pid,
+                            "process_id": proc.pid,
                             "is_live": self.is_live,
                             "force": True,
                         }
                     },
                 )
 
-            elif self.proc.pid and "posix" == os.name:
+            elif proc.pid and "posix" == os.name:
                 signal_name = "SIGUSR1"
 
                 try:
                     self.logger.debug(
                         "Sending %s signal to download process PID=%s.",
                         signal_name,
-                        self.proc.pid,
+                        proc.pid,
                         extra={
                             "download": {
                                 "download_id": self.download_id,
-                                "process_id": self.proc.pid,
+                                "process_id": proc.pid,
                                 "signal": signal_name,
                             }
                         },
                     )
-                    os.kill(self.proc.pid, signal.SIGUSR1)
+                    os.kill(proc.pid, signal.SIGUSR1)
 
-                    if wait_for_process_with_timeout(self.proc, 5):
+                    if wait_for_process_with_timeout(proc, 5):
                         self.logger.debug(
                             "Download process PID=%s stopped gracefully.",
-                            self.proc.pid,
+                            proc.pid,
                             extra={
                                 "download": {
                                     "download_id": self.download_id,
-                                    "process_id": self.proc.pid,
+                                    "process_id": proc.pid,
                                     "signal": signal_name,
                                 }
                             },
@@ -187,12 +191,12 @@ class ProcessManager:
                         return True
                     self.logger.warning(
                         "Download process PID=%s did not respond to %s; forcing termination.",
-                        self.proc.pid,
+                        proc.pid,
                         signal_name,
                         extra={
                             "download": {
                                 "download_id": self.download_id,
-                                "process_id": self.proc.pid,
+                                "process_id": proc.pid,
                                 "signal": signal_name,
                                 "force": True,
                             }
@@ -203,51 +207,49 @@ class ProcessManager:
                     self.logger.debug(
                         "Failed to send %s signal to download process PID=%s. %s",
                         signal_name,
-                        self.proc.pid,
+                        proc.pid,
                         e,
                         extra={
                             "download": {
                                 "download_id": self.download_id,
-                                "process_id": self.proc.pid,
+                                "process_id": proc.pid,
                                 "signal": signal_name,
                                 "exception_type": type(e).__name__,
                             }
                         },
                     )
 
-            if self.proc.is_alive():
+            if proc.is_alive():
                 self.logger.info(
                     "Terminating download process PID=%s.",
-                    self.proc.pid,
-                    extra={"download": {"download_id": self.download_id, "process_id": self.proc.pid, "force": True}},
+                    proc.pid,
+                    extra={"download": {"download_id": self.download_id, "process_id": proc.pid, "force": True}},
                 )
-                self.proc.terminate()
+                proc.terminate()
 
-                if not wait_for_process_with_timeout(self.proc, 1 if self.is_live else 2):
+                if not wait_for_process_with_timeout(proc, 1 if self.is_live else 2):
                     self.logger.warning(
                         "Download process PID=%s did not terminate; killing forcefully.",
-                        self.proc.pid,
-                        extra={
-                            "download": {"download_id": self.download_id, "process_id": self.proc.pid, "force": True}
-                        },
+                        proc.pid,
+                        extra={"download": {"download_id": self.download_id, "process_id": proc.pid, "force": True}},
                     )
-                    self.proc.kill()
-                    wait_for_process_with_timeout(self.proc, 1)
+                    proc.kill()
+                    wait_for_process_with_timeout(proc, 1)
 
             self.logger.info(
                 "Download process PID=%s stopped.",
-                self.proc.pid,
-                extra={"download": {"download_id": self.download_id, "process_id": self.proc.pid}},
+                proc.pid,
+                extra={"download": {"download_id": self.download_id, "process_id": proc.pid}},
             )
             return True
 
         except Exception as e:
             self.logger.exception(
-                f"Failed to stop download process PID={self.proc.pid}, ident={procId}.",
+                f"Failed to stop download process PID={proc.pid if proc else None}, ident={procId}.",
                 extra={
                     "download": {
                         "download_id": self.download_id,
-                        "process_id": self.proc.pid,
+                        "process_id": proc.pid if proc else None,
                         "process_ident": procId,
                         "is_live": self.is_live,
                         "exception_type": type(e).__name__,
@@ -271,11 +273,12 @@ class ProcessManager:
             return False
 
         self.cancel_in_progress = True
-        procId: int | None = self.proc.ident
+        proc = self.proc
+        procId: int | None = proc.ident if proc else None
 
         if not procId:
-            if self.proc:
-                self.proc.close()
+            if proc:
+                proc.close()
                 self.proc = None
             self.logger.warning("Attempted to close download process, but it is not running.")
             return False
@@ -293,13 +296,14 @@ class ProcessManager:
 
             loop = asyncio.get_running_loop()
 
-            if self.proc.is_alive():
+            current = self.proc
+            if current is not None and current.is_alive():
                 self.logger.debug(
                     "Waiting for download process PID='%s' to close.",
                     procId,
                     extra={"download": {"download_id": self.download_id, "process_ident": procId}},
                 )
-                await loop.run_in_executor(None, self.proc.join)
+                await loop.run_in_executor(None, current.join)
                 self.logger.debug(
                     "Download process PID='%s' closed.",
                     procId,

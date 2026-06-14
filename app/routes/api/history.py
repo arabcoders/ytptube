@@ -1,9 +1,10 @@
 import asyncio
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from aiohttp import web
 from aiohttp.web import Request, Response
+from aiohttp.web_response import StreamResponse
 
 from app.features.presets.schemas import Preset
 from app.features.presets.service import Presets
@@ -19,10 +20,6 @@ from app.library.ItemDTO import Item
 from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import calc_download_path, get_file_sidecar, rename_file
-
-if TYPE_CHECKING:
-    from library.downloads import Download
-
 
 LOG = get_logger()
 
@@ -280,7 +277,7 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
         Response: The response object.
 
     """
-    id: str = request.match_info.get("id")
+    id: str | None = request.match_info.get("id")
     if not id:
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
@@ -314,7 +311,7 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
 
 
 @route(["GET", "HEAD"], r"api/history/{id}/thumbnail", "history.item.thumbnail")
-async def item_thumbnail(request: Request, queue: DownloadQueue, config: Config) -> Response:
+async def item_thumbnail(request: Request, queue: DownloadQueue, config: Config) -> StreamResponse:
     if not (id := request.match_info.get("id")):
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
@@ -458,7 +455,7 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
         Response: The response object.
 
     """
-    id: str = request.match_info.get("id")
+    id: str | None = request.match_info.get("id")
     if not id:
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 

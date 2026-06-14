@@ -3,7 +3,7 @@ from __future__ import annotations
 import http.cookiejar
 from abc import ABC
 from collections.abc import Callable
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 from yt_dlp.networking.common import (
     _REQUEST_HANDLERS,
@@ -223,11 +223,13 @@ class CFSolverRH(RequestHandler, ABC):
         try:
             response: Response = director.send(request)
         except HTTPError as error:
-            if error.response and is_cf_challenge(getattr(error.response, "status", None), error.response.headers):
+            if error.response and is_cf_challenge(
+                getattr(error.response, "status", None), cast("Any", error.response.headers)
+            ):
                 return self._retry_with_clearance(request, error.response, director)
             raise
 
-        if is_cf_challenge(getattr(response, "status", None), response.headers):
+        if is_cf_challenge(getattr(response, "status", None), cast("Any", response.headers)):
             return self._retry_with_clearance(request, response, director)
 
         return response

@@ -10,9 +10,8 @@ import logging
 import os
 from pathlib import Path
 
-from library.PackageInstaller import PackageInstaller, Packages
-
 from app.library.log import get_logger
+from app.library.PackageInstaller import PackageInstaller, Packages
 
 LOG = get_logger()
 
