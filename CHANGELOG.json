@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "18f54a28c6e065a25bd3c24bc5b2a837ec885eab",
-    "date": "2026-06-12T17:18:58+00:00",
+    "full_sha": "36319472342d6704e4627a6e4bbef7741c8a3c4e",
+    "date": "2026-06-14T15:35:03+00:00",
     "commits": [
+      {
+        "sha": "36319472",
+        "full_sha": "36319472342d6704e4627a6e4bbef7741c8a3c4e",
+        "message": "chore: use ty as type checker.",
+        "author": "arabcoders",
+        "date": "2026-06-14T15:35:03+00:00"
+      },
       {
         "sha": "18f54a28",
         "full_sha": "18f54a28c6e065a25bd3c24bc5b2a837ec885eab",
