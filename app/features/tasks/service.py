@@ -51,7 +51,7 @@ class Tasks(metaclass=Singleton):
         pass
 
     async def _load_tasks(self) -> None:
-        tasks = await self._repo.list()
+        tasks = await self._repo.all()
 
         for task in tasks:
             if not task.timer or not task.enabled:
@@ -134,9 +134,11 @@ class Tasks(metaclass=Singleton):
         task_id = task.id
         task_name = task.name
         try:
-            if not (task := await self._repo.get(task_id)):
+            current_task = await self._repo.get(task_id)
+            if not current_task:
                 LOG.info("Task '%s' no longer exists.", task_name, extra={"task_id": task_id, "task_name": task_name})
                 return
+            task = current_task
 
             if not task.enabled:
                 LOG.debug(

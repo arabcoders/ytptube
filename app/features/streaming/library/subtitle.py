@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import anyio
 import pysubs2
@@ -48,7 +49,8 @@ def ms_to_timestamp(ms: int) -> str:
     return f"{h:01d}:{m:02d}:{s:02d}.{cs:02d}"
 
 
-SubstationFormat.ms_to_timestamp = ms_to_timestamp
+_substation_format: Any = SubstationFormat
+_substation_format.ms_to_timestamp = ms_to_timestamp
 
 
 class Subtitle:

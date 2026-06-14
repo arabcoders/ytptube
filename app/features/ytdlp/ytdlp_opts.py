@@ -50,12 +50,12 @@ class ARGSMerger:
         """
         return str(self)
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> list[str]:
         """
-        Get all the options as a dict.
+        Get all the options as a shell argument list.
 
         Returns:
-            dict: The options as a dict
+            list[str]: The options as shell arguments.
 
         """
         return shlex.split(shlex.join(self.args))

@@ -48,10 +48,13 @@ class HandleTask(TaskSchema):
         if isinstance(ret, tuple):
             return ret
 
-        archive_file: Path = ret.get("file")
-        items: set[str] = ret.get("items", set())
+        archive_file = ret.get("file")
+        items = ret.get("items", set())
+        if not isinstance(archive_file, Path) or not isinstance(items, set):
+            return (False, "Failed to get archive information.")
+        archive_items = [item for item in items if isinstance(item, str)]
 
-        if len(items) < 1 or not archive_add(archive_file, list(items)):
+        if len(archive_items) < 1 or not archive_add(archive_file, archive_items):
             return (True, "No new items to mark as downloaded.")
 
         return (True, f"Task '{self.name}' items marked as downloaded.")
@@ -70,10 +73,13 @@ class HandleTask(TaskSchema):
         if isinstance(ret, tuple):
             return ret
 
-        archive_file: Path = ret.get("file")
-        items: set[str] = ret.get("items", set())
+        archive_file = ret.get("file")
+        items = ret.get("items", set())
+        if not isinstance(archive_file, Path) or not isinstance(items, set):
+            return (False, "Failed to get archive information.")
+        archive_items = [item for item in items if isinstance(item, str)]
 
-        if len(items) < 1 or not archive_delete(archive_file, list(items)):
+        if len(archive_items) < 1 or not archive_delete(archive_file, archive_items):
             return (True, "No items to remove from archive file.")
 
         return (True, f"Removed '{self.name}' items from archive file.")

@@ -4,10 +4,13 @@ from collections import OrderedDict
 from dataclasses import asdict
 from datetime import UTC, datetime
 from email.utils import formatdate
+from typing import Any
 from unittest.mock import AsyncMock, Mock
+
 import pytest
 
 from app.library.DataStore import DataStore, StoreType
+from app.library.downloads import Download
 from app.library.ItemDTO import ItemDTO
 from app.library.operations import Operation
 from app.library.sqlite_store import SqliteStore
@@ -62,17 +65,18 @@ async def make_db(data: int = 0) -> SqliteStore:
     return ins
 
 
-class StubDownload:
-    def __init__(self, info: ItemDTO, started: bool = False, cancelled: bool = False):
+class StubDownload(Download):
+    def __init__(self, info: ItemDTO, started: bool = False, cancelled: bool = False) -> None:
         self.info = info
-        self._started: bool = started
-        self._cancelled: bool = cancelled
+        self.id = info._id
+        self._stub_started: bool = started
+        self._stub_cancelled: bool = cancelled
 
     def started(self) -> bool:
-        return self._started
+        return self._stub_started
 
     def is_cancelled(self) -> bool:
-        return self._cancelled
+        return self._stub_cancelled
 
 
 async def make_store_async(store_type: StoreType) -> DataStore:
@@ -357,7 +361,8 @@ class TestDataStore:
             def __init__(self):
                 self.info = None
 
-        store._dict["broken"] = BrokenDownload()
+        broken: Any = BrokenDownload()
+        store._dict["broken"] = broken
 
         # Should still find the valid item
         result = await store.get_item(title="Video 1")
@@ -960,10 +965,10 @@ class TestDataStoreOperations:
 
         item1 = make_item(id="vid1", title="Video 1")
         item1._id = "id1"
-        item1.filesize = 1000
+        setattr(item1, "filesize", 1000)
         item2 = make_item(id="vid2", title="Video 2")
         item2._id = "id2"
-        item2.filesize = 2000
+        setattr(item2, "filesize", 2000)
 
         await store.put(StubDownload(info=item1))
         await store.put(StubDownload(info=item2))
@@ -986,10 +991,10 @@ class TestDataStoreOperations:
 
         item1 = make_item(id="vid1", title="Video 1")
         item1._id = "id1"
-        item1.filesize = 1000
+        setattr(item1, "filesize", 1000)
         item2 = make_item(id="vid2", title="Video 2")
         item2._id = "id2"
-        item2.filesize = 2000
+        setattr(item2, "filesize", 2000)
 
         await store.put(StubDownload(info=item1))
         await store.put(StubDownload(info=item2))
@@ -1007,7 +1012,7 @@ class TestDataStoreOperations:
 
         item1 = make_item(id="vid1", title="Video 1")
         item1._id = "id1"
-        item1.filesize = 1000
+        setattr(item1, "filesize", 1000)
 
         await store.put(StubDownload(info=item1))
 
@@ -1033,7 +1038,7 @@ class TestDataStoreOperations:
 
         item1 = make_item(id="vid1", title="Video 1")
         item1._id = "id1"
-        item1.filesize = 1000
+        setattr(item1, "filesize", 1000)
 
         await store.put(StubDownload(info=item1))
 
@@ -1084,7 +1089,7 @@ class TestDataStoreOperations:
 
         item1 = make_item(id="vid1", title="Video 1")
         item1._id = "id1"
-        item1.description = None
+        setattr(item1, "description", None)
 
         await store.put(StubDownload(info=item1))
 

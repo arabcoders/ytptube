@@ -35,7 +35,7 @@ class TestNotificationsRepository:
     @pytest.mark.asyncio
     async def test_list_empty(self, repo):
         """List returns empty when no notifications exist."""
-        notifications = await repo.list()
+        notifications = await repo.all()
         assert notifications == [], "Should return empty list when no notifications exist"
 
     @pytest.mark.asyncio

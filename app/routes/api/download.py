@@ -1,5 +1,5 @@
 from aiohttp import web
-from aiohttp.web import Request, Response
+from aiohttp.web import Request, Response, StreamResponse
 
 from app.library.config import Config
 from app.library.log import get_logger
@@ -10,7 +10,7 @@ LOG = get_logger()
 
 
 @route(["GET", "HEAD"], "/api/download/{filename:.+}", "download_static")
-async def download_file(request: Request, config: Config, app: web.Application) -> Response:
+async def download_file(request: Request, config: Config, app: web.Application) -> StreamResponse:
     """
     Serve download files.
 

@@ -6,12 +6,15 @@ from app.features.conditions.migration import Migration
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Iterable
+    from collections.abc import Callable, Iterable
+    from contextlib import AbstractAsyncContextManager
 
     from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
+
+    SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
 from sqlalchemy import delete, func, or_, select
 
@@ -22,10 +25,26 @@ from app.library.log import get_logger
 LOG = get_logger()
 
 
+def _model_from_payload(payload: dict[str, Any]) -> ConditionModel:
+    model = ConditionModel()
+    for key, value in payload.items():
+        if not hasattr(model, key):
+            msg = f"'{key}' is an invalid keyword argument for ConditionModel"
+            raise TypeError(msg)
+        setattr(model, key, value)
+    return model
+
+
+def _coerce_model(payload: ConditionModel | dict[str, Any]) -> ConditionModel:
+    if isinstance(payload, ConditionModel):
+        return payload
+    return _model_from_payload(payload)
+
+
 class ConditionsRepository(metaclass=Singleton):
-    def __init__(self, session: AsyncGenerator[AsyncSession] | None = None) -> None:
+    def __init__(self, session: SessionFactory | None = None) -> None:
         self._migrated = False
-        self.session: AsyncGenerator[AsyncSession] = session or get_session
+        self.session: SessionFactory = session or get_session
 
     async def run_migrations(self) -> None:
         if self._migrated:
@@ -38,7 +57,7 @@ class ConditionsRepository(metaclass=Singleton):
     def get_instance() -> ConditionsRepository:
         return ConditionsRepository()
 
-    async def list(self) -> list[ConditionModel]:
+    async def all(self) -> list[ConditionModel]:
         async with self.session() as session:
             result: Result[tuple[ConditionModel]] = await session.execute(
                 select(ConditionModel).order_by(ConditionModel.priority.desc(), ConditionModel.name.asc())
@@ -93,11 +112,11 @@ class ConditionsRepository(metaclass=Singleton):
             result: Result[tuple[ConditionModel]] = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
-    async def create(self, payload: ConditionModel | dict) -> ConditionModel:
+    async def create(self, payload: ConditionModel | dict[str, Any]) -> ConditionModel:
         async with self.session() as session:
-            model: ConditionModel = ConditionModel(**payload) if isinstance(payload, dict) else payload
+            model = _coerce_model(payload)
             if model.id is not None:
-                model.id = None
+                model.id = None  # ty: ignore
 
             if await self.get_by_name(name=model.name) is not None:
                 msg: str = f"Condition with name '{model.name}' already exists."
@@ -160,13 +179,11 @@ class ConditionsRepository(metaclass=Singleton):
             await session.commit()
             return model
 
-    async def replace_all(self, items: Iterable[dict | ConditionModel]) -> list[ConditionModel]:
+    async def replace_all(self, items: Iterable[dict[str, Any] | ConditionModel]) -> list[ConditionModel]:
         async with self.session() as session:
             try:
                 await session.execute(delete(ConditionModel))
-                models: list[ConditionModel] = [
-                    ConditionModel(**item) if isinstance(item, dict) else item for item in items
-                ]
+                models: list[ConditionModel] = [_coerce_model(item) for item in items]
                 session.add_all(models)
                 await session.commit()
             except Exception:

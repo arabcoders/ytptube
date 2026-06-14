@@ -30,6 +30,30 @@ if TYPE_CHECKING:
 LOG = get_logger()
 
 
+def _payload_data(payload: PresetModel | dict[str, Any]) -> dict[str, Any]:
+    if isinstance(payload, dict):
+        data: dict[str, Any] = {}
+        for key, value in payload.items():
+            if not isinstance(key, str):
+                msg = "Preset payload keys must be strings."
+                raise TypeError(msg)
+            data[key] = value
+        return data
+
+    return {
+        "name": payload.name,
+        "description": payload.description,
+        "folder": payload.folder,
+        "template": payload.template,
+        "cookies": payload.cookies,
+        "cli": payload.cli,
+        "default": payload.default,
+        "priority": payload.priority,
+        "created_at": payload.created_at,
+        "updated_at": payload.updated_at,
+    }
+
+
 class PresetsRepository(metaclass=Singleton):
     SORT_FIELDS: dict[str, Any] = {
         "id": PresetModel.id,
@@ -73,15 +97,15 @@ class PresetsRepository(metaclass=Singleton):
                 LOG.debug("Refreshing presets cache due to configuration update.")
                 await self._update_cache()
 
-        Services.get_instance().add(__class__.__name__, self)
+        Services.get_instance().add(PresetsRepository.__name__, self)
         EventBus.get_instance().subscribe(
-            Events.STARTED, handle_event, f"{__class__.__name__}.run_migrations"
+            Events.STARTED, handle_event, f"{PresetsRepository.__name__}.run_migrations"
         ).subscribe(Events.CONFIG_UPDATE, handler, "Presets.refresh_cache")
 
     async def _update_cache(self) -> None:
         from app.features.presets.service import Presets
 
-        await Presets.get_instance().refresh_cache(await self.list())
+        await Presets.get_instance().refresh_cache(await self.all())
 
     @staticmethod
     def get_instance() -> PresetsRepository:
@@ -97,7 +121,7 @@ class PresetsRepository(metaclass=Singleton):
             LOG.error("Default preset '%s' not found, using 'default' preset.", default_name)
             config.default_preset = "default"
 
-    async def list(self) -> list[PresetModel]:
+    async def all(self) -> list[PresetModel]:
         async with self.session() as session:
             result: Result[tuple[PresetModel]] = await session.execute(
                 select(PresetModel).order_by(PresetModel.priority.desc(), PresetModel.name.asc())
@@ -238,24 +262,9 @@ class PresetsRepository(metaclass=Singleton):
             result: Result[tuple[PresetModel]] = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
-    async def create(self, payload: PresetModel | dict) -> PresetModel:
+    async def create(self, payload: PresetModel | dict[str, Any]) -> PresetModel:
         async with self.session() as session:
-            data: dict[str, Any]
-            if isinstance(payload, dict):
-                data = dict(payload)
-            else:
-                data = {
-                    "name": payload.name,
-                    "description": payload.description,
-                    "folder": payload.folder,
-                    "template": payload.template,
-                    "cookies": payload.cookies,
-                    "cli": payload.cli,
-                    "default": payload.default,
-                    "priority": payload.priority,
-                    "created_at": payload.created_at,
-                    "updated_at": payload.updated_at,
-                }
+            data = _payload_data(payload)
 
             data.pop("id", None)
             model = PresetModel(**data)

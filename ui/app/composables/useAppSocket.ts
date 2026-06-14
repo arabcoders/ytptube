@@ -255,7 +255,7 @@ const connect = () => {
   });
 
   socket.value.addEventListener('message', (event: MessageEvent<string>) => {
-    let payload: WebSocketEnvelope | null = null;
+    let payload: WebSocketEnvelope | null;
     try {
       payload = JSON.parse(event.data);
     } catch {

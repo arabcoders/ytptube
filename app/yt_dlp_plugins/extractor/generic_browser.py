@@ -1,4 +1,5 @@
 import base64
+import importlib.util
 import os
 import re
 import time
@@ -190,12 +191,7 @@ class RemoteBrowserUnavailableError(ExtractorError):
 class PlaywrightDriver:
     @staticmethod
     def is_available() -> bool:
-        try:
-            import playwright.sync_api  # noqa: F401
-
-            return True
-        except ImportError:
-            return False
+        return importlib.util.find_spec("playwright.sync_api") is not None
 
     @staticmethod
     def connect(ws_url: str, timeout: int | None = None):
@@ -336,15 +332,11 @@ class PlaywrightDriver:
 class SeleniumDriver:
     @staticmethod
     def is_available() -> bool:
-        try:
-            import selenium.webdriver  # noqa: F401
-
-            return True
-        except ImportError:
-            return False
+        return importlib.util.find_spec("selenium.webdriver") is not None
 
     @staticmethod
-    def connect(ws_url: str, timeout: int | None = None):  # noqa: ARG004
+    def connect(ws_url: str, timeout: int | None = None):
+        _ = timeout
         from selenium import webdriver
         from selenium.webdriver.chrome.options import Options
         from selenium.webdriver.common.by import By
@@ -441,6 +433,10 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
     _failed: bool = False
     _remote_browser_failures: dict[str, str] = {}
     _url: str = ""
+    __wrapped__: Any
+
+    def _fallback_extract(self, url: str) -> dict[str, Any]:
+        return self.__wrapped__._real_extract(self, url)
 
     def _get_config(self, name: str, env_name: str) -> str | None:
         value = self._configuration_arg(name, [None])[0]
@@ -473,7 +469,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         self._url = url
 
         if not (browser_url := self._get_config("url", "YTP_BROWSER_URL")) or self._failed:
-            return self.__wrapped__._real_extract(self, url)
+            return self._fallback_extract(url)
 
         safe_url = self._safe_url(browser_url)
 
@@ -496,7 +492,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             message = str(e)
             self._failed = True
             self.report_warning(f"Remote browser unavailable: {message}, marking as failed.", video_id)
-            return self.__wrapped__._real_extract(self, url)
+            return self._fallback_extract(url)
 
         try:
             self.report_extraction(url)
@@ -513,17 +509,18 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             requests = self._merge_requests(session.get_requests(), session.get_media_requests())
             self.write_debug(f"Captured {len(requests)} network requests")
 
-            if self._downloader.params.get("dump_intermediate_pages"):
+            downloader = self._downloader
+            if downloader and downloader.params.get("dump_intermediate_pages"):
                 self.to_screen(f"Browser content dump for: {url}")
                 self.to_screen(base64.b64encode(webpage.encode("utf-8")).decode("ascii"))
 
-            if self._downloader.params.get("write_pages"):
-                filename = _request_dump_filename(url, video_id, None, self._downloader.params.get("trim_file_name"))
+            if downloader and downloader.params.get("write_pages"):
+                filename = _request_dump_filename(url, video_id, None, downloader.params.get("trim_file_name"))
                 self.to_screen(f"Saving request to {filename}")
                 with open(filename, "w", encoding="utf-8") as f:
                     f.write(webpage)
 
-            if self._downloader.params.get("debug_printtraffic"):
+            if downloader and downloader.params.get("debug_printtraffic"):
                 self.to_screen(f"[browser] {url}")
                 self.to_screen(f"[browser] Captured '{len(requests)}' network requests")
                 for req in requests:
@@ -599,9 +596,9 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         self, requests: list[dict], video_id: str, base_info: dict[str, Any]
     ) -> dict[str, Any] | None:
         candidates = self._pick_network_candidates(requests)
-        formats = []
-        direct_formats = []
-        subtitles = {}
+        formats: list[dict[str, Any]] = []
+        direct_formats: list[dict[str, Any]] = []
+        subtitles: dict[str, Any] = {}
         source_counts = {}
         has_manifest_formats = False
 
@@ -674,7 +671,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             self.report_warning(
                 "Generic browser extractor found no media formats. falling back to generic extractor.", video_id
             )
-            return self.__wrapped__._real_extract(self, self._url)
+            return self._fallback_extract(self._url)
 
         if not has_manifest_formats and len(direct_formats) > 1:
             base_title = (base_info.get("title") or "").strip() or video_id
@@ -698,7 +695,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 )
             return {"_type": "playlist", "entries": entries}
 
-        result = {"formats": formats, "direct": True}
+        result: dict[str, Any] = {"formats": formats, "direct": True}
         if subtitles:
             result["subtitles"] = subtitles
         if formats and formats[0].get("url"):
@@ -733,9 +730,13 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             has_media_header_ext = header_ext and header_ext in MEDIA_EXTENSIONS
 
             resource_type = entry.get("resourceType")
-            if resource_type and resource_type.lower() not in MEDIA_RESOURCE_TYPES:  # noqa: SIM102
-                if not has_media_ext and not has_media_header_ext:
-                    continue
+            if (
+                resource_type
+                and resource_type.lower() not in MEDIA_RESOURCE_TYPES
+                and not has_media_ext
+                and not has_media_header_ext
+            ):
+                continue
 
             if not ext and not header_ext:
                 rt = (resource_type or "").lower()
@@ -779,7 +780,8 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         )
 
     def _get_timeout_ms(self) -> int | None:
-        socket_timeout = self._downloader.params.get("socket_timeout")
+        downloader = self._downloader
+        socket_timeout = downloader.params.get("socket_timeout") if downloader else None
         if isinstance(socket_timeout, (int, float)) and socket_timeout > 0:
             return int(socket_timeout * 1000)
         return None

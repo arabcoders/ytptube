@@ -705,8 +705,9 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
             xml_content += f'  <uniqueid type="{NFOMakerPP._escape_text(info.get("id_type"))}" default="true">{NFOMakerPP._escape_text(info.get("id"))}</uniqueid>\n'
         if info.get("uploader"):
             xml_content += f"  <studio>{NFOMakerPP._escape_text(info.get('uploader'))}</studio>\n"
-        if info.get("tags", []):
-            for tag in info.get("tags", []):
+        tags = info.get("tags", [])
+        if isinstance(tags, list):
+            for tag in tags:
                 xml_content += f"  <tag>{NFOMakerPP._escape_text(tag)}</tag>\n"
         if info.get("year"):
             xml_content += f"  <year>{info.get('year')}</year>\n"

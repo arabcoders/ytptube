@@ -1,6 +1,6 @@
 import asyncio
 import copy
-import importlib
+import importlib.util
 import json
 import logging
 import re
@@ -10,6 +10,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -861,16 +862,20 @@ class TestMergeDict:
     def test_merge_dict_type_validation(self):
         """Test that non-dict parameters are properly rejected."""
         # Test with non-dict source
+        bad_src: Any = "not_a_dict"
         with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
-            merge_dict("not_a_dict", {"key": "value"})
+            merge_dict(bad_src, {"key": "value"})
 
         # Test with non-dict destination
+        bad_dst: Any = "not_a_dict"
         with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
-            merge_dict({"key": "value"}, "not_a_dict")
+            merge_dict({"key": "value"}, bad_dst)
 
         # Test with both non-dict
+        bad_src2: Any = "not_a_dict"
+        bad_dst2: Any = ["also_not_dict"]
         with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
-            merge_dict("not_a_dict", ["also_not_dict"])
+            merge_dict(bad_src2, bad_dst2)
 
     def test_merge_dict_immutability(self):
         """Test that original dictionaries are not modified (immutability)."""
@@ -1084,7 +1089,8 @@ class TestEncryptDecrypt:
         assert encrypted != data
         assert isinstance(encrypted, str)
 
-        decrypted: str = decrypt_data(encrypted, key)
+        decrypted = decrypt_data(encrypted, key)
+        assert decrypted is not None
         assert decrypted == data
 
     def test_encrypt_empty_string(self):
@@ -1093,7 +1099,8 @@ class TestEncryptDecrypt:
         data: str = ""
 
         encrypted: str = encrypt_data(data, key)
-        decrypted: str = decrypt_data(encrypted, key)
+        decrypted = decrypt_data(encrypted, key)
+        assert decrypted is not None
         assert decrypted == data
 
 
@@ -1489,7 +1496,8 @@ class TestGet:
     def test_get_list_access(self):
         """Test getting from list."""
         data = ["item0", "item1", "item2"]
-        result = get(data, 1)
+        key: Any = 1
+        result = get(data, key)
         assert result == "item1"
 
     def test_get_empty_path(self):

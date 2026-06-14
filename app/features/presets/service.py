@@ -12,7 +12,7 @@ class Presets(metaclass=Singleton):
     def __init__(self, repo: PresetsRepository | None = None) -> None:
         self._repo: PresetsRepository = repo or PresetsRepository.get_instance()
         self._cache: list[tuple[int, str, Preset]] = []
-        Services.get_instance().add(__class__.__name__, self)
+        Services.get_instance().add(type(self).__name__, self)
 
     @staticmethod
     def get_instance() -> Presets:

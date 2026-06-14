@@ -4,6 +4,7 @@ from pathlib import Path
 
 from aiohttp import web
 from aiohttp.web import Request, Response
+from aiohttp.web_response import StreamResponse
 
 from app.features.streaming.library.m3u8 import M3u8
 from app.features.streaming.library.playlist import Playlist
@@ -32,7 +33,7 @@ async def playlist_create(request: Request, config: Config, app: web.Application
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
+    file: str | None = request.match_info.get("file")
 
     if not file:
         return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
@@ -83,8 +84,8 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
-    mode: str = request.match_info.get("mode")
+    file: str | None = request.match_info.get("file")
+    mode: str | None = request.match_info.get("mode")
 
     if mode not in ["video", "subtitle"]:
         return web.json_response(
@@ -94,13 +95,14 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
     if not file:
         return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
 
-    duration = request.query.get("duration", None)
+    duration: float | None = None
+    duration_arg = request.query.get("duration", None)
 
     if "subtitle" in mode:
-        if not duration:
+        if not duration_arg:
             return web.json_response(data={"error": "duration is required."}, status=web.HTTPBadRequest.status_code)
 
-        duration = float(duration)
+        duration = float(duration_arg)
 
     base_path: str = config.base_path.rstrip("/")
 
@@ -124,6 +126,8 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
             return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
 
         if "subtitle" in mode:
+            if duration is None:
+                return web.json_response(data={"error": "duration is required."}, status=web.HTTPBadRequest.status_code)
             text = await cls.make_subtitle(file=realFile, duration=duration)
         else:
             text = await cls.make_stream(file=realFile)
@@ -149,7 +153,7 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
 
 
 @route("GET", r"api/player/segments/{segment:\d+}/{file:.*}.ts", "segments_stream")
-async def segments_stream(request: Request, config: Config, app: web.Application) -> Response:
+async def segments_stream(request: Request, config: Config, app: web.Application) -> StreamResponse:
     """
     Get the segments.
 
@@ -162,9 +166,9 @@ async def segments_stream(request: Request, config: Config, app: web.Application
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
-    segment: int = request.match_info.get("segment")
-    sd: int = request.query.get("sd")
+    file: str | None = request.match_info.get("file")
+    segment: str | None = request.match_info.get("segment")
+    sd: str | None = request.query.get("sd")
     vc: int = int(request.query.get("vc", 0))
     ac: int = int(request.query.get("ac", 0))
 
@@ -241,7 +245,7 @@ async def subtitles_get(request: Request, config: Config, app: web.Application) 
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
+    file: str | None = request.match_info.get("file")
 
     if not file:
         return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
@@ -299,7 +303,7 @@ async def subtitles_manifest_get(request: Request, config: Config, app: web.Appl
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
+    file: str | None = request.match_info.get("file")
 
     if not file:
         return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
@@ -354,7 +358,7 @@ async def subtitles_track_get(request: Request, config: Config, app: web.Applica
         Response: The response object.
 
     """
-    file: str = request.match_info.get("file")
+    file: str | None = request.match_info.get("file")
     source_format: str | None = request.match_info.get("source_format")
 
     if not file:

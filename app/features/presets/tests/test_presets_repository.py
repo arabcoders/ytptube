@@ -57,7 +57,7 @@ class TestPresetsRepository:
         await repo.create({"name": "A", "priority": 1})
         await repo.create({"name": "C", "priority": 2})
 
-        items = await repo.list()
+        items = await repo.all()
 
         assert items[0].name == "c", "Highest priority should be first"
         assert items[1].name == "a", "Same priority should sort by name"

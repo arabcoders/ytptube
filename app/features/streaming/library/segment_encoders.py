@@ -1,7 +1,7 @@
-# flake8: noqa: ARG002
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 from functools import lru_cache
@@ -16,9 +16,13 @@ def detect_qsv_capabilities() -> dict[str, dict[str, bool]]:
     Returns a dict where keys are codec names (e.g. "h264", "hevc", "vp9") and
     values are dicts with keys "full" and "lp" booleans.
     """
+    vainfo = shutil.which("vainfo")
+    if not vainfo:
+        return {}
+
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
-            ["vainfo"],  # noqa: S607
+            [vainfo],
             capture_output=True,
             text=True,
             check=False,
@@ -87,9 +91,13 @@ def ffmpeg_encoders() -> set[str]:
     """
     from app.library.config import SUPPORTED_CODECS
 
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        return set()
+
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
-            ["ffmpeg", "-hide_banner", "-loglevel", "error", "-encoders"],  # noqa: S607
+            [ffmpeg, "-hide_banner", "-loglevel", "error", "-encoders"],
             capture_output=True,
             text=True,
             check=False,
@@ -149,9 +157,11 @@ class _BaseBuilder:
     codec_name: str
 
     def input_args(self, ctx: dict[str, Any] | None = None) -> list[str]:
+        _ = ctx
         return []
 
     def add_video_args(self, args: list[str], ctx: dict[str, Any] | None = None) -> list[str]:
+        _ = ctx
         return [*args, "-codec:v", self.codec_name]
 
 
@@ -312,4 +322,4 @@ def encoder_fallback_chain(codec: str) -> tuple[str, ...]:
         "libx264": [],
     }
 
-    return chains.get(codec, chains["libx264"])
+    return tuple(chains.get(codec, chains["libx264"]))

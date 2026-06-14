@@ -204,7 +204,7 @@ class TestDLFieldsRepository:
         await repo.create({"name": "a", "description": "a", "field": "--a", "kind": "text", "order": 1})
         await repo.create({"name": "c", "description": "c", "field": "--c", "kind": "text", "order": 0})
 
-        items = await repo.list()
+        items = await repo.all()
 
         assert items[0].name == "c", "Lowest order should be first"
         assert items[1].name == "a", "Same order sorted alphabetically"
@@ -243,6 +243,6 @@ class TestDLFieldsRepository:
 
         assert len(result) == 2, "Should create 2 new fields"
 
-        all_items = await repo.list()
+        all_items = await repo.all()
         assert len(all_items) == 2, "Should only have new fields"
         assert {item.name for item in all_items} == {"new_1", "new_2"}, "Should only have new items"

@@ -104,19 +104,20 @@ class HttpSocket:
             }
         )
 
-        self._notify.subscribe("frontend", event_handler, f"{__class__.__name__}.emit")
+        self._notify.subscribe("frontend", event_handler, f"{HttpSocket.__name__}.emit")
 
     @staticmethod
-    def ws_event(func):  # type: ignore
+    def ws_event(func):
         """
         Decorator to mark a method as a socket event.
         """
 
-        @functools.wraps(func)  # type: ignore
+        @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            return await func(*args, **kwargs)  # type: ignore
+            return await func(*args, **kwargs)
 
-        wrapper._ws_event = func.__name__  # type: ignore
+        wrapper_with_event: Any = wrapper
+        wrapper_with_event._ws_event = func.__name__
         return wrapper
 
     async def on_shutdown(self, _: web.Application):
@@ -134,9 +135,11 @@ class HttpSocket:
             if not (data and data.data):
                 return
 
-            await Services.get_instance().get("queue").add(item=Item.format(data.data))
+            queue = Services.get_instance().get("queue")
+            if queue is not None:
+                await queue.add(item=Item.format(data.data))
 
-        self._notify.subscribe(Events.ADD_URL, event_handler, f"{__class__.__name__}.add")
+        self._notify.subscribe(Events.ADD_URL, event_handler, f"{HttpSocket.__name__}.add")
 
         load_modules(self.rootPath, self.rootPath / "routes" / "socket")
 

@@ -55,7 +55,7 @@ class StatusTracker:
         self.final_update = False
         self._terminator_sent: bool = False
         self._candidate_filepath: Path | None = None
-        self.update_task: asyncio.Task | None = None
+        self.update_task: asyncio.Future[Any] | None = None
         self._last_progress_time: float = 0.0
         self._pending_progress: bool = False
         self._progress_interval: float = 0.5
@@ -256,7 +256,7 @@ class StatusTracker:
                     self.info.percent = status["downloaded_bytes"] / total * 100
                 except ZeroDivisionError:
                     self.info.percent = 0
-                self.info.total_bytes = total
+                self.info.total_bytes = int(total)
 
         self.info.speed = status.get("speed")
         self.info.eta = status.get("eta")
@@ -280,8 +280,9 @@ class StatusTracker:
         """
         while True:
             try:
-                self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
-                status = await self.update_task
+                update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
+                self.update_task = asyncio.ensure_future(update_task)
+                status = await update_task
                 if status is None or isinstance(status, Terminator):
                     self._flush_progress()
                     return

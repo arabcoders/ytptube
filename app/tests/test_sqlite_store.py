@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -182,12 +183,14 @@ async def test_paginate_order_and_bounds():
         encoded = itm.json()
         created_at = (base + timedelta(minutes=i)).strftime("%Y-%m-%d %H:%M:%S")
         _list.append(itm)
+        assert store._conn is not None
         await store._conn.execute(
             text(
                 'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (:id, :type, :url, :data, :created_at)'
             ),
             {"id": itm._id, "type": "history", "url": itm.url, "data": encoded, "created_at": created_at},
         )
+    assert store._conn is not None
     await store._conn.commit()
 
     items, total, page, total_pages = await store.paginate("history", page=1, per_page=5, order="ASC")
@@ -208,7 +211,9 @@ async def test_get_by_id():
     item = make_item(99)
     await store.enqueue_upsert("queue", item)
     await store.flush()
-    assert item._id == (await store.get_by_id("queue", item._id))._id
+    fetched = await store.get_by_id("queue", item._id)
+    assert fetched is not None
+    assert item._id == fetched._id
     await store.close()
 
 
@@ -358,7 +363,8 @@ async def test_on_shutdown_closes_connection():
     await store.enqueue_upsert("queue", make_item(1))
     await store.flush()
 
-    await store.on_shutdown(None)
+    app: Any = None
+    await store.on_shutdown(app)
     assert store._conn is None
     # Note: on_shutdown already closes the connection, so no need to call close() again
 

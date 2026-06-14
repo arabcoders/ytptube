@@ -1,15 +1,17 @@
-# flake8: noqa: S310
 from __future__ import annotations
 
 import json
 import time
 import urllib.request
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from app.library.log import get_logger
 
 from .cache import Cache
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 CACHE: Cache = Cache()
 LOG = get_logger()
@@ -57,7 +59,7 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
     if user_agent:
         payload.setdefault("headers", {})["User-Agent"] = user_agent
 
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         endpoint,
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
@@ -68,7 +70,7 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
         "Solving Cloudflare challenge for '%s' via FlareSolverr.", host, extra={"host": host, "endpoint": endpoint}
     )
     start_time = time.time()
-    with urllib.request.urlopen(req, timeout=float(config.flaresolverr_client_timeout)) as resp:
+    with urllib.request.urlopen(req, timeout=float(config.flaresolverr_client_timeout)) as resp:  # noqa: S310
         result = json.loads(resp.read().decode("utf-8"))
 
     if "ok" != result.get("status"):
@@ -98,7 +100,7 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
     return CACHE.get(host)
 
 
-def is_cf_challenge(status: int | None, headers: dict[str, Any] | None) -> bool:
+def is_cf_challenge(status: int | None, headers: Mapping[str, Any] | None) -> bool:
     """
     Determine whether a response indicates a Cloudflare challenge.
     """

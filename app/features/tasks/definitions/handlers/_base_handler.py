@@ -1,4 +1,3 @@
-# flake8: noqa: ARG004
 from typing import TYPE_CHECKING, Any
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskResult
@@ -12,6 +11,7 @@ if TYPE_CHECKING:
 class BaseHandler:
     @staticmethod
     async def can_handle(task: HandleTask) -> bool:
+        _ = task
         return False
 
     @staticmethod
@@ -24,6 +24,7 @@ class BaseHandler:
 
     @staticmethod
     def parse(url: str) -> Any | None:
+        _ = url
         return None
 
     @staticmethod

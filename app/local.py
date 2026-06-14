@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# flake8: noqa: S310 T201
 
 import argparse
+import http.client
 import os
 import pathlib
 import socket
 import sys
 import time
-import urllib.request
 import webbrowser
+from urllib.parse import urlsplit
 
 if __name__ == "__main__":
     from multiprocessing import freeze_support
@@ -26,7 +26,7 @@ APP_ROOT = str((pathlib.Path(__file__).parent / "..").resolve())
 if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
 
-import platformdirs  # type: ignore
+import platformdirs
 
 
 def set_env():
@@ -55,18 +55,27 @@ def open_browser_when_ready(url: str, timeout: float = 5.0) -> None:
     import threading
 
     def wait_then_open():
+        parsed = urlsplit(url)
+        path = parsed.path or "/"
         deadline = time.time() + timeout
         while time.time() < deadline:
             try:
-                with urllib.request.urlopen(url, timeout=1) as response:
-                    if 200 == response.status:
+                conn = http.client.HTTPConnection(parsed.hostname or "127.0.0.1", parsed.port or 80, timeout=1)
+                try:
+                    conn.request("GET", path)
+                    response = conn.getresponse()
+                    if response.status == 200:
                         os.environ.pop("LD_LIBRARY_PATH", None)
                         webbrowser.open_new(url)
                         return
+                finally:
+                    conn.close()
             except Exception:
                 time.sleep(0.5)
 
-        print(f"Failed to open browser automatically within {timeout} seconds. Please open {url} manually.")
+        sys.stderr.write(
+            f"Failed to open browser automatically within {timeout} seconds. Please open {url} manually.\n"
+        )
 
     threading.Thread(target=wait_then_open, daemon=True).start()
 
@@ -115,7 +124,7 @@ def main():
 
     set_env()
 
-    env_file: pathlib.Path = pathlib.Path(os.getenv("YTP_CONFIG_PATH")) / ".env"
+    env_file: pathlib.Path = pathlib.Path(os.getenv("YTP_CONFIG_PATH", "")) / ".env"
 
     port = None
     if env_file.exists():

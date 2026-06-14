@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -260,7 +261,7 @@ async def test_retry_no_seek(monkeypatch: pytest.MonkeyPatch) -> None:
         output = temp_dir / ".jpg"
         media.write_text("video")
 
-        ff_info = FFProbeResult()
+        ff_info: Any = FFProbeResult()
         ff_info.metadata = {"duration": "120.0"}
         ff_info.video = [type("Video", (), {"codec_type": "video", "codec_name": "h264"})()]
 
@@ -321,7 +322,7 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
         media1.write_text("video")
         media2.write_text("video")
 
-        ff_info = FFProbeResult()
+        ff_info: Any = FFProbeResult()
         ff_info.metadata = {"duration": "60.0"}
         ff_info.video = [type("Video", (), {"codec_type": "video", "codec_name": "h264"})()]
         monkeypatch.setattr(thumbnail, "ffprobe", AsyncMock(return_value=ff_info))

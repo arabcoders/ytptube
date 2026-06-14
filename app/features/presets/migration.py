@@ -46,7 +46,7 @@ class Migration(FeatureMigration):
             return
 
         inserted = 0
-        seen_names: dict[str, int] = {preset_name(preset.name): 1 for preset in await self._repo.list()}
+        seen_names: dict[str, int] = {preset_name(preset.name): 1 for preset in await self._repo.all()}
 
         for index, item in enumerate(items):
             if not (normalized := self._normalize(item, index, seen_names)):

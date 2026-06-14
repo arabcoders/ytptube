@@ -1,6 +1,7 @@
 import json
 from datetime import date
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -132,7 +133,8 @@ class TestEncoder:
                 return True
             return original_isinstance(obj, cls)
 
-        builtins.isinstance = mock_isinstance
+        builtins_any: Any = builtins
+        builtins_any.isinstance = mock_isinstance
 
         try:
             result = self.encoder.default(mock_daterange)

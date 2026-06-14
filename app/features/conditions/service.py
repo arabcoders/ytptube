@@ -1,10 +1,10 @@
 from collections.abc import Iterable
-from numbers import Number
 
 from aiohttp import web
 
 from app.features.conditions.models import ConditionModel
 from app.features.conditions.repository import ConditionsRepository
+from app.features.conditions.schemas import Condition
 from app.features.ytdlp.mini_filter import match_str
 from app.library.Events import EventBus, Events
 from app.library.log import get_logger
@@ -13,7 +13,7 @@ from app.library.Singleton import Singleton
 LOG = get_logger()
 
 
-def _ignored_identifiers(ignore_conditions: Iterable[str | Number] | None) -> tuple[set[str], bool]:
+def _ignored_identifiers(ignore_conditions: Iterable[str | int | float] | None) -> tuple[set[str], bool]:
     ignored: set[str] = set()
     ignore_all = False
 
@@ -21,7 +21,7 @@ def _ignored_identifiers(ignore_conditions: Iterable[str | Number] | None) -> tu
         return ignored, ignore_all
 
     for value in ignore_conditions:
-        if isinstance(value, bool) or not isinstance(value, (str, Number)):
+        if isinstance(value, bool) or not isinstance(value, (str, int, float)):
             continue
 
         identifier = str(value).strip()
@@ -55,7 +55,7 @@ class Conditions(metaclass=Singleton):
         EventBus.get_instance().subscribe(Events.STARTED, handle_event, "ConditionsRepository.run_migrations")
 
     async def get_all(self) -> list[ConditionModel]:
-        return await self._repo.list()
+        return await self._repo.all()
 
     async def save(self, item: ConditionModel | dict) -> ConditionModel:
         """
@@ -80,7 +80,7 @@ class Conditions(metaclass=Singleton):
             if item.id is None or 0 == item.id:
                 model = await repo.create(item)
             else:
-                model = await repo.update(item.id, item.serialize())
+                model = await repo.update(item.id, Condition.model_validate(item).model_dump())
         except KeyError as exc:
             raise ValueError(str(exc)) from exc
 
@@ -113,13 +113,15 @@ class Conditions(metaclass=Singleton):
         repo = self._repo
         return await repo.get(identifier)
 
-    async def match(self, info: dict, ignore_conditions: Iterable[str | Number] | None = None) -> ConditionModel | None:
+    async def match(
+        self, info: dict, ignore_conditions: Iterable[str | int | float] | None = None
+    ) -> ConditionModel | None:
         """
         Check if any condition matches the info dict.
 
         Args:
             info (dict): The info dict to check.
-            ignore_conditions (Iterable[str | Number] | None): Condition ids or names to skip for this match.
+            ignore_conditions (Iterable[str | int | float] | None): Condition ids or names to skip for this match.
 
         Returns:
             Condition|None: The condition if found, None otherwise.
@@ -133,7 +135,7 @@ class Conditions(metaclass=Singleton):
             return None
 
         repo = self._repo
-        items: list[ConditionModel] = await repo.list()
+        items: list[ConditionModel] = await repo.all()
         if len(items) < 1:
             return None
 
@@ -187,7 +189,7 @@ class Conditions(metaclass=Singleton):
         if not info or not isinstance(info, dict) or len(info) < 1:
             return None
 
-        if not (item := await self.get(identifier)) or not item.enabled or not item.filter:
+        if not (item := await self.get(str(identifier))) or not item.enabled or not item.filter:
             return None
 
         return item if match_str(item.filter, info) else None

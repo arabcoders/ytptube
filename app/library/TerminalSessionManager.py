@@ -75,7 +75,7 @@ class TerminalSessionManager(metaclass=Singleton):
         self._cleanup_job_id = Scheduler.get_instance().add(
             timer=CLEANUP_SCHEDULE,
             func=self.cleanup,
-            id=f"{__class__.__name__}.{__class__.cleanup.__name__}",
+            id=f"{type(self).__name__}.{type(self).cleanup.__name__}",
         )
 
     async def on_startup(self, _: web.Application) -> None:

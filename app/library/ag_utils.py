@@ -1,4 +1,18 @@
+import sys
 from typing import Any
+
+
+def _dict_value(data: dict[Any, Any], key: Any) -> tuple[bool, Any]:
+    if key not in data or data[key] is None:
+        return False, None
+    return True, data[key]
+
+
+def _dict_delete(data: dict[Any, Any], key: Any) -> bool:
+    if key not in data:
+        return False
+    del data[key]
+    return True
 
 
 def get_value(value: Any) -> Any:
@@ -91,14 +105,19 @@ def ag(
                 return val
         return get_value(default)
     key = path
-    if isinstance(array, dict) and key in array and array[key] is not None:
-        return array[key]
+    if isinstance(array, dict):
+        found, value = _dict_value(array, key)
+        if found:
+            return value
     if not isinstance(key, str) or separator not in key:
         return get_value(default)
     current = array
     for segment in key.split(separator):
-        if isinstance(current, dict) and segment in current and current[segment] is not None:
-            current = current[segment]
+        if isinstance(current, dict):
+            found, value = _dict_value(current, segment)
+            if not found:
+                return get_value(default)
+            current = value
         elif isinstance(current, list):
             try:
                 idx = int(segment)
@@ -150,7 +169,8 @@ def ag_exists(data: dict[Any, Any] | list[Any] | object, path: str | int, separa
         except TypeError:
             return False
     if isinstance(data, dict):
-        if path in data and data[path] is not None:
+        found, _ = _dict_value(data, path)
+        if found:
             return True
     elif isinstance(data, list) and isinstance(path, int):
         return 0 <= path < len(data) and data[path] is not None
@@ -158,8 +178,11 @@ def ag_exists(data: dict[Any, Any] | list[Any] | object, path: str | int, separa
     segments = path_str.split(separator)
     current = data
     for seg in segments:
-        if isinstance(current, dict) and seg in current and current[seg] is not None:
-            current = current[seg]
+        if isinstance(current, dict):
+            found, value = _dict_value(current, seg)
+            if not found:
+                return False
+            current = value
         elif isinstance(current, list):
             try:
                 idx = int(seg)
@@ -189,17 +212,16 @@ def ag_delete(
         The modified structure.
 
     """
-    if isinstance(path, list | tuple):
-        for p in path:
-            ag_delete(data, p, separator)
-        return data
     if not isinstance(data, dict | list):
         try:
             data = vars(data)
         except TypeError:
             return data  # type: ignore
-    if isinstance(data, dict) and path in data:
-        del data[path]
+    if isinstance(path, list | tuple):
+        for p in path:
+            ag_delete(data, p, separator)
+        return data
+    if isinstance(data, dict) and _dict_delete(data, path):
         return data
     if isinstance(data, list) and isinstance(path, int):
         if 0 <= path < len(data):
@@ -210,8 +232,12 @@ def ag_delete(
     last = segments.pop()
     current = data
     for seg in segments:
-        if isinstance(current, dict) and seg in current:
-            current = current[seg]
+        if isinstance(current, dict):
+            found, value = _dict_value(current, seg)
+            if not found:
+                current = None
+                break
+            current = value
         elif isinstance(current, list):
             try:
                 idx = int(seg)
@@ -228,8 +254,8 @@ def ag_delete(
             break
     if current is None:
         return data
-    if isinstance(current, dict) and last in current:
-        del current[last]
+    if isinstance(current, dict):
+        _dict_delete(current, last)
     elif isinstance(current, list):
         try:
             idx = int(last)
@@ -246,10 +272,12 @@ def run_tests():
         assert ag_set(d, "a.c.d", 42) == {"a": {"b": 1, "c": {"d": 42}}}
 
     def test_ag_set_overwrite_error():
+        error = ""
         try:
             ag_set({"a": 1}, "a.b", 2)
         except RuntimeError as e:
-            assert "Cannot set value at path" in str(e)  # noqa: PT017
+            error = str(e)
+        assert "Cannot set value at path" in error
 
     def test_ag_get_value_callable_and_value():
         assert get_value(5) == 5
@@ -320,9 +348,9 @@ def run_tests():
     ]:
         try:
             test()
-            print(f"PASS: {test.__name__}")  # noqa: T201
+            sys.stdout.write(f"PASS: {test.__name__}\n")
         except AssertionError:
-            print(f"FAIL {test.__name__}")  # noqa: T201
+            sys.stdout.write(f"FAIL {test.__name__}\n")
 
 
 if __name__ == "__main__":

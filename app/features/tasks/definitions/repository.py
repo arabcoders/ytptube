@@ -14,20 +14,23 @@ from app.library.Services import Services
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import Callable
+    from contextlib import AbstractAsyncContextManager
 
     from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
 
+    SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
 LOG = get_logger()
 
 
 class TaskDefinitionsRepository(metaclass=Singleton):
-    def __init__(self, session: AsyncGenerator[AsyncSession] | None = None) -> None:
+    def __init__(self, session: SessionFactory | None = None) -> None:
         self._migrated = False
-        self.session: AsyncGenerator[AsyncSession] = session or get_session
+        self.session: SessionFactory = session or get_session
 
     async def run_migrations(self) -> None:
         if self._migrated:
@@ -51,12 +54,12 @@ class TaskDefinitionsRepository(metaclass=Singleton):
                 LOG.debug("Refreshing task definitions due to configuration update.")
                 await GenericTaskHandler.refresh_definitions(force=True)
 
-        Services.get_instance().add(__class__.__name__, self)
+        Services.get_instance().add(TaskDefinitionsRepository.__name__, self)
         EventBus.get_instance().subscribe(
-            Events.STARTED, handle_event, f"{__class__.__name__}.run_migrations"
+            Events.STARTED, handle_event, f"{TaskDefinitionsRepository.__name__}.run_migrations"
         ).subscribe(Events.CONFIG_UPDATE, handler, "GenericTaskHandler.refresh_definitions")
 
-    async def list(self) -> list[TaskDefinitionModel]:
+    async def all(self) -> list[TaskDefinitionModel]:
         async with self.session() as session:
             result: Result[tuple[TaskDefinitionModel]] = await session.execute(
                 select(TaskDefinitionModel).order_by(TaskDefinitionModel.priority.asc(), TaskDefinitionModel.name.asc())
@@ -115,9 +118,9 @@ class TaskDefinitionsRepository(metaclass=Singleton):
 
     async def create(self, payload: dict[str, Any]) -> TaskDefinitionModel:
         async with self.session() as session:
-            model: TaskDefinitionModel = TaskDefinitionModel(**payload) if isinstance(payload, dict) else payload
+            model: TaskDefinitionModel = TaskDefinitionModel(**payload)
             if model.id is not None:
-                model.id = None
+                model.id = None  # ty: ignore
 
             if await self.get_by_name(name=model.name) is not None:
                 msg: str = f"Task definition with name '{model.name}' already exists."

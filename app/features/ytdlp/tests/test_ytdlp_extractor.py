@@ -122,6 +122,7 @@ class TestExtractInfo:
                         {}, "https://example.com/video", debug=True, capture_logs=logging.WARNING
                     )
 
+        assert result is not None
         assert result["id"] == "test123"
         assert logs == ["[generic_browser] Browser fallback warning"]
         assert (logging.INFO, "[generic_browser] Using remote browser for https://example.com/video") in seen
@@ -155,6 +156,7 @@ class TestExtractInfo:
                     {}, "https://example.com/video", debug=False, capture_logs=logging.WARNING
                 )
 
+        assert result is not None
         assert result["id"] == "test123"
         assert logs == ["[generic_browser] Browser fallback warning"]
         assert (logging.INFO, "[generic_browser] Using remote browser for https://example.com/video") in seen

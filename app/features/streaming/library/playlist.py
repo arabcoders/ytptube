@@ -14,7 +14,7 @@ class Playlist:
         "The path where files are downloaded."
 
     async def make(self, file: Path) -> str:
-        ref: str = Path(str(file.relative_to(self.download_path)).strip("/"))
+        ref: Path = Path(str(file.relative_to(self.download_path)).strip("/"))
 
         try:
             ff = await ffprobe(file)

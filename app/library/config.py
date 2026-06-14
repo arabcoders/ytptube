@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import os
 import re
+import shutil
 import sys
 import time
 from logging.handlers import TimedRotatingFileHandler
@@ -30,7 +31,7 @@ APP_THIRD_PARTY_LOG_LEVELS: tuple[tuple[str, int], ...] = (
 if TYPE_CHECKING:
     from subprocess import CompletedProcess
 
-SUPPORTED_CODECS: tuple[str] = ("h264_qsv", "h264_nvenc", "h264_amf", "h264_videotoolbox", "h264_vaapi", "libx264")
+SUPPORTED_CODECS: tuple[str, ...] = ("h264_qsv", "h264_nvenc", "h264_amf", "h264_videotoolbox", "h264_vaapi", "libx264")
 "Supported encoder names in order of preference."
 
 
@@ -179,7 +180,7 @@ class Config(metaclass=Singleton):
     file_logging: bool = True
     "Enable file logging."
 
-    secret_key: str
+    secret_key: str | bytes
     "The secret key to use for the application."
 
     tasks_handler_timer: str = "15 */1 * * *"
@@ -377,7 +378,7 @@ class Config(metaclass=Singleton):
         LOG = get_logger()
 
         self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or str(Path(baseDefaultPath) / "var" / "config")
-        envFile: str = Path(self.config_path) / ".env"
+        envFile: Path = Path(self.config_path) / ".env"
 
         if envFile.exists():
             LOG.info("Loading environment variables from '%s'.", envFile)
@@ -388,7 +389,7 @@ class Config(metaclass=Singleton):
         self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or str(
             Path(baseDefaultPath) / "var" / "downloads"
         )
-        self.app_path = Path(__file__).parent.parent.absolute()
+        self.app_path = str(Path(__file__).parent.parent.absolute())
 
         for k, v in self._get_attributes().items():
             if k.startswith("_") or k in self._manual_vars:
@@ -501,7 +502,7 @@ class Config(metaclass=Singleton):
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
 
-        key_file: str = Path(self.config_path) / "secret.key"
+        key_file: Path = Path(self.config_path) / "secret.key"
 
         if key_file.exists() and key_file.stat().st_size > 2:
             with open(key_file, "rb") as f:
@@ -511,7 +512,7 @@ class Config(metaclass=Singleton):
             with open(key_file, "wb") as f:
                 f.write(self.secret_key)
 
-        self.started = time.time()
+        self.started = int(time.time())
 
         for _tool, _level in APP_THIRD_PARTY_LOG_LEVELS:
             logging.getLogger(_tool).setLevel(_level)
@@ -545,7 +546,7 @@ class Config(metaclass=Singleton):
 
     def _get_attributes(self) -> dict:
         attrs: dict = {}
-        vClass: str = self.__class__
+        vClass: type = self.__class__
 
         for attribute in vClass.__dict__:
             if attribute.startswith("_"):
@@ -601,7 +602,7 @@ class Config(metaclass=Singleton):
             dict[str, str]: The replacer variables.
 
         """
-        keys: tuple[str] = ("os_sep", "download_path", "temp_path", "config_path", "archive_file")
+        keys: tuple[str, ...] = ("os_sep", "download_path", "temp_path", "config_path", "archive_file")
         return {k: getattr(self, k) for k in keys}
 
     @staticmethod
@@ -619,15 +620,20 @@ class Config(metaclass=Singleton):
         This is used to set the version to the latest git tag.
         """
         LOG = get_logger()
-        git_path: str = Path(__file__).parent / ".." / ".." / ".git"
+        git_path: Path = Path(__file__).parent / ".." / ".." / ".git"
         if not git_path.exists():
             return
 
         try:
             import subprocess
 
+            git = shutil.which("git")
+            if not git:
+                LOG.warning("Git executable was not found.")
+                return
+
             branch_result: CompletedProcess[str] = subprocess.run(
-                ["git", "-c", f"safe.directory={git_path.parent!s}", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
+                [git, "-c", f"safe.directory={git_path.parent!s}", "rev-parse", "--abbrev-ref", "HEAD"],
                 cwd=os.path.dirname(git_path),
                 capture_output=True,
                 text=True,
@@ -645,7 +651,7 @@ class Config(metaclass=Singleton):
                 return
 
             commit_result: CompletedProcess[str] = subprocess.run(
-                ["git", "-c", f"safe.directory={git_path.parent!s}", "log", "-1", "--format=%ct_%H"],  # noqa: S607
+                [git, "-c", f"safe.directory={git_path.parent!s}", "log", "-1", "--format=%ct_%H"],
                 cwd=os.path.dirname(git_path),
                 capture_output=True,
                 text=True,

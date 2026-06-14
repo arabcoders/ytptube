@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from aiohttp import web
@@ -110,7 +111,7 @@ async def _read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
         return {"logs": [], "next_offset": None, "end_is_reached": True}
 
 
-async def _tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
+async def _tail_log(file: Path, emitter: Callable[[dict], Awaitable[None]], sleep_time: float = 0.5):
     """
     Live tail.
 

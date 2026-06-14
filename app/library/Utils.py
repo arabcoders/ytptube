@@ -40,7 +40,8 @@ TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 
 
 class FileLogFormatter(logging.Formatter):
-    def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
+    def formatTime(self, record, datefmt=None):  # noqa: N802
+        _ = datefmt
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
 
 
@@ -78,7 +79,8 @@ class JsonLogFormatter(logging.Formatter):
 
         return json.dumps(data, ensure_ascii=False, default=str)
 
-    def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
+    def formatTime(self, record, datefmt=None):  # noqa: N802
+        _ = datefmt
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
 
     @staticmethod
@@ -210,7 +212,7 @@ class JsonLogFormatter(logging.Formatter):
         return source
 
 
-def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
+def timed_lru_cache(ttl_seconds: float, max_size: int = 128):
     """
     Decorator that applies an LRU cache with a time-to-live (TTL) to a function.
     Supports both synchronous and asynchronous functions.
@@ -280,8 +282,9 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
 
                 return _CacheInfo(hits=0, misses=len(cache), maxsize=max_size, currsize=len(cache))
 
-            async_wrapper.cache_clear = cache_clear
-            async_wrapper.cache_info = cache_info
+            async_wrapper_cache: Any = async_wrapper
+            async_wrapper_cache.cache_clear = cache_clear
+            async_wrapper_cache.cache_info = cache_info
             return async_wrapper
 
         # For sync functions, use the original implementation
@@ -309,8 +312,9 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
                 return result
 
         # expose cache_clear, cache_info
-        sync_wrapper.cache_clear = cached.cache_clear
-        sync_wrapper.cache_info = cached.cache_info
+        sync_wrapper_cache: Any = sync_wrapper
+        sync_wrapper_cache.cache_clear = cached.cache_clear
+        sync_wrapper_cache.cache_info = cached.cache_info
         return sync_wrapper
 
     return decorator
@@ -381,7 +385,12 @@ def _is_safe_key(key: Any) -> bool:
 
 
 def merge_dict(
-    source: dict, destination: dict, max_depth: int = 50, max_list_size: int = 10000, _depth: int = 0, _seen: set = None
+    source: dict,
+    destination: dict,
+    max_depth: int = 50,
+    max_list_size: int = 10000,
+    _depth: int = 0,
+    _seen: set | None = None,
 ) -> dict:
     """
     Merge data from source into destination.
@@ -472,7 +481,7 @@ def merge_dict(
     return destination_copy
 
 
-def check_id(file: Path) -> bool | str:
+def check_id(file: Path) -> bool | Path:
     """
     Check if we are able to get an id from the file name.
     if so check if any video file with the same id exists.
@@ -491,6 +500,8 @@ def check_id(file: Path) -> bool | str:
         return False
 
     id: str | None = match.groupdict().get("id")
+    if id is None:
+        return False
 
     try:
         if not file.parent.exists():
@@ -545,9 +556,9 @@ def validate_url(url: str, allow_internal: bool = False) -> bool:
         from yarl import URL
 
         parsed_url = URL(url)
-    except ValueError:
+    except ValueError as exc:
         msg = "Invalid URL."
-        raise ValueError(msg)  # noqa: B904
+        raise ValueError(msg) from exc
 
     # Check allowed schemes
     if parsed_url.scheme not in ["http", "https"]:
@@ -596,7 +607,7 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
 
 
 @timed_lru_cache(ttl_seconds=60, max_size=256)
-def get_file_sidecar(file: Path | None = None) -> dict[dict]:
+def get_file_sidecar(file: Path | None = None) -> dict[str, list[dict[str, Any]]]:
     """
     Get sidecar files for the given file.
 
@@ -925,7 +936,7 @@ def get_file(download_path: str | Path, file: str | Path) -> tuple[Path, int]:
         download_path = Path(download_path)
 
     try:
-        realFile: str = Path(calc_download_path(base_path=download_path, folder=str(file), create_path=False))
+        realFile: Path = Path(calc_download_path(base_path=download_path, folder=str(file), create_path=False))
         if realFile.exists():
             return (realFile, 200)
     except Exception as e:
@@ -936,11 +947,11 @@ def get_file(download_path: str | Path, file: str | Path) -> tuple[Path, int]:
         )
         return (Path(file), 404)
 
-    possibleFile: bool | str = check_id(file=realFile)
-    if not possibleFile:
+    possibleFile: bool | Path = check_id(file=realFile)
+    if not isinstance(possibleFile, Path):
         return (realFile, 404)
 
-    return (Path(possibleFile), 302)
+    return (possibleFile, 302)
 
 
 def encrypt_data(data: str, key: bytes) -> str:
@@ -962,7 +973,7 @@ def encrypt_data(data: str, key: bytes) -> str:
     return base64.urlsafe_b64encode(iv + ciphertext + tag).decode()
 
 
-def decrypt_data(data: str, key: bytes) -> str:
+def decrypt_data(data: str, key: bytes) -> str | None:
     """
     Decrypts AES-GCM encrypted data
 
@@ -975,8 +986,8 @@ def decrypt_data(data: str, key: bytes) -> str:
 
     """
     try:
-        data = base64.urlsafe_b64decode(data)
-        iv, ciphertext, tag = data[:12], data[12:-16], data[-16:]
+        raw: bytes = base64.urlsafe_b64decode(data)
+        iv, ciphertext, tag = raw[:12], raw[12:-16], raw[-16:]
         cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
         plaintext = cipher.decrypt_and_verify(ciphertext, tag)
         return plaintext.decode()
@@ -987,7 +998,7 @@ def decrypt_data(data: str, key: bytes) -> str:
 def get(
     data: dict | list,
     path: str | list | None = None,
-    default: any = None,
+    default: Any = None,
     separator=".",
 ):
     """
@@ -1111,7 +1122,7 @@ def get_files(
             extra={"requested_dir": dir, "base_path": str(base_path), "exception_type": type(e).__name__},
             exc_info=True,
         )
-        return []
+        return [], 0
 
     try:
         dir_path.relative_to(base_path)
@@ -1122,7 +1133,7 @@ def get_files(
             base_path,
             extra={"path": str(dir_path), "base_path": str(base_path)},
         )
-        return []
+        return [], 0
 
     if not str(dir_path).startswith(str(base_path)):
         LOG.warning(
@@ -1131,7 +1142,7 @@ def get_files(
             base_path,
             extra={"path": str(dir_path), "base_path": str(base_path)},
         )
-        return []
+        return [], 0
 
     if not dir_path.is_dir():
         LOG.warning(
@@ -1139,7 +1150,7 @@ def get_files(
             dir_path,
             extra={"path": str(dir_path), "base_path": str(base_path)},
         )
-        return []
+        return [], 0
 
     contents: list = []
     for file in dir_path.iterdir():
@@ -1298,7 +1309,7 @@ def load_cookies(file: str | Path) -> tuple[bool, MozillaCookieJar]:
     try:
         from http.cookiejar import MozillaCookieJar
 
-        cookies = MozillaCookieJar(str(file), None, None)
+        cookies = MozillaCookieJar(str(file), delayload=False, policy=None)
         cookies.load()
 
         return (True, cookies)

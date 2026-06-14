@@ -53,7 +53,7 @@ class DownloadQueue(metaclass=Singleton):
         async def event_handler(_, __):
             await self.initialize()
 
-        self._notify.subscribe(Events.STARTED, event_handler, f"{__class__.__name__}.{__class__.initialize.__name__}")
+        self._notify.subscribe(Events.STARTED, event_handler, f"{DownloadQueue.__name__}.initialize")
 
         Scheduler.get_instance().add(
             timer="* * * * *",
@@ -689,7 +689,7 @@ class DownloadQueue(metaclass=Singleton):
         )
         return {"deleted": deleted_count}
 
-    async def get(self, mode: str = "all") -> dict[str, list[dict[str, ItemDTO]]]:
+    async def get(self, mode: str = "all") -> dict[str, dict[str, ItemDTO]]:
         """
         Get the download queue and the download history.
 

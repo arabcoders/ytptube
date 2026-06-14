@@ -10,20 +10,39 @@ from app.library.log import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import Callable
+    from contextlib import AbstractAsyncContextManager
 
     from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
 
+    SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
 LOG = get_logger()
 
 
+def _model_from_payload(payload: dict[str, Any]) -> TaskModel:
+    model = TaskModel()
+    for key, value in payload.items():
+        if not hasattr(model, key):
+            msg = f"'{key}' is an invalid keyword argument for TaskModel"
+            raise TypeError(msg)
+        setattr(model, key, value)
+    return model
+
+
+def _coerce_model(payload: TaskModel | dict[str, Any]) -> TaskModel:
+    if isinstance(payload, TaskModel):
+        return payload
+    return _model_from_payload(payload)
+
+
 class TasksRepository(metaclass=Singleton):
-    def __init__(self, session: AsyncGenerator[AsyncSession] | None = None) -> None:
+    def __init__(self, session: SessionFactory | None = None) -> None:
         self._migrated = False
-        self.session = session or get_session
+        self.session: SessionFactory = session or get_session
 
     async def run_migrations(self) -> None:
         if self._migrated:
@@ -38,7 +57,7 @@ class TasksRepository(metaclass=Singleton):
     def get_instance() -> TasksRepository:
         return TasksRepository()
 
-    async def list(self) -> list[TaskModel]:
+    async def all(self) -> list[TaskModel]:
         async with self.session() as session:
             result: Result[tuple[TaskModel]] = await session.execute(select(TaskModel).order_by(TaskModel.name.asc()))
             return list(result.scalars().all())
@@ -90,7 +109,7 @@ class TasksRepository(metaclass=Singleton):
         """Get all enabled tasks."""
         async with self.session() as session:
             result: Result[tuple[TaskModel]] = await session.execute(
-                select(TaskModel).where(TaskModel.enabled == True).order_by(TaskModel.name.asc())  # noqa: E712
+                select(TaskModel).where(TaskModel.enabled).order_by(TaskModel.name.asc())
             )
             return list(result.scalars().all())
 
@@ -102,11 +121,11 @@ class TasksRepository(metaclass=Singleton):
             )
             return list(result.scalars().all())
 
-    async def create(self, payload: TaskModel | dict) -> TaskModel:
+    async def create(self, payload: TaskModel | dict[str, Any]) -> TaskModel:
         async with self.session() as session:
-            model: TaskModel = TaskModel(**payload) if isinstance(payload, dict) else payload
+            model = _coerce_model(payload)
             if model.id is not None:
-                model.id = None
+                model.id = None  # ty: ignore
 
             if await self.get_by_name(name=model.name) is not None:
                 msg: str = f"Task with name '{model.name}' already exists."

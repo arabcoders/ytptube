@@ -36,7 +36,8 @@ def _make_download(
 ) -> SimpleNamespace:
     base_dir = download_dir or "/downloads"
     original_post_init = ItemDTO.__post_init__
-    ItemDTO.__post_init__ = lambda self: None
+    cls: Any = ItemDTO
+    cls.__post_init__ = lambda self: None
 
     try:
         item = ItemDTO(

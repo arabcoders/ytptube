@@ -1,6 +1,6 @@
 import asyncio
 import os
-import subprocess  # type: ignore
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -178,6 +178,7 @@ class Segments:
         )
 
         try:
+            assert proc.stdout is not None
             while True:
                 chunk: bytes = await proc.stdout.read(1024 * 64)
                 if not chunk:
@@ -240,7 +241,9 @@ class Segments:
         return (wrote_any, rc, client_disconnected_local, stderr_buf.decode("utf-8", errors="ignore").strip())
 
     async def stream(self, file: Path, resp: web.StreamResponse) -> None:
-        codec: str = Segments._cached_vcodec if Segments._cache_initialized else self.vcodec
+        codec: str = self.vcodec
+        if Segments._cache_initialized and Segments._cached_vcodec:
+            codec = Segments._cached_vcodec
         if not codec or codec not in SUPPORTED_CODECS:
             codec: str = select_encoder(self.vcodec or "")
 

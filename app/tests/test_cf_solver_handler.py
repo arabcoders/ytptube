@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import http.cookiejar
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -12,10 +13,10 @@ try:
     YTDLP_AVAILABLE = True
 except ImportError:
     YTDLP_AVAILABLE = False
-    Request = Mock
-    Response = Mock
-    RequestDirector = Mock
-    HTTPError = Exception
+    Request: Any = Mock
+    Response: Any = Mock
+    RequestDirector: Any = Mock
+    HTTPError: Any = Exception
 
 pytestmark = pytest.mark.skipif(not YTDLP_AVAILABLE, reason="yt-dlp not available")
 

@@ -1,7 +1,15 @@
-from typing import Any
+from typing import Any, Literal, overload
 
 from app.features.tasks.definitions.models import TaskDefinitionModel
 from app.features.tasks.definitions.schemas import Definition, TaskDefinition, TaskDefinitionSummary
+
+
+@overload
+def model_to_schema(model: TaskDefinitionModel, summary: Literal[False] = False) -> TaskDefinition: ...
+
+
+@overload
+def model_to_schema(model: TaskDefinitionModel, summary: Literal[True]) -> TaskDefinitionSummary: ...
 
 
 def model_to_schema(model: TaskDefinitionModel, summary: bool = False) -> TaskDefinition | TaskDefinitionSummary:

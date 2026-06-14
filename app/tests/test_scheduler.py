@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import types
+from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -21,7 +22,7 @@ if "aiocron" not in sys.modules:
         def uuid(self) -> str:
             return "stub-uuid"
 
-    aiocron_stub.Cron = _CronImportStub
+    setattr(aiocron_stub, "Cron", _CronImportStub)
     sys.modules["aiocron"] = aiocron_stub
 
 
@@ -36,7 +37,7 @@ class DummyCron:
         self,
         *,
         spec: str,
-        func: callable,
+        func: Callable,
         args: tuple = (),
         kwargs: dict | None = None,
         uuid: str | None = None,
@@ -231,7 +232,7 @@ class TestScheduler:
                 self,
                 *_,
                 spec: str,
-                func: callable,
+                func: Callable,
                 args: tuple = (),
                 kwargs: dict | None = None,
                 uuid: str | None = None,
@@ -266,7 +267,7 @@ class TestScheduler:
                 self,
                 *_,
                 spec: str,
-                func: callable,
+                func: Callable,
                 args: tuple = (),
                 kwargs: dict | None = None,
                 uuid: str | None = None,

@@ -38,7 +38,7 @@ class Cache(metaclass=ThreadSafe):
         Scheduler.get_instance().add(
             timer="* * * * *",
             func=self.cleanup,
-            id=f"{__class__.__name__}.{__class__.cleanup.__name__}",
+            id=f"{type(self).__name__}.{type(self).cleanup.__name__}",
         )
 
     def set(self, key: str, value: Any, ttl: float | None = None) -> None:
