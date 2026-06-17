@@ -1,5 +1,6 @@
 import { proxyRefs, readonly, ref } from 'vue';
 import { useYtpConfig } from '~/composables/useYtpConfig';
+import { useHistoryState } from '~/composables/useHistoryState';
 import { useQueueState } from '~/composables/useQueueState';
 import type { StoreItem } from '~/types/store';
 import type {
@@ -17,6 +18,7 @@ type KnownEvent = keyof WSEP;
 
 const getRuntimeConfig = () => useRuntimeConfig();
 const getConfig = () => useYtpConfig();
+const getHistoryState = () => useHistoryState();
 const getQueueState = () => useQueueState();
 const getToast = () => useNotification();
 let queueReloadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -359,11 +361,15 @@ on('item_deleted', (data: WSEP['item_deleted']) => {
 on('item_updated', (data: WSEP['item_updated']) => {
   const queueState = getQueueState();
 
-  if (!queueState.isLoaded()) {
-    return;
+  if (queueState.isLoaded()) {
+    queueState.update(data.data._id, data.data);
   }
 
-  queueState.update(data.data._id, data.data);
+  const historyState = getHistoryState();
+
+  if (historyState.isLoaded.value) {
+    historyState.update(data.data._id, data.data);
+  }
 });
 
 on('item_progress', (data: WSEP['item_progress']) => {
