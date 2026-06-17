@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "13424d1bcfb7834a1b2bd8e929b8d2fe1acaac43",
-    "date": "2026-06-14T15:41:03+00:00",
+    "full_sha": "72f2373c42f6100a04e3c598903e7a1201433d12",
+    "date": "2026-06-17T19:44:37+00:00",
     "commits": [
+      {
+        "sha": "72f2373c",
+        "full_sha": "72f2373c42f6100a04e3c598903e7a1201433d12",
+        "message": "refactor: update the history item in UI automaticly whenever a item_update received via sockets",
+        "author": "arabcoders",
+        "date": "2026-06-17T19:44:37+00:00"
+      },
       {
         "sha": "13424d1b",
         "full_sha": "13424d1bcfb7834a1b2bd8e929b8d2fe1acaac43",
