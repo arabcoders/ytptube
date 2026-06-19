@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "19f0b7819e94cc64ff18faff3870a2f76a5fc604",
-    "date": "2026-06-19T15:39:35+00:00",
+    "full_sha": "3c571429e7a8deb23afb0269fc92b77626d82022",
+    "date": "2026-06-19T16:43:44+00:00",
     "commits": [
+      {
+        "sha": "3c571429",
+        "full_sha": "3c571429e7a8deb23afb0269fc92b77626d82022",
+        "message": "fix: seeting simple_mode cookie was crashing http layer",
+        "author": "arabcoders",
+        "date": "2026-06-19T16:43:44+00:00"
+      },
       {
         "sha": "19f0b781",
         "full_sha": "19f0b7819e94cc64ff18faff3870a2f76a5fc604",
