@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "72f2373c42f6100a04e3c598903e7a1201433d12",
-    "date": "2026-06-17T19:44:37+00:00",
+    "full_sha": "19f0b7819e94cc64ff18faff3870a2f76a5fc604",
+    "date": "2026-06-19T15:39:35+00:00",
     "commits": [
+      {
+        "sha": "19f0b781",
+        "full_sha": "19f0b7819e94cc64ff18faff3870a2f76a5fc604",
+        "message": "refactor: improve logs view",
+        "author": "arabcoders",
+        "date": "2026-06-19T15:39:35+00:00"
+      },
+      {
+        "sha": "3381ca38",
+        "full_sha": "3381ca38057a21bceb74663ec5291ca99b9bf3ce",
+        "message": "refactor: re-design simple mode toggle.",
+        "author": "arabcoders",
+        "date": "2026-06-19T14:41:04+00:00"
+      },
       {
         "sha": "72f2373c",
         "full_sha": "72f2373c42f6100a04e3c598903e7a1201433d12",
