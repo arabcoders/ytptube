@@ -264,6 +264,10 @@
 .markdown-alert-caution {
   --markdown-alert-accent: var(--ui-error);
 }
+.docs-markdown details summary {
+  cursor: pointer;
+  user-select: none;
+}
 </style>
 
 <template>

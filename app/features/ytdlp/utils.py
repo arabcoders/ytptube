@@ -131,10 +131,9 @@ class LogWrapper:
             if level < target.level:
                 continue
 
-            if target.logger:
-                log_kwargs = {**kwargs}
-                log_kwargs.setdefault("stacklevel", 3)
             if isinstance(target.target, logging.Logger):
+                log_kwargs: dict[str, Any] = {**kwargs}
+                log_kwargs.setdefault("stacklevel", 3)
                 target.target.log(level, msg, *args, **log_kwargs)
             elif callable(target.target):
                 target.target(level, msg, *args, **kwargs)

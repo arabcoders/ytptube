@@ -1,544 +1,453 @@
 <template>
-  <UApp :toaster="toasterConfig">
-    <Transition name="shell-mode" mode="out-in">
-      <div
-        v-if="simpleMode"
-        key="simple"
-        class="shell-stage flex flex-col bg-default/95 backdrop-blur-sm"
-      >
+  <AppRoot ref="root" mode="regular" load-opts v-slot="{ reloadBg, bgLoading }">
+    <div class="shell-stage shell-surface flex flex-col">
+      <Shutdown v-if="app_shutdown" />
+
+      <div id="main_container" class="shell-root flex flex-col" v-else>
         <UAlert
-          v-if="showConnectionBanner"
-          color="warning"
+          v-if="newVersionIsAvailable"
+          color="success"
           variant="soft"
           orientation="horizontal"
-          :title="connectionBannerTitle"
+          title="A new WebUI version is installed."
         >
           <template #leading>
-            <UIcon
-              :name="connectionBannerIcon"
-              :class="[
-                'size-4 shrink-0 text-warning',
-                socket.connectionStatus === 'connecting' ? 'animate-spin' : '',
-              ]"
-            />
+            <UIcon name="i-lucide-info" class="size-4 shrink-0 text-success" />
           </template>
 
-          <template v-if="socket.connectionStatus === 'disconnected'" #actions>
-            <UButton
-              color="neutral"
-              variant="link"
-              size="sm"
-              class="px-0"
-              @click="socket.reconnect()"
-            >
-              Reconnect
-            </UButton>
+          <template #actions>
+            <div class="flex items-center gap-3">
+              <UButton to="/changelog" color="neutral" variant="link" size="sm" class="px-0">
+                View changelog
+              </UButton>
+
+              <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
+                Reload app
+              </UButton>
+            </div>
           </template>
         </UAlert>
 
-        <Simple @show_settings="show_settings = true" />
-      </div>
-
-      <div v-else key="regular" class="shell-stage shell-surface flex flex-col">
-        <Shutdown v-if="app_shutdown" />
-
-        <div id="main_container" class="shell-root flex flex-col" v-else>
-          <UAlert
-            v-if="newVersionIsAvailable"
-            color="success"
-            variant="soft"
-            orientation="horizontal"
-            title="A new WebUI version is installed."
+        <UDashboardGroup
+          storage="local"
+          storage-key="ytptube-shell"
+          class="shell-dashboard flex-1"
+          :ui="{ base: 'relative flex min-h-full overflow-visible' }"
+        >
+          <UDashboardSidebar
+            v-model:open="showSidebar"
+            side="left"
+            collapsible
+            resizable
+            :default-size="15"
+            :min-size="10"
+            :max-size="20"
+            :collapsed-size="4"
+            :ui="dashboardSidebarUi"
           >
-            <template #leading>
-              <UIcon name="i-lucide-info" class="size-4 shrink-0 text-success" />
+            <template #header="{ collapsed }">
+              <UTooltip :text="connectionStatusLabel">
+                <NuxtLink
+                  to="/"
+                  class="flex w-full min-w-0 items-center gap-2 rounded-xl transition-colors hover:bg-elevated/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  :class="collapsed ? 'justify-center p-1' : 'px-1.5 py-1'"
+                  aria-label="Go to home"
+                >
+                  <span
+                    class="relative inline-flex shrink-0 items-center justify-center transition-all duration-200"
+                    :class="
+                      collapsed
+                        ? 'size-10 rounded-xl bg-elevated/80 ring ring-default shadow-xs'
+                        : 'size-9 rounded-lg'
+                    "
+                  >
+                    <img
+                      :src="uri('/images/favicon.png')"
+                      alt="YTPTube"
+                      class="rounded-lg object-contain"
+                      :class="collapsed ? 'size-6' : 'size-5'"
+                    />
+                    <span
+                      aria-hidden="true"
+                      class="absolute right-0 bottom-0 size-2.5 rounded-full ring-2 ring-default"
+                      :class="connectionStatusDotClass"
+                    />
+                  </span>
+
+                  <div v-if="false === collapsed" class="min-w-0">
+                    <p class="truncate text-sm font-semibold" :class="connectionStatusColor">
+                      YTPTube
+                    </p>
+                    <p v-if="config?.app?.instance_title" class="truncate text-xs text-toned">
+                      {{ config.app.instance_title }}
+                    </p>
+                  </div>
+                </NuxtLink>
+              </UTooltip>
             </template>
 
-            <template #actions>
-              <div class="flex items-center gap-3">
-                <UButton to="/changelog" color="neutral" variant="link" size="sm" class="px-0">
-                  View changelog
-                </UButton>
+            <template #default="{ collapsed }">
+              <div class="flex h-full flex-col gap-6 px-1 py-1">
+                <div v-for="section in sidebarSections" :key="section.id" class="space-y-2">
+                  <p
+                    v-if="false === collapsed && section.label"
+                    class="px-2 text-[11px] font-semibold tracking-[0.22em] text-toned uppercase"
+                  >
+                    {{ section.label }}
+                  </p>
 
-                <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
-                  Reload app
-                </UButton>
+                  <UNavigationMenu
+                    orientation="vertical"
+                    :collapsed="collapsed"
+                    :items="section.items"
+                    :tooltip="true"
+                    :ui="navigationUi(collapsed)"
+                  />
+                </div>
               </div>
             </template>
-          </UAlert>
 
-          <UDashboardGroup
-            storage="local"
-            storage-key="ytptube-shell"
-            class="shell-dashboard flex-1"
-            :ui="{ base: 'relative flex min-h-full overflow-visible' }"
-          >
-            <UDashboardSidebar
-              v-model:open="showSidebar"
-              side="left"
-              collapsible
-              resizable
-              :default-size="15"
-              :min-size="10"
-              :max-size="20"
-              :collapsed-size="4"
-              :ui="dashboardSidebarUi"
-            >
-              <template #header="{ collapsed }">
-                <UTooltip :text="connectionStatusLabel">
-                  <NuxtLink
-                    to="/"
-                    class="flex w-full min-w-0 items-center gap-2 rounded-xl transition-colors hover:bg-elevated/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    :class="collapsed ? 'justify-center p-1' : 'px-1.5 py-1'"
-                    aria-label="Go to home"
-                  >
-                    <span
-                      class="relative inline-flex shrink-0 items-center justify-center transition-all duration-200"
-                      :class="
-                        collapsed
-                          ? 'size-10 rounded-xl bg-elevated/80 ring ring-default shadow-xs'
-                          : 'size-9 rounded-lg'
+            <template #footer="{ collapsed }">
+              <div v-if="false === collapsed" class="w-full"></div>
+            </template>
+          </UDashboardSidebar>
+
+          <UDashboardPanel class="min-w-0 bg-transparent" :ui="dashboardPanelUi">
+            <template #header>
+              <UDashboardNavbar :toggle="false" :title="pageTitle" :ui="dashboardNavbarUi">
+                <template #left>
+                  <div class="flex items-center gap-2">
+                    <UDashboardSidebarToggle class="lg:hidden" />
+                    <UButton
+                      to="/"
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-house"
+                      class="lg:hidden"
+                    >
+                      Home
+                    </UButton>
+                    <UDashboardSidebarCollapse class="hidden lg:inline-flex" />
+                  </div>
+                </template>
+
+                <template #right>
+                  <div class="flex items-center gap-1 sm:gap-2">
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-gauge"
+                      @click="showLimits = true"
+                    >
+                      <span class="hidden xl:inline">Limits</span>
+                    </UButton>
+
+                    <NotifyDropdown />
+
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-search"
+                      aria-label="Search routes and actions"
+                      title="Search routes and actions"
+                      class="shrink-0 lg:hidden"
+                      @click="showRouteSearch = true"
+                    />
+
+                    <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
+
+                    <ThemeButton label-class="hidden xl:inline" />
+
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-refresh-cw"
+                      @click="$router.go(0)"
+                    >
+                      <span class="hidden xl:inline">Reload</span>
+                    </UButton>
+
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-settings-2"
+                      @click="root?.open()"
+                    >
+                      <span class="hidden xl:inline">WebUI Settings</span>
+                    </UButton>
+
+                    <UButton
+                      v-if="true === config.app.is_native"
+                      color="error"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-power"
+                      @click="shutdownApp"
+                    >
+                      <span class="hidden xl:inline">Shutdown</span>
+                    </UButton>
+                  </div>
+                </template>
+              </UDashboardNavbar>
+            </template>
+
+            <template #body>
+              <div class="relative flex min-h-full min-w-0 max-w-full flex-1 flex-col">
+                <NuxtLoadingIndicator />
+
+                <div
+                  class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5 lg:px-6"
+                >
+                  <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col gap-4">
+                    <UAlert
+                      v-if="!config.is_loaded"
+                      :color="config.is_loading ? 'info' : 'error'"
+                      variant="soft"
+                      :title="
+                        config.is_loading
+                          ? 'Loading configuration...'
+                          : 'Failed to load configuration'
                       "
                     >
-                      <img
-                        :src="uri('/images/favicon.png')"
-                        alt="YTPTube"
-                        class="rounded-lg object-contain"
-                        :class="collapsed ? 'size-6' : 'size-5'"
-                      />
-                      <span
-                        aria-hidden="true"
-                        class="absolute right-0 bottom-0 size-2.5 rounded-full ring-2 ring-default"
-                        :class="connectionStatusDotClass"
-                      />
-                    </span>
+                      <template #leading>
+                        <UIcon
+                          :name="
+                            config.is_loading ? 'i-lucide-loader-circle' : 'i-lucide-triangle-alert'
+                          "
+                          :class="[
+                            'size-4 shrink-0',
+                            config.is_loading ? 'animate-spin text-info' : 'text-error',
+                          ]"
+                        />
+                      </template>
 
-                    <div v-if="false === collapsed" class="min-w-0">
-                      <p class="truncate text-sm font-semibold" :class="connectionStatusColor">
-                        YTPTube
-                      </p>
-                      <p v-if="config?.app?.instance_title" class="truncate text-xs text-toned">
-                        {{ config.app.instance_title }}
-                      </p>
-                    </div>
-                  </NuxtLink>
-                </UTooltip>
-              </template>
+                      <template #description>
+                        <div class="space-y-3">
+                          <p v-if="config.is_loading" class="text-sm text-default">
+                            This usually takes less than a few seconds. If this is taking too long,
+                            <button
+                              type="button"
+                              class="font-semibold text-highlighted underline-offset-2 hover:underline"
+                              @click="$router.go(0)"
+                            >
+                              click here
+                            </button>
+                            to reload the page.
+                          </p>
 
-              <template #default="{ collapsed }">
-                <div class="flex h-full flex-col gap-6 px-1 py-1">
-                  <div v-for="section in sidebarSections" :key="section.id" class="space-y-2">
-                    <p
-                      v-if="false === collapsed && section.label"
-                      class="px-2 text-[11px] font-semibold tracking-[0.22em] text-toned uppercase"
+                          <p v-else class="text-sm text-default">
+                            Failed to load the application configuration. This likely indicates a
+                            problem with the backend. Try to
+                            <button
+                              type="button"
+                              class="font-semibold text-highlighted underline-offset-2 hover:underline"
+                              @click="config.loadConfig(true)"
+                            >
+                              reload configuration
+                            </button>
+                            or
+                            <button
+                              type="button"
+                              class="font-semibold text-highlighted underline-offset-2 hover:underline"
+                              @click="$router.go(0)"
+                            >
+                              reload the page
+                            </button>
+                            .
+                          </p>
+
+                          <div
+                            v-if="socket.error"
+                            class="flex flex-wrap items-center gap-2 border-t border-default pt-3 text-error"
+                          >
+                            <UIcon name="i-lucide-triangle-alert" class="size-4" />
+                            <span
+                              class="inline-flex min-w-6 items-center justify-center rounded-full bg-error px-2 py-0.5 text-xs font-semibold text-white"
+                            >
+                              {{ socket.error_count }}
+                            </span>
+                            <span>
+                              {{ socket.error }}. Check the developer console for more information.
+                            </span>
+                          </div>
+                        </div>
+                      </template>
+                    </UAlert>
+
+                    <ConnectionBanner />
+
+                    <div
+                      v-if="config.is_loaded"
+                      class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col"
                     >
-                      {{ section.label }}
-                    </p>
-
-                    <UNavigationMenu
-                      orientation="vertical"
-                      :collapsed="collapsed"
-                      :items="section.items"
-                      :tooltip="true"
-                      :ui="navigationUi(collapsed)"
-                    />
+                      <NuxtPage :isLoading="bgLoading" @reload_bg="reloadBg(true)" />
+                    </div>
                   </div>
-                </div>
-              </template>
 
-              <template #footer="{ collapsed }">
-                <div v-if="false === collapsed" class="w-full"></div>
-              </template>
-            </UDashboardSidebar>
-
-            <UDashboardPanel class="min-w-0 bg-transparent" :ui="dashboardPanelUi">
-              <template #header>
-                <UDashboardNavbar :toggle="false" :title="pageTitle" :ui="dashboardNavbarUi">
-                  <template #left>
-                    <div class="flex items-center gap-2">
-                      <UDashboardSidebarToggle class="lg:hidden" />
-                      <UButton
-                        to="/"
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-house"
-                        class="lg:hidden"
-                      >
-                        Home
-                      </UButton>
-                      <UDashboardSidebarCollapse class="hidden lg:inline-flex" />
-                    </div>
-                  </template>
-
-                  <template #right>
-                    <div class="flex items-center gap-1 sm:gap-2">
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-gauge"
-                        @click="showLimits = true"
-                      >
-                        <span class="hidden xl:inline">Limits</span>
-                      </UButton>
-
-                      <NotifyDropdown />
-
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-search"
-                        aria-label="Search routes and actions"
-                        title="Search routes and actions"
-                        class="shrink-0 lg:hidden"
-                        @click="showRouteSearch = true"
-                      />
-
-                      <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
-
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        :icon="colorModeButtonIcon"
-                        :aria-label="colorModeButtonTitle"
-                        :title="colorModeButtonTitle"
-                        @click="colorMode.preference = nextColorModePreference"
-                      >
-                        <span class="hidden xl:inline">{{ colorModeButtonTitle }}</span>
-                      </UButton>
-
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-refresh-cw"
-                        @click="$router.go(0)"
-                      >
-                        <span class="hidden xl:inline">Reload</span>
-                      </UButton>
-
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-settings-2"
-                        @click="show_settings = !show_settings"
-                      >
-                        <span class="hidden xl:inline">WebUI Settings</span>
-                      </UButton>
-
-                      <UButton
-                        v-if="true === config.app.is_native"
-                        color="error"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-power"
-                        @click="shutdownApp"
-                      >
-                        <span class="hidden xl:inline">Shutdown</span>
-                      </UButton>
-                    </div>
-                  </template>
-                </UDashboardNavbar>
-              </template>
-
-              <template #body>
-                <div class="relative flex min-h-full min-w-0 max-w-full flex-1 flex-col">
-                  <NuxtLoadingIndicator />
-
-                  <div
-                    class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5 lg:px-6"
+                  <footer
+                    v-if="config.is_loaded"
+                    class="shell-footer mt-auto border-t border-default pt-6 text-sm text-toned"
                   >
-                    <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col gap-4">
-                      <UAlert
-                        v-if="!config.is_loaded"
-                        :color="config.is_loading ? 'info' : 'error'"
-                        variant="soft"
-                        :title="
-                          config.is_loading
-                            ? 'Loading configuration...'
-                            : 'Failed to load configuration'
-                        "
-                      >
-                        <template #leading>
+                    <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                      <div class="space-y-3">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                          <NuxtLink
+                            href="https://github.com/ArabCoders/ytptube"
+                            target="_blank"
+                            class="inline-flex items-center gap-2 font-semibold text-highlighted"
+                          >
+                            <UIcon name="i-lucide-github" class="size-4" />
+                            <span>YTPTube</span>
+                          </NuxtLink>
+
+                          <UTooltip :text="buildTooltip">
+                            <span class="text-xs has-tooltip">
+                              {{ config?.app?.app_version || 'unknown' }}
+                            </span>
+                          </UTooltip>
+                        </div>
+
+                        <p
+                          v-if="config.app?.new_version"
+                          class="flex flex-wrap items-center gap-2 text-xs"
+                        >
+                          <UIcon name="i-lucide-info" class="size-4 text-warning" />
+                          <span>Update available:</span>
+                          <NuxtLink to="/changelog" class="font-semibold text-highlighted">
+                            {{ config.app.new_version }}
+                          </NuxtLink>
+                        </p>
+
+                        <button
+                          v-else
+                          type="button"
+                          class="inline-flex items-center gap-2 text-xs text-left transition-colors hover:text-highlighted disabled:opacity-60"
+                          :disabled="checkingUpdates"
+                          @click="checkForUpdates"
+                        >
                           <UIcon
                             :name="
-                              config.is_loading
+                              checkingUpdates
                                 ? 'i-lucide-loader-circle'
-                                : 'i-lucide-triangle-alert'
+                                : 'i-lucide-circle-check-big'
                             "
-                            :class="[
-                              'size-4 shrink-0',
-                              config.is_loading ? 'animate-spin text-info' : 'text-error',
-                            ]"
+                            :class="['size-4', checkingUpdates ? 'animate-spin' : '']"
                           />
-                        </template>
+                          <span>{{ updateCheckMessage }}</span>
+                        </button>
 
-                        <template #description>
-                          <div class="space-y-3">
-                            <p v-if="config.is_loading" class="text-sm text-default">
-                              This usually takes less than a few seconds. If this is taking too
-                              long,
-                              <button
-                                type="button"
-                                class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="$router.go(0)"
-                              >
-                                click here
-                              </button>
-                              to reload the page.
-                            </p>
-
-                            <p v-else class="text-sm text-default">
-                              Failed to load the application configuration. This likely indicates a
-                              problem with the backend. Try to
-                              <button
-                                type="button"
-                                class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="config.loadConfig(true)"
-                              >
-                                reload configuration
-                              </button>
-                              or
-                              <button
-                                type="button"
-                                class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                                @click="$router.go(0)"
-                              >
-                                reload the page
-                              </button>
-                              .
-                            </p>
-
-                            <div
-                              v-if="socket.error"
-                              class="flex flex-wrap items-center gap-2 border-t border-default pt-3 text-error"
-                            >
-                              <UIcon name="i-lucide-triangle-alert" class="size-4" />
-                              <span
-                                class="inline-flex min-w-6 items-center justify-center rounded-full bg-error px-2 py-0.5 text-xs font-semibold text-white"
-                              >
-                                {{ socket.error_count }}
-                              </span>
-                              <span>
-                                {{ socket.error }}. Check the developer console for more
-                                information.
-                              </span>
-                            </div>
-                          </div>
-                        </template>
-                      </UAlert>
-
-                      <UAlert
-                        v-if="showConnectionBanner"
-                        color="warning"
-                        variant="soft"
-                        orientation="horizontal"
-                        :title="connectionBannerTitle"
-                      >
-                        <template #leading>
-                          <UIcon
-                            :name="connectionBannerIcon"
-                            :class="[
-                              'size-4 shrink-0 text-warning',
-                              socket.connectionStatus === 'connecting' ? 'animate-spin' : '',
-                            ]"
-                          />
-                        </template>
-
-                        <template v-if="socket.connectionStatus === 'disconnected'" #actions>
-                          <UButton
-                            color="neutral"
-                            variant="link"
-                            size="sm"
-                            class="px-0"
-                            @click="socket.reconnect()"
+                        <p v-if="config.app?.started" class="flex items-center gap-2 text-xs">
+                          <UIcon name="i-lucide-clock-3" class="size-4" />
+                          <UTooltip
+                            :text="
+                              'Started: ' +
+                              moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z')
+                            "
                           >
-                            Reconnect
-                          </UButton>
-                        </template>
-                      </UAlert>
+                            <span class="has-tooltip">
+                              {{ moment.unix(config.app?.started).fromNow() }}
+                            </span>
+                          </UTooltip>
+                        </p>
+                      </div>
 
                       <div
-                        v-if="config.is_loaded"
-                        class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col"
+                        class="space-y-3 border-t border-default pt-4 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0"
                       >
-                        <NuxtPage :isLoading="loadingImage" @reload_bg="loadImage(true)" />
-                      </div>
-                    </div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-toned">
+                          Powered by
+                        </p>
 
-                    <footer
-                      v-if="config.is_loaded"
-                      class="shell-footer mt-auto border-t border-default pt-6 text-sm text-toned"
-                    >
-                      <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-                        <div class="space-y-3">
-                          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <div class="space-y-2">
+                          <div class="flex flex-wrap items-center gap-2">
                             <NuxtLink
-                              href="https://github.com/ArabCoders/ytptube"
+                              href="https://github.com/yt-dlp/yt-dlp"
                               target="_blank"
                               class="inline-flex items-center gap-2 font-semibold text-highlighted"
                             >
                               <UIcon name="i-lucide-github" class="size-4" />
-                              <span>YTPTube</span>
+                              <span>yt-dlp</span>
                             </NuxtLink>
 
-                            <UTooltip :text="buildTooltip">
-                              <span class="text-xs has-tooltip">
-                                {{ config?.app?.app_version || 'unknown' }}
-                              </span>
-                            </UTooltip>
+                            <span class="text-xs">{{
+                              config?.app?.ytdlp_version || 'unknown'
+                            }}</span>
                           </div>
 
                           <p
-                            v-if="config.app?.new_version"
+                            v-if="config.app?.yt_new_version"
                             class="flex flex-wrap items-center gap-2 text-xs"
                           >
-                            <UIcon name="i-lucide-info" class="size-4 text-warning" />
-                            <span>Update available:</span>
-                            <NuxtLink to="/changelog" class="font-semibold text-highlighted">
-                              {{ config.app.new_version }}
-                            </NuxtLink>
-                          </p>
-
-                          <button
-                            v-else
-                            type="button"
-                            class="inline-flex items-center gap-2 text-xs text-left transition-colors hover:text-highlighted disabled:opacity-60"
-                            :disabled="checkingUpdates"
-                            @click="checkForUpdates"
-                          >
-                            <UIcon
-                              :name="
-                                checkingUpdates
-                                  ? 'i-lucide-loader-circle'
-                                  : 'i-lucide-circle-check-big'
-                              "
-                              :class="['size-4', checkingUpdates ? 'animate-spin' : '']"
-                            />
-                            <span>{{ updateCheckMessage }}</span>
-                          </button>
-
-                          <p v-if="config.app?.started" class="flex items-center gap-2 text-xs">
-                            <UIcon name="i-lucide-clock-3" class="size-4" />
-                            <UTooltip
-                              :text="
-                                'Started: ' +
-                                moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z')
-                              "
-                            >
+                            <UTooltip text="Restart container to update yt-dlp">
                               <span class="has-tooltip">
-                                {{ moment.unix(config.app?.started).fromNow() }}
+                                <UIcon name="i-lucide-info" class="size-4 text-warning" />
                               </span>
                             </UTooltip>
-                          </p>
-                        </div>
-
-                        <div
-                          class="space-y-3 border-t border-default pt-4 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0"
-                        >
-                          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-toned">
-                            Powered by
-                          </p>
-
-                          <div class="space-y-2">
-                            <div class="flex flex-wrap items-center gap-2">
-                              <NuxtLink
-                                href="https://github.com/yt-dlp/yt-dlp"
-                                target="_blank"
-                                class="inline-flex items-center gap-2 font-semibold text-highlighted"
-                              >
-                                <UIcon name="i-lucide-github" class="size-4" />
-                                <span>yt-dlp</span>
-                              </NuxtLink>
-
-                              <span class="text-xs">{{
-                                config?.app?.ytdlp_version || 'unknown'
-                              }}</span>
-                            </div>
-
-                            <p
-                              v-if="config.app?.yt_new_version"
-                              class="flex flex-wrap items-center gap-2 text-xs"
+                            <span>Update available:</span>
+                            <NuxtLink
+                              :href="`https://github.com/yt-dlp/yt-dlp/releases/tag/${config.app.yt_new_version}`"
+                              target="_blank"
+                              class="font-semibold text-highlighted"
                             >
-                              <UTooltip text="Restart container to update yt-dlp">
-                                <span class="has-tooltip">
-                                  <UIcon name="i-lucide-info" class="size-4 text-warning" />
-                                </span>
-                              </UTooltip>
-                              <span>Update available:</span>
-                              <NuxtLink
-                                :href="`https://github.com/yt-dlp/yt-dlp/releases/tag/${config.app.yt_new_version}`"
-                                target="_blank"
-                                class="font-semibold text-highlighted"
-                              >
-                                {{ config.app.yt_new_version }}
-                              </NuxtLink>
-                            </p>
-                          </div>
+                              {{ config.app.yt_new_version }}
+                            </NuxtLink>
+                          </p>
                         </div>
                       </div>
-                    </footer>
-                  </div>
-
-                  <ClientOnly>
-                    <Dialog />
-                  </ClientOnly>
+                    </div>
+                  </footer>
                 </div>
-              </template>
-            </UDashboardPanel>
 
-            <UDashboardSearch
-              v-model:open="showRouteSearch"
-              :groups="routeSearchGroups"
-              shortcut="meta_k"
-              placeholder="Search routes and actions"
-              :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
-            />
+                <ClientOnly>
+                  <Dialog />
+                </ClientOnly>
+              </div>
+            </template>
+          </UDashboardPanel>
 
-            <UModal
-              v-if="showLimits"
-              :open="showLimits"
-              title="Download Limits"
-              :ui="{ content: 'sm:max-w-4xl', body: 'p-0' }"
-              @update:open="(open) => !open && (showLimits = false)"
-            >
-              <template #body>
-                <LimitsPage />
-              </template>
-            </UModal>
-          </UDashboardGroup>
-        </div>
+          <UDashboardSearch
+            v-model:open="showRouteSearch"
+            :groups="routeSearchGroups"
+            shortcut="meta_k"
+            placeholder="Search routes and actions"
+            :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
+          />
+
+          <UModal
+            v-if="showLimits"
+            :open="showLimits"
+            title="Download Limits"
+            :ui="{ content: 'sm:max-w-4xl', body: 'p-0' }"
+            @update:open="(open) => !open && (showLimits = false)"
+          >
+            <template #body>
+              <LimitsPage />
+            </template>
+          </UModal>
+        </UDashboardGroup>
       </div>
-    </Transition>
-
-    <SettingsPanel
-      :isOpen="show_settings"
-      :isLoading="loadingImage"
-      @close="show_settings = false"
-      @reload_bg="loadImage(true)"
-      direction="right"
-    />
-  </UApp>
+    </div>
+  </AppRoot>
 </template>
 
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
 import { ref, onBeforeUnmount, onMounted, readonly } from 'vue';
-import { useStorage } from '@vueuse/core';
 import moment from 'moment';
 import { useMediaQuery } from '~/composables/useMediaQuery';
-import type { toastPosition } from '~/composables/useNotification';
+import AppRoot from '~/components/AppRoot.vue';
+import ConnectionBanner from '~/components/ConnectionBanner.vue';
 import LimitsPage from '~/components/LimitsPage.vue';
-import { formatPageTitle, parse_api_response, request, syncOpacity, uri } from '~/utils';
+import ThemeButton from '~/components/ThemeButton.vue';
+import { formatPageTitle, parse_api_response, request, uri } from '~/utils';
 import { getSidebarSwipeMode } from '~/utils/sidebarSwipe';
-import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
-import Simple from '~/components/Simple.vue';
 import Shutdown from '~/components/shutdown.vue';
 import type { version_check } from '~/types';
 import {
@@ -555,7 +464,6 @@ type SidebarSection = {
   items: Array<Array<NavigationMenuItem>>;
 };
 
-type ColorModePreference = 'system' | 'light' | 'dark';
 type SwipeMode = 'open' | 'close';
 
 const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
@@ -563,15 +471,8 @@ const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
 const socket = useAppSocket();
 const config = useYtpConfig();
 const route = useRoute();
-const colorMode = useColorMode();
-const loadedImage = ref();
-const loadingImage = ref(false);
-const bg_enable = useStorage('random_bg', true);
-const bg_opacity = useStorage('random_bg_opacity', 0.95);
-const page_anims = useStorage<boolean>('page_anims', true);
+const root = ref<InstanceType<typeof AppRoot> | null>(null);
 const app_shutdown = ref<boolean>(false);
-const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
-const show_settings = ref(false);
 const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Check now');
 const showRouteSearch = ref(false);
@@ -588,42 +489,6 @@ const SwipeState = {
   endX: 0,
   endY: 0,
 };
-
-const colorModePreferences: Array<ColorModePreference> = ['system', 'light', 'dark'];
-
-const colorModePreference = computed<ColorModePreference>(() => {
-  const preference = colorMode.preference;
-  return colorModePreferences.includes(preference as ColorModePreference)
-    ? (preference as ColorModePreference)
-    : 'system';
-});
-
-const colorModeButtonIcon = computed(() => {
-  switch (colorModePreference.value) {
-    case 'light':
-      return 'i-lucide-sun';
-    case 'dark':
-      return 'i-lucide-moon';
-    default:
-      return 'i-lucide-monitor';
-  }
-});
-
-const nextColorModePreference = computed<ColorModePreference>(() => {
-  const currentIndex = colorModePreferences.indexOf(colorModePreference.value);
-  return colorModePreferences[(currentIndex + 1) % colorModePreferences.length] ?? 'system';
-});
-
-const colorModeButtonTitle = computed(() => {
-  switch (colorModePreference.value) {
-    case 'light':
-      return 'Light';
-    case 'dark':
-      return 'Dark';
-    default:
-      return 'System';
-  }
-});
 
 const resetSwipe = (): void => {
   SwipeState.mode = null;
@@ -806,21 +671,41 @@ const buildTooltip = computed(
     `Build: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, SHA: ${config.app?.app_commit_sha}`,
 );
 
-const showConnectionBanner = computed(() => socket.connectionStatus !== 'connected');
-
-const connectionBannerTitle = computed(() => {
-  switch (socket.connectionStatus) {
-    case 'connecting':
-      return 'Connecting to websocket server...';
-    case 'disconnected':
-    default:
-      return 'Websocket connection lost.';
+const connectionStatusColor = computed(() => {
+  if (socket.connectionStatus === 'connected') {
+    return 'text-success';
   }
+
+  if (socket.connectionStatus === 'connecting') {
+    return 'text-warning';
+  }
+
+  return 'text-error';
 });
 
-const connectionBannerIcon = computed(() =>
-  socket.connectionStatus === 'connecting' ? 'i-lucide-loader-circle' : 'i-lucide-info',
-);
+const connectionStatusDotClass = computed(() => {
+  if (socket.connectionStatus === 'connected') {
+    return 'bg-success';
+  }
+
+  if (socket.connectionStatus === 'connecting') {
+    return 'bg-warning';
+  }
+
+  return 'bg-error';
+});
+
+const connectionStatusLabel = computed(() => {
+  if (socket.connectionStatus === 'connected') {
+    return 'Connected';
+  }
+
+  if (socket.connectionStatus === 'connecting') {
+    return 'Connecting...';
+  }
+
+  return 'Disconnected';
+});
 
 const sidebarSections = computed<Array<SidebarSection>>(() =>
   sidebarItems.value.map((section) => ({
@@ -900,12 +785,7 @@ const resumeDownloads = async (): Promise<void> => {
 
 const openSettings = async (): Promise<void> => {
   await closeRouteSearch();
-  show_settings.value = true;
-};
-
-const syncShellModeClass = () => {
-  const html = document.documentElement;
-  html.classList.toggle('simple-mode', simpleMode.value);
+  root.value?.open();
 };
 
 const handleRouteSelect = async (item: NavItem) => {
@@ -983,26 +863,6 @@ onMounted(async () => {
     passive: true,
     capture: true,
   });
-  syncShellModeClass();
-
-  try {
-    await config.loadConfig();
-  } catch {}
-
-  try {
-    const opts = await request('/api/yt-dlp/options');
-    if (opts.ok) {
-      config.ytdlp_options = (await opts.json()) as Array<YTDLPOption>;
-    }
-  } catch {}
-
-  try {
-    socket.connect();
-  } catch {}
-
-  try {
-    await handleImage(bg_enable.value);
-  } catch {}
 });
 
 onBeforeUnmount(() => {
@@ -1012,8 +872,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('touchcancel', handleSwipeCancel, true);
 });
 
-watch(bg_enable, async (v) => await handleImage(v));
-watch(simpleMode, () => syncShellModeClass());
 watch(isMobile, (v) => {
   if (v) {
     return;
@@ -1022,103 +880,6 @@ watch(isMobile, (v) => {
   showSidebar.value = false;
   resetSwipe();
 });
-watch(bg_opacity, () => {
-  if (false === bg_enable.value) {
-    return;
-  }
-
-  syncOpacity();
-});
-
-watch(
-  page_anims,
-  (val) => {
-    if (val) {
-      document.documentElement.classList.remove('no-page-anim');
-    } else {
-      document.documentElement.classList.add('no-page-anim');
-    }
-  },
-  { immediate: true },
-);
-
-watch(loadedImage, () => {
-  if (false === bg_enable.value) {
-    return;
-  }
-
-  const html = document.documentElement;
-
-  const style = {
-    'background-color': 'unset',
-    display: 'block',
-    'min-height': '100%',
-    'min-width': '100%',
-    'background-image': `url(${loadedImage.value})`,
-  } as any;
-
-  html.setAttribute(
-    'style',
-    Object.keys(style)
-      .map((k) => `${k}: ${style[k]}`)
-      .join('; ')
-      .trim(),
-  );
-  html.classList.add('bg-fanart');
-  syncOpacity();
-});
-
-const handleImage = async (enabled: boolean) => {
-  if (false === enabled) {
-    const html = document.documentElement;
-    const body = document.querySelector('body');
-
-    html.classList.remove('bg-fanart');
-
-    if (html.getAttribute('style')) {
-      html.removeAttribute('style');
-    }
-
-    if (body?.getAttribute('style')) {
-      body.removeAttribute('style');
-    }
-
-    loadedImage.value = '';
-    return;
-  }
-
-  if (loadedImage.value) {
-    return;
-  }
-
-  await loadImage();
-};
-
-const loadImage = async (force = false) => {
-  if (loadingImage.value) {
-    return;
-  }
-
-  try {
-    loadingImage.value = true;
-
-    let url = '/api/random/background';
-    if (force) {
-      url += '?force=true';
-    }
-
-    const imgRequest = await request(url);
-    if (200 !== imgRequest.status) {
-      return;
-    }
-
-    loadedImage.value = URL.createObjectURL(await imgRequest.blob());
-  } catch (e) {
-    console.error(e);
-  } finally {
-    loadingImage.value = false;
-  }
-};
 
 const useVersionUpdate = () => {
   const newVersionIsAvailable = ref(false);
@@ -1174,51 +935,6 @@ const shutdownApp = async () => {
   }
 };
 
-const connectionStatusColor = computed(() => {
-  switch (socket.connectionStatus) {
-    case 'connected':
-      return 'text-success';
-    case 'connecting':
-      return 'text-warning';
-    case 'disconnected':
-    default:
-      return 'text-error';
-  }
-});
-
-const connectionStatusDotClass = computed(() => {
-  switch (socket.connectionStatus) {
-    case 'connected':
-      return 'bg-success';
-    case 'connecting':
-      return 'bg-warning';
-    case 'disconnected':
-    default:
-      return 'bg-error';
-  }
-});
-
-const connectionStatusLabel = computed(() => {
-  switch (socket.connectionStatus) {
-    case 'connected':
-      return 'Connected';
-    case 'connecting':
-      return 'Connecting...';
-    case 'disconnected':
-    default:
-      return 'Disconnected';
-  }
-});
-
-const toastPosition = useStorage<toastPosition>('toast_position', 'top-right');
-
-const toasterConfig = computed(() => ({
-  position: toastPosition.value,
-  max: 5,
-  expand: true,
-  progress: true,
-}));
-
 const reloadPage = () => window.location.reload();
 </script>
 
@@ -1226,20 +942,6 @@ const reloadPage = () => window.location.reload();
 .shell-stage {
   min-height: 100vh;
   min-height: 100dvh;
-}
-
-.shell-mode-enter-active,
-.shell-mode-leave-active {
-  transition:
-    opacity 0.28s ease,
-    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
-}
-
-.shell-mode-enter-from,
-.shell-mode-leave-to {
-  opacity: 0;
-  transform: translateY(18px) scale(0.985);
 }
 
 .shell-root {
