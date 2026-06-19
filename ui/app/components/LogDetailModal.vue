@@ -10,97 +10,142 @@
   >
     <template #body>
       <div v-if="log" class="space-y-5">
-        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-          <div class="flex min-w-0 flex-wrap items-center gap-2">
-            <UBadge
-              :color="LOG_LEVEL_COLOR[getLogLevel(log.level)]"
-              variant="soft"
-              size="sm"
-              class="uppercase"
-            >
-              <UIcon :name="LOG_LEVEL_ICON[getLogLevel(log.level)]" class="mr-1 size-3.5" />
-              {{ getLogLevel(log.level) }}
-            </UBadge>
-            <UBadge
-              v-if="log.logger"
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <StatCard
+            label="Level"
+            :value="getLogLevel(log.level)"
+            :icon="LOG_LEVEL_ICON[getLogLevel(log.level)]"
+            :color="LOG_LEVEL_COLOR[getLogLevel(log.level)]"
+          />
+          <StatCard v-if="log.logger" label="Logger" :value="log.logger" icon="i-lucide-tag" />
+          <StatCard
+            label="Date"
+            :value="moment(log.datetime).fromNow()"
+            icon="i-lucide-clock"
+            :tooltip="moment(log.datetime).format('YYYY-MM-DD HH:mm:ss Z')"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <UDropdownMenu :items="copyMenuItems" :content="{ align: 'end' }" :modal="false">
+            <UButton
               color="neutral"
-              variant="soft"
+              variant="outline"
               size="sm"
-              class="max-w-full min-w-0"
-              :title="log.logger"
+              icon="i-lucide-copy"
+              trailing-icon="i-lucide-chevron-down"
             >
-              <UIcon name="i-lucide-tag" class="mr-1 size-3.5" />
-              <span class="min-w-0 max-w-full truncate">{{ log.logger }}</span>
-            </UBadge>
-            <span class="text-xs text-toned">{{ logTimeTitle(log.datetime) }}</span>
-          </div>
+              Copy
+            </UButton>
+          </UDropdownMenu>
+        </div>
 
-          <div class="flex shrink-0 flex-wrap justify-end gap-2">
-            <UDropdownMenu :items="copyMenuItems" :content="{ align: 'end' }" :modal="false">
-              <UButton
-                color="neutral"
-                variant="outline"
-                size="xs"
-                icon="i-lucide-copy"
-                trailing-icon="i-lucide-chevron-down"
-              >
-                Copy
-              </UButton>
-            </UDropdownMenu>
-          </div>
-
-          <div class="min-w-0 space-y-2 sm:col-span-2">
+        <UAlert
+          :color="LOG_LEVEL_COLOR[getLogLevel(log.level)]"
+          variant="soft"
+          :icon="LOG_LEVEL_ICON[getLogLevel(log.level)]"
+          title=""
+          class="min-w-0"
+        >
+          <template #description>
             <p class="wrap-break-word w-full font-mono text-sm text-default">
               {{ log.message }}
             </p>
+          </template>
+        </UAlert>
 
-            <UAlert
-              v-if="exceptionSummary(log)"
-              color="error"
-              variant="soft"
-              icon="i-lucide-badge-alert"
-              :title="exceptionSummary(log)"
-              class="w-full"
-            />
-          </div>
-        </div>
+        <UAlert
+          v-if="exceptionSummary(log)"
+          color="error"
+          variant="soft"
+          icon="i-lucide-badge-alert"
+          :title="exceptionSummary(log)"
+        />
 
-        <section v-if="log.exception" class="space-y-2">
+        <section v-if="log.exception" class="space-y-3">
           <button
             type="button"
-            class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
             @click="exceptionOpen = !exceptionOpen"
           >
-            <UIcon
-              name="i-lucide-chevron-right"
-              :class="['size-4 transition-transform', exceptionOpen ? 'rotate-90' : '']"
-            />
-            <UIcon name="i-lucide-bug" class="size-4 text-error" />
-            Exception
+            <div class="flex items-center gap-3">
+              <span
+                class="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-error/30 bg-error/5 text-error"
+              >
+                <UIcon name="i-lucide-bug" class="size-4" />
+              </span>
+              <p class="text-base font-semibold text-highlighted">Exception</p>
+            </div>
+            <div class="flex items-center gap-2" @click.stop>
+              <UButton
+                size="sm"
+                color="neutral"
+                :variant="wrapException ? 'soft' : 'outline'"
+                icon="i-lucide-wrap-text"
+                @click="wrapException = !wrapException"
+              >
+                <span class="hidden sm:inline">Wrap</span>
+              </UButton>
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-copy"
+                @click="copyText(exceptionText(log), true)"
+              >
+                Copy
+              </UButton>
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="[
+                  'size-4 text-toned transition-transform',
+                  exceptionOpen ? 'rotate-90' : '',
+                ]"
+              />
+            </div>
           </button>
+
           <pre
             v-if="exceptionOpen"
-            class="max-h-72 overflow-auto rounded-sm border border-error/30 bg-error/5 p-3 text-xs whitespace-pre-wrap text-error"
-            >{{ exceptionText(log) }}</pre
-          >
+            class="ytp-terminal max-h-96 overflow-auto"
+            :class="wrapException ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
+          ><code>{{ exceptionText(log) }}</code></pre>
         </section>
 
-        <section v-if="detailRows(log).length > 0" class="space-y-2">
+        <section v-if="detailRows.length > 0" class="space-y-3">
           <button
             type="button"
-            class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
             @click="sourceOpen = !sourceOpen"
           >
-            <UIcon
-              name="i-lucide-chevron-right"
-              :class="['size-4 transition-transform', sourceOpen ? 'rotate-90' : '']"
-            />
-            <UIcon name="i-lucide-file-code" class="size-4 text-info" />
-            Source
+            <div class="flex items-center gap-3">
+              <span
+                class="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+              >
+                <UIcon name="i-lucide-file-code" class="size-4" />
+              </span>
+              <p class="text-base font-semibold text-highlighted">Source</p>
+            </div>
+            <div class="flex items-center gap-2" @click.stop>
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-copy"
+                @click="copyText(sourceJson, true)"
+              >
+                Copy
+              </UButton>
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="['size-4 text-toned transition-transform', sourceOpen ? 'rotate-90' : '']"
+              />
+            </div>
           </button>
+
           <dl v-if="sourceOpen" class="grid gap-2 sm:grid-cols-2">
             <div
-              v-for="row in detailRows(log)"
+              v-for="row in detailRows"
               :key="row.label"
               class="rounded-sm border border-default bg-elevated/40 p-3"
             >
@@ -115,22 +160,66 @@
           </dl>
         </section>
 
-        <section v-if="fieldRows(log).length > 0" class="space-y-2">
+        <section v-if="fieldRows.length > 0" class="space-y-3">
           <button
             type="button"
-            class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
             @click="fieldsOpen = !fieldsOpen"
           >
-            <UIcon
-              name="i-lucide-chevron-right"
-              :class="['size-4 transition-transform', fieldsOpen ? 'rotate-90' : '']"
-            />
-            <UIcon name="i-lucide-tags" class="size-4 text-primary" />
-            Fields
+            <div class="flex items-center gap-3">
+              <span
+                class="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+              >
+                <UIcon name="i-lucide-tags" class="size-4" />
+              </span>
+              <p class="text-base font-semibold text-highlighted">Fields</p>
+            </div>
+            <div class="flex items-center gap-2" @click.stop>
+              <UButton
+                size="sm"
+                color="neutral"
+                :variant="wrapFields ? 'soft' : 'outline'"
+                icon="i-lucide-wrap-text"
+                @click="wrapFields = !wrapFields"
+              >
+                <span class="hidden sm:inline">Wrap</span>
+              </UButton>
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-copy"
+                @click="copyText(displayedFieldsJson, true)"
+              >
+                Copy
+              </UButton>
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="['size-4 text-toned transition-transform', fieldsOpen ? 'rotate-90' : '']"
+              />
+            </div>
           </button>
+
           <div v-if="fieldsOpen" class="space-y-2">
+            <UInput
+              v-model="fieldsQuery"
+              type="search"
+              icon="i-lucide-filter"
+              placeholder="Filter fields"
+              size="sm"
+              class="w-full"
+            />
+
+            <UAlert
+              v-if="fieldsQuery && 0 === visibleFieldRows.length"
+              color="warning"
+              variant="soft"
+              icon="i-lucide-filter"
+              title="No matching fields"
+            />
+
             <div
-              v-for="field in fieldRows(log)"
+              v-for="field in visibleFieldRows"
               :key="field.key"
               class="rounded-sm border border-default bg-elevated/40"
             >
@@ -158,37 +247,50 @@
 
               <div v-if="fieldOpen(field.key)" class="border-t border-default/70 px-3 py-3">
                 <div class="mb-3 flex items-center justify-between gap-3">
-                  <UInput
-                    v-if="field.kind !== 'scalar'"
-                    :model-value="fieldFilter(field.key)"
-                    type="search"
-                    icon="i-lucide-filter"
-                    placeholder="Filter field lines"
-                    size="sm"
-                    class="w-full"
-                    @update:model-value="setFieldFilter(field.key, $event)"
-                  />
+                  <div v-if="field.kind !== 'scalar'" class="w-full">
+                    <UInput
+                      v-model="fieldFilters[field.key]"
+                      type="search"
+                      icon="i-lucide-filter"
+                      placeholder="Filter field lines"
+                      size="sm"
+                      class="w-full"
+                    />
+                  </div>
                   <UButton
-                    size="xs"
+                    size="sm"
                     color="neutral"
                     variant="outline"
                     icon="i-lucide-copy"
-                    @click="copyFieldValue(field)"
-                  >
-                    Copy
-                  </UButton>
+                    @click="copyText(displayedFieldValue(field), true)"
+                  />
                 </div>
 
+                <UAlert
+                  v-if="fieldFilter(field.key) && 0 === filteredFieldLineCount(field)"
+                  color="warning"
+                  variant="soft"
+                  icon="i-lucide-filter"
+                  title="No matching lines"
+                  class="mb-3"
+                />
+
                 <pre
-                  v-if="field.kind === 'json'"
-                  class="max-h-96 overflow-auto rounded-sm border border-default bg-elevated/50 p-3 text-xs whitespace-pre-wrap text-default"
-                  >{{ displayedFieldValue(field) }}</pre
-                >
+                  v-if="
+                    field.kind === 'json' &&
+                    (!fieldFilter(field.key) || filteredFieldLineCount(field) > 0)
+                  "
+                  class="ytp-terminal max-h-96 overflow-auto"
+                  :class="wrapFields ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
+                ><code>{{ displayedFieldValue(field) }}</code></pre>
                 <pre
-                  v-else-if="field.kind === 'text'"
-                  class="max-h-96 overflow-auto rounded-sm border border-default bg-elevated/50 p-3 text-xs whitespace-pre-wrap text-default"
-                  >{{ displayedFieldValue(field) }}</pre
-                >
+                  v-else-if="
+                    field.kind === 'text' &&
+                    (!fieldFilter(field.key) || filteredFieldLineCount(field) > 0)
+                  "
+                  class="ytp-terminal max-h-96 overflow-auto"
+                  :class="wrapFields ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
+                ><code>{{ displayedFieldValue(field) }}</code></pre>
                 <p v-else class="wrap-break-word font-mono text-xs text-default">
                   {{ field.value }}
                 </p>
@@ -197,44 +299,70 @@
           </div>
         </section>
 
-        <section class="space-y-2">
+        <section class="space-y-3">
           <button
             type="button"
-            class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-toned hover:text-default"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
             @click="rawJsonOpen = !rawJsonOpen"
           >
-            <UIcon
-              name="i-lucide-chevron-right"
-              :class="['size-4 transition-transform', rawJsonOpen ? 'rotate-90' : '']"
-            />
-            <UIcon name="i-lucide-braces" class="size-4 text-toned" />
-            RAW DATA
-          </button>
-          <div v-if="rawJsonOpen" class="space-y-3">
-            <div class="flex items-center justify-between gap-3">
-              <UInput
-                v-model="rawJsonFilter"
-                type="search"
-                icon="i-lucide-filter"
-                placeholder="Filter lines"
-                size="sm"
-                class="w-full"
-              />
+            <div class="flex items-center gap-3">
+              <span
+                class="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
+              >
+                <UIcon name="i-lucide-braces" class="size-4" />
+              </span>
+              <p class="text-base font-semibold text-highlighted">Raw Data</p>
+            </div>
+            <div class="flex items-center gap-2" @click.stop>
               <UButton
-                size="xs"
+                size="sm"
+                color="neutral"
+                :variant="wrapRaw ? 'soft' : 'outline'"
+                icon="i-lucide-wrap-text"
+                @click="wrapRaw = !wrapRaw"
+              >
+                <span class="hidden sm:inline">Wrap</span>
+              </UButton>
+              <UButton
+                size="sm"
                 color="neutral"
                 variant="outline"
                 icon="i-lucide-copy"
-                @click="log && copyText(logRaw(log))"
+                @click="copyText(displayedRawJson, true)"
               >
                 Copy
               </UButton>
+              <UIcon
+                name="i-lucide-chevron-right"
+                :class="['size-4 text-toned transition-transform', rawJsonOpen ? 'rotate-90' : '']"
+              />
             </div>
+          </button>
+
+          <template v-if="rawJsonOpen">
+            <UInput
+              v-model="rawJsonFilter"
+              type="search"
+              icon="i-lucide-filter"
+              placeholder="Filter raw data"
+              size="sm"
+              class="w-full"
+            />
+
+            <UAlert
+              v-if="rawJsonFilter && 0 === filteredRawJsonLineCount"
+              color="warning"
+              variant="soft"
+              icon="i-lucide-filter"
+              title="No matching lines"
+            />
+
             <pre
-              class="max-h-96 overflow-auto rounded-sm border border-default bg-elevated/50 p-3 text-xs whitespace-pre-wrap text-default"
-              >{{ filteredRawJson }}</pre
-            >
-          </div>
+              v-if="!rawJsonFilter || filteredRawJsonLineCount > 0"
+              class="ytp-terminal max-h-96 overflow-auto"
+              :class="wrapRaw ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
+            ><code>{{ displayedRawJson }}</code></pre>
+          </template>
         </section>
       </div>
     </template>
@@ -244,6 +372,9 @@
 <script setup lang="ts">
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
+import { computed, ref } from 'vue';
+import StatCard from '~/components/StatCard.vue';
+import { filterLogTextLines } from '~/utils/logs';
 import type { log_line } from '~/types/logs';
 import { copyText } from '~/utils';
 
@@ -292,10 +423,15 @@ const LOG_LEVEL_ICON: Record<LogLevel, string> = {
 const exceptionOpen = useStorage<boolean>('logs_exception_open', false);
 const fieldsOpen = useStorage<boolean>('logs_fields_open', true);
 const rawJsonOpen = useStorage<boolean>('logs_raw_json_open', false);
-const rawJsonFilter = ref('');
 const sourceOpen = useStorage<boolean>('logs_source_open', true);
+const wrapException = useStorage<boolean>('logs_wrap_exception', false);
+const wrapFields = useStorage<boolean>('logs_wrap_fields', false);
+const wrapRaw = useStorage<boolean>('logs_wrap_raw', false);
+
+const rawJsonFilter = ref('');
 const fieldOpenState = ref<Record<string, boolean>>({});
 const fieldFilters = ref<Record<string, string>>({});
+const fieldsQuery = ref<string>('');
 
 const getLogLevel = (level: string): LogLevel => {
   switch (level.toLowerCase()) {
@@ -329,8 +465,19 @@ const exceptionSummary = (log: log_line): string => {
 const exceptionText = (log: log_line): string =>
   log.exception ? JSON.stringify(log.exception, null, 2) : '';
 
-const logTimeTitle = (value?: string): string =>
-  value ? moment(value).format('YYYY-MM-DD HH:mm:ss Z') : 'No timestamp';
+const rawJson = computed(() => (props.log ? logRaw(props.log) : ''));
+
+const sourceJson = computed(() =>
+  JSON.stringify(
+    {
+      source: props.log?.source ?? null,
+      process: props.log?.process ?? null,
+      thread: props.log?.thread ?? null,
+    },
+    null,
+    2,
+  ),
+);
 
 const copyMenuItems = computed(() => [
   [
@@ -348,22 +495,20 @@ const copyMenuItems = computed(() => [
       icon: 'i-lucide-braces',
       onSelect: () => {
         if (props.log) {
-          copyText(logRaw(props.log));
+          copyText(rawJson.value);
         }
       },
     },
   ],
 ]);
 
-const filteredRawJson = computed(() => {
-  const raw = props.log ? logRaw(props.log) : '';
-  const query = rawJsonFilter.value.toLowerCase();
-  if (!query) return raw;
-  return raw
-    .split('\n')
-    .filter((line) => line.toLowerCase().includes(query))
-    .join('\n');
-});
+const filteredRawJsonLines = computed<Array<string>>(() =>
+  filterLogTextLines(rawJson.value, rawJsonFilter.value),
+);
+const filteredRawJsonLineCount = computed<number>(() => filteredRawJsonLines.value.length);
+const displayedRawJson = computed<string>(() =>
+  rawJsonFilter.value ? filteredRawJsonLines.value.join('\n') : rawJson.value,
+);
 
 const formatDetailValue = (value: unknown): string => {
   if (value === undefined || value === null || value === '') {
@@ -400,79 +545,31 @@ const formatNameId = (name: unknown, id: unknown): string => {
   return nameValue || idValue;
 };
 
-const detailRows = (log: log_line): DetailRow[] =>
-  compactRows([
-    { label: 'File', value: log.source?.file, icon: 'i-lucide-file' },
-    { label: 'Line', value: log.source?.line, icon: 'i-lucide-hash' },
-    { label: 'Function', value: log.source?.function, icon: 'i-lucide-code-2' },
-    { label: 'Module', value: log.source?.module, icon: 'i-lucide-box' },
-    { label: 'Path', value: log.source?.path, icon: 'i-lucide-folder-tree' },
+const detailRows = computed((): DetailRow[] => {
+  if (!props.log) return [];
+  return compactRows([
+    { label: 'File', value: props.log.source?.file, icon: 'i-lucide-file' },
+    { label: 'Line', value: props.log.source?.line, icon: 'i-lucide-hash' },
+    { label: 'Function', value: props.log.source?.function, icon: 'i-lucide-code-2' },
+    { label: 'Module', value: props.log.source?.module, icon: 'i-lucide-box' },
+    { label: 'Path', value: props.log.source?.path, icon: 'i-lucide-folder-tree' },
     {
       label: 'Process / ID',
-      value: formatNameId(log.process?.name, log.process?.id),
+      value: formatNameId(props.log.process?.name, props.log.process?.id),
       icon: 'i-lucide-cpu',
     },
     {
       label: 'Thread / ID',
-      value: formatNameId(log.thread?.name, log.thread?.id),
+      value: formatNameId(props.log.thread?.name, props.log.thread?.id),
       icon: 'i-lucide-git-branch',
     },
   ]);
+});
 
-const fieldRows = (log: log_line): LogFieldRow[] => {
-  if (!log.fields) return [];
-  const rows: LogFieldRow[] = [];
-  for (const [key, rawValue] of Object.entries(log.fields)) {
-    if (rawValue === undefined || rawValue === null || rawValue === '') continue;
-    const jsonValue =
-      typeof rawValue === 'string'
-        ? parseJsonContainerString(rawValue)
-        : isJsonContainer(rawValue)
-          ? rawValue
-          : null;
-    const value = jsonValue ? JSON.stringify(jsonValue, null, 2) : formatFieldValue(rawValue);
-    const kind = jsonValue
-      ? 'json'
-      : typeof rawValue === 'string'
-        ? rawValue.includes('\n')
-          ? 'text'
-          : 'scalar'
-        : 'scalar';
-    rows.push({
-      key,
-      label: normalizeFieldLabel(key),
-      value,
-      preview: formatFieldValue(rawValue).replaceAll('\n', ' '),
-      kind,
-    });
-  }
-  return rows;
-};
-
-const fieldOpen = (key: string) => fieldOpenState.value[key] ?? false;
-
-const toggleField = (key: string) => {
-  fieldOpenState.value = { ...fieldOpenState.value, [key]: !fieldOpen(key) };
-};
-
-const fieldFilter = (key: string) => fieldFilters.value[key] ?? '';
-
-const setFieldFilter = (key: string, value: string | number) => {
-  fieldFilters.value = { ...fieldFilters.value, [key]: String(value ?? '') };
-};
-
-const displayedFieldValue = (field: LogFieldRow): string => {
-  const query = fieldFilter(field.key);
-  if (!query) return field.value;
-  const needle = query.toLowerCase();
-  return field.value
-    .split('\n')
-    .filter((line) => line.toLowerCase().includes(needle))
-    .join('\n');
-};
-
-const copyFieldValue = (field: LogFieldRow): void => {
-  copyText(field.value);
+const formatFieldValue = (value: unknown): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value, null, 2);
 };
 
 const isJsonLike = (value: string): boolean => {
@@ -499,11 +596,86 @@ const parseJsonContainerString = (value: string): Record<string, unknown> | unkn
   return null;
 };
 
-const normalizeFieldLabel = (key: string) => key.replaceAll('_', ' ');
+const fieldRows = computed((): LogFieldRow[] => {
+  if (!props.log?.fields) return [];
+  const rows: LogFieldRow[] = [];
+  for (const [key, rawValue] of Object.entries(props.log.fields)) {
+    if (rawValue === undefined || rawValue === null || rawValue === '') continue;
+    const jsonValue =
+      typeof rawValue === 'string'
+        ? parseJsonContainerString(rawValue)
+        : isJsonContainer(rawValue)
+          ? rawValue
+          : null;
+    const value = jsonValue ? JSON.stringify(jsonValue, null, 2) : formatFieldValue(rawValue);
+    const kind: LogFieldRow['kind'] = jsonValue
+      ? 'json'
+      : typeof rawValue === 'string'
+        ? rawValue.includes('\n')
+          ? 'text'
+          : 'scalar'
+        : 'scalar';
+    rows.push({
+      key,
+      label: key,
+      value,
+      preview: formatFieldValue(rawValue).replaceAll('\n', ' '),
+      kind,
+    });
+  }
+  return rows;
+});
 
-const formatFieldValue = (value: unknown): string => {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  return JSON.stringify(value, null, 2);
+const visibleFieldRows = computed((): LogFieldRow[] => {
+  const query = fieldsQuery.value.trim().toLowerCase();
+  if (!query) {
+    return fieldRows.value;
+  }
+
+  if (query.includes('.')) {
+    const keyMatches = fieldRows.value.filter((field) => field.key.toLowerCase().includes(query));
+    if (keyMatches.length > 0) {
+      return keyMatches;
+    }
+  }
+
+  return fieldRows.value.filter((field) => {
+    const haystack = `${field.key}\n${field.preview}\n${field.value}`.toLowerCase();
+    return haystack.includes(query) || filterLogTextLines(field.value, query).length > 0;
+  });
+});
+
+const displayedFieldsJson = computed(() => {
+  const allFields = props.log?.fields ?? {};
+  if (!fieldsQuery.value.trim()) {
+    return JSON.stringify(allFields, null, 2);
+  }
+
+  const visibleKeys = new Set(visibleFieldRows.value.map((f) => f.key));
+  const filtered: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(allFields)) {
+    if (visibleKeys.has(key)) {
+      filtered[key] = value;
+    }
+  }
+
+  return JSON.stringify(filtered, null, 2);
+});
+
+const fieldOpen = (key: string) => fieldOpenState.value[key] ?? false;
+
+const toggleField = (key: string) => {
+  fieldOpenState.value = { ...fieldOpenState.value, [key]: !fieldOpen(key) };
 };
+
+const fieldFilter = (key: string) => fieldFilters.value[key] ?? '';
+
+const displayedFieldValue = (field: LogFieldRow): string => {
+  const query = fieldFilter(field.key);
+  if (!query) return field.value;
+  return filterLogTextLines(field.value, query).join('\n');
+};
+
+const filteredFieldLineCount = (field: LogFieldRow): number =>
+  filterLogTextLines(field.value, fieldFilter(field.key)).length;
 </script>
