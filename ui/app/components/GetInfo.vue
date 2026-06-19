@@ -35,13 +35,7 @@
             variant="soft"
             icon="i-lucide-filter"
             title="No matching lines"
-          >
-            <template #description>
-              <p class="text-sm text-default">
-                No lines match this filter: <u>{{ query }}</u>
-              </p>
-            </template>
-          </UAlert>
+          />
 
           <UAlert
             v-else-if="!hasDisplayText"
@@ -52,19 +46,30 @@
             description="The request completed successfully but did not return any visible content."
           />
 
-          <div v-else class="overflow-hidden rounded-md border border-default bg-elevated/30">
-            <code
-              ref="contentView"
-              class="block max-h-[55vh] overflow-auto p-4 font-mono text-sm leading-6 text-default whitespace-pre-wrap wrap-break-word"
-              v-text="displayedText"
-            />
-          </div>
+          <pre
+            v-else-if="!query || filteredLineCount > 0"
+            ref="contentView"
+            class="ytp-terminal max-h-[55vh] overflow-auto"
+            :class="wrap ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
+          ><code v-text="displayedText" /></pre>
         </div>
       </div>
     </template>
 
     <template #footer>
       <div class="flex w-full flex-wrap items-center justify-end gap-2">
+        <UButton
+          type="button"
+          color="neutral"
+          :variant="wrap ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-wrap-text"
+          :disabled="isLoading || !hasVisibleText"
+          @click="wrap = !wrap"
+        >
+          <span class="hidden sm:inline">Wrap</span>
+        </UButton>
+
         <UButton
           type="button"
           color="neutral"
@@ -119,7 +124,8 @@
 </template>
 
 <script setup lang="ts">
-const toast = useNotification();
+import { useStorage } from '@vueuse/core';
+import { filterLogTextLines } from '~/utils/logs';
 const emitter = defineEmits<{ (e: 'closeModel'): void }>();
 
 const props = withDefaults(
@@ -141,8 +147,11 @@ const isLoading = ref(true);
 const data = ref<unknown>(null);
 const errorMessage = ref('');
 const query = ref('');
+const wrap = useStorage<boolean>('getinfo_wrap', false);
 const contentView = ref<HTMLElement | null>(null);
 let latestRequestId = 0;
+
+const toast = useNotification();
 
 const modalUi = {
   content: 'w-full sm:max-w-5xl',
@@ -199,22 +208,9 @@ const displayText = computed(() => {
   }
 });
 
-const lines = computed<Array<string>>(() => {
-  if (!displayText.value) {
-    return [];
-  }
-
-  return displayText.value.split('\n');
-});
-
-const filteredLines = computed<Array<string>>(() => {
-  if (!query.value) {
-    return lines.value;
-  }
-
-  const needle = query.value.toLowerCase();
-  return lines.value.filter((line) => line.toLowerCase().includes(needle));
-});
+const filteredLines = computed<Array<string>>(() =>
+  filterLogTextLines(displayText.value, query.value),
+);
 
 const filteredLineCount = computed(() => filteredLines.value.length);
 const displayedText = computed(() =>

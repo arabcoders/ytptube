@@ -20,7 +20,9 @@
           size="sm"
           square
           icon="i-lucide-x"
-          class="ml-auto shrink-0 sm:hidden"
+          aria-label="Close settings"
+          title="Close settings"
+          class="ml-auto shrink-0"
           @click="emitter('close')"
         />
       </div>
@@ -37,14 +39,31 @@
           </template>
 
           <template #body>
-            <USwitch
-              v-model="simpleMode"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="simpleMode ? 'Simple View' : 'Regular View'"
-              description="The simple view is ideal for non-technical users and mobile devices."
-            />
+            <UFormField label="" class="w-full" :ui="settingsFieldUi">
+              <USelect
+                v-model="draftMode"
+                :items="modeItems"
+                value-key="value"
+                label-key="label"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'w-full' }"
+              />
+
+              <div class="mt-3 flex justify-end">
+                <UButton
+                  color="primary"
+                  variant="soft"
+                  size="sm"
+                  icon="i-lucide-save"
+                  :disabled="!modeChanged || savingMode"
+                  :loading="savingMode"
+                  @click="saveMode"
+                >
+                  Save layout
+                </UButton>
+              </div>
+            </UFormField>
 
             <USwitch
               v-model="page_anims"
@@ -91,12 +110,12 @@
               class="w-full"
               v-if="bg_enable"
               label="Background visibility"
-              :hint="String(parseFloat(String(1.0 - bg_opacity)).toFixed(2))"
+              :hint="`${Math.round(bgVisibilityModel * 100)}%`"
             >
               <USlider
-                v-model="bgOpacityModel"
-                :min="0.5"
-                :max="1"
+                v-model="bgVisibilityModel"
+                :min="0"
+                :max="0.5"
                 :step="0.01"
                 size="lg"
                 class="w-full"
@@ -114,12 +133,7 @@
           </template>
 
           <template #body>
-            <UFormField
-              v-if="!simpleMode"
-              label="URL Separator"
-              class="w-full"
-              :ui="settingsFieldUi"
-            >
+            <UFormField v-if="!modeOn" label="URL Separator" class="w-full" :ui="settingsFieldUi">
               <USelect
                 v-model="separator"
                 :items="separatorItems"
@@ -286,6 +300,7 @@ import { watch, onMounted, onBeforeUnmount, ref, computed } from 'vue';
 import { useStorage } from '@vueuse/core';
 import { useNotification } from '~/composables/useNotification';
 import type { notificationTarget, toastPosition } from '~/composables/useNotification';
+import { useMode, type Mode } from '~/composables/useMode';
 
 const props = withDefaults(
   defineProps<{
@@ -302,7 +317,6 @@ const props = withDefaults(
 
 const emitter = defineEmits<{ (e: 'close' | 'reload_bg'): void }>();
 
-const config = useYtpConfig();
 const notification = useNotification();
 
 const bg_enable = useStorage<boolean>('random_bg', true);
@@ -315,7 +329,9 @@ const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
 const show_popover = useStorage<boolean>('show_popover', true);
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',');
-const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
+const { mode, on: modeOn, save: applyMode } = useMode();
+const draftMode = ref<Mode>(mode.value);
+const savingMode = ref(false);
 const page_anims = useStorage<boolean>('page_anims', true);
 const queue_auto_refresh = useStorage<boolean>('queue_auto_refresh', true);
 const queue_auto_refresh_delay = useStorage<number>('queue_auto_refresh_delay', 10000);
@@ -338,10 +354,10 @@ const settingsSwitchUi = {
   wrapper: 'ms-0 flex-1 text-sm',
 };
 
-const bgOpacityModel = computed<number>({
-  get: () => Number(bg_opacity.value),
+const bgVisibilityModel = computed<number>({
+  get: () => Number((1 - Number(bg_opacity.value)).toFixed(2)),
   set: (value) => {
-    bg_opacity.value = Number(value);
+    bg_opacity.value = Number((1 - Number(value)).toFixed(2));
   },
 });
 
@@ -355,6 +371,30 @@ const queueRefreshDelayModel = computed<number>({
 const separatorItems = computed(() =>
   separators.map((sep) => ({ label: `${sep.name} (${sep.value})`, value: sep.value })),
 );
+
+const modeItems = computed<Array<{ label: string; value: Mode }>>(() => [
+  {
+    label: `Default`,
+    value: 'default',
+  },
+  { label: 'Simple', value: 'simple' },
+  { label: 'Regular', value: 'regular' },
+]);
+
+const modeChanged = computed(() => draftMode.value !== mode.value);
+
+const saveMode = async (): Promise<void> => {
+  if (!modeChanged.value || savingMode.value) {
+    return;
+  }
+
+  savingMode.value = true;
+  try {
+    await applyMode(draftMode.value);
+  } finally {
+    savingMode.value = false;
+  }
+};
 
 const thumbnailRatioItems = [
   { label: '16:9', value: 'is-16by9' },
@@ -412,12 +452,21 @@ watch(
   () => props.isOpen,
   (isOpen) => {
     if (isOpen) {
+      draftMode.value = mode.value;
       document.body.classList.add('settings-panel-open');
     } else {
       document.body.classList.remove('settings-panel-open');
     }
   },
 );
+
+watch(mode, (value) => {
+  if (props.isOpen && modeChanged.value) {
+    return;
+  }
+
+  draftMode.value = value;
+});
 </script>
 
 <style scoped>

@@ -65,6 +65,23 @@
     backdrop-filter: blur(16px);
   }
 
+  .ytp-terminal {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+    background-color: var(--ui-bg-elevated);
+    color: var(--ui-text);
+    line-height: 1.7;
+    border-radius: 0.5rem;
+    border: 1px solid var(--ui-border);
+  }
+
+  .ytp-terminal > code {
+    display: block;
+    font-family: var(--font-mono, monospace);
+  }
+
   .play-overlay {
     position: relative;
     display: block;

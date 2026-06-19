@@ -1,3 +1,20 @@
+<style scoped>
+.message-collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+@media (min-width: 768px) {
+  .message-collapsed {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+}
+</style>
+
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -111,7 +128,7 @@
         <div class="overflow-hidden rounded-sm border border-default bg-default shadow-sm">
           <div
             ref="logContainer"
-            class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-x-auto overflow-y-auto bg-transparent font-mono text-sm text-default overscroll-x-contain"
+            class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden bg-transparent font-mono text-sm text-default overscroll-x-contain"
             @scroll.passive="handleScroll"
           >
             <div
@@ -151,53 +168,53 @@
                 :class="logRowClass(entry, index)"
               >
                 <div
-                  :class="[
-                    'flex min-w-0 flex-1 items-start gap-[0.65rem] px-3 py-[0.65rem] leading-[1.6]',
-                    textWrap ? 'w-full' : 'w-max min-w-full',
-                  ]"
+                  class="flex w-full min-w-0 flex-col gap-1 px-3 py-[0.65rem] leading-[1.6] md:flex-row md:items-start md:gap-2"
                 >
-                  <p :class="logLineClass()">
-                    <span
-                      class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle"
-                    >
-                      <UTooltip :text="logTimeTitle(entry.log.datetime)">
-                        <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
-                          {{ logTimeLabel(entry.log.datetime) }}
-                        </span>
-                      </UTooltip>
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="xs"
-                        icon="i-lucide-panel-right-open"
-                        aria-label="Open log details"
-                        class="inline-flex align-[-0.2em] opacity-70 hover:opacity-100"
-                        @click="openLogDetails(entry.log)"
-                      />
-                      <span
-                        :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
-                        @click="openLogDetails(entry.log)"
-                      >
-                        <UIcon
-                          :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]"
-                          class="size-3"
-                        />
-                        {{ getLogLevel(entry.log.level) }}
+                  <span
+                    class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle md:shrink-0 md:flex-nowrap"
+                  >
+                    <UTooltip :text="logTimeTitle(entry.log.datetime)">
+                      <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
+                        {{ logTimeLabel(entry.log.datetime) }}
                       </span>
-                      <span
-                        v-if="
-                          entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)
-                        "
-                        :title="entry.log.logger"
-                        class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
-                        >[{{ entry.log.logger }}]</span
-                      >
+                    </UTooltip>
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      icon="i-lucide-panel-right-open"
+                      aria-label="Open log details"
+                      class="inline-flex align-[-0.2em] opacity-70 hover:opacity-100"
+                      @click="openLogDetails(entry.log)"
+                    />
+                    <span
+                      :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
+                      @click="openLogDetails(entry.log)"
+                    >
+                      <UIcon :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]" class="size-3" />
+                      {{ getLogLevel(entry.log.level) }}
                     </span>
-                    <span class="ml-2">{{ entry.log.message }}</span>
-                    <span v-if="exceptionSummary(entry.log)" class="ml-1 text-error/90">
-                      : {{ exceptionSummary(entry.log) }}
-                    </span>
-                  </p>
+                    <span
+                      v-if="entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)"
+                      :title="entry.log.logger"
+                      class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
+                      >[{{ entry.log.logger }}]</span
+                    >
+                  </span>
+
+                  <button
+                    type="button"
+                    class="block min-w-0 flex-1 cursor-pointer text-left"
+                    :aria-expanded="expandedRows.has(entry.log.id) || textWrap"
+                    @click="toggleRow(entry.log.id)"
+                  >
+                    <span :class="messageClass(entry.log.id)"
+                      >{{ entry.log.message
+                      }}<span v-if="exceptionSummary(entry.log)" class="text-error/90">
+                        : {{ exceptionSummary(entry.log) }}</span
+                      ></span
+                    >
+                  </button>
                 </div>
               </article>
             </template>
@@ -284,7 +301,7 @@ const route = useRoute();
 const pageShell = requirePageShell('logs');
 
 const logContainer = useTemplateRef<HTMLDivElement>('logContainer');
-const textWrap = useStorage<boolean>('logs_wrap', true);
+const textWrap = useStorage<boolean>('logs_text_wrap', false);
 const selectedLevels = useStorage<LogLevel[]>('logs_level_filter', [...LOG_LEVELS]);
 const sseController = ref<AbortController | null>(null);
 const runtimeLogLevel = ref<LogLevel | null>(null);
@@ -297,6 +314,7 @@ const loading = ref(false);
 const autoScroll = ref(true);
 const reachedEnd = ref(false);
 const detailsOpen = ref(false);
+const expandedRows = ref<Set<string>>(new Set());
 
 const pageCardUi = {
   root: 'w-full min-w-0 max-w-full bg-transparent',
@@ -765,13 +783,22 @@ const logLevelBadgeClass = (level: LogLevel): string[] => [
   level === 'error' ? 'bg-error/10 text-error' : '',
 ];
 
-const logLineClass = (): string[] => [
-  'flex-1',
-  textWrap.value
-    ? 'min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]'
-    : 'min-w-max whitespace-pre',
-  'text-default',
+const messageClass = (id: string): string[] => [
+  'block text-sm text-default',
+  expandedRows.value.has(id) || textWrap.value
+    ? 'whitespace-pre-wrap wrap-break-word'
+    : 'message-collapsed md:block md:truncate',
 ];
+
+const toggleRow = (id: string): void => {
+  const next = new Set(expandedRows.value);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  expandedRows.value = next;
+};
 
 const logRowClass = (entry: FilteredLogEntry, index: number): string[] => {
   const classes = [LOG_ROW_CLASS];

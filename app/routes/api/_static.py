@@ -144,7 +144,7 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
         else:
             return web.json_response({"error": "File not found.", "file": path}, status=web.HTTPNotFound.status_code)
 
-    return web.FileResponse(
+    response = web.FileResponse(
         path=file_path,
         headers={
             "Pragma": "public",
@@ -153,6 +153,16 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
         },
         status=web.HTTPOk.status_code,
     )
+
+    if STATIC_STATE.index_file is not None and file_path == STATIC_STATE.index_file:
+        response.set_cookie(
+            name="simple_mode",
+            value="true" if config.simple_mode else "false",
+            path=config.base_path if "/" != config.base_path else "/",
+            samesite="Lax",
+        )
+
+    return response
 
 
 def setup_static_routes(root_path: Path, config: Config) -> None:

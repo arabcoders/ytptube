@@ -201,6 +201,12 @@ const reset = (): void => {
   lastError.value = null;
 };
 
+const update = (id: string, data: StoreItem): void => {
+  const index = items.value.findIndex((item) => item._id === id);
+  if (index === -1) return;
+  items.value = [...items.value.slice(0, index), data, ...items.value.slice(index + 1)];
+};
+
 const upsert = (item: StoreItem): void => {
   const existingIndex = items.value.findIndex((existing) => existing._id === item._id);
 
@@ -252,6 +258,7 @@ export const useHistoryState = () => {
     remove,
     rename,
     reset,
+    update,
     upsert,
     moveHandler,
   };
