@@ -328,13 +328,13 @@ class HttpAPI:
                     new_response.set_cookie(
                         morsel.key,
                         morsel.value,
-                        expires=morsel["expires"],
-                        domain=morsel["domain"],
-                        max_age=morsel["max-age"],
-                        path=morsel["path"],
-                        secure=bool(morsel["secure"]),
-                        httponly=bool(morsel["httponly"]),
-                        samesite=morsel["samesite"] or None,
+                        expires=morsel.get("expires"),
+                        domain=morsel.get("domain"),
+                        max_age=morsel.get("max-age"),
+                        path=morsel.get("path") or "/",
+                        secure=bool(morsel.get("secure")),
+                        httponly=bool(morsel.get("httponly")),
+                        samesite=morsel.get("samesite") or None,
                     )
 
                 return new_response
