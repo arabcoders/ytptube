@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "52d6672fb32a5460724999703b31ec8071ea791b",
+    "date": "2026-06-21T18:25:47+00:00",
+    "commits": [
+      {
+        "sha": "52d6672f",
+        "full_sha": "52d6672fb32a5460724999703b31ec8071ea791b",
+        "message": "refactor: update design layout",
+        "author": "arabcoders",
+        "date": "2026-06-21T18:25:47+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.7",
     "full_sha": "c68646e266e41c565cc30f7e6bc69a6a99ebb28c",
     "date": "2026-06-19T16:59:35+00:00",
