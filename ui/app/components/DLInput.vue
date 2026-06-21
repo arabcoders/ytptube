@@ -1,7 +1,7 @@
 <template>
   <div v-if="'bool' === type && compact" class="w-full space-y-1.5">
     <div
-      class="flex min-h-11 items-start justify-between gap-3 rounded-md border border-default bg-default/80 px-3 py-2"
+      class="flex min-h-11 items-start justify-between gap-3 rounded-md border border-default bg-elevated/20 px-3 py-2"
     >
       <div class="min-w-0 flex-1">
         <div class="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-default">
@@ -27,7 +27,7 @@
         v-model="boolModel"
         :disabled="disabled"
         color="success"
-        :label="boolModel ? 'Yes' : 'No'"
+        label=""
         size="lg"
         class="shrink-0"
         :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-sm' }"
@@ -70,7 +70,7 @@
       :disabled="disabled"
       size="lg"
       class="w-full"
-      :ui="{ root: 'w-full', base: 'w-full bg-default/90' }"
+      :ui="{ root: 'w-full', base: 'w-full bg-elevated/60' }"
     />
 
     <UTextarea

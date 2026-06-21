@@ -1,492 +1,481 @@
 <template>
   <main class="space-y-4">
     <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
-      <UPageCard variant="outline" :ui="downloadCardUi">
-        <template #body>
-          <div class="space-y-4">
-            <UFormField class="w-full" :ui="downloadFieldUi">
+      <div class="ytp-card p-4 sm:p-6 space-y-4">
+        <div class="space-y-4">
+          <UFormField class="w-full" :ui="downloadFieldUi">
+            <template #label>
+              <span class="inline-flex items-center gap-2 font-semibold">
+                <UTooltip text="Use Shift+Enter to switch to multiline input mode.">
+                  <UIcon name="i-lucide-link" class="size-4 text-toned" />
+                </UTooltip>
+                <span>
+                  URLs separated by newlines or
+                  <span class="font-semibold lowercase">{{ getSeparatorsName(separator) }}</span>
+                </span>
+              </span>
+            </template>
+
+            <div class="flex flex-row gap-2 items-start">
+              <div class="min-w-0 flex-1">
+                <UTextarea
+                  v-if="isMultiLineInput"
+                  ref="urlTextarea"
+                  id="url"
+                  v-model="form.url"
+                  :disabled="addInProgress"
+                  size="lg"
+                  :variant="show_description ? 'soft' : 'outline'"
+                  color="neutral"
+                  class="w-full"
+                  :rows="3"
+                  :maxrows="12"
+                  autoresize
+                  :ui="{
+                    root: 'w-full',
+                    base: 'min-h-[7.25rem] bg-elevated/60 ring-default focus-visible:ring-primary',
+                  }"
+                  @keydown="handleKeyDown"
+                  autofocus
+                />
+                <UInput
+                  v-else
+                  id="url"
+                  v-model="form.url"
+                  type="text"
+                  placeholder="URLs to download"
+                  :disabled="addInProgress"
+                  size="lg"
+                  :variant="show_description ? 'soft' : 'outline'"
+                  color="neutral"
+                  class="w-full"
+                  :ui="{
+                    root: 'w-full',
+                    base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
+                  }"
+                  @keydown="handleKeyDown"
+                  @paste="handlePaste"
+                  autofocus
+                />
+              </div>
+
+              <UButton
+                type="submit"
+                color="primary"
+                icon="i-lucide-plus"
+                :loading="addInProgress"
+                :disabled="addInProgress || !hasValidUrl"
+                size="lg"
+                class="justify-center sm:min-w-28"
+              >
+                Add
+              </UButton>
+            </div>
+          </UFormField>
+
+          <div
+            class="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.95fr)_11rem] xl:items-end"
+          >
+            <UFormField
+              class="min-w-0 w-full"
+              label="Preset"
+              :ui="downloadFieldUi"
+              :description="
+                hasFormatInConfig
+                  ? 'Presets are disabled. Format key is present in the command options for yt-dlp.'
+                  : 'Prefill saved yt-dlp command options.'
+              "
+            >
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
-                  <UTooltip text="Use Shift+Enter to switch to multiline input mode.">
-                    <UIcon name="i-lucide-link" class="size-4 text-toned" />
-                  </UTooltip>
-                  <span>
-                    URLs separated by newlines or
-                    <span class="font-semibold lowercase">{{ getSeparatorsName(separator) }}</span>
-                  </span>
+                  <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
+                  <span>Preset</span>
                 </span>
               </template>
 
-              <div class="flex flex-row gap-2 items-start">
+              <div class="flex w-full gap-2">
+                <UButton
+                  color="neutral"
+                  :variant="show_description ? 'soft' : 'outline'"
+                  icon="i-lucide-info"
+                  square
+                  class="shrink-0"
+                  @click="show_description = !show_description"
+                />
+
                 <div class="min-w-0 flex-1">
-                  <UTextarea
-                    v-if="isMultiLineInput"
-                    ref="urlTextarea"
-                    id="url"
-                    v-model="form.url"
-                    :disabled="addInProgress"
-                    size="lg"
-                    variant="outline"
+                  <USelectMenu
+                    id="preset"
+                    v-model="form.preset"
+                    :items="presetItems"
+                    value-key="value"
+                    label-key="label"
                     color="neutral"
                     class="w-full"
-                    :rows="3"
-                    :maxrows="12"
-                    autoresize
-                    :ui="{
-                      root: 'w-full',
-                      base: 'min-h-[7.25rem] bg-elevated/60 ring-default focus-visible:ring-primary',
-                    }"
-                    @keydown="handleKeyDown"
-                    autofocus
-                  />
-                  <UInput
-                    v-else
-                    id="url"
-                    v-model="form.url"
-                    type="text"
-                    placeholder="URLs to download"
-                    :disabled="addInProgress"
                     size="lg"
-                    variant="outline"
-                    color="neutral"
-                    class="w-full"
-                    :ui="{
-                      root: 'w-full',
-                      base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
-                    }"
-                    @keydown="handleKeyDown"
-                    @paste="handlePaste"
-                    autofocus
+                    :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+                    :search-input="{ placeholder: 'Search presets' }"
+                    :disabled="addInProgress || hasFormatInConfig"
+                    placeholder="Select preset"
                   />
                 </div>
-
-                <UButton
-                  type="submit"
-                  color="primary"
-                  icon="i-lucide-plus"
-                  :loading="addInProgress"
-                  :disabled="addInProgress || !hasValidUrl"
-                  size="lg"
-                  class="justify-center sm:min-w-28"
-                >
-                  Add
-                </UButton>
               </div>
             </UFormField>
 
-            <div
-              class="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.95fr)_11rem] xl:items-end"
+            <UFormField
+              class="min-w-0 w-full"
+              label="Download path"
+              :ui="downloadFieldUi"
+              :description="`Relative to ${config.app.download_path}`"
             >
-              <UFormField
-                class="min-w-0 w-full"
-                label="Preset"
-                :ui="downloadFieldUi"
-                :description="
-                  hasFormatInConfig
-                    ? 'Presets are disabled. Format key is present in the command options for yt-dlp.'
-                    : 'Prefill saved yt-dlp command options.'
-                "
-              >
-                <template #label>
-                  <span class="inline-flex items-center gap-2 font-semibold">
-                    <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
-                    <span>Preset</span>
-                  </span>
-                </template>
+              <template #label>
+                <span class="inline-flex items-center gap-2 font-semibold">
+                  <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
+                  <span>Download path</span>
+                </span>
+              </template>
 
-                <div class="flex w-full gap-2">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    icon="i-lucide-info"
-                    square
-                    class="shrink-0"
-                    @click="show_description = !show_description"
-                  />
-
-                  <div class="min-w-0 flex-1">
-                    <USelectMenu
-                      id="preset"
-                      v-model="form.preset"
-                      :items="presetItems"
-                      value-key="value"
-                      label-key="label"
-                      color="neutral"
-                      class="w-full"
-                      size="lg"
-                      :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-                      :search-input="{ placeholder: 'Search presets' }"
-                      :disabled="addInProgress || hasFormatInConfig"
-                      placeholder="Select preset"
-                    />
-                  </div>
-                </div>
-              </UFormField>
-
-              <UFormField
-                class="min-w-0 w-full"
-                label="Download path"
-                :ui="downloadFieldUi"
-                :description="`Relative to ${config.app.download_path}`"
-              >
-                <template #label>
-                  <span class="inline-flex items-center gap-2 font-semibold">
-                    <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
-                    <span>Download path</span>
-                  </span>
-                </template>
-
-                <div class="flex items-center gap-2">
-                  <span
-                    class="max-w-44 shrink-0 truncate rounded-md border border-default bg-muted/40 px-3 py-2 text-xs text-toned"
-                    :title="config.app.download_path"
-                  >
-                    {{ shortPath(config.app.download_path) }}
-                  </span>
-
-                  <FolderInput
-                    id="folder"
-                    v-model="form.folder"
-                    :placeholder="getDefault('folder', '/')"
-                    :disabled="addInProgress"
-                    :ui="{ root: 'w-full', base: 'bg-default/90' }"
-                  />
-                </div>
-              </UFormField>
-
-              <div class="flex w-full items-end xl:col-span-1">
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="outline"
-                  icon="i-lucide-settings-2"
-                  size="lg"
-                  class="w-full justify-center"
-                  @click="showAdvanced = !showAdvanced"
+              <div class="flex items-center gap-2">
+                <span
+                  class="max-w-44 shrink-0 truncate rounded-md border border-default bg-muted/40 px-3 py-2 text-xs text-toned"
+                  :title="config.app.download_path"
                 >
-                  {{ showAdvanced ? 'Hide Options' : 'Show Options' }}
-                </UButton>
+                  {{ shortPath(config.app.download_path) }}
+                </span>
+
+                <FolderInput
+                  id="folder"
+                  v-model="form.folder"
+                  :placeholder="getDefault('folder', '/')"
+                  :disabled="addInProgress"
+                  :ui="{ root: 'w-full', base: 'bg-default/90' }"
+                />
               </div>
+            </UFormField>
+
+            <div class="flex w-full items-end xl:col-span-1">
+              <UButton
+                type="button"
+                color="neutral"
+                :variant="showAdvanced ? 'soft' : 'outline'"
+                icon="i-lucide-settings-2"
+                size="lg"
+                class="w-full justify-center"
+                @click="showAdvanced = !showAdvanced"
+              >
+                {{ showAdvanced ? 'Hide Options' : 'Show Options' }}
+              </UButton>
             </div>
           </div>
+        </div>
 
-          <div
-            v-if="show_description && !hasFormatInConfig && findPreset(form.preset)?.description"
-            class="max-h-36 overflow-auto rounded-md border border-default bg-muted/30 px-3 py-2 text-sm text-toned"
+        <div
+          v-if="show_description && !hasFormatInConfig && findPreset(form.preset)?.description"
+          class="max-h-36 overflow-auto rounded-md border border-default bg-muted/30 px-3 py-2 text-sm text-toned"
+        >
+          <button
+            type="button"
+            class="block w-full cursor-pointer text-left"
+            @click="expand_description"
           >
-            <button
-              type="button"
-              class="block w-full cursor-pointer text-left"
-              @click="expand_description"
-            >
-              <span class="inline-flex items-start gap-2">
-                <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0 text-info" />
-                <span class="is-ellipsis">{{ findPreset(form.preset)?.description }}</span>
-              </span>
-            </button>
-          </div>
-        </template>
-      </UPageCard>
+            <span class="inline-flex items-start gap-2">
+              <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0 text-info" />
+              <span class="is-ellipsis">{{ findPreset(form.preset)?.description }}</span>
+            </span>
+          </button>
+        </div>
+      </div>
 
-      <UPageCard v-if="showAdvanced" variant="outline" :ui="downloadCardUi">
-        <template #body>
-          <div class="space-y-4">
-            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-12">
-              <div class="xl:col-span-2">
-                <DLInput
-                  id="force_download"
-                  v-model="dlFields['--no-download-archive']"
-                  type="bool"
-                  label="Force download"
-                  icon="i-lucide-download"
-                  :disabled="addInProgress"
-                  description="Ignore archive."
-                  compact
-                />
-              </div>
-
-              <div class="xl:col-span-2">
-                <DLInput
-                  id="auto_start"
-                  v-model="auto_start"
-                  type="bool"
-                  label="Auto start"
-                  icon="i-lucide-play"
-                  :disabled="addInProgress"
-                  description="Download automatically."
-                  compact
-                />
-              </div>
-
-              <div class="xl:col-span-2">
-                <DLInput
-                  id="no_cache"
-                  v-model="dlFields['--no-continue']"
-                  type="bool"
-                  label="Bypass cache"
-                  icon="i-lucide-eraser"
-                  :disabled="addInProgress"
-                  description="Remove temporary files."
-                  compact
-                />
-              </div>
-
-              <div
-                :class="
-                  hasIgnoreConditionOptions
-                    ? 'md:col-span-2 xl:col-span-3'
-                    : 'md:col-span-2 xl:col-span-6'
-                "
-              >
-                <DLInput
-                  id="output_template"
-                  v-model="form.template"
-                  type="string"
-                  label="Output template"
-                  icon="i-lucide-file-code-2"
-                  :disabled="addInProgress"
-                  :placeholder="
-                    getDefault('template', config.app.output_template || '%(title)s.%(ext)s')
-                  "
-                >
-                  <template #description>
-                    <span>
-                      See
-                      <NuxtLink
-                        target="_blank"
-                        class="font-medium text-primary hover:underline"
-                        to="https://github.com/yt-dlp/yt-dlp#output-template"
-                      >
-                        the yt-dlp output template page
-                      </NuxtLink>
-                      for info.
-                    </span>
-                  </template>
-                </DLInput>
-              </div>
-
-              <UFormField
-                v-if="hasIgnoreConditionOptions"
-                class="md:col-span-2 xl:col-span-3 w-full"
-                :ui="advancedEditorFieldUi"
-              >
-                <template #label>
-                  <span class="inline-flex items-center gap-2 font-semibold">
-                    <UIcon name="i-lucide-list-minus" class="size-4 text-toned" />
-                    <span>Ignore conditions</span>
-                  </span>
-                </template>
-
-                <template #description>
-                  <span> Skip selected condition rules. </span>
-                </template>
-
-                <template #hint>
-                  <button
-                    v-if="selectedIgnoreConditions.length > 0"
-                    type="button"
-                    class="font-medium text-primary hover:underline"
-                    @click="selectedIgnoreConditions = []"
-                  >
-                    Clear selection
-                  </button>
-                </template>
-
-                <USelectMenu
-                  v-model="selectedIgnoreConditions"
-                  :items="ignoreConditionOptions"
-                  value-key="value"
-                  label-key="label"
-                  multiple
-                  placeholder="Select conditions to ignore"
-                  class="w-full"
-                  size="lg"
-                  :disabled="addInProgress || conditions.isLoading.value"
-                  :search-input="{ placeholder: 'Search conditions' }"
-                  :ui="{ base: 'w-full', content: 'min-w-[18rem]' }"
-                />
-              </UFormField>
-            </div>
-
-            <div class="grid gap-4 xl:grid-cols-2">
-              <UFormField
-                label="Command options for yt-dlp"
-                class="w-full"
-                :ui="advancedEditorFieldUi"
-              >
-                <template #label>
-                  <span class="inline-flex items-center gap-2 font-semibold">
-                    <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-                    <span>Command options for yt-dlp</span>
-                  </span>
-                </template>
-
-                <template #description>
-                  <span>
-                    <button
-                      type="button"
-                      class="font-medium text-primary hover:underline"
-                      @click="showOptions = true"
-                    >
-                      View all options
-                    </button>
-                    . Not all options are supported;
-                    <a
-                      target="_blank"
-                      href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
-                    >
-                      some are ignored
-                    </a>
-                  </span>
-                </template>
-
-                <TextareaAutocomplete
-                  id="cli_options"
-                  v-model="form.cli"
-                  :options="ytDlpOpt"
-                  :placeholder="getDefault('cli', '')"
-                  :disabled="addInProgress"
-                  :rows="5"
-                  class="w-full"
-                />
-              </UFormField>
-
-              <UFormField label="Cookies" class="w-full" :ui="advancedEditorFieldUi">
-                <template #label>
-                  <span class="inline-flex items-center gap-2 font-semibold">
-                    <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
-                    <span>Cookies</span>
-                  </span>
-                </template>
-
-                <template #hint>
-                  <button
-                    type="button"
-                    class="font-medium text-primary hover:underline"
-                    @click="cookiesDropzoneRef?.triggerFileSelect()"
-                  >
-                    Upload file
-                  </button>
-                </template>
-                <template #description>
-                  <span>
-                    Use the
-                    <NuxtLink
-                      target="_blank"
-                      to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
-                    >
-                      recommended addon
-                    </NuxtLink>
-                    to export cookies.
-                    <span class="text-error"
-                      >The cookies MUST be in Netscape HTTP Cookie format.</span
-                    >
-                  </span>
-                </template>
-
-                <TextDropzone
-                  ref="cookiesDropzoneRef"
-                  id="ytdlpCookies"
-                  v-model="form.cookies"
-                  :disabled="addInProgress"
-                  :rows="5"
-                  :placeholder="
-                    getDefault(
-                      'cookies',
-                      'Leave empty to use default cookies. Or drag & drop a cookie file here.',
-                    )
-                  "
-                  class="w-full"
-                  @error="(msg: string) => toast.error(msg)"
-                />
-              </UFormField>
-            </div>
-
-            <div
-              v-if="config.dl_fields.length > 0"
-              class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"
-            >
+      <div v-if="showAdvanced" class="ytp-card p-4 sm:p-6 space-y-4">
+        <div class="space-y-4">
+          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-12">
+            <div class="xl:col-span-2">
               <DLInput
-                v-for="(fi, index) in sortedDLFields"
-                :id="fi?.id || `dlf-${index}`"
-                :key="fi.id || `dlf-${index}`"
-                v-model="dlFields[fi.field]"
-                :type="fi.kind"
-                :description="fi.description"
-                :label="fi.name"
-                :icon="fi.icon"
-                :field="fi.field"
+                id="force_download"
+                v-model="dlFields['--no-download-archive']"
+                type="bool"
+                label="Force download"
+                icon="i-lucide-download"
                 :disabled="addInProgress"
+                description="Ignore archive."
+                compact
               />
             </div>
-          </div>
 
-          <div
-            class="flex flex-wrap items-center justify-between gap-2 border-t border-default pt-4"
-          >
-            <UDropdownMenu class="sm:hidden" :items="mobileActionGroups" :modal="false">
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-ellipsis"
-                trailing-icon="i-lucide-chevron-down"
-              >
-                Actions
-              </UButton>
-            </UDropdownMenu>
-
-            <div class="hidden flex-wrap items-center gap-2 sm:flex">
-              <UButton
-                type="button"
-                color="info"
-                variant="outline"
-                icon="i-lucide-info"
-                :disabled="addInProgress || !hasValidUrl"
-                @click="
-                  emitter('getInfo', splitUrls(form.url || '')[0] || '', form.preset, form.cli)
-                "
-              >
-                yt-dlp Information
-              </UButton>
-
-              <UButton
-                v-if="config.app.console_enabled"
-                type="button"
-                color="warning"
-                variant="outline"
-                icon="i-lucide-terminal"
-                :disabled="!hasValidUrl"
-                @click="runCliCommand"
-              >
-                Run CLI
-              </UButton>
-
-              <UButton
-                v-if="config.app.console_enabled"
-                type="button"
-                color="success"
-                variant="outline"
-                icon="i-lucide-flask-conical"
-                :disabled="!hasValidUrl"
-                @click="testDownloadOptions"
-              >
-                Show compiled yt-dlp options
-              </UButton>
+            <div class="xl:col-span-2">
+              <DLInput
+                id="auto_start"
+                v-model="auto_start"
+                type="bool"
+                label="Auto start"
+                icon="i-lucide-play"
+                :disabled="addInProgress"
+                description="Download automatically."
+                compact
+              />
             </div>
 
+            <div class="xl:col-span-2">
+              <DLInput
+                id="no_cache"
+                v-model="dlFields['--no-continue']"
+                type="bool"
+                label="Bypass cache"
+                icon="i-lucide-eraser"
+                :disabled="addInProgress"
+                description="Remove temporary files."
+                compact
+              />
+            </div>
+
+            <div
+              :class="
+                hasIgnoreConditionOptions
+                  ? 'md:col-span-2 xl:col-span-3'
+                  : 'md:col-span-2 xl:col-span-6'
+              "
+            >
+              <DLInput
+                id="output_template"
+                v-model="form.template"
+                type="string"
+                label="Output template"
+                icon="i-lucide-file-code-2"
+                :disabled="addInProgress"
+                :placeholder="
+                  getDefault('template', config.app.output_template || '%(title)s.%(ext)s')
+                "
+              >
+                <template #description>
+                  <span>
+                    See
+                    <NuxtLink
+                      target="_blank"
+                      class="font-medium text-primary hover:underline"
+                      to="https://github.com/yt-dlp/yt-dlp#output-template"
+                    >
+                      the yt-dlp output template page
+                    </NuxtLink>
+                    for info.
+                  </span>
+                </template>
+              </DLInput>
+            </div>
+
+            <UFormField
+              v-if="hasIgnoreConditionOptions"
+              class="md:col-span-2 xl:col-span-3 w-full"
+              :ui="advancedEditorFieldUi"
+            >
+              <template #label>
+                <span class="inline-flex items-center gap-2 font-semibold">
+                  <UIcon name="i-lucide-list-minus" class="size-4 text-toned" />
+                  <span>Ignore conditions</span>
+                </span>
+              </template>
+
+              <template #description>
+                <span> Skip selected condition rules. </span>
+              </template>
+
+              <template #hint>
+                <button
+                  v-if="selectedIgnoreConditions.length > 0"
+                  type="button"
+                  class="font-medium text-primary hover:underline"
+                  @click="selectedIgnoreConditions = []"
+                >
+                  Clear selection
+                </button>
+              </template>
+
+              <USelectMenu
+                v-model="selectedIgnoreConditions"
+                :items="ignoreConditionOptions"
+                value-key="value"
+                label-key="label"
+                multiple
+                placeholder="Select conditions to ignore"
+                class="w-full"
+                size="lg"
+                :disabled="addInProgress || conditions.isLoading.value"
+                :search-input="{ placeholder: 'Search conditions' }"
+                :ui="{ base: 'w-full', content: 'min-w-[18rem]' }"
+              />
+            </UFormField>
+          </div>
+
+          <div class="grid gap-4 xl:grid-cols-2">
+            <UFormField
+              label="Command options for yt-dlp"
+              class="w-full"
+              :ui="advancedEditorFieldUi"
+            >
+              <template #label>
+                <span class="inline-flex items-center gap-2 font-semibold">
+                  <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
+                  <span>Command options for yt-dlp</span>
+                </span>
+              </template>
+
+              <template #description>
+                <span>
+                  <button
+                    type="button"
+                    class="font-medium text-primary hover:underline"
+                    @click="showOptions = true"
+                  >
+                    View all options
+                  </button>
+                  . Not all options are supported;
+                  <a
+                    target="_blank"
+                    href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
+                  >
+                    some are ignored
+                  </a>
+                </span>
+              </template>
+
+              <TextareaAutocomplete
+                id="cli_options"
+                v-model="form.cli"
+                :options="ytDlpOpt"
+                :placeholder="getDefault('cli', '')"
+                :disabled="addInProgress"
+                :rows="5"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Cookies" class="w-full" :ui="advancedEditorFieldUi">
+              <template #label>
+                <span class="inline-flex items-center gap-2 font-semibold">
+                  <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
+                  <span>Cookies</span>
+                </span>
+              </template>
+
+              <template #hint>
+                <button
+                  type="button"
+                  class="font-medium text-primary hover:underline"
+                  @click="cookiesDropzoneRef?.triggerFileSelect()"
+                >
+                  Upload file
+                </button>
+              </template>
+              <template #description>
+                <span>
+                  Use the
+                  <NuxtLink
+                    target="_blank"
+                    to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+                  >
+                    recommended addon
+                  </NuxtLink>
+                  to export cookies.
+                  <span class="text-error"
+                    >The cookies MUST be in Netscape HTTP Cookie format.</span
+                  >
+                </span>
+              </template>
+
+              <TextDropzone
+                ref="cookiesDropzoneRef"
+                id="ytdlpCookies"
+                v-model="form.cookies"
+                :disabled="addInProgress"
+                :rows="5"
+                :placeholder="
+                  getDefault(
+                    'cookies',
+                    'Leave empty to use default cookies. Or drag & drop a cookie file here.',
+                  )
+                "
+                class="w-full"
+                @error="(msg: string) => toast.error(msg)"
+              />
+            </UFormField>
+          </div>
+
+          <div v-if="config.dl_fields.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+            <DLInput
+              v-for="(fi, index) in sortedDLFields"
+              :id="fi?.id || `dlf-${index}`"
+              :key="fi.id || `dlf-${index}`"
+              v-model="dlFields[fi.field]"
+              :type="fi.kind"
+              :description="fi.description"
+              :label="fi.name"
+              :icon="fi.icon"
+              :field="fi.field"
+              :disabled="addInProgress"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t border-default pt-4">
+          <UDropdownMenu class="sm:hidden" :items="mobileActionGroups" :modal="false">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-ellipsis"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              Actions
+            </UButton>
+          </UDropdownMenu>
+
+          <div class="hidden flex-wrap items-center gap-2 sm:flex">
             <UButton
               type="button"
-              color="error"
+              color="neutral"
               variant="outline"
-              icon="i-lucide-rotate-ccw"
-              :disabled="!!form?.id"
-              @click="resetConfig"
+              icon="i-lucide-info"
+              :disabled="addInProgress || !hasValidUrl"
+              @click="emitter('getInfo', splitUrls(form.url || '')[0] || '', form.preset, form.cli)"
             >
-              Reset local settings
+              yt-dlp Information
+            </UButton>
+
+            <UButton
+              v-if="config.app.console_enabled"
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-terminal"
+              :disabled="!hasValidUrl"
+              @click="runCliCommand"
+            >
+              Run CLI
+            </UButton>
+
+            <UButton
+              v-if="config.app.console_enabled"
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-flask-conical"
+              :disabled="!hasValidUrl"
+              @click="testDownloadOptions"
+            >
+              Show compiled yt-dlp options
             </UButton>
           </div>
-        </template>
-      </UPageCard>
+
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-rotate-ccw"
+            :disabled="!!form?.id"
+            @click="resetConfig"
+          >
+            Reset local settings
+          </UButton>
+        </div>
+      </div>
     </form>
 
     <UModal
@@ -707,13 +696,6 @@ const testResultsPreClasses = computed(() => [
   testResultsClasses.value,
 ]);
 
-const downloadCardUi = {
-  root: 'w-full',
-  container: 'w-full p-4 sm:p-6',
-  wrapper: 'w-full items-stretch',
-  body: 'w-full space-y-4',
-};
-
 const downloadFieldUi = {
   label: 'font-semibold text-default',
   container: 'space-y-2',
@@ -793,7 +775,6 @@ const mobileActionGroups = computed(() => {
     {
       label: 'Reset local settings',
       icon: 'i-lucide-rotate-ccw',
-      color: 'error',
       disabled: Boolean(form.value?.id),
       onSelect: () => void resetConfig(),
     },

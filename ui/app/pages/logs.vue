@@ -17,11 +17,9 @@
 
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-      <div class="flex min-w-0 items-start gap-3">
-        <span
-          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
-        >
+    <div class="ytp-page-header">
+      <div class="ytp-page-heading items-start">
+        <span class="ytp-page-icon">
           <UIcon
             name="i-lucide-file-text"
             :class="[
@@ -34,9 +32,7 @@
         </span>
 
         <div class="min-w-0 space-y-2">
-          <div
-            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
-          >
+          <div class="ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -46,7 +42,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
+      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UButton
           v-if="!autoScroll"
           color="neutral"
@@ -123,134 +119,132 @@
       </div>
     </div>
 
-    <UPageCard variant="naked" :ui="pageCardUi">
-      <template #body>
-        <div class="overflow-hidden rounded-sm border border-default bg-default shadow-sm">
+    <div class="ytp-card min-w-0 max-w-full p-4 sm:p-5 overflow-hidden">
+      <div class="ytp-frame overflow-hidden shadow-sm">
+        <div
+          ref="logContainer"
+          class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden bg-transparent font-mono text-sm text-default overscroll-x-contain"
+          @scroll.passive="handleScroll"
+        >
           <div
-            ref="logContainer"
-            class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden bg-transparent font-mono text-sm text-default overscroll-x-contain"
-            @scroll.passive="handleScroll"
+            v-if="reachedEnd && !hasActiveFilter"
+            class="flex justify-center border-b border-default/40 px-4 py-3"
           >
             <div
-              v-if="reachedEnd && !hasActiveFilter"
-              class="flex justify-center border-b border-default/40 px-4 py-3"
+              class="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-[11px] font-medium text-warning"
             >
-              <div
-                class="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-[11px] font-medium text-warning"
-              >
-                <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />
-                No older lines remain in this file.
-              </div>
-            </div>
-
-            <div
-              v-if="canLoadFilteredHistory"
-              class="flex justify-center border-b border-default/40 px-4 py-3"
-            >
-              <button
-                type="button"
-                class="inline-flex items-center gap-1.5 rounded-full border border-default/60 bg-elevated/40 px-3 py-1 text-[11px] font-medium text-toned transition-colors hover:border-default hover:text-default disabled:opacity-60"
-                :disabled="loading"
-                @click="fetchLogs(true)"
-              >
-                <UIcon
-                  :name="loading ? 'i-lucide-loader-circle' : 'i-lucide-history'"
-                  :class="['size-3.5 shrink-0', loading ? 'animate-spin' : '']"
-                />
-                Load older lines into filter
-              </button>
-            </div>
-
-            <template v-if="filteredLogs.length > 0">
-              <article
-                v-for="(entry, index) in filteredLogs"
-                :key="entry.log.id"
-                :class="logRowClass(entry, index)"
-              >
-                <div
-                  class="flex w-full min-w-0 flex-col gap-1 px-3 py-[0.65rem] leading-[1.6] md:flex-row md:items-start md:gap-2"
-                >
-                  <span
-                    class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle md:shrink-0 md:flex-nowrap"
-                  >
-                    <UTooltip :text="logTimeTitle(entry.log.datetime)">
-                      <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
-                        {{ logTimeLabel(entry.log.datetime) }}
-                      </span>
-                    </UTooltip>
-                    <UButton
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      icon="i-lucide-panel-right-open"
-                      aria-label="Open log details"
-                      class="inline-flex align-[-0.2em] opacity-70 hover:opacity-100"
-                      @click="openLogDetails(entry.log)"
-                    />
-                    <span
-                      :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
-                      @click="openLogDetails(entry.log)"
-                    >
-                      <UIcon :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]" class="size-3" />
-                      {{ getLogLevel(entry.log.level) }}
-                    </span>
-                    <span
-                      v-if="entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)"
-                      :title="entry.log.logger"
-                      class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
-                      >[{{ entry.log.logger }}]</span
-                    >
-                  </span>
-
-                  <button
-                    type="button"
-                    class="block min-w-0 flex-1 cursor-pointer text-left"
-                    :aria-expanded="expandedRows.has(entry.log.id) || textWrap"
-                    @click="toggleRow(entry.log.id)"
-                  >
-                    <span :class="messageClass(entry.log.id)"
-                      >{{ entry.log.message
-                      }}<span v-if="exceptionSummary(entry.log)" class="text-error/90">
-                        : {{ exceptionSummary(entry.log) }}</span
-                      ></span
-                    >
-                  </button>
-                </div>
-              </article>
-            </template>
-
-            <div
-              v-else
-              class="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 py-8 text-center font-sans"
-            >
-              <template v-if="loading">
-                <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-toned" />
-                <div class="space-y-1">
-                  <p class="text-sm font-medium text-default">Loading logs...</p>
-                  <p class="text-sm text-toned">Connecting to log stream.</p>
-                </div>
-              </template>
-
-              <template v-else-if="hasActiveFilter">
-                <UIcon name="i-lucide-filter-x" class="size-6 text-toned" />
-                <div class="space-y-1">
-                  <p class="text-sm font-medium text-default">No logs match these filters</p>
-                  <p class="text-sm text-toned">Try adjusting or clearing the filters.</p>
-                </div>
-              </template>
-
-              <template v-else>
-                <UIcon name="i-lucide-circle-off" class="size-6 text-toned" />
-                <div class="space-y-1">
-                  <p class="text-sm font-medium text-default">No log lines available</p>
-                  <p class="text-sm text-toned">There are no log entries to display.</p>
-                </div>
-              </template>
+              <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />
+              No older lines remain in this file.
             </div>
           </div>
+
+          <div
+            v-if="canLoadFilteredHistory"
+            class="flex justify-center border-b border-default/40 px-4 py-3"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-full border border-default/60 bg-elevated/40 px-3 py-1 text-[11px] font-medium text-toned transition-colors hover:border-default hover:text-default disabled:opacity-60"
+              :disabled="loading"
+              @click="fetchLogs(true)"
+            >
+              <UIcon
+                :name="loading ? 'i-lucide-loader-circle' : 'i-lucide-history'"
+                :class="['size-3.5 shrink-0', loading ? 'animate-spin' : '']"
+              />
+              Load older lines into filter
+            </button>
+          </div>
+
+          <template v-if="filteredLogs.length > 0">
+            <article
+              v-for="(entry, index) in filteredLogs"
+              :key="entry.log.id"
+              :class="logRowClass(entry, index)"
+            >
+              <div
+                class="flex w-full min-w-0 flex-col gap-1 px-3 py-[0.65rem] leading-[1.6] md:flex-row md:items-start md:gap-2"
+              >
+                <span
+                  class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle md:shrink-0 md:flex-nowrap"
+                >
+                  <UTooltip :text="logTimeTitle(entry.log.datetime)">
+                    <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
+                      {{ logTimeLabel(entry.log.datetime) }}
+                    </span>
+                  </UTooltip>
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    icon="i-lucide-panel-right-open"
+                    aria-label="Open log details"
+                    class="inline-flex align-[-0.2em] opacity-70 hover:opacity-100"
+                    @click="openLogDetails(entry.log)"
+                  />
+                  <span
+                    :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
+                    @click="openLogDetails(entry.log)"
+                  >
+                    <UIcon :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]" class="size-3" />
+                    {{ getLogLevel(entry.log.level) }}
+                  </span>
+                  <span
+                    v-if="entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)"
+                    :title="entry.log.logger"
+                    class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
+                    >[{{ entry.log.logger }}]</span
+                  >
+                </span>
+
+                <button
+                  type="button"
+                  class="block min-w-0 flex-1 cursor-pointer text-left"
+                  :aria-expanded="expandedRows.has(entry.log.id) || textWrap"
+                  @click="toggleRow(entry.log.id)"
+                >
+                  <span :class="messageClass(entry.log.id)"
+                    >{{ entry.log.message
+                    }}<span v-if="exceptionSummary(entry.log)" class="text-error/90">
+                      : {{ exceptionSummary(entry.log) }}</span
+                    ></span
+                  >
+                </button>
+              </div>
+            </article>
+          </template>
+
+          <div
+            v-else
+            class="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 py-8 text-center font-sans"
+          >
+            <template v-if="loading">
+              <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-toned" />
+              <div class="space-y-1">
+                <p class="text-sm font-medium text-default">Loading logs...</p>
+                <p class="text-sm text-toned">Connecting to log stream.</p>
+              </div>
+            </template>
+
+            <template v-else-if="hasActiveFilter">
+              <UIcon name="i-lucide-filter-x" class="size-6 text-toned" />
+              <div class="space-y-1">
+                <p class="text-sm font-medium text-default">No logs match these filters</p>
+                <p class="text-sm text-toned">Try adjusting or clearing the filters.</p>
+              </div>
+            </template>
+
+            <template v-else>
+              <UIcon name="i-lucide-circle-off" class="size-6 text-toned" />
+              <div class="space-y-1">
+                <p class="text-sm font-medium text-default">No log lines available</p>
+                <p class="text-sm text-toned">There are no log entries to display.</p>
+              </div>
+            </template>
+          </div>
         </div>
-      </template>
-    </UPageCard>
+      </div>
+    </div>
 
     <LogDetailModal v-model="detailsOpen" :log="selectedLog" />
   </main>
@@ -315,13 +309,6 @@ const autoScroll = ref(true);
 const reachedEnd = ref(false);
 const detailsOpen = ref(false);
 const expandedRows = ref<Set<string>>(new Set());
-
-const pageCardUi = {
-  root: 'w-full min-w-0 max-w-full bg-transparent',
-  container: 'w-full min-w-0 max-w-full p-4 sm:p-5',
-  wrapper: 'w-full min-w-0 items-stretch',
-  body: 'w-full min-w-0 max-w-full overflow-hidden',
-};
 
 const query = ref<string>(
   (() => {

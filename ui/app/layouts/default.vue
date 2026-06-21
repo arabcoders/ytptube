@@ -183,7 +183,7 @@
 
                     <UButton
                       v-if="true === config.app.is_native"
-                      color="error"
+                      color="neutral"
                       variant="ghost"
                       size="sm"
                       icon="i-lucide-power"

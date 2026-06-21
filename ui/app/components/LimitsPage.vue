@@ -25,10 +25,7 @@
       </UButton>
     </div>
 
-    <div
-      v-if="!limits && limitsLoading"
-      class="flex min-h-72 items-center justify-center rounded-md border border-default bg-default/90"
-    >
+    <div v-if="!limits && limitsLoading" class="ytp-card flex min-h-72 items-center justify-center">
       <div class="flex flex-col items-center gap-3 text-center text-toned">
         <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-info" />
 
@@ -66,7 +63,7 @@
         title="Download queue is paused"
       />
 
-      <div class="rounded-md border border-default bg-default shadow-sm">
+      <div class="ytp-card shadow-sm">
         <div class="grid gap-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           <section
             class="space-y-4 border-b border-default px-4 py-4 sm:px-5 lg:border-r lg:border-b-0"
@@ -197,13 +194,10 @@
           description="Overrides and extractor usage appear here once activity is detected."
         />
 
-        <div
-          v-else
-          class="w-full min-w-0 max-w-full overflow-hidden rounded-md border border-default bg-default"
-        >
+        <div v-else class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table class="min-w-180 w-full text-sm">
-              <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+              <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
                 <tr
                   class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
                 >

@@ -116,7 +116,7 @@
         <span>Result:</span>
       </div>
 
-      <div class="overflow-hidden rounded-lg border border-default bg-default">
+      <div class="overflow-hidden ytp-frame">
         <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
           <pre
             class="min-w-0 max-w-full overflow-x-auto p-4 text-xs leading-6 text-default"

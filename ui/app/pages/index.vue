@@ -1,17 +1,13 @@
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-      <div class="flex min-w-0 items-center gap-3">
-        <span
-          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
-        >
+    <div class="ytp-page-header">
+      <div class="ytp-page-heading">
+        <span class="ytp-page-icon">
           <UIcon :name="pageShell.icon" class="size-5" />
         </span>
 
         <div class="min-w-0 space-y-2">
-          <div
-            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
-          >
+          <div class="ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -21,7 +17,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
+      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UButton
           color="neutral"
           :variant="toggleFilter ? 'soft' : 'outline'"
@@ -56,7 +52,7 @@
 
         <UButton
           color="neutral"
-          variant="outline"
+          :variant="config.showForm ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-plus"
           @click="config.showForm = !config.showForm"
@@ -109,7 +105,7 @@
       <div class="w-full min-w-0 max-w-full space-y-4">
         <div v-if="!socket.isConnected" class="flex justify-end">
           <UButton
-            color="info"
+            color="neutral"
             variant="outline"
             size="sm"
             icon="i-lucide-refresh-cw"
@@ -122,7 +118,7 @@
 
         <div
           v-if="hasItems"
-          class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+          class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
         >
           <div class="flex flex-wrap items-center gap-2">
             <UButton
@@ -175,11 +171,11 @@
 
         <div
           v-if="'list' === contentStyle && hasItems"
-          class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+          class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
         >
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table class="min-w-210 table-fixed w-full text-sm">
-              <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+              <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
                 <tr
                   class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
                 >
@@ -409,16 +405,8 @@
             :min-height="showThumbnails ? 475 : 265"
             class="min-h-0 min-w-0 w-full max-w-full"
           >
-            <UCard
-              class="flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden"
-              :ui="{
-                body: 'flex flex-1 flex-col gap-4 p-4',
-                footer: 'border-t border-default px-4 py-4',
-                header: 'p-4 pb-3',
-                root: 'bg-default border border-default',
-              }"
-            >
-              <template #header>
+            <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
+              <div class="p-4 pb-3 ytp-border-bottom-soft">
                 <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
                   <div class="min-w-0 flex-1">
                     <UTooltip :text="item.title">
@@ -494,124 +482,129 @@
                     </label>
                   </div>
                 </div>
-              </template>
-
-              <div
-                v-if="showThumbnails"
-                class="-mx-4 -mt-4 overflow-hidden border-b border-default bg-muted/20"
-              >
-                <figure :class="['relative w-full overflow-hidden', thumbnailRatioClass]">
-                  <span
-                    v-if="isEmbedable(item.url)"
-                    class="play-overlay"
-                    @click="embed_url = getEmbedable(item.url) as string"
-                  >
-                    <span class="play-icon embed-icon" aria-hidden="true">
-                      <UIcon name="i-lucide-play" class="size-6 translate-x-px text-white" />
-                    </span>
-                    <img
-                      v-if="getGridImage(item)"
-                      :src="getGridImage(item)"
-                      @load="pImg"
-                      @error="onImgError"
-                    />
-                    <img v-else src="/images/placeholder.png" />
-                  </span>
-
-                  <template v-else>
-                    <img
-                      v-if="getGridImage(item)"
-                      :src="getGridImage(item)"
-                      @load="pImg"
-                      @error="onImgError"
-                    />
-                    <img v-else src="/images/placeholder.png" />
-                  </template>
-                </figure>
               </div>
 
-              <div class="queue-progress rounded-md border border-default bg-muted/20">
+              <div class="flex flex-1 flex-col gap-4 p-4">
                 <div
-                  class="queue-progress__bar bg-success/35"
-                  :style="{ width: progressWidth(item) }"
-                ></div>
-                <div class="queue-progress__label">
-                  <template v-if="progressIcon(item)">
-                    <UIcon
-                      :name="progressIcon(item)"
-                      :class="[
-                        'mr-1 size-4',
-                        progressIcon(item) === 'i-lucide-settings-2' ? 'animate-spin' : '',
-                      ]"
-                    />
-                  </template>
-                  <span>{{ progressText(item) }}</span>
+                  v-if="showThumbnails"
+                  class="-mx-4 -mt-4 overflow-hidden border-b border-default bg-muted/20"
+                >
+                  <figure :class="['relative w-full overflow-hidden', thumbnailRatioClass]">
+                    <span
+                      v-if="isEmbedable(item.url)"
+                      class="play-overlay"
+                      @click="embed_url = getEmbedable(item.url) as string"
+                    >
+                      <span class="play-icon embed-icon" aria-hidden="true">
+                        <UIcon name="i-lucide-play" class="size-6 translate-x-px text-white" />
+                      </span>
+                      <img
+                        v-if="getGridImage(item)"
+                        :src="getGridImage(item)"
+                        @load="pImg"
+                        @error="onImgError"
+                      />
+                      <img v-else src="/images/placeholder.png" />
+                    </span>
+
+                    <template v-else>
+                      <img
+                        v-if="getGridImage(item)"
+                        :src="getGridImage(item)"
+                        @load="pImg"
+                        @error="onImgError"
+                      />
+                      <img v-else src="/images/placeholder.png" />
+                    </template>
+                  </figure>
+                </div>
+
+                <div class="queue-progress rounded-md border border-default bg-muted/20">
+                  <div
+                    class="queue-progress__bar bg-success/35"
+                    :style="{ width: progressWidth(item) }"
+                  ></div>
+                  <div class="queue-progress__label">
+                    <template v-if="progressIcon(item)">
+                      <UIcon
+                        :name="progressIcon(item)"
+                        :class="[
+                          'mr-1 size-4',
+                          progressIcon(item) === 'i-lucide-settings-2' ? 'animate-spin' : '',
+                        ]"
+                      />
+                    </template>
+                    <span>{{ progressText(item) }}</span>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
+                  <button
+                    type="button"
+                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
+                    @click="toggleExpand(item._id, 'status')"
+                  >
+                    <span class="inline-flex w-full items-center justify-center gap-2">
+                      <UIcon
+                        :name="setIcon(item)"
+                        :class="[setIconColor(item), setIconAnimation(item), 'size-4 shrink-0']"
+                      />
+                      <span :class="['min-w-0 text-center', expandClass(item._id, 'status')]">
+                        {{ setStatus(item) }}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
+                    @click="toggleExpand(item._id, 'preset')"
+                  >
+                    <span class="inline-flex w-full items-center justify-center gap-2">
+                      <UIcon
+                        name="i-lucide-sliders-horizontal"
+                        class="size-4 shrink-0 text-toned"
+                      />
+                      <span :class="['min-w-0 text-center', expandClass(item._id, 'preset')]">
+                        {{ item.preset }}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+                    @click="toggleExpand(item._id, 'datetime')"
+                  >
+                    <UTooltip :text="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
+                      <span class="inline-flex w-full items-center justify-center gap-2">
+                        <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
+                        <span
+                          :class="['min-w-0 text-center', expandClass(item._id, 'datetime')]"
+                          :data-datetime="item.datetime"
+                          v-rtime="item.datetime"
+                        />
+                      </span>
+                    </UTooltip>
+                  </button>
+
+                  <button
+                    v-if="item.downloaded_bytes"
+                    type="button"
+                    class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+                    @click="toggleExpand(item._id, 'size')"
+                  >
+                    <span class="inline-flex w-full items-center justify-center gap-2">
+                      <UIcon name="i-lucide-hard-drive" class="size-4 shrink-0 text-toned" />
+                      <span :class="['min-w-0 text-center', expandClass(item._id, 'size')]">
+                        {{ formatBytes(item.downloaded_bytes) }}
+                      </span>
+                    </span>
+                  </button>
                 </div>
               </div>
 
-              <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
-                <button
-                  type="button"
-                  class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
-                  @click="toggleExpand(item._id, 'status')"
-                >
-                  <span class="inline-flex w-full items-center justify-center gap-2">
-                    <UIcon
-                      :name="setIcon(item)"
-                      :class="[setIconColor(item), setIconAnimation(item), 'size-4 shrink-0']"
-                    />
-                    <span :class="['min-w-0 text-center', expandClass(item._id, 'status')]">
-                      {{ setStatus(item) }}
-                    </span>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  class="rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
-                  @click="toggleExpand(item._id, 'preset')"
-                >
-                  <span class="inline-flex w-full items-center justify-center gap-2">
-                    <UIcon name="i-lucide-sliders-horizontal" class="size-4 shrink-0 text-toned" />
-                    <span :class="['min-w-0 text-center', expandClass(item._id, 'preset')]">
-                      {{ item.preset }}
-                    </span>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
-                  @click="toggleExpand(item._id, 'datetime')"
-                >
-                  <UTooltip :text="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
-                    <span class="inline-flex w-full items-center justify-center gap-2">
-                      <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
-                      <span
-                        :class="['min-w-0 text-center', expandClass(item._id, 'datetime')]"
-                        :data-datetime="item.datetime"
-                        v-rtime="item.datetime"
-                      />
-                    </span>
-                  </UTooltip>
-                </button>
-
-                <button
-                  v-if="item.downloaded_bytes"
-                  type="button"
-                  class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
-                  @click="toggleExpand(item._id, 'size')"
-                >
-                  <span class="inline-flex w-full items-center justify-center gap-2">
-                    <UIcon name="i-lucide-hard-drive" class="size-4 shrink-0 text-toned" />
-                    <span :class="['min-w-0 text-center', expandClass(item._id, 'size')]">
-                      {{ formatBytes(item.downloaded_bytes) }}
-                    </span>
-                  </span>
-                </button>
-              </div>
-
-              <template #footer>
+              <div class="ytp-border-top-soft px-4 py-4">
                 <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
                   <UButton
                     color="neutral"
@@ -657,8 +650,8 @@
                     </UButton>
                   </UDropdownMenu>
                 </div>
-              </template>
-            </UCard>
+              </div>
+            </div>
           </LateLoader>
         </div>
 

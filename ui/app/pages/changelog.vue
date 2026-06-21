@@ -1,17 +1,13 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-      <div class="flex min-w-0 items-center gap-3">
-        <span
-          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
-        >
+    <div class="ytp-page-header">
+      <div class="ytp-page-heading">
+        <span class="ytp-page-icon">
           <UIcon :name="pageShell.icon" class="size-5" />
         </span>
 
         <div class="min-w-0 space-y-2">
-          <div
-            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
-          >
+          <div class="ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -21,7 +17,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
+      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UButton
           v-if="logs.length > 0"
           color="neutral"
@@ -64,99 +60,117 @@
     />
 
     <template v-else>
-      <div v-if="filteredLogs.length > 0" class="space-y-4">
-        <UPageCard v-for="log in filteredLogs" :key="log.tag" variant="outline" :ui="pageCardUi">
-          <template #body>
-            <div class="space-y-4">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="min-w-0 space-y-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <div
-                      class="inline-flex items-center gap-2 text-base font-semibold text-highlighted"
-                    >
-                      <UIcon name="i-lucide-git-branch" class="size-4 text-toned" />
-                      <span>{{ log.tag }}</span>
-                    </div>
+      <div v-if="filteredLogs.length > 0" class="space-y-5">
+        <section v-for="log in filteredLogs" :key="log.tag" class="space-y-3">
+          <section class="space-y-3">
+            <button
+              type="button"
+              class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+              @click="toggleRelease(log.tag)"
+            >
+              <div class="flex min-w-0 items-center gap-3">
+                <span class="ytp-section-icon">
+                  <UIcon
+                    :name="isInstalled(log) ? 'i-lucide-badge-check' : 'i-lucide-git-branch'"
+                    class="size-5"
+                  />
+                </span>
 
-                    <UBadge v-if="isInstalled(log)" color="success" variant="soft" size="sm">
-                      Installed
-                    </UBadge>
+                <div class="min-w-0 space-y-1">
+                  <h2 class="truncate text-base font-semibold text-highlighted">
+                    {{ log.tag }}
+                  </h2>
+
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-toned">
+                    <UTooltip v-if="log.date" :text="`Release Date: ${log.date}`">
+                      <span class="inline-flex cursor-help items-center gap-1.5">
+                        <UIcon name="i-lucide-calendar-days" class="size-3.5 text-muted" />
+                        <span>{{ moment(log.date).fromNow() }}</span>
+                      </span>
+                    </UTooltip>
                   </div>
-                </div>
-
-                <div class="flex flex-wrap items-center justify-end gap-2 text-xs text-toned">
-                  <span
-                    class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                  >
-                    <UIcon name="i-lucide-list" class="size-3.5" />
-                    <span>{{ log.commits?.length || 0 }} commits</span>
-                  </span>
-
-                  <UTooltip v-if="log.date" :text="`Release Date: ${log.date}`">
-                    <span
-                      class="inline-flex cursor-help items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon name="i-lucide-calendar-days" class="size-3.5" />
-                      <span>{{ moment(log.date).fromNow() }}</span>
-                    </span>
-                  </UTooltip>
                 </div>
               </div>
 
-              <div class="space-y-3 border-t border-default pt-4">
-                <article
-                  v-for="commit in log.commits"
-                  :key="commit.sha"
-                  class="flex flex-col gap-2 rounded-md border border-default bg-muted/20 px-3 py-3"
+              <div class="flex shrink-0 items-center gap-2">
+                <UBadge
+                  v-if="isInstalled(log)"
+                  color="success"
+                  variant="soft"
+                  size="sm"
+                  icon="i-lucide-check"
                 >
-                  <div class="min-w-0">
+                  Installed
+                </UBadge>
+
+                <UBadge color="neutral" variant="outline" size="sm" icon="i-lucide-list">
+                  {{ log.commits?.length || 0 }} commits
+                </UBadge>
+
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  :class="[
+                    'size-4 text-toned transition-transform',
+                    isReleaseOpen(log.tag) ? 'rotate-90' : '',
+                  ]"
+                />
+              </div>
+            </button>
+
+            <div v-if="isReleaseOpen(log.tag)" class="space-y-2">
+              <article
+                v-for="commit in log.commits"
+                :key="commit.sha"
+                class="rounded-md border border-default bg-elevated/20 px-3 py-3 transition-colors hover:bg-elevated/35"
+              >
+                <NuxtLink
+                  :to="`${REPO}/commit/${commit.full_sha}`"
+                  target="_blank"
+                  class="block min-w-0 text-sm font-medium leading-5 text-highlighted transition hover:text-primary"
+                >
+                  {{ formatCommitMessage(commit.message) }}
+                </NuxtLink>
+
+                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-toned">
+                  <span
+                    class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1"
+                  >
+                    <UIcon name="i-lucide-user" class="size-3.5 text-muted" />
+                    <span>{{ commit.author }}</span>
+                  </span>
+
+                  <UTooltip :text="`Date: ${commit.date}`">
+                    <time
+                      class="inline-flex cursor-help items-center gap-1 rounded-sm border border-default px-2 py-1"
+                    >
+                      <UIcon name="i-lucide-clock-3" class="size-3.5 text-muted" />
+                      <span>{{ moment(commit.date).fromNow() }}</span>
+                    </time>
+                  </UTooltip>
+
+                  <UTooltip :text="`SHA: ${commit.full_sha}`">
                     <NuxtLink
                       :to="`${REPO}/commit/${commit.full_sha}`"
                       target="_blank"
-                      class="block min-w-0 text-sm text-default hover:underline"
+                      class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1 font-mono transition hover:border-primary hover:text-primary"
                     >
-                      <span class="font-semibold text-highlighted">
-                        {{ ucFirst(commit.message).replace(/\.$/, '') }}.
-                      </span>
+                      <UIcon name="i-lucide-git-commit-horizontal" class="size-3.5 text-muted" />
+                      <span>{{ commit.sha }}</span>
                     </NuxtLink>
-                  </div>
+                  </UTooltip>
 
-                  <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-                    <span
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon name="i-lucide-user" class="size-3.5" />
-                      {{ commit.author }}
-                    </span>
-                    <UTooltip :text="`Date: ${commit.date}`">
-                      <span
-                        class="inline-flex cursor-help items-center gap-1 rounded-md border border-default px-2 py-1"
-                      >
-                        <UIcon name="i-lucide-clock-3" class="size-3.5" />
-                        {{ moment(commit.date).fromNow() }}
-                      </span>
-                    </UTooltip>
-                    <UTooltip :text="`SHA: ${commit.full_sha}`">
-                      <span
-                        class="inline-flex cursor-help items-center gap-1 rounded-md border border-default px-2 py-1 font-medium"
-                      >
-                        <UIcon name="i-lucide-git-commit-horizontal" class="size-3.5" />
-                        {{ commit.sha }}
-                      </span>
-                    </UTooltip>
-                    <span
-                      v-if="commit.full_sha === app_sha"
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 font-medium"
-                    >
-                      <UIcon name="i-lucide-check" class="size-3.5 text-success" />
-                      <span>Installed</span>
-                    </span>
-                  </div>
-                </article>
-              </div>
+                  <span
+                    v-if="commit.full_sha === app_sha"
+                    class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1 font-medium"
+                  >
+                    <UIcon name="i-lucide-check" class="size-3.5 text-success" />
+                    <span>Installed</span>
+                  </span>
+                </div>
+              </article>
             </div>
-          </template>
-        </UPageCard>
+          </section>
+        </section>
       </div>
 
       <div v-else class="space-y-3">
@@ -206,13 +220,7 @@ const isLoading = ref(true);
 const query = ref('');
 const toggleFilter = ref(false);
 const latestOnly = useStorage<boolean>('changelog_latest_only', true);
-
-const pageCardUi = {
-  root: 'w-full bg-default',
-  container: 'w-full p-4 sm:p-5',
-  wrapper: 'w-full items-stretch',
-  body: 'w-full',
-};
+const openReleases = useStorage<string[]>('changelog_open_releases', []);
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -249,6 +257,27 @@ const filteredLogs = computed<changelogs>(() => {
     })
     .filter((log): log is changeset => log !== null);
 });
+
+watch(filteredLogs, (items) => {
+  if (openReleases.value.length > 0 || items.length < 1) {
+    return;
+  }
+
+  openReleases.value = items.slice(0, 3).map((log) => log.tag);
+});
+
+const isReleaseOpen = (tag: string): boolean => openReleases.value.includes(tag);
+
+const toggleRelease = (tag: string): void => {
+  if (isReleaseOpen(tag)) {
+    openReleases.value = openReleases.value.filter((entry) => entry !== tag);
+    return;
+  }
+
+  openReleases.value = [...openReleases.value, tag];
+};
+
+const formatCommitMessage = (message: string): string => `${ucFirst(message).replace(/\.$/, '')}.`;
 
 const loadContent = async (): Promise<void> => {
   if (app_version.value === '' || logs.value.length > 0) {

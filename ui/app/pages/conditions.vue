@@ -1,17 +1,13 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-      <div class="flex min-w-0 items-center gap-3">
-        <span
-          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
-        >
+    <div class="ytp-page-header">
+      <div class="ytp-page-heading">
+        <span class="ytp-page-icon">
           <UIcon :name="pageShell.icon" class="size-5" />
         </span>
 
         <div class="min-w-0 space-y-2">
-          <div
-            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
-          >
+          <div class="ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -21,7 +17,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
+      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UButton
           v-if="items.length > 0"
           color="neutral"
@@ -84,7 +80,7 @@
 
     <div
       v-if="!isLoading && filteredItems.length > 0"
-      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
     >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
@@ -129,11 +125,11 @@
 
     <div
       v-if="contentStyle === 'list' && filteredItems.length > 0"
-      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+      class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
         <table class="min-w-235 w-full text-sm">
-          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+          <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
               class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
             >
@@ -238,16 +234,8 @@
 
     <div v-else-if="filteredItems.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div v-for="cond in filteredItems" :key="cond.id" class="min-w-0 w-full max-w-full">
-        <UCard
-          class="flex h-full min-w-0 w-full max-w-full flex-col"
-          :ui="{
-            root: 'bg-default border border-default',
-            header: 'p-4 pb-3',
-            body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
-            footer: 'border-t border-default px-4 py-4',
-          }"
-        >
-          <template #header>
+        <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col">
+          <div class="p-4 pb-3 ytp-border-bottom-soft">
             <div class="flex min-w-0 items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-start gap-2">
@@ -283,100 +271,104 @@
                 </label>
               </div>
             </div>
-          </template>
+          </div>
 
-          <div class="space-y-2 text-sm text-default">
-            <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
-              <button
-                type="button"
-                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
-                :disabled="conditions.addInProgress.value"
-                @click="() => void toggleEnabled(cond)"
-              >
-                <UIcon
-                  name="i-lucide-power"
-                  class="size-3.5"
-                  :class="cond.enabled !== false ? 'text-success' : 'text-error'"
-                />
-                <span>{{ cond.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
-              </button>
-
-              <span
-                v-if="cond.priority > 0"
-                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-              >
-                <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                <span>Priority: {{ cond.priority }}</span>
-              </span>
-            </div>
-
-            <div class="feature-meta-grid">
-              <button
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-                @click="toggleExpand(cond.id, 'filter')"
-              >
-                <UIcon name="i-lucide-filter" class="mt-0.5 size-4 shrink-0 text-toned" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">Filter</div>
-                  <span :class="['block', expandClass(cond.id, 'filter')]">{{ cond.filter }}</span>
-                </div>
-              </button>
-
-              <button
-                v-if="cond.cli"
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-                @click="toggleExpand(cond.id, 'cli')"
-              >
-                <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">CLI options</div>
-                  <span :class="['block', expandClass(cond.id, 'cli')]">{{ cond.cli }}</span>
-                </div>
-              </button>
-            </div>
-
-            <button
-              v-if="cond.description"
-              type="button"
-              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-              @click="toggleExpand(cond.id, 'description')"
-            >
-              <UIcon name="i-lucide-align-left" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <div class="min-w-0 flex-1">
-                <div class="text-xs font-medium text-toned">Description</div>
-                <span :class="['block', expandClass(cond.id, 'description')]">{{
-                  cond.description
-                }}</span>
-              </div>
-            </button>
-
-            <div
-              v-if="extrasEntries(cond.extras).length > 0"
-              class="rounded-md border border-default bg-muted/20 px-3 py-2"
-            >
-              <div class="mb-2 flex items-center gap-2 text-toned">
-                <UIcon name="i-lucide-list" class="size-4" />
-                <span class="text-sm font-medium">Extras</span>
-              </div>
-
-              <div class="flex flex-wrap gap-2">
-                <UBadge
-                  v-for="([key, value], index) in extrasEntries(cond.extras)"
-                  :key="`${cond.id}-${key}-${index}`"
-                  color="info"
-                  variant="soft"
-                  size="sm"
+          <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div class="space-y-2 text-sm text-default">
+              <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                  :disabled="conditions.addInProgress.value"
+                  @click="() => void toggleEnabled(cond)"
                 >
-                  <span class="font-semibold">{{ key }}</span
-                  >: {{ value }}
-                </UBadge>
+                  <UIcon
+                    name="i-lucide-power"
+                    class="size-3.5"
+                    :class="cond.enabled !== false ? 'text-success' : 'text-error'"
+                  />
+                  <span>{{ cond.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                </button>
+
+                <span
+                  v-if="cond.priority > 0"
+                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                >
+                  <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                  <span>Priority: {{ cond.priority }}</span>
+                </span>
+              </div>
+
+              <div class="feature-meta-grid">
+                <button
+                  type="button"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  @click="toggleExpand(cond.id, 'filter')"
+                >
+                  <UIcon name="i-lucide-filter" class="mt-0.5 size-4 shrink-0 text-toned" />
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-medium text-toned">Filter</div>
+                    <span :class="['block', expandClass(cond.id, 'filter')]">{{
+                      cond.filter
+                    }}</span>
+                  </div>
+                </button>
+
+                <button
+                  v-if="cond.cli"
+                  type="button"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  @click="toggleExpand(cond.id, 'cli')"
+                >
+                  <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-medium text-toned">CLI options</div>
+                    <span :class="['block', expandClass(cond.id, 'cli')]">{{ cond.cli }}</span>
+                  </div>
+                </button>
+              </div>
+
+              <button
+                v-if="cond.description"
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(cond.id, 'description')"
+              >
+                <UIcon name="i-lucide-align-left" class="mt-0.5 size-4 shrink-0 text-toned" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Description</div>
+                  <span :class="['block', expandClass(cond.id, 'description')]">{{
+                    cond.description
+                  }}</span>
+                </div>
+              </button>
+
+              <div
+                v-if="extrasEntries(cond.extras).length > 0"
+                class="rounded-md border border-default bg-muted/20 px-3 py-2"
+              >
+                <div class="mb-2 flex items-center gap-2 text-toned">
+                  <UIcon name="i-lucide-list" class="size-4" />
+                  <span class="text-sm font-medium">Extras</span>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <UBadge
+                    v-for="([key, value], index) in extrasEntries(cond.extras)"
+                    :key="`${cond.id}-${key}-${index}`"
+                    color="info"
+                    variant="soft"
+                    size="sm"
+                  >
+                    <span class="font-semibold">{{ key }}</span
+                    >: {{ value }}
+                  </UBadge>
+                </div>
               </div>
             </div>
           </div>
 
-          <template #footer>
+          <div class="ytp-border-top-soft px-4 py-4">
             <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
               <UButton
                 color="neutral"
@@ -398,8 +390,8 @@
                 Delete
               </UButton>
             </div>
-          </template>
-        </UCard>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -566,7 +558,6 @@ const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
     {
       label: 'Remove Selected',
       icon: 'i-lucide-trash',
-      color: 'error',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
     },

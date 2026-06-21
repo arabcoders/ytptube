@@ -1,17 +1,13 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-      <div class="flex min-w-0 items-start gap-3">
-        <span
-          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
-        >
+    <div class="ytp-page-header">
+      <div class="ytp-page-heading items-start">
+        <span class="ytp-page-icon">
           <UIcon :name="pageShell.icon" class="size-5" />
         </span>
 
         <div class="min-w-0 space-y-2">
-          <div
-            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
-          >
+          <div class="ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -21,7 +17,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
+      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UButton
           color="neutral"
           variant="outline"
@@ -47,10 +43,7 @@
       </div>
     </div>
 
-    <div
-      v-if="!report && isLoading"
-      class="flex min-h-72 items-center justify-center rounded-md border border-default bg-default/90"
-    >
+    <div v-if="!report && isLoading" class="ytp-card flex min-h-72 items-center justify-center">
       <div class="flex flex-col items-center gap-3 text-center text-toned">
         <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-info" />
         <div class="space-y-1">
@@ -86,28 +79,15 @@
         </div>
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <article
+          <StatCard
             v-for="item in summaryCards"
             :key="item.label"
-            class="rounded-md border border-default bg-default px-3 py-3 shadow-sm"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wide text-toned">
-                  {{ item.label }}
-                </p>
-                <p class="mt-1 text-xs text-toned">{{ item.description }}</p>
-              </div>
-
-              <span
-                class="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-default bg-default"
-              >
-                <UIcon :name="item.icon" class="size-4 text-toned" />
-              </span>
-            </div>
-
-            <p :class="['mt-4 text-2xl font-semibold', item.valueClass]">{{ item.value }}</p>
-          </article>
+            :label="item.label"
+            :value="item.value"
+            :hint="item.description"
+            :icon="item.icon"
+            :color="item.color"
+          />
         </div>
       </section>
 
@@ -118,28 +98,16 @@
         </div>
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <article
+          <StatCard
             v-for="row in runtimeRows"
             :key="row.label"
-            class="rounded-md border border-default bg-default px-3 py-3 shadow-sm"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wide text-toned">
-                  {{ row.label }}
-                </p>
-                <p class="mt-1 text-xs text-toned">{{ row.description }}</p>
-              </div>
-
-              <span
-                class="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-default bg-default"
-              >
-                <UIcon :name="row.icon" class="size-4 text-toned" />
-              </span>
-            </div>
-
-            <p class="mt-4 wrap-break-word text-sm font-semibold text-default">{{ row.value }}</p>
-          </article>
+            :label="row.label"
+            :value="row.value"
+            :hint="row.description"
+            :icon="row.icon"
+            color="neutral"
+            value-wrap
+          />
         </div>
       </section>
 
@@ -155,11 +123,7 @@
         </div>
 
         <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-          <article
-            v-for="item in section.items"
-            :key="item.id"
-            class="rounded-md border border-default bg-default px-4 py-4 shadow-sm"
-          >
+          <article v-for="item in section.items" :key="item.id" class="ytp-card-padded shadow-sm">
             <div class="min-w-0 space-y-3">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
@@ -198,6 +162,7 @@
 
 <script setup lang="ts">
 import moment from 'moment';
+import StatCard from '~/components/StatCard.vue';
 import type { DiagnosticCheck, DiagnosticStatus } from '~/types/diagnostics';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 import { copyText } from '~/utils';
@@ -207,7 +172,7 @@ type SummaryCard = {
   description: string;
   value: number;
   icon: string;
-  valueClass: string;
+  color: 'success' | 'error' | 'warning' | 'neutral';
 };
 
 type DetailRow = {
@@ -295,28 +260,28 @@ const summaryCards = computed<Array<SummaryCard>>(() => {
       description: 'Checks that passed.',
       value: current.summary.pass,
       icon: 'i-lucide-badge-check',
-      valueClass: current.summary.pass > 0 ? 'text-success' : 'text-default',
+      color: current.summary.pass > 0 ? 'success' : 'neutral',
     },
     {
       label: 'Required fails',
       description: 'Items that block core use.',
       value: current.summary.required_failed,
       icon: 'i-lucide-octagon-alert',
-      valueClass: current.summary.required_failed > 0 ? 'text-error' : 'text-default',
+      color: current.summary.required_failed > 0 ? 'error' : 'neutral',
     },
     {
       label: 'Warnings',
       description: 'Optional or incomplete items.',
       value: current.summary.warn,
       icon: 'i-lucide-triangle-alert',
-      valueClass: current.summary.warn > 0 ? 'text-warning' : 'text-default',
+      color: current.summary.warn > 0 ? 'warning' : 'neutral',
     },
     {
       label: 'Skipped',
       description: 'Not configured or not needed.',
       value: current.summary.skip,
       icon: 'i-lucide-minus',
-      valueClass: current.summary.skip > 0 ? 'text-toned' : 'text-default',
+      color: 'neutral',
     },
   ];
 });

@@ -20,7 +20,7 @@
     <div
       v-if="open && suggestions.length"
       ref="dropdownRef"
-      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md border border-default bg-default shadow-lg"
+      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md ytp-floating-surface"
       role="listbox"
     >
       <button

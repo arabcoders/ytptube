@@ -34,7 +34,7 @@
 
     <div
       v-if="showList && filteredOptions.length"
-      class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md border border-default bg-default shadow-lg"
+      class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md ytp-floating-surface"
       role="menu"
     >
       <button

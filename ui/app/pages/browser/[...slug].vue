@@ -6,19 +6,14 @@
       aria-hidden="true"
     />
 
-    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-      <div class="flex min-w-0 items-start gap-3">
-        <span
-          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
-        >
+    <div class="ytp-page-header">
+      <div class="ytp-page-heading">
+        <span class="ytp-page-icon">
           <UIcon :name="pageShell.icon" class="size-5" />
         </span>
 
         <div class="min-w-0 flex-1 space-y-3">
-          <nav
-            aria-label="Breadcrumb"
-            class="flex min-w-0 flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
-          >
+          <nav aria-label="Breadcrumb" class="min-w-0 ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -50,7 +45,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
+      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UButton
           color="neutral"
           :variant="show_filter ? 'soft' : 'outline'"
@@ -123,7 +118,7 @@
 
     <div
       v-if="controlEnabled && hasItems"
-      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
     >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
@@ -169,11 +164,11 @@
 
     <div
       v-if="contentStyle === 'list' && hasItems"
-      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+      class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
         <table class="min-w-360 w-full text-sm">
-          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+          <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
               class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
             >
@@ -320,18 +315,8 @@
     </div>
 
     <div v-else-if="hasItems" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <UCard
-        v-for="item in filteredItems"
-        :key="item.path"
-        class="flex h-full flex-col"
-        :ui="{
-          root: 'bg-default border border-default',
-          header: 'p-4 pb-3',
-          body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
-          footer: 'border-t border-default px-4 py-4',
-        }"
-      >
-        <template #header>
+      <div v-for="item in filteredItems" :key="item.path" class="ytp-card flex h-full flex-col">
+        <div class="p-4 pb-3 ytp-border-bottom-soft">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
               <div class="flex items-start gap-2">
@@ -364,31 +349,33 @@
               </label>
             </div>
           </div>
-        </template>
+        </div>
 
-        <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
-          <div
-            class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
-          >
-            <span class="block truncate">{{ itemTypeLabel(item) }}</span>
-          </div>
+        <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
+            <div
+              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
+            >
+              <span class="block truncate">{{ itemTypeLabel(item) }}</span>
+            </div>
 
-          <div
-            class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
-          >
-            <span class="block truncate">{{ itemSizeLabel(item) }}</span>
-          </div>
+            <div
+              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+            >
+              <span class="block truncate">{{ itemSizeLabel(item) }}</span>
+            </div>
 
-          <div
-            class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
-          >
-            <UTooltip :text="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')">
-              <span class="block truncate">{{ moment(item.mtime).fromNow() }}</span>
-            </UTooltip>
+            <div
+              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+            >
+              <UTooltip :text="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')">
+                <span class="block truncate">{{ moment(item.mtime).fromNow() }}</span>
+              </UTooltip>
+            </div>
           </div>
         </div>
 
-        <template v-if="controlEnabled" #footer>
+        <div v-if="controlEnabled" class="ytp-border-top-soft px-4 py-4">
           <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
             <UButton
               v-if="item.type === 'file'"
@@ -437,8 +424,8 @@
               Delete
             </UButton>
           </div>
-        </template>
-      </UCard>
+        </div>
+      </div>
     </div>
 
     <div v-if="localSearch && !hasItems && !isLoading" class="space-y-3">
@@ -610,7 +597,6 @@ const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
     {
       label: 'Delete Selected',
       icon: 'i-lucide-trash',
-      color: 'error',
       disabled: !hasSelected.value || isLoading.value,
       onSelect: () => void handleDeleteSelected(),
     },

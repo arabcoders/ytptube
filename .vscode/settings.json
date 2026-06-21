@@ -30,5 +30,8 @@
     "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
   }
 }

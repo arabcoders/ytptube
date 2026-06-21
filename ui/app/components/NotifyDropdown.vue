@@ -86,7 +86,7 @@
                     <UIcon name="i-lucide-check" class="size-3.5" />
                   </UButton>
                   <UButton
-                    color="error"
+                    color="neutral"
                     variant="ghost"
                     size="xs"
                     square
@@ -121,7 +121,7 @@
           </UButton>
 
           <UButton
-            color="error"
+            color="neutral"
             variant="ghost"
             size="sm"
             icon="i-lucide-trash"
