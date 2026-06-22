@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "52d6672fb32a5460724999703b31ec8071ea791b",
-    "date": "2026-06-21T18:25:47+00:00",
+    "full_sha": "e14387e39970d3f2d8f46ce9fd7b9596ce2d495e",
+    "date": "2026-06-22T00:49:50+00:00",
     "commits": [
+      {
+        "sha": "e14387e3",
+        "full_sha": "e14387e39970d3f2d8f46ce9fd7b9596ce2d495e",
+        "message": "refactor: fix card width in mobile",
+        "author": "arabcoders",
+        "date": "2026-06-22T00:49:50+00:00"
+      },
       {
         "sha": "52d6672f",
         "full_sha": "52d6672fb32a5460724999703b31ec8071ea791b",
