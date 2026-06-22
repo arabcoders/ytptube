@@ -315,7 +315,11 @@
     </div>
 
     <div v-else-if="hasItems" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <div v-for="item in filteredItems" :key="item.path" class="ytp-card flex h-full flex-col">
+      <div
+        v-for="item in filteredItems"
+        :key="item.path"
+        class="ytp-card flex h-full flex-col overflow-hidden"
+      >
         <div class="p-4 pb-3 ytp-border-bottom-soft">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">

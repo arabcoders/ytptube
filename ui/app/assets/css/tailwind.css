@@ -100,42 +100,42 @@
   }
 
   .ytp-card {
-    @apply rounded-lg border bg-elevated/20;
+    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20;
     border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-card-padded {
-    @apply rounded-lg border bg-elevated/20 p-4;
+    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20 p-4;
     border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-card-padded-lg {
-    @apply rounded-lg border bg-elevated/20 p-4 sm:p-5;
+    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20 p-4 sm:p-5;
     border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-panel {
-    @apply rounded-lg border;
+    @apply min-w-0 max-w-full rounded-lg border;
     border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-panel-padded {
-    @apply rounded-lg border p-4;
+    @apply min-w-0 max-w-full rounded-lg border p-4;
     border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-panel-padded-lg {
-    @apply rounded-lg border p-4 sm:p-5;
+    @apply min-w-0 max-w-full rounded-lg border p-4 sm:p-5;
     border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-frame {
-    @apply rounded-lg border;
+    @apply min-w-0 max-w-full rounded-lg border;
     border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-table-surface {
-    @apply rounded-sm border bg-elevated/20;
+    @apply min-w-0 max-w-full rounded-sm border bg-elevated/20;
     border-color: var(--ytp-surface-border-solid);
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <main class="space-y-6">
+  <main class="w-full min-w-0 max-w-full space-y-6">
     <div class="ytp-page-header">
       <div class="ytp-page-heading">
         <span class="ytp-page-icon">
@@ -18,8 +18,8 @@
       </div>
     </div>
 
-    <div class="ytp-card p-0">
-      <div class="px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
+    <div class="ytp-card p-0 overflow-hidden">
+      <div class="min-w-0 max-w-full px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
         <Markdown :file="`/api/docs/${docEntry.file}`" />
       </div>
     </div>

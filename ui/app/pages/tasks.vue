@@ -335,7 +335,7 @@
       class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
       <div v-for="item in filteredTasks" :key="item.id" class="min-w-0 w-full max-w-full">
-        <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col">
+        <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
           <div class="p-4 pb-3 ytp-border-bottom-soft">
             <div class="flex min-w-0 items-start justify-between gap-3">
               <div class="min-w-0 flex-1 space-y-2">

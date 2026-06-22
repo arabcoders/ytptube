@@ -1,626 +1,426 @@
 <template>
-  <AppRoot mode="simple" @ready="init" v-slot="{ openSettings }">
-    <div class="shell-stage shell-surface flex min-h-screen flex-col">
-      <ConnectionBanner />
+  <div>
+    <AppRoot mode="simple" @ready="init" v-slot="{ openSettings }">
+      <div class="shell-stage shell-surface flex min-h-screen flex-col">
+        <ConnectionBanner />
 
-      <div
-        class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
-      >
         <div
-          class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
-          :class="lightsOut ? 'opacity-100' : 'opacity-0'"
-          aria-hidden="true"
-        />
+          class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
+        >
+          <div
+            class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+            :class="lightsOut ? 'opacity-100' : 'opacity-0'"
+            aria-hidden="true"
+          />
 
-        <div class="transition-transform duration-300">
-          <div class="mx-auto w-full transition-all duration-300" :class="formContainerClass">
-            <div class="ytp-card p-4 sm:p-5">
-              <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0 space-y-1">
-                    <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
-                      <UIcon name="i-lucide-link" class="size-4 text-toned" />
-                      <span>{{
-                        isMobile ? 'What would you like to download?' : greetingMessage
-                      }}</span>
+          <div class="transition-transform duration-300">
+            <div class="mx-auto w-full transition-all duration-300" :class="formContainerClass">
+              <div class="ytp-card p-4 sm:p-5">
+                <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0 space-y-1">
+                      <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
+                        <UIcon name="i-lucide-link" class="size-4 text-toned" />
+                        <span>{{
+                          isMobile ? 'What would you like to download?' : greetingMessage
+                        }}</span>
+                      </div>
+                    </div>
+
+                    <div class="flex shrink-0 items-center gap-1 sm:gap-2">
+                      <UTooltip v-if="!socketStore.isConnected" text="Reload queue">
+                        <UButton
+                          color="neutral"
+                          variant="ghost"
+                          size="sm"
+                          icon="i-lucide-refresh-cw"
+                          :loading="isRefreshing"
+                          :disabled="isRefreshing"
+                          :square="isMobile"
+                          @click="() => refreshQueue()"
+                        >
+                          <span v-if="!isMobile">Reload Queue</span>
+                        </UButton>
+                      </UTooltip>
+
+                      <ThemeButton :square="isMobile" :show-label="!isMobile" />
+
+                      <UTooltip text="WebUI Settings">
+                        <UButton
+                          color="neutral"
+                          variant="ghost"
+                          size="sm"
+                          icon="i-lucide-settings-2"
+                          :square="isMobile"
+                          @click="openSettings"
+                        >
+                          <span v-if="!isMobile">WebUI Settings</span>
+                        </UButton>
+                      </UTooltip>
                     </div>
                   </div>
 
-                  <div class="flex shrink-0 items-center gap-1 sm:gap-2">
-                    <UTooltip v-if="!socketStore.isConnected" text="Reload queue">
+                  <div class="flex items-stretch gap-2">
+                    <UTooltip :text="showExtras ? 'Hide extra options' : 'Show extra options'">
                       <UButton
+                        type="button"
                         color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-refresh-cw"
-                        :loading="isRefreshing"
-                        :disabled="isRefreshing"
-                        :square="isMobile"
-                        @click="() => refreshQueue()"
-                      >
-                        <span v-if="!isMobile">Reload Queue</span>
-                      </UButton>
+                        :variant="showExtras ? 'soft' : 'outline'"
+                        size="lg"
+                        :icon="showExtras ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                        class="shrink-0 justify-center w-12"
+                        :disabled="addInProgress"
+                        @click="showExtras = !showExtras"
+                      />
                     </UTooltip>
 
-                    <ThemeButton :square="isMobile" :show-label="!isMobile" />
+                    <UInput
+                      id="download-url"
+                      v-model="formUrl"
+                      type="url"
+                      placeholder="https://..."
+                      size="lg"
+                      required
+                      :disabled="isFormDisabled"
+                      class="min-w-0 flex-1"
+                      :ui="urlInputUi"
+                    />
 
-                    <UTooltip text="WebUI Settings">
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-settings-2"
-                        :square="isMobile"
-                        @click="openSettings"
-                      >
-                        <span v-if="!isMobile">WebUI Settings</span>
-                      </UButton>
-                    </UTooltip>
-                  </div>
-                </div>
-
-                <div class="flex items-stretch gap-2">
-                  <UTooltip :text="showExtras ? 'Hide extra options' : 'Show extra options'">
                     <UButton
-                      type="button"
-                      color="neutral"
-                      :variant="showExtras ? 'soft' : 'outline'"
+                      type="submit"
+                      color="primary"
                       size="lg"
-                      :icon="showExtras ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-                      class="shrink-0 justify-center w-12"
-                      :disabled="addInProgress"
-                      @click="showExtras = !showExtras"
-                    />
-                  </UTooltip>
-
-                  <UInput
-                    id="download-url"
-                    v-model="formUrl"
-                    type="url"
-                    placeholder="https://..."
-                    size="lg"
-                    required
-                    :disabled="isFormDisabled"
-                    class="min-w-0 flex-1"
-                    :ui="urlInputUi"
-                  />
-
-                  <UButton
-                    type="submit"
-                    color="primary"
-                    size="lg"
-                    icon="i-lucide-plus"
-                    :loading="addInProgress"
-                    :disabled="isFormDisabled || !formUrl.trim()"
-                    class="shrink-0 justify-center min-w-20 sm:min-w-28"
-                  >
-                    Add
-                  </UButton>
-                </div>
-
-                <div v-if="showExtras" class="space-y-3 ytp-border-top-soft pt-4">
-                  <UFormField label="Preset" :ui="fieldUi" class="w-full">
-                    <template #label>
-                      <span class="inline-flex items-center gap-2 font-semibold">
-                        <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
-                        <span>Preset</span>
-                      </span>
-                    </template>
-
-                    <USelectMenu
-                      id="preset"
-                      v-model="formPreset"
-                      :items="presetItems"
-                      value-key="value"
-                      label-key="label"
-                      color="neutral"
-                      size="lg"
-                      class="w-full"
-                      :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-                      :search-input="{ placeholder: 'Search presets' }"
-                      :disabled="isFormDisabled"
-                      placeholder="Select preset"
-                    />
-                  </UFormField>
-
-                  <div
-                    v-if="configStore.dl_fields.length > 0"
-                    class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
-                  >
-                    <DLInput
-                      id="force_download"
-                      v-model="dlFields['--no-download-archive']"
-                      type="bool"
-                      label="Force download"
-                      icon="i-lucide-download"
-                      :disabled="isFormDisabled"
-                      description="Ignore archive and re-download."
-                      compact
-                    />
-
-                    <DLInput
-                      v-for="(fi, index) in sortedDLFields"
-                      :id="fi?.id || `dlf-${index}`"
-                      :key="fi.id || `dlf-${index}`"
-                      v-model="dlFields[fi.field]"
-                      :type="fi.kind"
-                      :description="fi.description"
-                      :label="fi.name"
-                      :icon="fi.icon"
-                      :field="fi.field"
-                      :disabled="isFormDisabled"
-                      compact
-                    />
+                      icon="i-lucide-plus"
+                      :loading="addInProgress"
+                      :disabled="isFormDisabled || !formUrl.trim()"
+                      class="shrink-0 justify-center min-w-20 sm:min-w-28"
+                    >
+                      Add
+                    </UButton>
                   </div>
-                </div>
-              </form>
+
+                  <div v-if="showExtras" class="space-y-3 ytp-border-top-soft pt-4">
+                    <UFormField label="Preset" :ui="fieldUi" class="w-full">
+                      <template #label>
+                        <span class="inline-flex items-center gap-2 font-semibold">
+                          <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
+                          <span>Preset</span>
+                        </span>
+                      </template>
+
+                      <USelectMenu
+                        id="preset"
+                        v-model="formPreset"
+                        :items="presetItems"
+                        value-key="value"
+                        label-key="label"
+                        color="neutral"
+                        size="lg"
+                        class="w-full"
+                        :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
+                        :search-input="{ placeholder: 'Search presets' }"
+                        :disabled="isFormDisabled"
+                        placeholder="Select preset"
+                      />
+                    </UFormField>
+
+                    <div
+                      v-if="configStore.dl_fields.length > 0"
+                      class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+                    >
+                      <DLInput
+                        id="force_download"
+                        v-model="dlFields['--no-download-archive']"
+                        type="bool"
+                        label="Force download"
+                        icon="i-lucide-download"
+                        :disabled="isFormDisabled"
+                        description="Ignore archive and re-download."
+                        compact
+                      />
+
+                      <DLInput
+                        v-for="(fi, index) in sortedDLFields"
+                        :id="fi?.id || `dlf-${index}`"
+                        :key="fi.id || `dlf-${index}`"
+                        v-model="dlFields[fi.field]"
+                        :type="fi.kind"
+                        :description="fi.description"
+                        :label="fi.name"
+                        :icon="fi.icon"
+                        :field="fi.field"
+                        :disabled="isFormDisabled"
+                        compact
+                      />
+                    </div>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
 
-        <Transition name="queue-fade">
-          <section v-if="showSections" class="w-full space-y-6">
-            <section class="space-y-3">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-2 text-sm font-semibold text-highlighted transition-colors hover:text-default"
-                  :aria-expanded="!queueCollapsed"
-                  aria-controls="simple-queue-section"
-                  @click="queueCollapsed = !queueCollapsed"
-                >
-                  <UIcon
-                    :name="queueCollapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
-                    class="size-3.5 text-toned"
-                  />
-                  <UIcon name="i-lucide-list-video" class="size-4 text-toned" />
-                  <span>Queue</span>
-                </button>
-
-                <div class="flex flex-wrap items-center gap-2">
-                  <UBadge color="info" variant="soft" size="sm">{{ queueCountLabel }}</UBadge>
-
-                  <UButton
-                    v-if="stateStore.hasMore()"
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    :loading="isRefreshing"
-                    @click="() => loadMoreQueue()"
+          <Transition name="queue-fade">
+            <section v-if="showSections" class="w-full space-y-6">
+              <section class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-highlighted transition-colors hover:text-default"
+                    :aria-expanded="!queueCollapsed"
+                    aria-controls="simple-queue-section"
+                    @click="queueCollapsed = !queueCollapsed"
                   >
-                    Show more
-                  </UButton>
-                </div>
-              </div>
+                    <UIcon
+                      :name="queueCollapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                      class="size-3.5 text-toned"
+                    />
+                    <UIcon name="i-lucide-list-video" class="size-4 text-toned" />
+                    <span>Queue</span>
+                  </button>
 
-              <Transition name="section-collapse">
-                <div v-if="!queueCollapsed" id="simple-queue-section" class="overflow-hidden">
-                  <TransitionGroup
-                    v-if="queueItems.length > 0"
-                    name="queue-card"
-                    tag="div"
-                    class="grid grid-cols-1 gap-3 lg:grid-cols-2"
-                  >
-                    <div
-                      v-for="item in queueItems"
-                      :key="`queue-${item._id}`"
-                      class="ytp-card w-full min-w-0 max-w-full overflow-hidden"
+                  <div class="flex flex-wrap items-center gap-2">
+                    <UBadge color="info" variant="soft" size="sm">{{ queueCountLabel }}</UBadge>
+
+                    <UButton
+                      v-if="stateStore.hasMore()"
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      :loading="isRefreshing"
+                      @click="() => loadMoreQueue()"
                     >
-                      <div class="p-4 pb-0 ytp-border-bottom-soft">
-                        <div
-                          v-if="downloadingStatuses.has(item.status) || item.status === null"
-                          class="queue-progress rounded-md border border-default bg-muted/20"
-                        >
-                          <div
-                            class="queue-progress__bar bg-success/35"
-                            :style="{ width: progressWidth(item) }"
-                          ></div>
-                          <div class="queue-progress__label">
-                            <template v-if="progressIcon(item)">
-                              <UIcon
-                                :name="progressIcon(item)"
-                                :class="[
-                                  'mr-1 size-4',
-                                  ['i-lucide-settings-2', 'i-lucide-loader-circle'].includes(
-                                    progressIcon(item),
-                                  )
-                                    ? 'animate-spin'
-                                    : '',
-                                ]"
-                              />
-                            </template>
-                            <span>{{ updateProgress(item) }}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="p-4">
-                        <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
-                          <figure
-                            class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
-                          >
-                            <span
-                              v-if="item.filename || isEmbedable(item.url)"
-                              class="play-overlay"
-                              @click="openPlayer(item)"
-                            >
-                              <span
-                                :class="[
-                                  'play-icon',
-                                  isEmbedable(item.url) && !item.filename ? 'embed-icon' : '',
-                                ]"
-                                aria-hidden="true"
-                              >
-                                <UIcon
-                                  name="i-lucide-play"
-                                  class="size-6 translate-x-px text-white"
-                                />
-                              </span>
-                              <img
-                                :src="resolveThumbnail(item)"
-                                :alt="item.title || 'Video thumbnail'"
-                                loading="lazy"
-                                class="aspect-video h-full w-full object-cover"
-                                @error="onImgError($event, item)"
-                              />
-                            </span>
-
-                            <img
-                              v-else
-                              :src="resolveThumbnail(item)"
-                              :alt="item.title || 'Video thumbnail'"
-                              loading="lazy"
-                              class="aspect-video h-full w-full object-cover"
-                              @error="onImgError($event, item)"
-                            />
-
-                            <span
-                              v-if="getDurationLabel(item)"
-                              class="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
-                            >
-                              {{ getDurationLabel(item) }}
-                            </span>
-                          </figure>
-
-                          <div class="min-w-0 flex-1 space-y-3">
-                            <div class="space-y-2">
-                              <UTooltip :text="item.title">
-                                <a
-                                  :href="item.url"
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  class="block truncate text-sm font-semibold text-highlighted hover:underline"
-                                >
-                                  {{ item.title || 'Untitled' }}
-                                </a>
-                              </UTooltip>
-
-                              <div class="flex flex-wrap items-center gap-2 text-xs">
-                                <UBadge
-                                  :color="downloadingStatuses.has(item.status) ? 'info' : 'warning'"
-                                  variant="soft"
-                                  size="sm"
-                                  class="gap-1"
-                                >
-                                  <UIcon
-                                    :name="getQueueIcon(item)"
-                                    :class="['size-3.5', getStatusIconAnimation(item)]"
-                                  />
-                                  <span>{{
-                                    downloadingStatuses.has(item.status) ? 'Active' : 'Queued'
-                                  }}</span>
-                                </UBadge>
-
-                                <UBadge
-                                  :color="getStatusColor(item)"
-                                  variant="soft"
-                                  size="sm"
-                                  class="gap-1"
-                                >
-                                  <UIcon
-                                    :name="getStatusIcon(item)"
-                                    :class="['size-3.5', getStatusIconAnimation(item)]"
-                                  />
-                                  <span>{{ getStatusLabel(item) }}</span>
-                                </UBadge>
-
-                                <span
-                                  class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
-                                  :date-datetime="item.datetime"
-                                  v-rtime="item.datetime"
-                                />
-                              </div>
-                            </div>
-
-                            <p class="line-clamp-3 text-xs leading-5 text-toned wrap-break-word">
-                              <template v-if="item.error || showMessage(item)">
-                                <template v-if="item.error">
-                                  <span class="text-error">{{ item.error }}</span>
-                                </template>
-                                <template v-if="showMessage(item)">
-                                  <span class="text-error">{{ item.msg }}</span>
-                                </template>
-                              </template>
-                              <template v-else>
-                                {{ getDescription(item) || 'No description available.' }}
-                              </template>
-                            </p>
-
-                            <div class="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1">
-                              <UButton
-                                v-if="!item.status && item.auto_start === false"
-                                color="neutral"
-                                variant="soft"
-                                size="xs"
-                                icon="i-lucide-play-circle"
-                                @click="() => stateStore.startItems([item._id])"
-                              >
-                                Start
-                              </UButton>
-
-                              <UButton
-                                v-if="!item.status && item.auto_start === true"
-                                color="neutral"
-                                variant="soft"
-                                size="xs"
-                                icon="i-lucide-pause"
-                                @click="() => stateStore.pauseItems([item._id])"
-                              >
-                                Pause
-                              </UButton>
-
-                              <UButton
-                                color="neutral"
-                                variant="outline"
-                                size="xs"
-                                icon="i-lucide-x"
-                                @click="() => stateStore.cancelItems([item._id])"
-                              >
-                                {{ item.is_live ? 'Stop' : 'Cancel' }}
-                              </UButton>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </TransitionGroup>
-
-                  <UAlert
-                    v-else
-                    color="neutral"
-                    variant="soft"
-                    icon="i-lucide-inbox"
-                    title="Queue is empty"
-                  />
-                </div>
-              </Transition>
-            </section>
-
-            <section class="space-y-3">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-2 text-sm font-semibold text-highlighted transition-colors hover:text-default"
-                  :aria-expanded="!historyCollapsed"
-                  aria-controls="simple-history-section"
-                  @click="historyCollapsed = !historyCollapsed"
-                >
-                  <UIcon
-                    :name="historyCollapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
-                    class="size-3.5 text-toned"
-                  />
-                  <UIcon name="i-lucide-history" class="size-4 text-toned" />
-                  <span>History</span>
-                </button>
-
-                <div v-if="!historyCollapsed" class="flex flex-wrap items-center gap-2">
-                  <UPagination
-                    v-if="historyPagination.total_pages > 1"
-                    :page="historyPagination.page"
-                    :total="historyPagination.total"
-                    :items-per-page="historyPagination.per_page"
-                    :disabled="historyIsLoading"
-                    show-edges
-                    size="sm"
-                    :sibling-count="0"
-                    @update:page="
-                      (page) =>
-                        load(page, {
-                          order: 'DESC',
-                          perPage: configStore.app.default_pagination,
-                        })
-                    "
-                  />
-
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-refresh-cw"
-                    :loading="historyIsLoading"
-                    :disabled="historyIsLoading"
-                    @click="
-                      () => reload({ order: 'DESC', perPage: configStore.app.default_pagination })
-                    "
-                  >
-                    Reload
-                  </UButton>
-                </div>
-              </div>
-
-              <Transition name="section-collapse">
-                <div
-                  v-if="!historyCollapsed"
-                  id="simple-history-section"
-                  class="space-y-3 overflow-hidden"
-                >
-                  <div
-                    v-if="historyEntries.length > 0"
-                    class="grid grid-cols-1 gap-3 lg:grid-cols-2"
-                  >
-                    <div
-                      v-for="item in historyEntries"
-                      :key="`history-${historyPagination.page}-${item._id}`"
-                      class="ytp-card w-full min-w-0 max-w-full overflow-hidden"
-                    >
-                      <div class="p-4">
-                        <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
-                          <figure
-                            class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
-                          >
-                            <span
-                              v-if="item.filename || isEmbedable(item.url)"
-                              class="play-overlay"
-                              @click="openPlayer(item)"
-                            >
-                              <span
-                                :class="[
-                                  'play-icon',
-                                  isEmbedable(item.url) && !item.filename ? 'embed-icon' : '',
-                                ]"
-                                aria-hidden="true"
-                              >
-                                <UIcon
-                                  name="i-lucide-play"
-                                  class="size-6 translate-x-px text-white"
-                                />
-                              </span>
-                              <img
-                                :src="resolveThumbnail(item)"
-                                :alt="item.title || 'Video thumbnail'"
-                                loading="lazy"
-                                class="aspect-video h-full w-full object-cover"
-                                @error="onImgError($event, item)"
-                              />
-                            </span>
-
-                            <img
-                              v-else
-                              :src="resolveThumbnail(item)"
-                              :alt="item.title || 'Video thumbnail'"
-                              loading="lazy"
-                              class="aspect-video h-full w-full object-cover"
-                              @error="onImgError($event, item)"
-                            />
-
-                            <span
-                              v-if="getDurationLabel(item)"
-                              class="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
-                            >
-                              {{ getDurationLabel(item) }}
-                            </span>
-                          </figure>
-
-                          <div class="min-w-0 flex-1 space-y-3">
-                            <div class="space-y-2">
-                              <UTooltip :text="item.title">
-                                <a
-                                  :href="item.url"
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  class="block truncate text-sm font-semibold text-highlighted hover:underline"
-                                >
-                                  {{ item.title || 'Untitled' }}
-                                </a>
-                              </UTooltip>
-
-                              <div class="flex flex-wrap items-center gap-2 text-xs">
-                                <UBadge color="neutral" variant="soft" size="sm">History</UBadge>
-
-                                <UBadge
-                                  :color="getStatusColor(item)"
-                                  variant="soft"
-                                  size="sm"
-                                  class="gap-1"
-                                >
-                                  <UIcon
-                                    :name="getStatusIcon(item)"
-                                    :class="['size-3.5', getStatusIconAnimation(item)]"
-                                  />
-                                  <span>{{ getStatusLabel(item) }}</span>
-                                </UBadge>
-
-                                <span
-                                  class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
-                                  :date-datetime="item.datetime"
-                                  v-rtime="item.datetime"
-                                />
-                              </div>
-                            </div>
-
-                            <p class="line-clamp-3 text-xs leading-5 text-toned wrap-break-word">
-                              <template v-if="item.error || showMessage(item)">
-                                <template v-if="item.error">
-                                  <span class="text-error">{{ item.error }}</span>
-                                </template>
-                                <template v-if="showMessage(item)">
-                                  <span class="text-error">{{ item.msg }}</span>
-                                </template>
-                              </template>
-                              <template v-else>
-                                {{ getDescription(item) || 'No description available.' }}
-                              </template>
-                            </p>
-
-                            <div class="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1">
-                              <UButton
-                                v-if="getDownloadLink(item)"
-                                color="primary"
-                                variant="soft"
-                                size="xs"
-                                icon="i-lucide-download"
-                                external
-                                :href="getDownloadLink(item)"
-                                :download="getDownloadName(item)"
-                              >
-                                Download
-                              </UButton>
-
-                              <UButton
-                                v-if="!item.filename"
-                                color="neutral"
-                                variant="soft"
-                                size="xs"
-                                icon="i-lucide-rotate-cw"
-                                @click="() => requeueItem(item)"
-                              >
-                                Requeue
-                              </UButton>
-
-                              <UButton
-                                color="neutral"
-                                variant="outline"
-                                size="xs"
-                                icon="i-lucide-trash"
-                                @click="() => deleteHistoryItem(item)"
-                              >
-                                Delete
-                              </UButton>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      Show more
+                    </UButton>
                   </div>
+                </div>
 
-                  <UAlert
-                    v-else-if="historyIsLoading"
-                    color="info"
-                    variant="soft"
-                    icon="i-lucide-loader-circle"
-                    title="Loading history..."
-                  />
+                <Transition name="section-collapse">
+                  <div v-if="!queueCollapsed" id="simple-queue-section" class="overflow-hidden">
+                    <TransitionGroup
+                      v-if="queueItems.length > 0"
+                      name="queue-card"
+                      tag="div"
+                      class="grid grid-cols-1 gap-3 lg:grid-cols-2"
+                    >
+                      <div
+                        v-for="item in queueItems"
+                        :key="`queue-${item._id}`"
+                        class="ytp-card w-full min-w-0 max-w-full overflow-hidden"
+                      >
+                        <div class="p-4 pb-0 ytp-border-bottom-soft">
+                          <div
+                            v-if="downloadingStatuses.has(item.status) || item.status === null"
+                            class="queue-progress rounded-md border border-default bg-muted/20"
+                          >
+                            <div
+                              class="queue-progress__bar bg-success/35"
+                              :style="{ width: progressWidth(item) }"
+                            ></div>
+                            <div class="queue-progress__label">
+                              <template v-if="progressIcon(item)">
+                                <UIcon
+                                  :name="progressIcon(item)"
+                                  :class="[
+                                    'mr-1 size-4',
+                                    ['i-lucide-settings-2', 'i-lucide-loader-circle'].includes(
+                                      progressIcon(item),
+                                    )
+                                      ? 'animate-spin'
+                                      : '',
+                                  ]"
+                                />
+                              </template>
+                              <span>{{ updateProgress(item) }}</span>
+                            </div>
+                          </div>
+                        </div>
 
-                  <UAlert
-                    v-else
-                    color="neutral"
-                    variant="soft"
-                    icon="i-lucide-history"
-                    title="History is empty"
-                  />
+                        <div class="p-4">
+                          <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
+                            <figure
+                              class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
+                            >
+                              <span
+                                v-if="item.filename || isEmbedable(item.url)"
+                                class="play-overlay"
+                                @click="openPlayer(item)"
+                              >
+                                <span
+                                  :class="[
+                                    'play-icon',
+                                    isEmbedable(item.url) && !item.filename ? 'embed-icon' : '',
+                                  ]"
+                                  aria-hidden="true"
+                                >
+                                  <UIcon
+                                    name="i-lucide-play"
+                                    class="size-6 translate-x-px text-white"
+                                  />
+                                </span>
+                                <img
+                                  :src="resolveThumbnail(item)"
+                                  :alt="item.title || 'Video thumbnail'"
+                                  loading="lazy"
+                                  class="aspect-video h-full w-full object-cover"
+                                  @error="onImgError($event, item)"
+                                />
+                              </span>
 
-                  <div v-if="historyPagination.total_pages > 1" class="flex justify-end py-2">
+                              <img
+                                v-else
+                                :src="resolveThumbnail(item)"
+                                :alt="item.title || 'Video thumbnail'"
+                                loading="lazy"
+                                class="aspect-video h-full w-full object-cover"
+                                @error="onImgError($event, item)"
+                              />
+
+                              <span
+                                v-if="getDurationLabel(item)"
+                                class="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
+                              >
+                                {{ getDurationLabel(item) }}
+                              </span>
+                            </figure>
+
+                            <div class="min-w-0 flex-1 space-y-3">
+                              <div class="space-y-2">
+                                <UTooltip :text="item.title">
+                                  <a
+                                    :href="item.url"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    class="block truncate text-sm font-semibold text-highlighted hover:underline"
+                                  >
+                                    {{ item.title || 'Untitled' }}
+                                  </a>
+                                </UTooltip>
+
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                  <UBadge
+                                    :color="
+                                      downloadingStatuses.has(item.status) ? 'info' : 'warning'
+                                    "
+                                    variant="soft"
+                                    size="sm"
+                                    class="gap-1"
+                                  >
+                                    <UIcon
+                                      :name="getQueueIcon(item)"
+                                      :class="['size-3.5', getStatusIconAnimation(item)]"
+                                    />
+                                    <span>{{
+                                      downloadingStatuses.has(item.status) ? 'Active' : 'Queued'
+                                    }}</span>
+                                  </UBadge>
+
+                                  <UBadge
+                                    :color="getStatusColor(item)"
+                                    variant="soft"
+                                    size="sm"
+                                    class="gap-1"
+                                  >
+                                    <UIcon
+                                      :name="getStatusIcon(item)"
+                                      :class="['size-3.5', getStatusIconAnimation(item)]"
+                                    />
+                                    <span>{{ getStatusLabel(item) }}</span>
+                                  </UBadge>
+
+                                  <span
+                                    class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
+                                    :date-datetime="item.datetime"
+                                    v-rtime="item.datetime"
+                                  />
+                                </div>
+                              </div>
+
+                              <p class="line-clamp-3 text-xs leading-5 text-toned wrap-break-word">
+                                <template v-if="item.error || showMessage(item)">
+                                  <template v-if="item.error">
+                                    <span class="text-error">{{ item.error }}</span>
+                                  </template>
+                                  <template v-if="showMessage(item)">
+                                    <span class="text-error">{{ item.msg }}</span>
+                                  </template>
+                                </template>
+                                <template v-else>
+                                  {{ getDescription(item) || 'No description available.' }}
+                                </template>
+                              </p>
+
+                              <div
+                                class="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1"
+                              >
+                                <UButton
+                                  v-if="!item.status && item.auto_start === false"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-play-circle"
+                                  @click="() => stateStore.startItems([item._id])"
+                                >
+                                  Start
+                                </UButton>
+
+                                <UButton
+                                  v-if="!item.status && item.auto_start === true"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-pause"
+                                  @click="() => stateStore.pauseItems([item._id])"
+                                >
+                                  Pause
+                                </UButton>
+
+                                <UButton
+                                  color="neutral"
+                                  variant="outline"
+                                  size="xs"
+                                  icon="i-lucide-x"
+                                  @click="() => stateStore.cancelItems([item._id])"
+                                >
+                                  {{ item.is_live ? 'Stop' : 'Cancel' }}
+                                </UButton>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TransitionGroup>
+
+                    <UAlert
+                      v-else
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-inbox"
+                      title="Queue is empty"
+                    />
+                  </div>
+                </Transition>
+              </section>
+
+              <section class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-highlighted transition-colors hover:text-default"
+                    :aria-expanded="!historyCollapsed"
+                    aria-controls="simple-history-section"
+                    @click="historyCollapsed = !historyCollapsed"
+                  >
+                    <UIcon
+                      :name="historyCollapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                      class="size-3.5 text-toned"
+                    />
+                    <UIcon name="i-lucide-history" class="size-4 text-toned" />
+                    <span>History</span>
+                  </button>
+
+                  <div v-if="!historyCollapsed" class="flex flex-wrap items-center gap-2">
                     <UPagination
+                      v-if="historyPagination.total_pages > 1"
                       :page="historyPagination.page"
                       :total="historyPagination.total"
                       :items-per-page="historyPagination.per_page"
@@ -636,58 +436,266 @@
                           })
                       "
                     />
+
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-refresh-cw"
+                      :loading="historyIsLoading"
+                      :disabled="historyIsLoading"
+                      @click="
+                        () => reload({ order: 'DESC', perPage: configStore.app.default_pagination })
+                      "
+                    >
+                      Reload
+                    </UButton>
                   </div>
                 </div>
-              </Transition>
+
+                <Transition name="section-collapse">
+                  <div
+                    v-if="!historyCollapsed"
+                    id="simple-history-section"
+                    class="space-y-3 overflow-hidden"
+                  >
+                    <div
+                      v-if="historyEntries.length > 0"
+                      class="grid grid-cols-1 gap-3 lg:grid-cols-2"
+                    >
+                      <div
+                        v-for="item in historyEntries"
+                        :key="`history-${historyPagination.page}-${item._id}`"
+                        class="ytp-card w-full min-w-0 max-w-full overflow-hidden"
+                      >
+                        <div class="p-4">
+                          <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
+                            <figure
+                              class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
+                            >
+                              <span
+                                v-if="item.filename || isEmbedable(item.url)"
+                                class="play-overlay"
+                                @click="openPlayer(item)"
+                              >
+                                <span
+                                  :class="[
+                                    'play-icon',
+                                    isEmbedable(item.url) && !item.filename ? 'embed-icon' : '',
+                                  ]"
+                                  aria-hidden="true"
+                                >
+                                  <UIcon
+                                    name="i-lucide-play"
+                                    class="size-6 translate-x-px text-white"
+                                  />
+                                </span>
+                                <img
+                                  :src="resolveThumbnail(item)"
+                                  :alt="item.title || 'Video thumbnail'"
+                                  loading="lazy"
+                                  class="aspect-video h-full w-full object-cover"
+                                  @error="onImgError($event, item)"
+                                />
+                              </span>
+
+                              <img
+                                v-else
+                                :src="resolveThumbnail(item)"
+                                :alt="item.title || 'Video thumbnail'"
+                                loading="lazy"
+                                class="aspect-video h-full w-full object-cover"
+                                @error="onImgError($event, item)"
+                              />
+
+                              <span
+                                v-if="getDurationLabel(item)"
+                                class="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
+                              >
+                                {{ getDurationLabel(item) }}
+                              </span>
+                            </figure>
+
+                            <div class="min-w-0 flex-1 space-y-3">
+                              <div class="space-y-2">
+                                <UTooltip :text="item.title">
+                                  <a
+                                    :href="item.url"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    class="block truncate text-sm font-semibold text-highlighted hover:underline"
+                                  >
+                                    {{ item.title || 'Untitled' }}
+                                  </a>
+                                </UTooltip>
+
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                  <UBadge color="neutral" variant="soft" size="sm">History</UBadge>
+
+                                  <UBadge
+                                    :color="getStatusColor(item)"
+                                    variant="soft"
+                                    size="sm"
+                                    class="gap-1"
+                                  >
+                                    <UIcon
+                                      :name="getStatusIcon(item)"
+                                      :class="['size-3.5', getStatusIconAnimation(item)]"
+                                    />
+                                    <span>{{ getStatusLabel(item) }}</span>
+                                  </UBadge>
+
+                                  <span
+                                    class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
+                                    :date-datetime="item.datetime"
+                                    v-rtime="item.datetime"
+                                  />
+                                </div>
+                              </div>
+
+                              <p class="line-clamp-3 text-xs leading-5 text-toned wrap-break-word">
+                                <template v-if="item.error || showMessage(item)">
+                                  <template v-if="item.error">
+                                    <span class="text-error">{{ item.error }}</span>
+                                  </template>
+                                  <template v-if="showMessage(item)">
+                                    <span class="text-error">{{ item.msg }}</span>
+                                  </template>
+                                </template>
+                                <template v-else>
+                                  {{ getDescription(item) || 'No description available.' }}
+                                </template>
+                              </p>
+
+                              <div
+                                class="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1"
+                              >
+                                <UButton
+                                  v-if="getDownloadLink(item)"
+                                  color="primary"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-download"
+                                  external
+                                  :href="getDownloadLink(item)"
+                                  :download="getDownloadName(item)"
+                                >
+                                  Download
+                                </UButton>
+
+                                <UButton
+                                  v-if="!item.filename"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-rotate-cw"
+                                  @click="() => requeueItem(item)"
+                                >
+                                  Requeue
+                                </UButton>
+
+                                <UButton
+                                  color="neutral"
+                                  variant="outline"
+                                  size="xs"
+                                  icon="i-lucide-trash"
+                                  @click="() => deleteHistoryItem(item)"
+                                >
+                                  Delete
+                                </UButton>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <UAlert
+                      v-else-if="historyIsLoading"
+                      color="info"
+                      variant="soft"
+                      icon="i-lucide-loader-circle"
+                      title="Loading history..."
+                    />
+
+                    <UAlert
+                      v-else
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-history"
+                      title="History is empty"
+                    />
+
+                    <div v-if="historyPagination.total_pages > 1" class="flex justify-end py-2">
+                      <UPagination
+                        :page="historyPagination.page"
+                        :total="historyPagination.total"
+                        :items-per-page="historyPagination.per_page"
+                        :disabled="historyIsLoading"
+                        show-edges
+                        size="sm"
+                        :sibling-count="0"
+                        @update:page="
+                          (page) =>
+                            load(page, {
+                              order: 'DESC',
+                              perPage: configStore.app.default_pagination,
+                            })
+                        "
+                      />
+                    </div>
+                  </div>
+                </Transition>
+              </section>
             </section>
-          </section>
-        </Transition>
+          </Transition>
 
-        <UModal
-          v-if="videoItem"
-          :open="videoOpen"
-          title="Video"
-          :dismissible="true"
-          :ui="{
-            content: lightsOut ? 'w-full sm:max-w-5xl shadow-2xl' : 'w-full sm:max-w-5xl',
-            body: 'p-0',
-          }"
-          @update:open="handleVideoOpenChange"
-        >
-          <template #body>
-            <VideoPlayer
-              type="default"
-              :isMuted="false"
-              autoplay="true"
-              :isControls="true"
-              :item="videoItem"
-              class="w-full"
-              @closeModel="() => requestCloseVideo()"
-              @error="async (error: string) => await box.alert(error)"
-              @playback-state-change="(playing: boolean) => (playingNow = playing)"
-            />
-          </template>
-        </UModal>
+          <UModal
+            v-if="videoItem"
+            :open="videoOpen"
+            title="Video"
+            :dismissible="true"
+            :ui="{
+              content: lightsOut ? 'w-full sm:max-w-5xl shadow-2xl' : 'w-full sm:max-w-5xl',
+              body: 'p-0',
+            }"
+            @update:open="handleVideoOpenChange"
+          >
+            <template #body>
+              <VideoPlayer
+                type="default"
+                :isMuted="false"
+                autoplay="true"
+                :isControls="true"
+                :item="videoItem"
+                class="w-full"
+                @closeModel="() => requestCloseVideo()"
+                @error="async (error: string) => await box.alert(error)"
+                @playback-state-change="(playing: boolean) => (playingNow = playing)"
+              />
+            </template>
+          </UModal>
 
-        <UModal
-          v-if="embedUrl"
-          :open="Boolean(embedUrl)"
-          title="Embed"
-          :dismissible="true"
-          :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
-          @update:open="(open) => !open && closePlayer()"
-        >
-          <template #body>
-            <EmbedPlayer :url="embedUrl" @closeModel="closePlayer" />
-          </template>
-        </UModal>
+          <UModal
+            v-if="embedUrl"
+            :open="Boolean(embedUrl)"
+            title="Embed"
+            :dismissible="true"
+            :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
+            @update:open="(open) => !open && closePlayer()"
+          >
+            <template #body>
+              <EmbedPlayer :url="embedUrl" @closeModel="closePlayer" />
+            </template>
+          </UModal>
 
-        <ClientOnly>
-          <Dialog />
-        </ClientOnly>
+          <ClientOnly>
+            <Dialog />
+          </ClientOnly>
+        </div>
       </div>
-    </div>
-  </AppRoot>
+    </AppRoot>
+  </div>
 </template>
 
 <script setup lang="ts">

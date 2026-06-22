@@ -408,6 +408,10 @@ const toastPositionItems: Array<{ label: string; value: toastPosition }> = [
   { label: 'bottom-right', value: 'bottom-right' },
 ];
 
+const closeScrollLock = (): void => {
+  document.body.classList.remove('settings-panel-open');
+};
+
 const handleKeydown = (e: KeyboardEvent) => {
   if ('Escape' === e.key && props.isOpen) {
     e.preventDefault();
@@ -427,7 +431,10 @@ onMounted(async () => {
   document.addEventListener('keydown', handleKeydown);
 });
 
-onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown));
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown);
+  closeScrollLock();
+});
 
 const onNotificationTargetChange = async (): Promise<void> => {
   if ('browser' === toast_target.value) {
@@ -448,7 +455,7 @@ watch(
       draftMode.value = mode.value;
       document.body.classList.add('settings-panel-open');
     } else {
-      document.body.classList.remove('settings-panel-open');
+      closeScrollLock();
     }
   },
 );
