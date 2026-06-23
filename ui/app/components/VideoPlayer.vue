@@ -94,6 +94,7 @@
           :label="nativeSubtitleTrack.name || 'Subtitles'"
           default
           :src="uri(nativeSubtitleTrack.url)"
+          @load="handleNativeTrackLoad"
         />
         Your browser does not support the video tag.
       </video>
@@ -170,16 +171,30 @@
                     @click="forceSwitchToHls"
                   />
                 </UTooltip>
-                <UButton
+                <USelect
                   v-if="hasSubtitles"
+                  v-model="subtitleSelectValue"
+                  :items="subtitleSelectItems"
+                  value-key="value"
+                  label-key="label"
                   color="neutral"
                   variant="soft"
                   size="sm"
+                  trailing-icon=""
+                  :content="subtitleSelectContent"
+                  :portal="helpPortal"
+                  :ui="subtitleSelectUi"
                   class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-                  :icon="subtitleEnabled ? 'i-lucide-captions' : 'i-lucide-captions-off'"
-                  :aria-label="subtitleEnabled ? 'Disable subtitles' : 'Enable subtitles'"
-                  @click="subtitleEnabled = !subtitleEnabled"
-                />
+                  :aria-label="subtitleButtonLabel"
+                >
+                  <template #default>
+                    <span class="sr-only">{{ subtitleButtonLabel }}</span>
+                    <UIcon
+                      :name="subtitleEnabled ? 'i-lucide-captions' : 'i-lucide-captions-off'"
+                      class="size-4 shrink-0"
+                    />
+                  </template>
+                </USelect>
                 <UButton
                   color="neutral"
                   variant="soft"
@@ -429,9 +444,12 @@ const timeLabel = computed(() => {
   return `${currentLabel} / ${durationLabel}`;
 });
 const {
+  subtitleTracks,
   subtitleLoading,
   subtitleLoadError,
   subtitleEnabled,
+  selectedSubtitleTrack,
+  selectedSubtitleTrackId,
   nativeSubtitleTrack,
   usesAssSubtitleTrack,
   hasSubtitles,
@@ -443,6 +461,40 @@ const {
   assLayoutVersion,
   video: videoElement,
   overlay: assOverlayElement,
+});
+
+const SUBTITLE_OFF_VALUE = '__off__';
+const subtitleSelectContent = { align: 'end' as const } as const;
+const subtitleSelectUi = {
+  base: 'size-8 min-h-8 min-w-8 justify-center rounded-md px-0',
+  value: 'flex items-center justify-center px-0',
+  trailing: 'hidden',
+  leading: 'hidden',
+  content: 'z-40 min-w-56 w-auto max-w-[min(24rem,calc(100vw-2rem))]',
+} as const;
+const subtitleSelectItems = computed(() => [
+  { label: 'Off', value: SUBTITLE_OFF_VALUE },
+  ...subtitleTracks.value.map((track) => ({ label: track.name, value: track.url })),
+]);
+const subtitleButtonLabel = computed(() => {
+  if (!subtitleEnabled.value || !selectedSubtitleTrack.value) {
+    return 'Subtitles off';
+  }
+  return selectedSubtitleTrack.value.name || 'Subtitles';
+});
+const subtitleSelectValue = computed<string>({
+  get: () =>
+    subtitleEnabled.value
+      ? (selectedSubtitleTrackId.value ?? SUBTITLE_OFF_VALUE)
+      : SUBTITLE_OFF_VALUE,
+  set: (value: string) => {
+    if (SUBTITLE_OFF_VALUE === value) {
+      subtitleEnabled.value = false;
+      return;
+    }
+    selectedSubtitleTrackId.value = value;
+    subtitleEnabled.value = true;
+  },
 });
 
 useHead(() => (title.value ? { title: formatPageTitle(`Playing: ${title.value}`) } : {}));
@@ -960,6 +1012,10 @@ function updateMediaSessionPosition(target: EventTarget | null) {
 }
 
 async function restoreDefaultTextTrack() {
+  if (true === destroyed.value) {
+    return;
+  }
+
   const el = videoElement.value;
   if (!el) {
     return;
@@ -968,36 +1024,6 @@ async function restoreDefaultTextTrack() {
   try {
     const tracksList = el.textTracks;
     if (!tracksList || tracksList.length === 0) {
-      return;
-    }
-
-    const firstTrack = tracksList[0] as TextTrack | undefined;
-    const needsReload = firstTrack && (!firstTrack.cues || firstTrack.cues.length === 0);
-
-    if (needsReload) {
-      const trackElements = el.querySelectorAll('track');
-
-      trackElements.forEach((trackEl, idx) => {
-        const parent = trackEl.parentNode;
-        const clone = trackEl.cloneNode(true) as HTMLTrackElement;
-        trackEl.remove();
-        setTimeout(() => {
-          if (parent) {
-            parent.appendChild(clone);
-            clone.addEventListener(
-              'load',
-              () => {
-                const trackObj = clone.track;
-                if (trackObj) {
-                  trackObj.mode = idx === 0 && subtitleEnabled.value ? 'showing' : 'disabled';
-                }
-              },
-              { once: true },
-            );
-          }
-        }, idx * 10);
-      });
-
       return;
     }
 
@@ -1010,16 +1036,32 @@ async function restoreDefaultTextTrack() {
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    for (let i = 0; i < tracksList.length; i += 1) {
-      const track = tracksList[i] as TextTrack | undefined;
+    if (el !== videoElement.value) {
+      return;
+    }
+
+    if (false === subtitleEnabled.value || null === nativeSubtitleTrack.value) {
+      return;
+    }
+
+    const activeTracksList = el.textTracks;
+    for (let i = 0; i < activeTracksList.length; i += 1) {
+      const track = activeTracksList[i] as TextTrack | undefined;
       if (!track) {
         continue;
       }
-      track.mode = i === 0 && subtitleEnabled.value ? 'showing' : 'disabled';
+      track.mode = i === 0 ? 'showing' : 'disabled';
     }
   } catch (error) {
     console.warn('Failed to restore subtitle track state', error);
   }
+}
+
+function handleNativeTrackLoad() {
+  if (true === destroyed.value) {
+    return;
+  }
+  void restoreDefaultTextTrack();
 }
 
 function applyMediaSessionMetadata() {
@@ -1239,6 +1281,10 @@ usePlayerShortcuts({
 });
 
 watch(subtitleEnabled, () => {
+  void nextTick(() => restoreDefaultTextTrack());
+});
+
+watch(selectedSubtitleTrack, () => {
   void nextTick(() => restoreDefaultTextTrack());
 });
 
