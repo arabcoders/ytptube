@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "e14387e39970d3f2d8f46ce9fd7b9596ce2d495e",
-    "date": "2026-06-22T00:49:50+00:00",
+    "full_sha": "60b8e7c4a65284eaee3e1903ddc06946be75ab90",
+    "date": "2026-06-23T07:42:01+00:00",
     "commits": [
+      {
+        "sha": "60b8e7c4",
+        "full_sha": "60b8e7c4a65284eaee3e1903ddc06946be75ab90",
+        "message": "fix: video player did not support multi subs",
+        "author": "arabcoders",
+        "date": "2026-06-23T07:42:01+00:00"
+      },
       {
         "sha": "e14387e3",
         "full_sha": "e14387e39970d3f2d8f46ce9fd7b9596ce2d495e",
