@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "60b8e7c4a65284eaee3e1903ddc06946be75ab90",
-    "date": "2026-06-23T07:42:01+00:00",
+    "full_sha": "ffc814b424f344d92a641eb3a3fa2720634e19d1",
+    "date": "2026-06-28T17:27:00+00:00",
     "commits": [
+      {
+        "sha": "ffc814b4",
+        "full_sha": "ffc814b424f344d92a641eb3a3fa2720634e19d1",
+        "message": "fix: lazy load notifications",
+        "author": "arabcoders",
+        "date": "2026-06-28T17:27:00+00:00"
+      },
       {
         "sha": "60b8e7c4",
         "full_sha": "60b8e7c4a65284eaee3e1903ddc06946be75ab90",
