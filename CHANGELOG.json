@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "ffc814b424f344d92a641eb3a3fa2720634e19d1",
-    "date": "2026-06-28T17:27:00+00:00",
+    "full_sha": "219124dc31d4b73612ffbb4104492de79dcf30b0",
+    "date": "2026-06-28T17:35:54+00:00",
     "commits": [
+      {
+        "sha": "219124dc",
+        "full_sha": "219124dc31d4b73612ffbb4104492de79dcf30b0",
+        "message": "tests: fix flakey terminal session test",
+        "author": "arabcoders",
+        "date": "2026-06-28T17:35:54+00:00"
+      },
       {
         "sha": "ffc814b4",
         "full_sha": "ffc814b424f344d92a641eb3a3fa2720634e19d1",
