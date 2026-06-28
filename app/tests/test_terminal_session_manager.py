@@ -260,7 +260,7 @@ class TestTerminalSessionRoutes:
         self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         config, manager, encoder = terminal_setup
-        manager._completed_retention = 0.05
+        manager._completed_retention = 60.0
         await manager.initialize()
 
         async def fake_create_subprocess_exec(*_args, **_kwargs):
@@ -282,7 +282,8 @@ class TestTerminalSessionRoutes:
         before_expiry = await manager.get_session(session_id)
         assert before_expiry is not None
 
-        await asyncio.sleep(0.06)
+        before_expiry["expires_at"] = time.time() - 1
+        manager._write_json(manager._metadata_path(session_id), before_expiry)
 
         expired = await manager.get_session(session_id)
         assert expired is None
