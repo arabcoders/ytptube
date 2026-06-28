@@ -12,6 +12,7 @@ const props = defineProps<{
   unrender?: boolean;
   minHeight?: number;
   unrenderDelay?: number;
+  root?: HTMLElement | null;
 }>();
 
 const ROOT_MARGIN = 600;
@@ -24,20 +25,34 @@ const fixedMinHeight = ref(0);
 let unrenderTimer: ReturnType<typeof setTimeout> | null = null;
 let renderTimer: ReturnType<typeof setTimeout> | null = null;
 
+const observerRoot = computed(() => props.root ?? undefined);
+
+function visibleBounds(): DOMRect {
+  if (props.root) {
+    return props.root.getBoundingClientRect();
+  }
+
+  return new DOMRect(
+    0,
+    0,
+    window.innerWidth || document.documentElement.clientWidth,
+    window.innerHeight || document.documentElement.clientHeight,
+  );
+}
+
 function ensureRenderedIfNearViewport(): void {
   if (!targetEl.value) {
     return;
   }
 
   const rect = targetEl.value.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const bounds = visibleBounds();
 
   if (
-    rect.bottom < -ROOT_MARGIN ||
-    rect.top > viewportHeight + ROOT_MARGIN ||
-    rect.right < 0 ||
-    rect.left > viewportWidth
+    rect.bottom < bounds.top - ROOT_MARGIN ||
+    rect.top > bounds.bottom + ROOT_MARGIN ||
+    rect.right < bounds.left ||
+    rect.left > bounds.right
   ) {
     return;
   }
@@ -87,7 +102,7 @@ const { stop } = useIntersectionObserver(
       }, props.unrenderDelay ?? 6000);
     }
   },
-  { rootMargin: `${ROOT_MARGIN}px` },
+  { root: observerRoot, rootMargin: `${ROOT_MARGIN}px` },
 );
 
 const removePageHooks = [

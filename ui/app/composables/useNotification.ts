@@ -124,7 +124,7 @@ const notify = (type: notificationType, message: string, opts?: notificationOpti
 
   let id: string = '';
   const force = opts?.force || false;
-  const store = opts?.store || true;
+  const store = opts?.store ?? true;
   const lowPriority = opts?.lowPriority || false;
 
   if (notificationStore && (store || true === lowPriority)) {
