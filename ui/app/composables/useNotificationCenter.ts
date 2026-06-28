@@ -12,6 +12,48 @@ const NOTIFICATION_META: Record<notificationType, { level: number; color: string
 
 const notifications = useStorage<notification[]>('notifications', []);
 
+const dummyMessages = [
+  'Download finished successfully.',
+  'Unable to fetch video metadata. The remote service returned an unexpected response.',
+  'Queue item is waiting for a free worker.',
+  'Preset updated and saved.',
+  'The selected output folder is not writable.',
+  'Connection to the event stream was restored.',
+  'Background refresh completed.',
+  'Task failed after yt-dlp reported a network timeout.',
+];
+
+const dummyLevels: notificationType[] = ['info', 'success', 'warning', 'error'];
+
+const randomId = (): string =>
+  Array.from(window.crypto.getRandomValues(new Uint8Array(14 / 2)), (dec: number) =>
+    dec.toString(16).padStart(2, '0'),
+  ).join('');
+
+const generateDummyNotifications = (count: number = 99): number => {
+  const total = Math.max(0, Math.min(99, Math.floor(count)));
+  const now = Date.now();
+
+  notifications.value = Array.from({ length: total }, (_, index) => {
+    const level = dummyLevels[index % dummyLevels.length] ?? 'info';
+    const message = dummyMessages[index % dummyMessages.length] ?? 'Dummy notification.';
+
+    return {
+      id: randomId(),
+      message: `${message} #${index + 1}`,
+      level,
+      seen: index % 3 === 0,
+      created: new Date(now - index * 73_000),
+    };
+  });
+
+  return notifications.value.length;
+};
+
+if (import.meta.client) {
+  window.ytpGenerateNotifications = generateDummyNotifications;
+}
+
 const unreadCount = computed<number>(() => notifications.value.filter((n) => !n.seen).length);
 
 const severityLevel = computed<notificationType | null>(() => {
@@ -51,9 +93,7 @@ const sortedNotifications = computed<notification[]>(() => {
 });
 
 const add = (level: notificationType, message: string, seen: boolean = false): string => {
-  const id = Array.from(window.crypto.getRandomValues(new Uint8Array(14 / 2)), (dec: number) =>
-    dec.toString(16).padStart(2, '0'),
-  ).join('');
+  const id = randomId();
 
   notifications.value.unshift({
     id,

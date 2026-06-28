@@ -214,8 +214,7 @@ const NavItems: Array<NavDefinition> = [
     group: 'docs',
     label: 'Changelog',
     pageLabel: 'Changelog',
-    description:
-      'Latest project changes, loaded remotely when available and falling back to the bundled changelog file.',
+    description: 'Latest project changes',
     icon: 'i-lucide-git-commit-horizontal',
     to: '/changelog',
     matchPath: '/changelog',

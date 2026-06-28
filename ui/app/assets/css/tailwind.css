@@ -1,3 +1,5 @@
+@layer theme, base, legacy, components, utilities;
+
 @import 'tailwindcss';
 @import '@nuxt/ui';
 
@@ -30,6 +32,11 @@
   html.simple-mode.bg-fanart #__nuxt {
     background-image: none !important;
   }
+
+  html.dark.simple-mode.bg-fanart body,
+  html.dark.simple-mode.bg-fanart #__nuxt {
+    background-color: var(--ui-bg) !important;
+  }
 }
 
 @layer components {
@@ -51,9 +58,9 @@
 
   .shell-surface {
     background:
-      radial-gradient(circle at top left, rgb(99 102 241 / 0.1), transparent 28%),
-      radial-gradient(circle at top right, rgb(245 158 11 / 0.08), transparent 22%),
-      linear-gradient(180deg, rgb(255 255 255 / 0.84), rgb(248 250 252 / 0.9));
+      radial-gradient(circle at top left, rgb(99 102 241 / 0.14), transparent 28%),
+      radial-gradient(circle at top right, rgb(245 158 11 / 0.12), transparent 22%),
+      linear-gradient(180deg, rgb(255 255 255 / 0.6), rgb(248 250 252 / 0.72));
     backdrop-filter: blur(16px);
   }
 
@@ -63,6 +70,115 @@
       radial-gradient(circle at top right, rgb(245 158 11 / 0.07), transparent 20%),
       linear-gradient(180deg, rgb(9 12 18 / 0.84), rgb(17 24 39 / 0.9));
     backdrop-filter: blur(16px);
+  }
+
+  .ytp-page-header {
+    @apply flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between;
+  }
+
+  .ytp-page-heading {
+    @apply flex min-w-0 items-center gap-3;
+  }
+
+  .ytp-page-kicker {
+    @apply flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned;
+  }
+
+  .ytp-page-icon {
+    @apply inline-flex size-11 shrink-0 items-center justify-center rounded-md border bg-elevated/70 text-primary;
+    border-color: var(--ytp-surface-border-solid);
+  }
+
+  .ytp-section-icon {
+    @apply inline-flex size-10 shrink-0 items-center justify-center rounded-md border bg-elevated/70 text-primary;
+    border-color: var(--ytp-surface-border-solid);
+  }
+
+  .ytp-detail-icon {
+    @apply inline-flex size-9 shrink-0 items-center justify-center rounded-md border bg-elevated/70 text-primary;
+    border-color: var(--ytp-surface-border-solid);
+  }
+
+  .ytp-card {
+    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-card-padded {
+    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20 p-4;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-card-padded-lg {
+    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20 p-4 sm:p-5;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-panel {
+    @apply min-w-0 max-w-full rounded-lg border;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-panel-padded {
+    @apply min-w-0 max-w-full rounded-lg border p-4;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-panel-padded-lg {
+    @apply min-w-0 max-w-full rounded-lg border p-4 sm:p-5;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-frame {
+    @apply min-w-0 max-w-full rounded-lg border;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-table-surface {
+    @apply min-w-0 max-w-full rounded-sm border bg-elevated/20;
+    border-color: var(--ytp-surface-border-solid);
+  }
+
+  .ytp-floating-surface {
+    @apply border bg-default/95 shadow-xl backdrop-blur-md;
+    border-color: var(--ytp-surface-border-solid);
+    box-shadow: 0 1rem 2rem rgb(15 23 42 / 0.1);
+  }
+
+  .ytp-floating-surface [data-slot='item'][data-highlighted]::before,
+  .ytp-floating-surface [data-slot='item'][data-state='open']::before,
+  .ytp-floating-surface [data-slot='item']:hover::before {
+    background-color: color-mix(in oklab, var(--ui-primary) 11%, transparent) !important;
+  }
+
+  .ytp-floating-surface [data-slot='item'][data-disabled]::before {
+    background-color: transparent !important;
+  }
+
+  .dark .ytp-floating-surface {
+    background: color-mix(in oklab, var(--ui-bg) 92%, var(--ui-bg-elevated) 8%);
+    box-shadow: 0 1rem 2rem rgb(0 0 0 / 0.3);
+  }
+
+  .dark .ytp-floating-surface [data-slot='item'][data-highlighted]::before,
+  .dark .ytp-floating-surface [data-slot='item'][data-state='open']::before,
+  .dark .ytp-floating-surface [data-slot='item']:hover::before {
+    background-color: color-mix(in oklab, var(--ui-primary) 16%, transparent) !important;
+  }
+
+  .ytp-border-top-soft {
+    @apply border-t;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-border-bottom-soft {
+    @apply border-b;
+    border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-border-left-soft {
+    @apply border-l;
+    border-color: var(--ytp-surface-border-soft);
   }
 
   .ytp-terminal {
@@ -167,6 +283,15 @@
   --ui-radius: 0.5rem;
   --ui-container: 96rem;
   --ui-header-height: 4.25rem;
+  --ytp-border-strong: var(--ui-border-accented);
+  --ytp-surface-border-soft: var(--ui-border-accented);
+  --ytp-surface-border-solid: var(--ui-border-accented);
+}
+
+.dark {
+  --ytp-border-strong: var(--ui-border);
+  --ytp-surface-border-soft: color-mix(in oklab, var(--ui-border) 70%, transparent);
+  --ytp-surface-border-solid: var(--ui-border);
 }
 
 html:not(.no-page-anim) .page-enter-active {

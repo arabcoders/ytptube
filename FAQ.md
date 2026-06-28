@@ -3,8 +3,9 @@
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
 or the `environment:` section in `compose.yaml` file.
 
+
 <details>
-<summary>Click to expand</summary>
+<summary>Click to expand all environment Variables</summary>
 
 | Environment Variable            | Description                                                         | Default               |
 | ------------------------------- | ------------------------------------------------------------------- | --------------------- |
@@ -64,7 +65,6 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_THUMB_GENERATE              | Enable ffmpeg thumbnail generation when no local thumbnail exists.  | `true`                |
 | YTP_THUMB_SIDECAR               | Save generated thumbnails next to media instead of temp cache.      | `false`               |
 | YTP_DISABLE_EXEC                | Strip some dangerous yt-dlp options.                                | `false`               |
-</details>
 
 > [!NOTE]
 > To raise the worker limit for a specific extractor, set an env variable using this format: `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`
@@ -77,6 +77,7 @@ or the `environment:` section in `compose.yaml` file.
 > `YTP_AUTO_CLEAR_HISTORY_DAYS`  `0` days means no automatic clearing of the download history. lowest value that will 
 > trigger the clearing is `1` day. This setting will **NOT** delete the downloaded files, it will only clear the 
 > history from the database.
+</details>
 
 # Browser extensions & bookmarklets
 

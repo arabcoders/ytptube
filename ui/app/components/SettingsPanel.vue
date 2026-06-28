@@ -30,15 +30,15 @@
 
     <template #body>
       <div class="w-full space-y-6">
-        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
-          <template #header>
+        <div class="ytp-card w-full">
+          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-layout-dashboard" class="size-4 text-toned" />
               <span class="text-sm font-semibold text-highlighted">Page View</span>
             </div>
-          </template>
+          </div>
 
-          <template #body>
+          <div class="p-4 sm:p-5 space-y-4">
             <UFormField label="" class="w-full" :ui="settingsFieldUi">
               <USelect
                 v-model="draftMode"
@@ -73,18 +73,18 @@
               :label="page_anims ? 'Animations On' : 'Animations Off'"
               description="Enable page transition animations."
             />
-          </template>
-        </UPageCard>
+          </div>
+        </div>
 
-        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
-          <template #header>
+        <div class="ytp-card w-full">
+          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-image" class="size-4 text-toned" />
               <span class="text-sm font-semibold text-highlighted">Background</span>
             </div>
-          </template>
+          </div>
 
-          <template #body>
+          <div class="p-4 sm:p-5 space-y-4">
             <USwitch
               v-model="bg_enable"
               class="w-full"
@@ -95,7 +95,7 @@
 
             <UButton
               v-if="bg_enable"
-              color="info"
+              color="neutral"
               variant="outline"
               icon="i-lucide-image-up"
               class="w-full justify-center"
@@ -121,18 +121,18 @@
                 class="w-full"
               />
             </UFormField>
-          </template>
-        </UPageCard>
+          </div>
+        </div>
 
-        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
-          <template #header>
+        <div class="ytp-card w-full">
+          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-monitor" class="size-4 text-toned" />
               <span class="text-sm font-semibold text-highlighted">Downloads</span>
             </div>
-          </template>
+          </div>
 
-          <template #body>
+          <div class="p-4 sm:p-5 space-y-4">
             <UFormField v-if="!modeOn" label="URL Separator" class="w-full" :ui="settingsFieldUi">
               <USelect
                 v-model="separator"
@@ -179,18 +179,18 @@
               :label="show_popover ? 'Popover On' : 'Popover Off'"
               description="Show additional information over certain elements."
             />
-          </template>
-        </UPageCard>
+          </div>
+        </div>
 
-        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
-          <template #header>
+        <div class="ytp-card w-full">
+          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-download" class="size-4 text-toned" />
               <span class="text-sm font-semibold text-highlighted">Queue</span>
             </div>
-          </template>
+          </div>
 
-          <template #body>
+          <div class="p-4 sm:p-5 space-y-4">
             <USwitch
               v-model="queue_auto_refresh"
               class="w-full"
@@ -219,18 +219,18 @@
                 How often to refresh the queue (5-60 seconds). Lower values increase server load.
               </p>
             </UFormField>
-          </template>
-        </UPageCard>
+          </div>
+        </div>
 
-        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
-          <template #header>
+        <div class="ytp-card w-full">
+          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-bell" class="size-4 text-toned" />
               <span class="text-sm font-semibold text-highlighted">Notifications</span>
             </div>
-          </template>
+          </div>
 
-          <template #body>
+          <div class="p-4 sm:p-5 space-y-4">
             <USwitch
               v-model="allow_toasts"
               class="w-full"
@@ -288,8 +288,8 @@
               :ui="settingsSwitchUi"
               :label="toast_dismiss_on_click ? 'Dismiss on click' : 'Keep on click'"
             />
-          </template>
-        </UPageCard>
+          </div>
+        </div>
       </div>
     </template>
   </USlideover>
@@ -336,13 +336,6 @@ const page_anims = useStorage<boolean>('page_anims', true);
 const queue_auto_refresh = useStorage<boolean>('queue_auto_refresh', true);
 const queue_auto_refresh_delay = useStorage<number>('queue_auto_refresh_delay', 10000);
 const isSecureContext = ref<boolean>(false);
-
-const settingsCardUi = {
-  root: 'w-full',
-  container: 'w-full p-4 sm:p-5',
-  wrapper: 'w-full items-stretch',
-  body: 'w-full space-y-4',
-};
 
 const settingsFieldUi = {
   root: 'w-full',
@@ -415,6 +408,10 @@ const toastPositionItems: Array<{ label: string; value: toastPosition }> = [
   { label: 'bottom-right', value: 'bottom-right' },
 ];
 
+const closeScrollLock = (): void => {
+  document.body.classList.remove('settings-panel-open');
+};
+
 const handleKeydown = (e: KeyboardEvent) => {
   if ('Escape' === e.key && props.isOpen) {
     e.preventDefault();
@@ -434,7 +431,10 @@ onMounted(async () => {
   document.addEventListener('keydown', handleKeydown);
 });
 
-onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown));
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown);
+  closeScrollLock();
+});
 
 const onNotificationTargetChange = async (): Promise<void> => {
   if ('browser' === toast_target.value) {
@@ -455,7 +455,7 @@ watch(
       draftMode.value = mode.value;
       document.body.classList.add('settings-panel-open');
     } else {
-      document.body.classList.remove('settings-panel-open');
+      closeScrollLock();
     }
   },
 );

@@ -33,69 +33,78 @@
         </template>
 
         <template #default>
-          <div v-if="store.sortedNotifications.length > 0" class="max-h-104 overflow-y-auto p-0">
+          <div
+            v-if="store.sortedNotifications.length > 0"
+            ref="scrollEl"
+            class="max-h-104 overflow-y-auto p-0"
+          >
             <div class="space-y-2">
-              <UAlert
+              <LateLoader
                 v-for="item in store.sortedNotifications"
                 :key="item.id"
-                orientation="horizontal"
-                variant="outline"
-                color="neutral"
-                :icon="notificationIcon(item.level)"
-                :title="item.message"
-                :description="moment(item.created).fromNow()"
-                :ui="{
-                  root: 'rounded-md border border-default border-l-4 bg-default px-3 py-2 transition-colors hover:bg-muted/40',
-                  icon: 'size-4 mt-0.5',
-                  title:
-                    expandedId === item.id
-                      ? 'whitespace-normal break-words text-sm'
-                      : 'truncate text-sm',
-                  description: 'mt-1 text-xs text-toned',
-                  actions: 'items-center gap-1 ml-2',
-                }"
-                :class="notificationAlertClass(item.level, item.id)"
-                @click="handleNotificationClick(item.id)"
+                :root="scrollEl"
+                :min-height="55"
+                unrender
               >
-                <template #description>
-                  <span class="flex items-center gap-1 text-xs text-toned">
-                    <UTooltip :text="moment(item.created).format('YYYY-M-DD H:mm Z')">
-                      <span :date-datetime="item.created" v-rtime="item.created" />
-                    </UTooltip>
-                    <span>-</span>
-                    <button
-                      type="button"
-                      class="underline underline-offset-2"
-                      @click.stop="copy_text(item.id, item.message)"
-                    >
-                      <span v-if="copiedId === item.id" class="text-success">Copied!</span>
-                      <span v-else>Copy</span>
-                    </button>
-                  </span>
-                </template>
+                <UAlert
+                  orientation="horizontal"
+                  variant="outline"
+                  color="neutral"
+                  :icon="notificationIcon(item.level)"
+                  :title="item.message"
+                  :ui="{
+                    root: 'select-none rounded-none border border-default border-l-4 bg-default px-3 py-2 transition-colors hover:bg-muted/40',
+                    icon: 'size-4 mt-0.5',
+                    title:
+                      expandedId === item.id
+                        ? 'whitespace-normal break-words text-sm'
+                        : 'truncate text-sm',
+                    description: 'mt-1 text-xs text-toned',
+                    actions: 'items-center gap-1 ml-2',
+                  }"
+                  :class="notificationAlertClass(item.level, item.id)"
+                  @click="handleNotificationClick(item.id)"
+                >
+                  <template #description>
+                    <span class="flex items-center gap-1 text-xs text-toned">
+                      <UTooltip :text="moment(item.created).format('YYYY-M-DD H:mm Z')">
+                        <span :date-datetime="item.created" v-rtime="item.created" />
+                      </UTooltip>
+                      <span>-</span>
+                      <button
+                        type="button"
+                        class="underline underline-offset-2"
+                        @click.stop="copy_text(item.id, item.message)"
+                      >
+                        <span v-if="copiedId === item.id" class="text-success">Copied!</span>
+                        <span v-else>Copy</span>
+                      </button>
+                    </span>
+                  </template>
 
-                <template #actions>
-                  <UButton
-                    v-if="!item.seen"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    square
-                    @click.stop="store.markRead(item.id)"
-                  >
-                    <UIcon name="i-lucide-check" class="size-3.5" />
-                  </UButton>
-                  <UButton
-                    color="error"
-                    variant="ghost"
-                    size="xs"
-                    square
-                    @click.stop="store.remove(item.id)"
-                  >
-                    <UIcon name="i-lucide-trash" class="size-3.5" />
-                  </UButton>
-                </template>
-              </UAlert>
+                  <template #actions>
+                    <UButton
+                      v-if="!item.seen"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      square
+                      @click.stop="store.markRead(item.id)"
+                    >
+                      <UIcon name="i-lucide-check" class="size-3.5" />
+                    </UButton>
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      square
+                      @click.stop="store.remove(item.id)"
+                    >
+                      <UIcon name="i-lucide-trash" class="size-3.5" />
+                    </UButton>
+                  </template>
+                </UAlert>
+              </LateLoader>
             </div>
           </div>
 
@@ -121,7 +130,7 @@
           </UButton>
 
           <UButton
-            color="error"
+            color="neutral"
             variant="ghost"
             size="sm"
             icon="i-lucide-trash"
@@ -143,6 +152,7 @@ import type { notificationType } from '~/composables/useNotification';
 
 const store = useNotificationCenter();
 
+const scrollEl = ref<HTMLElement | null>(null);
 const copiedId = ref<string | null>(null);
 const expandedId = ref<string | null>(null);
 

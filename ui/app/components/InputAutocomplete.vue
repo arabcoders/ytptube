@@ -12,7 +12,7 @@
       variant="outline"
       color="neutral"
       class="w-full"
-      :ui="{ root: 'w-full', base: 'w-full bg-default/90', leadingIcon: iconClass }"
+      :ui="{ root: 'w-full', base: 'w-full bg-elevated/60', leadingIcon: iconClass }"
       @focus="onFocus"
       @blur="hideList"
       @input="onInput"
@@ -25,7 +25,7 @@
     <div
       v-if="showList && filteredOptions.length"
       ref="dropdownRef"
-      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md border border-default bg-default shadow-lg"
+      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md ytp-floating-surface"
       role="menu"
     >
       <button

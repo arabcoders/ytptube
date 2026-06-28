@@ -1,17 +1,13 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-      <div class="flex min-w-0 items-center gap-3">
-        <span
-          class="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/70 text-primary"
-        >
+    <div class="ytp-page-header">
+      <div class="ytp-page-heading">
+        <span class="ytp-page-icon">
           <UIcon :name="pageShell.icon" class="size-5" />
         </span>
 
         <div class="min-w-0 space-y-2">
-          <div
-            class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned"
-          >
+          <div class="ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -21,7 +17,7 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:justify-end">
+      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UButton
           v-if="tasks.length > 0"
           color="neutral"
@@ -83,7 +79,7 @@
 
     <div
       v-if="!isLoading && filteredTasks.length > 0"
-      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
     >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
@@ -128,11 +124,11 @@
 
     <div
       v-if="contentStyle === 'list' && filteredTasks.length > 0"
-      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+      class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
         <table class="min-w-210 table-fixed w-full text-sm">
-          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+          <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
               class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
             >
@@ -339,16 +335,8 @@
       class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
       <div v-for="item in filteredTasks" :key="item.id" class="min-w-0 w-full max-w-full">
-        <UCard
-          class="flex h-full min-w-0 w-full max-w-full flex-col"
-          :ui="{
-            root: 'bg-default border border-default',
-            header: 'p-4 pb-3',
-            body: 'flex flex-1 flex-col gap-4 p-4 pt-0',
-            footer: 'border-t border-default px-4 py-4',
-          }"
-        >
-          <template #header>
+        <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
+          <div class="p-4 pb-3 ytp-border-bottom-soft">
             <div class="flex min-w-0 items-start justify-between gap-3">
               <div class="min-w-0 flex-1 space-y-2">
                 <div class="flex items-start gap-2">
@@ -414,159 +402,165 @@
                 </label>
               </div>
             </div>
-          </template>
+          </div>
 
-          <div class="space-y-2 text-sm text-default">
-            <div class="grid grid-cols-2 gap-2 text-xs text-toned sm:flex sm:flex-wrap">
-              <button
-                type="button"
-                class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
-                @click="() => void toggleFlag(item, 'enabled')"
-              >
-                <UIcon
-                  name="i-lucide-power"
-                  class="size-3.5"
-                  :class="item.enabled !== false ? 'text-success' : 'text-error'"
-                />
-                <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
-              </button>
+          <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div class="space-y-2 text-sm text-default">
+              <div class="grid grid-cols-2 gap-2 text-xs text-toned sm:flex sm:flex-wrap">
+                <button
+                  type="button"
+                  class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
+                  @click="() => void toggleFlag(item, 'enabled')"
+                >
+                  <UIcon
+                    name="i-lucide-power"
+                    class="size-3.5"
+                    :class="item.enabled !== false ? 'text-success' : 'text-error'"
+                  />
+                  <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                </button>
 
-              <button
-                type="button"
-                class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
-                @click="() => void toggleFlag(item, 'auto_start')"
-              >
-                <UIcon
-                  name="i-lucide-circle-play"
-                  class="size-3.5"
-                  :class="item.auto_start ? 'text-success' : 'text-error'"
-                />
-                <span>Auto start: {{ item.auto_start ? 'Yes' : 'No' }}</span>
-              </button>
+                <button
+                  type="button"
+                  class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
+                  @click="() => void toggleFlag(item, 'auto_start')"
+                >
+                  <UIcon
+                    name="i-lucide-circle-play"
+                    class="size-3.5"
+                    :class="item.auto_start ? 'text-success' : 'text-error'"
+                  />
+                  <span>Auto start: {{ item.auto_start ? 'Yes' : 'No' }}</span>
+                </button>
 
-              <button
-                type="button"
-                class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
-                @click="() => void toggleFlag(item, 'handler_enabled')"
-              >
-                <UIcon
-                  name="i-lucide-rss"
-                  class="size-3.5"
-                  :class="item.handler_enabled !== false ? 'text-success' : 'text-error'"
-                />
-                <span>Handler: {{ item.handler_enabled !== false ? 'On' : 'Off' }}</span>
-              </button>
+                <button
+                  type="button"
+                  class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
+                  @click="() => void toggleFlag(item, 'handler_enabled')"
+                >
+                  <UIcon
+                    name="i-lucide-rss"
+                    class="size-3.5"
+                    :class="item.handler_enabled !== false ? 'text-success' : 'text-error'"
+                  />
+                  <span>Handler: {{ item.handler_enabled !== false ? 'On' : 'Off' }}</span>
+                </button>
 
-              <button
-                type="button"
-                class="flex min-w-0 w-full items-start gap-1 rounded-md border border-default px-2 py-1 text-left transition hover:border-primary hover:text-default sm:flex-1"
-                @click="toggleExpand(item.id, 'preset')"
-              >
-                <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                <span class="min-w-0 flex-1">
-                  <span :class="['min-w-0 capitalize', expandClass(item.id, 'preset')]">
-                    Preset: {{ item.preset ?? config.app.default_preset }}
+                <button
+                  type="button"
+                  class="flex min-w-0 w-full items-start gap-1 rounded-md border border-default px-2 py-1 text-left transition hover:border-primary hover:text-default sm:flex-1"
+                  @click="toggleExpand(item.id, 'preset')"
+                >
+                  <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
+                  <span class="min-w-0 flex-1">
+                    <span :class="['min-w-0 capitalize', expandClass(item.id, 'preset')]">
+                      Preset: {{ item.preset ?? config.app.default_preset }}
+                    </span>
                   </span>
-                </span>
-              </button>
-            </div>
+                </button>
+              </div>
 
-            <div
-              v-if="
-                item.timer || item.folder || item.template || item.cli || willTaskBeProcessed(item)
-              "
-              class="feature-meta-grid"
-            >
-              <button
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-                @click="toggleExpand(item.id, 'schedule')"
+              <div
+                v-if="
+                  item.timer ||
+                  item.folder ||
+                  item.template ||
+                  item.cli ||
+                  willTaskBeProcessed(item)
+                "
+                class="feature-meta-grid"
               >
-                <UIcon
-                  :name="
-                    item.timer
-                      ? 'i-lucide-clock-3'
-                      : willTaskBeProcessed(item)
-                        ? 'i-lucide-rss'
-                        : 'i-lucide-triangle-alert'
-                  "
-                  class="mt-0.5 size-4 shrink-0"
-                  :class="!item.timer && !willTaskBeProcessed(item) ? 'text-error' : 'text-toned'"
-                />
+                <button
+                  type="button"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  @click="toggleExpand(item.id, 'schedule')"
+                >
+                  <UIcon
+                    :name="
+                      item.timer
+                        ? 'i-lucide-clock-3'
+                        : willTaskBeProcessed(item)
+                          ? 'i-lucide-rss'
+                          : 'i-lucide-triangle-alert'
+                    "
+                    class="mt-0.5 size-4 shrink-0"
+                    :class="!item.timer && !willTaskBeProcessed(item) ? 'text-error' : 'text-toned'"
+                  />
 
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">Schedule</div>
-                  <template v-if="item.timer">
-                    <a
-                      target="_blank"
-                      :href="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`"
-                      class="block text-highlighted hover:underline"
-                      @click.stop
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-medium text-toned">Schedule</div>
+                    <template v-if="item.timer">
+                      <a
+                        target="_blank"
+                        :href="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`"
+                        class="block text-highlighted hover:underline"
+                        @click.stop
+                      >
+                        <span :class="['block', expandClass(item.id, 'schedule')]">
+                          {{ item.timer }} ( {{ tryParse(item.timer) }} )
+                        </span>
+                      </a>
+                    </template>
+
+                    <p
+                      v-else-if="willTaskBeProcessed(item)"
+                      :class="['text-sm text-default', expandClass(item.id, 'schedule')]"
                     >
-                      <span :class="['block', expandClass(item.id, 'schedule')]">
-                        {{ item.timer }} ( {{ tryParse(item.timer) }} )
-                      </span>
-                    </a>
-                  </template>
+                      Handler only
+                    </p>
+                    <p v-else :class="['text-sm text-error', expandClass(item.id, 'schedule')]">
+                      Not configured
+                    </p>
+                  </div>
+                </button>
 
-                  <p
-                    v-else-if="willTaskBeProcessed(item)"
-                    :class="['text-sm text-default', expandClass(item.id, 'schedule')]"
-                  >
-                    Handler only
-                  </p>
-                  <p v-else :class="['text-sm text-error', expandClass(item.id, 'schedule')]">
-                    Not configured
-                  </p>
-                </div>
-              </button>
+                <button
+                  v-if="item.folder"
+                  type="button"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  @click="toggleExpand(item.id, 'folder')"
+                >
+                  <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-medium text-toned">Download path</div>
+                    <span :class="['block', expandClass(item.id, 'folder')]">
+                      {{ calcPath(item.folder) }}
+                    </span>
+                  </div>
+                </button>
 
-              <button
-                v-if="item.folder"
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-                @click="toggleExpand(item.id, 'folder')"
-              >
-                <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">Download path</div>
-                  <span :class="['block', expandClass(item.id, 'folder')]">
-                    {{ calcPath(item.folder) }}
-                  </span>
-                </div>
-              </button>
+                <button
+                  v-if="item.template"
+                  type="button"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  @click="toggleExpand(item.id, 'template')"
+                >
+                  <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-medium text-toned">Output template</div>
+                    <span :class="['block', expandClass(item.id, 'template')]">{{
+                      item.template
+                    }}</span>
+                  </div>
+                </button>
 
-              <button
-                v-if="item.template"
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-                @click="toggleExpand(item.id, 'template')"
-              >
-                <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">Output template</div>
-                  <span :class="['block', expandClass(item.id, 'template')]">{{
-                    item.template
-                  }}</span>
-                </div>
-              </button>
-
-              <button
-                v-if="item.cli"
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
-                @click="toggleExpand(item.id, 'cli')"
-              >
-                <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">CLI options</div>
-                  <span :class="['block', expandClass(item.id, 'cli')]">{{ item.cli }}</span>
-                </div>
-              </button>
+                <button
+                  v-if="item.cli"
+                  type="button"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  @click="toggleExpand(item.id, 'cli')"
+                >
+                  <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-medium text-toned">CLI options</div>
+                    <span :class="['block', expandClass(item.id, 'cli')]">{{ item.cli }}</span>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
 
-          <template #footer>
+          <div class="ytp-border-top-soft px-4 py-4">
             <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
               <UButton
                 color="neutral"
@@ -600,8 +594,8 @@
                 </UButton>
               </UDropdownMenu>
             </div>
-          </template>
-        </UCard>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -853,7 +847,6 @@ const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
     {
       label: 'Remove Selected',
       icon: 'i-lucide-trash',
-      color: 'error',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
     },

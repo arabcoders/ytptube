@@ -261,9 +261,7 @@
         </div>
       </div>
 
-      <div
-        class="grid gap-3 rounded-lg border border-default bg-default p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
-      >
+      <div class="grid gap-3 ytp-card-padded md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
         <UFormField :ui="fieldUi">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">

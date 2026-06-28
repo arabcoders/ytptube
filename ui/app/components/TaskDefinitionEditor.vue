@@ -363,12 +363,10 @@
           </UButton>
         </div>
 
-        <div
-          class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
-        >
+        <div class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table class="min-w-215 table-fixed w-full text-sm">
-              <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+              <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
                 <tr
                   class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
                 >

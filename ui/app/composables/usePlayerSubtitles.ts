@@ -54,7 +54,10 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
   const subtitleLoading = ref(false);
   const subtitleLoadError = ref('');
   const subtitleEnabled = ref(true);
-  const selectedTrack = computed(() => tracks.value[0] || null);
+  const selectedTrackId = ref<string | null>(null);
+  const selectedTrack = computed(
+    () => tracks.value.find((track) => track.url === selectedTrackId.value) || null,
+  );
   const nativeSubtitleTrack = computed(() => {
     const track = selectedTrack.value;
     return subtitleEnabled.value && track?.renderer === 'native' ? track : null;
@@ -82,6 +85,7 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
     assRequestId += 1;
     destroyAssRenderer();
     tracks.value = [];
+    selectedTrackId.value = null;
     subtitleLoadError.value = '';
 
     if (!manifestUrl || !isVideo || !canPlay) {
@@ -104,6 +108,7 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
 
       tracks.value = (payload as SubtitleManifestResponse).subtitles || [];
       if (tracks.value.length > 0) {
+        selectedTrackId.value = tracks.value[0]?.url || null;
         subtitleEnabled.value = true;
       }
     } catch {
@@ -212,6 +217,7 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
     subtitleLoadError,
     subtitleEnabled,
     selectedSubtitleTrack: selectedTrack,
+    selectedSubtitleTrackId: selectedTrackId,
     nativeSubtitleTrack,
     usesAssSubtitleTrack: usesAssTrack,
     hasSubtitles,
