@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "219124dc31d4b73612ffbb4104492de79dcf30b0",
-    "date": "2026-06-28T17:35:54+00:00",
+    "full_sha": "7b595a7af4598b7e550836fc00e236b91ba9e2ae",
+    "date": "2026-06-29T09:19:46+00:00",
     "commits": [
+      {
+        "sha": "7b595a7a",
+        "full_sha": "7b595a7af4598b7e550836fc00e236b91ba9e2ae",
+        "message": "feat: add copy functionality for logs",
+        "author": "arabcoders",
+        "date": "2026-06-29T09:19:46+00:00"
+      },
+      {
+        "sha": "70e0857b",
+        "full_sha": "70e0857b3bbda8062c1b3b82bfbbad740e5e157b",
+        "message": "Fix: possible fix for #623\n\nI cant test it as i dont have mac",
+        "author": "arabcoders",
+        "date": "2026-06-29T09:18:45+00:00"
+      },
       {
         "sha": "219124dc",
         "full_sha": "219124dc31d4b73612ffbb4104492de79dcf30b0",
