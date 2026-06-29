@@ -129,10 +129,10 @@ class YTDLPCli:
             msg = f"Expected Item instance, got {type(item).__name__}"
             raise ValueError(msg)
 
+        self._config: Config = config or Config.get_instance()
         self.item = item
         preset_name = item.preset or self._config.default_preset
         self.preset: Preset | None = YTDLPCli._get_presets().get(preset_name)
-        self._config: Config = config or Config.get_instance()
 
     @staticmethod
     def _get_presets():
