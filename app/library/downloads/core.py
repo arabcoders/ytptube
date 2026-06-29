@@ -25,6 +25,7 @@ from app.library.Utils import create_cookies_file
 from ...features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
 from .hooks import HookHandlers, NestedLogger
 from .process_manager import ProcessManager
+from .runtime import ensure_download_runtime
 from .status_tracker import StatusTracker
 from .temp_manager import TempManager
 from .types import Terminator
@@ -117,6 +118,8 @@ class Download:
             raise RuntimeError(msg)
 
         try:
+            ensure_download_runtime(logger=self.logger)
+
             params = (
                 self.info.get_ytdlp_opts()
                 .add(

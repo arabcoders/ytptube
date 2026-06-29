@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import signal
@@ -11,6 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 
 from app.library.Events import EventBus, Events
+import app.library.downloads.runtime as download_runtime
 from app.library.downloads import Download, NestedLogger, Terminator
 from app.library.downloads.hooks import HookHandlers
 from app.library.downloads.pool_manager import PoolManager
@@ -277,6 +279,97 @@ class TestDownloadStale:
 
 
 class TestDownloadFlow:
+    def test_download_bootstraps_before_options(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from app.features.presets.models import PresetModel
+        from app.features.presets.service import Presets
+
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+            download_path = "/downloads"
+            temp_path = "/tmp"
+            output_template = "%(title)s.%(ext)s"
+            output_template_chapter = "%(title)s.%(ext)s"
+            disable_exec = False
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+            @staticmethod
+            def get_replacers():
+                return {
+                    "os_sep": os.path.sep,
+                    "download_path": Cfg.download_path,
+                    "temp_path": Cfg.temp_path,
+                    "config_path": "/config",
+                    "archive_file": "/config/archive.log",
+                }
+
+        Presets._reset_singleton()
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.ytdlp.ytdlp_opts.Config", Cfg)
+
+        def bootstrap(*, logger=None):
+            del logger
+            preset = PresetModel(
+                id=1,
+                name="native",
+                description="",
+                folder="",
+                template="",
+                cookies="",
+                cli="--format worst",
+                default=False,
+                priority=0,
+            )
+            asyncio.run(Presets.get_instance().refresh_cache([preset]))
+            return True
+
+        monkeypatch.setattr("app.library.downloads.core.ensure_download_runtime", bootstrap)
+
+        item = make_item()
+        item.preset = "native"
+        download = Download(
+            info=item,
+            info_dict={
+                "id": "test-id",
+                "url": "http://u",
+                "formats": [{"format_id": "18"}],
+                "epoch": int(time.time()),
+            },
+        )
+        download.status_queue = cast(Any, DummyQueue())
+        download._hook_handlers = Mock(
+            progress_hook=Mock(),
+            postprocessor_hook=Mock(),
+            post_hook=Mock(),
+        )
+
+        captured: dict[str, Any] = {}
+
+        class FakeYTDLP:
+            def __init__(self, params):
+                captured["params"] = params
+                self._download_retcode = 0
+                self._interrupted = False
+
+            def process_ie_result(self, ie_result, download):
+                return ie_result, download
+
+        monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
+
+        try:
+            download._download()
+        finally:
+            Presets._reset_singleton()
+
+        assert captured["params"]["format"] == "worst"
+
     def test_download_pushes_download_skipped_flag(self, monkeypatch: pytest.MonkeyPatch) -> None:
         class Cfg:
             debug = False
@@ -753,6 +846,64 @@ class TestDownloadSpawnPickling:
         assert state.get("_status_tracker") is None, "StatusTracker should be excluded from pickled state"
 
         ForkingPickler.dumps(download._download)
+
+
+class TestDownloadRuntime:
+    def test_fork_skip(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setitem(download_runtime._BOOTSTRAP_STATE, "pid", None)
+        monkeypatch.setattr(
+            download_runtime.multiprocessing,
+            "current_process",
+            lambda: SimpleNamespace(name="download-test"),
+        )
+        monkeypatch.setattr(download_runtime.multiprocessing, "get_start_method", lambda allow_none=True: "fork")
+        run = Mock()
+        monkeypatch.setattr(download_runtime, "_run_bootstrap", run)
+
+        assert download_runtime.ensure_download_runtime() is False
+        run.assert_not_called()
+
+    def test_spawn_once(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setitem(download_runtime._BOOTSTRAP_STATE, "pid", None)
+        monkeypatch.setattr(
+            download_runtime.multiprocessing,
+            "current_process",
+            lambda: SimpleNamespace(name="download-test"),
+        )
+        monkeypatch.setattr(download_runtime.multiprocessing, "get_start_method", lambda allow_none=True: "spawn")
+        monkeypatch.setattr(download_runtime.os, "getpid", lambda: 123)
+        run = Mock()
+        monkeypatch.setattr(download_runtime, "_run_bootstrap", run)
+
+        assert download_runtime.ensure_download_runtime() is True
+        assert download_runtime.ensure_download_runtime() is False
+        run.assert_called_once_with()
+
+    @pytest.mark.asyncio
+    async def test_bootstrap_loads_presets(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        config = SimpleNamespace(db_file="/tmp/test.db")
+        store = SimpleNamespace(get_connection=AsyncMock())
+        repo = SimpleNamespace(all=AsyncMock(return_value=["preset"]))
+        presets = SimpleNamespace(refresh_cache=AsyncMock())
+
+        monkeypatch.setattr(download_runtime, "Config", SimpleNamespace(get_instance=lambda: config))
+        monkeypatch.setattr(
+            download_runtime,
+            "SqliteStore",
+            SimpleNamespace(get_instance=lambda db_path=None: store),
+        )
+        monkeypatch.setattr(
+            download_runtime,
+            "PresetsRepository",
+            SimpleNamespace(get_instance=lambda: repo),
+        )
+        monkeypatch.setattr(download_runtime, "Presets", SimpleNamespace(get_instance=lambda: presets))
+
+        await download_runtime._bootstrap_download_runtime()
+
+        store.get_connection.assert_awaited_once_with()
+        repo.all.assert_awaited_once_with()
+        presets.refresh_cache.assert_awaited_once_with(["preset"])
 
 
 class TestTempManager:
