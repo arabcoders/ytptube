@@ -77,6 +77,18 @@
           Wrap
         </UButton>
 
+        <UDropdownMenu :items="copyMenuItems" :content="copyMenuContent" :modal="false">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-copy"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            Copy
+          </UButton>
+        </UDropdownMenu>
+
         <USelectMenu
           v-model="selectedLevels"
           :items="levelFilterItems"
@@ -175,13 +187,14 @@
                   </UTooltip>
                   <UButton
                     color="neutral"
-                    variant="ghost"
+                    variant="soft"
                     size="xs"
                     icon="i-lucide-panel-right-open"
-                    aria-label="Open log details"
-                    class="inline-flex align-[-0.2em] opacity-70 hover:opacity-100"
+                    class="inline-flex align-[-0.2em]"
                     @click="openLogDetails(entry.log)"
-                  />
+                  >
+                    Details
+                  </UButton>
                   <span
                     :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
                     @click="openLogDetails(entry.log)"
@@ -256,7 +269,7 @@ import type { EventSourceMessage } from '@microsoft/fetch-event-source';
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { log_line } from '~/types/logs';
-import { parse_api_error, request, uri } from '~/utils';
+import { copyText, parse_api_error, request, uri } from '~/utils';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 type FilteredLogEntry = {
@@ -345,6 +358,21 @@ const hasActiveFilter = computed(() => hasTextFilter.value);
 const canLoadFilteredHistory = computed(
   () => hasTextFilter.value && !reachedEnd.value && logs.value.length > 0,
 );
+const copyMenuContent = computed(() => ({ align: 'end' as const }));
+const copyMenuItems = computed(() => [
+  [
+    {
+      label: 'Copy Rendered Logs',
+      icon: 'i-lucide-file-text',
+      onSelect: () => copyText(copyRenderedLogText.value),
+    },
+    {
+      label: 'Copy Raw Logs',
+      icon: 'i-lucide-file-code',
+      onSelect: () => copyText(copyRawLogText.value),
+    },
+  ],
+]);
 const levelCounts = computed<Record<LogLevel, number>>(() => {
   const counts: Record<LogLevel, number> = {
     debug: 0,
@@ -729,6 +757,31 @@ const exceptionSummary = (log: log_line): string => {
 
   return type || message;
 };
+
+const formatLogLine = (log: log_line): string =>
+  [
+    log.datetime,
+    getLogLevel(log.level).toUpperCase(),
+    log.logger ? `[${log.logger}]` : '',
+    exceptionSummary(log) ? `${log.message}: ${exceptionSummary(log)}` : log.message,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+const rawLogText = computed(() => logs.value.map((log) => JSON.stringify(log)).join('\n'));
+const renderedLogText = computed(() => logs.value.map((log) => formatLogLine(log)).join('\n'));
+const filteredRawLogText = computed(() =>
+  filteredLogs.value.map((entry) => JSON.stringify(entry.log)).join('\n'),
+);
+const filteredRenderedLogText = computed(() =>
+  filteredLogs.value.map((entry) => formatLogLine(entry.log)).join('\n'),
+);
+const copyRawLogText = computed(() =>
+  hasActiveFilter.value ? filteredRawLogText.value : rawLogText.value,
+);
+const copyRenderedLogText = computed(() =>
+  hasActiveFilter.value ? filteredRenderedLogText.value : renderedLogText.value,
+);
 
 const searchableLog = (log: log_line): string =>
   [
