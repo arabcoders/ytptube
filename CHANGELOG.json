@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "53b414ef3f28dbdcc3612ed27e2b128db6487810",
+    "date": "2026-06-30T03:59:38+00:00",
+    "commits": [
+      {
+        "sha": "53b414ef",
+        "full_sha": "53b414ef3f28dbdcc3612ed27e2b128db6487810",
+        "message": "fix: incorrect master selected key reset. Fixes #625",
+        "author": "arabcoders",
+        "date": "2026-06-30T03:59:38+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.8",
     "full_sha": "cd2c0d959b2c4bdbf0e60b8e8880701a982d6492",
     "date": "2026-06-29T10:09:30+00:00",
