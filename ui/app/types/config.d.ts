@@ -21,6 +21,8 @@ type AppConfig = {
   instance_title: string | null;
   /** Indicates if the console is enabled */
   console_enabled: boolean;
+  /** Indicates if resource monitoring is enabled */
+  monitor_enabled: boolean;
   /** Indicates if the file browser control is enabled */
   browser_control_enabled: boolean;
   /** Indicates if file logging is enabled */

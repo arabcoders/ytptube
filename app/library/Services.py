@@ -132,11 +132,15 @@ class Services(metaclass=Singleton):
             if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
                 continue
 
-            if name in overrides:
-                resolved[name] = overrides[name]
+            lookup_name: str = name
+            if name.startswith("_"):
+                lookup_name = name.lstrip("_")
+
+            if name in overrides or lookup_name in overrides:
+                resolved[name] = overrides.get(name, overrides.get(lookup_name))
                 continue
 
-            by_name: Any | None = self.get(name)
+            by_name: Any | None = self.get(name) or self.get(lookup_name)
             if by_name is not None:
                 resolved[name] = by_name
                 continue

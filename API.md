@@ -104,6 +104,10 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/system/folders](#get-apisystemfolders)
     - [GET /api/system/diagnostics](#get-apisystemdiagnostics)
     - [GET /api/system/limits](#get-apisystemlimits)
+    - [GET /api/stats/latest](#get-apistatslatest)
+    - [GET /api/stats/history](#get-apistatshistory)
+    - [GET /api/stats/bottlenecks](#get-apistatsbottlenecks)
+    - [GET /api/stats/stream](#get-apistatsstream)
     - [POST /api/system/terminal](#post-apisystemterminal)
     - [GET /api/system/terminal](#get-apisystemterminal)
     - [GET /api/system/terminal/active](#get-apisystemterminalactive)
@@ -2763,6 +2767,198 @@ or an error:
 - `downloads.global` counts only non-live downloads against the worker limit.
 - `downloads.global.live_active` is reported separately because live downloads bypass the global and per-extractor worker limits.
 - `downloads.per_extractor.items[*].source` is `default` unless an override was provided through `YTP_MAX_WORKERS_FOR_<EXTRACTOR>`.
+
+---
+
+### GET /api/stats/latest
+**Purpose**: Current resource snapshot and app state. Requires `YTP_MONITOR_ENABLED=true`.
+
+**Response**:
+```json
+{
+  "ts": 1719900000.0,
+  "process_cpu_percent": 34.2,
+  "system_cpu_percent": 61.0,
+  "cpu_limit": 4.0,
+  "effective_cpu_count": 4.0,
+  "rss_mb": 812.5,
+  "uss_mb": 620.0,
+  "vms_mb": 1234.0,
+  "memory_percent": 58.2,
+  "cgroup_memory": {
+    "available": true,
+    "usage_mb": 1234.0,
+    "working_set_mb": 980.0,
+    "limit_mb": 4096.0,
+    "usage_percent": 30.1,
+    "working_set_percent": 23.9
+  },
+  "process_read_bps": 4915200.0,
+  "process_write_bps": 86245376.0,
+  "process_io_available": true,
+  "disk_read_bps": 12697600.0,
+  "disk_write_bps": 93061120.0,
+  "disk_usage": {
+    "/downloads": {"total_gb": 500.0, "used_gb": 320.0, "free_gb": 180.0, "used_percent": 64.0}
+  },
+  "network_recv_bps": 1024000.0,
+  "network_sent_bps": 512000.0,
+  "threads": 18,
+  "open_files": 124,
+  "connections": 5,
+  "children": [
+    {"pid": 12345, "name": "ffmpeg", "status": "running", "cpu_percent": 180.0, "rss_mb": 420.0, "threads": 12}
+  ],
+  "active_jobs": 3,
+  "queued_jobs": 18,
+  "is_paused": false,
+  "uptime_seconds": 15600.0
+}
+```
+
+**Error Responses**:
+- `403 Forbidden` if monitoring is disabled.
+
+
+**Notes**:
+- `cgroup_memory` is only populated in Docker/Linux containers; `available` is `false` otherwise.
+- `cpu_limit` is the container CPU limit as a core count; `null` if running without limits.
+- `process_cpu_percent` is normalized against `effective_cpu_count` (e.g. 200% usage on 4 CPUs shows as 50%).
+
+---
+
+### GET /api/stats/history
+**Purpose**: Time-series resource data for graphs. Requires `YTP_MONITOR_ENABLED=true`.
+
+**Query Parameters**:
+- `range` (optional): Time range suffix — `30s`, `5m`, `1h`, `30m` (default). Also accepts raw seconds.
+
+**Response**:
+```json
+[
+  {
+    "ts": 1719900000.0,
+    "process_cpu_percent": 34.2,
+    "system_cpu_percent": 61.0,
+    "rss_mb": 812.5,
+    "uss_mb": 620.0,
+    "memory_percent": 58.2,
+    "process_read_bps": 4915200.0,
+    "process_write_bps": 86245376.0,
+    "disk_read_bps": 12697600.0,
+    "disk_write_bps": 93061120.0,
+    "network_recv_bps": 1024000.0,
+    "network_sent_bps": 512000.0,
+    "threads": 18,
+    "open_files": 124,
+    "connections": 5,
+    "active_jobs": 3,
+    "queued_jobs": 18,
+    "is_paused": 0,
+    "children_count": 1
+  }
+]
+```
+
+**Error Responses**:
+- `403 Forbidden` if monitoring is disabled.
+
+**Notes**:
+- Returns up to 900 samples. Use `range` to limit the window.
+- Falls back to the persistent stats database when in-memory history is thin.
+
+---
+
+### GET /api/stats/bottlenecks
+**Purpose**: Analyzes recent samples and returns human-readable diagnosis. Requires `YTP_MONITOR_ENABLED=true`.
+
+**Response**:
+```json
+{
+  "status": "attention",
+  "window_samples": 30,
+  "averages": {
+    "process_cpu_percent": 82.0,
+    "system_cpu_percent": 74.0,
+    "memory_percent": 55.0,
+    "process_read_mbps": 4.7,
+    "process_write_mbps": 82.3,
+    "disk_read_mbps": 12.1,
+    "disk_write_mbps": 91.0,
+    "network_recv_mbps": 1.0,
+    "network_sent_mbps": 0.5,
+    "active_jobs": 3.0
+  },
+  "bottlenecks": [
+    {
+      "type": "cpu",
+      "level": "warning",
+      "summary": "Process CPU usage is high.",
+      "details": "Average process CPU usage was 82% over the last 30 samples. 3 active downloads were running."
+    },
+    {
+      "type": "process_io_write",
+      "level": "warning",
+      "summary": "The app appears to be write I/O bound.",
+      "details": "Process write rate averaged 82.3 MB/s while CPU averaged 82.0%."
+    }
+  ]
+}
+```
+
+**Possible Bottleneck Types**:
+| Type               | Threshold                   | Meaning                                              |
+| ------------------ | --------------------------- | ---------------------------------------------------- |
+| `cpu`              | Process CPU ≥ 80%           | CPU-bound; `warning` at 80%, `critical` at 95%       |
+| `memory`           | Memory ≥ 80%                | Memory pressure; `warning` at 80%, `critical` at 90% |
+| `process_io_write` | Write ≥ 20 MB/s + CPU < 60% | Write I/O bound                                      |
+| `process_io_read`  | Read ≥ 20 MB/s + CPU < 60%  | Read I/O bound                                       |
+| `disk_write`       | System disk write ≥ 50 MB/s | High system disk throughput (info)                   |
+| `disk_read`        | System disk read ≥ 50 MB/s  | High system disk throughput (info)                   |
+| `network_download` | Receive ≥ 50 MB/s           | High network throughput (info)                       |
+| `network_upload`   | Send ≥ 50 MB/s              | High network throughput (info)                       |
+
+**Error Responses**:
+- `403 Forbidden` if monitoring is disabled.
+
+**Notes**:
+- Analyzes the last 5 minutes of samples.
+- `status` is `ok` when no bottlenecks are found, `attention` when one or more exist, `unknown` when there is not enough data.
+- Averages are computed over the last 30 samples.
+
+---
+
+### GET /api/stats/stream
+**Purpose**: Server-Sent Events stream of resource samples. Requires `YTP_MONITOR_ENABLED=true`.
+
+**Response**: `Content-Type: text/event-stream`
+
+Each new sample is pushed as:
+```
+event: sample
+data: {"ts": 1719900000.0, "process_cpu_percent": 34.2, ...}
+```
+
+Bottleneck analysis is emitted when the diagnosis changes from the last result:
+```
+event: bottleneck
+data: {"status": "attention", "window_samples": 30, "averages": {...}, "bottlenecks": [...]}
+```
+
+Heartbeats are sent every 15 seconds:
+```
+: keepalive
+```
+
+On initial connection, the latest sample is sent immediately so the client has data without waiting for the next tick.
+
+**Error Responses**:
+- `403 Forbidden` if monitoring is disabled.
+
+**Notes**:
+- Use `EventSource` in the browser to consume this stream.
+- Samples arrive at the configured `YTP_MONITOR_INTERVAL` cadence.
+- The connection is kept alive indefinitely; clients should handle reconnection on disconnect.
 
 ---
 

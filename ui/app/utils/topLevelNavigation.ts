@@ -187,6 +187,17 @@ const NavItems: Array<NavDefinition> = [
     requires: 'console_enabled',
   },
   {
+    id: 'status',
+    section: 'tools',
+    group: 'tools',
+    label: 'Status',
+    pageLabel: 'Status',
+    description: 'Live resource usage.',
+    icon: 'i-lucide-activity',
+    to: '/status',
+    matchPath: '/status',
+  },
+  {
     id: 'diagnostics',
     section: 'tools',
     group: 'tools',

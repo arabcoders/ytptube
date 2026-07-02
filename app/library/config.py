@@ -256,6 +256,15 @@ class Config(metaclass=Singleton):
     yt_new_version: str = ""
     "The new yt-dlp version available."
 
+    monitor_enabled: bool = False
+    "Enable app resource monitoring."
+
+    monitor_interval: int = 30
+    "Sampling interval in seconds for app resource monitoring."
+
+    monitor_retention_hours: int = 24
+    "How many hours to retain raw monitor samples in the stats database."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -292,6 +301,8 @@ class Config(metaclass=Singleton):
         "flaresolverr_max_timeout",
         "flaresolverr_client_timeout",
         "flaresolverr_cache_ttl",
+        "monitor_interval",
+        "monitor_retention_hours",
     )
     "The variables that are integers."
 
@@ -317,6 +328,7 @@ class Config(metaclass=Singleton):
         "thumb_generate",
         "thumb_sidecar",
         "disable_exec",
+        "monitor_enabled",
     )
     "The variables that are booleans."
 
@@ -351,6 +363,7 @@ class Config(metaclass=Singleton):
         "check_for_updates",
         "new_version",
         "yt_new_version",
+        "monitor_enabled",
     )
     "The variables that are relevant to the frontend."
 

@@ -17,6 +17,9 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_DOWNLOAD_PATH               | Path to where the downloads will be saved                           | `/downloads`          |
 | YTP_MAX_WORKERS                 | The maximum number of workers to use for downloading                | `20`                  |
 | YTP_MAX_WORKERS_PER_EXTRACTOR   | The maximum number of concurrent downloads per extractor            | `2`                   |
+| YTP_MONITOR_ENABLED             | Enable app resource monitoring                                      | `false`               |
+| YTP_MONITOR_INTERVAL            | Sampling interval in seconds for resource monitoring                | `30`                  |
+| YTP_MONITOR_RETENTION_HOURS     | How many hours to retain raw monitor samples in the stats database  | `24`                  |
 | YTP_AUTH_USERNAME               | Username for basic authentication                                   | `(not_set)`           |
 | YTP_AUTH_PASSWORD               | Password for basic authentication                                   | `(not_set)`           |
 | YTP_CONSOLE_ENABLED             | Whether to enable the console                                       | `false`               |

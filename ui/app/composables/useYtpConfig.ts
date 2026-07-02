@@ -21,6 +21,7 @@ const state = reactive<ConfigState>({
     default_preset: 'default',
     instance_title: null,
     console_enabled: false,
+    monitor_enabled: false,
     browser_control_enabled: false,
     file_logging: false,
     is_native: false,
