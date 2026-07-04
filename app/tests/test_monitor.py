@@ -9,9 +9,139 @@ import pytest
 
 from app.library.config import Config
 from app.library.encoder import Encoder
+from app.library.monitor import _disk_usage, _process_tree_stats
 from app.library.monitor_bottlenecks import detect
 from app.library.monitor_store import MonitorStore
 from app.tests.helpers import make_test_temp_dir
+
+
+MB = 1024 * 1024
+
+
+@dataclass
+class FakeTimes:
+    user: float
+    system: float = 0
+
+
+@dataclass
+class FakeMem:
+    rss: int
+    vms: int
+    uss: int | None = None
+
+
+@dataclass
+class FakeIo:
+    read_bytes: int
+    write_bytes: int
+    read_count: int = 0
+    write_count: int = 0
+
+
+@dataclass
+class FakeThread:
+    id: int
+    name: str
+
+
+class FakeProcess:
+    def __init__(
+        self,
+        pid: int,
+        *,
+        created: float,
+        cpu: float,
+        rss: int,
+        uss: int,
+        vms: int,
+        read: int,
+        write: int,
+        threads: int,
+        files: int,
+        conns: int,
+        children: list | None = None,
+        name: str = "python",
+        status: str = "sleeping",
+        cmdline: list[str] | None = None,
+        thread_names: list[str] | None = None,
+    ):
+        self.pid = pid
+        self.created = created
+        self.cpu = cpu
+        self.rss = rss
+        self.uss = uss
+        self.vms = vms
+        self.read = read
+        self.write = write
+        self.thread_count = threads
+        self.files = files
+        self.conns = conns
+        self._children = children or []
+        self._name = name
+        self._status = status
+        self._cmdline = cmdline or [name]
+        self._thread_names = thread_names or []
+
+    def oneshot(self):
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def create_time(self):
+        return self.created
+
+    def cpu_times(self):
+        return FakeTimes(user=self.cpu)
+
+    def memory_info(self):
+        return FakeMem(rss=self.rss, vms=self.vms)
+
+    def memory_full_info(self):
+        return FakeMem(rss=self.rss, uss=self.uss, vms=self.vms)
+
+    def io_counters(self):
+        return FakeIo(read_bytes=self.read, write_bytes=self.write)
+
+    def num_threads(self):
+        return self.thread_count
+
+    def threads(self):
+        return [FakeThread(id=self.pid * 100 + idx, name=name) for idx, name in enumerate(self._thread_names, start=1)]
+
+    def open_files(self):
+        return [object()] * self.files
+
+    def net_connections(self, *, kind: str):
+        assert kind == "inet"
+        return [object()] * self.conns
+
+    def name(self):
+        return self._name
+
+    def status(self):
+        return self._status
+
+    def cmdline(self):
+        return self._cmdline
+
+    def children(self, *, recursive: bool = False):
+        if not recursive:
+            return list(self._children)
+
+        result = []
+        for child in self._children:
+            result.append(child)
+            result.extend(child.children(recursive=True))
+        return result
+
+
+def _key(proc: FakeProcess) -> tuple[int, float]:
+    return proc.pid, proc.created
 
 
 class TestMonitorStore:
@@ -123,6 +253,111 @@ class TestMonitorStore:
             "is_paused": 0,
             "children_count": 0,
         }
+
+
+class TestMonitorHelpers:
+    def test_tree_totals(self):
+        grandchild = FakeProcess(
+            3,
+            created=3,
+            cpu=5,
+            rss=300 * MB,
+            uss=80 * MB,
+            vms=3000 * MB,
+            read=50,
+            write=90,
+            threads=2,
+            files=0,
+            conns=0,
+            name="ffmpeg",
+            status="running",
+            cmdline=["ffmpeg", "-i", "input"],
+            thread_names=["ffmpeg-main", "ffmpeg-io"],
+        )
+        child = FakeProcess(
+            2,
+            created=2,
+            cpu=3,
+            rss=200 * MB,
+            uss=70 * MB,
+            vms=2000 * MB,
+            read=30,
+            write=70,
+            threads=3,
+            files=1,
+            conns=2,
+            children=[grandchild],
+            cmdline=["python", "worker.py"],
+            thread_names=["worker-main", "status-updates"],
+        )
+        root = FakeProcess(
+            1,
+            created=1,
+            cpu=3,
+            rss=100 * MB,
+            uss=50 * MB,
+            vms=1000 * MB,
+            read=300,
+            write=150,
+            threads=5,
+            files=2,
+            conns=1,
+            children=[child],
+        )
+
+        stats = _process_tree_stats(
+            root,  # type: ignore
+            last_cpu={_key(root): 1, _key(child): 2, _key(grandchild): 3},
+            last_io={
+                _key(root): {"available": True, "read_bytes": 100, "write_bytes": 50},
+                _key(child): {"available": True, "read_bytes": 10, "write_bytes": 20},
+                _key(grandchild): {"available": True, "read_bytes": 40, "write_bytes": 60},
+            },
+            elapsed=2,
+            effective_cpus=2,
+            labels={2: "download-abc: Example title"},
+        )
+
+        assert stats.process_cpu_percent == 125
+        assert stats.rss_mb == 600
+        assert stats.uss_mb == 200
+        assert stats.vms_mb == 6000
+        assert stats.process_read_bps == 115
+        assert stats.process_write_bps == 90
+        assert stats.threads == 10
+        assert stats.open_files == 3
+        assert stats.connections == 3
+        assert stats.children_count == 2
+        assert stats.children[0]["pid"] == 3
+        assert stats.children[0]["cpu_percent"] == 100
+        assert stats.children[0]["display_name"] == "ffmpeg"
+        assert stats.children[0]["cmdline"] == "ffmpeg -i input"
+        assert stats.children[0]["thread_names"] == ["ffmpeg-main", "ffmpeg-io"]
+        assert stats.children[1]["cpu_percent"] == 50
+        assert stats.children[1]["display_name"] == "download-abc: Example title"
+        assert stats.children[1]["cmdline"] == "python worker.py"
+        assert stats.children[1]["thread_names"] == ["worker-main", "status-updates"]
+
+    def test_disk_labels(self, tmp_path: Path) -> None:
+        downloads = tmp_path / "downloads"
+        temp = downloads / "tmp"
+        config = tmp_path / "config"
+        downloads.mkdir()
+        temp.mkdir()
+        config.mkdir()
+
+        result = _disk_usage(
+            [
+                (str(downloads), "Downloads", "downloads"),
+                (str(temp), "Temp", "temp"),
+                (str(config), "Config", "config"),
+            ]
+        )
+
+        assert result[str(downloads)]["label"] == "Downloads"
+        assert result[str(temp)]["label"] == "Temp"
+        assert result[str(temp)]["role"] == "temp"
+        assert result[str(config)]["label"] == "Config"
 
 
 class TestBottlenecks:

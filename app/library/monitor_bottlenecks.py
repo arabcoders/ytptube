@@ -35,10 +35,10 @@ def detect(history: list[dict[str, Any]]) -> dict[str, Any]:
 
     if cpu is not None and cpu >= 80:
         level: str = "critical" if cpu >= 95 else "warning"
-        details: str = f"Average process CPU usage was {cpu}% over the last {len(window)} samples."
+        details: str = f"Average app CPU usage was {cpu}% over the last {len(window)} samples."
         if active and active > 0:
             details += f" {int(active)} active downloads were running."
-        bottlenecks.append({"type": "cpu", "level": level, "summary": "Process CPU usage is high.", "details": details})
+        bottlenecks.append({"type": "cpu", "level": level, "summary": "App CPU usage is high.", "details": details})
 
     if mem is not None and mem >= 80:
         level: str = "critical" if mem >= 90 else "warning"
@@ -57,7 +57,7 @@ def detect(history: list[dict[str, Any]]) -> dict[str, Any]:
                 "type": "process_io_write",
                 "level": "warning",
                 "summary": "The app appears to be write I/O bound.",
-                "details": f"Process write rate averaged {_mbps(proc_write)} MB/s while CPU averaged {cpu}%.",
+                "details": f"App write rate averaged {_mbps(proc_write)} MB/s while CPU averaged {cpu}%.",
             }
         )
 
@@ -67,7 +67,7 @@ def detect(history: list[dict[str, Any]]) -> dict[str, Any]:
                 "type": "process_io_read",
                 "level": "warning",
                 "summary": "The app appears to be read I/O bound.",
-                "details": f"Process read rate averaged {_mbps(proc_read)} MB/s while CPU averaged {cpu}%.",
+                "details": f"App read rate averaged {_mbps(proc_read)} MB/s while CPU averaged {cpu}%.",
             }
         )
 

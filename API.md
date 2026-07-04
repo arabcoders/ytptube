@@ -2799,7 +2799,14 @@ or an error:
   "disk_read_bps": 12697600.0,
   "disk_write_bps": 93061120.0,
   "disk_usage": {
-    "/downloads": {"total_gb": 500.0, "used_gb": 320.0, "free_gb": 180.0, "used_percent": 64.0}
+    "/downloads": {
+      "label": "Downloads",
+      "role": "downloads",
+      "total_gb": 500.0,
+      "used_gb": 320.0,
+      "free_gb": 180.0,
+      "used_percent": 64.0
+    }
   },
   "network_recv_bps": 1024000.0,
   "network_sent_bps": 512000.0,
@@ -2807,8 +2814,19 @@ or an error:
   "open_files": 124,
   "connections": 5,
   "children": [
-    {"pid": 12345, "name": "ffmpeg", "status": "running", "cpu_percent": 180.0, "rss_mb": 420.0, "threads": 12}
+    {
+      "pid": 12345,
+      "name": "python",
+      "display_name": "download-a1b2c3: Example video",
+      "cmdline": "python -m app.main",
+      "status": "running",
+      "cpu_percent": 180.0,
+      "rss_mb": 420.0,
+      "threads": 12,
+      "thread_names": ["python", "status-updates"]
+    }
   ],
+  "children_count": 1,
   "active_jobs": 3,
   "queued_jobs": 18,
   "is_paused": false,
@@ -2866,6 +2884,7 @@ or an error:
 **Notes**:
 - Returns up to 900 samples. Use `range` to limit the window.
 - Falls back to the persistent stats database when in-memory history is thin.
+- Process fields in history have the same process-tree semantics as `/api/stats/latest`.
 
 ---
 
@@ -2893,14 +2912,14 @@ or an error:
     {
       "type": "cpu",
       "level": "warning",
-      "summary": "Process CPU usage is high.",
-      "details": "Average process CPU usage was 82% over the last 30 samples. 3 active downloads were running."
+      "summary": "App CPU usage is high.",
+      "details": "Average app CPU usage was 82% over the last 30 samples. 3 active downloads were running."
     },
     {
       "type": "process_io_write",
       "level": "warning",
       "summary": "The app appears to be write I/O bound.",
-      "details": "Process write rate averaged 82.3 MB/s while CPU averaged 82.0%."
+      "details": "App write rate averaged 82.3 MB/s while CPU averaged 82.0%."
     }
   ]
 }
@@ -2909,7 +2928,7 @@ or an error:
 **Possible Bottleneck Types**:
 | Type               | Threshold                   | Meaning                                              |
 | ------------------ | --------------------------- | ---------------------------------------------------- |
-| `cpu`              | Process CPU ≥ 80%           | CPU-bound; `warning` at 80%, `critical` at 95%       |
+| `cpu`              | Process-tree CPU ≥ 80%      | CPU-bound; `warning` at 80%, `critical` at 95%       |
 | `memory`           | Memory ≥ 80%                | Memory pressure; `warning` at 80%, `critical` at 90% |
 | `process_io_write` | Write ≥ 20 MB/s + CPU < 60% | Write I/O bound                                      |
 | `process_io_read`  | Read ≥ 20 MB/s + CPU < 60%  | Read I/O bound                                       |

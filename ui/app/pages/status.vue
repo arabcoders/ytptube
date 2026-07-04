@@ -150,7 +150,7 @@
           />
         </button>
 
-        <div v-if="isOpen('appState')" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        <div v-if="isOpen('appState')" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
           <StatCard
             label="Active"
             :value="String(sample.active_jobs)"
@@ -173,6 +173,13 @@
             :color="sample.is_paused ? 'warning' : 'success'"
           />
           <StatCard
+            label="Workers"
+            :value="fmtNum(workerCount)"
+            hint="Subprocesses"
+            icon="i-lucide-container"
+            :color="workerCount > 0 ? 'info' : 'neutral'"
+          />
+          <StatCard
             label="Uptime"
             :value="fmtUptime(sample.uptime_seconds)"
             icon="i-lucide-clock"
@@ -182,7 +189,7 @@
           <StatCard
             label="Threads"
             :value="fmtNum(sample.threads)"
-            hint="Main process"
+            hint="Process tree"
             icon="i-lucide-split"
             color="neutral"
           />
@@ -204,7 +211,7 @@
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-container" class="size-4 text-toned" />
-            <span>Child Processes</span>
+            <span>Child Processes ({{ workerCount }})</span>
           </div>
           <UIcon
             name="i-lucide-chevron-right"
@@ -233,11 +240,31 @@
                 :key="child.pid"
                 class="border-b border-default last:border-b-0"
               >
-                <td class="px-3 py-2 text-default font-medium">{{ child.name }}</td>
+                <td class="px-3 py-2 text-default font-medium">
+                  <p class="max-w-80 truncate" :title="childDisplayName(child)">
+                    {{ childDisplayName(child) }}
+                  </p>
+                  <p
+                    v-if="childMeta(child)"
+                    class="max-w-80 truncate text-xs font-normal text-toned"
+                    :title="childMeta(child)"
+                  >
+                    {{ childMeta(child) }}
+                  </p>
+                </td>
                 <td class="px-3 py-2 text-toned">{{ child.pid }}</td>
                 <td class="px-3 py-2 text-toned">{{ fmtPct(child.cpu_percent) }}</td>
                 <td class="px-3 py-2 text-toned">{{ fmtMb(child.rss_mb) }}</td>
-                <td class="px-3 py-2 text-toned">{{ fmtNum(child.threads) }}</td>
+                <td class="px-3 py-2 text-toned">
+                  <p>{{ fmtNum(child.threads) }}</p>
+                  <p
+                    v-if="threadNames(child)"
+                    class="max-w-56 truncate text-xs text-muted"
+                    :title="threadNames(child)"
+                  >
+                    {{ threadNames(child) }}
+                  </p>
+                </td>
                 <td class="px-3 py-2 text-toned">{{ child.status }}</td>
               </tr>
             </tbody>
@@ -268,7 +295,7 @@
           <StatCard
             v-for="(disk, path) in sample.disk_usage"
             :key="String(path)"
-            :label="diskLabel(String(path))"
+            :label="diskLabel(String(path), disk)"
             :value="`${disk.used_percent}%`"
             :hint="`${disk.free_gb} GB free of ${disk.total_gb} GB`"
             icon="i-lucide-folder"
@@ -379,13 +406,13 @@
         <template #description>
           <ul class="list-disc space-y-2 pl-5 text-sm text-default">
             <li>
-              <strong>App CPU</strong> - CPU usage of the YTPTube process, normalized against the
-              effective core count.
+              <strong>App CPU</strong> - CPU usage of the YTPTube process tree, including worker
+              subprocesses, normalized against the effective core count.
             </li>
             <li><strong>System CPU</strong> - Overall system-wide CPU usage across all cores.</li>
             <li>
-              <strong>RSS (Resident Set Size)</strong> - Physical memory (RAM) held by the process,
-              including shared libraries.
+              <strong>RSS (Resident Set Size)</strong> - Physical memory (RAM) held by the app
+              process tree, including shared libraries.
             </li>
             <li>
               <strong>USS (Unique Set Size)</strong> - Memory pages exclusive to this process.
@@ -397,8 +424,8 @@
             </li>
             <li>
               <strong>Child Processes</strong> - Sub-processes like <code>ffmpeg</code>,
-              <code>yt-dlp</code>, or browsers. Their resource usage is reported separately since
-              they often dominate total load.
+              <code>yt-dlp</code>, or browsers. Their resource usage is included in app totals and
+              listed separately because they often dominate total load.
             </li>
             <li>
               <strong>Pool</strong> - <em>Paused</em> means no new downloads start;
@@ -420,6 +447,7 @@
 import { useStorage } from '@vueuse/core';
 import StatCard from '~/components/StatCard.vue';
 import Chart from '~/components/Chart.vue';
+import type { ChildProcess } from '~/types/stats';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const pageShell = requirePageShell('status');
@@ -487,6 +515,11 @@ const networkTotalBps = computed(() => {
   return (s.network_recv_bps ?? 0) + (s.network_sent_bps ?? 0);
 });
 
+const workerCount = computed(() => {
+  const s = sample.value;
+  return s?.children_count ?? s?.children.length ?? 0;
+});
+
 const networkHint = computed(() => {
   const s = sample.value;
   if (!s) return '';
@@ -499,6 +532,7 @@ const cpuHint = computed(() => {
   let hint = `System ${fmtPct(s.system_cpu_percent)}`;
   const limit = s.cpu_limit;
   if (limit) hint += ` / Limit ${limit}`;
+  if (workerCount.value > 0) hint += ` / Workers ${workerCount.value}`;
   return hint;
 });
 
@@ -591,6 +625,20 @@ const fmtNum = (v: number | null | undefined): string => {
   return String(v);
 };
 
+const childDisplayName = (child: ChildProcess): string => child.display_name || child.name;
+
+const childMeta = (child: ChildProcess): string => {
+  const parts: string[] = [];
+  if (child.display_name && child.display_name !== child.name) parts.push(child.name);
+  if (child.cmdline && child.cmdline !== child.name && child.cmdline !== child.display_name) {
+    parts.push(child.cmdline);
+  }
+  return parts.join('  ');
+};
+
+const threadNames = (child: ChildProcess): string =>
+  child.thread_names?.filter(Boolean).join(', ') ?? '';
+
 const fmtChartPct = (v: number): string => `${Math.round(v)}%`;
 const fmtChartMb = (v: number): string => {
   if (v >= 1024) return `${(v / 1024).toFixed(1)}G`;
@@ -602,10 +650,17 @@ const fmtChartBps = (v: number): string => {
   return `${Math.round(v)}`;
 };
 
-const diskLabel = (path: string): string => {
-  if (path.endsWith('/downloads') || path.includes('download')) return 'Downloads';
-  if (path.endsWith('/tmp') || path.includes('temp')) return 'Temp';
-  if (path.endsWith('/config') || path.includes('config')) return 'Config';
+const diskLabel = (path: string, disk?: { label?: string; role?: string }): string => {
+  if (disk?.label) return disk.label;
+  if (disk?.role === 'temp') return 'Temp';
+  if (disk?.role === 'config') return 'Config';
+  if (disk?.role === 'downloads') return 'Downloads';
+
+  const value = path.toLowerCase().replace(/\/+$/, '');
+  if (value.endsWith('/tmp') || value.includes('/tmp/') || value.includes('temp')) return 'Temp';
+  if (value.endsWith('/config') || value.includes('/config/') || value.includes('config'))
+    return 'Config';
+  if (value.endsWith('/downloads') || value.includes('download')) return 'Downloads';
   return path;
 };
 

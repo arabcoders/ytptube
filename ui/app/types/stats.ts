@@ -21,6 +21,7 @@ export type StatsSample = {
   open_files: number | null;
   connections: number | null;
   children: ChildProcess[];
+  children_count: number;
   active_jobs: number;
   queued_jobs: number;
   is_paused: boolean;
@@ -40,6 +41,8 @@ export type CgroupMemory = {
 };
 
 export type DiskUsage = {
+  label?: string;
+  role?: string;
   total_gb: number;
   used_gb: number;
   free_gb: number;
@@ -49,10 +52,13 @@ export type DiskUsage = {
 export type ChildProcess = {
   pid: number;
   name: string;
+  display_name?: string;
+  cmdline?: string | null;
   status: string;
   cpu_percent: number;
   rss_mb: number | null;
   threads: number | null;
+  thread_names?: readonly string[];
 };
 
 export type StatsHistorySample = {
