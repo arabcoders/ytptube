@@ -129,6 +129,9 @@ class Config(metaclass=Singleton):
     extract_info_concurrency: int = 4
     """The number of concurrent extract_info calls allowed."""
 
+    extract_info_keep_alive: bool = False
+    """Keep extract_info worker processes alive between requests."""
+
     thumb_concurrency: int = 2
     """The number of concurrent ffmpeg thumbnail generations allowed."""
 
@@ -328,6 +331,7 @@ class Config(metaclass=Singleton):
         "thumb_generate",
         "thumb_sidecar",
         "disable_exec",
+        "extract_info_keep_alive",
         "monitor_enabled",
     )
     "The variables that are booleans."

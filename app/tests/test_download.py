@@ -545,6 +545,7 @@ class TestDownloadFlow:
             temp_dir=str(tmp_path),
         )
         download = Download(info=item)
+        monkeypatch.setattr(download._process_manager, "create_queue", lambda: DummyQueue())
 
         def fake_download():
             queue = download.status_queue
@@ -665,6 +666,7 @@ class TestDownloadFlow:
             is_live=True,
         )
         download = Download(info=item)
+        monkeypatch.setattr(download._process_manager, "create_queue", lambda: DummyQueue())
         final_file = tmp_path / "live.mp4"
         final_file.write_text("test content")
 
@@ -772,6 +774,7 @@ class TestDownloadFlow:
         monkeypatch.setattr("app.library.downloads.core.HookHandlers", Mock())
 
         download = Download(make_item(id="regular-id"))
+        monkeypatch.setattr(download._process_manager, "create_queue", lambda: DummyQueue())
 
         mock_proc = Mock()
         mock_proc.join = Mock(return_value=0)

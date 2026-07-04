@@ -25,6 +25,7 @@ from app.features.notifications.service import Notifications
 from app.features.presets.deps import get_presets_repo
 from app.features.tasks.definitions.deps import get_task_definitions_repo
 from app.features.tasks.service import Tasks
+from app.features.ytdlp.extractor import ExtractorPool
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.cache import Cache
 from app.library.config import Config
@@ -140,6 +141,7 @@ class Main:
         Conditions.get_instance().attach(self._app)
         DLFields.get_instance().attach(self._app)
         get_task_definitions_repo().attach(self._app)
+        ExtractorPool.get_instance().attach(self._app)
         DownloadQueue.get_instance().attach(self._app)
         UpdateChecker.get_instance().attach(self._app)
         ResourceTracker.get_instance().attach(self._app)

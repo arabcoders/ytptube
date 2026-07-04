@@ -37,6 +37,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_DEBUG                       | Whether to turn on debug mode                                       | `false`               |
 | YTP_DEBUGPY_PORT                | The port to use for the debugpy debugger                            | `5678`                |
 | YTP_EXTRACT_INFO_TIMEOUT        | The timeout for extracting video information                        | `70`                  |
+| YTP_EXTRACT_INFO_KEEP_ALIVE     | Keep extract info worker processes alive between requests           | `false`               |
 | YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |
 | YTP_PIP_IGNORE_UPDATES          | Do not update the custom pip packages                               | `false`               |
 | YTP_PICTURES_BACKENDS           | A comma separated list of pictures urls to use                      | `(not_set)`           |
@@ -80,6 +81,9 @@ or the `environment:` section in `compose.yaml` file.
 > `YTP_AUTO_CLEAR_HISTORY_DAYS`  `0` days means no automatic clearing of the download history. lowest value that will 
 > trigger the clearing is `1` day. This setting will **NOT** delete the downloaded files, it will only clear the 
 > history from the database.
+>
+> `YTP_EXTRACT_INFO_KEEP_ALIVE=true` keeps yt-dlp metadata extraction worker processes alive between requests. This
+> can make playlist extraction faster, but uses more idle memory. Leave it `false` to reduce idle resource usage.
 </details>
 
 # Browser extensions & bookmarklets

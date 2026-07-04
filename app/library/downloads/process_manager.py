@@ -5,8 +5,7 @@ import multiprocessing
 import os
 import signal
 from collections.abc import Callable
-
-from app.library.config import Config
+from typing import Any
 
 from .utils import wait_for_process_with_timeout
 
@@ -35,9 +34,18 @@ class ProcessManager:
         self.logger = logger
         self._context = multiprocessing.get_context()
         self.proc: multiprocessing.Process | None = None
-        self.cancel_event = Config.get_manager().Event()
+        self._cancel_event: Any | None = None
         self.cancelled = False
         self.cancel_in_progress = False
+
+    @property
+    def cancel_event(self) -> Any:
+        if self._cancel_event is None:
+            self._cancel_event = self._context.Event()
+        return self._cancel_event
+
+    def create_queue(self) -> multiprocessing.Queue:
+        return self._context.Queue()
 
     def create_process(self, target: Callable[[], None]) -> multiprocessing.Process:
         """
