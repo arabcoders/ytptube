@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "d24f5eaa6d24c68c24ef57afe7fed217f6100f65",
-    "date": "2026-07-02T21:21:50+00:00",
+    "full_sha": "f702913c94d51b645da504c42ac34c452bec91ed",
+    "date": "2026-07-04T09:18:00+00:00",
     "commits": [
+      {
+        "sha": "f702913c",
+        "full_sha": "f702913c94d51b645da504c42ac34c452bec91ed",
+        "message": "refactor: reduce idle resource usage",
+        "author": "arabcoders",
+        "date": "2026-07-04T09:18:00+00:00"
+      },
+      {
+        "sha": "c73dfb3b",
+        "full_sha": "c73dfb3bcd20703cac51d9cfd248f81a69d1095c",
+        "message": "fix: group sub processes into app resources usage.",
+        "author": "arabcoders",
+        "date": "2026-07-04T09:14:47+00:00"
+      },
       {
         "sha": "d24f5eaa",
         "full_sha": "d24f5eaa6d24c68c24ef57afe7fed217f6100f65",
