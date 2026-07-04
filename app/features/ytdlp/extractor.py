@@ -67,6 +67,7 @@ class ExtractorConfig:
         concurrency: int = 4,
         timeout: float = 60.0,
         wait_threshold: float = 0.2,
+        keep_alive: bool = False,
     ):
         """
         Initialize extractor configuration.
@@ -75,11 +76,13 @@ class ExtractorConfig:
             concurrency: Maximum number of concurrent extract operations
             timeout: Timeout for extract operations in seconds
             wait_threshold: Log warning if waiting exceeds this threshold in seconds
+            keep_alive: Keep worker processes alive between extract operations
 
         """
-        self.concurrency = concurrency
-        self.timeout = timeout
-        self.wait_threshold = wait_threshold
+        self.concurrency: int = concurrency
+        self.timeout: float = timeout
+        self.wait_threshold: float = wait_threshold
+        self.keep_alive: bool = keep_alive
 
 
 def _sleep_timeout(config: dict[str, Any], timeout: float, budget_sleep: bool) -> float:
@@ -103,6 +106,7 @@ class ExtractorPool(metaclass=Singleton):
     def __init__(self):
         """Initialize the extractor pool."""
         self._pool: ProcessPoolExecutor | None = None
+        self._transient_pools: set[ProcessPoolExecutor] = set()
         self._semaphore: asyncio.Semaphore | None = None
         self._config: ExtractorConfig | None = None
 
@@ -122,23 +126,25 @@ class ExtractorPool(metaclass=Singleton):
         app.on_shutdown.append(self.shutdown)
         Services.get_instance().add(type(self).__name__, self)
 
-    def _ensure_initialized(self, config: ExtractorConfig) -> None:
-        """
-        Ensure pool and semaphore are initialized.
-
-        Args:
-            config: Extractor configuration
-
-        """
+    def _ensure_semaphore(self, config: ExtractorConfig) -> None:
+        """Ensure concurrency limiter is initialized without spawning workers."""
         if self._config is None or self._config.concurrency != config.concurrency:
             self._config = config
 
         if self._semaphore is None:
             self._semaphore = asyncio.Semaphore(config.concurrency)
 
+    def _get_keep_alive_pool(self, config: ExtractorConfig) -> ProcessPoolExecutor:
         if self._pool is None:
             self._pool = ProcessPoolExecutor(max_workers=config.concurrency, **_get_process_pool_kwargs())
-            LOG.info("Initialized extractor process pool with %s workers", config.concurrency)
+            LOG.info("Initialized persistent extractor process pool with %s workers", config.concurrency)
+        return self._pool
+
+    def _get_transient_pool(self) -> ProcessPoolExecutor:
+        pool = ProcessPoolExecutor(max_workers=1, **_get_process_pool_kwargs())
+        self._transient_pools.add(pool)
+        LOG.debug("Initialized lazy extractor process pool.")
+        return pool
 
     def get_pool(self, config: ExtractorConfig) -> ProcessPoolExecutor:
         """
@@ -151,11 +157,10 @@ class ExtractorPool(metaclass=Singleton):
             ProcessPoolExecutor instance
 
         """
-        self._ensure_initialized(config)
-        if self._pool is None:
-            msg = "Process pool not initialized"
-            raise RuntimeError(msg)
-        return self._pool
+        self._ensure_semaphore(config)
+        if config.keep_alive:
+            return self._get_keep_alive_pool(config)
+        return self._get_transient_pool()
 
     def get_semaphore(self, config: ExtractorConfig) -> asyncio.Semaphore:
         """
@@ -168,18 +173,33 @@ class ExtractorPool(metaclass=Singleton):
             asyncio.Semaphore instance
 
         """
-        self._ensure_initialized(config)
+        self._ensure_semaphore(config)
         if self._semaphore is None:
             msg = "Semaphore not initialized"
             raise RuntimeError(msg)
         return self._semaphore
 
-    async def shutdown(self) -> None:
+    def release_pool(self, pool: ProcessPoolExecutor) -> None:
+        """Release a lazy executor after its work is complete."""
+        if pool is self._pool:
+            return
+
+        self._transient_pools.discard(pool)
+        try:
+            pool.shutdown(wait=False, cancel_futures=True)
+            LOG.debug("Lazy extractor process pool shutdown requested.")
+        except Exception as exc:
+            LOG.exception(
+                "Failed to shut down lazy extractor process pool.",
+                extra={"exception_type": type(exc).__name__},
+            )
+
+    async def shutdown(self, _app: web.Application | None = None) -> None:
         """Shutdown the extractor pool and clean up resources."""
         if self._pool is not None:
             try:
-                self._pool.shutdown(wait=False, cancel_futures=False)
-                LOG.debug("Extractor process pool shutdown complete")
+                self._pool.shutdown(wait=False, cancel_futures=True)
+                LOG.debug("Persistent extractor process pool shutdown requested.")
             except Exception as exc:
                 LOG.exception(
                     "Failed to shut down the extractor process pool.",
@@ -187,6 +207,9 @@ class ExtractorPool(metaclass=Singleton):
                 )
             else:
                 self._pool = None
+
+        for pool in list(self._transient_pools):
+            self.release_pool(pool)
 
         self._semaphore = None
         self._config = None
@@ -425,6 +448,7 @@ async def fetch_info(
             concurrency=conf.extract_info_concurrency,
             timeout=conf.extract_info_timeout,
             wait_threshold=0.2,
+            keep_alive=conf.extract_info_keep_alive,
         )
 
     pool_manager: ExtractorPool = ExtractorPool.get_instance()
@@ -432,6 +456,7 @@ async def fetch_info(
 
     await semaphore.acquire()
     loop = asyncio.get_running_loop()
+    executor: ProcessPoolExecutor | None = None
 
     safe_config = _sanitize_config(config)
     safe_kwargs = _sanitize_picklable(kwargs)
@@ -440,7 +465,7 @@ async def fetch_info(
 
     try:
         try:
-            executor: ProcessPoolExecutor = pool_manager.get_pool(extractor_config)
+            executor = pool_manager.get_pool(extractor_config)
 
             return await asyncio.wait_for(
                 fut=loop.run_in_executor(
@@ -465,6 +490,10 @@ async def fetch_info(
             raise
 
         except Exception as exc:
+            if executor is not None:
+                pool_manager.release_pool(executor)
+                executor = None
+
             LOG.warning(
                 "yt-dlp extraction for '%s' fell back to the thread pool after the process pool failed.",
                 url,
@@ -500,4 +529,6 @@ async def fetch_info(
                 timeout=timeout,
             )
     finally:
+        if executor is not None:
+            pool_manager.release_pool(executor)
         semaphore.release()

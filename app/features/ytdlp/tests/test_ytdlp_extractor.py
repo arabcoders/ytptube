@@ -42,7 +42,17 @@ class TestProcessPoolConfiguration:
         assert _get_process_pool_kwargs() == {}
         get_context.assert_not_called()
 
-    def test_init_pool_kwargs(self, monkeypatch):
+    def test_semaphore_does_not_spawn_pool(self, monkeypatch):
+        executor_cls = MagicMock()
+        monkeypatch.setattr("app.features.ytdlp.extractor.ProcessPoolExecutor", executor_cls)
+
+        pool = ExtractorPool.get_instance()
+        semaphore = pool.get_semaphore(ExtractorConfig(concurrency=3))
+
+        assert semaphore is pool.get_semaphore(ExtractorConfig(concurrency=3))
+        executor_cls.assert_not_called()
+
+    def test_keep_alive_pool_kwargs(self, monkeypatch):
         context = object()
         monkeypatch.setattr("app.features.ytdlp.extractor._get_process_pool_kwargs", lambda: {"mp_context": context})
 
@@ -51,10 +61,26 @@ class TestProcessPoolConfiguration:
         monkeypatch.setattr("app.features.ytdlp.extractor.ProcessPoolExecutor", executor_cls)
 
         pool = ExtractorPool.get_instance()
-        pool._ensure_initialized(ExtractorConfig(concurrency=3))
+        result = pool.get_pool(ExtractorConfig(concurrency=3, keep_alive=True))
 
         executor_cls.assert_called_once_with(max_workers=3, mp_context=context)
-        assert pool.get_pool(ExtractorConfig(concurrency=3)) is executor
+        assert result is executor
+        assert pool.get_pool(ExtractorConfig(concurrency=3, keep_alive=True)) is executor
+
+    def test_one_shot_pool(self, monkeypatch):
+        context = object()
+        monkeypatch.setattr("app.features.ytdlp.extractor._get_process_pool_kwargs", lambda: {"mp_context": context})
+
+        executor = MagicMock()
+        executor_cls = MagicMock(return_value=executor)
+        monkeypatch.setattr("app.features.ytdlp.extractor.ProcessPoolExecutor", executor_cls)
+
+        pool = ExtractorPool.get_instance()
+        result = pool.get_pool(ExtractorConfig(concurrency=3))
+        pool.release_pool(result)
+
+        executor_cls.assert_called_once_with(max_workers=1, mp_context=context)
+        executor.shutdown.assert_called_once_with(wait=False, cancel_futures=True)
 
 
 class TestExtractInfo:

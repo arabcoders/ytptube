@@ -43,15 +43,14 @@
       </div>
     </div>
 
-    <div v-if="!report && isLoading" class="ytp-card flex min-h-72 items-center justify-center">
-      <div class="flex flex-col items-center gap-3 text-center text-toned">
-        <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-info" />
-        <div class="space-y-1">
-          <p class="text-sm font-medium text-default">Loading</p>
-          <p class="text-xs">Reading tools, paths, and configured extras.</p>
-        </div>
-      </div>
-    </div>
+    <UAlert
+      v-if="!report && isLoading"
+      color="info"
+      variant="soft"
+      icon="i-lucide-loader-circle"
+      title="Loading"
+      description="Reading tools, paths, and configured extras."
+    />
 
     <UAlert
       v-else-if="!report && lastError"

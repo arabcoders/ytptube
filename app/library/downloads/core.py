@@ -336,9 +336,10 @@ class Download:
 
             if self.is_live:
                 signal.signal(signal.SIGINT, signal.default_int_handler)
+                cancel_event = self._process_manager.cancel_event
 
                 def trigger_live_cancel() -> None:
-                    self._process_manager.cancel_event.wait()
+                    cancel_event.wait()
                     cls._interrupted = True
                     cls.to_screen("[info] Interrupt received, exiting cleanly...")
                     if "posix" == os.name:
@@ -525,7 +526,7 @@ class Download:
             Process exit code or None
 
         """
-        status_queue: Any = Config.get_manager().Queue()
+        status_queue: Any = self._process_manager.create_queue()
         self.status_queue = status_queue
 
         temp_path = self._temp_manager.create_temp_path()

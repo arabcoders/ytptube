@@ -712,10 +712,6 @@ const syncFromUrl = (): { page: number } => {
   return { page };
 };
 
-watch(masterSelectAll, (value) => {
-  selectedElms.value = value ? [...displayedItemPaths.value] : [];
-});
-
 watch(
   displayedItemPaths,
   (paths) => {
@@ -966,7 +962,14 @@ const toggleDisplayStyle = (): void => {
 };
 
 const toggleMasterSelection = (): void => {
-  masterSelectAll.value = !masterSelectAll.value;
+  if (masterSelectAll.value) {
+    selectedElms.value = [];
+    masterSelectAll.value = false;
+    return;
+  }
+
+  selectedElms.value = [...displayedItemPaths.value];
+  masterSelectAll.value = true;
 };
 
 const handleCreateDirectory = async (): Promise<void> => {

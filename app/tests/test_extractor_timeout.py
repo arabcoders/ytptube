@@ -21,12 +21,22 @@ class _Pool:
     def __init__(self) -> None:
         self.semaphore = asyncio.Semaphore(1)
         self.executor = object()
+        self.released: list[object] = []
 
     def get_semaphore(self, _config: extractor.ExtractorConfig) -> asyncio.Semaphore:
         return self.semaphore
 
     def get_pool(self, _config: extractor.ExtractorConfig) -> object:
         return self.executor
+
+    def release_pool(self, executor: object) -> None:
+        self.released.append(executor)
+
+
+class _Config:
+    extract_info_concurrency = 2
+    extract_info_timeout = 30
+    extract_info_keep_alive = True
 
 
 def test_sleep_budget() -> None:
@@ -60,6 +70,7 @@ async def test_timeout_no_retry(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert loop.calls == [pool.executor]
     assert seen == [130]
+    assert pool.released == [pool.executor]
     assert not pool.semaphore.locked()
 
 
@@ -91,6 +102,7 @@ async def test_pool_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result == expected
     assert loop.calls == [pool.executor, None]
     assert seen == [130, 130]
+    assert pool.released == [pool.executor]
     assert not pool.semaphore.locked()
 
 
@@ -118,4 +130,31 @@ async def test_pool_process_safe(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result == expected
     assert loop.calls == [pool.executor]
     assert sync.call_args.kwargs["process_safe"] is True
+    assert pool.released == [pool.executor]
     assert not pool.semaphore.locked()
+
+
+@pytest.mark.asyncio
+async def test_config_keep_alive(monkeypatch: pytest.MonkeyPatch) -> None:
+    pool = _Pool()
+    loop = _Loop()
+    seen: list[extractor.ExtractorConfig] = []
+
+    def get_semaphore(config: extractor.ExtractorConfig) -> asyncio.Semaphore:
+        seen.append(config)
+        return pool.semaphore
+
+    async def fake_wait_for(*, fut, timeout):  # noqa: ARG001
+        return ({"id": "ok"}, [])
+
+    monkeypatch.setattr(extractor.ExtractorPool, "get_instance", classmethod(lambda cls: pool))
+    monkeypatch.setattr(pool, "get_semaphore", get_semaphore)
+    monkeypatch.setattr("app.library.config.Config.get_instance", staticmethod(lambda: _Config()))
+    monkeypatch.setattr(extractor.asyncio, "get_running_loop", lambda: loop)
+    monkeypatch.setattr(extractor.asyncio, "wait_for", fake_wait_for)
+
+    await extractor.fetch_info(config={}, url="https://example.com")
+
+    assert seen[0].concurrency == 2
+    assert seen[0].timeout == 30
+    assert seen[0].keep_alive is True
