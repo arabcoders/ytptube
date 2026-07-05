@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "415a57c7ec9a74ba3ccbc37e22267831b524424c",
-    "date": "2026-07-05T01:22:11+00:00",
+    "full_sha": "d625942c87a6f92f4fa908d9a9e49ede554cc7aa",
+    "date": "2026-07-05T15:19:03+00:00",
     "commits": [
+      {
+        "sha": "d625942c",
+        "full_sha": "d625942c87a6f92f4fa908d9a9e49ede554cc7aa",
+        "message": "feat: add resource monitoring and diagnostics statistics",
+        "author": "arabcoders",
+        "date": "2026-07-05T15:19:03+00:00"
+      },
       {
         "sha": "415a57c7",
         "full_sha": "415a57c7ec9a74ba3ccbc37e22267831b524424c",
