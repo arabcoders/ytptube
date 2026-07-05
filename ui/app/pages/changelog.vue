@@ -24,7 +24,11 @@
           :variant="toggleFilter ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-filter"
-          @click="toggleFilter = !toggleFilter"
+          @click="
+            () => {
+              toggleFilter = !toggleFilter;
+            }
+          "
         >
           <span>Filter</span>
         </UButton>

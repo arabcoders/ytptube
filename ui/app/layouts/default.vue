@@ -139,7 +139,11 @@
                       variant="ghost"
                       size="sm"
                       icon="i-lucide-gauge"
-                      @click="showLimits = true"
+                      @click="
+                        () => {
+                          showLimits = true;
+                        }
+                      "
                     >
                       <span class="hidden xl:inline">Limits</span>
                     </UButton>
@@ -154,7 +158,11 @@
                       aria-label="Search routes and actions"
                       title="Search routes and actions"
                       class="shrink-0 lg:hidden"
-                      @click="showRouteSearch = true"
+                      @click="
+                        () => {
+                          showRouteSearch = true;
+                        }
+                      "
                     />
 
                     <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
@@ -166,7 +174,7 @@
                       variant="ghost"
                       size="sm"
                       icon="i-lucide-refresh-cw"
-                      @click="$router.go(0)"
+                      @click="() => router.go(0)"
                     >
                       <span class="hidden xl:inline">Reload</span>
                     </UButton>
@@ -233,7 +241,7 @@
                             <button
                               type="button"
                               class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                              @click="$router.go(0)"
+                              @click="() => router.go(0)"
                             >
                               click here
                             </button>
@@ -254,7 +262,7 @@
                             <button
                               type="button"
                               class="font-semibold text-highlighted underline-offset-2 hover:underline"
-                              @click="$router.go(0)"
+                              @click="() => router.go(0)"
                             >
                               reload the page
                             </button>
@@ -471,6 +479,7 @@ const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
 const socket = useAppSocket();
 const config = useYtpConfig();
 const route = useRoute();
+const router = useRouter();
 const root = ref<InstanceType<typeof AppRoot> | null>(null);
 const app_shutdown = ref<boolean>(false);
 const checkingUpdates = ref(false);

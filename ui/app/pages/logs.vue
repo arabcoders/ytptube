@@ -59,7 +59,11 @@
           :variant="toggleFilter ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-filter"
-          @click="toggleFilter = !toggleFilter"
+          @click="
+            () => {
+              toggleFilter = !toggleFilter;
+            }
+          "
         >
           Filter
         </UButton>
@@ -72,7 +76,11 @@
           :aria-pressed="textWrap"
           :title="textWrap ? 'Text wrap enabled' : 'Text wrap disabled'"
           :class="['transition-all', textWrap ? '-translate-y-px ring ring-default shadow-xs' : '']"
-          @click="textWrap = !textWrap"
+          @click="
+            () => {
+              textWrap = !textWrap;
+            }
+          "
         >
           Wrap
         </UButton>

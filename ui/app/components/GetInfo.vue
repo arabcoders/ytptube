@@ -65,7 +65,11 @@
           size="sm"
           icon="i-lucide-wrap-text"
           :disabled="isLoading || !hasVisibleText"
-          @click="wrap = !wrap"
+          @click="
+            () => {
+              wrap = !wrap;
+            }
+          "
         >
           <span class="hidden sm:inline">Wrap</span>
         </UButton>

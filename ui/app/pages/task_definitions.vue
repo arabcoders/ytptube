@@ -34,7 +34,11 @@
           variant="outline"
           size="sm"
           icon="i-lucide-search"
-          @click="inspect = true"
+          @click="
+            () => {
+              inspect = true;
+            }
+          "
         >
           <span>Inspect</span>
         </UButton>

@@ -100,7 +100,11 @@
                   icon="i-lucide-info"
                   square
                   class="shrink-0"
-                  @click="show_description = !show_description"
+                  @click="
+                    () => {
+                      show_description = !show_description;
+                    }
+                  "
                 />
 
                 <div class="min-w-0 flex-1">
@@ -161,7 +165,11 @@
                 icon="i-lucide-settings-2"
                 size="lg"
                 class="w-full justify-center"
-                @click="showAdvanced = !showAdvanced"
+                @click="
+                  () => {
+                    showAdvanced = !showAdvanced;
+                  }
+                "
               >
                 {{ showAdvanced ? 'Hide Options' : 'Show Options' }}
               </UButton>
@@ -550,6 +558,7 @@ import type { item_request } from '~/types/item';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
 import { useDialog } from '~/composables/useDialog';
+import { getSeparatorsName, shortPath } from '~/utils';
 
 const props = defineProps<{ item?: Partial<item_request> }>();
 const emitter = defineEmits<{

@@ -82,7 +82,11 @@
                 color="neutral"
                 :variant="wrapException ? 'soft' : 'outline'"
                 icon="i-lucide-wrap-text"
-                @click="wrapException = !wrapException"
+                @click="
+                  () => {
+                    wrapException = !wrapException;
+                  }
+                "
               >
                 <span class="hidden sm:inline">Wrap</span>
               </UButton>
@@ -176,7 +180,11 @@
                 color="neutral"
                 :variant="wrapFields ? 'soft' : 'outline'"
                 icon="i-lucide-wrap-text"
-                @click="wrapFields = !wrapFields"
+                @click="
+                  () => {
+                    wrapFields = !wrapFields;
+                  }
+                "
               >
                 <span class="hidden sm:inline">Wrap</span>
               </UButton>
@@ -315,7 +323,11 @@
                 color="neutral"
                 :variant="wrapRaw ? 'soft' : 'outline'"
                 icon="i-lucide-wrap-text"
-                @click="wrapRaw = !wrapRaw"
+                @click="
+                  () => {
+                    wrapRaw = !wrapRaw;
+                  }
+                "
               >
                 <span class="hidden sm:inline">Wrap</span>
               </UButton>

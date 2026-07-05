@@ -8,7 +8,11 @@
           variant="ghost"
           size="sm"
           :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          @click="showImport = !showImport"
+          @click="
+            () => {
+              showImport = !showImport;
+            }
+          "
         >
           {{ showImport ? 'Hide' : 'Show' }} import
         </UButton>
@@ -387,7 +391,11 @@
               variant="outline"
               icon="i-lucide-trash"
               :disabled="addInProgress"
-              @click="form.request.headers.splice(index, 1)"
+              @click="
+                () => {
+                  form.request.headers.splice(index, 1);
+                }
+              "
             >
               Remove
             </UButton>

@@ -77,7 +77,11 @@
             size="xs"
             :color="filters.flagKind === item.value ? 'primary' : 'neutral'"
             :variant="filters.flagKind === item.value ? 'solid' : 'outline'"
-            @click="filters.flagKind = item.value"
+            @click="
+              () => {
+                filters.flagKind = item.value;
+              }
+            "
           >
             {{ item.label }}
           </UButton>
