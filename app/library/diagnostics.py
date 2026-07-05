@@ -17,6 +17,8 @@ from typing import Any, Literal
 
 from app.library.config import Config
 from app.library.httpx_client import resolve_curl_transport
+from app.library.monitor import ResourceTracker
+from app.library.monitor_bottlenecks import detect as detect_bottlenecks
 
 CheckStatus = Literal["pass", "fail", "warn", "skip"]
 ReportStatus = Literal["ok", "degraded", "error"]
@@ -625,6 +627,71 @@ def _requirements() -> dict[str, Any]:
     }
 
 
+def _avg(rows: list[dict[str, Any]], key: str) -> float | None:
+    values = [value for row in rows if (value := row.get(key)) is not None]
+    if not values:
+        return None
+    return round(sum(values) / len(values), 2)
+
+
+def _max(rows: list[dict[str, Any]], key: str) -> float | None:
+    values = [value for row in rows if (value := row.get(key)) is not None]
+    return round(max(values), 2) if values else None
+
+
+def _stats_summary(history: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "averages": {
+            "process_cpu_percent": _avg(history, "process_cpu_percent"),
+            "system_cpu_percent": _avg(history, "system_cpu_percent"),
+            "memory_percent": _avg(history, "memory_percent"),
+            "rss_mb": _avg(history, "rss_mb"),
+            "process_read_bps": _avg(history, "process_read_bps"),
+            "process_write_bps": _avg(history, "process_write_bps"),
+            "disk_read_bps": _avg(history, "disk_read_bps"),
+            "disk_write_bps": _avg(history, "disk_write_bps"),
+            "network_recv_bps": _avg(history, "network_recv_bps"),
+            "network_sent_bps": _avg(history, "network_sent_bps"),
+            "active_jobs": _avg(history, "active_jobs"),
+            "queued_jobs": _avg(history, "queued_jobs"),
+            "children_count": _avg(history, "children_count"),
+        },
+        "max": {
+            "process_cpu_percent": _max(history, "process_cpu_percent"),
+            "system_cpu_percent": _max(history, "system_cpu_percent"),
+            "memory_percent": _max(history, "memory_percent"),
+            "rss_mb": _max(history, "rss_mb"),
+            "process_read_bps": _max(history, "process_read_bps"),
+            "process_write_bps": _max(history, "process_write_bps"),
+            "disk_read_bps": _max(history, "disk_read_bps"),
+            "disk_write_bps": _max(history, "disk_write_bps"),
+            "network_recv_bps": _max(history, "network_recv_bps"),
+            "network_sent_bps": _max(history, "network_sent_bps"),
+            "active_jobs": _max(history, "active_jobs"),
+            "queued_jobs": _max(history, "queued_jobs"),
+            "children_count": _max(history, "children_count"),
+        },
+    }
+
+
+def _stats(config: Config) -> dict[str, Any]:
+    if not config.monitor_enabled:
+        return {"enabled": False}
+
+    try:
+        tracker: ResourceTracker = ResourceTracker.get_instance()
+        history = tracker.snapshot(range_seconds=3600)
+        return {
+            "enabled": True,
+            "window_seconds": 3600,
+            "sample_count": len(history),
+            "summary": _stats_summary(history),
+            "bottlenecks": detect_bottlenecks(history),
+        }
+    except Exception as exc:
+        return {"enabled": True, "error": f"Stats unavailable. {exc!s}"}
+
+
 def _summarize(checks: list[DiagnosticCheck]) -> tuple[ReportStatus, dict[str, int]]:
     summary = {"total": len(checks), "pass": 0, "fail": 0, "warn": 0, "skip": 0, "required_failed": 0}
 
@@ -651,6 +718,7 @@ def _make_report(config: Config, checks: list[DiagnosticCheck]) -> dict[str, Any
         "summary": summary,
         "runtime": _make_runtime(config),
         "requirements": _requirements(),
+        "stats": _stats(config),
         "checks": [check.to_dict() for check in checks],
     }
 

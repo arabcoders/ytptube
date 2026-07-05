@@ -1,3 +1,5 @@
+import type { BottlenecksResponse } from '~/types/stats';
+
 export type DiagnosticStatus = 'pass' | 'fail' | 'warn' | 'skip';
 export type DiagnosticReportStatus = 'ok' | 'degraded' | 'error';
 
@@ -46,11 +48,44 @@ export type DiagnosticRequirements = {
   };
 };
 
+export type DiagnosticStats =
+  | {
+      enabled: false;
+    }
+  | {
+      enabled: true;
+      window_seconds?: number;
+      sample_count?: number;
+      summary?: {
+        averages: DiagnosticStatsValues;
+        max: DiagnosticStatsValues;
+      };
+      bottlenecks?: BottlenecksResponse;
+      error?: string;
+    };
+
+export type DiagnosticStatsValues = {
+  process_cpu_percent: number | null;
+  system_cpu_percent: number | null;
+  memory_percent: number | null;
+  rss_mb: number | null;
+  process_read_bps: number | null;
+  process_write_bps: number | null;
+  disk_read_bps: number | null;
+  disk_write_bps: number | null;
+  network_recv_bps: number | null;
+  network_sent_bps: number | null;
+  active_jobs: number | null;
+  queued_jobs: number | null;
+  children_count: number | null;
+};
+
 export type DiagnosticsResponse = {
   status: DiagnosticReportStatus;
   generated_at: number;
   summary: DiagnosticSummary;
   runtime: DiagnosticRuntime;
   requirements: DiagnosticRequirements;
+  stats: DiagnosticStats;
   checks: Array<DiagnosticCheck>;
 };

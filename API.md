@@ -2713,12 +2713,42 @@ or an error:
       "note": ""
     }
   },
+  "stats": {
+    "enabled": true,
+    "window_seconds": 3600,
+    "sample_count": 10,
+    "summary": {
+      "averages": {
+        "process_cpu_percent": 12.5,
+        "system_cpu_percent": 30.1,
+        "memory_percent": 48.2,
+        "rss_mb": 256.4
+      },
+      "max": {
+        "process_cpu_percent": 42.5,
+        "system_cpu_percent": 70.1,
+        "memory_percent": 55.2,
+        "rss_mb": 320.8
+      }
+    },
+    "bottlenecks": {
+      "status": "ok",
+      "window_samples": 10,
+      "averages": {
+        "process_cpu_percent": 12.5,
+        "system_cpu_percent": 30.1,
+        "memory_percent": 48.2
+      },
+      "bottlenecks": []
+    }
+  },
   "checks": []
 }
 ```
 
 **Notes**:
 - Unexpected collection errors are returned as an `error`.
+- `stats.enabled` is `false` when `YTP_MONITOR_ENABLED` is disabled. When enabled, diagnostics includes one-hour aggregate stats and bottleneck analysis when available.
 
 ---
 

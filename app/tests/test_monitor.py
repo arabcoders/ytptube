@@ -255,6 +255,34 @@ class TestMonitorStore:
         }
 
 
+class TestResourceTracker:
+    def setup_method(self):
+        from app.library.monitor import ResourceTracker
+
+        ResourceTracker._reset_singleton()
+
+    def teardown_method(self):
+        from app.library.monitor import ResourceTracker
+
+        ResourceTracker._reset_singleton()
+
+    def test_snapshot_reads_store(self):
+        from app.library.monitor import ResourceTracker
+
+        tracker = ResourceTracker.get_instance()
+        tracker._store = MagicMock()
+        tracker._store.query.return_value = [
+            {"ts": 100.0, "process_cpu_percent": 10.0},
+            {"ts": 130.0, "process_cpu_percent": 20.0},
+        ]
+
+        with patch("app.library.monitor.time.time", return_value=200.0):
+            result = tracker.snapshot(range_seconds=120)
+
+        tracker._store.query.assert_called_once_with(limit=900, since=80.0)
+        assert len(result) == 2
+
+
 class TestMonitorHelpers:
     def test_tree_totals(self):
         grandchild = FakeProcess(

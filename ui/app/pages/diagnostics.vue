@@ -340,6 +340,64 @@ const shareText = computed(() => {
   lines.push(`- Python: ${current.requirements.python.current}`);
   lines.push(`- Started: ${formatIsoTimestamp(current.runtime.started)}`);
 
+  if (current.stats?.enabled) {
+    lines.push('', 'Resource stats');
+
+    if (current.stats.error) {
+      lines.push(`- Error: ${current.stats.error}`);
+    } else {
+      const summary = current.stats.summary;
+      const bottlenecks = current.stats.bottlenecks;
+
+      lines.push(`- Window: ${formatDuration(current.stats.window_seconds)}`);
+      lines.push(`- Samples: ${current.stats.sample_count ?? 0}`);
+
+      if (summary) {
+        lines.push(`- Avg app CPU: ${formatPercent(summary.averages.process_cpu_percent)}`);
+        lines.push(`- Max app CPU: ${formatPercent(summary.max.process_cpu_percent)}`);
+        lines.push(`- Avg system CPU: ${formatPercent(summary.averages.system_cpu_percent)}`);
+        lines.push(`- Max system CPU: ${formatPercent(summary.max.system_cpu_percent)}`);
+        lines.push(`- Avg memory: ${formatPercent(summary.averages.memory_percent)}`);
+        lines.push(`- Max memory: ${formatPercent(summary.max.memory_percent)}`);
+        lines.push(`- Avg RSS: ${formatMb(summary.averages.rss_mb)}`);
+        lines.push(`- Max RSS: ${formatMb(summary.max.rss_mb)}`);
+        lines.push(
+          `- Avg jobs: ${formatOptionalNumber(summary.averages.active_jobs)} active, ${formatOptionalNumber(summary.averages.queued_jobs)} queued`,
+        );
+        lines.push(
+          `- Max jobs: ${formatOptionalNumber(summary.max.active_jobs)} active, ${formatOptionalNumber(summary.max.queued_jobs)} queued`,
+        );
+        lines.push(`- Avg children: ${formatOptionalNumber(summary.averages.children_count)}`);
+        lines.push(`- Max children: ${formatOptionalNumber(summary.max.children_count)}`);
+        lines.push(`- Avg process write: ${formatBps(summary.averages.process_write_bps)}`);
+        lines.push(`- Max process write: ${formatBps(summary.max.process_write_bps)}`);
+        lines.push(`- Avg process read: ${formatBps(summary.averages.process_read_bps)}`);
+        lines.push(`- Max process read: ${formatBps(summary.max.process_read_bps)}`);
+        lines.push(`- Avg disk write: ${formatBps(summary.averages.disk_write_bps)}`);
+        lines.push(`- Max disk write: ${formatBps(summary.max.disk_write_bps)}`);
+        lines.push(`- Avg disk read: ${formatBps(summary.averages.disk_read_bps)}`);
+        lines.push(`- Max disk read: ${formatBps(summary.max.disk_read_bps)}`);
+        lines.push(`- Avg network down: ${formatBps(summary.averages.network_recv_bps)}`);
+        lines.push(`- Max network down: ${formatBps(summary.max.network_recv_bps)}`);
+        lines.push(`- Avg network up: ${formatBps(summary.averages.network_sent_bps)}`);
+        lines.push(`- Max network up: ${formatBps(summary.max.network_sent_bps)}`);
+      }
+
+      if (bottlenecks) {
+        lines.push(`- Bottleneck status: ${bottlenecks.status}`);
+        lines.push(`- Bottleneck window: ${bottlenecks.window_samples} samples`);
+
+        if (bottlenecks.bottlenecks.length > 0) {
+          for (const item of bottlenecks.bottlenecks) {
+            lines.push(`- [${item.level.toUpperCase()}] ${item.summary} ${item.details}`);
+          }
+        } else {
+          lines.push('- Bottlenecks: none detected');
+        }
+      }
+    }
+  }
+
   for (const section of featureSections.value) {
     lines.push('', section.label);
 
@@ -422,6 +480,48 @@ const formatIsoTimestamp = (value: number | undefined): string => {
   }
 
   return moment.unix(value).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+};
+
+const formatDuration = (value: number | undefined): string => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return 'Unknown';
+  }
+
+  if (value % 3600 === 0) {
+    return `${value / 3600}h`;
+  }
+
+  if (value % 60 === 0) {
+    return `${value / 60}m`;
+  }
+
+  return `${value}s`;
+};
+
+const formatOptionalNumber = (value: number | null | undefined, digits: number = 2): string => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return 'n/a';
+  }
+
+  return Number(value.toFixed(digits)).toString();
+};
+
+const formatPercent = (value: number | null | undefined): string => {
+  const formatted = formatOptionalNumber(value);
+  return formatted === 'n/a' ? formatted : `${formatted}%`;
+};
+
+const formatMb = (value: number | null | undefined): string => {
+  const formatted = formatOptionalNumber(value);
+  return formatted === 'n/a' ? formatted : `${formatted} MB`;
+};
+
+const formatBps = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return 'n/a';
+  }
+
+  return `${formatOptionalNumber(value / 1024 / 1024)} MB/s`;
 };
 
 const formatShareVersion = (item: DiagnosticCheck): string => {
