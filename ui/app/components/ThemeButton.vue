@@ -8,7 +8,11 @@
       :square="square"
       :aria-label="title"
       :title="title"
-      @click="color.preference = next"
+      @click="
+        () => {
+          color.preference = next;
+        }
+      "
     >
       <span v-if="showLabel" :class="labelClass">{{ title }}</span>
     </UButton>

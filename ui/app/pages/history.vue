@@ -39,7 +39,11 @@
           :variant="showFilter ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-filter"
-          @click="showFilter = !showFilter"
+          @click="
+            () => {
+              showFilter = !showFilter;
+            }
+          "
         >
           <span>Filter</span>
         </UButton>
@@ -448,7 +452,11 @@
                     size="xs"
                     :icon="hideThumbnail ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'"
                     square
-                    @click="hideThumbnail = !hideThumbnail"
+                    @click="
+                      () => {
+                        hideThumbnail = !hideThumbnail;
+                      }
+                    "
                   />
 
                   <label class="inline-flex cursor-pointer items-center justify-center px-1">

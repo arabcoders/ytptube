@@ -23,7 +23,11 @@
           :variant="toggleFilter ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-filter"
-          @click="toggleFilter = !toggleFilter"
+          @click="
+            () => {
+              toggleFilter = !toggleFilter;
+            }
+          "
         >
           <span>Filter</span>
         </UButton>
@@ -55,7 +59,11 @@
           :variant="config.showForm ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-plus"
-          @click="config.showForm = !config.showForm"
+          @click="
+            () => {
+              config.showForm = !config.showForm;
+            }
+          "
         >
           <span>Add</span>
         </UButton>
@@ -468,7 +476,11 @@
                       size="xs"
                       :icon="hideThumbnail ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'"
                       square
-                      @click="hideThumbnail = !hideThumbnail"
+                      @click="
+                        () => {
+                          hideThumbnail = !hideThumbnail;
+                        }
+                      "
                     />
 
                     <label class="inline-flex cursor-pointer items-center justify-center px-1">

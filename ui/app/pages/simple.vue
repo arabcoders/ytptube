@@ -70,7 +70,11 @@
                         :icon="showExtras ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
                         class="shrink-0 justify-center w-12"
                         :disabled="addInProgress"
-                        @click="showExtras = !showExtras"
+                        @click="
+                          () => {
+                            showExtras = !showExtras;
+                          }
+                        "
                       />
                     </UTooltip>
 

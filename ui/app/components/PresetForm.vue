@@ -8,7 +8,11 @@
           variant="ghost"
           size="sm"
           :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          @click="showImport = !showImport"
+          @click="
+            () => {
+              showImport = !showImport;
+            }
+          "
         >
           {{ showImport ? 'Hide' : 'Show' }} import
         </UButton>
@@ -349,7 +353,7 @@ import TextDropzone from '~/components/TextDropzone.vue';
 import type { ImportedItem } from '~/types';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset } from '~/types/presets';
-import { normalizePresetName } from '~/utils';
+import { normalizePresetName, shortPath } from '~/utils';
 
 const emitter = defineEmits<{
   (event: 'cancel'): void;

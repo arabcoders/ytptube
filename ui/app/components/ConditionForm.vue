@@ -8,7 +8,11 @@
           variant="ghost"
           size="sm"
           :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          @click="showImport = !showImport"
+          @click="
+            () => {
+              showImport = !showImport;
+            }
+          "
         >
           {{ showImport ? 'Hide' : 'Show' }} import
         </UButton>

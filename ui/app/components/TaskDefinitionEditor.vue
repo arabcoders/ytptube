@@ -8,7 +8,11 @@
         size="sm"
         :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
         :disabled="isBusy"
-        @click="showImport = !showImport"
+        @click="
+          () => {
+            showImport = !showImport;
+          }
+        "
       >
         {{ showImport ? 'Hide import' : 'Show import' }}
       </UButton>

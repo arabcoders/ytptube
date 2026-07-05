@@ -232,7 +232,11 @@
                     class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                     icon="i-lucide-circle-help"
                     aria-label="Show keyboard shortcuts"
-                    @click="showHelp = !showHelp"
+                    @click="
+                      () => {
+                        showHelp = !showHelp;
+                      }
+                    "
                   />
                 </UTooltip>
               </div>

@@ -63,7 +63,11 @@
           variant="ghost"
           size="sm"
           :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          @click="showImport = !showImport"
+          @click="
+            () => {
+              showImport = !showImport;
+            }
+          "
         >
           {{ showImport ? 'Hide' : 'Show' }} import
         </UButton>
@@ -504,6 +508,7 @@ import { CronExpressionParser } from 'cron-parser';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { ExportedTask, Task } from '~/types/tasks';
+import { shortPath } from '~/utils';
 
 const props = defineProps<{
   reference?: number | null | undefined;
