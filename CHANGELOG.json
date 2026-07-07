@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "d625942c87a6f92f4fa908d9a9e49ede554cc7aa",
-    "date": "2026-07-05T15:19:03+00:00",
+    "full_sha": "7ad9c41a7248ab79ca04978550aad1de7cc5ba5e",
+    "date": "2026-07-07T08:44:36+00:00",
     "commits": [
+      {
+        "sha": "7ad9c41a",
+        "full_sha": "7ad9c41a7248ab79ca04978550aad1de7cc5ba5e",
+        "message": "feat: implement media profile extraction and display in UI",
+        "author": "arabcoders",
+        "date": "2026-07-07T08:44:36+00:00"
+      },
       {
         "sha": "d625942c",
         "full_sha": "d625942c87a6f92f4fa908d9a9e49ede554cc7aa",
