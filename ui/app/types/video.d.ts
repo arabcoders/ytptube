@@ -48,6 +48,7 @@ type FFProbeStream = {
   codec_type: string;
   width?: number;
   height?: number;
+  framerate?: number | null;
   tags?: {
     language?: string;
     title?: string;

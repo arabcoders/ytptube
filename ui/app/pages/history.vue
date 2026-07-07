@@ -209,11 +209,20 @@
                     </div>
 
                     <div
-                      v-if="item.extras?.duration || show_popover"
+                      v-if="item.extras?.duration || mediaProfileLabel(item) || show_popover"
                       class="flex shrink-0 items-center gap-2"
                     >
                       <UBadge v-if="item.extras?.duration" color="info" variant="soft" size="sm">
                         {{ formatTime(item.extras.duration) }}
+                      </UBadge>
+
+                      <UBadge
+                        v-if="mediaProfileLabel(item)"
+                        color="neutral"
+                        variant="soft"
+                        size="sm"
+                      >
+                        {{ mediaProfileLabel(item) }}
                       </UBadge>
 
                       <UPopover
@@ -409,10 +418,6 @@
                 </div>
 
                 <div class="flex max-w-full flex-wrap items-center justify-end gap-1 sm:shrink-0">
-                  <UBadge v-if="item.extras?.duration" color="info" variant="soft" size="sm">
-                    {{ formatTime(item.extras.duration) }}
-                  </UBadge>
-
                   <UPopover
                     v-if="show_popover && getItemPath(item)"
                     :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
@@ -585,6 +590,34 @@
                       />
                     </span>
                   </UTooltip>
+                </button>
+
+                <button
+                  v-if="item.extras?.duration"
+                  type="button"
+                  class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+                  @click="toggleExpand(item._id, 'duration')"
+                >
+                  <span class="inline-flex w-full items-center justify-center gap-2">
+                    <UIcon name="i-lucide-timer" class="size-4 shrink-0 text-toned" />
+                    <span :class="['min-w-0 text-center', expandClass(item._id, 'duration')]">
+                      {{ formatTime(item.extras.duration) }}
+                    </span>
+                  </span>
+                </button>
+
+                <button
+                  v-if="mediaProfileLabel(item)"
+                  type="button"
+                  class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
+                  @click="toggleExpand(item._id, 'profile')"
+                >
+                  <span class="inline-flex w-full items-center justify-center gap-2">
+                    <UIcon name="i-lucide-badge-info" class="size-4 shrink-0 text-toned" />
+                    <span :class="['min-w-0 text-center', expandClass(item._id, 'profile')]">
+                      {{ mediaProfileLabel(item) }}
+                    </span>
+                  </span>
                 </button>
 
                 <button
@@ -818,6 +851,7 @@ import {
   uri,
 } from '~/utils';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
+import { mediaProfileLabel } from '~/utils/mediaProfile';
 import { requirePageShell } from '~/utils/topLevelNavigation';
 
 const config = useYtpConfig();

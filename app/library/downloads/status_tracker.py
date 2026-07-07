@@ -19,6 +19,34 @@ if TYPE_CHECKING:
     from app.library.ItemDTO import ItemDTO
 
 
+def _compact_media_profile(ff: Any) -> dict[str, Any]:
+    profile: dict[str, Any] = {}
+
+    if ff.video:
+        video = ff.video[0]
+        stream = video.__dict__
+        data = {
+            "width": stream.get("width"),
+            "height": stream.get("height"),
+            "fps": stream.get("framerate"),
+            "codec": stream.get("codec_name"),
+        }
+        profile["video"] = {key: value for key, value in data.items() if value is not None}
+
+    if ff.audio:
+        audio = ff.audio[0]
+        stream = audio.__dict__
+        data = {
+            "bitrate": stream.get("bit_rate"),
+            "codec": stream.get("codec_name"),
+            "channels": stream.get("channels"),
+            "sample_rate": stream.get("sample_rate"),
+        }
+        profile["audio"] = {key: value for key, value in data.items() if value is not None}
+
+    return profile
+
+
 class StatusTracker:
     def __init__(
         self,
@@ -97,7 +125,6 @@ class StatusTracker:
         """
         self.info.datetime = str(formatdate(time.time()))
         self.info.filename = safe_relative_path(filepath, Path(self.download_dir))
-        self.final_update = True
         self.logger.debug(
             "Final download file for '%s' is '%s'.",
             self.info.title,
@@ -111,59 +138,64 @@ class StatusTracker:
                 }
             },
         )
+
         try:
-            filepath.relative_to(self.download_dir)
-        except ValueError:
-            self.logger.warning(
-                "Final file '%s' for '%s' is outside download directory '%s'.",
-                filepath,
-                self.info.title,
-                self.download_dir,
-                extra={
-                    "download": {
-                        "download_id": self.id,
-                        "item_id": self.info.id,
-                        "title": self.info.title,
-                        "file_path": str(filepath),
-                        "download_dir": self.download_dir,
-                    }
-                },
-            )
-            self.info.filename = None
-            return
-
-        if filepath.is_file() and filepath.exists():
             try:
-                self.info.file_size = filepath.stat().st_size
-            except FileNotFoundError:
-                self.info.file_size = 0
-
-            try:
-                from app.features.streaming.library.ffprobe import ffprobe
-
-                ff = await ffprobe(filepath)
-                self.info.extras["is_video"] = ff.has_video()
-                self.info.extras["is_audio"] = ff.has_audio()
-                if ff.has_video() or ff.has_audio():
-                    self.info.extras["duration"] = int(
-                        float(ff.metadata.get("duration", self.info.extras.get("duration", 0.0)))
-                    )
-            except Exception as e:
-                self.info.extras["is_video"] = True
-                self.info.extras["is_audio"] = True
-                self.logger.exception(
-                    "Failed to inspect completed file '%s' with ffprobe.",
+                filepath.relative_to(self.download_dir)
+            except ValueError:
+                self.logger.warning(
+                    "Final file '%s' for '%s' is outside download directory '%s'.",
                     filepath,
+                    self.info.title,
+                    self.download_dir,
                     extra={
                         "download": {
                             "download_id": self.id,
                             "item_id": self.info.id,
                             "title": self.info.title,
                             "file_path": str(filepath),
-                            "exception_type": type(e).__name__,
+                            "download_dir": self.download_dir,
                         }
                     },
                 )
+                self.info.filename = None
+                return
+
+            if filepath.is_file() and filepath.exists():
+                try:
+                    self.info.file_size = filepath.stat().st_size
+                except FileNotFoundError:
+                    self.info.file_size = 0
+
+                try:
+                    from app.features.streaming.library.ffprobe import ffprobe
+
+                    ff = await ffprobe(filepath)
+                    self.info.extras["is_video"] = ff.has_video()
+                    self.info.extras["is_audio"] = ff.has_audio()
+                    if ff.has_video() or ff.has_audio():
+                        self.info.extras["media_profile"] = _compact_media_profile(ff)
+                        self.info.extras["duration"] = int(
+                            float(ff.metadata.get("duration", self.info.extras.get("duration", 0.0)))
+                        )
+                except Exception as e:
+                    self.info.extras["is_video"] = True
+                    self.info.extras["is_audio"] = True
+                    self.logger.exception(
+                        "Failed to inspect completed file '%s' with ffprobe.",
+                        filepath,
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "file_path": str(filepath),
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
+        finally:
+            self.final_update = True
 
     async def process_status_update(self, status: StatusDict) -> None:
         """

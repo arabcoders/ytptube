@@ -546,6 +546,20 @@ class TestDownloadFlow:
         )
         download = Download(info=item)
         monkeypatch.setattr(download._process_manager, "create_queue", lambda: DummyQueue())
+        final_file = tmp_path / "video.mp4"
+        final_file.write_text("test content")
+
+        async def fake_ffprobe(_file: Path):
+            await asyncio.sleep(0.01)
+            return SimpleNamespace(
+                metadata={"duration": "10"},
+                video=[SimpleNamespace(width=1280, height=720, framerate=30, codec_name="h264")],
+                audio=[],
+                has_video=lambda: True,
+                has_audio=lambda: False,
+            )
+
+        monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe", fake_ffprobe)
 
         def fake_download():
             queue = download.status_queue
@@ -572,7 +586,7 @@ class TestDownloadFlow:
                 {
                     "id": download.id,
                     "status": "finished",
-                    "final_name": str(tmp_path / "video.mp4"),
+                    "final_name": str(final_file),
                 }
             )
             queue.put(Terminator())
@@ -620,6 +634,9 @@ class TestDownloadFlow:
 
         assert download.info.status == "finished", "Download should finish via inline process"
         assert download.info.filename == "video.mp4", "Final filename should be set from status update"
+        assert download.info.extras["media_profile"] == {
+            "video": {"width": 1280, "height": 720, "fps": 30, "codec": "h264"}
+        }
 
     @pytest.mark.asyncio
     async def test_live_cancel_drains_final(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -1304,6 +1321,39 @@ class TestStatusTracker:
         await st.process_status_update(status)
         assert st.final_update is True, "Should set final_update when final file exists"
         assert st.info.filename == "test.mp4", "Should set relative filename"
+
+    @pytest.mark.asyncio
+    async def test_media_profile(
+        self, tmp_path: Path, mock_config: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        test_file = tmp_path / "test.mp4"
+        test_file.write_text("test content")
+        seen: dict[str, bool] = {}
+
+        async def fake_ffprobe(_file: Path):
+            seen["final_update"] = st.final_update
+            return SimpleNamespace(
+                metadata={"duration": "42.5"},
+                video=[SimpleNamespace(width=1920, height=1080, framerate=60, codec_name="h264")],
+                audio=[SimpleNamespace(bit_rate="320000", codec_name="aac", channels=2, sample_rate="48000")],
+                has_video=lambda: True,
+                has_audio=lambda: True,
+            )
+
+        monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe", fake_ffprobe)
+
+        st = StatusTracker(**mock_config)
+        st.download_dir = str(tmp_path)
+        status = {"id": "test-id", "status": "finished", "final_name": str(test_file)}
+
+        await st.process_status_update(status)
+
+        assert st.info.extras["media_profile"] == {
+            "video": {"width": 1920, "height": 1080, "fps": 60, "codec": "h264"},
+            "audio": {"bitrate": "320000", "codec": "aac", "channels": 2, "sample_rate": "48000"},
+        }
+        assert st.info.extras["duration"] == 42
+        assert seen["final_update"] is False
 
     @pytest.mark.asyncio
     async def test_drain_queue_processes_remaining_updates(self, mock_config: dict[str, Any]) -> None:

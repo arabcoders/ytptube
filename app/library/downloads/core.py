@@ -554,10 +554,14 @@ class Download:
         self.info.status = "preparing"
 
         EventBus.get_instance().emit(Events.ITEM_UPDATED, data=self.info)
-        asyncio.create_task(self._status_tracker.progress_update(), name=f"update-{self.id}")
+        progress_task = asyncio.create_task(self._status_tracker.progress_update(), name=f"update-{self.id}")
 
         proc = self._process_manager.proc
         ret = await asyncio.get_running_loop().run_in_executor(None, proc.join) if proc else None
+
+        wait_for_status = not self._process_manager.is_cancelled() or self.is_live
+        if wait_for_status and isinstance(progress_task, asyncio.Future):
+            await progress_task
 
         if self._status_tracker.final_update:
             return ret

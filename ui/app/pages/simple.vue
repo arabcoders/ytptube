@@ -534,8 +534,6 @@
                                 </UTooltip>
 
                                 <div class="flex flex-wrap items-center gap-2 text-xs">
-                                  <UBadge color="neutral" variant="soft" size="sm">History</UBadge>
-
                                   <UBadge
                                     :color="getStatusColor(item)"
                                     variant="soft"
@@ -554,6 +552,15 @@
                                     :date-datetime="item.datetime"
                                     v-rtime="item.datetime"
                                   />
+
+                                  <UBadge
+                                    v-if="mediaProfileLabel(item)"
+                                    color="neutral"
+                                    variant="soft"
+                                    size="sm"
+                                  >
+                                    {{ mediaProfileLabel(item) }}
+                                  </UBadge>
                                 </div>
                               </div>
 
@@ -718,6 +725,7 @@ import { usePresetOptions } from '~/composables/usePresetOptions';
 import { useNotification } from '~/composables/useNotification';
 import EmbedPlayer from '~/components/EmbedPlayer.vue';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
+import { mediaProfileLabel } from '~/utils/mediaProfile';
 import {
   ag,
   formatTime,
