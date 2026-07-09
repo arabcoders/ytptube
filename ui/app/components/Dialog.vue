@@ -44,6 +44,7 @@
         <UButton
           id="primaryButton"
           :color="state.current?.opts.confirmColor ?? 'primary'"
+          :icon="state.current?.opts.confirmIcon ?? 'i-lucide-check'"
           @click="onEnter"
         >
           {{ state.current?.opts.confirmText ?? 'OK' }}
@@ -52,8 +53,20 @@
 
       <template v-else-if="'confirm' === state.current?.type || 'prompt' === state.current?.type">
         <UButton
+          color="neutral"
+          variant="outline"
+          :icon="
+            (state.current?.opts as PromptOptions | ConfirmOptions)?.cancelIcon ?? 'i-lucide-x'
+          "
+          @click="cancel"
+        >
+          {{ (state.current?.opts as PromptOptions | ConfirmOptions)?.cancelText ?? 'Cancel' }}
+        </UButton>
+
+        <UButton
           id="primaryButton"
           :color="state.current?.opts.confirmColor ?? 'primary'"
+          :icon="state.current?.opts.confirmIcon ?? 'i-lucide-check'"
           :disabled="
             'prompt' === state.current?.type &&
             localInput === (state.current?.opts as PromptOptions)?.initial
@@ -61,10 +74,6 @@
           @click="onEnter"
         >
           {{ state.current?.opts.confirmText ?? 'OK' }}
-        </UButton>
-
-        <UButton color="neutral" variant="outline" @click="cancel">
-          {{ (state.current?.opts as PromptOptions | ConfirmOptions)?.cancelText ?? 'Cancel' }}
         </UButton>
       </template>
     </template>
