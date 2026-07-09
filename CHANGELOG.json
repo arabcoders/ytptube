@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "7ad9c41a7248ab79ca04978550aad1de7cc5ba5e",
-    "date": "2026-07-07T08:44:36+00:00",
+    "full_sha": "d52a4d8f4908f544ca30e8496768be6e935a8a0c",
+    "date": "2026-07-09T21:07:54+00:00",
     "commits": [
+      {
+        "sha": "d52a4d8f",
+        "full_sha": "d52a4d8f4908f544ca30e8496768be6e935a8a0c",
+        "message": "refactor: minor update to dialog component",
+        "author": "arabcoders",
+        "date": "2026-07-09T21:07:54+00:00"
+      },
       {
         "sha": "7ad9c41a",
         "full_sha": "7ad9c41a7248ab79ca04978550aad1de7cc5ba5e",
