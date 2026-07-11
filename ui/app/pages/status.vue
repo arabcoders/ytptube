@@ -423,6 +423,10 @@
               may indicate a resource leak.
             </li>
             <li>
+              <strong>Disk I/O</strong> - System-wide disk read/write throughput from the host. This
+              is not limited to YTPTube or its worker subprocesses.
+            </li>
+            <li>
               <strong>Child Processes</strong> - Sub-processes like <code>ffmpeg</code>,
               <code>yt-dlp</code>, or browsers. Their resource usage is included in app totals and
               listed separately because they often dominate total load.

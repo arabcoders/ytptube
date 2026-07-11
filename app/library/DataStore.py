@@ -217,6 +217,7 @@ class DataStore:
             msg = f"order must be 'ASC' or 'DESC', got '{order}'"
             raise ValueError(msg)
 
+        await self._connection.flush()
         items, total_items, current_page, total_pages = await self._connection.paginate(
             str(self._type), page, per_page, order, status_filter
         )

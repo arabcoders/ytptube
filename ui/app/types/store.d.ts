@@ -19,6 +19,21 @@ type sideCarSubtitle = SideCar & {
   name: string;
 };
 
+type MediaProfile = {
+  video?: {
+    width?: number;
+    height?: number;
+    fps?: number;
+    codec?: string;
+  };
+  audio?: {
+    bitrate?: number | string;
+    codec?: string;
+    channels?: number;
+    sample_rate?: string;
+  };
+};
+
 type StoreItem = {
   /** Unique identifier for the item */
   _id: string;
@@ -84,6 +99,8 @@ type StoreItem = {
     thumbnail?: string;
     /** The uploader of the item if available */
     uploader?: string;
+    /** Actual media properties from the completed file */
+    media_profile?: MediaProfile;
     /** Uploader name if available */
     is_audio?: boolean;
     /** If the item has audio stream */
@@ -122,4 +139,4 @@ type StoreItem = {
   postprocessor?: string | null;
 };
 
-export type { ItemStatus, StoreItem };
+export type { ItemStatus, MediaProfile, StoreItem };

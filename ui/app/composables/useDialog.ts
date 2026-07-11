@@ -25,6 +25,10 @@ type BaseOptions = {
    * Color for the confirm button.
    */
   confirmColor?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral';
+  /**
+   * Icon for the confirm button.
+   */
+  confirmIcon?: string;
 };
 
 export type PromptOptions = BaseOptions & {
@@ -41,6 +45,10 @@ export type PromptOptions = BaseOptions & {
    */
   cancelText?: string;
   /**
+   * Icon for the cancel button.
+   */
+  cancelIcon?: string;
+  /**
    * Function to validate the input value
    * @returns true if valid, or an error message string if invalid
    */
@@ -52,6 +60,10 @@ export type ConfirmOptions = BaseOptions & {
    * Text for the confirm button
    */
   cancelText?: string;
+  /**
+   * Icon for the cancel button.
+   */
+  cancelIcon?: string;
   /**
    * Optional checkbox-style options to return with the confirmation result.
    */

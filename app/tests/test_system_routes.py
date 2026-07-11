@@ -308,6 +308,35 @@ class TestSystemDiagnosticsEndpoint:
             "https://***:***@example.test/***?***#***"
         )
 
+    def test_stats_disabled(self):
+        from app.library.diagnostics import _stats
+
+        config = Config.get_instance()
+        config.monitor_enabled = False
+
+        assert _stats(config) == {"enabled": False}
+
+    def test_stats_enabled(self):
+        from app.library.diagnostics import _stats
+
+        config = Config.get_instance()
+        config.monitor_enabled = True
+        tracker = MagicMock()
+        tracker.snapshot.return_value = [
+            {"ts": 1, "process_cpu_percent": 12, "system_cpu_percent": 22, "memory_percent": 33},
+            {"ts": 2, "process_cpu_percent": 18, "system_cpu_percent": 28, "memory_percent": 43},
+        ]
+
+        with patch("app.library.diagnostics.ResourceTracker.get_instance", return_value=tracker):
+            result = _stats(config)
+
+        assert result["enabled"] is True
+        assert result["window_seconds"] == 3600
+        assert result["sample_count"] == 2
+        assert result["summary"]["averages"]["process_cpu_percent"] == 15
+        assert result["summary"]["max"]["memory_percent"] == 43
+        assert result["bottlenecks"]["status"] == "ok"
+
     @pytest.mark.asyncio
     async def test_binary_timeout(self):
         from app.library.diagnostics import _check_binary

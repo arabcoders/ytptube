@@ -564,16 +564,18 @@ class ResourceTracker(metaclass=Singleton):
         return h[-1].to_dict()
 
     def snapshot(self, range_seconds: float | None = None) -> list[dict[str, Any]]:
-        h: list[ResourceSample] = list(self._history)
         cutoff: float | None = None
         if range_seconds is not None:
             cutoff = time.time() - range_seconds
-            h = [s for s in h if s.ts >= cutoff]
 
-        if self._store and len(h) <= 1:
+        if self._store:
             stored: list[dict[str, Any]] = self._store.query(limit=900, since=cutoff)
             if stored:
                 return stored
+
+        h: list[ResourceSample] = list(self._history)
+        if cutoff is not None:
+            h = [s for s in h if s.ts >= cutoff]
 
         return [s.to_flat() for s in h]
 
