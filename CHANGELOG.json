@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "ef980e42f885c363191134d2ab5777762a354ce7",
+    "date": "2026-07-12T08:35:41+00:00",
+    "commits": [
+      {
+        "sha": "ef980e42",
+        "full_sha": "ef980e42f885c363191134d2ab5777762a354ce7",
+        "message": "feat: add ytdlp options to download parameters and logging",
+        "author": "arabcoders",
+        "date": "2026-07-12T08:35:41+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.10",
     "full_sha": "1fe464b9d1193204c16f8739c9d2493ccd9d4cfc",
     "date": "2026-07-11T14:40:37+00:00",
