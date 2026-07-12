@@ -253,6 +253,7 @@ async def add(
                         "preset": item.preset,
                         "has_cookies": bool(yt_conf.get("cookiefile")),
                         "pre_extracted": True,
+                        "ytdlp_opts": yt_conf.copy(),
                     }
                 },
             )
@@ -266,6 +267,7 @@ async def add(
                         "preset": item.preset,
                         "has_cookies": bool(yt_conf.get("cookiefile")),
                         "pre_extracted": False,
+                        "ytdlp_opts": yt_conf.copy(),
                     }
                 },
             )
@@ -288,6 +290,7 @@ async def add(
                         "url": item.url,
                         "preset": item.preset,
                         "has_cookies": bool(yt_conf.get("cookiefile")),
+                        "ytdlp_opts": yt_conf.copy(),
                         "yt_dlp_logs": logs,
                     }
                 },

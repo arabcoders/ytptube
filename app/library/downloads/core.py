@@ -245,6 +245,7 @@ class Download:
                             "url": self.info.url,
                             "preset": self.info.preset,
                             "has_cookies": bool(params.get("cookiefile")),
+                            "ytdlp_opts": params.copy(),
                         }
                     },
                 )
@@ -307,6 +308,7 @@ class Download:
                         "preset": self.info.preset,
                         "has_cookies": bool(params.get("cookiefile")),
                         "download_skipped": download_skipped,
+                        "ytdlp_opts": params.copy(),
                     }
                 },
             )
