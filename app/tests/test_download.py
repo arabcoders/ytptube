@@ -21,7 +21,7 @@ from app.library.downloads.queue_manager import DownloadQueue
 from app.library.downloads.status_tracker import StatusTracker
 from app.library.downloads.temp_manager import TempManager
 from app.library.downloads.video_processor import add_video
-from app.library.ItemDTO import ItemDTO
+from app.library.ItemDTO import Item, ItemDTO
 
 
 class CaptureHandler(logging.Handler):
@@ -1547,8 +1547,8 @@ class TestQueueManager:
             extras={},
             folder="",
             preset="default",
-            cookies=None,
-            template=None,
+            cookies="",
+            template="",
             cli=[],
             auto_start=True,
         )
@@ -1640,6 +1640,117 @@ class TestQueueManager:
 
         assert result == {"status": "ok"}
         assert seen == [entry]
+
+    def test_extract_config_strips_subtitles(self) -> None:
+        from app.library.downloads.item_adder import _extract_config
+
+        config = {
+            "format": "bv*+ba/b",
+            "sleep_interval_requests": 3.0,
+            "sleep_interval_subtitles": 76.0,
+            "writeautomaticsub": True,
+            "writesubtitles": True,
+            "subtitleslangs": ["en.*", "fr.*"],
+            "postprocessors": [
+                {"key": "FFmpegSubtitlesConvertor", "format": "srt", "when": "before_dl"},
+                {"key": "FFmpegMetadata"},
+            ],
+        }
+
+        stripped, changed = _extract_config(config)
+
+        assert changed is True
+        assert stripped["format"] == "bv*+ba/b"
+        assert stripped["sleep_interval_requests"] == 3.0
+        assert stripped["sleep_interval_subtitles"] == 76.0
+        assert "writeautomaticsub" not in stripped
+        assert "writesubtitles" not in stripped
+        assert "subtitleslangs" not in stripped
+        assert stripped["postprocessors"] == [{"key": "FFmpegMetadata"}]
+
+    @pytest.mark.asyncio
+    async def test_light_extract_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+
+        seen: list[dict | None] = []
+
+        def fake_download(*, info, info_dict, logs):
+            seen.append(info_dict)
+            return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
+
+        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+
+        entry = {
+            "id": "video-id",
+            "title": "Video",
+            "webpage_url": "https://example.test/video",
+            "live_status": "not_live",
+            "formats": [{"format_id": "18"}],
+            LIGHT_EXTRACT_KEY: True,
+        }
+
+        result = await add_video(queue=self._video_queue(), item=self._any_video_item(), entry=entry)
+
+        assert result == {"status": "ok"}
+        assert seen == [None]
+
+    @pytest.mark.asyncio
+    async def test_add_strips_subtitle_extract(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from app.library.downloads import item_adder
+        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+
+        seen_config: list[dict] = []
+        seen_entry: list[dict] = []
+
+        async def fake_fetch_info(*, config, **kwargs):  # noqa: ARG001
+            seen_config.append(config)
+            return ({"id": "video-id", "title": "Video", "_type": "video", "formats": [{"format_id": "18"}]}, [])
+
+        async def fake_add_video(*, queue, entry, item, logs):  # noqa: ARG001
+            seen_entry.append(entry)
+            return {"status": "ok"}
+
+        class Opts:
+            def get_all(self):
+                return {
+                    "format": "bv*+ba/b",
+                    "sleep_interval_requests": 3.0,
+                    "writeautomaticsub": True,
+                    "writesubtitles": True,
+                    "subtitleslangs": ["en.*", "fr.*"],
+                }
+
+        item = Item(
+            url="https://example.test/video",
+            preset="default",
+            folder="",
+            cookies="",
+            template="",
+            extras={},
+            auto_start=True,
+            requeued=False,
+        )
+        monkeypatch.setattr(item, "get_ytdlp_opts", lambda: Opts())
+        monkeypatch.setattr(item, "get_archive_id", lambda: None)
+        monkeypatch.setattr(item, "is_archived", lambda: False)
+        monkeypatch.setattr(item, "get_archive_file", lambda: None)
+        queue = self._video_queue()
+        queue.config.ytdlp_debug = False
+        queue.config.ignore_archived_items = False
+
+        monkeypatch.setattr(item_adder, "fetch_info", fake_fetch_info)
+        monkeypatch.setattr(item_adder, "add_video", fake_add_video)
+        monkeypatch.setattr(
+            item_adder.Conditions,
+            "get_instance",
+            classmethod(lambda cls: SimpleNamespace(match=AsyncMock(return_value=None))),
+        )
+
+        result = await item_adder.add(queue=queue, item=item)
+
+        assert result == {"status": "ok"}
+        assert seen_config == [{"format": "bv*+ba/b", "sleep_interval_requests": 3.0}]
+        assert seen_entry[0][LIGHT_EXTRACT_KEY] is True
 
     @pytest.mark.asyncio
     async def test_cleanup_thumbnails(self, tmp_path: Path) -> None:

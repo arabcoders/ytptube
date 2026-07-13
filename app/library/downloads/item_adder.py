@@ -19,7 +19,7 @@ from app.library.Utils import create_cookies_file, merge_dict
 
 from .core import Download
 from .playlist_processor import process_playlist
-from .video_processor import add_video
+from .video_processor import LIGHT_EXTRACT_KEY, add_video
 
 if TYPE_CHECKING:
     from app.features.presets.schemas import Preset
@@ -28,6 +28,38 @@ if TYPE_CHECKING:
     from .queue_manager import DownloadQueue
 
 LOG = get_logger()
+
+SUBTITLE_EXTRACT_KEYS: set[str] = {
+    "allsubtitles",
+    "embedsubtitles",
+    "listsubtitles",
+    "subtitlesformat",
+    "subtitleslangs",
+    "writeautomaticsub",
+    "writesubtitles",
+}
+SUBTITLE_POSTPROCESSORS: set[str] = {"FFmpegEmbedSubtitle", "FFmpegSubtitlesConvertor"}
+
+
+def _extract_config(config: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    stripped = {key: value for key, value in config.items() if key not in SUBTITLE_EXTRACT_KEYS}
+    changed = len(stripped) != len(config)
+
+    postprocessors = stripped.get("postprocessors")
+    if isinstance(postprocessors, list):
+        kept = [
+            pp
+            for pp in postprocessors
+            if not (isinstance(pp, dict) and str(pp.get("key", "")) in SUBTITLE_POSTPROCESSORS)
+        ]
+        if len(kept) != len(postprocessors):
+            changed = True
+            if kept:
+                stripped["postprocessors"] = kept
+            else:
+                stripped.pop("postprocessors", None)
+
+    return stripped, changed
 
 
 def _get_ignored_conditions(extras: dict | None) -> list[str]:
@@ -258,6 +290,8 @@ async def add(
                 },
             )
 
+        extract_conf, light_extract = _extract_config(yt_conf)
+
         if not entry:
             LOG.info(
                 f"Extracting info for '{item.url}'.",
@@ -267,12 +301,13 @@ async def add(
                         "preset": item.preset,
                         "has_cookies": bool(yt_conf.get("cookiefile")),
                         "pre_extracted": False,
-                        "ytdlp_opts": yt_conf.copy(),
+                        "ytdlp_opts": extract_conf.copy(),
+                        "light_extract": light_extract,
                     }
                 },
             )
             (entry, logs) = await fetch_info(
-                config=yt_conf,
+                config=extract_conf,
                 url=item.url,
                 debug=bool(queue.config.ytdlp_debug),
                 no_archive=False,
@@ -281,6 +316,9 @@ async def add(
                 budget_sleep=True,
                 suppress_logs=_task_ignored_logs(item),
             )
+
+            if entry and light_extract:
+                entry[LIGHT_EXTRACT_KEY] = True
 
         if not entry:
             LOG.error(

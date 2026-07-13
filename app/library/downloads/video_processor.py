@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .queue_manager import DownloadQueue
 
 LOG = get_logger()
+LIGHT_EXTRACT_KEY = "_ytptube_light_extract"
 
 
 async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, str]:
@@ -148,7 +149,7 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
     )
 
     try:
-        _reextract: bool = bool(entry.get(REEXTRACT_INFO_KEY) or needs_reextract(entry))
+        _reextract: bool = bool(entry.get(REEXTRACT_INFO_KEY) or entry.get(LIGHT_EXTRACT_KEY) or needs_reextract(entry))
         dlInfo: Download = Download(info=dl, info_dict=entry if item.auto_start and not _reextract else None, logs=logs)
         nEvent: str | None = None
         nTitle: str | None = None
