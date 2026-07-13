@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "ef980e42f885c363191134d2ab5777762a354ce7",
-    "date": "2026-07-12T08:35:41+00:00",
+    "full_sha": "b823ded4dcfea3102ec50cc9495d602fdd651adb",
+    "date": "2026-07-13T19:24:54+00:00",
     "commits": [
+      {
+        "sha": "b823ded4",
+        "full_sha": "b823ded4dcfea3102ec50cc9495d602fdd651adb",
+        "message": "fix: prevent youtube 403 during info extraction due to subtitles",
+        "author": "arabcoders",
+        "date": "2026-07-13T19:24:54+00:00"
+      },
       {
         "sha": "ef980e42",
         "full_sha": "ef980e42f885c363191134d2ab5777762a354ce7",
