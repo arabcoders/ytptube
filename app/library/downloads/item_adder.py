@@ -139,6 +139,9 @@ async def add_item(
     if event_type.startswith("playlist"):
         return await process_playlist(queue=queue, entry=entry, item=item, already=already, yt_params=yt_params)
 
+    if event_type == "url_transparent":
+        return await add_video(queue=queue, entry=entry, item=item, logs=logs)
+
     if event_type.startswith("url"):
         return await add(queue=queue, item=item.new_with(url=entry.get("url")), already=already)
 

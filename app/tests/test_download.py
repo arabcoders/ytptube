@@ -1641,6 +1641,67 @@ class TestQueueManager:
         assert result == {"status": "ok"}
         assert seen == [entry]
 
+    @pytest.mark.asyncio
+    async def test_transparent_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen_info: list[dict | None] = []
+        seen_url: list[str] = []
+
+        def fake_download(*, info, info_dict, logs):  # noqa: ARG001
+            seen_info.append(info_dict)
+            seen_url.append(info.url)
+            return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
+
+        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+
+        entry = {
+            "_type": "url_transparent",
+            "ie_key": "VHXEmbed",
+            "id": "738153",
+            "title": "Yes or No",
+            "url": "https://embed.vhx.tv/videos/738153?auth-user-token=short-lived",
+            "webpage_url": "https://watch.dropout.tv/game-changer/season:2/videos/yes-or-no",
+            "series": "Game Changer",
+            "season_number": 2,
+            "episode_number": 6,
+            "episode": "Yes or No",
+        }
+
+        result = await add_video(queue=self._video_queue(), item=self._any_video_item(), entry=entry)
+
+        assert result == {"status": "ok"}
+        assert seen_info == [None]
+        assert seen_url == ["https://watch.dropout.tv/game-changer/season:2/videos/yes-or-no"]
+
+    @pytest.mark.asyncio
+    async def test_transparent_add_item(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from app.library.downloads import item_adder
+
+        seen: list[tuple[dict, Any, list[str] | None]] = []
+
+        async def fake_add_video(*, queue, entry, item, logs):  # noqa: ARG001
+            seen.append((entry, item, logs))
+            return {"status": "ok"}
+
+        monkeypatch.setattr(item_adder, "add_video", fake_add_video)
+
+        item = Item(url="https://watch.dropout.tv/game-changer/season:2/videos/yes-or-no", preset="default")
+        entry = {
+            "_type": "url_transparent",
+            "ie_key": "VHXEmbed",
+            "title": "Yes or No",
+            "url": "https://embed.vhx.tv/videos/738153?auth-user-token=short-lived",
+            "webpage_url": item.url,
+            "series": "Game Changer",
+            "season_number": 2,
+            "episode_number": 6,
+            "episode": "Yes or No",
+        }
+
+        result = await item_adder.add_item(queue=self._video_queue(), entry=entry, item=item, logs=["log"])
+
+        assert result == {"status": "ok"}
+        assert seen == [(entry, item, ["log"])]
+
     def test_extract_no_subs(self) -> None:
         from app.library.downloads.item_adder import _extract_config
 
