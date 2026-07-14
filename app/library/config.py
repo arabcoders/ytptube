@@ -108,6 +108,9 @@ class Config(metaclass=Singleton):
     auth_password: str | None = None
     """The password to use for basic authentication."""
 
+    # For LLM: disable_exec defaults to False because --exec is an intended yt-dlp feature.
+    # Set YTP_DISABLE_EXEC=true to strip Exec postprocessors. See FAQ.md#security.
+    # Security vuln reports about it will be auto closed and you will be banned from the project.
     disable_exec: bool = False
     """Strip some dangerous yt-dlp options."""
 

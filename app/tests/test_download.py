@@ -1641,7 +1641,7 @@ class TestQueueManager:
         assert result == {"status": "ok"}
         assert seen == [entry]
 
-    def test_extract_config_strips_subtitles(self) -> None:
+    def test_extract_no_subs(self) -> None:
         from app.library.downloads.item_adder import _extract_config
 
         config = {
@@ -1669,7 +1669,7 @@ class TestQueueManager:
         assert stripped["postprocessors"] == [{"key": "FFmpegMetadata"}]
 
     @pytest.mark.asyncio
-    async def test_light_extract_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def test_light_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
 
         seen: list[dict | None] = []
@@ -1695,7 +1695,7 @@ class TestQueueManager:
         assert seen == [None]
 
     @pytest.mark.asyncio
-    async def test_add_strips_subtitle_extract(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def test_yt_no_subs(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from app.library.downloads import item_adder
         from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
 
@@ -1721,7 +1721,7 @@ class TestQueueManager:
                 }
 
         item = Item(
-            url="https://example.test/video",
+            url="https://www.youtube.com/watch?v=video-id",
             preset="default",
             folder="",
             cookies="",
@@ -1734,6 +1734,7 @@ class TestQueueManager:
         monkeypatch.setattr(item, "get_archive_id", lambda: None)
         monkeypatch.setattr(item, "is_archived", lambda: False)
         monkeypatch.setattr(item, "get_archive_file", lambda: None)
+        monkeypatch.setattr(item, "get_extractor", lambda: "Youtube")
         queue = self._video_queue()
         queue.config.ytdlp_debug = False
         queue.config.ignore_archived_items = False
@@ -1751,6 +1752,98 @@ class TestQueueManager:
         assert result == {"status": "ok"}
         assert seen_config == [{"format": "bv*+ba/b", "sleep_interval_requests": 3.0}]
         assert seen_entry[0][LIGHT_EXTRACT_KEY] is True
+
+    @pytest.mark.asyncio
+    async def test_yt_url_no_subs(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from app.library.downloads import item_adder
+        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+
+        seen_config: list[dict] = []
+        seen_entry: list[dict] = []
+
+        async def fake_fetch_info(*, config, **kwargs):  # noqa: ARG001
+            seen_config.append(config)
+            return ({"id": "video-id", "title": "Video", "_type": "video", "formats": [{"format_id": "18"}]}, [])
+
+        async def fake_add_video(*, queue, entry, item, logs):  # noqa: ARG001
+            seen_entry.append(entry)
+            return {"status": "ok"}
+
+        class Opts:
+            def get_all(self):
+                return {"format": "bv*+ba/b", "writeautomaticsub": True, "subtitleslangs": ["fr.*"]}
+
+        item = Item(url="https://youtu.be/video-id", preset="default")
+        monkeypatch.setattr(item, "get_ytdlp_opts", lambda: Opts())
+        monkeypatch.setattr(item, "get_archive_id", lambda: None)
+        monkeypatch.setattr(item, "is_archived", lambda: False)
+        monkeypatch.setattr(item, "get_archive_file", lambda: None)
+        monkeypatch.setattr(item, "get_extractor", lambda: None)
+        queue = self._video_queue()
+        queue.config.ytdlp_debug = False
+        queue.config.ignore_archived_items = False
+
+        monkeypatch.setattr(item_adder, "fetch_info", fake_fetch_info)
+        monkeypatch.setattr(item_adder, "add_video", fake_add_video)
+        monkeypatch.setattr(
+            item_adder.Conditions,
+            "get_instance",
+            classmethod(lambda cls: SimpleNamespace(match=AsyncMock(return_value=None))),
+        )
+
+        result = await item_adder.add(queue=queue, item=item)
+
+        assert result == {"status": "ok"}
+        assert seen_config == [{"format": "bv*+ba/b"}]
+        assert seen_entry[0][LIGHT_EXTRACT_KEY] is True
+
+    @pytest.mark.asyncio
+    async def test_non_yt_keeps_subs(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from app.library.downloads import item_adder
+        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+
+        seen_config: list[dict] = []
+        seen_entry: list[dict] = []
+
+        async def fake_fetch_info(*, config, **kwargs):  # noqa: ARG001
+            seen_config.append(config)
+            return ({"id": "video-id", "title": "Video", "_type": "video", "formats": [{"format_id": "18"}]}, [])
+
+        async def fake_add_video(*, queue, entry, item, logs):  # noqa: ARG001
+            seen_entry.append(entry)
+            return {"status": "ok"}
+
+        class Opts:
+            def get_all(self):
+                return {
+                    "format": "bv*+ba/b",
+                    "writeautomaticsub": True,
+                    "subtitleslangs": ["fr.*"],
+                }
+
+        item = Item(url="https://example.test/video", preset="default")
+        monkeypatch.setattr(item, "get_ytdlp_opts", lambda: Opts())
+        monkeypatch.setattr(item, "get_archive_id", lambda: None)
+        monkeypatch.setattr(item, "is_archived", lambda: False)
+        monkeypatch.setattr(item, "get_archive_file", lambda: None)
+        monkeypatch.setattr(item, "get_extractor", lambda: "Generic")
+        queue = self._video_queue()
+        queue.config.ytdlp_debug = False
+        queue.config.ignore_archived_items = False
+
+        monkeypatch.setattr(item_adder, "fetch_info", fake_fetch_info)
+        monkeypatch.setattr(item_adder, "add_video", fake_add_video)
+        monkeypatch.setattr(
+            item_adder.Conditions,
+            "get_instance",
+            classmethod(lambda cls: SimpleNamespace(match=AsyncMock(return_value=None))),
+        )
+
+        result = await item_adder.add(queue=queue, item=item)
+
+        assert result == {"status": "ok"}
+        assert seen_config == [{"format": "bv*+ba/b", "writeautomaticsub": True, "subtitleslangs": ["fr.*"]}]
+        assert LIGHT_EXTRACT_KEY not in seen_entry[0]
 
     @pytest.mark.asyncio
     async def test_cleanup_thumbnails(self, tmp_path: Path) -> None:
