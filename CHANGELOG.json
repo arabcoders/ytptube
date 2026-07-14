@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "b823ded4dcfea3102ec50cc9495d602fdd651adb",
-    "date": "2026-07-13T19:24:54+00:00",
+    "full_sha": "13b6e3c0a18bbb3b8536077335fe02b1d370d444",
+    "date": "2026-07-14T06:17:40+00:00",
     "commits": [
+      {
+        "sha": "13b6e3c0",
+        "full_sha": "13b6e3c0a18bbb3b8536077335fe02b1d370d444",
+        "message": "refactor: add llm slope warning about yt-dlp --exec",
+        "author": "arabcoders",
+        "date": "2026-07-14T06:17:40+00:00"
+      },
+      {
+        "sha": "cc9b6b6c",
+        "full_sha": "cc9b6b6c4de81890c93d3e0b994b7755c216469c",
+        "message": "refactor: scope light extractor for youtube",
+        "author": "arabcoders",
+        "date": "2026-07-14T06:12:02+00:00"
+      },
       {
         "sha": "b823ded4",
         "full_sha": "b823ded4dcfea3102ec50cc9495d602fdd651adb",
