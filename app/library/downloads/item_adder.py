@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import time
 import uuid
 from numbers import Number
@@ -39,6 +40,10 @@ SUBTITLE_EXTRACT_KEYS: set[str] = {
     "writesubtitles",
 }
 SUBTITLE_POSTPROCESSORS: set[str] = {"FFmpegEmbedSubtitle", "FFmpegSubtitlesConvertor"}
+YOUTUBE_URL_RE = re.compile(
+    r"^https?://(?:www\.|m\.|music\.|gaming\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)(?:/|$)",
+    re.IGNORECASE,
+)
 
 
 def _extract_config(config: dict[str, Any]) -> tuple[dict[str, Any], bool]:
@@ -60,6 +65,17 @@ def _extract_config(config: dict[str, Any]) -> tuple[dict[str, Any], bool]:
                 stripped.pop("postprocessors", None)
 
     return stripped, changed
+
+
+def _is_youtube(item: "Item") -> bool:
+    try:
+        extractor = item.get_extractor()
+        if extractor and "youtube" in extractor.lower():
+            return True
+    except Exception:
+        pass
+
+    return bool(YOUTUBE_URL_RE.match(str(item.url or "")))
 
 
 def _get_ignored_conditions(extras: dict | None) -> list[str]:
@@ -290,7 +306,7 @@ async def add(
                 },
             )
 
-        extract_conf, light_extract = _extract_config(yt_conf)
+        extract_conf, light_extract = _extract_config(yt_conf) if _is_youtube(item) else (yt_conf, False)
 
         if not entry:
             LOG.info(
