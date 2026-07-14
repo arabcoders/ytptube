@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "13b6e3c0a18bbb3b8536077335fe02b1d370d444",
-    "date": "2026-07-14T06:17:40+00:00",
+    "full_sha": "4f1c9c9bf922b5b6c65d26322384d5a6bf0a3b6a",
+    "date": "2026-07-14T08:41:07+00:00",
     "commits": [
+      {
+        "sha": "4f1c9c9b",
+        "full_sha": "4f1c9c9bf922b5b6c65d26322384d5a6bf0a3b6a",
+        "message": "fix: treat url_transparent as full video. Fixes #635",
+        "author": "arabcoders",
+        "date": "2026-07-14T08:41:07+00:00"
+      },
       {
         "sha": "13b6e3c0",
         "full_sha": "13b6e3c0a18bbb3b8536077335fe02b1d370d444",
