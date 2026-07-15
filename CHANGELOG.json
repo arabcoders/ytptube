@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "4f1c9c9bf922b5b6c65d26322384d5a6bf0a3b6a",
-    "date": "2026-07-14T08:41:07+00:00",
+    "full_sha": "7beb303c838def810d4e1115a67836035118f798",
+    "date": "2026-07-15T19:52:24+00:00",
     "commits": [
+      {
+        "sha": "7beb303c",
+        "full_sha": "7beb303c838def810d4e1115a67836035118f798",
+        "message": "fix duplicated capture_logs",
+        "author": "arabcoders",
+        "date": "2026-07-15T19:52:24+00:00"
+      },
       {
         "sha": "4f1c9c9b",
         "full_sha": "4f1c9c9bf922b5b6c65d26322384d5a6bf0a3b6a",
