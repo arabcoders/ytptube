@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import time
 import uuid
 from numbers import Number
@@ -19,7 +20,7 @@ from app.library.Utils import create_cookies_file, merge_dict
 
 from .core import Download
 from .playlist_processor import process_playlist
-from .video_processor import add_video
+from .video_processor import LIGHT_EXTRACT_KEY, add_video
 
 if TYPE_CHECKING:
     from app.features.presets.schemas import Preset
@@ -28,6 +29,53 @@ if TYPE_CHECKING:
     from .queue_manager import DownloadQueue
 
 LOG = get_logger()
+
+SUBTITLE_EXTRACT_KEYS: set[str] = {
+    "allsubtitles",
+    "embedsubtitles",
+    "listsubtitles",
+    "subtitlesformat",
+    "subtitleslangs",
+    "writeautomaticsub",
+    "writesubtitles",
+}
+SUBTITLE_POSTPROCESSORS: set[str] = {"FFmpegEmbedSubtitle", "FFmpegSubtitlesConvertor"}
+YOUTUBE_URL_RE = re.compile(
+    r"^https?://(?:www\.|m\.|music\.|gaming\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)(?:/|$)",
+    re.IGNORECASE,
+)
+
+
+def _extract_config(config: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    stripped = {key: value for key, value in config.items() if key not in SUBTITLE_EXTRACT_KEYS}
+    changed = len(stripped) != len(config)
+
+    postprocessors = stripped.get("postprocessors")
+    if isinstance(postprocessors, list):
+        kept = [
+            pp
+            for pp in postprocessors
+            if not (isinstance(pp, dict) and str(pp.get("key", "")) in SUBTITLE_POSTPROCESSORS)
+        ]
+        if len(kept) != len(postprocessors):
+            changed = True
+            if kept:
+                stripped["postprocessors"] = kept
+            else:
+                stripped.pop("postprocessors", None)
+
+    return stripped, changed
+
+
+def _is_youtube(item: "Item") -> bool:
+    try:
+        extractor = item.get_extractor()
+        if extractor and "youtube" in extractor.lower():
+            return True
+    except Exception:
+        pass
+
+    return bool(YOUTUBE_URL_RE.match(str(item.url or "")))
 
 
 def _get_ignored_conditions(extras: dict | None) -> list[str]:
@@ -90,6 +138,9 @@ async def add_item(
 
     if event_type.startswith("playlist"):
         return await process_playlist(queue=queue, entry=entry, item=item, already=already, yt_params=yt_params)
+
+    if event_type == "url_transparent":
+        return await add_video(queue=queue, entry=entry, item=item, logs=logs)
 
     if event_type.startswith("url"):
         return await add(queue=queue, item=item.new_with(url=entry.get("url")), already=already)
@@ -253,9 +304,12 @@ async def add(
                         "preset": item.preset,
                         "has_cookies": bool(yt_conf.get("cookiefile")),
                         "pre_extracted": True,
+                        "ytdlp_opts": yt_conf.copy(),
                     }
                 },
             )
+
+        extract_conf, light_extract = _extract_config(yt_conf) if _is_youtube(item) else (yt_conf, False)
 
         if not entry:
             LOG.info(
@@ -266,11 +320,13 @@ async def add(
                         "preset": item.preset,
                         "has_cookies": bool(yt_conf.get("cookiefile")),
                         "pre_extracted": False,
+                        "ytdlp_opts": extract_conf.copy(),
+                        "light_extract": light_extract,
                     }
                 },
             )
             (entry, logs) = await fetch_info(
-                config=yt_conf,
+                config=extract_conf,
                 url=item.url,
                 debug=bool(queue.config.ytdlp_debug),
                 no_archive=False,
@@ -280,6 +336,9 @@ async def add(
                 suppress_logs=_task_ignored_logs(item),
             )
 
+            if entry and light_extract:
+                entry[LIGHT_EXTRACT_KEY] = True
+
         if not entry:
             LOG.error(
                 f"Unable to extract info for '{item.url}'.",
@@ -288,6 +347,7 @@ async def add(
                         "url": item.url,
                         "preset": item.preset,
                         "has_cookies": bool(yt_conf.get("cookiefile")),
+                        "ytdlp_opts": yt_conf.copy(),
                         "yt_dlp_logs": logs,
                     }
                 },

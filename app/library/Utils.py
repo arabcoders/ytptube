@@ -116,7 +116,7 @@ class JsonLogFormatter(logging.Formatter):
 
             return data
 
-        if isinstance(value, list):
+        if isinstance(value, list | tuple | set):
             data: list[Any] = []
             for item in value:
                 item = JsonLogFormatter._field(item)
@@ -125,7 +125,10 @@ class JsonLogFormatter(logging.Formatter):
 
             return data
 
-        return SKIP_LOG_FIELD
+        try:
+            return str(value)
+        except Exception:
+            return SKIP_LOG_FIELD
 
     @staticmethod
     def _exception(

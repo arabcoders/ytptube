@@ -230,3 +230,46 @@ class TestConditionIgnorePropagation:
             "https://cdn.example/1.mp3",
             "https://cdn.example/2.mp3",
         ]
+
+    @pytest.mark.asyncio
+    async def test_playlist_keeps_transparent_entries(self) -> None:
+        class FakeItem:
+            def __init__(self) -> None:
+                self.extras = {}
+
+            def get_ytdlp_opts(self):
+                return Mock(get_all=Mock(return_value={}))
+
+            def new_with(self, **kwargs):
+                return SimpleNamespace(extras=kwargs["extras"], url=kwargs["url"])
+
+        queue = Mock(add=AsyncMock(return_value={"status": "ok"}))
+        transparent = {
+            "_type": "url_transparent",
+            "ie_key": "VHXEmbed",
+            "id": "738153",
+            "title": "Yes or No",
+            "url": "https://embed.vhx.tv/videos/738153?auth-user-token=short-lived",
+            "webpage_url": "https://watch.dropout.tv/game-changer/season:2/videos/yes-or-no",
+            "series": "Game Changer",
+            "season_number": 2,
+            "episode_number": 6,
+            "episode": "Yes or No",
+        }
+        entry = {
+            "_type": "playlist",
+            "id": "playlist-1",
+            "title": "Playlist",
+            "entries": [transparent],
+        }
+
+        with patch("app.library.downloads.playlist_processor.ytdlp_reject", return_value=(True, "")):
+            fake: Any = FakeItem()
+            result = await process_playlist(queue=queue, entry=entry, item=fake)
+
+        assert result == {"status": "ok"}
+        queue.add.assert_awaited_once()
+        call = queue.add.await_args
+        assert call.kwargs["item"].url == "https://watch.dropout.tv/game-changer/season:2/videos/yes-or-no"
+        assert call.kwargs["item"].extras["playlist"] == "Playlist"
+        assert call.kwargs["entry"] is transparent

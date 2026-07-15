@@ -108,7 +108,15 @@ async def process_playlist(
         if isinstance(ignore_conditions, list) and ignore_conditions:
             extras["ignore_conditions"] = ignore_conditions
 
-        newItem: Item = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
+        if etr.get("_type") == "url_transparent":
+            item_url = etr.get("webpage_url") or etr.get("original_url") or etr.get("url")
+        else:
+            item_url = etr.get("url") or etr.get("webpage_url")
+
+        newItem: Item = item.new_with(url=item_url, extras=extras)
+
+        if etr.get("_type") == "url_transparent":
+            return await queue.add(item=newItem, entry=etr, already=already)
 
         if ("video" == etr.get("_type") and etr.get("url")) or (
             "formats" in etr and isinstance(etr["formats"], list) and len(etr["formats"]) > 0

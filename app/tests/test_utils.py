@@ -293,6 +293,11 @@ class TestJsonLogFormatter:
             "_token": "secret",
         }
         record.tags = ["video", {"quality": "720p", "_private": "hidden"}]
+        record.ytdlp_opts = {
+            "paths": {"home": Path("downloads"), "temp": Path("tmp")},
+            "progress_hooks": [lambda _: None],
+            "postprocessors": ({"key": "FFmpegMetadata"},),
+        }
         record._private = "hidden"
         record.relativeCreated = 123
 
@@ -307,7 +312,13 @@ class TestJsonLogFormatter:
             "download_id": "abc",
             "payload": {"enabled": True, "items": [{"name": "one", "path": "downloads/file.mp4"}]},
             "tags": ["video", {"quality": "720p"}],
+            "ytdlp_opts": {
+                "paths": {"home": "downloads", "temp": "tmp"},
+                "progress_hooks": [data["fields"]["ytdlp_opts"]["progress_hooks"][0]],
+                "postprocessors": [{"key": "FFmpegMetadata"}],
+            },
         }
+        assert "<lambda>" in data["fields"]["ytdlp_opts"]["progress_hooks"][0]
         assert data["source"]["line"] == 123
 
     def test_exception(self):
