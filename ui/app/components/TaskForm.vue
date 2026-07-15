@@ -5,15 +5,11 @@
       color="warning"
       variant="soft"
       icon="i-lucide-info"
-      title="Warning"
+      :title="t('common.warning')"
     >
       <template #description>
         <div class="space-y-2 text-sm text-default">
-          <p>
-            You are using a YouTube link with <code>@handle</code> instead of
-            <code>channel_id</code>. To activate RSS feed support for URL click on the
-            <b>Convert URL</b> link.
-          </p>
+          <p v-html="t('common.handleWarningDesc')" />
 
           <UButton
             type="button"
@@ -24,7 +20,7 @@
             :disabled="addInProgress || convertInProgress"
             @click="() => void convertCurrentUrl()"
           >
-            Convert URL
+            {{ t('common.convertUrl') }}
           </UButton>
         </div>
       </template>
@@ -35,8 +31,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-info"
-      title="Information"
-      description="You are using a generic RSS/Atom feed URL. The task handler will automatically download new items found in this feed."
+      :title="t('common.information')"
+      :description="t('common.rssWarningDesc')"
     />
 
     <UAlert
@@ -44,13 +40,13 @@
       color="info"
       variant="soft"
       icon="i-lucide-files"
-      title="Multiple URLs"
+      :title="t('common.multipleUrls')"
     >
       <template #description>
-        <ul class="list-disc space-y-1 pl-5 text-sm text-default">
-          <li>First URL uses the <b>Name</b> provided above with full settings.</li>
-          <li>Other URLs infer names from metadata and inherit settings from the first URL.</li>
-          <li v-if="form.timer">Timers are offset by 5-minute increments for each URL.</li>
+        <ul class="list-disc space-y-1 ps-5 text-sm text-default">
+          <li>{{ t('common.multipleUrlsDesc1') }}</li>
+          <li>{{ t('common.multipleUrlsDesc2') }}</li>
+          <li v-if="form.timer">{{ t('common.multipleUrlsDesc3') }}</li>
         </ul>
       </template>
     </UAlert>
@@ -69,7 +65,7 @@
             }
           "
         >
-          {{ showImport ? 'Hide' : 'Show' }} import
+          {{ showImport ? t('common.hideImport') : t('common.showImport') }}
         </UButton>
       </div>
 
@@ -78,16 +74,17 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Import string</span>
+              <span class="font-semibold text-default">{{ t('common.importString') }}</span>
             </div>
           </template>
           <template #description>
-            <span>You can use this field to populate the data, using shared string.</span>
+            <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
           <div class="flex flex-col gap-2 sm:flex-row">
             <UInput
               id="import_string"
+              dir="ltr"
               v-model="import_string"
               type="text"
               autocomplete="off"
@@ -106,7 +103,7 @@
               class="justify-center sm:min-w-28"
               @click="() => void importItem()"
             >
-              Import
+              {{ t('common.import') }}
             </UButton>
           </div>
         </UFormField>
@@ -118,14 +115,13 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-type" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Name</span>
+                <span class="font-semibold text-default">{{ t('common.name') }}</span>
               </div>
             </template>
             <template #description>
-              <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-toned">
-                <p class="text-sm text-toned">The name is used to identify this specific task.</p>
-              </div>
+              <span>&nbsp;</span>
             </template>
+
             <UInput
               id="name"
               v-model="form.name"
@@ -141,16 +137,17 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-link" class="size-4 text-toned" />
-                <span class="font-semibold text-default">URL</span>
-                <UBadge v-if="urlCount > 1" color="info" variant="soft" size="sm">
-                  {{ urlCount }} URLs
+                <span class="font-semibold text-default">{{ t('common.url') }}</span>
+                <UBadge v-if="canUseMultiUrl && urlCount > 1" color="info" variant="soft" size="sm">
+                  {{ t('common.urlCount', { count: urlCount }) }}
                 </UBadge>
               </div>
             </template>
 
             <template #description>
               <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-toned">
-                <span>The channel or playlist URL. Use Shift+Enter for multiple URLs.</span>
+                <span v-if="canUseMultiUrl">{{ t('common.urlDesc') }}</span>
+                <span v-else>&nbsp;</span>
                 <button
                   v-if="!isMultiLineInput && is_yt_handle(form.url)"
                   type="button"
@@ -158,7 +155,7 @@
                   :disabled="addInProgress || convertInProgress"
                   @click="() => void convertCurrentUrl()"
                 >
-                  Convert URL
+                  {{ t('common.convertUrl') }}
                 </button>
               </div>
             </template>
@@ -167,6 +164,7 @@
               <UTextarea
                 v-if="isMultiLineInput"
                 id="url"
+                dir="ltr"
                 ref="urlFieldRef"
                 v-model="form.url"
                 :disabled="addInProgress || convertInProgress"
@@ -183,6 +181,7 @@
               <UInput
                 v-else
                 id="url"
+                dir="ltr"
                 ref="urlFieldRef"
                 v-model="form.url"
                 type="url"
@@ -205,13 +204,12 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-clock-3" class="size-4 text-toned" />
-                <span class="font-semibold text-default">CRON Timer</span>
+                <span class="font-semibold text-default">{{ t('common.cronTimer') }}</span>
               </div>
             </template>
             <template #description>
               <span>
-                The CRON timer expression to use for this task. If not set, the task runner will be
-                disabled. For more information on CRON expressions, see
+                {{ t('common.cronTimerDesc') }}
                 <NuxtLink
                   to="https://crontab.guru/"
                   target="_blank"
@@ -225,6 +223,7 @@
 
             <UInput
               id="timer"
+              dir="ltr"
               v-model="form.timer"
               type="text"
               :disabled="addInProgress"
@@ -239,17 +238,13 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Preset</span>
+                <span class="font-semibold text-default">{{ t('common.presetLabel') }}</span>
               </div>
             </template>
 
             <UTooltip
               side="bottom"
-              :text="
-                hasFormatInConfig
-                  ? 'Presets are disabled. Format key is present in the command options for yt-dlp.'
-                  : undefined
-              "
+              :text="hasFormatInConfig ? t('common.presetDisabled') : undefined"
             >
               <USelectMenu
                 id="preset"
@@ -259,11 +254,11 @@
                 label-key="label"
                 color="neutral"
                 :disabled="addInProgress || hasFormatInConfig"
-                placeholder="Select preset"
+                :placeholder="t('common.selectPreset')"
                 size="lg"
                 class="w-full"
-                :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-                :search-input="{ placeholder: 'Search presets' }"
+                :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
+                :search-input="{ placeholder: t('common.searchPresets') }"
               />
             </UTooltip>
           </UFormField>
@@ -276,17 +271,16 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Download path</span>
+                <span class="font-semibold text-default">{{ t('common.downloadPath') }}</span>
               </div>
             </template>
 
             <template #description>
-              Path relative to the download path, leave empty to use preset or default download
-              path.
+              {{ t('common.downloadPathDesc') }}
             </template>
 
-            <div class="flex flex-col gap-2 sm:flex-row">
-              <UTooltip :text="`Full Path: ${config.app.download_path}`">
+            <div class="flex flex-col gap-2 sm:flex-row" dir="ltr">
+              <UTooltip :text="t('common.fullPath', { path: config.app.download_path })">
                 <div
                   class="inline-flex min-h-11 items-center rounded-md border border-default bg-muted/30 px-3 text-sm text-toned"
                 >
@@ -308,16 +302,17 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-file-code-2" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Output template</span>
+                <span class="font-semibold text-default">{{ t('common.outputTemplate') }}</span>
               </div>
             </template>
 
             <template #description>
-              The template to use. Leave empty to use preset or default template.
+              {{ t('common.outputTemplateDesc') }}
             </template>
 
             <UInput
               id="output_template"
+              dir="ltr"
               v-model="form.template"
               type="text"
               :disabled="addInProgress"
@@ -335,42 +330,38 @@
       <div class="space-y-5">
         <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           <div class="rounded-lg border border-default bg-muted/20 p-3">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-power" class="size-4 text-toned" />
-                  <p class="text-sm font-semibold text-default">Enabled</p>
+                  <p class="text-sm font-semibold text-default">{{ t('common.enabled') }}</p>
                 </div>
-                <p class="text-xs text-toned">Whether the task is enabled.</p>
               </div>
               <USwitch v-model="form.enabled" :disabled="addInProgress" />
             </div>
           </div>
 
           <div class="rounded-lg border border-default bg-muted/20 p-3">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-play" class="size-4 text-toned" />
-                  <p class="text-sm font-semibold text-default">Auto Start</p>
+                  <p class="text-sm font-semibold text-default">{{ t('common.autoStart') }}</p>
                 </div>
-                <p class="text-xs text-toned">
-                  Whether to automatically queue and start the download task.
-                </p>
               </div>
               <USwitch v-model="form.auto_start" :disabled="addInProgress" />
             </div>
           </div>
 
           <div class="rounded-lg border border-default bg-muted/20 p-3">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-rss" class="size-4 text-toned" />
-                  <p class="text-sm font-semibold text-default">Enable Handler</p>
+                  <p class="text-sm font-semibold text-default">{{ t('common.enableHandler') }}</p>
                 </div>
                 <p class="text-xs text-toned">
-                  Tasks without a supported handler must use a timer.
+                  {{ t('common.enableHandlerDesc') }}
                 </p>
               </div>
               <USwitch v-model="form.handler_enabled" :disabled="addInProgress" />
@@ -378,13 +369,13 @@
           </div>
 
           <div v-if="!reference" class="rounded-lg border border-default bg-muted/20 p-3">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-archive" class="size-4 text-toned" />
-                  <p class="text-sm font-semibold text-default">Archive All</p>
+                  <p class="text-sm font-semibold text-default">{{ t('common.archiveAll') }}</p>
                 </div>
-                <p class="text-xs text-toned">Mark all existing items as downloaded after add.</p>
+                <p class="text-xs text-toned">{{ t('common.archiveAllDesc') }}</p>
               </div>
               <USwitch v-model="archiveAllAfterAdd" :disabled="addInProgress" />
             </div>
@@ -397,20 +388,20 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-              <span>Command options for yt-dlp</span>
+              <span>{{ t('common.cliOptions') }}</span>
             </div>
           </template>
           <template #description>
             <NuxtLink class="text-primary hover:underline" @click="showOptions = true">
-              View all options
+              {{ t('common.cliOptionsViewAll') }}
             </NuxtLink>
-            . Not all options are supported;
+            {{ t('common.cliOptionsDescPrefix') }}
             <a
               target="_blank"
               href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
               class="text-primary hover:underline"
             >
-              some are ignored
+              {{ t('common.cliOptionsDescIgnored') }}
             </a>
           </template>
           <TextareaAutocomplete
@@ -426,73 +417,25 @@
 
     <UAlert color="info" variant="soft">
       <template #description>
-        <ul class="list-disc space-y-2 pl-5 text-sm text-default">
-          <li>
-            <strong>Tasks:</strong> requires <code>--download-archive</code> in
-            <code>Command options for yt-dlp</code> can be set via presets or manually. Default
-            presets already include this option.
-          </li>
-          <li>
-            <strong>YouTube RSS:</strong> Use <code>channel_id</code> or
-            <code>playlist_id</code> URLs. Other link types (custom names, handles, user profiles)
-            are not supported.
-          </li>
-          <li>
-            <strong>Generic RSS/Atom:</strong> URL must end with <code>.rss</code> or
-            <code>.atom</code>. If not possible, append <code>&handler=rss</code> to existing query
-            parameters, or add <code>#handler=rss</code> as a fragment.
-          </li>
-          <li>
-            <strong>RSS Monitoring Basics:</strong> Runs hourly independently. Timer controls
-            scheduled downloads to yt-dlp. Disable <code>Enable Handler</code> to disable RSS
-            monitoring.
-          </li>
-          <li>
-            <strong>Timer Requirement:</strong> if no supported handler matches the URL, you must
-            set a CRON timer before saving.
-          </li>
+        <ul class="list-disc space-y-2 ps-5 text-sm text-default">
+          <li v-html="t('common.tasksInfo1')" />
+          <li v-html="t('common.tasksInfo2')" />
+          <li v-html="t('common.tasksInfo3')" />
+          <li v-html="t('common.tasksInfo4')" />
+          <li v-html="t('common.tasksInfo5')" />
         </ul>
       </template>
     </UAlert>
 
-    <div
-      class="flex flex-col-reverse gap-2 border-t border-default pt-5 sm:flex-row sm:justify-end"
-    >
-      <UButton
-        type="button"
-        color="neutral"
-        variant="outline"
-        size="lg"
-        icon="i-lucide-x"
-        :disabled="addInProgress"
-        class="justify-center"
-        @click="emitter('cancel')"
-      >
-        Cancel
-      </UButton>
-
-      <UButton
-        type="submit"
-        color="primary"
-        size="lg"
-        icon="i-lucide-save"
-        :disabled="addInProgress"
-        :loading="addInProgress"
-        class="justify-center"
-      >
-        Save
-      </UButton>
-    </div>
-
     <UModal
       v-if="showOptions"
       v-model:open="showOptions"
-      title="yt-dlp options"
+      :title="t('common.cliOptions')"
       :dismissible="true"
       :ui="{ content: 'sm:max-w-6xl', body: 'p-0' }"
     >
       <template #description>
-        <span class="sr-only">Browse available yt-dlp flags and descriptions.</span>
+        <span class="sr-only">{{ t('common.browseYtdlpFlags') }}</span>
       </template>
 
       <template #body>
@@ -517,7 +460,6 @@ const props = defineProps<{
 }>();
 
 const emitter = defineEmits<{
-  (e: 'cancel'): void;
   (e: 'dirty-change', dirty: boolean): void;
   (
     e: 'submit',
@@ -528,6 +470,7 @@ const emitter = defineEmits<{
 const toast = useNotification();
 const config = useYtpConfig();
 const dialog = useDialog();
+const { t } = useI18n();
 const tasksComposable = useTasks();
 const { findPreset, getPresetDefault, selectItems } = usePresetOptions();
 const showImport = useStorage('showTaskImport', false);
@@ -596,13 +539,14 @@ const textareaUi = {
   base: 'min-h-[7rem] w-full bg-elevated/60 ring-default focus-visible:ring-primary',
 };
 
-const isMultiLineInput = computed(() => Boolean(form.url && form.url.includes('\n')));
+const canUseMultiUrl = computed(() => props.reference == null);
+const isMultiLineInput = computed(
+  () => canUseMultiUrl.value && Boolean(form.url && form.url.includes('\n')),
+);
 const urlCount = computed(() => splitUrls(form.url || '').length);
 const presetItems = computed(() => selectItems.value);
 const presetDescription = computed(() => {
-  return hasFormatInConfig.value
-    ? 'Presets are disabled. Format key is present in the command options for yt-dlp.'
-    : "Select the preset to use for this URL. If the -f, --format argument is present in the command line options, the preset and all it's options will be ignored.";
+  return hasFormatInConfig.value ? t('common.presetDisabled') : t('common.presetDescription');
 });
 
 const hasFormatInConfig = computed<boolean>(
@@ -676,7 +620,7 @@ const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
     return;
   }
 
-  if (event.shiftKey && !isTextarea) {
+  if (canUseMultiUrl.value && event.shiftKey && !isTextarea) {
     event.preventDefault();
     const cursorPos = target.selectionStart || form.url.length;
     form.url =
@@ -696,7 +640,7 @@ const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
 
 const handlePaste = async (event: ClipboardEvent): Promise<void> => {
   const pastedText = event.clipboardData?.getData('text') || '';
-  if (!pastedText.includes('\n')) {
+  if (!canUseMultiUrl.value || !pastedText.includes('\n')) {
     return;
   }
 
@@ -739,10 +683,10 @@ const confirmImportOverwrite = async (): Promise<boolean> => {
   }
 
   const { status } = await dialog.confirmDialog({
-    title: 'Overwrite current form?',
-    message: 'Importing will overwrite the current task form fields.',
-    confirmText: 'Overwrite',
-    cancelText: 'Cancel',
+    title: t('common.overwriteForm'),
+    message: t('common.overwriteFormDesc'),
+    confirmText: t('common.overwrite'),
+    cancelText: t('common.cancel'),
     confirmColor: 'warning',
   });
 
@@ -753,12 +697,17 @@ const checkInfo = async (): Promise<void> => {
   const urls = splitUrls(form.url || '');
 
   if (urls.length === 0) {
-    toast.error('At least one URL is required.');
+    toast.error(t('common.validationUrlRequired'));
+    return;
+  }
+
+  if (!canUseMultiUrl.value && urls.length > 1) {
+    toast.error(t('common.multipleUrlsAddOnly'));
     return;
   }
 
   if (!form.name) {
-    toast.error('The name field is required.');
+    toast.error(t('common.validationNameRequired'));
     return;
   }
 
@@ -772,7 +721,7 @@ const checkInfo = async (): Promise<void> => {
       CronExpressionParser.parse(form.timer);
     } catch (error: any) {
       console.error(error);
-      toast.error(`Invalid CRON expression. ${error.message}`);
+      toast.error(t('common.validationInvalidCron', { error: error.message }));
       return;
     }
   }
@@ -780,7 +729,7 @@ const checkInfo = async (): Promise<void> => {
   try {
     new URL(urls[0] || '');
   } catch {
-    toast.error('Invalid URL');
+    toast.error(t('common.invalidUrl'));
     return;
   }
 
@@ -857,7 +806,7 @@ const checkInfo = async (): Promise<void> => {
 const importItem = async (): Promise<void> => {
   const val = import_string.value.trim();
   if (!val) {
-    toast.error('The import string is required.');
+    toast.error(t('common.validationImportRequired'));
     return;
   }
 
@@ -869,7 +818,7 @@ const importItem = async (): Promise<void> => {
     const item = decode(val) as ExportedTask;
 
     if ('task' !== item._type) {
-      toast.error(`Invalid import string. Expected type 'task', got '${item._type}'.`);
+      toast.error(t('common.validationInvalidImport', { expected: 'task', type: item._type }));
       import_string.value = '';
       return;
     }
@@ -887,7 +836,7 @@ const importItem = async (): Promise<void> => {
     if (item.preset) {
       const preset = findPreset(item.preset);
       if (!preset) {
-        toast.warning(`Preset '${item.preset}' not found. Preset will be set to default.`);
+        toast.warning(t('common.presetNotFound', { preset: item.preset }));
         form.preset = 'default';
       } else {
         form.preset = item.preset;
@@ -898,7 +847,7 @@ const importItem = async (): Promise<void> => {
     showImport.value = false;
   } catch (error: any) {
     console.error(error);
-    toast.error(`Failed to import string. ${error.message}`);
+    toast.error(t('common.validationImportParseFailed', { error: error.message }));
   }
 };
 
@@ -964,7 +913,7 @@ const convert_url = async (url: string): Promise<string> => {
     }
   } catch (error: any) {
     console.error(error);
-    toast.error(`Error: ${error.message}`);
+    toast.error(t('common.errorPrefix', { msg: error.message }));
   } finally {
     convertInProgress.value = false;
   }
@@ -984,7 +933,7 @@ const requireTimerForTask = async (
   }
 
   if (item.handler_enabled === false) {
-    throw new Error('This task needs a CRON timer because the handler is disabled.');
+    throw new Error(t('common.handlerDisabledCron'));
   }
 
   const result = await tasksComposable.inspectTaskHandler({
@@ -994,14 +943,14 @@ const requireTimerForTask = async (
   });
 
   if (!result) {
-    throw new Error('Failed to verify handler support. Set a CRON timer or try again.');
+    throw new Error(t('common.handlerVerifyFailed'));
   }
 
   if (result?.matched) {
     return;
   }
 
-  throw new Error('This task needs a CRON timer because no supported handler matches the URL.');
+  throw new Error(t('common.handlerNoMatch'));
 };
 
 const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string = '') => {

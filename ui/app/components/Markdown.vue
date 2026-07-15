@@ -281,11 +281,17 @@
       color="warning"
       variant="soft"
       icon="i-lucide-triangle-alert"
-      title="Error"
+      :title="t('common.error')"
       :description="error"
     />
 
-    <div v-else class="docs-markdown min-w-0 max-w-none" v-html="content" @click="handleClick" />
+    <div
+      v-else
+      class="docs-markdown min-w-0 max-w-none"
+      v-html="content"
+      @click="handleClick"
+      dir="ltr"
+    />
   </div>
 </template>
 
@@ -296,6 +302,8 @@ import markedAlert from 'marked-alert';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 import { resolveDocsImageSrc, resolveDocsLink } from '~/composables/useDocs';
 import { parse_api_error, request } from '~/utils';
+
+const { t } = useI18n();
 
 type MarkdownToken = {
   type: string;
@@ -435,7 +443,7 @@ const loader = async (file: string) => {
     });
 
     if (!response.ok) {
-      let message = response.statusText || 'Failed to load documentation';
+      let message = response.statusText || t('common.failedFetch');
 
       try {
         message = await parse_api_error(response.json());

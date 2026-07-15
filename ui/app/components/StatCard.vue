@@ -2,11 +2,17 @@
   <div class="ytp-card bg-elevated/40 p-3">
     <div class="flex items-center justify-between gap-3">
       <div class="min-w-0 space-y-1">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-toned">{{ label }}</p>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-toned">
+          <bdi>{{ label }}</bdi>
+        </p>
         <UTooltip v-if="tooltip" :text="tooltip" :content="{ side: 'left' }">
           <div :class="valueWrap ? 'space-y-1' : 'flex items-baseline gap-1.5'">
-            <span class="text-sm font-semibold text-highlighted">{{ value }}</span>
-            <span v-if="hint" class="truncate text-xs text-toned">{{ hint }}</span>
+            <span class="text-sm font-semibold text-highlighted"
+              ><bdi>{{ value }}</bdi></span
+            >
+            <span v-if="hint" class="truncate text-xs text-toned"
+              ><bdi>{{ hint }}</bdi></span
+            >
           </div>
         </UTooltip>
         <div v-else :class="valueWrap ? 'space-y-1' : 'flex items-baseline gap-1.5'">
@@ -15,9 +21,11 @@
               'text-sm font-semibold text-highlighted',
               valueWrap ? 'block wrap-break-word' : '',
             ]"
-            >{{ value }}</span
+            ><bdi>{{ value }}</bdi></span
           >
-          <span v-if="hint" class="truncate text-xs text-toned">{{ hint }}</span>
+          <span v-if="hint" class="truncate text-xs text-toned"
+            ><bdi>{{ hint }}</bdi></span
+          >
         </div>
       </div>
       <span

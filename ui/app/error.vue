@@ -7,27 +7,26 @@
             <div class="min-w-0 space-y-2">
               <div class="flex flex-wrap items-center gap-2 text-sm text-toned">
                 <UIcon name="i-lucide-triangle-alert" class="size-4 text-warning" />
-                <span>Application error</span>
+                <span>{{ t('app.error.applicationError') }}</span>
               </div>
 
               <h1 class="text-2xl font-semibold text-highlighted sm:text-3xl">
-                {{ error.status || 'Unknown Error' }}
+                {{ error.status || t('app.error.unknownError') }}
                 <span v-if="error.statusText"> - {{ error.statusText }}</span>
               </h1>
 
               <p class="max-w-3xl text-sm leading-6 text-toned">
-                An unexpected error interrupted this view. You can go back home or retry the current
-                route.
+                {{ t('app.error.description') }}
               </p>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 lg:justify-end">
               <UButton color="neutral" variant="outline" size="sm" icon="i-lucide-house" to="/">
-                Back to Home
+                {{ t('app.error.backToHome') }}
               </UButton>
 
               <UButton color="primary" size="sm" icon="i-lucide-rotate-cw" @click="handleRetry">
-                Retry
+                {{ t('common.retry') }}
               </UButton>
             </div>
           </div>
@@ -37,7 +36,7 @@
             color="warning"
             variant="soft"
             icon="i-lucide-circle-alert"
-            title="Details"
+            :title="t('app.error.details')"
             :description="error.message"
           />
 
@@ -51,7 +50,7 @@
                 :name="showStacks ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
                 class="size-4"
               />
-              <span>Stack trace</span>
+              <span>{{ t('app.error.stackTrace') }}</span>
             </button>
 
             <div
@@ -71,6 +70,8 @@
 
 <script setup lang="ts">
 import type { NuxtError } from '#app';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   error: NuxtError;

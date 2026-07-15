@@ -20,6 +20,7 @@ export const usePresetOptions = (
   source?: MaybeRefOrGetter<Preset[] | readonly Preset[] | undefined>,
   options: UsePresetOptionsOptions = {},
 ) => {
+  const { t } = useI18n();
   const config = useYtpConfig();
 
   const presets = computed<Preset[]>(() => {
@@ -44,12 +45,12 @@ export const usePresetOptions = (
     const groups =
       options.order === 'default-first'
         ? [
-            { label: 'Default presets', list: defaultPresets.value },
-            { label: 'Custom presets', list: customPresets.value },
+            { label: t('common.defaultPresets'), list: defaultPresets.value },
+            { label: t('common.customPresets'), list: customPresets.value },
           ]
         : [
-            { label: 'Custom presets', list: customPresets.value },
-            { label: 'Default presets', list: defaultPresets.value },
+            { label: t('common.customPresets'), list: customPresets.value },
+            { label: t('common.defaultPresets'), list: defaultPresets.value },
           ];
 
     groups.forEach((group) => {

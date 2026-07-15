@@ -14,7 +14,7 @@
             }
           "
         >
-          {{ showImport ? 'Hide' : 'Show' }} import
+          {{ showImport ? t('common.hideImport') : t('common.showImport') }}
         </UButton>
       </div>
 
@@ -23,17 +23,18 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Import string</span>
+              <span class="font-semibold text-default">{{ t('common.importString') }}</span>
             </div>
           </template>
 
           <template #description>
-            <span>You can use this field to populate the data, using shared string.</span>
+            <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
           <div class="flex flex-col gap-2 sm:flex-row">
             <UInput
               id="import_string"
+              dir="ltr"
               v-model="importString"
               type="text"
               autocomplete="off"
@@ -52,7 +53,7 @@
               :disabled="!importString"
               @click="() => void importItem()"
             >
-              Import
+              {{ t('common.import') }}
             </UButton>
           </div>
         </UFormField>
@@ -62,12 +63,8 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-type" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Field Name</span>
+            <span class="font-semibold text-default">{{ t('common.fieldName') }}</span>
           </div>
-        </template>
-
-        <template #description>
-          <span>The name of the field, it will be shown in the UI.</span>
         </template>
 
         <UInput
@@ -84,12 +81,8 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-message-square-text" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Field Description</span>
+            <span class="font-semibold text-default">{{ t('common.fieldDescription') }}</span>
           </div>
-        </template>
-
-        <template #description>
-          <span>A short description of the field, it will be shown in the UI.</span>
         </template>
 
         <UInput
@@ -106,13 +99,13 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-shapes" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Field Type</span>
+            <span class="font-semibold text-default">{{ t('common.fieldType') }}</span>
           </div>
         </template>
 
         <template #description>
           <span>
-            Field Type. String is a single line, Text is a multi-line, Bool is a checkbox.
+            {{ t('common.fieldTypeDesc') }}
           </span>
         </template>
 
@@ -130,23 +123,22 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Associated yt-dlp option</span>
+            <span class="font-semibold text-default">{{ t('common.associatedYtdlpOption') }}</span>
           </div>
         </template>
         <template #description>
-          <span>
-            The long form of yt-dlp option name, e.g. <code>--no-overwrites</code> not
-            <code>-w</code>.
-          </span>
+          <span v-html="t('common.associatedYtdlpOptionDesc')" />
         </template>
 
         <InputAutocomplete
           v-model="form.field"
           :options="ytDlpOptions"
           :disabled="addInProgress"
-          placeholder="Type or select a yt-dlp option"
+          :placeholder="t('common.selectOption')"
           :multiple="false"
           :openOnFocus="true"
+          :preferUp="true"
+          dir="ltr"
         />
       </UFormField>
 
@@ -154,14 +146,13 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Field Order</span>
+            <span class="font-semibold text-default">{{ t('common.fieldOrder') }}</span>
           </div>
         </template>
 
         <template #description>
           <span>
-            The order of the field, used to sort the fields in the UI. Lower numbers will appear
-            first.
+            {{ t('common.fieldOrderDesc') }}
           </span>
         </template>
 
@@ -180,78 +171,38 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-image" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Field Icon</span>
+            <span class="font-semibold text-default">{{ t('common.fieldIcon') }}</span>
           </div>
         </template>
         <template #description>
-          <span>
-            The icon of the field must use a
-            <a
-              href="https://icones.js.org/collection/lucide"
-              target="_blank"
-              rel="noreferrer"
-              class="text-primary hover:underline"
-            >
-              Lucide icon
-            </a>
-            name in the <code>i-lucide-*</code> format, e.g. <code>i-lucide-image</code>. Leave
-            empty for no icon.
-          </span>
+          <span v-html="t('common.fieldIconDesc')" />
         </template>
 
-        <UInput
+        <IconAutocomplete
+          id="field_icon"
           v-model="form.icon"
-          type="text"
-          size="lg"
+          :options="iconOptions"
           :disabled="addInProgress"
-          class="w-full"
-          :ui="inputUi"
+          :placeholder="t('common.fieldIconPlaceholder')"
+          :preferUp="true"
         />
       </UFormField>
-    </div>
-
-    <div
-      class="flex flex-col-reverse gap-2 border-t border-default pt-5 sm:flex-row sm:justify-end"
-    >
-      <UButton
-        type="button"
-        color="neutral"
-        variant="outline"
-        size="lg"
-        icon="i-lucide-x"
-        :disabled="addInProgress"
-        class="justify-center"
-        @click="emitter('cancel')"
-      >
-        Cancel
-      </UButton>
-
-      <UButton
-        type="submit"
-        color="primary"
-        size="lg"
-        icon="i-lucide-save"
-        :disabled="addInProgress"
-        :loading="addInProgress"
-        class="justify-center"
-      >
-        Save
-      </UButton>
     </div>
   </form>
 </template>
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
+import IconAutocomplete from '~/components/IconAutocomplete.vue';
 import InputAutocomplete from '~/components/InputAutocomplete.vue';
 import { useConfirm } from '~/composables/useConfirm';
 import type { ImportedItem } from '~/types';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { DLField } from '~/types/dl_fields';
 import { decode } from '~/utils';
+import { bundledUiIconNames, isBundledUiIcon } from '~/utils/generatedIconCatalog';
 
 const emitter = defineEmits<{
-  (e: 'cancel'): void;
   (e: 'dirty-change', dirty: boolean): void;
   (e: 'submit', payload: { reference: number | null | undefined; item: DLField }): void;
 }>();
@@ -265,11 +216,20 @@ const props = defineProps<{
 const toast = useNotification();
 const box = useConfirm();
 const config = useYtpConfig();
+const { t } = useI18n();
 
 const fieldTypes = ['string', 'text', 'bool'] as const;
-const fieldTypeItems = [...fieldTypes];
+const fieldTypeItems = computed(() => [
+  { label: t('common.fieldTypeString'), value: 'string' },
+  { label: t('common.fieldTypeText'), value: 'text' },
+  { label: t('common.fieldTypeBool'), value: 'bool' },
+]);
 const form = reactive<DLField>(normalizeField(props.item));
 const ytDlpOptions = ref<AutoCompleteOptions>([]);
+const iconOptions: AutoCompleteOptions = bundledUiIconNames.map((name) => ({
+  value: name,
+  description: name.replace('i-lucide-', '').replaceAll('-', ' '),
+}));
 const showImport = useStorage('showDlFieldsImport', false);
 const importString = ref('');
 
@@ -356,7 +316,7 @@ function normalizeField(value?: Partial<DLField> | null): DLField {
 const importItem = async (): Promise<void> => {
   const value = importString.value.trim();
   if (!value) {
-    toast.error('The import string is required.');
+    toast.error(t('common.validationImportRequired'));
     return;
   }
 
@@ -365,14 +325,17 @@ const importItem = async (): Promise<void> => {
 
     if (!item._type || item._type !== 'dl_field') {
       toast.error(
-        `Invalid import string. Expected type 'dl_field', got '${item._type ?? 'unknown'}'.`,
+        t('common.validationInvalidImport', {
+          expected: 'dl_field',
+          type: item._type ?? 'unknown',
+        }),
       );
       return;
     }
 
     if (
       (form.name || form.field || form.description) &&
-      !(await box.confirm('Overwrite the current form fields?'))
+      !(await box.confirm(t('common.overwriteForm')))
     ) {
       return;
     }
@@ -381,30 +344,35 @@ const importItem = async (): Promise<void> => {
     importString.value = '';
     showImport.value = false;
   } catch (error: any) {
-    toast.error(`Failed to parse import string. ${error.message}`);
+    toast.error(t('common.validationImportParseFailed', { error: error.message }));
   }
 };
 
 const checkInfo = (): void => {
   for (const key of ['name', 'field', 'kind', 'description'] as const) {
     if (!form[key]) {
-      toast.error(`The ${key} field is required.`);
+      toast.error(t('common.fieldRequired', { field: key }));
       return;
     }
   }
 
   if (!form.order || form.order < 1) {
-    toast.error('Order must be a positive number.');
+    toast.error(t('common.validationOrderPositive'));
     return;
   }
 
   if (!fieldTypes.includes(form.kind)) {
-    toast.error(`Invalid field type: ${form.kind}`);
+    toast.error(t('common.validationInvalidFieldType', { kind: form.kind }));
     return;
   }
 
   if (!/^--[a-zA-Z0-9-]+$/.test(form.field)) {
-    toast.error('Invalid field format, it must start with "--" and contain no spaces.');
+    toast.error(t('common.validationInvalidFieldFormat'));
+    return;
+  }
+
+  if (form.icon && !isBundledUiIcon(form.icon)) {
+    toast.error(t('common.validationInvalidIcon'));
     return;
   }
 

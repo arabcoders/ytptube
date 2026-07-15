@@ -1,11 +1,11 @@
 <template>
   <div class="w-full min-w-0 max-w-full space-y-4 p-1 sm:p-2">
     <div class="grid gap-4 rounded-lg border border-default bg-muted/10 p-4 lg:grid-cols-12">
-      <UFormField label="Search" class="lg:col-span-4" :ui="fieldUi">
+      <UFormField :label="t('common.search')" class="lg:col-span-4" :ui="fieldUi">
         <UInput
           v-model.trim="filters.query"
           type="text"
-          placeholder="Filter by flag or description..."
+          :placeholder="t('common.filterFlagDesc')"
           autocomplete="off"
           class="w-full"
           :ui="inputUi"
@@ -16,7 +16,11 @@
         </UInput>
       </UFormField>
 
-      <UFormField label="Group Filter" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+      <UFormField
+        :label="t('common.groupFilter')"
+        class="sm:col-span-6 lg:col-span-2"
+        :ui="fieldUi"
+      >
         <USelectMenu
           v-model="filters.group"
           :items="groupItems"
@@ -25,11 +29,11 @@
           color="neutral"
           class="w-full"
           :ui="{ content: 'min-w-[13rem]' }"
-          :search-input="{ placeholder: 'Search groups' }"
+          :search-input="{ placeholder: t('common.searchGroups') }"
         />
       </UFormField>
 
-      <UFormField label="Display" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+      <UFormField :label="t('common.display')" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
         <USelectMenu
           v-model="displayMode"
           :items="displayItems"
@@ -42,7 +46,7 @@
         />
       </UFormField>
 
-      <UFormField label="Sort By" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+      <UFormField :label="t('common.sortBy')" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
         <USelectMenu
           v-model="sortBy"
           :items="sortItems"
@@ -55,7 +59,7 @@
         />
       </UFormField>
 
-      <UFormField label="Order" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+      <UFormField :label="t('common.order')" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
         <USelectMenu
           v-model="sortDir"
           :items="orderItems"
@@ -68,7 +72,7 @@
         />
       </UFormField>
 
-      <UFormField label="Flags" class="lg:col-span-12" :ui="fieldUi">
+      <UFormField :label="t('common.flagsColumn')" class="lg:col-span-12" :ui="fieldUi">
         <div class="flex flex-wrap gap-2">
           <UButton
             v-for="item in flagFilterItems"
@@ -96,7 +100,7 @@
             :disabled="isLoading"
             @click="() => void reload()"
           >
-            Reload
+            {{ t('common.refresh') }}
           </UButton>
         </div>
       </UFormField>
@@ -107,8 +111,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading yt-dlp options. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <UAlert
@@ -116,12 +120,12 @@
       color="warning"
       variant="soft"
       icon="i-lucide-search-x"
-      title="No options match your criteria."
+      :title="t('common.noOptionsMatch')"
     />
 
     <template v-else-if="displayMode === 'grouped' && grouped.length !== 0">
       <section v-for="group in grouped" :key="group.name" class="space-y-3">
-        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted" dir="ltr">
           <UIcon name="i-lucide-folder-open" class="size-4 text-toned" />
           <span>{{ group.name }}</span>
           <UBadge color="neutral" variant="soft" size="sm">{{ group.items.length }}</UBadge>
@@ -129,24 +133,24 @@
 
         <div class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <table class="min-w-180 w-full table-auto text-sm">
+            <table class="min-w-180 w-full table-auto text-sm" dir="ltr">
               <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
                 <tr
-                  class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+                  class="text-left [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
                 >
-                  <th class="w-80 whitespace-nowrap">Flags</th>
-                  <th>Description</th>
+                  <th class="w-80 whitespace-nowrap">{{ t('common.flagsColumn') }}</th>
+                  <th>{{ t('common.description') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-default">
                 <tr
                   v-for="opt in group.items"
                   :key="opt.flags.join('|')"
-                  class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+                  class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
                 >
                   <td class="w-80 px-3 py-3 align-top">
-                    <div class="flex items-start gap-2">
-                      <div class="flex flex-wrap gap-1.5">
+                    <div class="flex items-start gap-3" dir="ltr">
+                      <div class="flex min-w-0 flex-1 flex-wrap gap-1.5">
                         <UBadge
                           v-for="flag in opt.flags"
                           :key="flag"
@@ -159,7 +163,7 @@
                         </UBadge>
                       </div>
 
-                      <UTooltip text="Copy long flag">
+                      <UTooltip :text="t('common.copyLongFlag')">
                         <UButton
                           type="button"
                           color="neutral"
@@ -192,25 +196,25 @@
 
     <div v-else class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-215 w-full table-auto text-sm">
+        <table class="min-w-215 w-full table-auto text-sm" dir="ltr">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-left [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
-              <th class="w-80 whitespace-nowrap">Flags</th>
-              <th class="w-36 whitespace-nowrap">Group</th>
-              <th>Description</th>
+              <th class="w-80 whitespace-nowrap">{{ t('common.flagsColumn') }}</th>
+              <th class="w-36 whitespace-nowrap">{{ t('common.groupColumn') }}</th>
+              <th>{{ t('common.description') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-default">
             <tr
               v-for="opt in visible"
               :key="opt.flags.join('|')"
-              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td class="w-80 px-3 py-3 align-top">
-                <div class="flex items-start gap-2">
-                  <div class="flex flex-wrap gap-1.5">
+                <div class="flex items-start gap-3" dir="ltr">
+                  <div class="flex min-w-0 flex-1 flex-wrap gap-1.5">
                     <UBadge
                       v-for="flag in opt.flags"
                       :key="flag"
@@ -223,7 +227,7 @@
                     </UBadge>
                   </div>
 
-                  <UTooltip text="Copy long flag">
+                  <UTooltip :text="t('common.copyLongFlag')">
                     <UButton
                       type="button"
                       color="neutral"
@@ -266,6 +270,8 @@ import {
   YTDLP_ALL_GROUPS,
 } from '~/utils/ytdlpOptions';
 
+const { t } = useI18n();
+
 const isLoading = ref(false);
 const options = ref<YTDLPOption[]>([]);
 const displayMode = useStorage<'grouped' | 'list'>('opts_display', 'grouped');
@@ -289,26 +295,26 @@ const inputUi = {
   base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
 };
 
-const displayItems = [
-  { label: 'Grouped', value: 'grouped' },
-  { label: 'List', value: 'list' },
-];
+const displayItems = computed(() => [
+  { label: t('common.grouped'), value: 'grouped' },
+  { label: t('common.list'), value: 'list' },
+]);
 
-const sortItems = [
-  { label: 'Flag', value: 'flag' },
-  { label: 'Group', value: 'group' },
-];
+const sortItems = computed(() => [
+  { label: t('common.sortByFlag'), value: 'flag' },
+  { label: t('common.groupColumn'), value: 'group' },
+]);
 
-const orderItems = [
-  { label: 'Asc', value: 'asc' },
-  { label: 'Desc', value: 'desc' },
-];
+const orderItems = computed(() => [
+  { label: t('common.asc'), value: 'asc' },
+  { label: t('common.desc'), value: 'desc' },
+]);
 
-const flagFilterItems = [
-  { label: 'Any', value: 'any' as const },
-  { label: 'Short Only (-x)', value: 'short' as const },
-  { label: 'Long Only (--xyz)', value: 'long' as const },
-];
+const flagFilterItems = computed(() => [
+  { label: t('common.anyFilter'), value: 'any' as const },
+  { label: t('common.shortFilter'), value: 'short' as const },
+  { label: t('common.longFilter'), value: 'long' as const },
+]);
 
 const reload = async (): Promise<void> => {
   try {

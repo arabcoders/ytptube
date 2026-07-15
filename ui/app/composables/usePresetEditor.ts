@@ -34,6 +34,7 @@ const sanitizePreset = (item: Preset | EditablePreset): Partial<Preset> => {
 };
 
 export const usePresetEditor = () => {
+  const { t } = useI18n();
   const presetsStore = usePresets();
 
   const isOpen = ref(false);
@@ -54,18 +55,20 @@ export const usePresetEditor = () => {
     handleOpenChange,
   } = useDirtyCloseGuard(isOpen, {
     dirty,
-    message: 'You have unsaved preset changes. Do you want to discard them?',
+    message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();
     },
   });
 
-  const modalTitle = computed(() => {
-    return reference.value ? `Edit - ${prettyName(preset.value.name || '')}` : 'Add';
-  });
+  const modalTitle = computed(() =>
+    reference.value
+      ? t('common.editTitle', { name: prettyName(preset.value.name || '') })
+      : t('common.add'),
+  );
 
   const modalDescription = computed(() => {
-    return reference.value ? 'Update an existing preset.' : 'Create a preset.';
+    return reference.value ? t('common.updateDescription') : t('common.createDescription');
   });
 
   const modalKey = computed(() => `${reference.value ?? 'create'}:${sessionId.value}`);

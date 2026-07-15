@@ -14,7 +14,7 @@
           }
         "
       >
-        {{ showImport ? 'Hide import' : 'Show import' }}
+        {{ showImport ? t('common.hideImport') : t('common.showImport') }}
       </UButton>
     </div>
 
@@ -25,38 +25,35 @@
       <UFormField
         v-if="availableDefinitions.length"
         :ui="fieldUi"
-        description="Pre-fill from an existing task definition."
+        :description="t('common.prefillFromDef')"
       >
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-copy" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Import from existing</span>
+            <span class="font-semibold text-default">{{ t('common.importFromExisting') }}</span>
           </div>
         </template>
 
         <USelectMenu
           v-model="selectedExistingValue"
           :items="existingDefinitionItems"
-          placeholder="Select a definition"
+          :placeholder="t('common.selectDefinition')"
           value-key="value"
           label-key="label"
           color="neutral"
           class="w-full"
-          :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-          :search-input="{ placeholder: 'Search definitions' }"
+          :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
+          :search-input="{ placeholder: t('common.searchPresets') }"
           :disabled="isBusy"
           @update:model-value="importExisting"
         />
       </UFormField>
 
-      <UFormField
-        :ui="fieldUi"
-        description="Paste shared task definition string here to import it."
-      >
+      <UFormField :ui="fieldUi" :description="t('common.importStringDesc')">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-import" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Import string</span>
+            <span class="font-semibold text-default">{{ t('common.importString') }}</span>
           </div>
         </template>
 
@@ -68,6 +65,7 @@
             class="w-full"
             :ui="inputUi"
             :disabled="isBusy"
+            dir="ltr"
           />
 
           <UButton
@@ -79,7 +77,7 @@
             :disabled="isBusy || !importString.trim()"
             @click="importFromString"
           >
-            Import
+            {{ t('common.import') }}
           </UButton>
         </div>
       </UFormField>
@@ -90,8 +88,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading full definition before editing."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <UAlert
@@ -99,8 +97,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-triangle-alert"
-      title="Advanced mode required"
-      description="This task definition uses features that cannot be represented with the visual editor. You can still update it via the advanced view."
+      :title="t('common.advancedModeRequired')"
+      :description="t('common.advancedModeRequiredDesc')"
     />
 
     <UAlert
@@ -108,7 +106,7 @@
       color="info"
       variant="soft"
       icon="i-lucide-info"
-      title="GUI limitations"
+      :title="t('common.guiLimitations')"
       :description="guiLimitations"
     />
 
@@ -117,12 +115,12 @@
         <UFormField
           class="md:col-span-6"
           :ui="fieldUi"
-          description="Human readable label for this definition."
+          :description="t('common.definitionNameDesc')"
         >
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-type" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Name</span>
+              <span class="font-semibold text-default">{{ t('common.name') }}</span>
             </div>
           </template>
 
@@ -138,12 +136,12 @@
         <UFormField
           class="md:col-span-3"
           :ui="fieldUi"
-          description="Lower values are evaluated first."
+          :description="t('common.definitionPriorityDesc')"
         >
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Priority</span>
+              <span class="font-semibold text-default">{{ t('common.priority') }}</span>
             </div>
           </template>
 
@@ -157,33 +155,36 @@
           />
         </UFormField>
 
-        <UFormField
-          class="md:col-span-3"
-          :ui="fieldUi"
-          description="Whether this definition is active or not."
-        >
+        <UFormField class="md:col-span-3" :ui="fieldUi">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-power" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Status</span>
+              <span class="font-semibold text-default">{{ t('common.status') }}</span>
             </div>
+          </template>
+          <template #description>
+            <span>&nbsp;</span>
           </template>
 
           <div
             class="flex min-h-11 items-center rounded-md border border-default bg-elevated/40 px-3"
           >
             <USwitch v-model="guiState.enabled" :disabled="isBusy" />
-            <span class="ml-3 text-sm text-default">{{
-              guiState.enabled ? 'Enabled' : 'Disabled'
+            <span class="ms-3 text-sm text-default">{{
+              guiState.enabled ? t('common.enabled') : t('common.disabled')
             }}</span>
           </div>
         </UFormField>
 
-        <UFormField class="md:col-span-12" :ui="fieldUi" description="One glob/regex url per line">
+        <UFormField
+          class="md:col-span-12"
+          :ui="fieldUi"
+          :description="t('common.matchPatternsDesc')"
+        >
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-link" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Match patterns</span>
+              <span class="font-semibold text-default">{{ t('common.matchPatterns') }}</span>
             </div>
           </template>
 
@@ -194,6 +195,7 @@
             class="w-full"
             :ui="textareaUi"
             :disabled="isBusy"
+            dir="ltr"
           />
         </UFormField>
       </div>
@@ -203,19 +205,16 @@
           <div class="space-y-1">
             <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
               <UIcon name="i-lucide-settings-2" class="size-4 text-toned" />
-              <span>Request setup</span>
+              <span>{{ t('common.requestSetup') }}</span>
             </div>
           </div>
 
           <div class="grid gap-4 md:grid-cols-2">
-            <UFormField
-              :ui="fieldUi"
-              description="Choose the fetch engine. You should use HTTPX when possible."
-            >
+            <UFormField :ui="fieldUi" :description="t('common.engineDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-cpu" class="size-4 text-toned" />
-                  <span class="font-semibold text-default">Engine</span>
+                  <span class="font-semibold text-default">{{ t('common.engine') }}</span>
                 </div>
               </template>
 
@@ -227,14 +226,15 @@
                 class="w-full"
                 :ui="inputUi"
                 :disabled="isBusy"
+                dir="ltr"
               />
             </UFormField>
 
-            <UFormField :ui="fieldUi" description="HTTP method to use when fetching the page.">
+            <UFormField :ui="fieldUi" :description="t('common.requestMethodDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-arrow-right-left" class="size-4 text-toned" />
-                  <span class="font-semibold text-default">Request Method</span>
+                  <span class="font-semibold text-default">{{ t('common.requestMethod') }}</span>
                 </div>
               </template>
 
@@ -246,6 +246,7 @@
                 class="w-full"
                 :ui="inputUi"
                 :disabled="isBusy"
+                dir="ltr"
               />
             </UFormField>
 
@@ -253,12 +254,12 @@
               v-if="guiState.engineType === 'selenium'"
               class="md:col-span-2"
               :ui="fieldUi"
-              description="Remote webdriver endpoint."
+              :description="t('common.seleniumHubUrlDesc')"
             >
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-server" class="size-4 text-toned" />
-                  <span class="font-semibold text-default">Selenium Hub URL (Required)</span>
+                  <span class="font-semibold text-default">{{ t('common.seleniumHubUrl') }}</span>
                 </div>
               </template>
 
@@ -269,18 +270,19 @@
                 class="w-full"
                 :ui="inputUi"
                 :disabled="isBusy"
+                dir="ltr"
               />
             </UFormField>
 
             <UFormField
               class="md:col-span-2"
               :ui="fieldUi"
-              description="Overrides the URL used to fetch the page. Useful for sites with separate feed URLs."
+              :description="t('common.requestUrlDesc')"
             >
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-link" class="size-4 text-toned" />
-                  <span class="font-semibold text-default">Request URL (optional)</span>
+                  <span class="font-semibold text-default">{{ t('common.requestUrl') }}</span>
                 </div>
               </template>
 
@@ -291,6 +293,7 @@
                 class="w-full"
                 :ui="inputUi"
                 :disabled="isBusy"
+                dir="ltr"
               />
             </UFormField>
           </div>
@@ -300,16 +303,16 @@
           <div class="space-y-1">
             <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
               <UIcon name="i-lucide-list-tree" class="size-4 text-toned" />
-              <span>Container selector</span>
+              <span>{{ t('common.containerSelector') }}</span>
             </div>
           </div>
 
           <div class="grid gap-4 md:grid-cols-12">
-            <UFormField class="md:col-span-4" :ui="fieldUi" description="Selector type">
+            <UFormField class="md:col-span-4" :ui="fieldUi" :description="t('common.selectorType')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-shapes" class="size-4 text-toned" />
-                  <span class="font-semibold text-default">Type</span>
+                  <span class="font-semibold text-default">{{ t('common.type') }}</span>
                 </div>
               </template>
 
@@ -321,14 +324,21 @@
                 class="w-full"
                 :ui="inputUi"
                 :disabled="isBusy"
+                dir="ltr"
               />
             </UFormField>
 
-            <UFormField class="md:col-span-8" :ui="fieldUi" description="Match expression">
+            <UFormField
+              class="md:col-span-8"
+              :ui="fieldUi"
+              :description="t('common.matchExpression')"
+            >
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-crosshair" class="size-4 text-toned" />
-                  <span class="font-semibold text-default">Selector / Expression</span>
+                  <span class="font-semibold text-default">{{
+                    t('common.selectorExpression')
+                  }}</span>
                 </div>
               </template>
 
@@ -339,6 +349,7 @@
                 class="w-full"
                 :ui="inputUi"
                 :disabled="isBusy"
+                dir="ltr"
               />
             </UFormField>
           </div>
@@ -350,7 +361,7 @@
           <div class="space-y-1">
             <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
               <UIcon name="i-lucide-braces" class="size-4 text-toned" />
-              <span>Extracted fields</span>
+              <span>{{ t('common.extractedFields') }}</span>
             </div>
           </div>
 
@@ -363,115 +374,116 @@
             :disabled="isBusy"
             @click="addField"
           >
-            Add field
+            {{ t('common.addField') }}
           </UButton>
         </div>
 
-        <div class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
-          <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <table class="min-w-215 table-fixed w-full text-sm">
-              <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-                <tr
-                  class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
-                >
-                  <th class="w-40">
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon name="i-lucide-key" class="size-3.5 text-toned" />
-                      <span>Key</span>
-                    </span>
-                  </th>
-                  <th class="w-36">
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon name="i-lucide-shapes" class="size-3.5 text-toned" />
-                      <span>Type</span>
-                    </span>
-                  </th>
-                  <th class="w-auto">
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon name="i-lucide-code" class="size-3.5 text-toned" />
-                      <span>Expression</span>
-                    </span>
-                  </th>
-                  <th class="w-44">
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon name="i-lucide-at-sign" class="size-3.5 text-toned" />
-                      <span>Attribute</span>
-                    </span>
-                  </th>
-                  <th class="w-20">
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon name="i-lucide-trash-2" class="size-3.5 text-toned" />
-                      <span>Action</span>
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-if="!guiState.fields.length">
-                  <td colspan="5" class="px-3 py-6 text-center text-sm text-toned">
-                    No extractor fields configured.
-                  </td>
-                </tr>
-                <tr
-                  v-for="(field, index) in guiState.fields"
-                  :key="`${index}-${field.key}`"
-                  class="align-top [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
-                >
-                  <td class="px-3 py-3">
-                    <UInput
-                      v-model="field.key"
-                      type="text"
-                      class="w-full"
-                      :ui="inputUi"
-                      :disabled="isBusy"
-                    />
-                  </td>
-                  <td class="px-3 py-3">
-                    <USelect
-                      v-model="field.type"
-                      :items="fieldTypeItems"
-                      value-key="value"
-                      label-key="label"
-                      class="w-full"
-                      :ui="inputUi"
-                      :disabled="isBusy"
-                    />
-                  </td>
-                  <td class="px-3 py-3">
-                    <UInput
-                      v-model="field.expression"
-                      type="text"
-                      class="w-full"
-                      :ui="inputUi"
-                      :disabled="isBusy"
-                    />
-                  </td>
-                  <td class="px-3 py-3">
-                    <UInput
-                      v-model="field.attribute"
-                      type="text"
-                      placeholder="Optional"
-                      class="w-full"
-                      :ui="inputUi"
-                      :disabled="isBusy"
-                    />
-                  </td>
-                  <td class="px-3 py-3 text-right">
-                    <UButton
-                      type="button"
-                      color="neutral"
-                      variant="outline"
-                      size="xs"
-                      icon="i-lucide-trash"
-                      square
-                      :disabled="isBusy"
-                      @click="removeField(index)"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="w-full min-w-0 overflow-x-auto overscroll-x-contain ytp-table-surface">
+          <table class="table-fixed w-full text-sm" dir="ltr">
+            <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
+              <tr
+                class="text-start [&>th]:border-e [&>th]:border-default/60 [&>th]:px-2 [&>th]:py-2.5 [&>th]:font-semibold [&>th:last-child]:border-e-0"
+              >
+                <th class="w-28">
+                  <span class="inline-flex items-center gap-1.5">
+                    <UIcon name="i-lucide-key" class="size-3.5 text-toned" />
+                    <span>{{ t('common.keyLabel') }}</span>
+                  </span>
+                </th>
+                <th class="w-28">
+                  <span class="inline-flex items-center gap-1.5">
+                    <UIcon name="i-lucide-shapes" class="size-3.5 text-toned" />
+                    <span>{{ t('common.fieldType') }}</span>
+                  </span>
+                </th>
+                <th class="w-auto">
+                  <span class="inline-flex items-center gap-1.5">
+                    <UIcon name="i-lucide-code" class="size-3.5 text-toned" />
+                    <span>{{ t('common.fieldExpression') }}</span>
+                  </span>
+                </th>
+                <th class="w-28">
+                  <span class="inline-flex items-center gap-1.5">
+                    <UIcon name="i-lucide-at-sign" class="size-3.5 text-toned" />
+                    <span>{{ t('common.fieldAttribute') }}</span>
+                  </span>
+                </th>
+                <th class="w-12">
+                  <span class="inline-flex items-center gap-1.5">
+                    <UIcon name="i-lucide-trash-2" class="size-3.5 text-toned" />
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-default">
+              <tr v-if="!guiState.fields.length">
+                <td colspan="5" class="px-2 py-6 text-center text-sm text-toned">
+                  {{ t('common.noExtractorFields') }}
+                </td>
+              </tr>
+              <tr
+                v-for="(field, index) in guiState.fields"
+                :key="`${index}-${field.key}`"
+                class="align-top [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
+              >
+                <td class="px-2 py-2">
+                  <UInput
+                    v-model="field.key"
+                    type="text"
+                    class="w-full"
+                    :ui="inputUi"
+                    :disabled="isBusy"
+                    dir="ltr"
+                  />
+                </td>
+                <td class="px-2 py-2">
+                  <USelect
+                    v-model="field.type"
+                    :items="fieldTypeItems"
+                    value-key="value"
+                    label-key="label"
+                    class="w-full"
+                    :ui="inputUi"
+                    :disabled="isBusy"
+                    dir="ltr"
+                  />
+                </td>
+                <td class="px-2 py-2">
+                  <UInput
+                    v-model="field.expression"
+                    type="text"
+                    class="w-full"
+                    :ui="inputUi"
+                    :disabled="isBusy"
+                    dir="ltr"
+                  />
+                </td>
+                <td class="px-2 py-2">
+                  <UInput
+                    v-model="field.attribute"
+                    type="text"
+                    :placeholder="t('common.optional')"
+                    class="w-full"
+                    :ui="inputUi"
+                    :disabled="isBusy"
+                    dir="ltr"
+                  />
+                </td>
+                <td class="px-2 py-2 text-end">
+                  <UButton
+                    type="button"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-trash"
+                    square
+                    :disabled="isBusy"
+                    @click="removeField(index)"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -480,17 +492,17 @@
         color="error"
         variant="soft"
         icon="i-lucide-circle-alert"
-        title="Unable to build definition"
+        :title="t('common.unableToBuildDef')"
         :description="guiError"
       />
     </template>
 
     <template v-else>
-      <UFormField :ui="fieldUi" description="Edit the full task definition JSON directly.">
+      <UFormField :ui="fieldUi">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-file-code-2" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Raw JSON definition</span>
+            <span class="font-semibold text-default">{{ t('common.rawJson') }}</span>
           </div>
         </template>
 
@@ -501,6 +513,7 @@
           :readonly="submitting"
           class="w-full font-mono text-sm"
           :ui="advancedTextareaUi"
+          dir="ltr"
         />
       </UFormField>
 
@@ -509,81 +522,10 @@
         color="error"
         variant="soft"
         icon="i-lucide-circle-alert"
-        title="Invalid JSON"
+        :title="t('common.invalidJson')"
         :description="errorMessage"
       />
     </template>
-
-    <div
-      class="flex flex-col gap-3 border-t border-default pt-5 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div class="inline-flex self-start rounded-md border border-default bg-muted/20 p-1">
-        <UButton
-          type="button"
-          size="sm"
-          icon="i-lucide-sliders-horizontal"
-          color="neutral"
-          :variant="mode === 'gui' ? 'soft' : 'ghost'"
-          :disabled="!guiSupported || isBusy"
-          @click="switchMode('gui')"
-        >
-          GUI
-        </UButton>
-        <UButton
-          type="button"
-          size="sm"
-          icon="i-lucide-code"
-          color="neutral"
-          :variant="mode === 'advanced' ? 'soft' : 'ghost'"
-          :disabled="isBusy"
-          @click="switchMode('advanced')"
-        >
-          Advanced
-        </UButton>
-      </div>
-
-      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <UButton
-          v-if="mode === 'advanced'"
-          type="button"
-          color="neutral"
-          variant="outline"
-          size="lg"
-          icon="i-lucide-wand-sparkles"
-          :disabled="isBusy"
-          class="justify-center"
-          @click="beautify"
-        >
-          Format
-        </UButton>
-
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          size="lg"
-          icon="i-lucide-x"
-          :disabled="submitting"
-          class="justify-center"
-          @click="cancel"
-        >
-          Cancel
-        </UButton>
-
-        <UButton
-          type="button"
-          color="primary"
-          size="lg"
-          icon="i-lucide-save"
-          :loading="submitting"
-          :disabled="isBusy"
-          class="justify-center"
-          @click="submit"
-        >
-          Save
-        </UButton>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -592,6 +534,8 @@ import { computed, reactive, ref, watch } from 'vue';
 
 import { prettyName, decode } from '~/utils';
 import type { TaskDefinitionDocument, TaskDefinitionSummary } from '~/types/task_definitions';
+
+const { t } = useI18n();
 
 type EditorMode = 'gui' | 'advanced';
 
@@ -627,7 +571,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'submit', payload: TaskDefinitionDocument): void;
-  (e: 'cancel'): void;
   (e: 'dirty-change', dirty: boolean): void;
   (e: 'import-existing', id: number): void;
 }>();
@@ -666,9 +609,9 @@ const guiState = reactive<GuiState>({
 const loading = computed(() => props.loading ?? false);
 const submitting = computed(() => props.submitting ?? false);
 const isBusy = computed(() => loading.value || submitting.value);
+const advancedMode = computed(() => mode.value === 'advanced');
 
-const guiLimitations =
-  'Only a single container selector and per-field extractors are exposed. More advanced constructs require raw view mode.';
+const guiLimitations = computed(() => t('common.editorInfo'));
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -859,16 +802,16 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
 
 const fromGui = (state: GuiState): TaskDefinitionDocument => {
   if (!state.name.trim()) {
-    throw new Error('Name is required.');
+    throw new Error(t('common.validationNameRequired'));
   }
 
   const matches = splitMatches(state.matchText);
   if (!matches.length) {
-    throw new Error('At least one match pattern is required.');
+    throw new Error(t('common.validationMatchRequired'));
   }
 
   if (!state.containerSelector.trim()) {
-    throw new Error('Container selector is required.');
+    throw new Error(t('common.validationSelectorRequired'));
   }
 
   const formattedFields: Record<string, Record<string, string>> = {};
@@ -878,7 +821,7 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
     }
 
     if (!field.expression.trim()) {
-      throw new Error(`Expression is required for field "${field.key}".`);
+      throw new Error(t('common.validationExpressionRequired', { key: field.key }));
     }
 
     formattedFields[field.key.trim()] = {
@@ -889,7 +832,7 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
   });
 
   if (!Object.keys(formattedFields).length) {
-    throw new Error('Configure at least one extractor field.');
+    throw new Error(t('common.validationFieldsRequired'));
   }
 
   const definition: Record<string, unknown> = {
@@ -949,19 +892,17 @@ const normalizeRequestConfig = (request: any): any => {
 
 const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
   if (!payload || Array.isArray(payload) || typeof payload !== 'object') {
-    throw new Error('Import payload is not a task definition object.');
+    throw new Error(t('common.validationImportPayload'));
   }
 
   const record = payload as Record<string, unknown>;
   if ('_type' in record && record._type !== undefined && record._type !== 'task_definition') {
-    throw new Error('Import string is not a task definition export.');
+    throw new Error(t('common.invalidImportDefinition'));
   }
 
   const version = record._version as string | undefined;
   if (!['1.0', '2.0'].includes(version ?? '')) {
-    throw new Error(
-      `Unsupported or missing _version field. Expected "1.0" or "2.0", got: ${version ?? 'undefined'}`,
-    );
+    throw new Error(t('common.unsupportedVersion'));
   }
 
   let base: TaskDefinitionDocument;
@@ -1011,18 +952,18 @@ const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
 const parseDocument = (): TaskDefinitionDocument | null => {
   try {
     if (!jsonText.value.trim()) {
-      throw new Error('Definition cannot be empty.');
+      throw new Error(t('common.validationDefinitionEmpty'));
     }
 
     const parsed = JSON.parse(jsonText.value) as unknown;
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-      throw new Error('Definition must be a JSON object.');
+      throw new Error(t('common.validationDefinitionObject'));
     }
 
     errorMessage.value = null;
     return parsed as TaskDefinitionDocument;
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Invalid JSON document.';
+    errorMessage.value = error instanceof Error ? error.message : t('common.invalidJsonDocument');
     return null;
   }
 };
@@ -1076,7 +1017,7 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
     jsonText.value = '';
     guiSupported.value = false;
     mode.value = 'advanced';
-    errorMessage.value = 'Failed to prepare definition for editing.';
+    errorMessage.value = t('common.failedPrepareDefinition');
   }
 
   nextTick(() => {
@@ -1091,7 +1032,7 @@ const importFromString = (): void => {
   }
 
   if (!importString.value.trim()) {
-    guiError.value = 'Import string cannot be empty.';
+    guiError.value = t('common.importStringEmpty');
     return;
   }
 
@@ -1102,7 +1043,7 @@ const importFromString = (): void => {
     importString.value = '';
     showImport.value = false;
   } catch (error) {
-    guiError.value = error instanceof Error ? error.message : 'Unable to import definition.';
+    guiError.value = error instanceof Error ? error.message : t('common.unableToImportDefinition');
   }
 };
 
@@ -1155,7 +1096,7 @@ const switchMode = (next: EditorMode): void => {
       errorMessage.value = null;
       guiError.value = null;
     } catch (error) {
-      guiError.value = error instanceof Error ? error.message : 'Failed to serialize GUI changes.';
+      guiError.value = error instanceof Error ? error.message : t('common.failedSerializeGui');
       return;
     }
   }
@@ -1174,7 +1115,7 @@ const submit = (): void => {
       emit('submit', doc);
       guiError.value = null;
     } catch (error) {
-      guiError.value = error instanceof Error ? error.message : 'Unable to build definition.';
+      guiError.value = error instanceof Error ? error.message : t('common.unableToBuildDef');
     }
     return;
   }
@@ -1201,13 +1142,14 @@ const beautify = (): void => {
   errorMessage.value = null;
 };
 
-const cancel = (): void => {
-  if (submitting.value) {
-    return;
-  }
-
-  emit('cancel');
-};
-
-defineExpose({ submit, beautify });
+defineExpose({
+  submit,
+  beautify,
+  switchMode,
+  advancedMode,
+  guiSupported,
+  isBusy,
+  mode,
+  submitting,
+});
 </script>

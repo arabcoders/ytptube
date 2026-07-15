@@ -9,6 +9,7 @@
     @click="handleClick"
   >
     <UTextarea
+      dir="ltr"
       :id="id"
       ref="textareaRef"
       v-model="model"
@@ -35,7 +36,7 @@
         >
           <UIcon name="i-lucide-file-down" class="size-5" />
         </span>
-        <p class="text-sm font-semibold">Drop file here</p>
+        <p class="text-sm font-semibold">{{ t('common.dropFileHere') }}</p>
       </div>
     </div>
 
@@ -51,6 +52,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -170,19 +173,19 @@ const processFile = async (file: File): Promise<void> => {
     if (file.size > props.maxSize) {
       const sizeMB = (file.size / 1024 / 1024).toFixed(2);
       const maxSizeMB = (props.maxSize / 1024 / 1024).toFixed(2);
-      emit('error', `File too large: ${sizeMB}MB. Maximum allowed size is ${maxSizeMB}MB.`);
+      emit('error', t('common.fileTooLarge', { size: sizeMB, max: maxSizeMB }));
       return;
     }
 
     const isBinary = await checkIfBinary(file);
     if (isBinary) {
-      emit('error', 'File appears to be binary. Please provide a text file.');
+      emit('error', t('common.fileBinary'));
       return;
     }
 
     model.value = await readFileAsText(file);
   } catch (error) {
-    emit('error', error instanceof Error ? error.message : 'Failed to read file');
+    emit('error', error instanceof Error ? error.message : t('common.fileReadFailed'));
   }
 };
 
@@ -228,11 +231,11 @@ const readFileAsText = (file: File): Promise<string> =>
       if (e.target?.result) {
         resolve(e.target.result as string);
       } else {
-        reject(new Error('Failed to read file'));
+        reject(new Error(t('common.fileReadFailed')));
       }
     };
 
-    reader.onerror = () => reject(new Error('File reading error'));
+    reader.onerror = () => reject(new Error(t('common.fileReadFailed')));
     reader.readAsText(file);
   });
 

@@ -26,7 +26,7 @@
           :disabled="isStartBlocked"
           @click="() => void runHelp()"
         >
-          Help
+          {{ t('common.help') }}
         </UButton>
 
         <UButton
@@ -36,7 +36,7 @@
           icon="i-lucide-eraser"
           @click="() => void clearOutput()"
         >
-          Clear output
+          {{ t('common.clearOutput') }}
         </UButton>
       </div>
     </div>
@@ -46,10 +46,14 @@
         <div
           class="flex min-h-72 min-w-0 flex-1 overflow-hidden rounded-sm border border-default bg-neutral-950/95 shadow-sm"
         >
-          <div ref="terminal_window" class="terminal-host h-full min-h-0 w-full overflow-hidden" />
+          <div
+            ref="terminal_window"
+            class="terminal-host h-full min-h-0 w-full overflow-hidden"
+            dir="ltr"
+          />
         </div>
 
-        <div class="ytp-card shadow-sm">
+        <div class="ytp-card shadow-sm" dir="ltr">
           <div
             class="flex flex-col gap-3 border-b border-default bg-muted/10 px-4 py-3 lg:flex-row lg:items-start lg:justify-between"
           >
@@ -59,7 +63,7 @@
                   class="flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-highlighted"
                 >
                   <UIcon name="i-lucide-send" class="size-4 shrink-0 text-toned" />
-                  <span>Command</span>
+                  <span>{{ t('console.command') }}</span>
 
                   <UBadge :color="sessionStatusColor" variant="soft" size="sm">
                     <span class="inline-flex items-center gap-1.5">
@@ -74,12 +78,12 @@
                 </div>
 
                 <UBadge :color="isMultiLineInput ? 'info' : 'neutral'" variant="soft" size="sm">
-                  {{ isMultiLineInput ? 'Multi-line' : 'Single-line' }}
+                  {{ isMultiLineInput ? t('console.multiLine') : t('console.singleLine') }}
                 </UBadge>
               </div>
 
               <p class="text-xs text-toned">
-                <kbd><kbd>Shift</kbd>+<kbd>Enter</kbd></kbd> to switch to multi-line input.
+                {{ t('console.shiftEnterHint') }}
               </p>
             </div>
           </div>
@@ -99,8 +103,8 @@
               color="warning"
               variant="soft"
               icon="i-lucide-rotate-cw"
-              title="Reconnecting to the command stream"
-              description="The connection was lost. Attempting to reconnect and restore the stream."
+              :title="t('console.reconnecting')"
+              :description="t('console.reconnectingDesc')"
             />
 
             <UAlert
@@ -108,8 +112,8 @@
               color="warning"
               variant="soft"
               icon="i-lucide-circle-off"
-              title="Session interrupted"
-              description="The command execution was interrupted."
+              :title="t('console.interrupted')"
+              :description="t('console.interruptedDesc')"
             />
 
             <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
@@ -125,6 +129,7 @@
                   :icon-class="isLoading ? 'animate-spin' : ''"
                   placeholder="--help"
                   :rows="5"
+                  dir="ltr"
                   @keydown="handleKeyDown"
                 />
 
@@ -138,6 +143,7 @@
                   :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-terminal'"
                   :icon-class="isLoading ? 'animate-spin' : ''"
                   placeholder="--help"
+                  dir="ltr"
                   :multiple="true"
                   :allowShortFlags="true"
                   @keydown="handleKeyDown"
@@ -155,18 +161,19 @@
                     trailing-icon="i-lucide-chevron-up"
                     class="flex-1 justify-center sm:flex-none sm:min-w-36"
                   >
-                    History
+                    {{ t('common.history') }}
                   </UButton>
 
                   <template #content>
                     <UCard
                       class="w-[min(92vw,42rem)] border border-default/70 shadow-sm"
+                      dir="ltr"
                       :ui="historyCardUi"
                     >
                       <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
                           <UIcon name="i-lucide-history" class="size-4 text-toned" />
-                          <span>Recent runs</span>
+                          <span>{{ t('console.recentRuns') }}</span>
                         </div>
 
                         <UButton
@@ -177,7 +184,7 @@
                           :disabled="recentSessionEntries.length < 1"
                           @click="() => void hideRecentSessions()"
                         >
-                          Hide recent runs
+                          {{ t('console.hideRecent') }}
                         </UButton>
                       </div>
 
@@ -186,7 +193,7 @@
                         color="info"
                         variant="soft"
                         icon="i-lucide-clock-3"
-                        title="No recent console sessions"
+                        :title="t('console.noSessions')"
                       />
 
                       <div
@@ -199,13 +206,14 @@
                               <tr
                                 v-for="item in recentSessionEntries"
                                 :key="item.sessionId"
-                                class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+                                class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
                               >
                                 <td class="px-3 py-3 align-middle">
                                   <div class="space-y-2">
                                     <button
                                       type="button"
-                                      class="block w-full text-left font-mono text-xs text-default hover:text-highlighted"
+                                      class="block w-full text-start font-mono text-xs text-default hover:text-highlighted"
+                                      dir="ltr"
                                       @click="() => void replayRecentSession(item)"
                                     >
                                       {{ item.command }}
@@ -266,14 +274,12 @@
                                             "
                                           >
                                             {{
-                                              moment
-                                                .unix(
-                                                  item.finishedAt ||
-                                                    item.startedAt ||
-                                                    item.createdAt ||
-                                                    0,
-                                                )
-                                                .fromNow()
+                                              relativeTime(
+                                                item.finishedAt ||
+                                                  item.startedAt ||
+                                                  item.createdAt ||
+                                                  0,
+                                              )
                                             }}
                                           </time>
                                         </span>
@@ -293,7 +299,7 @@
                                       icon="i-lucide-terminal"
                                       @click="() => void loadCommand(item.command)"
                                     >
-                                      Fill
+                                      {{ t('console.fill') }}
                                     </UButton>
 
                                     <UButton
@@ -325,7 +331,7 @@
                   class="flex-1 justify-center sm:flex-none sm:min-w-36"
                   @click="() => void cancelCommand()"
                 >
-                  Close output
+                  {{ t('console.closeOutput') }}
                 </UButton>
 
                 <UButton
@@ -338,7 +344,7 @@
                   class="flex-1 justify-center sm:flex-none sm:min-w-36"
                   @click="() => void reconnectSession()"
                 >
-                  Reconnect
+                  {{ t('common.reconnect') }}
                 </UButton>
 
                 <UButton
@@ -397,7 +403,9 @@ import { useConsoleSession } from '~/composables/useConsoleSession';
 import { useDialog } from '~/composables/useDialog';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { disableOpacity, enableOpacity } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+import { usePageShell } from '~/composables/usePageShell';
+const { locale, t } = useI18n();
 
 const ACTIVE_SESSION_STATUSES = ['starting', 'running', 'reconnecting'];
 
@@ -411,7 +419,8 @@ const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
 const consoleSession = useConsoleSession();
-const pageShell = requirePageShell('console');
+const pageShell = usePageShell('console');
+const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 
 const terminal = shallowRef<Terminal | null>(null);
 const terminalFit = shallowRef<FitAddon | null>(null);
@@ -453,7 +462,7 @@ const isStartBlocked = computed(() => isLoading.value);
 const canStartCommand = computed(() => !isStartBlocked.value && hasValidCommand.value);
 const runButtonLabel = computed(() => {
   if (runnableCommand.value === 'clear') {
-    return 'Clear output';
+    return t('common.clearOutput');
   }
 
   if (
@@ -461,43 +470,43 @@ const runButtonLabel = computed(() => {
     consoleSession.state.value.command.trim() === displayCommand.value &&
     ['finished', 'interrupted', 'expired', 'error'].includes(sessionStatus.value)
   ) {
-    return 'Run again';
+    return t('console.runAgain');
   }
 
-  return 'Run command';
+  return t('console.runCommand');
 });
 const sessionErrorTitle = computed(() => {
   if (typeof sessionExitCode.value === 'number') {
-    return 'Command failed';
+    return t('console.commandFailed');
   }
 
-  return hasActiveSession.value ? 'Command stream failed' : 'Command request failed';
+  return hasActiveSession.value ? t('console.streamFailed') : t('console.requestFailed');
 });
 const sessionStatusLabel = computed(() => {
   switch (sessionStatus.value) {
     case 'starting':
-      return 'Starting';
+      return t('common.starting');
 
     case 'running':
-      return 'Streaming';
+      return t('common.streaming');
 
     case 'reconnecting':
-      return 'Reconnecting';
+      return t('console.reconnectingStatus');
 
     case 'finished':
-      return sessionExitCode.value === 0 ? 'Finished' : 'Failed';
+      return sessionExitCode.value === 0 ? t('console.finished') : t('console.failed');
 
     case 'interrupted':
-      return 'Interrupted';
+      return t('console.interruptedStatus');
 
     case 'expired':
-      return 'Expired';
+      return t('console.expired');
 
     case 'error':
-      return 'Failed';
+      return t('console.failed');
 
     default:
-      return 'Idle';
+      return t('console.idle');
   }
 });
 const sessionStatusColor = computed(() => {
@@ -552,18 +561,18 @@ const isRecentSessionFailed = (item: (typeof recentSessions.value)[number]): boo
 
 const recentSessionStatusLabel = (item: (typeof recentSessions.value)[number]): string => {
   if (isRecentSessionFailed(item)) {
-    return 'Failed';
+    return t('console.failed');
   }
 
   switch (item.status) {
     case 'starting':
-      return 'Starting';
+      return t('common.starting');
 
     case 'running':
-      return 'Running';
+      return t('common.running');
 
     default:
-      return 'Completed';
+      return t('common.completed');
   }
 };
 
@@ -673,7 +682,7 @@ watch(
       return;
     }
 
-    toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
+    toast.error(t('console.disabled'));
     await navigateTo('/');
   },
 );
@@ -893,7 +902,7 @@ const runCommand = async (): Promise<void> => {
 
   if (config.app.console_enabled !== true) {
     await navigateTo('/');
-    toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
+    toast.error(t('console.disabled'));
     return;
   }
 
@@ -993,9 +1002,9 @@ const hideRecentSessions = async (): Promise<void> => {
   }
 
   const { status } = await dialog.confirmDialog({
-    title: 'Confirm Action',
-    message: 'Hide the current recent runs from this browser?',
-    confirmText: 'Hide runs',
+    title: t('common.pleaseConfirm'),
+    message: t('console.hideRunsConfirm'),
+    confirmText: t('console.hideRuns'),
     confirmColor: 'error',
   });
 
@@ -1021,7 +1030,7 @@ const replayRecentSession = async (item: (typeof recentSessions.value)[number]):
 
 onMounted(async () => {
   if (config.app.console_enabled !== true) {
-    toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
+    toast.error(t('console.disabled'));
     await navigateTo('/');
     return;
   }

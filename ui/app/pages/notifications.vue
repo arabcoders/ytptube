@@ -26,7 +26,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -36,7 +36,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span>New Notification</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -49,7 +49,7 @@
           :disabled="sendingTest"
           @click="() => void sendTest()"
         >
-          <span>Test</span>
+          <span>{{ t('common.test') }}</span>
         </UButton>
 
         <UButton
@@ -61,7 +61,9 @@
           class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            displayStyle === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UButton
@@ -74,7 +76,7 @@
           :disabled="isLoading"
           @click="() => void loadContent(page)"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -83,7 +85,7 @@
           ref="filterInput"
           v-model="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -103,7 +105,7 @@
           :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
-          {{ allSelected ? 'Unselect' : 'Select' }}
+          {{ allSelected ? t('common.unselect') : t('common.select') }}
         </UButton>
 
         <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
@@ -118,7 +120,7 @@
             icon="i-lucide-list"
             trailing-icon="i-lucide-chevron-down"
           >
-            Actions
+            {{ t('common.actions') }}
           </UButton>
         </UDropdownMenu>
       </div>
@@ -144,7 +146,7 @@
         <table class="min-w-235 w-full text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
@@ -154,8 +156,8 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">Targets</th>
-              <th class="w-48 whitespace-nowrap">Actions</th>
+              <th class="w-full text-start">{{ t('notificationsPage.target') }}</th>
+              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
             </tr>
           </thead>
 
@@ -163,7 +165,7 @@
             <tr
               v-for="item in filteredTargets"
               :key="item.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -179,15 +181,17 @@
               <td class="px-3 py-3 align-middle">
                 <div class="space-y-2">
                   <div class="min-w-0 text-sm font-semibold text-highlighted">
-                    {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
-                    <a
-                      :href="item.request.url"
-                      target="_blank"
-                      rel="noreferrer"
-                      class="break-all text-primary hover:underline"
-                    >
-                      {{ item.name }}
-                    </a>
+                    <bdi dir="ltr">
+                      {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
+                      <a
+                        :href="item.request.url"
+                        target="_blank"
+                        rel="noreferrer"
+                        class="break-all text-primary hover:underline"
+                      >
+                        {{ item.name }}
+                      </a>
+                    </bdi>
                   </div>
 
                   <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
@@ -202,21 +206,25 @@
                         class="size-3.5"
                         :class="item.enabled !== false ? 'text-success' : 'text-error'"
                       />
-                      <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                      <span>{{
+                        item.enabled !== false ? t('common.enabled') : t('common.disabled')
+                      }}</span>
                     </button>
 
                     <span
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-bell-ring" class="size-3.5" />
-                      <span>On: {{ joinEvents(item.on) }}</span>
+                      <span>{{ t('notificationsPage.on', { events: joinEvents(item.on) }) }}</span>
                     </span>
 
                     <span
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                      <span>Presets: {{ joinPresets(item.presets) }}</span>
+                      <span>{{
+                        t('notificationsPage.presetsOn', { presets: joinPresets(item.presets) })
+                      }}</span>
                     </span>
 
                     <span
@@ -224,7 +232,9 @@
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-key" class="size-3.5" />
-                      <span>Headers: {{ headerKeys(item).length }}</span>
+                      <span>{{
+                        t('notificationsPage.headersCount', { count: headerKeys(item).length })
+                      }}</span>
                     </span>
                   </div>
                 </div>
@@ -239,7 +249,7 @@
                     icon="i-lucide-file-up"
                     @click="exportItem(item)"
                   >
-                    <span class="hidden sm:inline">Export</span>
+                    {{ t('common.exportItem') }}
                   </UButton>
 
                   <UButton
@@ -249,7 +259,7 @@
                     icon="i-lucide-pencil"
                     @click="editItem(item)"
                   >
-                    <span class="hidden sm:inline">Edit</span>
+                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
                   </UButton>
 
                   <UButton
@@ -259,7 +269,7 @@
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(item)"
                   >
-                    <span class="hidden sm:inline">Delete</span>
+                    <span class="hidden sm:inline">{{ t('common.delete') }}</span>
                   </UButton>
                 </div>
               </td>
@@ -273,17 +283,19 @@
       <div v-for="item in filteredTargets" :key="item.id" class="min-w-0 w-full max-w-full">
         <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
           <div class="p-4 pb-3 ytp-border-bottom-soft">
-            <div class="flex min-w-0 items-start justify-between gap-3">
+            <div dir="ltr" class="flex min-w-0 items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-start gap-2">
                   <button
                     type="button"
-                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
                     @click="toggleExpand(item.id, 'title')"
                   >
                     <span :class="['block', expandClass(item.id, 'title')]">
-                      {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
-                      {{ item.name }}
+                      <bdi dir="ltr">
+                        {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
+                        {{ item.name }}
+                      </bdi>
                     </span>
                   </button>
                 </div>
@@ -298,7 +310,7 @@
                   square
                   @click="exportItem(item)"
                 >
-                  <span>Export Target</span>
+                  <span>{{ t('common.exportItem') }}</span>
                 </UButton>
 
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -327,21 +339,31 @@
                     class="size-3.5"
                     :class="item.enabled !== false ? 'text-success' : 'text-error'"
                   />
-                  <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                  <span>{{
+                    item.enabled !== false ? t('common.enabled') : t('common.disabled')
+                  }}</span>
                 </button>
 
                 <span
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-bell-ring" class="size-3.5" />
-                  <span>Events: {{ item.on.length || 'All' }}</span>
+                  <span>{{
+                    item.on.length
+                      ? t('notificationsPage.eventsCount', { count: item.on.length })
+                      : t('notificationsPage.eventsAll')
+                  }}</span>
                 </span>
 
                 <span
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                  <span>Presets: {{ item.presets.length || 'All' }}</span>
+                  <span>{{
+                    item.presets.length
+                      ? t('notificationsPage.presetsCount', { count: item.presets.length })
+                      : t('notificationsPage.presetsAll')
+                  }}</span>
                 </span>
 
                 <span
@@ -349,19 +371,23 @@
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-key" class="size-3.5" />
-                  <span>Headers: {{ headerKeys(item).length }}</span>
+                  <span>{{
+                    t('notificationsPage.headersCount', { count: headerKeys(item).length })
+                  }}</span>
                 </span>
               </div>
 
               <div class="feature-meta-grid">
                 <button
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'url')"
                 >
                   <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Target URL</div>
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('common.targetUrl') }}
+                    </div>
                     <a
                       :href="item.request.url"
                       target="_blank"
@@ -369,7 +395,7 @@
                       class="block text-highlighted hover:underline"
                       @click.stop
                     >
-                      <span :class="['block', expandClass(item.id, 'url')]">
+                      <span :class="['block', expandClass(item.id, 'url')]" dir="ltr">
                         {{ item.request.url }}
                       </span>
                     </a>
@@ -379,13 +405,15 @@
                 <button
                   v-if="headerKeys(item).length > 0"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'headers')"
                 >
                   <UIcon name="i-lucide-key" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Headers</div>
-                    <span :class="['block', expandClass(item.id, 'headers')]">
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('notificationsPage.headers') }}
+                    </div>
+                    <span :class="['block font-mono', expandClass(item.id, 'headers')]" dir="ltr">
                       {{ headerKeys(item).join(', ') }}
                     </span>
                   </div>
@@ -393,13 +421,15 @@
 
                 <button
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'events')"
                 >
                   <UIcon name="i-lucide-bell-ring" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Events</div>
-                    <span :class="['block', expandClass(item.id, 'events')]">{{
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('notificationsPage.events') }}
+                    </div>
+                    <span :class="['block', expandClass(item.id, 'events')]" dir="ltr">{{
                       joinEvents(item.on)
                     }}</span>
                   </div>
@@ -407,7 +437,7 @@
 
                 <button
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'presets')"
                 >
                   <UIcon
@@ -415,7 +445,9 @@
                     class="mt-0.5 size-4 shrink-0 text-toned"
                   />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Presets</div>
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('common.presets') }}
+                    </div>
                     <span :class="['block', expandClass(item.id, 'presets')]">
                       {{ joinPresets(item.presets) }}
                     </span>
@@ -434,7 +466,7 @@
                 class="w-full justify-center"
                 @click="editItem(item)"
               >
-                Edit
+                {{ t('common.edit') }}
               </UButton>
 
               <UButton
@@ -444,7 +476,7 @@
                 class="w-full justify-center"
                 @click="() => void deleteItem(item)"
               >
-                Delete
+                {{ t('common.delete') }}
               </UButton>
             </div>
           </div>
@@ -457,8 +489,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading data. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <div v-else-if="query && filteredTargets.length < 1" class="space-y-3">
@@ -466,8 +498,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-search"
-        title="No Results"
-        :description="`No results found for the query: ${query}. Please try a different search term.`"
+        :title="t('common.noResults')"
+        :description="t('common.noResultsFor', { query })"
       />
     </div>
 
@@ -476,8 +508,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="No targets"
-      description="No notification targets found. Click on the New Notification button to add your first notification target."
+      :title="t('common.noItems')"
+      :description="t('common.empty')"
     />
 
     <div v-if="filteredTargets.length > 0 && paging?.total_pages > 1" class="flex justify-end">
@@ -497,39 +529,19 @@
       v-if="!query && filteredTargets.length > 0"
       class="rounded-lg border border-info/30 bg-info/10 p-4 text-sm text-default"
     >
-      <ul class="list-disc space-y-2 pl-5 text-sm text-default">
-        <li>
-          When you export notification target, We remove <code>Authorization</code> header key by
-          default, However this might not be enough to remove credentials from the exported data.
-          it's your responsibility to ensure that the exported data does not contain any sensitive
-          information for sharing.
-        </li>
-        <li>
-          When you set the request type as <code>Form</code>, the event data will be JSON encoded
-          and sent as <code>...&amp;data_key=json_string</code>, only the <code>data</code> field
-          will be JSON encoded. The other keys <code>id</code>, <code>event</code> and
-          <code>created_at</code> will be sent as they are.
-        </li>
-        <li>
-          We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with the
-          request.
-        </li>
-        <li>
-          If you have selected specific presets or events, this will take priority, For example, if
-          you limited the target to <code>default</code> preset and selected
-          <code>ALL</code> events, only events that reference the <code>default</code> preset will
-          be sent to that target. Like wise, if you have limited both events and presets, then ONLY
-          events that satisfy both conditions will be sent to that target. Only the
-          <code>test</code> events can bypass these conditions.
-        </li>
+      <ul class="list-disc space-y-2 ps-5 text-sm text-default">
+        <li v-html="t('notificationsPage.info1')" />
+        <li v-html="t('notificationsPage.info2')" />
+        <li v-html="t('notificationsPage.info3')" />
+        <li v-html="t('notificationsPage.info4')" />
       </ul>
     </div>
 
     <UModal
       v-if="editorOpen"
       :open="editorOpen"
-      :title="targetRef ? `Edit - ${target.name}` : 'Add new notification target'"
-      description="Send notifications to your webhooks based on specified events or presets."
+      :title="targetRef ? t('common.editTitle', { name: target.name }) : t('common.add')"
+      :description="t('notificationsPage.description')"
       :dismissible="!addInProgress"
       :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="handleEditorOpenChange"
@@ -541,10 +553,37 @@
           :reference="targetRef"
           :item="target"
           :allowedEvents="allowedEvents"
-          @cancel="() => void requestCloseEditor()"
           @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-x"
+            :disabled="addInProgress"
+            class="justify-center"
+            @click="() => void requestCloseEditor()"
+          >
+            {{ t('common.cancel') }}
+          </UButton>
+
+          <UButton
+            type="submit"
+            form="notificationForm"
+            color="primary"
+            icon="i-lucide-save"
+            :disabled="addInProgress"
+            :loading="addInProgress"
+            class="justify-center"
+          >
+            {{ t('common.save') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </main>
@@ -560,13 +599,14 @@ import { useNotifications } from '~/composables/useNotifications';
 import { copyText, encode, parse_api_error, request, ucFirst } from '~/utils';
 import type { ImportedItem } from '~/types';
 import type { notification } from '~/types/notification';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
 const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
-const pageShell = requirePageShell('notifications');
+const pageShell = usePageShell('notifications');
 const displayStyleState = useStorage<'list' | 'grid' | 'cards'>(
   'notification_display_style',
   'cards',
@@ -613,7 +653,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(editorOpen, {
     dirty: editorDirty,
-    message: 'You have unsaved notification changes. Do you want to discard them?',
+    message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();
     },
@@ -645,7 +685,7 @@ const hasSelected = computed(() => selectedIds.value.length > 0);
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Remove Selected',
+      label: t('common.removeSelected'),
       icon: 'i-lucide-trash',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
@@ -729,12 +769,12 @@ const editItem = (item: notification): void => {
 };
 
 const deleteItem = async (item: notification): Promise<void> => {
-  if (true !== (await box.confirm(`Delete '${item.name}'?`))) {
+  if (true !== (await box.confirm(t('common.deleteNamedConfirm', { name: item.name })))) {
     return;
   }
 
   if (!item.id) {
-    toast.error('Notification target not found.');
+    toast.error(t('common.targetNotFound'));
     return;
   }
 
@@ -747,9 +787,9 @@ const deleteSelected = async (): Promise<void> => {
   }
 
   const { status } = await confirmDialog({
-    title: 'Delete Selected Notifications',
+    title: t('common.deleteSelected'),
     message:
-      `Delete ${selectedIds.value.length} notification target/s?` +
+      t('common.deleteCountConfirm', { count: selectedIds.value.length }) +
       '\n\n' +
       selectedIds.value
         .map((id) => {
@@ -758,7 +798,7 @@ const deleteSelected = async (): Promise<void> => {
         })
         .filter(Boolean)
         .join('\n'),
-    confirmText: 'Delete',
+    confirmText: t('common.delete'),
     confirmColor: 'error',
   });
 
@@ -788,7 +828,7 @@ const deleteSelected = async (): Promise<void> => {
 
 const toggleEnabled = async (item: notification): Promise<void> => {
   if (!item.id) {
-    toast.error('Notification target not found.');
+    toast.error(t('common.targetNotFound'));
     return;
   }
 
@@ -818,16 +858,18 @@ const toggleDisplayStyle = (): void => {
 };
 
 const joinEvents = (events: string[]): string =>
-  !events || events.length < 1 ? 'ALL' : events.map((event) => ucFirst(event)).join(', ');
+  !events || events.length < 1 ? t('common.all') : events.map((event) => ucFirst(event)).join(', ');
 
 const joinPresets = (presets: string[]): string =>
-  !presets || presets.length < 1 ? 'ALL' : presets.map((preset) => ucFirst(preset)).join(', ');
+  !presets || presets.length < 1
+    ? t('common.all')
+    : presets.map((preset) => ucFirst(preset)).join(', ');
 
 const headerKeys = (item: notification): string[] =>
   item.request?.headers?.map((header) => header.key).filter(Boolean) ?? [];
 
 const sendTest = async (): Promise<void> => {
-  if (true !== (await box.confirm('Send test notification?'))) {
+  if (true !== (await box.confirm(t('common.sendTestNotification')))) {
     return;
   }
 
@@ -838,14 +880,24 @@ const sendTest = async (): Promise<void> => {
     if (!response.ok) {
       const data = await response.json();
       const message = await parse_api_error(data);
-      toast.error(`Failed to send test notification. ${message}`);
+      toast.error(
+        t('common.failedWithReason', {
+          message: t('common.failedTestNotification'),
+          reason: message,
+        }),
+      );
       return;
     }
 
-    toast.success('Test notification sent.');
+    toast.success(t('common.testNotificationSent'));
   } catch (error: any) {
-    const message = error?.message || 'Unknown error';
-    toast.error(`Failed to send test notification. ${message}`);
+    const message = error?.message || t('common.unknownError');
+    toast.error(
+      t('common.failedWithReason', {
+        message: t('common.failedTestNotification'),
+        reason: message,
+      }),
+    );
   } finally {
     sendingTest.value = false;
   }

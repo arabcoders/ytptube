@@ -14,7 +14,7 @@
             }
           "
         >
-          {{ showImport ? 'Hide' : 'Show' }} import
+          {{ showImport ? t('common.hideImport') : t('common.showImport') }}
         </UButton>
       </div>
 
@@ -23,12 +23,12 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Import string</span>
+              <span class="font-semibold text-default">{{ t('common.importString') }}</span>
             </div>
           </template>
 
           <template #description>
-            <span>You can use this field to populate the data, using shared string.</span>
+            <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
           <div class="flex flex-col gap-2 sm:flex-row">
@@ -52,7 +52,7 @@
               :disabled="!importString"
               @click="() => void importItem()"
             >
-              Import
+              {{ t('common.import') }}
             </UButton>
           </div>
         </UFormField>
@@ -62,19 +62,15 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-type" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Name</span>
+            <span class="font-semibold text-default">{{ t('common.name') }}</span>
           </div>
-        </template>
-
-        <template #description>
-          <span>The name that refers to this condition.</span>
         </template>
 
         <UInput
           id="name"
           v-model="form.name"
           type="text"
-          placeholder="For the problematic channel or video name."
+          :placeholder="t('common.conditionNamePlaceholder')"
           size="lg"
           :disabled="addInProgress"
           class="w-full"
@@ -86,18 +82,16 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-power" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Enabled</span>
+            <span class="font-semibold text-default">{{ t('common.enabled') }}</span>
           </div>
-        </template>
-
-        <template #description>
-          <span>Whether the condition is enabled.</span>
         </template>
 
         <div
           class="flex min-h-11 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
         >
-          <span class="text-sm text-default">{{ form.enabled ? 'Yes' : 'No' }}</span>
+          <span class="text-sm text-default">{{
+            form.enabled ? t('common.yesLabel') : t('common.noLabel')
+          }}</span>
           <USwitch v-model="form.enabled" :disabled="addInProgress" />
         </div>
       </UFormField>
@@ -106,12 +100,8 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Priority</span>
+            <span class="font-semibold text-default">{{ t('common.priority') }}</span>
           </div>
-        </template>
-
-        <template #description>
-          <span>Higher priority conditions are checked first.</span>
         </template>
 
         <UInput
@@ -119,7 +109,7 @@
           v-model.number="form.priority"
           type="number"
           min="0"
-          placeholder="0"
+          :placeholder="t('conditions.priorityPlaceholder')"
           size="lg"
           :disabled="addInProgress"
           class="w-full"
@@ -133,26 +123,24 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-filter" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Condition Filter</span>
+            <span class="font-semibold text-default">{{ t('common.conditionFilter') }}</span>
             <button
               v-if="!addInProgress || form.filter"
               type="button"
               class="text-primary hover:underline"
               @click="testData.show = true"
             >
-              Test filter logic
+              {{ t('common.testFilter') }}
             </button>
           </div>
         </template>
         <template #description>
-          <span>
-            This filter determines when the condition applies. It uses the same syntax as yt-dlp's
-            <code>--match-filters</code> with <code>OR</code> and <code>||</code> support.
-          </span>
+          <span v-html="t('common.filterSyntaxDesc')"></span>
         </template>
 
         <UInput
           id="filter"
+          dir="ltr"
           v-model="form.filter"
           type="text"
           placeholder="availability = 'needs_auth' & channel_id = 'channel_id'"
@@ -168,21 +156,21 @@
       <div class="space-y-1">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-          <span>Command options for yt-dlp</span>
+          <span>{{ t('common.cliOptions') }}</span>
         </div>
         <p class="text-sm text-toned">
           <button type="button" class="text-primary hover:underline" @click="showOptions = true">
-            View all options
+            {{ t('common.cliOptionsViewAll') }}
           </button>
-          . Not all options are supported;
+          {{ t('common.cliOptionsDescPrefix') }}
           <a
             target="_blank"
             rel="noreferrer"
             href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
             class="text-primary hover:underline"
           >
-            some are ignored.
-          </a>
+            {{ t('common.cliOptionsDescIgnored') }}</a
+          >.
         </p>
       </div>
 
@@ -200,7 +188,7 @@
       <div class="space-y-1">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-lucide-list-plus" class="size-4 text-toned" />
-          <span>Extra/Custom Options</span>
+          <span>{{ t('common.extraOptions') }}</span>
         </div>
       </div>
 
@@ -214,7 +202,7 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-key" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Key</span>
+                <span class="font-semibold text-default">{{ t('common.keyLabel') }}</span>
               </div>
             </template>
 
@@ -226,6 +214,7 @@
               :disabled="addInProgress"
               class="w-full"
               :ui="inputUi"
+              dir="ltr"
               @update:model-value="(value) => updateExtraKey(String(value), entry[0])"
             />
           </UFormField>
@@ -234,7 +223,7 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-pen-line" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Value</span>
+                <span class="font-semibold text-default">{{ t('common.valueLabel') }}</span>
               </div>
             </template>
 
@@ -245,6 +234,7 @@
               size="lg"
               :disabled="addInProgress"
               class="w-full"
+              dir="ltr"
               :ui="inputUi"
               @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
             />
@@ -259,7 +249,7 @@
               :disabled="addInProgress"
               @click="removeExtra(entry[0])"
             >
-              Remove
+              {{ t('common.remove') }}
             </UButton>
           </div>
         </div>
@@ -270,7 +260,7 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-key" class="size-4 text-toned" />
-              <span class="font-semibold text-default">New key</span>
+              <span class="font-semibold text-default">{{ t('common.newKey') }}</span>
             </div>
           </template>
 
@@ -282,6 +272,7 @@
             :disabled="addInProgress"
             class="w-full"
             :ui="inputUi"
+            dir="ltr"
             @keyup.enter="addExtra"
           />
         </UFormField>
@@ -290,7 +281,7 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-pen-line" class="size-4 text-toned" />
-              <span class="font-semibold text-default">New value</span>
+              <span class="font-semibold text-default">{{ t('common.newValue') }}</span>
             </div>
           </template>
 
@@ -302,6 +293,7 @@
             :disabled="addInProgress"
             class="w-full"
             :ui="inputUi"
+            dir="ltr"
             @keyup.enter="addExtra"
           />
         </UFormField>
@@ -316,28 +308,18 @@
             :disabled="addInProgress || !newExtraKey || !newExtraValue"
             @click="addExtra"
           >
-            Add
+            {{ t('common.add') }}
           </UButton>
         </div>
       </div>
 
       <div class="rounded-lg border border-info/30 bg-info/10 p-4 text-sm text-default">
-        <ul class="list-disc space-y-2 pl-5 text-sm text-default">
-          <li>For advanced users only. This feature is meant to be expanded later.</li>
-          <li>Keys must be lowercase with underscores (e.g., custom_field).</li>
-          <li class="font-semibold text-error">
-            You must click on Add to actually add the option.
-          </li>
-          <li>
-            The key <code>ignore_download</code> with value of <code>true</code> will instruct
-            <b>YTPTube</b> to ignore the download and directly mark the item as archived. this is
-            useful to skip certain kind of downloads.
-          </li>
-          <li>
-            The key <code>set_preset</code> with the name of an existing preset will instruct
-            <b>YTPTube</b> to switch the download to use the specified preset. This is useful to
-            apply different download settings based on content type or source.
-          </li>
+        <ul class="list-disc space-y-2 ps-5 text-sm text-default">
+          <li v-html="t('common.extraOptionsInfo1')"></li>
+          <li v-html="t('common.extraOptionsInfo2')"></li>
+          <li class="font-semibold text-error" v-html="t('common.extraOptionsInfo3')"></li>
+          <li v-html="t('common.extraOptionsInfo4')"></li>
+          <li v-html="t('common.extraOptionsInfo5')"></li>
         </ul>
       </div>
     </div>
@@ -346,11 +328,8 @@
       <div class="space-y-1">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-lucide-message-square-text" class="size-4 text-toned" />
-          <span>Description</span>
+          <span>{{ t('common.description') }}</span>
         </div>
-        <p class="text-sm text-toned">
-          Use this field to help understand the purpose of this condition.
-        </p>
       </div>
 
       <UFormField class="w-full" :ui="editorFieldUi">
@@ -358,7 +337,7 @@
           id="description"
           v-model="form.description"
           :disabled="addInProgress"
-          placeholder="Describe what this condition does"
+          :placeholder="t('common.conditionDescPlaceholder')"
           :rows="6"
           size="lg"
           variant="outline"
@@ -369,93 +348,52 @@
       </UFormField>
     </div>
 
-    <div
-      class="flex flex-col-reverse gap-2 border-t border-default pt-5 sm:flex-row sm:justify-end"
-    >
-      <UButton
-        type="button"
-        color="neutral"
-        variant="outline"
-        size="lg"
-        icon="i-lucide-x"
-        :disabled="addInProgress"
-        class="justify-center"
-        @click="emitter('cancel')"
-      >
-        Cancel
-      </UButton>
-
-      <UButton
-        type="submit"
-        color="primary"
-        size="lg"
-        icon="i-lucide-save"
-        :disabled="addInProgress"
-        :loading="addInProgress"
-        class="justify-center"
-      >
-        Save
-      </UButton>
-    </div>
-
     <UModal
       v-if="testData.show"
       :open="testData.show"
-      title="Test condition"
+      :title="t('common.testCondition')"
       :dismissible="!testData.in_progress"
       :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="(open) => !open && (testData.show = false)"
     >
       <template #body>
-        <form autocomplete="off" class="space-y-5" @submit.prevent="runTest">
+        <form id="conditionTestForm" autocomplete="off" class="space-y-5" @submit.prevent="runTest">
           <UFormField :ui="fieldUi">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-link" class="size-4 text-toned" />
-                <span class="font-semibold text-default">URL</span>
+                <span class="font-semibold text-default">{{ t('common.url') }}</span>
               </div>
             </template>
 
             <template #description>
-              <span>The url to test the filter against.</span>
+              <span>{{ t('common.testUrlDesc') }}</span>
             </template>
 
-            <div class="flex flex-col gap-2 sm:flex-row">
-              <UInput
-                id="test_url"
-                v-model="testData.url"
-                type="url"
-                placeholder="https://..."
-                size="lg"
-                :disabled="testData.in_progress"
-                class="w-full"
-                :ui="inputUi"
-              />
-
-              <UButton
-                type="submit"
-                color="primary"
-                icon="i-lucide-play"
-                size="lg"
-                class="justify-center sm:min-w-24"
-                :disabled="testData.in_progress"
-                :loading="testData.in_progress"
-              >
-                Test
-              </UButton>
-            </div>
+            <UInput
+              id="test_url"
+              dir="ltr"
+              v-model="testData.url"
+              type="url"
+              placeholder="https://..."
+              size="lg"
+              :disabled="testData.in_progress"
+              class="w-full"
+              :ui="inputUi"
+            />
           </UFormField>
 
-          <UFormField :ui="fieldUi" description="yt-dlp --match-filters logic with OR, || support.">
+          <UFormField :ui="fieldUi" :description="t('common.testFilterDesc')">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-filter" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Condition Filter</span>
+                <span class="font-semibold text-default">{{ t('common.conditionFilter') }}</span>
               </div>
             </template>
 
             <UInput
               id="test_filter"
+              dir="ltr"
               v-model="form.filter"
               type="text"
               placeholder="availability = 'needs_auth' & channel_id = 'channel_id'"
@@ -476,9 +414,13 @@
                   ? 'i-lucide-x'
                   : 'i-lucide-circle-help'
             "
-            title="Filter Status"
+            :title="t('common.filterStatus')"
             :description="
-              testData.data.status === null ? 'Not tested' : logicTest ? 'Matched' : 'Not matched'
+              testData.data.status === null
+                ? t('common.notTested')
+                : logicTest
+                  ? t('common.matched')
+                  : t('common.notMatched')
             "
           />
 
@@ -486,27 +428,44 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-braces" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Returned data</span>
+                <span class="font-semibold text-default">{{ t('common.returnedData') }}</span>
               </div>
             </template>
 
             <pre
               class="max-h-[60vh] overflow-auto rounded-lg border border-default bg-elevated/40 p-4 text-xs text-default"
+              dir="ltr"
             ><code>{{ showData() }}</code></pre>
           </UFormField>
         </form>
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="submit"
+            form="conditionTestForm"
+            color="primary"
+            icon="i-lucide-play"
+            class="justify-center"
+            :disabled="testData.in_progress"
+            :loading="testData.in_progress"
+          >
+            {{ t('common.test') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
 
     <UModal
       v-if="showOptions"
       v-model:open="showOptions"
-      title="yt-dlp options"
+      :title="t('common.cliOptions')"
       :dismissible="true"
       :ui="{ content: 'sm:max-w-6xl', body: 'p-0' }"
     >
       <template #description>
-        <span class="sr-only">Browse available yt-dlp flags and descriptions.</span>
+        <span class="sr-only">{{ t('common.browseYtdlpFlags') }}</span>
       </template>
 
       <template #body>
@@ -525,8 +484,9 @@ import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Condition, ConditionTestResponse } from '~/types/conditions';
 import { match_str } from '~/utils/ytdlp';
 
+const { t } = useI18n();
+
 const emitter = defineEmits<{
-  (e: 'cancel'): void;
   (e: 'dirty-change', dirty: boolean): void;
   (e: 'submit', payload: { reference: number | null | undefined; item: Condition }): void;
 }>();
@@ -680,13 +640,13 @@ const logicTest = computed(() => {
 const checkInfo = async (): Promise<void> => {
   for (const key of ['name', 'filter'] as const) {
     if (!form[key]) {
-      toast.error(`The ${key} field is required.`);
+      toast.error(t('common.fieldRequired', { field: key }));
       return;
     }
   }
 
   if ((!form.cli || '' === form.cli.trim()) && Object.keys(form.extras).length < 1) {
-    toast.error('Command options for yt-dlp or at least one extra option is required.');
+    toast.error(t('common.optionsOrExtraRequired'));
     return;
   }
 
@@ -723,14 +683,14 @@ const convertOptions = async (args: string): Promise<Record<string, unknown> | n
 
 const runTest = async (): Promise<void> => {
   if (!testData.value.url) {
-    toast.error('The URL is required for testing.', { force: true });
+    toast.error(t('common.urlRequiredForTest'), { force: true });
     return;
   }
 
   try {
     new URL(testData.value.url);
   } catch {
-    toast.error('The URL is invalid.', { force: true });
+    toast.error(t('common.invalidUrl'), { force: true });
     return;
   }
 
@@ -745,14 +705,14 @@ const runTest = async (): Promise<void> => {
 
     const json = await response.json();
     if (!response.ok) {
-      toast.error(json.message || json.error || 'Unknown error', { force: true });
+      toast.error(json.message || json.error || t('common.unknownError'), { force: true });
       return;
     }
 
     testData.value.data = json as ConditionTestResponse;
     testData.value.changed = false;
   } catch (error: any) {
-    toast.error(`Failed to test condition. ${error.message}`);
+    toast.error(t('common.failedTestCondition', { error: error.message }));
   } finally {
     testData.value.in_progress = false;
   }
@@ -761,7 +721,7 @@ const runTest = async (): Promise<void> => {
 const importItem = async (): Promise<void> => {
   const value = importString.value.trim();
   if (!value) {
-    toast.error('The import string is required.');
+    toast.error(t('common.validationImportRequired'));
     return;
   }
 
@@ -770,14 +730,17 @@ const importItem = async (): Promise<void> => {
 
     if (!item._type || item._type !== 'condition') {
       toast.error(
-        `Invalid import string. Expected type 'condition', got '${item._type ?? 'unknown'}'.`,
+        t('common.validationInvalidImport', {
+          expected: 'condition',
+          type: item._type ?? 'unknown',
+        }),
       );
       return;
     }
 
     if (
       (form.filter || form.cli || Object.keys(form.extras).length > 0) &&
-      !(await box.confirm('Overwrite the current form fields?'))
+      !(await box.confirm(t('common.overwriteFormDesc')))
     ) {
       return;
     }
@@ -786,13 +749,13 @@ const importItem = async (): Promise<void> => {
     importString.value = '';
     showImport.value = false;
   } catch (error: any) {
-    toast.error(`Failed to parse import string. ${error.message}`);
+    toast.error(t('common.validationImportParseFailed', { error: error.message }));
   }
 };
 
 const showData = (): string => {
   if (!testData.value.data?.data || Object.keys(testData.value.data.data).length === 0) {
-    return 'No data to show.';
+    return t('common.noDataToShow');
   }
 
   return JSON.stringify(testData.value.data.data, null, 2);
@@ -821,17 +784,17 @@ const addExtra = (): void => {
   const value = newExtraValue.value.trim();
 
   if (!key || !value) {
-    toast.error('Both key and value are required.');
+    toast.error(t('common.bothKeyValueRequired'));
     return;
   }
 
   if (!validateKey(key)) {
-    toast.error('Key must be lower_case.');
+    toast.error(t('common.keyMustBeLowercase'));
     return;
   }
 
   if (form.extras[key] !== undefined) {
-    toast.error(`Key '${key}' already exists.`);
+    toast.error(t('common.keyAlreadyExists', { key }));
     return;
   }
 
@@ -852,12 +815,12 @@ const updateExtraKey = (newKeyValue: string, oldKey: string): void => {
   }
 
   if (!validateKey(newKey)) {
-    toast.error('Key must be lowercase and contain only letters, numbers, and underscores.');
+    toast.error(t('common.keyFormatLetters'));
     return;
   }
 
   if (form.extras[newKey] !== undefined) {
-    toast.error(`Key '${newKey}' already exists.`);
+    toast.error(t('common.keyAlreadyExists', { key: newKey }));
     return;
   }
 

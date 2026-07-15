@@ -26,8 +26,8 @@
               'size-5 transition-colors',
               loading ? 'text-info' : 'animate-pulse text-success',
             ]"
-            :title="loading ? 'Loading history' : 'Live stream active'"
-            :aria-label="loading ? 'Loading history' : 'Live stream active'"
+            :title="loading ? t('logs.loadingHistoryTitle') : t('logs.liveStreamActiveTitle')"
+            :aria-label="loading ? t('logs.loadingHistoryTitle') : t('logs.liveStreamActiveTitle')"
           />
         </span>
 
@@ -51,7 +51,7 @@
           icon="i-lucide-arrow-down"
           @click="scrollToBottom(false)"
         >
-          Bottom
+          {{ t('common.bottom') }}
         </UButton>
 
         <UButton
@@ -65,7 +65,7 @@
             }
           "
         >
-          Filter
+          {{ t('common.filter') }}
         </UButton>
 
         <UButton
@@ -74,7 +74,7 @@
           size="sm"
           icon="i-lucide-wrap-text"
           :aria-pressed="textWrap"
-          :title="textWrap ? 'Text wrap enabled' : 'Text wrap disabled'"
+          :title="textWrap ? t('logs.textWrapOn') : t('logs.textWrapOff')"
           :class="['transition-all', textWrap ? '-translate-y-px ring ring-default shadow-xs' : '']"
           @click="
             () => {
@@ -82,7 +82,7 @@
             }
           "
         >
-          Wrap
+          {{ t('common.wrap') }}
         </UButton>
 
         <UDropdownMenu :items="copyMenuItems" :content="copyMenuContent" :modal="false">
@@ -93,7 +93,7 @@
             icon="i-lucide-copy"
             trailing-icon="i-lucide-chevron-down"
           >
-            Copy
+            {{ t('common.copy') }}
           </UButton>
         </UDropdownMenu>
 
@@ -107,7 +107,7 @@
           size="sm"
           icon="i-lucide-list-filter"
           class="w-44 shrink-0 sm:w-48"
-          :ui="{ content: 'min-w-48', item: 'pl-6' }"
+          :ui="{ content: 'min-w-48', item: 'ps-6' }"
           :search-input="false"
         >
           {{ levelFilterLabel }}
@@ -123,7 +123,7 @@
           :disabled="!canApplyRuntimeLogLevel || runtimeLogLevelLoading"
           @click="applyRuntimeLogLevel"
         >
-          Apply
+          {{ t('common.apply') }}
         </UButton>
 
         <UInput
@@ -131,7 +131,7 @@
           id="filter"
           v-model.lazy="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -144,6 +144,7 @@
         <div
           ref="logContainer"
           class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden bg-transparent font-mono text-sm text-default overscroll-x-contain"
+          dir="ltr"
           @scroll.passive="handleScroll"
         >
           <div
@@ -154,7 +155,7 @@
               class="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-[11px] font-medium text-warning"
             >
               <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />
-              No older lines remain in this file.
+              {{ t('logs.emptyOlder') }}
             </div>
           </div>
 
@@ -172,7 +173,7 @@
                 :name="loading ? 'i-lucide-loader-circle' : 'i-lucide-history'"
                 :class="['size-3.5 shrink-0', loading ? 'animate-spin' : '']"
               />
-              Load older lines into filter
+              {{ t('logs.loadOlder') }}
             </button>
           </div>
 
@@ -201,7 +202,7 @@
                     class="inline-flex align-[-0.2em]"
                     @click="openLogDetails(entry.log)"
                   >
-                    Details
+                    {{ t('logs.details') }}
                   </UButton>
                   <span
                     :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
@@ -220,7 +221,7 @@
 
                 <button
                   type="button"
-                  class="block min-w-0 flex-1 cursor-pointer text-left"
+                  class="block min-w-0 flex-1 cursor-pointer text-start"
                   :aria-expanded="expandedRows.has(entry.log.id) || textWrap"
                   @click="toggleRow(entry.log.id)"
                 >
@@ -242,24 +243,24 @@
             <template v-if="loading">
               <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-toned" />
               <div class="space-y-1">
-                <p class="text-sm font-medium text-default">Loading logs...</p>
-                <p class="text-sm text-toned">Connecting to log stream.</p>
+                <p class="text-sm font-medium text-default">{{ t('logs.loadingLogs') }}</p>
+                <p class="text-sm text-toned">{{ t('logs.connectingStream') }}</p>
               </div>
             </template>
 
             <template v-else-if="hasActiveFilter">
               <UIcon name="i-lucide-filter-x" class="size-6 text-toned" />
               <div class="space-y-1">
-                <p class="text-sm font-medium text-default">No logs match these filters</p>
-                <p class="text-sm text-toned">Try adjusting or clearing the filters.</p>
+                <p class="text-sm font-medium text-default">{{ t('logs.emptyFilter') }}</p>
+                <p class="text-sm text-toned">{{ t('logs.emptyFilterDesc') }}</p>
               </div>
             </template>
 
             <template v-else>
               <UIcon name="i-lucide-circle-off" class="size-6 text-toned" />
               <div class="space-y-1">
-                <p class="text-sm font-medium text-default">No log lines available</p>
-                <p class="text-sm text-toned">There are no log entries to display.</p>
+                <p class="text-sm font-medium text-default">{{ t('logs.emptyLines') }}</p>
+                <p class="text-sm text-toned">{{ t('logs.emptyLinesDesc') }}</p>
               </div>
             </template>
           </div>
@@ -278,7 +279,8 @@ import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { log_line } from '~/types/logs';
 import { copyText, parse_api_error, request, uri } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
 type FilteredLogEntry = {
   log: log_line;
@@ -313,7 +315,7 @@ let scrollTimeout: NodeJS.Timeout | null = null;
 const toast = useNotification();
 const config = useYtpConfig();
 const route = useRoute();
-const pageShell = requirePageShell('logs');
+const pageShell = usePageShell('logs');
 
 const logContainer = useTemplateRef<HTMLDivElement>('logContainer');
 const textWrap = useStorage<boolean>('logs_text_wrap', false);
@@ -370,12 +372,12 @@ const copyMenuContent = computed(() => ({ align: 'end' as const }));
 const copyMenuItems = computed(() => [
   [
     {
-      label: 'Copy Rendered Logs',
+      label: t('logs.copyRendered'),
       icon: 'i-lucide-file-text',
       onSelect: () => copyText(copyRenderedLogText.value),
     },
     {
-      label: 'Copy Raw Logs',
+      label: t('logs.copyRaw'),
       icon: 'i-lucide-file-code',
       onSelect: () => copyText(copyRawLogText.value),
     },
@@ -428,11 +430,11 @@ const canApplyRuntimeLogLevel = computed(
 
 const levelFilterLabel = computed(() => {
   if (selectedLevelSet.value.size === LOG_LEVELS.length) {
-    return `All levels`;
+    return t('logs.allLevels');
   }
 
   if (selectedLevelSet.value.size === 0) {
-    return 'No levels selected';
+    return t('logs.noLevelsSelected');
   }
 
   return LOG_LEVELS.filter((level) => selectedLevelSet.value.has(level)).join(', ');
@@ -544,7 +546,7 @@ const fetchLogs = async (force = false): Promise<void> => {
   try {
     const req = await request(`/api/logs?offset=${offset.value}`);
     if (!req.ok) {
-      toast.error('Failed to fetch logs');
+      toast.error(t('common.failedFetch'));
       return;
     }
 
@@ -656,17 +658,17 @@ const applyRuntimeLogLevel = async (): Promise<void> => {
       const data = await response.json();
       const message = await parse_api_error(data);
       runtimeLogLevel.value = previous;
-      toast.error(`Failed to change log level. ${message}`);
+      toast.error(t('logs.failedLogLevel', { msg: message }));
       return;
     }
 
     runtimeLogLevel.value = normalized;
     config.app.runtime_log_level = normalized;
-    toast.success('log level updated until next restart.');
+    toast.success(t('common.logLevelUpdated'));
   } catch (error: any) {
     runtimeLogLevel.value = previous;
-    const message = error?.message || 'Unknown error';
-    toast.error(`Failed to change log level. ${message}`);
+    const message = error?.message || t('common.unknownError');
+    toast.error(t('logs.failedLogLevel', { msg: message }));
   } finally {
     runtimeLogLevelLoading.value = false;
   }
@@ -713,7 +715,7 @@ const startLogStream = async (): Promise<void> => {
           return;
         }
 
-        let message = response.statusText || 'Failed to start log stream.';
+        let message = response.statusText || t('logs.failedStream');
         try {
           message = await parse_api_error(response.clone().json());
         } catch {
@@ -723,7 +725,7 @@ const startLogStream = async (): Promise<void> => {
               message = text;
             }
           } catch {
-            message = response.statusText || 'Failed to start log stream.';
+            message = response.statusText || t('logs.failedStream');
           }
         }
 
@@ -753,7 +755,7 @@ const logTimeLabel = (value?: string): string =>
   value ? moment(value).format('HH:mm:ss') : '00:00:00';
 
 const logTimeTitle = (value?: string): string =>
-  value ? moment(value).format('YYYY-MM-DD HH:mm:ss Z') : 'No timestamp';
+  value ? moment(value).format('YYYY-MM-DD HH:mm:ss Z') : t('logs.noTimestamp');
 
 const exceptionSummary = (log: log_line): string => {
   const type = log.exception?.type?.trim() ?? '';

@@ -16,13 +16,13 @@
       <button
         v-if="!active"
         type="button"
-        class="group absolute inset-0 z-40 block overflow-hidden bg-black text-left"
+        class="group absolute inset-0 z-40 block overflow-hidden bg-black text-start"
         @click="activatePlayer"
       >
         <img
           v-if="poster"
           :src="uri(poster)"
-          :alt="`${title || 'Untitled media'} preview`"
+          :alt="`${title || t('common.untitledMedia')} preview`"
           class="block h-full w-full bg-black object-contain opacity-90 transition duration-200 group-hover:opacity-100"
           @error="handlePosterError"
         />
@@ -39,15 +39,17 @@
           class="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-4 px-4 py-4 sm:px-6"
         >
           <div class="min-w-0">
-            <div class="text-xs uppercase tracking-[0.2em] text-white/70">Click to play</div>
+            <div class="text-xs uppercase tracking-[0.2em] text-white/70">
+              {{ t('common.clickToPlay') }}
+            </div>
             <div class="mt-1 truncate text-lg font-semibold text-white">
-              {{ title || 'Untitled media' }}
+              {{ title || t('common.untitledMedia') }}
             </div>
           </div>
           <div
             class="flex size-16 shrink-0 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur ring-1 ring-white/25"
           >
-            <UIcon name="i-lucide-play" class="ml-1 size-8" />
+            <UIcon name="i-lucide-play" class="ms-1 size-8" />
           </div>
         </div>
       </button>
@@ -91,19 +93,19 @@
           :key="nativeSubtitleTrack.url"
           kind="subtitles"
           :srclang="nativeSubtitleTrack.lang || 'und'"
-          :label="nativeSubtitleTrack.name || 'Subtitles'"
+          :label="nativeSubtitleTrack.name || t('common.subtitles')"
           default
           :src="uri(nativeSubtitleTrack.url)"
           @load="handleNativeTrackLoad"
         />
-        Your browser does not support the video tag.
+        {{ t('common.browserNoSupport') }}
       </video>
 
       <button
         v-if="active && isTouchDevice && !controlsVisible"
         type="button"
         class="absolute inset-0 z-10"
-        aria-label="Show controls"
+        :aria-label="t('common.showControls')"
         @click="toggleControls"
       />
 
@@ -120,7 +122,10 @@
         :class="controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0'"
         @pointermove="showControls"
       >
-        <div class="rounded-sm border border-white/8 bg-black/8 p-2.5 shadow-lg backdrop-blur-sm">
+        <div
+          class="rounded-sm border border-white/8 bg-black/8 p-2.5 shadow-lg backdrop-blur-sm"
+          dir="ltr"
+        >
           <div
             class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2.5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
           >
@@ -132,7 +137,7 @@
                   size="sm"
                   class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
-                  :aria-label="paused ? 'Play video' : 'Pause video'"
+                  :aria-label="paused ? t('common.playVideo') : t('common.pauseVideoAria')"
                   @click="togglePlayback"
                 />
                 <div class="min-w-0 truncate whitespace-nowrap text-xs font-medium text-white/60">
@@ -148,7 +153,7 @@
                 max="1000"
                 step="1"
                 class="h-1.5 w-full accent-white opacity-55 transition-opacity hover:opacity-100 seek-bar"
-                aria-label="Seek video"
+                :aria-label="t('common.seekVideoAria')"
                 @input="handleSeekInput"
                 @touchstart.prevent="handleSeekTouch"
                 @touchmove.prevent="handleSeekTouch"
@@ -156,18 +161,14 @@
             </div>
             <div class="order-3 flex items-center justify-end sm:order-3 sm:shrink-0">
               <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                <UTooltip
-                  v-if="!usingHls && hasVideo"
-                  side="top"
-                  text="Trouble playing? Switch to HLS stream."
-                >
+                <UTooltip v-if="!usingHls && hasVideo" side="top" :text="t('common.switchToHls')">
                   <UButton
                     color="neutral"
                     variant="soft"
                     size="sm"
                     class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                     icon="i-lucide-refresh-cw"
-                    aria-label="Switch to HLS stream"
+                    :aria-label="t('common.switchToHlsAria')"
                     @click="forceSwitchToHls"
                   />
                 </UTooltip>
@@ -201,7 +202,9 @@
                   size="sm"
                   class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="muted || mediaVol <= 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
-                  :aria-label="muted || mediaVol <= 0 ? 'Unmute video' : 'Mute video'"
+                  :aria-label="
+                    muted || mediaVol <= 0 ? t('common.unmuteVideoAria') : t('common.muteVideoAria')
+                  "
                   @click="toggleMute"
                 />
                 <input
@@ -212,7 +215,7 @@
                   max="100"
                   step="1"
                   class="w-16 accent-white opacity-55 transition-opacity hover:opacity-100 sm:w-18"
-                  aria-label="Video volume"
+                  :aria-label="t('common.videoVolumeAria')"
                   @input="handleVolumeInput"
                 />
                 <UButton
@@ -221,17 +224,19 @@
                   size="sm"
                   class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                   :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
-                  :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+                  :aria-label="
+                    isFullscreen ? t('common.exitFullscreenAria') : t('common.enterFullscreenAria')
+                  "
                   @click="toggleFullscreen"
                 />
-                <UTooltip side="top" text="Show keyboard shortcuts with ? or /">
+                <UTooltip side="top" :text="t('common.shortcutsTooltip')">
                   <UButton
                     color="neutral"
                     variant="soft"
                     size="sm"
                     class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                     icon="i-lucide-circle-help"
-                    aria-label="Show keyboard shortcuts"
+                    :aria-label="t('common.shortcutsAria')"
                     @click="
                       () => {
                         showHelp = !showHelp;
@@ -250,91 +255,91 @@
       v-if="subtitleLoading || subtitleLoadError"
       class="flex flex-wrap items-center gap-3 text-sm"
     >
-      <span v-if="subtitleLoading" class="text-toned">Looking for matching subtitles...</span>
+      <span v-if="subtitleLoading" class="text-toned">{{ t('common.lookingForSubtitles') }}</span>
       <span v-else-if="subtitleLoadError" class="text-warning">{{ subtitleLoadError }}</span>
     </div>
 
     <UModal
       v-model:open="showHelp"
-      title="Keyboard Shortcuts"
+      :title="t('common.keyboardShortcuts')"
       :portal="helpPortal"
       :ui="{ content: 'sm:max-w-3xl' }"
     >
       <template #body>
         <div class="grid gap-5 text-sm sm:grid-cols-2">
           <div class="space-y-3">
-            <div class="font-semibold text-highlighted">Playback</div>
+            <div class="font-semibold text-highlighted">{{ t('common.playbackHelp') }}</div>
             <div class="flex items-center justify-between gap-4">
-              <span>Play or pause</span>
+              <span>{{ t('common.playOrPause') }}</span>
               <span class="text-muted">Space, K</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Back 10 seconds</span>
+              <span>{{ t('common.back10Seconds') }}</span>
               <span class="text-muted">J</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Forward 10 seconds</span>
+              <span>{{ t('common.forward10Seconds') }}</span>
               <span class="text-muted">L</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Mute</span>
+              <span>{{ t('common.muteHelp') }}</span>
               <span class="text-muted">M</span>
             </div>
           </div>
           <div class="space-y-3">
-            <div class="font-semibold text-highlighted">Navigation</div>
+            <div class="font-semibold text-highlighted">{{ t('common.navigationHelp') }}</div>
             <div class="flex items-center justify-between gap-4">
-              <span>Back 5 seconds</span>
+              <span>{{ t('common.back5Seconds') }}</span>
               <span class="text-muted">Left</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Forward 5 seconds</span>
+              <span>{{ t('common.forward5Seconds') }}</span>
               <span class="text-muted">Right</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Go to start or end</span>
+              <span>{{ t('common.goToStartOrEnd') }}</span>
               <span class="text-muted">Home, End</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Jump through the timeline</span>
+              <span>{{ t('common.jumpThroughTimeline') }}</span>
               <span class="text-muted">0-9</span>
             </div>
           </div>
           <div class="space-y-3">
-            <div class="font-semibold text-highlighted">Volume & Speed</div>
+            <div class="font-semibold text-highlighted">{{ t('common.volumeAndSpeedHelp') }}</div>
             <div class="flex items-center justify-between gap-4">
-              <span>Volume up or down</span>
+              <span>{{ t('common.volumeUpOrDown') }}</span>
               <span class="text-muted">Up, Down</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Faster</span>
+              <span>{{ t('common.fasterHelp') }}</span>
               <span class="text-muted">'</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Slower</span>
+              <span>{{ t('common.slowerHelp') }}</span>
               <span class="text-muted">;</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Step frame by frame</span>
+              <span>{{ t('common.stepFrameByFrame') }}</span>
               <span class="text-muted">, .</span>
             </div>
           </div>
           <div class="space-y-3">
-            <div class="font-semibold text-highlighted">Display</div>
+            <div class="font-semibold text-highlighted">{{ t('common.displayHelp') }}</div>
             <div class="flex items-center justify-between gap-4">
-              <span>Fullscreen</span>
+              <span>{{ t('common.fullscreenHelp') }}</span>
               <span class="text-muted">F</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Show or hide subtitles</span>
+              <span>{{ t('common.showOrHideSubtitles') }}</span>
               <span class="text-muted">C</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Open this help</span>
+              <span>{{ t('common.openThisHelp') }}</span>
               <span class="text-muted">?, /</span>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <span>Close help or player</span>
+              <span>{{ t('common.closeHelpOrPlayer') }}</span>
               <span class="text-muted">Esc</span>
             </div>
           </div>
@@ -373,6 +378,7 @@ import { nextTapVisible } from '~/utils/playerControls';
 import type { StoreItem } from '~/types/store';
 import type { FileInfo, PlayerSourceElement } from '~/types/video';
 
+const { t } = useI18n();
 const config = useYtpConfig();
 
 const props = defineProps<{ item: StoreItem }>();
@@ -477,14 +483,14 @@ const subtitleSelectUi = {
   content: 'z-40 min-w-56 w-auto max-w-[min(24rem,calc(100vw-2rem))]',
 } as const;
 const subtitleSelectItems = computed(() => [
-  { label: 'Off', value: SUBTITLE_OFF_VALUE },
+  { label: t('common.subtitlesOff'), value: SUBTITLE_OFF_VALUE },
   ...subtitleTracks.value.map((track) => ({ label: track.name, value: track.url })),
 ]);
 const subtitleButtonLabel = computed(() => {
   if (!subtitleEnabled.value || !selectedSubtitleTrack.value) {
-    return 'Subtitles off';
+    return t('common.subtitlesOff');
   }
-  return selectedSubtitleTrack.value.name || 'Subtitles';
+  return selectedSubtitleTrack.value.name || t('common.subtitles');
 });
 const subtitleSelectValue = computed<string>({
   get: () =>
@@ -501,7 +507,9 @@ const subtitleSelectValue = computed<string>({
   },
 });
 
-useHead(() => (title.value ? { title: formatPageTitle(`Playing: ${title.value}`) } : {}));
+useHead(() =>
+  title.value ? { title: formatPageTitle(t('common.playing', { title: title.value })) } : {},
+);
 
 watch(
   [mediaVol, muted],
@@ -1087,7 +1095,7 @@ function applyMediaSessionMetadata() {
 async function loadPlayerInfo() {
   if (!props.item.filename) {
     loading.value = false;
-    loadingError.value = 'No media file is available for playback.';
+    loadingError.value = t('common.noMediaFile');
     emitter('error', loadingError.value);
     emitter('closeModel');
     return;
@@ -1101,7 +1109,7 @@ async function loadPlayerInfo() {
 
   if (!req.ok) {
     loading.value = false;
-    loadingError.value = response?.error || 'Failed to fetch video info. Unknown error';
+    loadingError.value = response?.error || t('common.failedFetch');
     emitter('error', loadingError.value);
     emitter('closeModel');
     return;
@@ -1255,7 +1263,7 @@ function forceSwitchToHls() {
   }
 
   if (!hasVideo.value) {
-    useNotification().error('Cannot switch to HLS: stream has no video track.');
+    useNotification().error(t('common.switchToHlsFailed'));
     return;
   }
 

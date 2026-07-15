@@ -18,7 +18,7 @@
 
     <template v-if="sock.connectionStatus === 'disconnected'" #actions>
       <UButton color="neutral" variant="link" size="sm" class="px-0" @click="sock.reconnect()">
-        Reconnect
+        {{ t('common.reconnect') }}
       </UButton>
     </template>
   </UAlert>
@@ -27,14 +27,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+const { t } = useI18n();
+
 const sock = useAppSocket();
 
 const title = computed(() => {
   if (sock.connectionStatus === 'connecting') {
-    return 'Connecting to websocket server...';
+    return t('app.connection.connectingServer');
   }
 
-  return 'Websocket connection lost.';
+  return t('app.connection.lost');
 });
 
 const icon = computed(() =>

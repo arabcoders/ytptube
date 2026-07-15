@@ -174,6 +174,8 @@ const needsBackfill = (): boolean => {
 };
 
 const loadQueue = async (limit?: number): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
+
   if (state.is_loading) {
     return;
   }
@@ -189,7 +191,7 @@ const loadQueue = async (limit?: number): Promise<void> => {
     const query = params.toString();
     const response = await request(`/api/history/live${query ? `?${query}` : ''}`);
     if (!response.ok) {
-      throw new Error('Failed to load queue');
+      throw new Error(t('common.failedFetch'));
     }
 
     const data = (await response.json()) as {
@@ -215,6 +217,7 @@ const loadMore = async (): Promise<void> => {
 };
 
 const addDownload = async (data: item_request): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const socket = useAppSocket();
   const toast = useNotification();
 
@@ -232,22 +235,23 @@ const addDownload = async (data: item_request): Promise<void> => {
 
     if (!response.ok) {
       const error = await response.json();
-      toast.error(error.error || 'Failed to add download');
-      throw new Error(error.error || 'Failed to add download');
+      toast.error(error.error || t('queue.failedToAdd'));
+      throw new Error(error.error || t('queue.failedToAdd'));
     }
 
-    toast.success('Download added successfully');
+    toast.success(t('queue.added'));
     await loadQueue();
   } catch (error) {
     console.error('Failed to add download:', error);
-    if (error instanceof Error && !error.message.includes('Failed to add download')) {
-      toast.error('Failed to add download');
+    if (error instanceof Error && !error.message.includes(t('queue.failedToAdd'))) {
+      toast.error(t('queue.failedToAdd'));
     }
     throw error;
   }
 };
 
 const startItems = async (ids: string[]): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const socket = useAppSocket();
   const toast = useNotification();
 
@@ -265,8 +269,8 @@ const startItems = async (ids: string[]): Promise<void> => {
 
     if (!response.ok) {
       const error = await response.json();
-      toast.error(error.error || 'Failed to start items');
-      throw new Error(error.error || 'Failed to start items');
+      toast.error(error.error || t('queue.failedToStart'));
+      throw new Error(error.error || t('queue.failedToStart'));
     }
 
     const result = await response.json();
@@ -280,17 +284,18 @@ const startItems = async (ids: string[]): Promise<void> => {
       }
     }
 
-    toast.success(`Started ${ids.length} item${1 === ids.length ? '' : 's'}`);
+    toast.success(t('queue.startedCount', { count: ids.length }));
   } catch (error) {
     console.error('Failed to start items:', error);
-    if (error instanceof Error && !error.message.includes('Failed to start items')) {
-      toast.error('Failed to start items');
+    if (error instanceof Error && !error.message.includes(t('queue.failedToStart'))) {
+      toast.error(t('queue.failedToStart'));
     }
     throw error;
   }
 };
 
 const pauseItems = async (ids: string[]): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const socket = useAppSocket();
   const toast = useNotification();
 
@@ -308,8 +313,8 @@ const pauseItems = async (ids: string[]): Promise<void> => {
 
     if (!response.ok) {
       const error = await response.json();
-      toast.error(error.error || 'Failed to pause items');
-      throw new Error(error.error || 'Failed to pause items');
+      toast.error(error.error || t('queue.failedToPause'));
+      throw new Error(error.error || t('queue.failedToPause'));
     }
 
     const result = await response.json();
@@ -323,17 +328,18 @@ const pauseItems = async (ids: string[]): Promise<void> => {
       }
     }
 
-    toast.success(`Paused ${ids.length} item${1 === ids.length ? '' : 's'}`);
+    toast.success(t('queue.pausedCount', { count: ids.length }));
   } catch (error) {
     console.error('Failed to pause items:', error);
-    if (error instanceof Error && !error.message.includes('Failed to pause items')) {
-      toast.error('Failed to pause items');
+    if (error instanceof Error && !error.message.includes(t('queue.failedToPause'))) {
+      toast.error(t('queue.failedToPause'));
     }
     throw error;
   }
 };
 
 const cancelItems = async (ids: string[]): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const socket = useAppSocket();
   const toast = useNotification();
 
@@ -351,8 +357,8 @@ const cancelItems = async (ids: string[]): Promise<void> => {
 
     if (!response.ok) {
       const error = await response.json();
-      toast.error(error.error || 'Failed to cancel items');
-      throw new Error(error.error || 'Failed to cancel items');
+      toast.error(error.error || t('queue.failedToCancel'));
+      throw new Error(error.error || t('queue.failedToCancel'));
     }
 
     const result = await response.json();
@@ -363,11 +369,11 @@ const cancelItems = async (ids: string[]): Promise<void> => {
       }
     }
 
-    toast.success(`Cancelled ${ids.length} item${1 === ids.length ? '' : 's'}`);
+    toast.success(t('queue.cancelledCount', { count: ids.length }));
   } catch (error) {
     console.error('Failed to cancel items:', error);
-    if (error instanceof Error && !error.message.includes('Failed to cancel items')) {
-      toast.error('Failed to cancel items');
+    if (error instanceof Error && !error.message.includes(t('queue.failedToCancel'))) {
+      toast.error(t('queue.failedToCancel'));
     }
     throw error;
   }

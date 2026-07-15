@@ -1,7 +1,7 @@
 <template>
   <UModal
     :open="open"
-    title="Log details"
+    :title="t('common.logDetails')"
     :ui="{
       content: 'max-w-5xl',
       body: 'max-h-[75vh] overflow-y-auto',
@@ -12,15 +12,17 @@
       <div v-if="log" class="space-y-5">
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
-            label="Level"
+            :label="t('common.level')"
             :value="getLogLevel(log.level)"
             :icon="LOG_LEVEL_ICON[getLogLevel(log.level)]"
             :color="LOG_LEVEL_COLOR[getLogLevel(log.level)]"
           />
-          <StatCard v-if="log.logger" label="Logger" :value="log.logger" icon="i-lucide-tag" />
+          <div v-if="log.logger" dir="ltr">
+            <StatCard :label="t('common.logger')" :value="log.logger" icon="i-lucide-tag" />
+          </div>
           <StatCard
-            label="Date"
-            :value="moment(log.datetime).fromNow()"
+            :label="t('common.date')"
+            :value="relativeTime(log.datetime)"
             icon="i-lucide-clock"
             :tooltip="moment(log.datetime).format('YYYY-MM-DD HH:mm:ss Z')"
           />
@@ -28,14 +30,8 @@
 
         <div class="flex flex-wrap items-center justify-end gap-2">
           <UDropdownMenu :items="copyMenuItems" :content="{ align: 'end' }" :modal="false">
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-copy"
-              trailing-icon="i-lucide-chevron-down"
-            >
-              Copy
+            <UButton color="neutral" variant="outline" size="sm" icon="i-lucide-copy">
+              {{ t('common.copy') }}
             </UButton>
           </UDropdownMenu>
         </div>
@@ -46,9 +42,10 @@
           :icon="LOG_LEVEL_ICON[getLogLevel(log.level)]"
           title=""
           class="min-w-0"
+          dir="ltr"
         >
           <template #description>
-            <p class="wrap-break-word w-full font-mono text-sm text-default">
+            <p class="wrap-break-word w-full font-mono text-sm text-default" dir="ltr">
               {{ log.message }}
             </p>
           </template>
@@ -60,12 +57,13 @@
           variant="soft"
           icon="i-lucide-badge-alert"
           :title="exceptionSummary(log)"
+          dir="ltr"
         />
 
         <section v-if="log.exception" class="space-y-3">
           <button
             type="button"
-            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-start"
             @click="exceptionOpen = !exceptionOpen"
           >
             <div class="flex items-center gap-3">
@@ -74,7 +72,7 @@
               >
                 <UIcon name="i-lucide-bug" class="size-4" />
               </span>
-              <p class="text-base font-semibold text-highlighted">Exception</p>
+              <p class="text-base font-semibold text-highlighted">{{ t('common.exception') }}</p>
             </div>
             <div class="flex items-center gap-2" @click.stop>
               <UButton
@@ -88,7 +86,7 @@
                   }
                 "
               >
-                <span class="hidden sm:inline">Wrap</span>
+                <span class="hidden sm:inline">{{ t('common.wrap') }}</span>
               </UButton>
               <UButton
                 size="sm"
@@ -97,7 +95,7 @@
                 icon="i-lucide-copy"
                 @click="copyText(exceptionText(log), true)"
               >
-                Copy
+                {{ t('common.copy') }}
               </UButton>
               <UIcon
                 name="i-lucide-chevron-right"
@@ -112,6 +110,7 @@
           <pre
             v-if="exceptionOpen"
             class="ytp-terminal max-h-96 overflow-auto"
+            dir="ltr"
             :class="wrapException ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
           ><code>{{ exceptionText(log) }}</code></pre>
         </section>
@@ -119,14 +118,14 @@
         <section v-if="detailRows.length > 0" class="space-y-3">
           <button
             type="button"
-            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-start"
             @click="sourceOpen = !sourceOpen"
           >
             <div class="flex items-center gap-3">
               <span class="ytp-detail-icon">
                 <UIcon name="i-lucide-file-code" class="size-4" />
               </span>
-              <p class="text-base font-semibold text-highlighted">Source</p>
+              <p class="text-base font-semibold text-highlighted">{{ t('common.source') }}</p>
             </div>
             <div class="flex items-center gap-2" @click.stop>
               <UButton
@@ -136,7 +135,7 @@
                 icon="i-lucide-copy"
                 @click="copyText(sourceJson, true)"
               >
-                Copy
+                {{ t('common.copy') }}
               </UButton>
               <UIcon
                 name="i-lucide-chevron-right"
@@ -145,7 +144,7 @@
             </div>
           </button>
 
-          <dl v-if="sourceOpen" class="grid gap-2 sm:grid-cols-2">
+          <dl v-if="sourceOpen" class="grid gap-2 sm:grid-cols-2" dir="ltr">
             <div
               v-for="row in detailRows"
               :key="row.label"
@@ -165,14 +164,14 @@
         <section v-if="fieldRows.length > 0" class="space-y-3">
           <button
             type="button"
-            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-start"
             @click="fieldsOpen = !fieldsOpen"
           >
             <div class="flex items-center gap-3">
               <span class="ytp-detail-icon">
                 <UIcon name="i-lucide-tags" class="size-4" />
               </span>
-              <p class="text-base font-semibold text-highlighted">Fields</p>
+              <p class="text-base font-semibold text-highlighted">{{ t('common.fields') }}</p>
             </div>
             <div class="flex items-center gap-2" @click.stop>
               <UButton
@@ -186,7 +185,7 @@
                   }
                 "
               >
-                <span class="hidden sm:inline">Wrap</span>
+                <span class="hidden sm:inline">{{ t('common.wrap') }}</span>
               </UButton>
               <UButton
                 size="sm"
@@ -195,7 +194,7 @@
                 icon="i-lucide-copy"
                 @click="copyText(displayedFieldsJson, true)"
               >
-                Copy
+                {{ t('common.copy') }}
               </UButton>
               <UIcon
                 name="i-lucide-chevron-right"
@@ -209,9 +208,10 @@
               v-model="fieldsQuery"
               type="search"
               icon="i-lucide-filter"
-              placeholder="Filter fields"
+              :placeholder="t('common.filterFields')"
               size="sm"
               class="w-full"
+              dir="ltr"
             />
 
             <UAlert
@@ -219,7 +219,7 @@
               color="warning"
               variant="soft"
               icon="i-lucide-filter"
-              title="No matching fields"
+              :title="t('common.noMatchingFields')"
             />
 
             <div
@@ -229,7 +229,8 @@
             >
               <button
                 type="button"
-                class="grid w-full grid-cols-[minmax(7rem,0.45fr)_minmax(0,1fr)] items-center gap-3 px-3 py-2 text-left sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]"
+                class="grid w-full grid-cols-[minmax(7rem,0.45fr)_minmax(0,1fr)] items-center gap-3 px-3 py-2 text-start sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]"
+                dir="ltr"
                 @click="toggleField(field.key)"
               >
                 <span
@@ -258,9 +259,10 @@
                       v-model="fieldFilters[field.key]"
                       type="search"
                       icon="i-lucide-filter"
-                      placeholder="Filter field lines"
+                      :placeholder="t('common.filterFieldLines')"
                       size="sm"
                       class="w-full"
+                      dir="ltr"
                     />
                   </div>
                   <UButton
@@ -277,7 +279,7 @@
                   color="warning"
                   variant="soft"
                   icon="i-lucide-filter"
-                  title="No matching lines"
+                  :title="t('common.noMatchingLines')"
                   class="mb-3"
                 />
 
@@ -287,6 +289,7 @@
                     (!fieldFilter(field.key) || filteredFieldLineCount(field) > 0)
                   "
                   class="ytp-terminal max-h-96 overflow-auto"
+                  dir="ltr"
                   :class="wrapFields ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
                 ><code>{{ displayedFieldValue(field) }}</code></pre>
                 <pre
@@ -295,9 +298,10 @@
                     (!fieldFilter(field.key) || filteredFieldLineCount(field) > 0)
                   "
                   class="ytp-terminal max-h-96 overflow-auto"
+                  dir="ltr"
                   :class="wrapFields ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
                 ><code>{{ displayedFieldValue(field) }}</code></pre>
-                <p v-else class="wrap-break-word font-mono text-xs text-default">
+                <p v-else class="wrap-break-word font-mono text-xs text-default" dir="ltr">
                   {{ field.value }}
                 </p>
               </div>
@@ -308,14 +312,14 @@
         <section class="space-y-3">
           <button
             type="button"
-            class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+            class="flex w-full flex-wrap items-center justify-between gap-3 text-start"
             @click="rawJsonOpen = !rawJsonOpen"
           >
             <div class="flex items-center gap-3">
               <span class="ytp-detail-icon">
                 <UIcon name="i-lucide-braces" class="size-4" />
               </span>
-              <p class="text-base font-semibold text-highlighted">Raw Data</p>
+              <p class="text-base font-semibold text-highlighted">{{ t('common.rawData') }}</p>
             </div>
             <div class="flex items-center gap-2" @click.stop>
               <UButton
@@ -329,7 +333,7 @@
                   }
                 "
               >
-                <span class="hidden sm:inline">Wrap</span>
+                <span class="hidden sm:inline">{{ t('common.wrap') }}</span>
               </UButton>
               <UButton
                 size="sm"
@@ -338,7 +342,7 @@
                 icon="i-lucide-copy"
                 @click="copyText(displayedRawJson, true)"
               >
-                Copy
+                {{ t('common.copy') }}
               </UButton>
               <UIcon
                 name="i-lucide-chevron-right"
@@ -352,9 +356,10 @@
               v-model="rawJsonFilter"
               type="search"
               icon="i-lucide-filter"
-              placeholder="Filter raw data"
+              :placeholder="t('common.filterRawData')"
               size="sm"
               class="w-full"
+              dir="ltr"
             />
 
             <UAlert
@@ -362,12 +367,13 @@
               color="warning"
               variant="soft"
               icon="i-lucide-filter"
-              title="No matching lines"
+              :title="t('common.noMatchingLines')"
             />
 
             <pre
               v-if="!rawJsonFilter || filteredRawJsonLineCount > 0"
               class="ytp-terminal max-h-96 overflow-auto"
+              dir="ltr"
               :class="wrapRaw ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
             ><code>{{ displayedRawJson }}</code></pre>
           </template>
@@ -385,6 +391,10 @@ import StatCard from '~/components/StatCard.vue';
 import { filterLogTextLines } from '~/utils/logs';
 import type { log_line } from '~/types/logs';
 import { copyText } from '~/utils';
+import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+
+const { locale, t } = useI18n();
+const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 
 const props = defineProps<{
   modelValue?: boolean;
@@ -490,7 +500,7 @@ const sourceJson = computed(() =>
 const copyMenuItems = computed(() => [
   [
     {
-      label: 'Copy Message',
+      label: t('common.copyMessage'),
       icon: 'i-lucide-message-square-text',
       onSelect: () => {
         if (props.log) {
@@ -499,7 +509,7 @@ const copyMenuItems = computed(() => [
       },
     },
     {
-      label: 'Copy JSON',
+      label: t('common.copyJson'),
       icon: 'i-lucide-braces',
       onSelect: () => {
         if (props.log) {
@@ -556,18 +566,22 @@ const formatNameId = (name: unknown, id: unknown): string => {
 const detailRows = computed((): DetailRow[] => {
   if (!props.log) return [];
   return compactRows([
-    { label: 'File', value: props.log.source?.file, icon: 'i-lucide-file' },
-    { label: 'Line', value: props.log.source?.line, icon: 'i-lucide-hash' },
-    { label: 'Function', value: props.log.source?.function, icon: 'i-lucide-code-2' },
-    { label: 'Module', value: props.log.source?.module, icon: 'i-lucide-box' },
-    { label: 'Path', value: props.log.source?.path, icon: 'i-lucide-folder-tree' },
+    { label: t('common.file'), value: props.log.source?.file, icon: 'i-lucide-file' },
+    { label: t('common.lineDetail'), value: props.log.source?.line, icon: 'i-lucide-hash' },
     {
-      label: 'Process / ID',
+      label: t('common.functionDetail'),
+      value: props.log.source?.function,
+      icon: 'i-lucide-code-2',
+    },
+    { label: t('common.moduleDetail'), value: props.log.source?.module, icon: 'i-lucide-box' },
+    { label: t('common.pathDetail'), value: props.log.source?.path, icon: 'i-lucide-folder-tree' },
+    {
+      label: t('common.processIdDetail'),
       value: formatNameId(props.log.process?.name, props.log.process?.id),
       icon: 'i-lucide-cpu',
     },
     {
-      label: 'Thread / ID',
+      label: t('common.threadIdDetail'),
       value: formatNameId(props.log.thread?.name, props.log.thread?.id),
       icon: 'i-lucide-git-branch',
     },

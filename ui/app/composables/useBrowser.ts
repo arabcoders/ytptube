@@ -4,6 +4,9 @@ import { useNotification } from '~/composables/useNotification';
 import { request, parse_api_error, sTrim, encodePath } from '~/utils';
 import type { FileItem, Pagination } from '~/types/filebrowser';
 
+const t = (key: string, named: Record<string, unknown> = {}): string =>
+  useNuxtApp().$i18n?.t(key, named) ?? key;
+
 const items = ref<FileItem[]>([]);
 const path = ref<string>('/');
 const pagination = ref<Pagination>({
@@ -43,7 +46,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 };
 
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
   notify.error(message);
 };
@@ -168,7 +171,7 @@ const performAction = async (
       }
 
       if (!multiple && !result.status) {
-        notify.error(`Failed to perform action: ${result.error || 'Unknown error'}`);
+        notify.error(t('files.actionFailed', { error: result.error || t('common.unknownError') }));
         return false;
       }
 
@@ -213,7 +216,10 @@ const performMassAction = async (
     for (const result of results) {
       if (!result.status) {
         notify.error(
-          `Failed to perform action on '${result.path}': ${result.error || 'Unknown error'}`,
+          t('files.actionFailedItem', {
+            name: result.path,
+            error: result.error || t('common.unknownError'),
+          }),
         );
         continue;
       }
@@ -242,7 +248,7 @@ const createDirectory = async (dir: string, newDir: string): Promise<boolean> =>
     'directory',
     { new_dir: trimmedDir },
     () => {
-      notify.success(`Successfully created '${trimmedDir}'.`);
+      notify.success(t('files.directoryCreated', { name: trimmedDir }));
     },
   );
 
@@ -265,7 +271,7 @@ const renameItem = async (item: FileItem, newName: string): Promise<boolean> => 
         it.name = source.new_path.split('/').pop() || trimmedName;
         it.path = source.new_path;
       }
-      notify.success(`Renamed '${item.name}'.`);
+      notify.success(t('common.renamed', { name: item.name }));
     },
     true,
   );
@@ -274,7 +280,7 @@ const renameItem = async (item: FileItem, newName: string): Promise<boolean> => 
 const deleteItem = async (item: FileItem): Promise<boolean> => {
   return await performAction(item, 'delete', {}, () => {
     items.value = items.value.filter((i) => i.path !== item.path);
-    notify.warning(`Deleted '${item.name}'.`);
+    notify.warning(t('files.deleted', { name: item.name }));
   });
 };
 
@@ -293,7 +299,7 @@ const moveItem = async (item: FileItem, newPath: string): Promise<boolean> => {
       if (source.path) {
         items.value = items.value.filter((i) => i.path !== source.path);
       }
-      notify.success(`Moved '${item.name}' to '${trimmedPath}'.`);
+      notify.success(t('files.moved', { name: item.name, destination: trimmedPath }));
     },
     true,
   );
@@ -301,7 +307,7 @@ const moveItem = async (item: FileItem, newPath: string): Promise<boolean> => {
 
 const deleteSelected = async (): Promise<boolean> => {
   if (selectedElms.value.length < 1) {
-    notify.error('No items selected.');
+    notify.error(t('common.noItemsSelected'));
     return false;
   }
 
@@ -313,7 +319,7 @@ const deleteSelected = async (): Promise<boolean> => {
     const item = items.value.find((it) => it.path === result.path);
     if (item) {
       items.value = items.value.filter((it) => it.path !== result.path);
-      notify.warning(`Deleted '${item.name}'.`);
+      notify.warning(t('files.deleted', { name: item.name }));
     }
   });
 
@@ -326,7 +332,7 @@ const deleteSelected = async (): Promise<boolean> => {
 
 const moveSelected = async (newPath: string): Promise<boolean> => {
   if (selectedElms.value.length < 1) {
-    notify.error('No items selected.');
+    notify.error(t('common.noItemsSelected'));
     return false;
   }
 
@@ -339,7 +345,7 @@ const moveSelected = async (newPath: string): Promise<boolean> => {
 
   const success = await performMassAction(actions, (result) => {
     items.value = items.value.filter((it) => it.path !== result.path);
-    notify.success(`Moved '${result.path}' to '${trimmedPath}'.`);
+    notify.success(t('files.moved', { name: result.path, destination: trimmedPath }));
   });
 
   if (success) {

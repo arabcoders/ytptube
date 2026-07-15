@@ -4,7 +4,7 @@
       <template #leading>
         <UIcon name="i-lucide-bell" class="size-4" />
       </template>
-      <span class="hidden sm:inline">Notifications</span>
+      <span class="hidden sm:inline">{{ t('common.notifications') }}</span>
       <template #trailing>
         <UBadge :color="severityTone" variant="soft" size="sm"
           >{{ store.unreadCount }}/{{ store.notifications.length }}</UBadge
@@ -23,12 +23,12 @@
       >
         <template #header>
           <div>
-            <p class="text-sm font-semibold text-highlighted">Notifications</p>
-            <p class="text-xs text-toned">Recent activity and errors.</p>
+            <p class="text-sm font-semibold text-highlighted">{{ t('common.notifications') }}</p>
+            <p class="text-xs text-toned">{{ t('app.notifications.subtitle') }}</p>
           </div>
 
           <UBadge :color="severityTone" variant="soft" size="sm">
-            {{ store.unreadCount }} unread
+            {{ t('app.notifications.unread', { count: store.unreadCount }) }}
           </UBadge>
         </template>
 
@@ -53,14 +53,14 @@
                   :icon="notificationIcon(item.level)"
                   :title="item.message"
                   :ui="{
-                    root: 'select-none rounded-none border border-default border-l-4 bg-default px-3 py-2 transition-colors hover:bg-muted/40',
+                    root: 'select-none rounded-none border border-default border-s-4 bg-default px-3 py-2 transition-colors hover:bg-muted/40',
                     icon: 'size-4 mt-0.5',
                     title:
                       expandedId === item.id
                         ? 'whitespace-normal break-words text-sm'
                         : 'truncate text-sm',
                     description: 'mt-1 text-xs text-toned',
-                    actions: 'items-center gap-1 ml-2',
+                    actions: 'items-center gap-1 ms-2',
                   }"
                   :class="notificationAlertClass(item.level, item.id)"
                   @click="handleNotificationClick(item.id)"
@@ -76,8 +76,10 @@
                         class="underline underline-offset-2"
                         @click.stop="copy_text(item.id, item.message)"
                       >
-                        <span v-if="copiedId === item.id" class="text-success">Copied!</span>
-                        <span v-else>Copy</span>
+                        <span v-if="copiedId === item.id" class="text-success">{{
+                          t('app.notifications.copied')
+                        }}</span>
+                        <span v-else>{{ t('common.copy') }}</span>
                       </button>
                     </span>
                   </template>
@@ -111,8 +113,8 @@
           <UEmpty
             v-else
             icon="i-lucide-inbox"
-            title="No notifications"
-            description="You do not have any stored notifications yet."
+            :title="t('app.notifications.noNotifications')"
+            :description="t('app.notifications.noNotificationsDesc')"
             class="px-4 py-8"
           />
         </template>
@@ -126,7 +128,7 @@
             :disabled="store.unreadCount === 0"
             @click="store.markAllRead()"
           >
-            Mark all read
+            {{ t('app.notifications.markAllRead') }}
           </UButton>
 
           <UButton
@@ -137,7 +139,7 @@
             :disabled="store.notifications.length === 0"
             @click="store.clear()"
           >
-            Clear all
+            {{ t('app.notifications.clearAll') }}
           </UButton>
         </template>
       </UCard>
@@ -149,6 +151,8 @@
 import moment from 'moment';
 import { useNotificationCenter } from '~/composables/useNotificationCenter';
 import type { notificationType } from '~/composables/useNotification';
+
+const { t } = useI18n();
 
 const store = useNotificationCenter();
 
@@ -190,14 +194,14 @@ const notificationAlertClass = (level: notificationType, id: string): string => 
 
   switch (level) {
     case 'error':
-      return `border-l-error text-default ${selectedClass}`.trim();
+      return `border-s-error text-default ${selectedClass}`.trim();
     case 'warning':
-      return `border-l-warning text-default ${selectedClass}`.trim();
+      return `border-s-warning text-default ${selectedClass}`.trim();
     case 'success':
-      return `border-l-success text-default ${selectedClass}`.trim();
+      return `border-s-success text-default ${selectedClass}`.trim();
     case 'info':
     default:
-      return `border-l-info text-default ${selectedClass}`.trim();
+      return `border-s-info text-default ${selectedClass}`.trim();
   }
 };
 

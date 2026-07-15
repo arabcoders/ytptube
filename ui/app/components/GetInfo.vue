@@ -15,7 +15,7 @@
           color="error"
           variant="soft"
           icon="i-lucide-triangle-alert"
-          title="Unable to load information"
+          :title="t('common.unableToLoadInfo')"
           :description="errorMessage"
         />
 
@@ -23,7 +23,7 @@
           <UInput
             v-model="query"
             type="search"
-            placeholder="Filter text"
+            :placeholder="t('common.filterText')"
             icon="i-lucide-filter"
             size="sm"
             class="w-full"
@@ -34,7 +34,7 @@
             color="warning"
             variant="soft"
             icon="i-lucide-filter"
-            title="No matching lines"
+            :title="t('common.noMatchingLines')"
           />
 
           <UAlert
@@ -42,14 +42,15 @@
             color="neutral"
             variant="soft"
             icon="i-lucide-info"
-            title="No content returned"
-            description="The request completed successfully but did not return any visible content."
+            :title="t('common.noContentReturned')"
+            :description="t('common.noContentReturnedDesc')"
           />
 
           <pre
             v-else-if="!query || filteredLineCount > 0"
             ref="contentView"
             class="ytp-terminal max-h-[55vh] overflow-auto"
+            dir="ltr"
             :class="wrap ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
           ><code v-text="displayedText" /></pre>
         </div>
@@ -71,7 +72,7 @@
             }
           "
         >
-          <span class="hidden sm:inline">Wrap</span>
+          <span class="hidden sm:inline">{{ t('common.wrap') }}</span>
         </UButton>
 
         <UButton
@@ -83,7 +84,7 @@
           :disabled="isLoading || !hasVisibleText"
           @click="copyData"
         >
-          Copy
+          {{ t('common.copy') }}
         </UButton>
 
         <UButton
@@ -95,7 +96,7 @@
           :disabled="isLoading || !hasVisibleText"
           @click="scrollContent('end')"
         >
-          Go down
+          {{ t('common.goDown') }}
         </UButton>
 
         <UButton
@@ -108,7 +109,7 @@
           :loading="isLoading"
           @click="() => void loadInfo()"
         >
-          Reload
+          {{ t('common.refresh') }}
         </UButton>
 
         <UButton
@@ -120,7 +121,7 @@
           :disabled="isLoading || !hasVisibleText"
           @click="scrollContent('start')"
         >
-          Go up
+          {{ t('common.goUp') }}
         </UButton>
       </div>
     </template>
@@ -130,6 +131,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
 import { filterLogTextLines } from '~/utils/logs';
+const { t } = useI18n();
 const emitter = defineEmits<{ (e: 'closeModel'): void }>();
 
 const props = withDefaults(
@@ -174,26 +176,26 @@ const modalOpen = computed({
 
 const resolvedTitle = computed(() => {
   if (props.useUrl && props.link.startsWith('/api/history/')) {
-    return 'Local Information';
+    return t('common.localInformation');
   }
 
   if (props.useUrl) {
-    return 'File Contents';
+    return t('common.fileContents');
   }
 
-  return 'yt-dlp Information';
+  return t('common.ytdlpInformation');
 });
 
 const modalDescription = computed(() => {
   if (props.useUrl && props.link.startsWith('/api/history/')) {
-    return 'View the stored local information payload for this item.';
+    return t('common.localInfoDesc');
   }
 
   if (props.useUrl) {
-    return 'Preview the fetched text response.';
+    return t('common.fileContentsDesc');
   }
 
-  return 'View the yt-dlp information payload for this URL.';
+  return t('common.ytdlpInfoDesc');
 });
 
 const displayText = computed(() => {
@@ -251,9 +253,9 @@ const parseResponseBody = (body: string): unknown => {
   }
 };
 
-const getErrorMessage = (body: string, status: number): string => {
+const getErrorMessage = (body: string): string => {
   if (!body) {
-    return `Request failed with status ${status}.`;
+    return t('common.failedFetch');
   }
 
   try {
@@ -274,7 +276,7 @@ const loadInfo = async (): Promise<void> => {
   data.value = null;
 
   if (!props.link) {
-    errorMessage.value = 'No source URL was provided.';
+    errorMessage.value = t('common.noSourceUrl');
     isLoading.value = false;
     return;
   }
@@ -288,7 +290,7 @@ const loadInfo = async (): Promise<void> => {
     }
 
     if (!response.ok) {
-      throw new Error(getErrorMessage(body, response.status));
+      throw new Error(getErrorMessage(body));
     }
 
     data.value = parseResponseBody(body);
@@ -298,9 +300,9 @@ const loadInfo = async (): Promise<void> => {
     }
 
     console.error(error);
-    const message = error instanceof Error ? error.message : 'Failed to load information.';
+    const message = error instanceof Error ? error.message : t('common.failedFetch');
     errorMessage.value = message;
-    toast.error(`Error: ${message}`);
+    toast.error(t('common.errorPrefix', { msg: message }));
   } finally {
     if (requestId === latestRequestId) {
       isLoading.value = false;

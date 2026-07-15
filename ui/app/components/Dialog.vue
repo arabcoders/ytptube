@@ -47,7 +47,7 @@
           :icon="state.current?.opts.confirmIcon ?? 'i-lucide-check'"
           @click="onEnter"
         >
-          {{ state.current?.opts.confirmText ?? 'OK' }}
+          {{ state.current?.opts.confirmText ?? t('common.confirm') }}
         </UButton>
       </template>
 
@@ -60,7 +60,10 @@
           "
           @click="cancel"
         >
-          {{ (state.current?.opts as PromptOptions | ConfirmOptions)?.cancelText ?? 'Cancel' }}
+          {{
+            (state.current?.opts as PromptOptions | ConfirmOptions)?.cancelText ??
+            t('common.cancel')
+          }}
         </UButton>
 
         <UButton
@@ -73,7 +76,7 @@
           "
           @click="onEnter"
         >
-          {{ state.current?.opts.confirmText ?? 'OK' }}
+          {{ state.current?.opts.confirmText ?? t('common.confirm') }}
         </UButton>
       </template>
     </template>
@@ -86,6 +89,7 @@ import { UButton, UCheckbox, UInput } from '#components';
 import { disableOpacity, enableOpacity } from '~/utils';
 import { useDialog, type ConfirmOptions, type PromptOptions } from '~/composables/useDialog';
 
+const { t } = useI18n();
 const { state, confirm, cancel } = useDialog();
 
 const localInput = ref('');
@@ -139,13 +143,13 @@ const defaultTitle = computed(() => {
   }
   switch (state.current.type) {
     case 'alert':
-      return 'Alert';
+      return t('common.alert');
     case 'confirm':
-      return 'Confirm';
+      return t('common.confirm');
     case 'prompt':
-      return 'Input required';
+      return t('common.inputRequired');
     default:
-      return 'Dialog';
+      return t('common.dialog');
   }
 });
 </script>

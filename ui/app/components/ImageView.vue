@@ -18,8 +18,8 @@ img {
         color="error"
         variant="soft"
         icon="i-lucide-triangle-alert"
-        title="Unable to load image"
-        description="The preview could not be loaded."
+        :title="t('common.unableToLoadImage')"
+        :description="t('common.imagePreviewFailed')"
         class="w-full max-w-2xl"
       />
     </div>
@@ -27,7 +27,7 @@ img {
     <img
       v-if="link"
       :src="link"
-      alt="Image preview"
+      :alt="t('common.imagePreviewAlt')"
       :class="{ invisible: isLoading || hasError }"
       @load="handle_load"
       @error="handle_error"
@@ -37,6 +37,8 @@ img {
 
 <script setup lang="ts">
 import { disableOpacity, enableOpacity } from '~/utils';
+
+const { t } = useI18n();
 
 const emitter = defineEmits(['closeModel']);
 

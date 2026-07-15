@@ -42,7 +42,9 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 };
 
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Failed to load diagnostics.';
+  const { $i18n } = useNuxtApp();
+  const t = $i18n?.t ?? ((key: string) => key);
+  const message = error instanceof Error ? error.message : t('diagnostics.failed');
   lastError.value = message;
   useNotification().error(message);
 };

@@ -6,6 +6,9 @@ import { computed, ref } from 'vue';
 import type { TerminalSessionItem, TerminalSessionsResponse } from '~/types';
 import { parse_api_error, parse_api_response, request, uri } from '~/utils';
 
+const t = (key: string, named: Record<string, unknown> = {}): string =>
+  useNuxtApp().$i18n?.t(key, named) ?? key;
+
 type ConsoleSessionStatus =
   | 'idle'
   | 'starting'
@@ -365,10 +368,10 @@ const parseResponseError = async (response: Response): Promise<string> => {
       return text;
     }
   } catch {
-    return response.statusText || 'Request failed.';
+    return response.statusText || t('common.failedFetch');
   }
 
-  return response.statusText || 'Request failed.';
+  return response.statusText || t('common.requestFailed');
 };
 
 const normalizeRecentSessionStatus = (
@@ -488,6 +491,7 @@ const refreshSessionMetadata = async (): Promise<void> => {
 };
 
 const normalizeResponse = (payload: ConsoleSessionResponse): Partial<ConsoleSessionState> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const status =
     payload.expired || payload.not_found
       ? 'expired'
@@ -510,7 +514,7 @@ const normalizeResponse = (payload: ConsoleSessionResponse): Partial<ConsoleSess
       status === 'error'
         ? sessionState.value.error ||
           (typeof exitCode === 'number' && exitCode !== 0
-            ? `Command exited with code ${exitCode}.`
+            ? t('console.commandExited', { code: exitCode })
             : '')
         : '',
   };
@@ -804,8 +808,10 @@ const startSession = async ({
 };
 
 const cancelSession = async (): Promise<CancelConsoleSessionResult> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
+
   if (!sessionState.value.sessionId) {
-    return { status: 'missing', message: 'No active terminal session found.' };
+    return { status: 'missing', message: t('console.noSession') };
   }
 
   try {
@@ -819,7 +825,7 @@ const cancelSession = async (): Promise<CancelConsoleSessionResult> => {
     if (response.status === 404) {
       await refreshSessionMetadata();
       await fetchRecentSessions();
-      return { status: 'missing', message: 'Terminal session not found.' };
+      return { status: 'missing', message: t('console.sessionNotFound') };
     }
 
     if (!response.ok) {

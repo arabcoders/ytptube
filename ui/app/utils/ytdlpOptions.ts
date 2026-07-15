@@ -6,8 +6,11 @@ type YTDLPGroupItem = {
 };
 
 export const buildYtdlpGroupItems = (groups: string[]): YTDLPGroupItem[] => {
+  const { $i18n } = useNuxtApp();
+  const t = $i18n?.t ?? ((key: string) => key);
+
   return [
-    { label: 'All groups', value: YTDLP_ALL_GROUPS },
+    { label: t('common.allGroups'), value: YTDLP_ALL_GROUPS },
     ...groups.map((group) => ({ label: group, value: group })),
   ];
 };

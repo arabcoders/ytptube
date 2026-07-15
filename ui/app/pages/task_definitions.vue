@@ -26,7 +26,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -40,7 +40,7 @@
             }
           "
         >
-          <span>Inspect</span>
+          <span>{{ t('common.inspect') }}</span>
         </UButton>
 
         <UButton
@@ -50,7 +50,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span>New Definition</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -61,7 +61,9 @@
           class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            display_style === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UButton
@@ -73,7 +75,7 @@
           :disabled="isLoading"
           @click="() => void loadDefinitions(1, 1000)"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -82,7 +84,7 @@
           ref="filterInput"
           v-model="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -95,7 +97,7 @@
       color="error"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="Error"
+      :title="t('common.error')"
       :description="lastError"
     />
 
@@ -111,7 +113,7 @@
           :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
-          {{ allSelected ? 'Unselect' : 'Select' }}
+          {{ allSelected ? t('common.unselect') : t('common.select') }}
         </UButton>
 
         <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
@@ -126,7 +128,7 @@
             icon="i-lucide-list"
             trailing-icon="i-lucide-chevron-down"
           >
-            Actions
+            {{ t('common.actions') }}
           </UButton>
         </UDropdownMenu>
       </div>
@@ -140,7 +142,7 @@
         <table class="min-w-255 w-full text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
@@ -150,10 +152,10 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">Definition</th>
-              <th class="w-28 whitespace-nowrap">Priority</th>
-              <th class="w-36 whitespace-nowrap">Updated</th>
-              <th class="w-48 whitespace-nowrap">Actions</th>
+              <th class="w-full text-start">{{ t('taskDefinitions.definition') }}</th>
+              <th class="w-28 whitespace-nowrap">{{ t('common.priority') }}</th>
+              <th class="w-36 whitespace-nowrap">{{ t('taskDefinitions.updated') }}</th>
+              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
             </tr>
           </thead>
 
@@ -161,7 +163,7 @@
             <tr
               v-for="definition in filteredDefinitions"
               :key="definition.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -177,7 +179,7 @@
               <td class="px-3 py-3 align-middle">
                 <div class="space-y-1">
                   <div class="font-semibold text-highlighted">
-                    {{ definition.name || '(Unnamed definition)' }}
+                    {{ definition.name || t('taskDefinitions.unnamed') }}
                   </div>
 
                   <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
@@ -191,14 +193,18 @@
                         class="size-3.5"
                         :class="definition.enabled ? 'text-success' : 'text-error'"
                       />
-                      <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
+                      <span>{{
+                        definition.enabled ? t('common.enabled') : t('common.disabled')
+                      }}</span>
                     </button>
 
                     <span
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-link" class="size-3.5" />
-                      <span>Patterns: {{ definition.match_url.length }} match/s</span>
+                      <span>{{
+                        t('taskDefinitions.patterns', { count: definition.match_url.length })
+                      }}</span>
                     </span>
                   </div>
                 </div>
@@ -227,7 +233,7 @@
                     icon="i-lucide-file-up"
                     @click="() => void exportDefinition(definition)"
                   >
-                    <span class="hidden sm:inline">Export</span>
+                    {{ t('common.exportItem') }}
                   </UButton>
 
                   <UButton
@@ -237,7 +243,7 @@
                     icon="i-lucide-pencil"
                     @click="() => void openEdit(definition)"
                   >
-                    <span class="hidden sm:inline">Edit</span>
+                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
                   </UButton>
 
                   <UButton
@@ -247,7 +253,7 @@
                     icon="i-lucide-trash"
                     @click="() => void remove(definition)"
                   >
-                    <span class="hidden sm:inline">Delete</span>
+                    <span class="hidden sm:inline">{{ t('common.delete') }}</span>
                   </UButton>
                 </div>
               </td>
@@ -273,11 +279,11 @@
                 <div class="flex items-start gap-2">
                   <button
                     type="button"
-                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
                     @click="toggleExpand(definition.id, 'title')"
                   >
                     <span :class="['block', expandClass(definition.id, 'title')]">
-                      {{ definition.name || '(Unnamed)' }}
+                      {{ definition.name || t('taskDefinitions.unnamed') }}
                     </span>
                   </button>
                 </div>
@@ -292,7 +298,7 @@
                   square
                   @click="() => void exportDefinition(definition)"
                 >
-                  <span>Export Definition</span>
+                  <span>{{ t('common.exportItem') }}</span>
                 </UButton>
 
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -320,26 +326,28 @@
                     class="size-3.5"
                     :class="definition.enabled ? 'text-success' : 'text-error'"
                   />
-                  <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
+                  <span>{{ definition.enabled ? t('common.enabled') : t('common.disabled') }}</span>
                 </button>
 
                 <span
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>Priority: {{ definition.priority }}</span>
+                  <span>{{ t('common.priority') }}: {{ definition.priority }}</span>
                 </span>
               </div>
 
               <button
                 type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                 @click="toggleExpand(definition.id, 'patterns')"
               >
                 <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">URL patterns</div>
-                  <span :class="['block', expandClass(definition.id, 'patterns')]">
+                  <div class="text-xs font-medium text-toned">
+                    {{ t('taskDefinitions.urlPatterns') }}
+                  </div>
+                  <span :class="['block', expandClass(definition.id, 'patterns')]" dir="ltr">
                     {{ definition.match_url.join('\n') }}
                   </span>
                 </div>
@@ -356,7 +364,7 @@
                 class="w-full justify-center"
                 @click="() => void openEdit(definition)"
               >
-                Edit
+                {{ t('common.edit') }}
               </UButton>
 
               <UButton
@@ -366,7 +374,7 @@
                 class="w-full justify-center"
                 @click="() => void remove(definition)"
               >
-                Delete
+                {{ t('common.delete') }}
               </UButton>
             </div>
           </div>
@@ -379,8 +387,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading data. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <div v-else-if="query && filteredDefinitions.length < 1" class="space-y-3">
@@ -388,8 +396,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-search"
-        title="No Results"
-        :description="`No results found for the query: ${query}. Please try a different search term.`"
+        :title="t('common.noResults')"
+        :description="t('common.noResultsFor', { query })"
       />
     </div>
 
@@ -398,8 +406,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="No definitions"
-      description="There are no task definitions. Click the New Definition button to create your first task definition."
+      :title="t('common.noItems')"
+      :description="t('common.empty')"
     />
 
     <UModal
@@ -407,13 +415,13 @@
       :open="isEditorOpen"
       :title="
         editorMode === 'create'
-          ? 'Create Task Definition'
-          : `Edit - ${currentSummary?.name || 'Task Definition'}`
+          ? t('common.add')
+          : t('common.editTitle', {
+              name: currentSummary?.name || t('taskDefinitions.definition'),
+            })
       "
       :description="
-        editorLoading
-          ? 'Loading full definition before editing.'
-          : 'Use the GUI editor when it fits, or switch to advanced JSON for full control.'
+        editorLoading ? t('taskDefinitions.editorLoadingDesc') : t('taskDefinitions.editorDesc')
       "
       :dismissible="!editorLoading && !editorSubmitting"
       :ui="{ content: 'w-full sm:max-w-7xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
@@ -421,29 +429,125 @@
     >
       <template #body>
         <TaskDefinitionEditor
+          ref="definitionEditor"
           :document="workingDefinition"
           :initial-show-import="showImportByDefault"
           :available-definitions="definitions"
           :loading="editorLoading"
           :submitting="editorSubmitting"
           @submit="submitDefinition"
-          @cancel="() => void requestCloseEditor()"
           @dirty-change="(dirty) => (editorDirty = dirty)"
           @import-existing="importExistingDefinition"
         />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="inline-flex self-start rounded-md border border-default bg-muted/20 p-1">
+            <UButton
+              type="button"
+              size="sm"
+              icon="i-lucide-sliders-horizontal"
+              color="neutral"
+              :variant="definitionEditor?.mode === 'gui' ? 'soft' : 'ghost'"
+              :disabled="!definitionEditor?.guiSupported || definitionEditor?.isBusy"
+              @click="definitionEditor?.switchMode('gui')"
+            >
+              {{ t('common.guiTab') }}
+            </UButton>
+
+            <UButton
+              type="button"
+              size="sm"
+              icon="i-lucide-code"
+              color="neutral"
+              :variant="definitionEditor?.mode === 'advanced' ? 'soft' : 'ghost'"
+              :disabled="definitionEditor?.isBusy"
+              @click="definitionEditor?.switchMode('advanced')"
+            >
+              {{ t('common.advancedTab') }}
+            </UButton>
+          </div>
+
+          <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <UButton
+              v-if="definitionEditor?.advancedMode"
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-wand-sparkles"
+              :disabled="definitionEditor.isBusy"
+              class="justify-center"
+              @click="definitionEditor.beautify"
+            >
+              {{ t('common.format') }}
+            </UButton>
+
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-x"
+              :disabled="editorSubmitting"
+              class="justify-center"
+              @click="() => void requestCloseEditor()"
+            >
+              {{ t('common.cancel') }}
+            </UButton>
+
+            <UButton
+              type="button"
+              color="primary"
+              icon="i-lucide-save"
+              :loading="editorSubmitting"
+              :disabled="definitionEditor?.isBusy"
+              class="justify-center"
+              @click="definitionEditor?.submit()"
+            >
+              {{ t('common.save') }}
+            </UButton>
+          </div>
+        </div>
       </template>
     </UModal>
 
     <UModal
       v-if="inspect"
       :open="inspect"
-      title="Inspect Task Handler"
-      description="Enter the URL of the resource you want to inspect."
+      :title="t('common.inspectHandler')"
       :ui="{ content: 'w-full sm:max-w-4xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="(open) => !open && (inspect = false)"
     >
       <template #body>
-        <TaskInspect />
+        <TaskInspect ref="taskInspect" />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-rotate-ccw"
+            :disabled="taskInspect?.loading"
+            class="justify-center"
+            @click="taskInspect?.onReset()"
+          >
+            {{ t('common.reset') }}
+          </UButton>
+
+          <UButton
+            type="submit"
+            form="taskInspectForm"
+            color="primary"
+            icon="i-lucide-search"
+            :loading="taskInspect?.loading"
+            :disabled="taskInspect?.loading"
+            class="justify-center"
+          >
+            {{ t('common.inspect') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </main>
@@ -460,13 +564,16 @@ import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
 import { useDialog } from '~/composables/useDialog';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { copyText, encode } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
-
+import { usePageShell } from '~/composables/usePageShell';
+import TaskDefinitionEditor from '~/components/TaskDefinitionEditor.vue';
+import TaskInspect from '~/components/TaskInspect.vue';
 import type {
   TaskDefinitionDetailed,
   TaskDefinitionDocument,
   TaskDefinitionSummary,
 } from '~/types/task_definitions';
+
+const { t } = useI18n();
 
 const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   name: 'New Definition',
@@ -487,7 +594,7 @@ const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   },
 };
 
-const pageShell = requirePageShell('task-definitions');
+const pageShell = usePageShell('task-definitions');
 
 const { toggleExpand, expandClass } = useExpandableMeta();
 
@@ -513,6 +620,8 @@ const editorLoading = ref(false);
 const editorSubmitting = ref(false);
 const workingDefinition = ref<TaskDefinitionDocument | null>(null);
 const workingId = ref<number | null>(null);
+const definitionEditor = ref<InstanceType<typeof TaskDefinitionEditor> | null>(null);
+const taskInspect = ref<InstanceType<typeof TaskInspect> | null>(null);
 const inspect = ref(false);
 const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid');
 const isMobile = useMediaQuery({ maxWidth: 639 });
@@ -564,7 +673,7 @@ const contentStyle = computed<'list' | 'grid'>(() =>
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Remove Selected',
+      label: t('common.removeSelected'),
       icon: 'i-lucide-trash',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
@@ -596,7 +705,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(isEditorOpen, {
     dirty: editorDirty,
-    message: 'You have unsaved task definition changes. Do you want to discard them?',
+    message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();
     },
@@ -746,8 +855,8 @@ const submitDefinition = async (definition: TaskDefinitionDocument): Promise<voi
 
 const remove = async (summary: TaskDefinitionSummary): Promise<void> => {
   const result = await confirmDialog({
-    title: 'Delete Task Definition',
-    message: `Are you sure you want to delete "${summary.name || summary.id}"?`,
+    title: t('common.delete'),
+    message: t('common.deleteNamedConfirm', { name: summary.name || String(summary.id) }),
     confirmColor: 'error',
   });
 
@@ -764,18 +873,18 @@ const deleteSelected = async (): Promise<void> => {
   }
 
   const { status } = await confirmDialog({
-    title: 'Delete Selected Task Definitions',
+    title: t('common.deleteSelected'),
     message:
-      `Delete ${selectedIds.value.length} task definition/s?` +
+      t('common.deleteCountConfirm', { count: selectedIds.value.length }) +
       '\n\n' +
       selectedIds.value
         .map((id) => {
           const item = filteredDefinitions.value.find((definition) => definition.id === id);
-          return item ? `${item.id}: ${item.name || '(Unnamed definition)'}` : '';
+          return item ? `${item.id}: ${item.name || t('taskDefinitions.unnamed')}` : '';
         })
         .filter(Boolean)
         .join('\n'),
-    confirmText: 'Delete',
+    confirmText: t('common.delete'),
     confirmColor: 'error',
   });
 

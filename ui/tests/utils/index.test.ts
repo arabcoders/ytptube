@@ -369,7 +369,7 @@ describe('dom and browser helpers', () => {
 
     await Promise.resolve();
 
-    expect(notificationMock.success).toHaveBeenCalledWith('Text copied to clipboard.');
+    expect(notificationMock.success).toHaveBeenCalledWith('common.copiedToClipboard');
   });
 
   it('lock_opacity', () => {
@@ -473,7 +473,7 @@ describe('network and id helpers', () => {
     const responseMock = { status: 400, json: jsonMock };
     fetchMock.mockResolvedValue(responseMock);
 
-    await expect(utils.convertCliOptions('--bad')).rejects.toThrow('Error: (400): fail');
+    await expect(utils.convertCliOptions('--bad')).rejects.toThrow('common.errorPrefix');
   });
 
 });

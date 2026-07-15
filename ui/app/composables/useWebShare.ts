@@ -4,12 +4,14 @@ import { makeDownload } from '~/utils';
 import type { StoreItem } from '~/types/store';
 
 export const useWebShare = () => {
+  const { t } = useI18n();
+
   const canShare = (): boolean =>
     typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const shareUrl = async (download: StoreItem): Promise<void> => {
     if (!canShare()) {
-      useNotification().error('Web Share API is not supported in this browser.');
+      useNotification().error(t('common.shareUnsupported'));
       return;
     }
 
@@ -28,8 +30,8 @@ export const useWebShare = () => {
       console.error('Share failed:', err);
 
       await useDialog().alertDialog({
-        title: 'Share Failed',
-        message: `Share failed: ${err?.message || 'unknown error'}`,
+        title: t('common.shareFailedTitle'),
+        message: t('common.shareFailed', { error: err?.message || t('common.unknownError') }),
       });
     }
   };

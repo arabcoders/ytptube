@@ -5,8 +5,8 @@
     >
       <div class="min-w-0 flex-1">
         <div class="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-default">
-          <UIcon v-if="props.icon" :name="props.icon" class="size-4 shrink-0 text-toned" />
-          <UTooltip :text="field ? `yt-dlp option: ${field}` : undefined">
+          <UIcon v-if="iconName" :name="iconName" class="size-4 shrink-0 text-toned" />
+          <UTooltip :text="field ? t('common.ytdlpOption', { field }) : undefined">
             <span class="truncate" :class="{ 'has-tooltip': field }">
               {{ label }}
             </span>
@@ -52,8 +52,8 @@
       </template>
       <template v-else>
         <span class="inline-flex items-center gap-2 font-semibold">
-          <UIcon v-if="props.icon" :name="props.icon" class="size-4 text-toned" />
-          <UTooltip :text="field ? `yt-dlp option: ${field}` : undefined">
+          <UIcon v-if="iconName" :name="iconName" class="size-4 text-toned" />
+          <UTooltip :text="field ? t('common.ytdlpOption', { field }) : undefined">
             <span :class="{ 'has-tooltip': field }">
               {{ label }}
             </span>
@@ -64,6 +64,7 @@
 
     <UInput
       v-if="'string' === type"
+      dir="ltr"
       :id="`dlf-${id}`"
       v-model="stringModel"
       :placeholder="placeholder"
@@ -75,6 +76,7 @@
 
     <UTextarea
       v-else-if="'text' === type"
+      dir="ltr"
       :id="`dlf-${id}`"
       v-model="stringModel"
       :placeholder="placeholder"
@@ -95,7 +97,7 @@
       v-model="boolModel"
       :disabled="disabled"
       color="success"
-      :label="boolModel ? 'Yes' : 'No'"
+      :label="boolModel ? t('common.yesLabel') : t('common.noLabel')"
       size="lg"
       class="w-full"
       :ui="{ root: 'w-full items-start justify-between gap-4', wrapper: 'ms-0 flex-1 text-sm' }"
@@ -113,6 +115,9 @@
 
 <script setup lang="ts">
 import type { DLFieldType } from '~/types/dl_fields';
+import { isBundledUiIcon } from '~/utils/generatedIconCatalog';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   id: number | string;
@@ -127,6 +132,14 @@ const props = defineProps<{
 }>();
 
 const model = defineModel<string | boolean>();
+
+const iconName = computed(() => {
+  if (!props.icon) {
+    return '';
+  }
+
+  return isBundledUiIcon(props.icon) ? props.icon : 'i-lucide-circle-dot';
+});
 
 const stringModel = computed({
   get: () => (typeof model.value === 'string' ? model.value : ''),

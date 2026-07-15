@@ -45,6 +45,10 @@ const lastError = ref<string | null>(null);
  * If true, methods will throw errors instead of returning null/false (for testing)
  */
 const throwInstead = ref(false);
+
+const { $i18n } = useNuxtApp();
+const t = $i18n?.t ?? ((key: string) => key);
+
 /**
  * Notification composable for showing success/error messages.
  */
@@ -92,7 +96,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
   useNotification().error(message);
 };
@@ -201,8 +205,8 @@ const createTask = async (
     const created = await parse_api_response<Task | Array<Task>>(json);
 
     if (Array.isArray(created)) {
-      useNotification().success(`${created.length} tasks created.`);
-      created.forEach((t) => updateTasksList(t));
+      useNotification().success(t('common.crudCreated', { type: t('tasks.task') }));
+      created.forEach((item) => updateTasksList(item));
       lastError.value = null;
 
       if (callback) {
@@ -213,7 +217,7 @@ const createTask = async (
     }
 
     updateTasksList(created);
-    useNotification().success('Task created.');
+    useNotification().success(t('common.crudCreated', { type: t('tasks.task') }));
     lastError.value = null;
 
     if (callback) {
@@ -222,7 +226,7 @@ const createTask = async (
 
     return created;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -263,7 +267,9 @@ const updateTask = async (
     const updated = await parse_api_response<Task>(json);
 
     updateTasksList(updated);
-    useNotification().success(`Task '${updated.name}' updated.`);
+    useNotification().success(
+      t('common.crudUpdated', { type: t('tasks.task'), name: updated.name }),
+    );
     lastError.value = null;
 
     if (callback) {
@@ -272,7 +278,7 @@ const updateTask = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -310,7 +316,9 @@ const patchTask = async (
     const updated = await parse_api_response<Task>(json);
 
     updateTasksList(updated);
-    useNotification().success(`Task '${updated.name}' updated.`);
+    useNotification().success(
+      t('common.crudUpdated', { type: t('tasks.task'), name: updated.name }),
+    );
     lastError.value = null;
 
     if (callback) {
@@ -319,7 +327,7 @@ const patchTask = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -348,7 +356,7 @@ const deleteTask = async (
     await ensureSuccess(response);
 
     removeTask(id);
-    useNotification().success('Task deleted.');
+    useNotification().success(t('common.crudDeleted', { type: t('tasks.task') }));
     lastError.value = null;
 
     if (callback) {
@@ -357,7 +365,7 @@ const deleteTask = async (
 
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -404,7 +412,7 @@ const markTaskItems = async (id: number): Promise<string | null> => {
     await ensureSuccess(response);
 
     const json = await response.json();
-    const message = json.message || 'All items marked as downloaded.';
+    const message = json.message || t('tasks.allMarkedDownloaded');
 
     useNotification().success(message);
     lastError.value = null;
@@ -427,7 +435,7 @@ const unmarkTaskItems = async (id: number): Promise<string | null> => {
     await ensureSuccess(response);
 
     const json = await response.json();
-    const message = json.message || 'All items removed from archive.';
+    const message = json.message || t('tasks.allRemovedArchive');
 
     useNotification().success(message);
     lastError.value = null;
@@ -452,7 +460,7 @@ const generateTaskMetadata = async (id: number): Promise<TaskMetadataResponse | 
     const json = await response.json();
     const metadata = await parse_api_response<TaskMetadataResponse>(json);
 
-    useNotification().success('Metadata generation completed.');
+    useNotification().success(t('tasks.metadataCompleted'));
     lastError.value = null;
     return metadata;
   } catch (error) {

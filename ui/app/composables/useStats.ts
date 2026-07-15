@@ -28,7 +28,9 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 };
 
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Failed to load stats.';
+  const { $i18n } = useNuxtApp();
+  const t = $i18n?.t ?? ((key: string) => key);
+  const message = error instanceof Error ? error.message : t('common.failedFetch');
   lastError.value = message;
 };
 
@@ -159,8 +161,10 @@ const connect = (): void => {
   });
 
   _es.addEventListener('error', () => {
+    const { $i18n } = useNuxtApp();
+    const t = $i18n?.t ?? ((key: string) => key);
     connected.value = false;
-    lastError.value = 'Stream connection lost. Reconnecting...';
+    lastError.value = t('common.streamConnectionLost');
     disconnect();
     // Auto-reconnect after a delay.
     setTimeout(() => {

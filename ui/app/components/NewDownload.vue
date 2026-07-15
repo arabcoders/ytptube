@@ -6,12 +6,11 @@
           <UFormField class="w-full" :ui="downloadFieldUi">
             <template #label>
               <span class="inline-flex items-center gap-2 font-semibold">
-                <UTooltip text="Use Shift+Enter to switch to multiline input mode.">
+                <UTooltip :text="t('common.downloadUrlHint')">
                   <UIcon name="i-lucide-link" class="size-4 text-toned" />
                 </UTooltip>
                 <span>
-                  URLs separated by newlines or
-                  <span class="font-semibold lowercase">{{ getSeparatorsName(separator) }}</span>
+                  {{ t('common.urlsSeparatedBy', { separator: getSeparatorsName(separator) }) }}
                 </span>
               </span>
             </template>
@@ -23,6 +22,7 @@
                   ref="urlTextarea"
                   id="url"
                   v-model="form.url"
+                  dir="ltr"
                   :disabled="addInProgress"
                   size="lg"
                   :variant="show_description ? 'soft' : 'outline'"
@@ -42,8 +42,9 @@
                   v-else
                   id="url"
                   v-model="form.url"
+                  dir="ltr"
                   type="text"
-                  placeholder="URLs to download"
+                  :placeholder="t('common.urlsPlaceholder')"
                   :disabled="addInProgress"
                   size="lg"
                   :variant="show_description ? 'soft' : 'outline'"
@@ -68,7 +69,7 @@
                 size="lg"
                 class="justify-center sm:min-w-28"
               >
-                Add
+                {{ t('common.add') }}
               </UButton>
             </div>
           </UFormField>
@@ -78,18 +79,14 @@
           >
             <UFormField
               class="min-w-0 w-full"
-              label="Preset"
+              :label="t('common.presetLabel')"
               :ui="downloadFieldUi"
-              :description="
-                hasFormatInConfig
-                  ? 'Presets are disabled. Format key is present in the command options for yt-dlp.'
-                  : 'Prefill saved yt-dlp command options.'
-              "
+              :description="hasFormatInConfig ? t('common.presetDisabled') : t('common.presetDesc')"
             >
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
-                  <span>Preset</span>
+                  <span>{{ t('common.presetLabel') }}</span>
                 </span>
               </template>
 
@@ -117,10 +114,10 @@
                     color="neutral"
                     class="w-full"
                     size="lg"
-                    :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-                    :search-input="{ placeholder: 'Search presets' }"
+                    :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
+                    :search-input="{ placeholder: t('common.searchPresets') }"
                     :disabled="addInProgress || hasFormatInConfig"
-                    placeholder="Select preset"
+                    :placeholder="t('common.selectPreset')"
                   />
                 </div>
               </div>
@@ -128,18 +125,18 @@
 
             <UFormField
               class="min-w-0 w-full"
-              label="Download path"
+              :label="t('common.downloadPath')"
               :ui="downloadFieldUi"
-              :description="`Relative to ${config.app.download_path}`"
+              :description="t('common.downloadPathHint', { path: config.app.download_path })"
             >
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
-                  <span>Download path</span>
+                  <span>{{ t('common.downloadPath') }}</span>
                 </span>
               </template>
 
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2" dir="ltr">
                 <span
                   class="max-w-44 shrink-0 truncate rounded-md border border-default bg-muted/40 px-3 py-2 text-xs text-toned"
                   :title="config.app.download_path"
@@ -171,7 +168,7 @@
                   }
                 "
               >
-                {{ showAdvanced ? 'Hide Options' : 'Show Options' }}
+                {{ showAdvanced ? t('common.hideOptions') : t('common.showOptions') }}
               </UButton>
             </div>
           </div>
@@ -183,7 +180,7 @@
         >
           <button
             type="button"
-            class="block w-full cursor-pointer text-left"
+            class="block w-full cursor-pointer text-start"
             @click="expand_description"
           >
             <span class="inline-flex items-start gap-2">
@@ -202,10 +199,9 @@
                 id="force_download"
                 v-model="dlFields['--no-download-archive']"
                 type="bool"
-                label="Force download"
+                :label="t('common.forceDownload')"
                 icon="i-lucide-download"
                 :disabled="addInProgress"
-                description="Ignore archive."
                 compact
               />
             </div>
@@ -215,10 +211,9 @@
                 id="auto_start"
                 v-model="auto_start"
                 type="bool"
-                label="Auto start"
+                :label="t('common.autoStart')"
                 icon="i-lucide-play"
                 :disabled="addInProgress"
-                description="Download automatically."
                 compact
               />
             </div>
@@ -228,10 +223,9 @@
                 id="no_cache"
                 v-model="dlFields['--no-continue']"
                 type="bool"
-                label="Bypass cache"
+                :label="t('common.bypassCache')"
                 icon="i-lucide-eraser"
                 :disabled="addInProgress"
-                description="Remove temporary files."
                 compact
               />
             </div>
@@ -247,7 +241,7 @@
                 id="output_template"
                 v-model="form.template"
                 type="string"
-                label="Output template"
+                :label="t('common.outputTemplate')"
                 icon="i-lucide-file-code-2"
                 :disabled="addInProgress"
                 :placeholder="
@@ -256,15 +250,14 @@
               >
                 <template #description>
                   <span>
-                    See
-                    <NuxtLink
+                    {{ t('common.outputTemplateDescPrefix')
+                    }}<NuxtLink
                       target="_blank"
                       class="font-medium text-primary hover:underline"
                       to="https://github.com/yt-dlp/yt-dlp#output-template"
                     >
-                      the yt-dlp output template page
-                    </NuxtLink>
-                    for info.
+                      {{ t('common.outputTemplateDescLink') }}</NuxtLink
+                    >{{ t('common.outputTemplateDescSuffix') }}
                   </span>
                 </template>
               </DLInput>
@@ -278,12 +271,12 @@
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-list-minus" class="size-4 text-toned" />
-                  <span>Ignore conditions</span>
+                  <span>{{ t('common.ignoreConditions') }}</span>
                 </span>
               </template>
 
               <template #description>
-                <span> Skip selected condition rules. </span>
+                <span>{{ t('common.ignoreConditionsDesc') }}</span>
               </template>
 
               <template #hint>
@@ -293,7 +286,7 @@
                   class="font-medium text-primary hover:underline"
                   @click="selectedIgnoreConditions = []"
                 >
-                  Clear selection
+                  {{ t('common.clearSelection') }}
                 </button>
               </template>
 
@@ -303,26 +296,22 @@
                 value-key="value"
                 label-key="label"
                 multiple
-                placeholder="Select conditions to ignore"
+                :placeholder="t('common.selectConditions')"
                 class="w-full"
                 size="lg"
                 :disabled="addInProgress || conditions.isLoading.value"
-                :search-input="{ placeholder: 'Search conditions' }"
+                :search-input="{ placeholder: t('common.searchConditions') }"
                 :ui="{ base: 'w-full', content: 'min-w-[18rem]' }"
               />
             </UFormField>
           </div>
 
           <div class="grid gap-4 xl:grid-cols-2">
-            <UFormField
-              label="Command options for yt-dlp"
-              class="w-full"
-              :ui="advancedEditorFieldUi"
-            >
+            <UFormField :label="t('common.cliOptions')" class="w-full" :ui="advancedEditorFieldUi">
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-                  <span>Command options for yt-dlp</span>
+                  <span>{{ t('common.cliOptions') }}</span>
                 </span>
               </template>
 
@@ -333,14 +322,14 @@
                     class="font-medium text-primary hover:underline"
                     @click="showOptions = true"
                   >
-                    View all options
+                    {{ t('common.cliOptionsViewAll') }}
                   </button>
-                  . Not all options are supported;
-                  <a
+                  {{ t('common.cliOptionsDescPrefix')
+                  }}<a
                     target="_blank"
                     href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
                   >
-                    some are ignored
+                    {{ t('common.cliOptionsDescIgnored') }}
                   </a>
                 </span>
               </template>
@@ -356,11 +345,15 @@
               />
             </UFormField>
 
-            <UFormField label="Cookies" class="w-full" :ui="advancedEditorFieldUi">
+            <UFormField
+              :label="t('common.cookiesLabel')"
+              class="w-full"
+              :ui="advancedEditorFieldUi"
+            >
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
-                  <span>Cookies</span>
+                  <span>{{ t('common.cookiesLabel') }}</span>
                 </span>
               </template>
 
@@ -370,22 +363,19 @@
                   class="font-medium text-primary hover:underline"
                   @click="cookiesDropzoneRef?.triggerFileSelect()"
                 >
-                  Upload file
+                  {{ t('common.uploadFile') }}
                 </button>
               </template>
               <template #description>
                 <span>
-                  Use the
-                  <NuxtLink
+                  {{ t('common.cookiesInstructionsPrefix')
+                  }}<NuxtLink
                     target="_blank"
                     to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
                   >
-                    recommended addon
-                  </NuxtLink>
-                  to export cookies.
-                  <span class="text-error"
-                    >The cookies MUST be in Netscape HTTP Cookie format.</span
-                  >
+                    {{ t('common.recommendedAddon') }}</NuxtLink
+                  >{{ t('common.cookiesInstructionsSuffix')
+                  }}<span class="text-error">{{ t('common.cookiesInstructionsFormat') }}</span>
                 </span>
               </template>
 
@@ -395,12 +385,7 @@
                 v-model="form.cookies"
                 :disabled="addInProgress"
                 :rows="5"
-                :placeholder="
-                  getDefault(
-                    'cookies',
-                    'Leave empty to use default cookies. Or drag & drop a cookie file here.',
-                  )
-                "
+                :placeholder="getDefault('cookies', t('common.cookiesPlaceholder'))"
                 class="w-full"
                 @error="(msg: string) => toast.error(msg)"
               />
@@ -431,7 +416,7 @@
               icon="i-lucide-ellipsis"
               trailing-icon="i-lucide-chevron-down"
             >
-              Actions
+              {{ t('common.actions') }}
             </UButton>
           </UDropdownMenu>
 
@@ -444,7 +429,7 @@
               :disabled="addInProgress || !hasValidUrl"
               @click="emitter('getInfo', splitUrls(form.url || '')[0] || '', form.preset, form.cli)"
             >
-              yt-dlp Information
+              {{ t('common.ytdlpInformation') }}
             </UButton>
 
             <UButton
@@ -456,7 +441,7 @@
               :disabled="!hasValidUrl"
               @click="runCliCommand"
             >
-              Run CLI
+              {{ t('common.runCli') }}
             </UButton>
 
             <UButton
@@ -468,7 +453,7 @@
               :disabled="!hasValidUrl"
               @click="testDownloadOptions"
             >
-              Show compiled yt-dlp options
+              {{ t('common.showCompiledOptions') }}
             </UButton>
           </div>
 
@@ -478,9 +463,10 @@
             variant="outline"
             icon="i-lucide-rotate-ccw"
             :disabled="!!form?.id"
+            class="hidden sm:inline-flex"
             @click="resetConfig"
           >
-            Reset local settings
+            {{ t('common.resetLocalSettings') }}
           </UButton>
         </div>
       </div>
@@ -489,12 +475,12 @@
     <UModal
       v-if="showOptions"
       v-model:open="showOptions"
-      title="yt-dlp options"
+      :title="t('common.cliOptions')"
       :dismissible="true"
       :ui="{ content: 'sm:max-w-6xl', body: 'p-0' }"
     >
       <template #description>
-        <span class="sr-only">Browse available yt-dlp flags and descriptions.</span>
+        <span class="sr-only">{{ t('common.browseYtdlpFlags') }}</span>
       </template>
 
       <template #body>
@@ -504,7 +490,7 @@
 
     <UModal
       v-model:open="showTestResults"
-      title="Test results"
+      :title="t('common.testResults')"
       :dismissible="true"
       :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
       @update:open="(open) => !open && closeTestResults()"
@@ -523,7 +509,7 @@
               <button
                 type="button"
                 class="pointer-events-auto inline-flex size-9 items-center justify-center rounded-md border border-default bg-default/90 text-toned shadow-sm transition-colors hover:text-default"
-                aria-label="Toggle wrapped text"
+                :aria-label="t('common.toggleWrap')"
                 @click="toggleTestResultsWrap"
               >
                 <UIcon name="i-lucide-wrap-text" class="size-4" />
@@ -531,7 +517,7 @@
               <button
                 type="button"
                 class="pointer-events-auto inline-flex size-9 items-center justify-center rounded-md border border-default bg-default/90 text-toned shadow-sm transition-colors hover:text-default"
-                aria-label="Copy text"
+                :aria-label="t('common.copyTextAria')"
                 @click="copyTestResults"
               >
                 <UIcon name="i-lucide-copy" class="size-4" />
@@ -540,6 +526,7 @@
 
             <pre
               :class="testResultsPreClasses"
+              dir="ltr"
             ><code class="block p-4" v-text="testResultsText" /></pre>
           </div>
         </div>
@@ -559,6 +546,8 @@ import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
 import { useDialog } from '~/composables/useDialog';
 import { getSeparatorsName, shortPath } from '~/utils';
+
+const { t } = useI18n();
 
 const props = defineProps<{ item?: Partial<item_request> }>();
 const emitter = defineEmits<{
@@ -635,7 +624,7 @@ const buildIgnoreConditionOptions = (
   return [
     {
       value: '*',
-      label: 'All conditions',
+      label: t('common.allConditions'),
     },
     ...options,
     ...missingSelectedItems,
@@ -744,12 +733,12 @@ const mobileActionGroups = computed(() => {
   const groups = [
     [
       {
-        label: 'Custom Fields',
+        label: t('common.customFieldsAction'),
         icon: 'i-lucide-plus',
         onSelect: () => navigateTo('/dl_fields'),
       },
       {
-        label: 'yt-dlp Information',
+        label: t('common.ytdlpInformation'),
         icon: 'i-lucide-info',
         disabled: addInProgress.value || !hasValidUrl.value,
         onSelect: () =>
@@ -766,13 +755,13 @@ const mobileActionGroups = computed(() => {
   if (config.app.console_enabled) {
     groups[0]?.push(
       {
-        label: 'Run CLI',
+        label: t('common.runCli'),
         icon: 'i-lucide-terminal',
         disabled: !hasValidUrl.value,
         onSelect: () => void runCliCommand(),
       },
       {
-        label: 'Show compiled yt-dlp options',
+        label: t('common.showCompiledOptions'),
         icon: 'i-lucide-flask-conical',
         disabled: !hasValidUrl.value,
         onSelect: () => void testDownloadOptions(),
@@ -782,7 +771,7 @@ const mobileActionGroups = computed(() => {
 
   groups.push([
     {
-      label: 'Reset local settings',
+      label: t('common.resetLocalSettings'),
       icon: 'i-lucide-rotate-ccw',
       disabled: Boolean(form.value?.id),
       onSelect: () => void resetConfig(),
@@ -948,7 +937,7 @@ const addDownload = async () => {
 
     const data = await response.json();
     if (!response.ok) {
-      toast.error(`Error: ${data.error || 'Failed to add download.'}`);
+      toast.error(t('common.errorPrefix', { msg: data.error || t('queue.failedToAdd') }));
       return;
     }
 
@@ -966,7 +955,7 @@ const addDownload = async () => {
           return;
         }
 
-        toast.error(`Error: ${item.msg || 'Failed to add download.'}`);
+        toast.error(t('common.errorPrefix', { msg: item.msg || t('queue.failedToAdd') }));
       });
     }
 
@@ -980,7 +969,7 @@ const addDownload = async () => {
     }
   } catch (e: any) {
     console.error(e);
-    toast.error(`Error: ${e.message}`);
+    toast.error(t('common.errorPrefix', { msg: e.message }));
   } finally {
     addInProgress.value = false;
   }
@@ -988,8 +977,8 @@ const addDownload = async () => {
 
 const resetConfig = async () => {
   const { status } = await dialog.confirmDialog({
-    title: 'Confirm Action',
-    message: `Reset local configuration?`,
+    title: t('common.pleaseConfirm'),
+    message: t('common.confirmResetConfig'),
     confirmColor: 'error',
   });
   if (!status) {
@@ -1007,7 +996,7 @@ const resetConfig = async () => {
   } as item_request;
   dlFields.value = {};
   showAdvanced.value = false;
-  toast.success('Local configuration has been reset.');
+  toast.success(t('common.resetConfigDone'));
 };
 
 const convertOptions = async (args: string) => {
@@ -1103,7 +1092,7 @@ onMounted(async () => {
 
 const runCliCommand = async (): Promise<void> => {
   if (!form.value.url) {
-    toast.warning('Please enter a URL first');
+    toast.warning(t('common.enterUrlFirst'));
     return;
   }
 
@@ -1113,8 +1102,8 @@ const runCliCommand = async (): Promise<void> => {
   }
 
   const { status } = await dialog.confirmDialog({
-    title: 'Run CLI Command',
-    message: `This will generate a yt-dlp command and run it in the console. Continue?`,
+    title: t('common.confirmRunCliTitle'),
+    message: t('common.confirmRunCliDesc'),
   });
 
   if (!status) {
@@ -1170,7 +1159,9 @@ const runCliCommand = async (): Promise<void> => {
     const json = (await resp.json()) as { command?: string; error?: string };
 
     if (!resp.ok) {
-      toast.error(`Error: ${json.error || 'Failed to generate command.'}`);
+      toast.error(
+        t('common.errorPrefix', { msg: json.error || t('common.failedGenerateCommand') }),
+      );
       return;
     }
 
@@ -1179,15 +1170,13 @@ const runCliCommand = async (): Promise<void> => {
     await nextTick();
     await navigateTo('/console');
   } catch (error) {
-    toast.error(
-      error instanceof Error ? error.message : 'Failed to create and navigate to command',
-    );
+    toast.error(error instanceof Error ? error.message : t('common.failedCreateCommand'));
   }
 };
 
 const testDownloadOptions = async (): Promise<void> => {
   if (!form.value.url) {
-    toast.warning('Please enter a URL first');
+    toast.warning(t('common.enterUrlFirst'));
     return;
   }
 
@@ -1238,7 +1227,9 @@ const testDownloadOptions = async (): Promise<void> => {
     const json = await resp.json();
 
     if (!resp.ok) {
-      toast.error(`Error: ${json.error || 'Failed to generate command.'}`);
+      toast.error(
+        t('common.errorPrefix', { msg: json.error || t('common.failedGenerateCommand') }),
+      );
       return;
     }
 
@@ -1248,7 +1239,7 @@ const testDownloadOptions = async (): Promise<void> => {
     };
     showTestResults.value = true;
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Failed to test download options');
+    toast.error(error instanceof Error ? error.message : t('common.failedTestOptions'));
   }
 };
 

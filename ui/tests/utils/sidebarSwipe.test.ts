@@ -70,4 +70,9 @@ describe('sidebarSwipe', () => {
   it('return_close', () => {
     expect(getSidebarSwipeMode(true, 4)).toBe('close');
   });
+
+  it('rtl_edge', () => {
+    expect(getSidebarSwipeMode(false, 375 - MOBILE_SIDEBAR_EDGE_WIDTH, undefined, true, 375)).toBe('open');
+    expect(getSidebarSwipeMode(false, 375 - MOBILE_SIDEBAR_EDGE_WIDTH - 1, undefined, true, 375)).toBe(null);
+  });
 });

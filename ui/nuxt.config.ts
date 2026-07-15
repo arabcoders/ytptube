@@ -1,4 +1,6 @@
 import { defineNuxtConfig } from 'nuxt/config';
+import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 let extraNitro = {};
 try {
@@ -59,16 +61,70 @@ export default defineNuxtConfig({
     },
     pageTransition: { name: 'page', mode: 'out-in' },
   },
-  modules: ['@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint'],
+  modules: ['@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint', '@nuxtjs/i18n'],
+
+  i18n: {
+    compilation: {
+      strictMessage: false,
+    },
+    strategy: 'no_prefix',
+    defaultLocale: 'en',
+    langDir: 'locales',
+
+    locales: [
+      {
+        code: 'en',
+        name: 'English',
+        language: 'en',
+        file: 'en.json',
+        dir: 'ltr',
+      },
+      {
+        code: 'ar',
+        name: 'العربية',
+        language: 'ar',
+        file: 'ar.json',
+        dir: 'rtl',
+      },
+    ],
+
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'ytptube_locale',
+      redirectOn: 'root',
+      fallbackLocale: 'en',
+    },
+  },
   icon: {
     provider: 'none',
     fallbackToApi: false,
     clientBundle: {
-      icons: isProd ? [] : ['lucide:book'],
       scan: {
         globInclude: ['app/**/*.{vue,ts,js}', 'node_modules/@nuxt/ui/dist/shared/ui*.mjs'],
-        globExclude: ['dist', 'build', 'coverage', 'test', 'tests', '.*'],
+        globExclude: [
+          'dist',
+          'build',
+          'coverage',
+          'test',
+          'tests',
+          '.*',
+          'app/utils/generatedIconCatalog.ts',
+        ],
       },
+    },
+  },
+  hooks: {
+    async 'icon:clientBundleIcons'(icons) {
+      const names = [...icons]
+        .map((icon) => icon.replace(/^i[-:]/, ''))
+        .filter((icon) => icon.startsWith('lucide:'))
+        .map((icon) => icon.slice('lucide:'.length))
+        .sort();
+      const iconifyNames = names.map((name) => `lucide:${name}`);
+      const uiNames = names.map((name) => `i-lucide-${name}`);
+      const content = `// Generated from Nuxt Icon's client bundle. Do not edit manually.\n\nexport const bundledIconNames = ${JSON.stringify(iconifyNames, null, 2)} as const;\n\nexport const bundledUiIconNames = ${JSON.stringify(uiNames, null, 2)} as const;\n\nconst bundledUiIconSet = new Set<string>(bundledUiIconNames);\n\nexport const isBundledUiIcon = (name?: string | null): name is (typeof bundledUiIconNames)[number] =>\n  typeof name === 'string' && bundledUiIconSet.has(name);\n`;
+
+      await writeFile(resolve('app/utils/generatedIconCatalog.ts'), content);
     },
   },
   nitro: {

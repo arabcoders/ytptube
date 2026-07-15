@@ -49,9 +49,9 @@ describe('usePresetOptions', () => {
     const { selectItems } = usePresetOptions()
 
     expect(selectItems.value).toEqual([
-      { type: 'label', label: 'Custom presets' },
+      { type: 'label', label: 'common.customPresets' },
       { label: 'Custom Audio', value: 'custom_audio' },
-      { type: 'label', label: 'Default presets' },
+      { type: 'label', label: 'common.defaultPresets' },
       { label: 'Default Video', value: 'default_video' },
     ])
   })
@@ -65,9 +65,9 @@ describe('usePresetOptions', () => {
     const { selectItems } = usePresetOptions(undefined, { order: 'default-first' })
 
     expect(selectItems.value).toEqual([
-      { type: 'label', label: 'Default presets' },
+      { type: 'label', label: 'common.defaultPresets' },
       { label: 'Default Video', value: 'default_video' },
-      { type: 'label', label: 'Custom presets' },
+      { type: 'label', label: 'common.customPresets' },
       { label: 'Custom Audio', value: 'custom_audio' },
     ])
   })

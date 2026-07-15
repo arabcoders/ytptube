@@ -1,6 +1,7 @@
 <template>
   <div class="relative flex h-full w-full flex-col">
     <UTextarea
+      dir="ltr"
       :id="id"
       ref="textareaRef"
       v-model="localValue"
@@ -35,6 +36,7 @@
     <div
       v-if="showList && filteredOptions.length"
       class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md ytp-floating-surface"
+      dir="ltr"
       role="menu"
     >
       <button
@@ -43,7 +45,7 @@
         ref="dropdownItems"
         data-autocomplete-item
         type="button"
-        class="flex w-full items-start justify-between gap-4 px-3 py-2 text-left text-sm transition-colors"
+        class="flex w-full items-start justify-between gap-4 px-3 py-2 text-start text-sm transition-colors"
         :class="
           idx === highlightedIndex
             ? 'bg-elevated text-highlighted'

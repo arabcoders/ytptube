@@ -1,22 +1,19 @@
 <template>
-  <UTooltip :text="title">
-    <UButton
-      color="neutral"
-      variant="ghost"
-      size="sm"
-      :icon="icon"
-      :square="square"
-      :aria-label="title"
-      :title="title"
-      @click="
-        () => {
-          color.preference = next;
-        }
-      "
-    >
-      <span v-if="showLabel" :class="labelClass">{{ title }}</span>
-    </UButton>
-  </UTooltip>
+  <UButton
+    color="neutral"
+    variant="ghost"
+    size="sm"
+    :icon="icon"
+    :square="square"
+    :aria-label="title"
+    @click="
+      () => {
+        color.preference = next;
+      }
+    "
+  >
+    <span v-if="showLabel" :class="labelClass">{{ title }}</span>
+  </UButton>
 </template>
 
 <script setup lang="ts">
@@ -34,6 +31,8 @@ withDefaults(
     labelClass: '',
   },
 );
+
+const { t } = useI18n();
 
 type Choice = 'system' | 'light' | 'dark';
 
@@ -58,13 +57,13 @@ const icon = computed(() => {
 });
 const title = computed(() => {
   if (current.value === 'light') {
-    return 'Light';
+    return t('app.theme.light');
   }
 
   if (current.value === 'dark') {
-    return 'Dark';
+    return t('app.theme.dark');
   }
 
-  return 'System';
+  return t('app.theme.system');
 });
 </script>

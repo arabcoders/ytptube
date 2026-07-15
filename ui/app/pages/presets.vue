@@ -26,7 +26,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -36,7 +36,7 @@
           icon="i-lucide-plus"
           @click="editor.openCreate()"
         >
-          <span>New Preset</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -47,7 +47,9 @@
           class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            display_style === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UButton
@@ -60,7 +62,7 @@
           :disabled="isLoading"
           @click="() => void loadContent(page)"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -69,7 +71,7 @@
           ref="filterInput"
           v-model="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -89,7 +91,7 @@
           :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
-          {{ allSelected ? 'Unselect' : 'Select' }}
+          {{ allSelected ? t('common.unselect') : t('common.select') }}
         </UButton>
 
         <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
@@ -104,7 +106,7 @@
             icon="i-lucide-list"
             trailing-icon="i-lucide-chevron-down"
           >
-            Actions
+            {{ t('common.actions') }}
           </UButton>
         </UDropdownMenu>
       </div>
@@ -130,7 +132,7 @@
         <table class="min-w-200 w-full text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
@@ -140,8 +142,8 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">Preset</th>
-              <th class="w-48 whitespace-nowrap">Actions</th>
+              <th class="w-full text-start">{{ t('common.presetLabel') }}</th>
+              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
             </tr>
           </thead>
 
@@ -149,7 +151,7 @@
             <tr
               v-for="item in filteredPresets"
               :key="item.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -177,7 +179,9 @@
                         class="size-3.5"
                         :class="item.cookies ? 'text-success' : ''"
                       />
-                      <span>Cookies: {{ item.cookies ? 'Configured' : 'Not set' }}</span>
+                      <span>{{
+                        item.cookies ? t('presets.cookiesConfigured') : t('presets.cookiesNotSet')
+                      }}</span>
                     </span>
 
                     <span
@@ -185,7 +189,7 @@
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                      <span>Priority: {{ item.priority }}</span>
+                      <span>{{ t('presets.priority', { priority: item.priority }) }}</span>
                     </span>
                   </div>
                 </div>
@@ -200,7 +204,7 @@
                     icon="i-lucide-file-up"
                     @click="exportItem(item)"
                   >
-                    <span class="hidden sm:inline">Export</span>
+                    <span class="hidden sm:inline">{{ t('common.exportItem') }}</span>
                   </UButton>
 
                   <UButton
@@ -210,7 +214,7 @@
                     icon="i-lucide-pencil"
                     @click="editor.openEdit(item)"
                   >
-                    <span class="hidden sm:inline">Edit</span>
+                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
                   </UButton>
 
                   <UButton
@@ -220,7 +224,7 @@
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(item)"
                   >
-                    <span class="hidden sm:inline">Delete</span>
+                    <span class="hidden sm:inline">{{ t('common.delete') }}</span>
                   </UButton>
                 </div>
               </td>
@@ -239,7 +243,7 @@
                 <div class="flex items-start gap-2">
                   <button
                     type="button"
-                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
                     @click="toggleExpand(item.id, 'title')"
                   >
                     <span :class="['block', expandClass(item.id, 'title')]">
@@ -258,7 +262,7 @@
                   square
                   @click="exportItem(item)"
                 >
-                  <span>Export Preset</span>
+                  <span>{{ t('common.exportItem') }}</span>
                 </UButton>
 
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -284,7 +288,9 @@
                     class="size-3.5"
                     :class="item.cookies ? 'text-success' : ''"
                   />
-                  <span>Cookies: {{ item.cookies ? 'Configured' : 'Not set' }}</span>
+                  <span>{{
+                    item.cookies ? t('presets.cookiesConfigured') : t('presets.cookiesNotSet')
+                  }}</span>
                 </span>
 
                 <span
@@ -292,7 +298,7 @@
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>Priority: {{ item.priority }}</span>
+                  <span>{{ t('presets.priority', { priority: item.priority }) }}</span>
                 </span>
               </div>
 
@@ -300,13 +306,13 @@
                 <button
                   v-if="item.folder"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'folder')"
                 >
                   <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Download path</div>
-                    <span :class="['block', expandClass(item.id, 'folder')]">{{
+                    <div class="text-xs font-medium text-toned">{{ t('common.downloadPath') }}</div>
+                    <span :class="['block', expandClass(item.id, 'folder')]" dir="ltr">{{
                       calcPath(item.folder)
                     }}</span>
                   </div>
@@ -315,13 +321,15 @@
                 <button
                   v-if="item.template"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'template')"
                 >
                   <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Output template</div>
-                    <span :class="['block', expandClass(item.id, 'template')]">{{
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('common.outputTemplate') }}
+                    </div>
+                    <span :class="['block', expandClass(item.id, 'template')]" dir="ltr">{{
                       item.template
                     }}</span>
                   </div>
@@ -330,13 +338,15 @@
                 <button
                   v-if="item.cli"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'cli')"
                 >
                   <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">CLI options</div>
-                    <span :class="['block', expandClass(item.id, 'cli')]">{{ item.cli }}</span>
+                    <div class="text-xs font-medium text-toned">{{ t('common.cliOptions') }}</div>
+                    <span :class="['block', expandClass(item.id, 'cli')]" dir="ltr">{{
+                      item.cli
+                    }}</span>
                   </div>
                 </button>
               </div>
@@ -344,12 +354,14 @@
               <button
                 v-if="item.description"
                 type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                 @click="toggleExpand(item.id, 'description')"
               >
                 <UIcon name="i-lucide-align-left" class="mt-0.5 size-4 shrink-0 text-toned" />
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">Description</div>
+                  <div class="text-xs font-medium text-toned">
+                    {{ t('common.description') }}
+                  </div>
                   <span :class="['block', expandClass(item.id, 'description')]">{{
                     item.description
                   }}</span>
@@ -367,7 +379,7 @@
                 class="w-full justify-center"
                 @click="editor.openEdit(item)"
               >
-                Edit
+                {{ t('common.edit') }}
               </UButton>
 
               <UButton
@@ -377,7 +389,7 @@
                 class="w-full justify-center"
                 @click="() => void deleteItem(item)"
               >
-                Delete
+                {{ t('common.delete') }}
               </UButton>
             </div>
           </div>
@@ -390,8 +402,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading data. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <div v-else-if="query && filteredPresets.length < 1" class="space-y-3">
@@ -399,8 +411,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-search"
-        title="No Results"
-        :description="`No results found for the query: ${query}. Please try a different search term.`"
+        :title="t('common.noResults')"
+        :description="t('common.noResultsFor', { query })"
       />
     </div>
 
@@ -409,8 +421,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="No presets"
-      description="There are no custom defined presets."
+      :title="t('common.noItems')"
+      :description="t('common.empty')"
     />
 
     <div
@@ -431,12 +443,8 @@
 
     <UAlert v-if="!query && presets.length > 0" color="info" variant="soft">
       <template #description>
-        <ul class="list-disc space-y-2 pl-5 text-sm text-default">
-          <li>
-            When you export preset, it doesn't include the cookies field contents for security
-            reasons. However, there are some CLI options that could contain sensitive data like
-            username or password. Remove them before sharing your preset.
-          </li>
+        <ul class="list-disc space-y-2 ps-5 text-sm text-default">
+          <li>{{ t('presets.info1') }}</li>
         </ul>
       </template>
     </UAlert>
@@ -456,10 +464,37 @@
           :addInProgress="editor.addInProgress.value"
           :reference="editor.reference.value"
           :preset="editor.preset.value"
-          @cancel="() => void editor.requestClose()"
           @dirty-change="(dirty) => (editor.dirty.value = dirty)"
           @submit="editor.submit"
         />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-x"
+            :disabled="editor.addInProgress.value"
+            class="justify-center"
+            @click="() => void editor.requestClose()"
+          >
+            {{ t('common.cancel') }}
+          </UButton>
+
+          <UButton
+            type="submit"
+            form="presetForm"
+            color="primary"
+            icon="i-lucide-save"
+            :disabled="editor.addInProgress.value"
+            :loading="editor.addInProgress.value"
+            class="justify-center"
+          >
+            {{ t('common.save') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </main>
@@ -473,7 +508,8 @@ import { useDialog } from '~/composables/useDialog';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useConfirm } from '~/composables/useConfirm';
 import { prettyName } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
 type PresetWithUI = Preset & { raw?: boolean; toggle_description?: boolean };
 
@@ -481,7 +517,7 @@ const presetsStore = usePresets();
 const config = useYtpConfig();
 const box = useConfirm();
 const editor = usePresetEditor();
-const pageShell = requirePageShell('presets');
+const pageShell = usePageShell('presets');
 const route = useRoute();
 const router = useRouter();
 const { confirmDialog } = useDialog();
@@ -528,7 +564,7 @@ const contentStyle = computed<'list' | 'grid'>(() =>
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Remove Selected',
+      label: t('common.removeSelected'),
       icon: 'i-lucide-trash',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
@@ -599,9 +635,9 @@ const deleteSelected = async (): Promise<void> => {
   }
 
   const { status } = await confirmDialog({
-    title: 'Delete Selected Presets',
+    title: t('common.deleteSelected'),
     message:
-      `Delete ${selectedIds.value.length} preset/s?` +
+      t('common.deleteCountConfirm', { count: selectedIds.value.length }) +
       '\n\n' +
       selectedIds.value
         .map((id) => {
@@ -610,7 +646,7 @@ const deleteSelected = async (): Promise<void> => {
         })
         .filter(Boolean)
         .join('\n'),
-    confirmText: 'Delete',
+    confirmText: t('common.delete'),
     confirmColor: 'error',
   });
 
@@ -644,7 +680,7 @@ const deleteSelected = async (): Promise<void> => {
 };
 
 const deleteItem = async (item: Preset): Promise<void> => {
-  if (true !== (await box.confirm(`Delete preset '${item.name}'?`))) {
+  if (true !== (await box.confirm(t('common.deleteNamedConfirm', { name: item.name })))) {
     return;
   }
 

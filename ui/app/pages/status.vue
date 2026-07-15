@@ -19,7 +19,7 @@
 
       <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
         <UTooltip
-          :text="connected ? 'Click to disconnect' : 'Click to reconnect'"
+          :text="connected ? t('status.clickToDisconnect') : t('status.clickToReconnect')"
           v-if="!monitorDisabled"
         >
           <button
@@ -33,7 +33,7 @@
                 connected ? 'bg-success' : 'bg-muted',
               ]"
             ></span>
-            <span>{{ connected ? 'Live' : 'Offline' }}</span>
+            <span>{{ connected ? t('common.live') : t('common.offline') }}</span>
           </button>
         </UTooltip>
       </div>
@@ -44,8 +44,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-info"
-      title="Monitoring disabled"
-      description="Enable resource monitoring by setting YTP_MONITOR_ENABLED=true."
+      :title="t('status.monitoringDisabled')"
+      :description="t('status.monitoringDisabledDesc')"
     />
 
     <UAlert
@@ -53,8 +53,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Collecting system resource data..."
+      :title="t('common.loading')"
+      :description="t('status.loadingDesc')"
     />
 
     <UAlert
@@ -62,7 +62,7 @@
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
-      title="Failed to load status"
+      :title="t('status.failedLoad')"
       :description="lastError"
     />
 
@@ -70,12 +70,12 @@
       <section class="space-y-3">
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-highlighted"
+          class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
           @click="toggleSection('resources')"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-activity" class="size-4 text-toned" />
-            <span>Resources</span>
+            <span>{{ t('status.resources') }}</span>
           </div>
           <UIcon
             name="i-lucide-chevron-right"
@@ -88,7 +88,7 @@
 
         <div v-if="isOpen('resources')" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="App CPU"
+            :label="t('status.appCpu')"
             :value="fmtPct(sample.process_cpu_percent)"
             :hint="cpuHint"
             icon="i-lucide-cpu"
@@ -96,7 +96,7 @@
             value-wrap
           />
           <StatCard
-            label="Memory"
+            :label="t('status.memory')"
             :value="fmtMb(sample.rss_mb)"
             :hint="memoryHint"
             icon="i-lucide-memory-stick"
@@ -104,15 +104,17 @@
             value-wrap
           />
           <StatCard
-            label="Disk I/O"
+            :label="t('status.diskIo')"
             :value="fmtBps(diskReadBps)"
-            :hint="`Read ${fmtBps(diskReadBps)}  Write ${fmtBps(diskWriteNow)}`"
+            :hint="
+              t('status.diskIoHint', { read: fmtBps(diskReadBps), write: fmtBps(diskWriteNow) })
+            "
             icon="i-lucide-hard-drive"
             color="neutral"
             value-wrap
           />
           <StatCard
-            label="Network"
+            :label="t('status.network')"
             :value="fmtBps(networkTotalBps)"
             :hint="networkHint"
             icon="i-lucide-globe"
@@ -134,12 +136,12 @@
       <section class="space-y-3">
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-highlighted"
+          class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
           @click="toggleSection('appState')"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-layers" class="size-4 text-toned" />
-            <span>App State</span>
+            <span>{{ t('status.appState') }}</span>
           </div>
           <UIcon
             name="i-lucide-chevron-right"
@@ -152,49 +154,49 @@
 
         <div v-if="isOpen('appState')" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
           <StatCard
-            label="Active"
+            :label="t('common.active')"
             :value="String(sample.active_jobs)"
-            hint="Downloading"
+            :hint="t('common.downloading')"
             icon="i-lucide-play"
             :color="sample.active_jobs > 0 ? 'info' : 'neutral'"
           />
           <StatCard
-            label="Queued"
+            :label="t('common.queued')"
             :value="String(sample.queued_jobs)"
-            hint="Waiting"
+            :hint="t('status.waiting')"
             icon="i-lucide-hourglass"
             color="neutral"
           />
           <StatCard
-            label="Pool"
-            :value="sample.is_paused ? 'Paused' : 'Running'"
-            hint="Worker state"
+            :label="t('status.pool')"
+            :value="sample.is_paused ? t('common.paused') : t('common.running')"
+            :hint="t('status.workerState')"
             icon="i-lucide-pause-circle"
             :color="sample.is_paused ? 'warning' : 'success'"
           />
           <StatCard
-            label="Workers"
+            :label="t('status.workers')"
             :value="fmtNum(workerCount)"
-            hint="Subprocesses"
+            :hint="t('status.subprocesses')"
             icon="i-lucide-container"
             :color="workerCount > 0 ? 'info' : 'neutral'"
           />
           <StatCard
-            label="Uptime"
+            :label="t('status.uptime')"
             :value="fmtUptime(sample.uptime_seconds)"
             icon="i-lucide-clock"
             color="neutral"
             value-wrap
           />
           <StatCard
-            label="Threads"
+            :label="t('common.threads')"
             :value="fmtNum(sample.threads)"
-            hint="Process tree"
+            :hint="t('status.processTree')"
             icon="i-lucide-split"
             color="neutral"
           />
           <StatCard
-            label="Handles"
+            :label="t('status.handles')"
             :value="fmtNum(sample.open_files)"
             :hint="connectionsHint"
             icon="i-lucide-link"
@@ -206,12 +208,12 @@
       <section v-if="sample.children.length > 0" class="space-y-3">
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-highlighted"
+          class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
           @click="toggleSection('children')"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-container" class="size-4 text-toned" />
-            <span>Child Processes ({{ workerCount }})</span>
+            <span>{{ t('status.childProcesses', { count: workerCount }) }}</span>
           </div>
           <UIcon
             name="i-lucide-chevron-right"
@@ -226,12 +228,24 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-default bg-elevated/40">
-                <th class="px-3 py-2 text-left font-medium text-highlighted">Process</th>
-                <th class="px-3 py-2 text-left font-medium text-highlighted">PID</th>
-                <th class="px-3 py-2 text-left font-medium text-highlighted">CPU</th>
-                <th class="px-3 py-2 text-left font-medium text-highlighted">RSS</th>
-                <th class="px-3 py-2 text-left font-medium text-highlighted">Threads</th>
-                <th class="px-3 py-2 text-left font-medium text-highlighted">Status</th>
+                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                  {{ t('status.process') }}
+                </th>
+                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                  {{ t('status.pid') }}
+                </th>
+                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                  {{ t('status.cpu') }}
+                </th>
+                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                  {{ t('status.rss') }}
+                </th>
+                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                  {{ t('common.threads') }}
+                </th>
+                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                  {{ t('common.status') }}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -275,12 +289,12 @@
       <section class="space-y-3">
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-highlighted"
+          class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
           @click="toggleSection('diskUsage')"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-hard-drive" class="size-4 text-toned" />
-            <span>Disk Usage</span>
+            <span>{{ t('status.diskUsage') }}</span>
           </div>
           <UIcon
             name="i-lucide-chevron-right"
@@ -297,7 +311,7 @@
             :key="String(path)"
             :label="diskLabel(String(path), disk)"
             :value="`${disk.used_percent}%`"
-            :hint="`${disk.free_gb} GB free of ${disk.total_gb} GB`"
+            :hint="t('status.diskFree', { free: disk.free_gb, total: disk.total_gb })"
             icon="i-lucide-folder"
             :color="
               disk.used_percent > 90 ? 'error' : disk.used_percent > 75 ? 'warning' : 'neutral'
@@ -309,12 +323,12 @@
       <section class="space-y-3">
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-highlighted"
+          class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
           @click="toggleSection('charts')"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-chart-area" class="size-4 text-toned" />
-            <span>Charts</span>
+            <span>{{ t('status.charts') }}</span>
           </div>
           <UIcon
             name="i-lucide-chevron-right"
@@ -325,7 +339,7 @@
         <div v-if="isOpen('charts')" class="grid gap-4 lg:grid-cols-2">
           <div class="ytp-card bg-elevated/40 p-4">
             <Chart
-              label="CPU %"
+              :label="t('status.cpuPercent')"
               icon="i-lucide-cpu"
               :values="historyCpu"
               :timestamps="historyTimestamps"
@@ -335,7 +349,7 @@
           </div>
           <div class="ytp-card bg-elevated/40 p-4">
             <Chart
-              label="Memory (MB)"
+              :label="t('status.memoryMb')"
               icon="i-lucide-memory-stick"
               :values="historyMem"
               :timestamps="historyTimestamps"
@@ -345,7 +359,7 @@
           </div>
           <div class="ytp-card bg-elevated/40 p-4">
             <Chart
-              label="Disk Write"
+              :label="t('status.diskWrite')"
               icon="i-lucide-hard-drive"
               :values="historyDiskWrite"
               :timestamps="historyTimestamps"
@@ -355,7 +369,7 @@
           </div>
           <div class="ytp-card bg-elevated/40 p-4">
             <Chart
-              label="Network Recv"
+              :label="t('status.networkRecv')"
               icon="i-lucide-globe"
               :values="historyNetRecv"
               :timestamps="historyTimestamps"
@@ -369,12 +383,12 @@
       <section v-if="bottlenecks && bottlenecks.bottlenecks.length > 0" class="space-y-3">
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-highlighted"
+          class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
           @click="toggleSection('diagnosis')"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-search" class="size-4 text-toned" />
-            <span>Diagnosis</span>
+            <span>{{ t('status.diagnosis') }}</span>
           </div>
           <UIcon
             name="i-lucide-chevron-right"
@@ -404,42 +418,16 @@
 
       <UAlert color="info" variant="soft">
         <template #description>
-          <ul class="list-disc space-y-2 pl-5 text-sm text-default">
-            <li>
-              <strong>App CPU</strong> - CPU usage of the YTPTube process tree, including worker
-              subprocesses, normalized against the effective core count.
-            </li>
-            <li><strong>System CPU</strong> - Overall system-wide CPU usage across all cores.</li>
-            <li>
-              <strong>RSS (Resident Set Size)</strong> - Physical memory (RAM) held by the app
-              process tree, including shared libraries.
-            </li>
-            <li>
-              <strong>USS (Unique Set Size)</strong> - Memory pages exclusive to this process.
-              Excludes shared libraries, a truer measure of consumption.
-            </li>
-            <li>
-              <strong>Handles</strong> - Open file descriptors (files, sockets, pipes). Rapid growth
-              may indicate a resource leak.
-            </li>
-            <li>
-              <strong>Disk I/O</strong> - System-wide disk read/write throughput from the host. This
-              is not limited to YTPTube or its worker subprocesses.
-            </li>
-            <li>
-              <strong>Child Processes</strong> - Sub-processes like <code>ffmpeg</code>,
-              <code>yt-dlp</code>, or browsers. Their resource usage is included in app totals and
-              listed separately because they often dominate total load.
-            </li>
-            <li>
-              <strong>Pool</strong> - <em>Paused</em> means no new downloads start;
-              <em>Running</em> means workers are accepting new items.
-            </li>
-            <li>
-              <strong>Bottlenecks</strong> - Analyses the last 30 samples for CPU, memory, I/O, or
-              network contention. The summary describes the issue; details include measurements from
-              the sample window.
-            </li>
+          <ul class="list-disc space-y-2 ps-5 text-sm text-default">
+            <li v-html="t('status.helpAppCpu')"></li>
+            <li v-html="t('status.helpSystemCpu')"></li>
+            <li v-html="t('status.helpRss')"></li>
+            <li v-html="t('status.helpUss')"></li>
+            <li v-html="t('status.helpHandles')"></li>
+            <li v-html="t('status.helpDiskIo')"></li>
+            <li v-html="t('status.helpChildren')"></li>
+            <li v-html="t('status.helpPool')"></li>
+            <li v-html="t('status.helpBottlenecks')"></li>
           </ul>
         </template>
       </UAlert>
@@ -452,9 +440,10 @@ import { useStorage } from '@vueuse/core';
 import StatCard from '~/components/StatCard.vue';
 import Chart from '~/components/Chart.vue';
 import type { ChildProcess } from '~/types/stats';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
-const pageShell = requirePageShell('status');
+const pageShell = usePageShell('status');
 const statsState = useStats();
 const config = useYtpConfig();
 
@@ -502,7 +491,7 @@ const bottleneckIcon = computed(() => {
 
 const bottleneckTitle = computed(() => {
   const count = bottlenecks.value?.bottlenecks.length ?? 0;
-  if (count > 1) return `${count} Possible issues detected`;
+  if (count > 1) return t('status.possibleIssues', { count });
   return '';
 });
 
@@ -527,16 +516,19 @@ const workerCount = computed(() => {
 const networkHint = computed(() => {
   const s = sample.value;
   if (!s) return '';
-  return `Down ${fmtBps(s.network_recv_bps)}  Up ${fmtBps(s.network_sent_bps)}`;
+  return t('status.networkStats', {
+    down: fmtBps(s.network_recv_bps),
+    up: fmtBps(s.network_sent_bps),
+  });
 });
 
 const cpuHint = computed(() => {
   const s = sample.value;
   if (!s) return '';
-  let hint = `System ${fmtPct(s.system_cpu_percent)}`;
+  let hint = t('status.systemCpuHint', { value: fmtPct(s.system_cpu_percent) });
   const limit = s.cpu_limit;
-  if (limit) hint += ` / Limit ${limit}`;
-  if (workerCount.value > 0) hint += ` / Workers ${workerCount.value}`;
+  if (limit) hint += ` / ${t('common.limit')} ${limit}`;
+  if (workerCount.value > 0) hint += ` / ${t('status.workers')} ${workerCount.value}`;
   return hint;
 });
 
@@ -575,7 +567,7 @@ const memoryHint = computed(() => {
 const connectionsHint = computed(() => {
   const conn = sample.value?.connections;
   if (conn == null) return '';
-  return `Connections: ${conn}`;
+  return t('status.connections', { count: conn });
 });
 
 // Sparkline data (last 60 samples)
@@ -604,24 +596,26 @@ const fmtPct = (v: number | null | undefined): string => {
 
 const fmtMb = (v: number | null | undefined): string => {
   if (v == null) return '\u2014';
-  if (v >= 1024) return `${(v / 1024).toFixed(1)} GB`;
-  return `${Math.round(v)} MB`;
+  if (v >= 1024) return `${(v / 1024).toFixed(1)} ${t('common.gib')}`;
+  return `${Math.round(v)} ${t('common.mib')}`;
 };
 
 const fmtBps = (v: number | null | undefined): string => {
-  if (v == null || v === 0) return '0 B/s';
-  if (v >= 1024 * 1024) return `${(v / 1024 / 1024).toFixed(1)} MB/s`;
-  if (v >= 1024) return `${(v / 1024).toFixed(1)} KB/s`;
-  return `${Math.round(v)} B/s`;
+  if (v == null || v === 0) return `0 ${t('common.bytes')}${t('common.perSec')}`;
+  if (v >= 1024 * 1024)
+    return `${(v / 1024 / 1024).toFixed(1)} ${t('common.mib')}${t('common.perSec')}`;
+  if (v >= 1024) return `${(v / 1024).toFixed(1)} ${t('common.kib')}${t('common.perSec')}`;
+  return `${Math.round(v)} ${t('common.bytes')}${t('common.perSec')}`;
 };
 
 const fmtUptime = (seconds: number): string => {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h ${m}m`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  if (d > 0)
+    return `${d}${t('common.dayAbbr')} ${h}${t('common.hourAbbr')} ${m}${t('common.minAbbr')}`;
+  if (h > 0) return `${h}${t('common.hourAbbr')} ${m}${t('common.minAbbr')}`;
+  return `${m}${t('common.minAbbr')}`;
 };
 
 const fmtNum = (v: number | null | undefined): string => {
@@ -645,27 +639,27 @@ const threadNames = (child: ChildProcess): string =>
 
 const fmtChartPct = (v: number): string => `${Math.round(v)}%`;
 const fmtChartMb = (v: number): string => {
-  if (v >= 1024) return `${(v / 1024).toFixed(1)}G`;
-  return `${Math.round(v)}M`;
+  if (v >= 1024) return `${(v / 1024).toFixed(1)}${t('common.gib')[0]}`;
+  return `${Math.round(v)}${t('common.mib')[0]}`;
 };
 const fmtChartBps = (v: number): string => {
-  if (v >= 1024 * 1024) return `${(v / 1024 / 1024).toFixed(1)}M`;
-  if (v >= 1024) return `${(v / 1024).toFixed(1)}K`;
+  if (v >= 1024 * 1024) return `${(v / 1024 / 1024).toFixed(1)}${t('common.mib')[0]}`;
+  if (v >= 1024) return `${(v / 1024).toFixed(1)}${t('common.kib')[0]}`;
   return `${Math.round(v)}`;
 };
 
 const diskLabel = (path: string, disk?: { label?: string; role?: string }): string => {
-  if (disk?.label) return disk.label;
-  if (disk?.role === 'temp') return 'Temp';
-  if (disk?.role === 'config') return 'Config';
-  if (disk?.role === 'downloads') return 'Downloads';
+  if (disk?.role === 'temp') return t('status.diskTemp');
+  if (disk?.role === 'config') return t('status.diskConfig');
+  if (disk?.role === 'downloads') return t('common.downloads');
 
   const value = path.toLowerCase().replace(/\/+$/, '');
-  if (value.endsWith('/tmp') || value.includes('/tmp/') || value.includes('temp')) return 'Temp';
+  if (value.endsWith('/tmp') || value.includes('/tmp/') || value.includes('temp'))
+    return t('status.diskTemp');
   if (value.endsWith('/config') || value.includes('/config/') || value.includes('config'))
-    return 'Config';
-  if (value.endsWith('/downloads') || value.includes('download')) return 'Downloads';
-  return path;
+    return t('status.diskConfig');
+  if (value.endsWith('/downloads') || value.includes('download')) return t('common.downloads');
+  return disk?.label || path;
 };
 
 const bottleneckDotClass = (level: string): string => {

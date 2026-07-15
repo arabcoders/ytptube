@@ -26,7 +26,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -36,7 +36,7 @@
           icon="i-lucide-plus"
           @click="openCreateForm"
         >
-          <span>New Task</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -47,7 +47,9 @@
           class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            displayStyle === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UButton
@@ -60,7 +62,7 @@
           :disabled="isLoading"
           @click="() => void loadContent(page)"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -69,7 +71,7 @@
           ref="filterInput"
           v-model="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -89,7 +91,7 @@
           :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
-          {{ allSelected ? 'Unselect' : 'Select' }}
+          {{ allSelected ? t('common.unselect') : t('common.select') }}
         </UButton>
 
         <UBadge v-if="selectedElms.length > 0" color="error" variant="soft" size="sm">
@@ -104,7 +106,7 @@
             icon="i-lucide-list"
             trailing-icon="i-lucide-chevron-down"
           >
-            Actions
+            {{ t('common.actions') }}
           </UButton>
         </UDropdownMenu>
       </div>
@@ -130,7 +132,7 @@
         <table class="min-w-210 table-fixed w-full text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
@@ -140,9 +142,9 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">Task</th>
-              <th class="w-50 whitespace-nowrap">Timer</th>
-              <th class="w-75 whitespace-nowrap">Actions</th>
+              <th class="w-full text-start">{{ t('tasks.task') }}</th>
+              <th class="w-50 whitespace-nowrap">{{ t('tasks.timer') }}</th>
+              <th class="w-75 whitespace-nowrap">{{ t('common.actions') }}</th>
             </tr>
           </thead>
 
@@ -150,7 +152,7 @@
             <tr
               v-for="item in filteredTasks"
               :key="item.id"
-              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td class="px-3 py-3 text-center align-top">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -208,7 +210,9 @@
                           class="size-3.5"
                           :class="item.enabled !== false ? 'text-success' : 'text-error'"
                         />
-                        <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                        <span>{{
+                          item.enabled !== false ? t('common.enabled') : t('common.disabled')
+                        }}</span>
                       </button>
 
                       <button
@@ -221,7 +225,9 @@
                           class="size-3.5"
                           :class="item.auto_start ? 'text-success' : 'text-error'"
                         />
-                        <span>Auto start: {{ item.auto_start ? 'Yes' : 'No' }}</span>
+                        <span>{{
+                          item.auto_start ? t('tasks.autoStartYes') : t('tasks.autoStartNo')
+                        }}</span>
                       </button>
 
                       <button
@@ -234,7 +240,11 @@
                           class="size-3.5"
                           :class="item.handler_enabled !== false ? 'text-success' : 'text-error'"
                         />
-                        <span>Handler: {{ item.handler_enabled !== false ? 'On' : 'Off' }}</span>
+                        <span>{{
+                          item.handler_enabled !== false
+                            ? t('tasks.handlerOn')
+                            : t('tasks.handlerOff')
+                        }}</span>
                       </button>
 
                       <span
@@ -242,7 +252,8 @@
                       >
                         <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
                         <span class="capitalize">
-                          Preset: {{ item.preset ?? config.app.default_preset }}
+                          {{ t('common.presetLabel') }}:
+                          {{ item.preset ?? config.app.default_preset }}
                         </span>
                       </span>
                     </div>
@@ -264,7 +275,9 @@
                     </UTooltip>
                     <p
                       class="text-xs"
-                      :class="tryParse(item.timer) === 'Invalid' ? 'text-error' : 'text-toned'"
+                      :class="
+                        tryParse(item.timer) === t('common.invalid') ? 'text-error' : 'text-toned'
+                      "
                     >
                       {{ tryParse(item.timer) }}
                     </p>
@@ -276,14 +289,14 @@
                   >
                     <span class="inline-flex items-center gap-1 whitespace-nowrap">
                       <UIcon name="i-lucide-triangle-alert" class="size-3.5" />
-                      <span>Not configured</span>
+                      <span>{{ t('tasks.notConfigured') }}</span>
                     </span>
                   </p>
 
                   <p v-else class="text-xs font-medium text-toned whitespace-nowrap">
                     <span class="inline-flex items-center gap-1 whitespace-nowrap">
                       <UIcon name="i-lucide-rss" class="size-3.5" />
-                      <span>Handler only</span>
+                      <span>{{ t('tasks.handlerOnly') }}</span>
                     </span>
                   </p>
                 </div>
@@ -298,7 +311,7 @@
                     icon="i-lucide-pencil"
                     @click="editItem(item)"
                   >
-                    Edit
+                    {{ t('common.edit') }}
                   </UButton>
 
                   <UButton
@@ -308,7 +321,7 @@
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(item)"
                   >
-                    Delete
+                    {{ t('common.delete') }}
                   </UButton>
 
                   <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
@@ -319,7 +332,7 @@
                       icon="i-lucide-settings-2"
                       trailing-icon="i-lucide-chevron-down"
                     >
-                      Actions
+                      {{ t('common.actions') }}
                     </UButton>
                   </UDropdownMenu>
                 </div>
@@ -344,13 +357,13 @@
                     target="_blank"
                     :href="item.url"
                     class="mt-0.5 shrink-0 text-toned transition hover:text-highlighted"
-                    aria-label="Open source URL"
+                    :aria-label="t('tasks.openSourceUrl')"
                   >
                     <UIcon name="i-lucide-external-link" class="size-4" />
                   </NuxtLink>
                   <button
                     type="button"
-                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
                     @click="toggleExpand(item.id, 'title')"
                   >
                     <span :class="['block', expandClass(item.id, 'title')]">
@@ -390,7 +403,7 @@
                   square
                   @click="() => void exportItem(item)"
                 >
-                  <span>Export Task</span>
+                  <span>{{ t('common.exportItem') }}</span>
                 </UButton>
                 <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
@@ -417,7 +430,9 @@
                     class="size-3.5"
                     :class="item.enabled !== false ? 'text-success' : 'text-error'"
                   />
-                  <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                  <span>{{
+                    item.enabled !== false ? t('common.enabled') : t('common.disabled')
+                  }}</span>
                 </button>
 
                 <button
@@ -430,7 +445,9 @@
                     class="size-3.5"
                     :class="item.auto_start ? 'text-success' : 'text-error'"
                   />
-                  <span>Auto start: {{ item.auto_start ? 'Yes' : 'No' }}</span>
+                  <span>{{
+                    item.auto_start ? t('tasks.autoStartYes') : t('tasks.autoStartNo')
+                  }}</span>
                 </button>
 
                 <button
@@ -443,18 +460,20 @@
                     class="size-3.5"
                     :class="item.handler_enabled !== false ? 'text-success' : 'text-error'"
                   />
-                  <span>Handler: {{ item.handler_enabled !== false ? 'On' : 'Off' }}</span>
+                  <span>{{
+                    item.handler_enabled !== false ? t('tasks.handlerOn') : t('tasks.handlerOff')
+                  }}</span>
                 </button>
 
                 <button
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-1 rounded-md border border-default px-2 py-1 text-left transition hover:border-primary hover:text-default sm:flex-1"
+                  class="flex min-w-0 w-full items-start gap-1 rounded-md border border-default px-2 py-1 text-start transition hover:border-primary hover:text-default sm:flex-1"
                   @click="toggleExpand(item.id, 'preset')"
                 >
                   <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
                   <span class="min-w-0 flex-1">
                     <span :class="['min-w-0 capitalize', expandClass(item.id, 'preset')]">
-                      Preset: {{ item.preset ?? config.app.default_preset }}
+                      {{ t('common.presetLabel') }}: {{ item.preset ?? config.app.default_preset }}
                     </span>
                   </span>
                 </button>
@@ -472,7 +491,7 @@
               >
                 <button
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'schedule')"
                 >
                   <UIcon
@@ -488,7 +507,7 @@
                   />
 
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Schedule</div>
+                    <div class="text-xs font-medium text-toned">{{ t('tasks.schedule') }}</div>
                     <template v-if="item.timer">
                       <a
                         target="_blank"
@@ -496,7 +515,7 @@
                         class="block text-highlighted hover:underline"
                         @click.stop
                       >
-                        <span :class="['block', expandClass(item.id, 'schedule')]">
+                        <span :class="['block', expandClass(item.id, 'schedule')]" dir="ltr">
                           {{ item.timer }} ( {{ tryParse(item.timer) }} )
                         </span>
                       </a>
@@ -506,10 +525,10 @@
                       v-else-if="willTaskBeProcessed(item)"
                       :class="['text-sm text-default', expandClass(item.id, 'schedule')]"
                     >
-                      Handler only
+                      {{ t('tasks.handlerOnly') }}
                     </p>
                     <p v-else :class="['text-sm text-error', expandClass(item.id, 'schedule')]">
-                      Not configured
+                      {{ t('tasks.notConfigured') }}
                     </p>
                   </div>
                 </button>
@@ -517,13 +536,13 @@
                 <button
                   v-if="item.folder"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'folder')"
                 >
                   <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Download path</div>
-                    <span :class="['block', expandClass(item.id, 'folder')]">
+                    <div class="text-xs font-medium text-toned">{{ t('common.downloadPath') }}</div>
+                    <span :class="['block', expandClass(item.id, 'folder')]" dir="ltr">
                       {{ calcPath(item.folder) }}
                     </span>
                   </div>
@@ -532,13 +551,15 @@
                 <button
                   v-if="item.template"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'template')"
                 >
                   <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Output template</div>
-                    <span :class="['block', expandClass(item.id, 'template')]">{{
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('common.outputTemplate') }}
+                    </div>
+                    <span :class="['block', expandClass(item.id, 'template')]" dir="ltr">{{
                       item.template
                     }}</span>
                   </div>
@@ -547,13 +568,15 @@
                 <button
                   v-if="item.cli"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(item.id, 'cli')"
                 >
                   <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">CLI options</div>
-                    <span :class="['block', expandClass(item.id, 'cli')]">{{ item.cli }}</span>
+                    <div class="text-xs font-medium text-toned">{{ t('common.cliOptions') }}</div>
+                    <span :class="['block', expandClass(item.id, 'cli')]" dir="ltr">{{
+                      item.cli
+                    }}</span>
                   </div>
                 </button>
               </div>
@@ -569,7 +592,7 @@
                 class="w-full justify-center"
                 @click="editItem(item)"
               >
-                Edit
+                {{ t('common.edit') }}
               </UButton>
 
               <UButton
@@ -579,7 +602,7 @@
                 class="w-full justify-center"
                 @click="() => void deleteItem(item)"
               >
-                Delete
+                {{ t('common.delete') }}
               </UButton>
 
               <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
@@ -590,7 +613,7 @@
                   trailing-icon="i-lucide-chevron-down"
                   class="w-full justify-center"
                 >
-                  Actions
+                  {{ t('common.actions') }}
                 </UButton>
               </UDropdownMenu>
             </div>
@@ -604,8 +627,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading data. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <div v-else-if="query && filteredTasks.length < 1" class="space-y-3">
@@ -613,8 +636,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-search"
-        title="No Results"
-        :description="`No results found for the query: ${query}. Please try a different search term.`"
+        :title="t('common.noResults')"
+        :description="t('common.noResultsFor', { query })"
       />
     </div>
 
@@ -623,8 +646,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="No tasks."
-      description="There are no tasks defined yet. Click the New Task button to create your first automated download task."
+      :title="t('common.noItems')"
+      :description="t('common.empty')"
     />
 
     <div v-if="filteredTasks.length > 0 && paging?.total_pages > 1" class="flex justify-end">
@@ -642,38 +665,17 @@
 
     <UAlert v-if="tasks.length > 0" color="info" variant="soft">
       <template #description>
-        <ul class="list-disc space-y-2 pl-5 text-sm text-default">
+        <ul class="list-disc space-y-2 ps-5 text-sm text-default">
           <li>
-            <span class="text-error">
-              All tasks operations require <code>--download-archive</code> to be set in the
-              <b>preset</b> or in the <b>command options for yt-dlp</b> for the task to be
-              dispatched. If you have selected one of the built in presets it already includes this
-              option and no further action is required.
-            </span>
+            <strong>{{ t('tasks.notesTitle') }}</strong>
           </li>
           <li>
-            To avoid downloading all existing content from a channel/playlist, use
-            <code>Actions &gt; Archive All</code> to mark existing items as already downloaded.
+            <span class="text-error" v-html="t('tasks.noteArchive')" />
           </li>
-          <li>
-            <strong>Timer Requirement:</strong> Tasks must have either a valid timer or a supported
-            handler. If the URL does not match a handler, set a CRON timer.
-          </li>
-          <li>
-            <strong>Generate metadata:</strong> will attempt first to save metadata based on the
-            task <code>Download path</code> if not set, it will fallback to the
-            <code>Output template</code> with the priority of <code>task</code>,
-            <code>preset</code> and then finally to <code>YTP_OUTPUT_TEMPLATE</code>. The final path
-            must resolve inside <code>{{ config.app.download_path }}</code
-            >.
-          </li>
-          <li>
-            It's pretty normal for youtube rss feeds to return 404 from around
-            <span class="text-error">00:00 UTC</span> to around
-            <span class="text-error">06:00 UTC</span>. This is because youtube updates the feeds
-            around that time The tasks will automatically recover once the feeds are available
-            again.
-          </li>
+          <li v-html="t('tasks.noteArchiveAll')" />
+          <li v-html="t('tasks.noteCron')" />
+          <li v-html="t('tasks.noteMetadata', { path: config.app.download_path })" />
+          <li v-html="t('tasks.noteYoutubeRss')" />
         </ul>
       </template>
     </UAlert>
@@ -681,12 +683,10 @@
     <UModal
       v-if="toggleForm"
       :open="toggleForm"
-      :title="taskRef ? `Edit - ${task.name || 'Task'}` : 'Add new task'"
-      :description="
-        taskRef
-          ? 'Update the settings of your automated download task'
-          : 'Create an automated download task'
+      :title="
+        taskRef ? t('common.editTitle', { name: task.name || t('tasks.task') }) : t('common.add')
       "
+      :description="taskRef ? t('common.updateDescription') : t('common.createDescription')"
       :dismissible="!addInProgress"
       :ui="{ content: 'w-full sm:max-w-7xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="handleEditorOpenChange"
@@ -697,30 +697,84 @@
           :addInProgress="addInProgress"
           :reference="taskRef"
           :task="task as Task"
-          @cancel="() => void requestCloseEditor()"
           @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-x"
+            :disabled="addInProgress"
+            class="justify-center"
+            @click="() => void requestCloseEditor()"
+          >
+            {{ t('common.cancel') }}
+          </UButton>
+
+          <UButton
+            type="submit"
+            form="taskForm"
+            color="primary"
+            icon="i-lucide-save"
+            :disabled="addInProgress"
+            :loading="addInProgress"
+            class="justify-center"
+          >
+            {{ t('common.save') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
 
     <UModal
       v-if="inspectTask"
       :open="Boolean(inspectTask)"
-      title="Inspect Task Handler"
-      description="Inspect how the current task URL maps to a handler."
+      :title="t('tasks.inspectHandlerTitle')"
+      :description="t('tasks.inspectHandlerDesc')"
       :ui="{ content: 'w-full sm:max-w-4xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="(open) => !open && (inspectTask = null)"
     >
       <template #body>
-        <TaskInspect :url="inspectTask.url" :preset="inspectTask.preset" />
+        <TaskInspect ref="taskInspect" :url="inspectTask.url" :preset="inspectTask.preset" />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-rotate-ccw"
+            :disabled="taskInspect?.loading"
+            class="justify-center"
+            @click="taskInspect?.onReset()"
+          >
+            {{ t('common.reset') }}
+          </UButton>
+
+          <UButton
+            type="submit"
+            form="taskInspectForm"
+            color="primary"
+            icon="i-lucide-search"
+            :loading="taskInspect?.loading"
+            :disabled="taskInspect?.loading"
+            class="justify-center"
+          >
+            {{ t('common.inspect') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </main>
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { useStorage } from '@vueuse/core';
 import { CronExpressionParser } from 'cron-parser';
@@ -731,16 +785,18 @@ import TaskInspect from '~/components/TaskInspect.vue';
 import type { ExportedTask, Task } from '~/types/tasks';
 import type { WSEP } from '~/types/sockets';
 import { sleep } from '~/utils';
+import { formatRelativeTime } from '~/utils/relativeTime';
 import { useSessionCache } from '~/utils/cache';
 import type { item_request } from '~/types/item';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { locale, t } = useI18n();
 
 const box = useConfirm();
 const toast = useNotification();
 const config = useYtpConfig();
 const socket = useAppSocket();
 const stateStore = useQueueState();
-const pageShell = requirePageShell('tasks');
+const pageShell = usePageShell('tasks');
 const route = useRoute();
 const router = useRouter();
 const { confirmDialog } = useDialog();
@@ -776,6 +832,7 @@ const createEmptyTask = (): Partial<Task> => ({
 const task = ref<Partial<Task>>(createEmptyTask());
 const taskRef = ref<number | null>(null);
 const toggleForm = ref(false);
+const taskInspect = ref<InstanceType<typeof TaskInspect> | null>(null);
 const editorDirty = ref(false);
 const selectedElms = ref<number[]>([]);
 const massRun = ref(false);
@@ -808,7 +865,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(toggleForm, {
     dirty: editorDirty,
-    message: 'You have unsaved task changes. Do you want to discard them?',
+    message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();
     },
@@ -838,14 +895,14 @@ const hasSelected = computed(() => selectedElms.value.length > 0);
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Run Selected',
+      label: t('common.runSelected'),
       icon: 'i-lucide-square-play',
       color: 'primary',
       disabled: !hasSelected.value || massRun.value,
       onSelect: () => void runSelected(),
     },
     {
-      label: 'Remove Selected',
+      label: t('common.removeSelected'),
       icon: 'i-lucide-trash',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
@@ -1019,14 +1076,14 @@ const openCreateForm = (): void => {
 
 const deleteSelected = async () => {
   if (selectedElms.value.length < 1) {
-    toast.error('No tasks selected.');
+    toast.error(t('common.noTasksSelected'));
     return;
   }
 
   const { status } = await confirmDialog({
-    title: 'Delete Selected Tasks',
+    title: t('common.deleteSelected'),
     message:
-      `Delete ${selectedElms.value.length} task/s?` +
+      t('common.deleteCountConfirm', { count: selectedElms.value.length }) +
       '\n\n' +
       selectedElms.value
         .map((id) => {
@@ -1035,7 +1092,7 @@ const deleteSelected = async () => {
         })
         .filter(Boolean)
         .join('\n'),
-    confirmText: 'Delete',
+    confirmText: t('common.delete'),
     confirmColor: 'error',
   });
 
@@ -1047,7 +1104,7 @@ const deleteSelected = async () => {
     (item) => item.id && selectedElms.value.includes(item.id),
   );
   if (itemsToDelete.length < 1) {
-    toast.error('No tasks found to delete.');
+    toast.error(t('common.noTasksToDelete'));
     return;
   }
 
@@ -1069,7 +1126,10 @@ const deleteSelected = async () => {
 };
 
 const deleteItem = async (item: Task) => {
-  if (!item.id || true !== (await box.confirm(`Delete '${item.name}' task?`))) {
+  if (
+    !item.id ||
+    true !== (await box.confirm(t('common.deleteNamedConfirm', { name: item.name })))
+  ) {
     return;
   }
 
@@ -1078,7 +1138,7 @@ const deleteItem = async (item: Task) => {
 
 const toggleFlag = async (item: Task, field: 'enabled' | 'auto_start' | 'handler_enabled') => {
   if (!item.id) {
-    toast.error('Task ID is missing');
+    toast.error(t('common.taskIdMissing'));
     return;
   }
 
@@ -1126,9 +1186,7 @@ const updateItem = async ({
   if (!reference && true === archive_all) {
     await nextTick();
     await sleep(1);
-    toast.info(
-      `Archiving existing items for '${tasksList.length}' tasks. This will take a while...`,
-    );
+    toast.info(t('tasks.archivingItems', { count: tasksList.length }));
 
     for (const item of tasksList) {
       if (item.id) {
@@ -1164,21 +1222,24 @@ const calcPath = (path: string) => {
 
 const tryParse = (expression: string) => {
   try {
-    return moment(CronExpressionParser.parse(expression).next().toISOString()).fromNow();
+    return formatRelativeTime(
+      CronExpressionParser.parse(expression).next().toISOString(),
+      locale.value,
+    );
   } catch {
-    return 'Invalid';
+    return t('common.invalid');
   }
 };
 
 const runSelected = async () => {
   if (selectedElms.value.length < 1) {
-    toast.error('No tasks selected.');
+    toast.error(t('common.noTasksSelected'));
     return;
   }
 
   const { status } = await confirmDialog({
     message:
-      'Run the following tasks?' +
+      t('tasks.runTasksConfirm') +
       '\n\n' +
       selectedElms.value
         .map((id) => {
@@ -1205,7 +1266,7 @@ const runSelected = async () => {
   }
 
   selectedElms.value = [];
-  toast.success('Dispatched selected tasks.');
+  toast.success(t('common.dispatchedTasks'));
 
   setTimeout(async () => {
     await nextTick();
@@ -1218,10 +1279,7 @@ const runNow = async (item: Task, mass: boolean = false) => {
     return;
   }
 
-  if (
-    !mass &&
-    true !== (await box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`))
-  ) {
+  if (!mass && true !== (await box.confirm(t('tasks.runNowConfirm', { name: item.name })))) {
     return;
   }
 
@@ -1273,7 +1331,7 @@ async function statusHandler(payload: WSEP['item_status']) {
   const { status, msg } = payload.data || {};
 
   if ('error' === status) {
-    toast.error(msg ?? 'Unknown error');
+    toast.error(msg ?? t('common.unknownError'));
   }
 }
 
@@ -1315,14 +1373,14 @@ const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').tri
 
 const archiveAll = async (item: Task, by_pass: boolean = false) => {
   if (!item.id) {
-    toast.error('Task ID is missing');
+    toast.error(t('common.taskIdMissing'));
     return;
   }
 
   try {
     if (true !== by_pass) {
       const { status } = await confirmDialog({
-        message: `Mark all '${item.name}' items as downloaded in download archive?`,
+        message: t('tasks.archiveAllConfirm', { name: item.name }),
       });
 
       if (true !== status) {
@@ -1333,7 +1391,12 @@ const archiveAll = async (item: Task, by_pass: boolean = false) => {
     setTaskInProgress(item.id);
     await tasksComposable.markTaskItems(item.id);
   } catch (error: any) {
-    toast.error(`Failed to archive items. ${error.message || 'Unknown error.'}`);
+    toast.error(
+      t('common.failedWithReason', {
+        message: t('common.failedArchive'),
+        reason: error.message || t('common.unknownError'),
+      }),
+    );
   } finally {
     clearTaskInProgress(item.id);
   }
@@ -1341,13 +1404,13 @@ const archiveAll = async (item: Task, by_pass: boolean = false) => {
 
 const unarchiveAll = async (item: Task) => {
   if (!item.id) {
-    toast.error('Task ID is missing');
+    toast.error(t('common.taskIdMissing'));
     return;
   }
 
   try {
     const { status } = await confirmDialog({
-      message: `Remove all '${item.name}' items from download archive?`,
+      message: t('tasks.unarchiveAllConfirm', { name: item.name }),
     });
 
     if (true !== status) {
@@ -1357,7 +1420,12 @@ const unarchiveAll = async (item: Task) => {
     setTaskInProgress(item.id);
     await tasksComposable.unmarkTaskItems(item.id);
   } catch (error: any) {
-    toast.error(`Failed to remove items from archive. ${error.message || 'Unknown error.'}`);
+    toast.error(
+      t('common.failedWithReason', {
+        message: t('common.failedRemoveArchive'),
+        reason: error.message || t('common.unknownError'),
+      }),
+    );
   } finally {
     if (item.id) {
       clearTaskInProgress(item.id);
@@ -1367,19 +1435,16 @@ const unarchiveAll = async (item: Task) => {
 
 const generateMeta = async (item: Task) => {
   if (!item.id) {
-    toast.error('Task ID is missing');
+    toast.error(t('common.taskIdMissing'));
     return;
   }
 
   try {
     const { status } = await confirmDialog({
       message:
-        `Generate '${item.name}' metadata? You will be notified when it is done.` +
-        '\n\nThis action will generate:' +
-        '\n- tvshow.nfo - for media center compatibility' +
-        '\n- title [id].info.json - yt-dlp metadata file' +
-        '\n- Thumbnails: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg if they are available.' +
-        '\n\nWarning: This will overwrite existing metadata files if they exist.',
+        t('tasks.generateMetadataConfirm', { name: item.name }) +
+        '\n\n' +
+        t('tasks.generateMetadataConfirmDesc'),
     });
 
     if (true !== status) {
@@ -1389,7 +1454,12 @@ const generateMeta = async (item: Task) => {
     setTaskInProgress(item.id);
     await tasksComposable.generateTaskMetadata(item.id);
   } catch (error: any) {
-    toast.error(`Failed to generate metadata. ${error.message || 'Unknown error.'}`);
+    toast.error(
+      t('common.failedWithReason', {
+        message: t('common.failedGenerateMetadata'),
+        reason: error.message || t('common.unknownError'),
+      }),
+    );
   } finally {
     if (item.id) {
       clearTaskInProgress(item.id);
@@ -1400,19 +1470,19 @@ const generateMeta = async (item: Task) => {
 const itemActionGroups = (item: Task): DropdownMenuItem[][] => [
   [
     {
-      label: 'Run now',
+      label: t('common.runNow'),
       icon: 'i-lucide-square-play',
       onSelect: () => void runNow(item),
     },
     {
-      label: 'Generate metadata',
+      label: t('common.generateMetadata'),
       icon: 'i-lucide-film',
       onSelect: () => void generateMeta(item),
     },
   ],
   [
     {
-      label: 'Inspect Handler',
+      label: t('common.inspectHandler'),
       icon: 'i-lucide-search',
       onSelect: () => {
         inspectTask.value = item;
@@ -1421,19 +1491,19 @@ const itemActionGroups = (item: Task): DropdownMenuItem[][] => [
   ],
   [
     {
-      label: 'Archive All',
+      label: t('common.archiveAll'),
       icon: 'i-lucide-box',
       onSelect: () => void archiveAll(item),
     },
     {
-      label: 'Unarchive All',
+      label: t('common.unarchiveAll'),
       icon: 'i-lucide-box',
       onSelect: () => void unarchiveAll(item),
     },
   ],
   [
     {
-      label: 'Export Task',
+      label: t('common.exportItem'),
       icon: 'i-lucide-file-up',
       onSelect: () => void exportItem(item),
     },

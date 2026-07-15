@@ -14,7 +14,7 @@
             }
           "
         >
-          {{ showImport ? 'Hide' : 'Show' }} import
+          {{ showImport ? t('common.hideImport') : t('common.showImport') }}
         </UButton>
       </div>
 
@@ -23,17 +23,18 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Import string</span>
+              <span class="font-semibold text-default">{{ t('common.importString') }}</span>
             </div>
           </template>
 
           <template #description>
-            <span>You can use this field to populate the data, using shared string.</span>
+            <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
           <div class="flex flex-col gap-2 sm:flex-row">
             <UInput
               id="import_string"
+              dir="ltr"
               v-model="importString"
               type="text"
               autocomplete="off"
@@ -52,7 +53,7 @@
               :disabled="!importString"
               @click="() => void importItem()"
             >
-              Import
+              {{ t('common.import') }}
             </UButton>
           </div>
         </UFormField>
@@ -62,15 +63,8 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-type" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Target name</span>
+            <span class="font-semibold text-default">{{ t('common.targetName') }}</span>
           </div>
-        </template>
-
-        <template #description>
-          <span>
-            The notification target name, this is used to identify the target in the logs and
-            notifications.
-          </span>
         </template>
 
         <UInput
@@ -88,27 +82,13 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-link" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Target URL</span>
+            <span class="font-semibold text-default">{{ t('common.targetUrl') }}</span>
           </div>
-        </template>
-
-        <template #description>
-          <span>
-            The URL to send the notification to. It can be regular http/https endpoint. or
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://github.com/caronc/apprise?tab=readme-ov-file#readme"
-              class="text-primary hover:underline"
-            >
-              Apprise
-            </a>
-            URL.
-          </span>
         </template>
 
         <UInput
           id="url"
+          dir="ltr"
           v-model="form.request.url"
           type="url"
           size="lg"
@@ -124,8 +104,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-bell-ring"
-      title="Apprise target detected"
-      description="Apprise URLs only require the target name and URL. Request method, request type, headers, and data field are not used."
+      :title="t('common.appriseDetected')"
+      :description="t('common.appriseDetectedDesc')"
     />
 
     <div v-if="!isAppriseTarget" class="grid gap-4 border-t border-default pt-5 md:grid-cols-2">
@@ -133,19 +113,17 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-arrow-right-left" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Request method</span>
+            <span class="font-semibold text-default">{{ t('common.requestMethod') }}</span>
           </div>
         </template>
 
         <template #description>
-          <span>
-            The request method to use when sending the notification. This can be any of the standard
-            HTTP methods.
-          </span>
+          <span>{{ t('common.requestMethodDesc') }}</span>
         </template>
 
         <USelect
           id="method"
+          dir="ltr"
           v-model="form.request.method"
           :items="requestMethods"
           size="lg"
@@ -159,18 +137,17 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-braces" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Request Type</span>
+            <span class="font-semibold text-default">{{ t('common.requestType') }}</span>
           </div>
         </template>
 
         <template #description>
-          <span>
-            The request type to use when sending the notification. This can be JSON or FORM request.
-          </span>
+          <span>{{ t('common.requestTypeDesc') }}</span>
         </template>
 
         <USelect
           id="type"
+          dir="ltr"
           v-model="form.request.type"
           :items="requestTypeItems"
           value-key="value"
@@ -189,7 +166,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-2 font-semibold text-default">
               <UIcon name="i-lucide-bell-ring" class="size-4 text-toned" />
-              <span>Select Events</span>
+              <span>{{ t('common.selectEvents') }}</span>
             </span>
             <button
               v-if="form.on.length > 0"
@@ -197,21 +174,18 @@
               class="text-primary hover:underline"
               @click="form.on = []"
             >
-              Clear selection
+              {{ t('common.clearSelection') }}
             </button>
           </div>
         </template>
 
         <template #description>
-          <span>
-            Subscribe to the events you want to listen for. When the event is triggered, the
-            notification will be sent to the target URL. If no events are selected, the notification
-            will be sent for all events.
-          </span>
+          <span>{{ t('common.selectEventsDesc') }}</span>
         </template>
 
         <select
           id="on"
+          dir="ltr"
           v-model="form.on"
           multiple
           :disabled="addInProgress"
@@ -228,7 +202,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-2 font-semibold text-default">
               <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
-              <span>Select Presets</span>
+              <span>{{ t('common.selectPresets') }}</span>
             </span>
             <button
               v-if="form.presets.length > 0"
@@ -236,17 +210,13 @@
               class="text-primary hover:underline"
               @click="form.presets = []"
             >
-              Clear selection
+              {{ t('common.clearSelection') }}
             </button>
           </div>
         </template>
 
         <template #description>
-          <span>
-            Select the presets you want to listen for. If you select presets, only events that
-            reference those presets will trigger the notification. If no presets are selected, the
-            notification will be sent for all presets.
-          </span>
+          <span>{{ t('common.selectPresetsDesc') }}</span>
         </template>
 
         <select
@@ -256,13 +226,13 @@
           :disabled="addInProgress"
           class="min-h-40 w-full rounded-md border border-default bg-elevated/60 px-3 py-2 text-sm text-default outline-none transition focus:border-primary"
         >
-          <optgroup v-if="filterPresets(false).length > 0" label="Custom presets">
+          <optgroup v-if="filterPresets(false).length > 0" :label="t('common.customPresets')">
             <option v-for="preset in filterPresets(false)" :key="preset.id" :value="preset.name">
               {{ preset.name }}
             </option>
           </optgroup>
 
-          <optgroup label="Default presets">
+          <optgroup :label="t('common.defaultPresets')">
             <option v-for="preset in filterPresets(true)" :key="preset.id" :value="preset.name">
               {{ preset.name }}
             </option>
@@ -276,18 +246,19 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-power" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Enabled</span>
+            <span class="font-semibold text-default">{{ t('common.enabled') }}</span>
           </div>
         </template>
-
         <template #description>
-          <span>Whether the notification target is enabled.</span>
+          <span>&nbsp;</span>
         </template>
 
         <div
           class="flex min-h-11 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
         >
-          <span class="text-sm text-default">{{ form.enabled ? 'Yes' : 'No' }}</span>
+          <span class="text-sm text-default">{{
+            form.enabled ? t('common.yesLabel') : t('common.noLabel')
+          }}</span>
           <USwitch v-model="form.enabled" :disabled="addInProgress" />
         </div>
       </UFormField>
@@ -296,19 +267,17 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-braces" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Data field</span>
+            <span class="font-semibold text-default">{{ t('common.dataField') }}</span>
           </div>
         </template>
 
         <template #description>
-          <span>
-            The field name to use when sending the notification. This is used to identify the data
-            in the request. The default is data.
-          </span>
+          <span>{{ t('common.dataFieldDesc') }}</span>
         </template>
 
         <UInput
           id="data_key"
+          dir="ltr"
           v-model="form.request.data_key"
           type="text"
           size="lg"
@@ -324,9 +293,8 @@
         <div class="space-y-1">
           <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
             <UIcon name="i-lucide-key" class="size-4 text-toned" />
-            <span>Optional Headers</span>
+            <span>{{ t('common.optionalHeaders') }}</span>
           </div>
-          <p class="text-sm text-toned">The header key/value to send with the notification.</p>
         </div>
 
         <UButton
@@ -338,7 +306,7 @@
           :disabled="addInProgress"
           @click="addHeader"
         >
-          Add Header
+          {{ t('common.addHeader') }}
         </UButton>
       </div>
 
@@ -347,17 +315,19 @@
           v-for="(header, index) in form.request.headers"
           :key="`header-${index}`"
           class="grid gap-3 rounded-lg border border-default bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+          dir="ltr"
         >
           <UFormField :ui="fieldUi">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-key" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Header key</span>
+                <span class="font-semibold text-default">{{ t('common.headerKey') }}</span>
               </div>
             </template>
 
             <UInput
               v-model="header.key"
+              dir="ltr"
               type="text"
               size="lg"
               :disabled="addInProgress"
@@ -370,12 +340,13 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-pen-line" class="size-4 text-toned" />
-                <span class="font-semibold text-default">Header value</span>
+                <span class="font-semibold text-default">{{ t('common.headerValue') }}</span>
               </div>
             </template>
 
             <UInput
               v-model="header.value"
+              dir="ltr"
               type="text"
               size="lg"
               :disabled="addInProgress"
@@ -397,7 +368,7 @@
                 }
               "
             >
-              Remove
+              {{ t('common.remove') }}
             </UButton>
           </div>
         </div>
@@ -407,37 +378,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-triangle-alert"
-        description="If header key or value is empty, the header will not be sent."
+        :description="t('common.headerEmptyWarning')"
       />
-    </div>
-
-    <div
-      class="flex flex-col-reverse gap-2 border-t border-default pt-5 sm:flex-row sm:justify-end"
-    >
-      <UButton
-        type="button"
-        color="neutral"
-        variant="outline"
-        size="lg"
-        icon="i-lucide-x"
-        :disabled="addInProgress"
-        class="justify-center"
-        @click="emitter('cancel')"
-      >
-        Cancel
-      </UButton>
-
-      <UButton
-        type="submit"
-        color="primary"
-        size="lg"
-        icon="i-lucide-save"
-        :disabled="addInProgress"
-        :loading="addInProgress"
-        class="justify-center"
-      >
-        Save
-      </UButton>
     </div>
   </form>
 </template>
@@ -449,8 +391,9 @@ import { useNotifications } from '~/composables/useNotifications';
 import type { ImportedItem } from '~/types';
 import type { notification, notificationRequestHeaderItem } from '~/types/notification';
 
+const { t } = useI18n();
+
 const emitter = defineEmits<{
-  (event: 'cancel'): void;
   (event: 'dirty-change', dirty: boolean): void;
   (event: 'submit', payload: { reference: number | undefined; item: notification }): void;
 }>();
@@ -468,10 +411,10 @@ const { isApprise } = useNotifications();
 const { filterPresets, hasPreset } = usePresetOptions();
 
 const requestMethods = ['POST', 'PUT'];
-const requestTypeItems = [
-  { label: 'Json', value: 'json' },
-  { label: 'Form', value: 'form' },
-];
+const requestTypeItems = computed(() => [
+  { label: t('common.requestTypeJson'), value: 'json' },
+  { label: t('common.requestTypeForm'), value: 'form' },
+]);
 
 const showImport = useStorage('showImport', false);
 const importString = ref('');
@@ -590,11 +533,11 @@ const checkInfo = async (): Promise<void> => {
       const parentObject = form[parent] as Record<string, unknown> | undefined;
 
       if (!parentObject || !parentObject[child]) {
-        toast.error(`The field ${parent}.${child} is required.`);
+        toast.error(t('common.fieldRequired', { field: `${parent}.${child}` }));
         return;
       }
     } else if (!(form as Record<string, unknown>)[key]) {
-      toast.error(`The field ${key} is required.`);
+      toast.error(t('common.fieldRequired', { field: key }));
       return;
     }
   }
@@ -603,7 +546,7 @@ const checkInfo = async (): Promise<void> => {
     try {
       new URL(form.request.url);
     } catch {
-      toast.error('Invalid URL');
+      toast.error(t('common.invalidUrl'));
       return;
     }
   }
@@ -629,7 +572,7 @@ const checkInfo = async (): Promise<void> => {
 const importItem = async (): Promise<void> => {
   const value = importString.value.trim();
   if (!value) {
-    toast.error('The import string is required.');
+    toast.error(t('common.validationImportRequired'));
     return;
   }
 
@@ -637,15 +580,14 @@ const importItem = async (): Promise<void> => {
     const item = decode(value) as notification & ImportedItem;
 
     if ('notification' !== item._type) {
-      toast.error(`Invalid import string. Expected type 'notification', got '${item._type}'.`);
+      toast.error(
+        t('common.validationInvalidImport', { expected: 'notification', type: item._type }),
+      );
       importString.value = '';
       return;
     }
 
-    if (
-      hasFormContent.value &&
-      false === (await box.confirm('Overwrite the current form fields?'))
-    ) {
+    if (hasFormContent.value && false === (await box.confirm(t('common.overwriteFormDesc')))) {
       return;
     }
 
@@ -656,7 +598,7 @@ const importItem = async (): Promise<void> => {
     importString.value = '';
     showImport.value = false;
   } catch (error: any) {
-    toast.error(`Failed to import task. ${error.message}`);
+    toast.error(t('common.failedImportNotification', { error: error.message }));
   }
 };
 

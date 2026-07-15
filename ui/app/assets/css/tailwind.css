@@ -84,6 +84,16 @@
     @apply flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned;
   }
 
+  :dir(rtl) .ytp-page-kicker,
+  :dir(rtl) [class*='tracking-'] {
+    letter-spacing: normal;
+  }
+
+  :dir(rtl) .ytp-page-kicker,
+  :dir(rtl) .uppercase {
+    text-transform: none;
+  }
+
   .ytp-page-icon {
     @apply inline-flex size-11 shrink-0 items-center justify-center rounded-md border bg-elevated/70 text-primary;
     border-color: var(--ytp-surface-border-solid);
@@ -308,4 +318,8 @@ html:not(.no-page-anim) .page-enter-from {
 }
 html:not(.no-page-anim) .page-leave-to {
   opacity: 0;
+}
+code {
+  direction: ltr;
+  unicode-bidi: bidi-override;
 }

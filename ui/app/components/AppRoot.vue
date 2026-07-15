@@ -1,11 +1,11 @@
 <template>
-  <UApp :toaster="toaster">
+  <UApp :toaster="toaster" :locale="uiLocale" :dir="direction">
     <slot :openSettings="open" :reloadBg="loadBg" :bgLoading="bgLoading" />
 
     <SettingsPanel
       :isOpen="settings"
       :isLoading="bgLoading"
-      direction="right"
+      :direction="slideoverSide"
       @close="settings = false"
       @reload_bg="loadBg(true)"
     />
@@ -19,6 +19,13 @@ import SettingsPanel from '~/components/SettingsPanel.vue';
 import type { toastPosition } from '~/composables/useNotification';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { request, syncOpacity } from '~/utils';
+import { getUiLocale } from '~/utils/ui-locales';
+
+const { locale } = useI18n();
+const { direction, isRtl } = useAppLocale();
+
+const slideoverSide = computed<'left' | 'right'>(() => (isRtl.value ? 'left' : 'right'));
+const uiLocale = computed(() => getUiLocale(locale.value));
 
 const props = withDefaults(
   defineProps<{

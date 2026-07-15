@@ -26,7 +26,7 @@
           :disabled="isLoading || !report"
           @click="copyDiagnostics"
         >
-          Copy
+          {{ t('common.copy') }}
         </UButton>
 
         <UButton
@@ -38,7 +38,7 @@
           :disabled="isLoading"
           @click="void load(true)"
         >
-          Refresh
+          {{ t('common.refresh') }}
         </UButton>
       </div>
     </div>
@@ -48,8 +48,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Reading tools, paths, and configured extras."
+      :title="t('common.loading')"
+      :description="t('diagnostics.loadingDesc')"
     />
 
     <UAlert
@@ -57,7 +57,7 @@
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
-      title="Diagnostics failed"
+      :title="t('diagnostics.failed')"
       :description="lastError"
     />
 
@@ -67,14 +67,14 @@
         color="error"
         variant="soft"
         icon="i-lucide-octagon-alert"
-        title="Required items missing"
+        :title="t('diagnostics.requiredMissing')"
         :description="requiredAlertDescription"
       />
 
       <section class="space-y-3">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-lucide-gauge" class="size-4 text-toned" />
-          <span>Overview</span>
+          <span>{{ t('diagnostics.overview') }}</span>
         </div>
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -93,7 +93,7 @@
       <section class="space-y-3">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-lucide-server" class="size-4 text-toned" />
-          <span>Runtime</span>
+          <span>{{ t('diagnostics.runtime') }}</span>
         </div>
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -122,21 +122,28 @@
         </div>
 
         <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-          <article v-for="item in section.items" :key="item.id" class="ytp-card-padded shadow-sm">
+          <article
+            v-for="item in section.items"
+            :key="item.id"
+            class="ytp-card-padded shadow-sm"
+            dir="ltr"
+          >
             <div class="min-w-0 space-y-3">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <span :class="tagDotClass(item.status)"></span>
-                  <p class="text-base font-semibold text-default">{{ item.label }}</p>
+                  <p class="text-base font-semibold text-default" dir="auto">{{ item.label }}</p>
                   <span
                     class="inline-flex items-center rounded-md border border-default px-2 py-1 text-xs text-toned"
                   >
-                    {{ item.required ? 'Required' : 'Optional' }}
+                    {{ item.required ? t('diagnostics.required') : t('common.optional') }}
                   </span>
                 </div>
 
-                <p v-if="item.description" class="text-sm text-toned">{{ item.description }}</p>
-                <p v-if="showMessage(item)" class="text-sm leading-6 text-default">
+                <p v-if="item.description" class="text-sm text-toned" dir="auto">
+                  {{ item.description }}
+                </p>
+                <p v-if="showMessage(item)" class="text-sm leading-6 text-default" dir="auto">
                   {{ item.message }}
                 </p>
               </div>
@@ -147,8 +154,8 @@
                   :key="`${item.id}-${key}`"
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 text-xs text-toned"
                 >
-                  <span class="font-medium text-default">{{ keyLabel(key) }}:</span>
-                  <span>{{ formatValue(value) }}</span>
+                  <span class="font-medium text-default" dir="auto">{{ keyLabel(key) }}:</span>
+                  <span dir="auto">{{ formatValue(value) }}</span>
                 </span>
               </div>
             </div>
@@ -163,9 +170,10 @@
 import moment from 'moment';
 import StatCard from '~/components/StatCard.vue';
 import type { DiagnosticCheck, DiagnosticStatus } from '~/types/diagnostics';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
 import { copyText } from '~/utils';
 
+const { t } = useI18n();
 type SummaryCard = {
   label: string;
   description: string;
@@ -182,47 +190,37 @@ type DetailRow = {
 };
 
 type FeatureMeta = {
-  label: string;
-  description: string;
   icon: string;
 };
 
 type FeatureSection = FeatureMeta & {
   id: string;
+  label: string;
+  description: string;
   items: Array<DiagnosticCheck>;
 };
 
 const FEATURE_META: Record<string, FeatureMeta> = {
   core: {
-    label: 'Core setup',
-    description: 'Main tools and local paths.',
     icon: 'i-lucide-wrench',
   },
   youtube: {
-    label: 'YouTube',
-    description: 'Support needed for YouTube downloads.',
     icon: 'i-lucide-video',
   },
   notifications: {
-    label: 'Notifications',
-    description: 'Apprise support.',
     icon: 'i-lucide-bell',
   },
   advanced: {
-    label: 'Advanced',
-    description: 'Optional tools, transports, browser extractor, and plugins.',
     icon: 'i-lucide-plug-zap',
   },
   custom: {
-    label: 'Custom pip packages',
-    description: 'Packages requested through config.',
     icon: 'i-lucide-package-plus',
   },
 };
 
 const FEATURE_ORDER = ['core', 'youtube', 'notifications', 'advanced', 'custom'];
 
-const pageShell = requirePageShell('diagnostics');
+const pageShell = usePageShell('diagnostics');
 const diagnosticsState = useDiagnostics();
 
 const report = diagnosticsState.diagnostics;
@@ -240,11 +238,16 @@ const requiredAlertDescription = computed(() => {
 });
 
 const featureSections = computed<Array<FeatureSection>>(() => {
-  return FEATURE_ORDER.filter((id) => (groupedChecks.value[id] ?? []).length > 0).map((id) => ({
-    id,
-    ...FEATURE_META[id]!,
-    items: groupedChecks.value[id] ?? [],
-  }));
+  return FEATURE_ORDER.filter((id) => (groupedChecks.value[id] ?? []).length > 0).map((id) => {
+    const meta = FEATURE_META[id]!;
+    return {
+      id,
+      label: t(`diagnostics.feature.${id}.label`),
+      description: t(`diagnostics.feature.${id}.description`),
+      icon: meta.icon,
+      items: groupedChecks.value[id] ?? [],
+    };
+  });
 });
 
 const summaryCards = computed<Array<SummaryCard>>(() => {
@@ -255,29 +258,29 @@ const summaryCards = computed<Array<SummaryCard>>(() => {
 
   return [
     {
-      label: 'Passing',
-      description: 'Checks that passed.',
+      label: t('diagnostics.passing'),
+      description: t('diagnostics.passingDesc'),
       value: current.summary.pass,
       icon: 'i-lucide-badge-check',
       color: current.summary.pass > 0 ? 'success' : 'neutral',
     },
     {
-      label: 'Required fails',
-      description: 'Items that block core use.',
+      label: t('diagnostics.requiredFails'),
+      description: t('diagnostics.requiredFailsDesc'),
       value: current.summary.required_failed,
       icon: 'i-lucide-octagon-alert',
       color: current.summary.required_failed > 0 ? 'error' : 'neutral',
     },
     {
-      label: 'Warnings',
-      description: 'Optional or incomplete items.',
+      label: t('diagnostics.warnings'),
+      description: t('diagnostics.warningsDesc'),
       value: current.summary.warn,
       icon: 'i-lucide-triangle-alert',
       color: current.summary.warn > 0 ? 'warning' : 'neutral',
     },
     {
-      label: 'Skipped',
-      description: 'Not configured or not needed.',
+      label: t('common.skipped'),
+      description: t('diagnostics.skippedDesc'),
       value: current.summary.skip,
       icon: 'i-lucide-minus',
       color: 'neutral',
@@ -295,19 +298,19 @@ const runtimeRows = computed<Array<DetailRow>>(() => {
 
   return [
     {
-      label: 'App',
-      description: 'Current build.',
+      label: t('diagnostics.app'),
+      description: t('diagnostics.appDesc'),
       value: runtime.app_version || 'Unknown',
       icon: 'i-lucide-package',
     },
     {
-      label: 'Host',
-      description: 'OS and machine.',
+      label: t('diagnostics.host'),
+      description: t('diagnostics.hostDesc'),
       value: `${runtime.platform} ${runtime.platform_release} (${runtime.platform_machine})`,
       icon: 'i-lucide-server',
     },
     {
-      label: 'Python',
+      label: t('diagnostics.python'),
       description: `${python.note} Minimum ${python.required}+`,
       value: python.current,
       icon: 'i-lucide-square-terminal',
@@ -315,72 +318,86 @@ const runtimeRows = computed<Array<DetailRow>>(() => {
   ];
 });
 
+const SHARE_STATUS: Record<DiagnosticStatus, string> = {
+  pass: 'PASS',
+  fail: 'FAIL',
+  warn: 'WARN',
+  skip: 'SKIP',
+};
+
+const SHARE_SECTION_LABELS: Record<string, string> = {
+  core: 'Core',
+  youtube: 'YouTube',
+  notifications: 'Notifications',
+  advanced: 'Advanced',
+  custom: 'Custom',
+};
+
 const shareText = computed(() => {
   const current = report.value;
   if (!current) {
     return '';
   }
 
-  const lines = [
-    'YTPTube diagnostics',
+  const summary = current.summary;
+  const lines: string[] = [
+    'YTPTube Diagnostics',
     `Generated: ${formatIsoTimestamp(current.generated_at)}`,
     '',
+    'Overview',
+    `- Passing: ${summary.pass}`,
+    `- Required fails: ${summary.required_failed}`,
+    `- Warnings: ${summary.warn}`,
+    `- Skipped: ${summary.skip}`,
+    '',
+    'Runtime',
+    `- App: ${current.runtime.app_version || 'Unknown'}`,
+    `- Host: ${current.runtime.platform} ${current.runtime.platform_release} (${current.runtime.platform_machine})`,
+    `- Python: ${current.requirements.python.current}`,
+    `- Started: ${formatIsoTimestamp(current.runtime.started)}`,
   ];
 
-  lines.push('Overview');
-  for (const item of summaryCards.value) {
-    lines.push(`- ${item.label}: ${item.value}`);
-  }
-
-  lines.push('', 'Runtime');
-  lines.push(`- App: ${current.runtime.app_version || 'Unknown'}`);
-  lines.push(
-    `- Host: ${current.runtime.platform} ${current.runtime.platform_release} (${current.runtime.platform_machine})`,
-  );
-  lines.push(`- Python: ${current.requirements.python.current}`);
-  lines.push(`- Started: ${formatIsoTimestamp(current.runtime.started)}`);
-
   if (current.stats?.enabled) {
-    lines.push('', 'Resource stats');
+    lines.push('', 'Resource Stats');
 
     if (current.stats.error) {
       lines.push(`- Error: ${current.stats.error}`);
     } else {
-      const summary = current.stats.summary;
+      const stats = current.stats.summary;
       const bottlenecks = current.stats.bottlenecks;
 
       lines.push(`- Window: ${formatDuration(current.stats.window_seconds)}`);
       lines.push(`- Samples: ${current.stats.sample_count ?? 0}`);
 
-      if (summary) {
-        lines.push(`- Avg app CPU: ${formatPercent(summary.averages.process_cpu_percent)}`);
-        lines.push(`- Max app CPU: ${formatPercent(summary.max.process_cpu_percent)}`);
-        lines.push(`- Avg system CPU: ${formatPercent(summary.averages.system_cpu_percent)}`);
-        lines.push(`- Max system CPU: ${formatPercent(summary.max.system_cpu_percent)}`);
-        lines.push(`- Avg memory: ${formatPercent(summary.averages.memory_percent)}`);
-        lines.push(`- Max memory: ${formatPercent(summary.max.memory_percent)}`);
-        lines.push(`- Avg RSS: ${formatMb(summary.averages.rss_mb)}`);
-        lines.push(`- Max RSS: ${formatMb(summary.max.rss_mb)}`);
+      if (stats) {
+        lines.push(`- Avg app CPU: ${formatPercent(stats.averages.process_cpu_percent)}`);
+        lines.push(`- Max app CPU: ${formatPercent(stats.max.process_cpu_percent)}`);
+        lines.push(`- Avg system CPU: ${formatPercent(stats.averages.system_cpu_percent)}`);
+        lines.push(`- Max system CPU: ${formatPercent(stats.max.system_cpu_percent)}`);
+        lines.push(`- Avg memory: ${formatPercent(stats.averages.memory_percent)}`);
+        lines.push(`- Max memory: ${formatPercent(stats.max.memory_percent)}`);
+        lines.push(`- Avg RSS: ${formatMb(stats.averages.rss_mb)}`);
+        lines.push(`- Max RSS: ${formatMb(stats.max.rss_mb)}`);
         lines.push(
-          `- Avg jobs: ${formatOptionalNumber(summary.averages.active_jobs)} active, ${formatOptionalNumber(summary.averages.queued_jobs)} queued`,
+          `- Avg jobs: ${formatOptionalNumber(stats.averages.active_jobs)} active, ${formatOptionalNumber(stats.averages.queued_jobs)} queued`,
         );
         lines.push(
-          `- Max jobs: ${formatOptionalNumber(summary.max.active_jobs)} active, ${formatOptionalNumber(summary.max.queued_jobs)} queued`,
+          `- Max jobs: ${formatOptionalNumber(stats.max.active_jobs)} active, ${formatOptionalNumber(stats.max.queued_jobs)} queued`,
         );
-        lines.push(`- Avg children: ${formatOptionalNumber(summary.averages.children_count)}`);
-        lines.push(`- Max children: ${formatOptionalNumber(summary.max.children_count)}`);
-        lines.push(`- Avg process write: ${formatBps(summary.averages.process_write_bps)}`);
-        lines.push(`- Max process write: ${formatBps(summary.max.process_write_bps)}`);
-        lines.push(`- Avg process read: ${formatBps(summary.averages.process_read_bps)}`);
-        lines.push(`- Max process read: ${formatBps(summary.max.process_read_bps)}`);
-        lines.push(`- Avg disk write: ${formatBps(summary.averages.disk_write_bps)}`);
-        lines.push(`- Max disk write: ${formatBps(summary.max.disk_write_bps)}`);
-        lines.push(`- Avg disk read: ${formatBps(summary.averages.disk_read_bps)}`);
-        lines.push(`- Max disk read: ${formatBps(summary.max.disk_read_bps)}`);
-        lines.push(`- Avg network down: ${formatBps(summary.averages.network_recv_bps)}`);
-        lines.push(`- Max network down: ${formatBps(summary.max.network_recv_bps)}`);
-        lines.push(`- Avg network up: ${formatBps(summary.averages.network_sent_bps)}`);
-        lines.push(`- Max network up: ${formatBps(summary.max.network_sent_bps)}`);
+        lines.push(`- Avg children: ${formatOptionalNumber(stats.averages.children_count)}`);
+        lines.push(`- Max children: ${formatOptionalNumber(stats.max.children_count)}`);
+        lines.push(`- Avg process write: ${formatBps(stats.averages.process_write_bps)}`);
+        lines.push(`- Max process write: ${formatBps(stats.max.process_write_bps)}`);
+        lines.push(`- Avg process read: ${formatBps(stats.averages.process_read_bps)}`);
+        lines.push(`- Max process read: ${formatBps(stats.max.process_read_bps)}`);
+        lines.push(`- Avg disk write: ${formatBps(stats.averages.disk_write_bps)}`);
+        lines.push(`- Max disk write: ${formatBps(stats.max.disk_write_bps)}`);
+        lines.push(`- Avg disk read: ${formatBps(stats.averages.disk_read_bps)}`);
+        lines.push(`- Max disk read: ${formatBps(stats.max.disk_read_bps)}`);
+        lines.push(`- Avg network down: ${formatBps(stats.averages.network_recv_bps)}`);
+        lines.push(`- Max network down: ${formatBps(stats.max.network_recv_bps)}`);
+        lines.push(`- Avg network up: ${formatBps(stats.averages.network_sent_bps)}`);
+        lines.push(`- Max network up: ${formatBps(stats.max.network_sent_bps)}`);
       }
 
       if (bottlenecks) {
@@ -399,12 +416,12 @@ const shareText = computed(() => {
   }
 
   for (const section of featureSections.value) {
-    lines.push('', section.label);
+    lines.push('', SHARE_SECTION_LABELS[section.id] ?? section.id);
 
     for (const item of section.items) {
       const versionSuffix = formatShareVersion(item);
       lines.push(
-        `- [${statusLabel(item.status)}] ${item.label} (${item.required ? 'Required' : 'Optional'})${versionSuffix}`,
+        `- [${SHARE_STATUS[item.status] ?? item.status}] ${item.label} (${item.required ? 'required' : 'optional'})${versionSuffix}`,
       );
     }
   }
@@ -430,20 +447,6 @@ const showMessage = (item: DiagnosticCheck): boolean => {
   }
 
   return Boolean(item.message?.trim());
-};
-
-const statusLabel = (status: DiagnosticStatus): string => {
-  switch (status) {
-    case 'pass':
-      return 'PASS';
-    case 'fail':
-      return 'FAIL';
-    case 'warn':
-      return 'WARN';
-    case 'skip':
-    default:
-      return 'SKIP';
-  }
 };
 
 const tagDotClass = (status: DiagnosticStatus): string => {

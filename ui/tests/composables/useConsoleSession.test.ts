@@ -29,8 +29,14 @@ const runtimeConfig = {
 
 ;(globalThis as typeof globalThis & { useRuntimeConfig?: () => typeof runtimeConfig }).useRuntimeConfig = () => runtimeConfig
 
+;(globalThis as typeof globalThis & { useI18n?: () => unknown }).useI18n = () => ({
+  t: (key: string) => key,
+  locale: { value: 'en' },
+})
+
 mock.module('#imports', () => ({
   useRuntimeConfig: () => runtimeConfig,
+  useI18n: () => ({ t: (key: string) => key, locale: { value: 'en' } }),
 }))
 
 const storageMap = new Map<string, StorageEntry<unknown>>()
@@ -471,7 +477,7 @@ describe('useConsoleSession', () => {
 
     const result = await session.cancelSession()
 
-    expect(result).toEqual({ status: 'missing', message: 'Terminal session not found.' })
+    expect(result).toEqual({ status: 'missing', message: 'console.sessionNotFound' })
     expect(session.state.value.status).toBe('running')
 
     requestSpy.mockRestore()

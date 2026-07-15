@@ -13,7 +13,7 @@
         </span>
 
         <div class="min-w-0 flex-1 space-y-3">
-          <nav aria-label="Breadcrumb" class="min-w-0 ytp-page-kicker">
+          <nav :aria-label="t('common.breadcrumb')" class="min-w-0 ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
             <span>{{ pageShell.pageLabel }}</span>
@@ -53,7 +53,7 @@
           icon="i-lucide-filter"
           @click="toggleFilter"
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -64,7 +64,7 @@
           icon="i-lucide-folder-plus"
           @click="() => void handleCreateDirectory()"
         >
-          <span>New Folder</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -75,7 +75,9 @@
           class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            display_style === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
@@ -86,7 +88,7 @@
             icon="i-lucide-arrow-up-down"
             trailing-icon="i-lucide-chevron-down"
           >
-            <span>Sort</span>
+            <span>{{ t('common.sort') }}</span>
           </UButton>
         </UDropdownMenu>
 
@@ -99,7 +101,7 @@
           :disabled="isLoading"
           @click="() => void reloadContent(browserPath)"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -108,7 +110,7 @@
           ref="searchInput"
           v-model.lazy="localSearch"
           type="search"
-          placeholder="Filter"
+          :placeholder="t('common.filter')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -129,7 +131,7 @@
           :disabled="isLoading || filteredItems.length < 1"
           @click="toggleMasterSelection"
         >
-          {{ masterSelectAll ? 'Unselect' : 'Select' }}
+          {{ masterSelectAll ? t('common.unselect') : t('common.select') }}
         </UButton>
 
         <UBadge v-if="selectedElms.length > 0" color="error" variant="soft" size="sm">
@@ -144,7 +146,7 @@
             icon="i-lucide-list"
             trailing-icon="i-lucide-chevron-down"
           >
-            Actions
+            {{ t('common.actions') }}
           </UButton>
         </UDropdownMenu>
       </div>
@@ -170,13 +172,13 @@
         <table class="min-w-360 w-full text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
               <th v-if="controlEnabled" class="w-16">
                 <button
                   type="button"
                   class="cursor-pointer"
-                  :aria-label="masterSelectAll ? 'Unselect all items' : 'Select all items'"
+                  :aria-label="masterSelectAll ? t('common.unselectAll') : t('common.selectAll')"
                   @click="toggleMasterSelection"
                 >
                   <UIcon
@@ -185,31 +187,33 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">
-                Name
+              <th class="w-full text-start">
+                {{ t('common.name') }}
                 <UIcon
                   v-if="sort_by === 'name'"
                   :name="sortDirectionIcon"
-                  class="ml-1 inline-flex size-3.5"
+                  class="ms-1 inline-flex size-3.5"
                 />
               </th>
               <th class="w-28 whitespace-nowrap">
-                Size
+                {{ t('common.size') }}
                 <UIcon
                   v-if="sort_by === 'size'"
                   :name="sortDirectionIcon"
-                  class="ml-1 inline-flex size-3.5"
+                  class="ms-1 inline-flex size-3.5"
                 />
               </th>
               <th class="w-40 whitespace-nowrap">
-                Date
+                {{ t('common.date') }}
                 <UIcon
                   v-if="sort_by === 'date'"
                   :name="sortDirectionIcon"
-                  class="ml-1 inline-flex size-3.5"
+                  class="ms-1 inline-flex size-3.5"
                 />
               </th>
-              <th v-if="controlEnabled" class="w-96 whitespace-nowrap">Actions</th>
+              <th v-if="controlEnabled" class="w-96 whitespace-nowrap">
+                {{ t('common.actions') }}
+              </th>
             </tr>
           </thead>
 
@@ -217,7 +221,7 @@
             <tr
               v-for="item in filteredItems"
               :key="item.path"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td v-if="controlEnabled" class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -245,7 +249,7 @@
                         class="block truncate font-medium text-highlighted hover:underline"
                         @click.prevent="handleClick(item)"
                       >
-                        {{ item.name }}
+                        <bdi>{{ item.name }}</bdi>
                       </a>
                     </UTooltip>
                   </div>
@@ -258,7 +262,7 @@
 
               <td class="px-3 py-3 text-center align-middle text-toned whitespace-nowrap">
                 <UTooltip :text="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')">
-                  <span>{{ moment(item.mtime).fromNow() }}</span>
+                  <span>{{ relativeTime(item.mtime) }}</span>
                 </UTooltip>
               </td>
 
@@ -275,7 +279,7 @@
                     :href="downloadHref(item)"
                     :download="downloadName(item)"
                   >
-                    Download
+                    {{ t('common.download') }}
                   </UButton>
                   <UButton
                     color="neutral"
@@ -284,7 +288,7 @@
                     icon="i-lucide-pencil"
                     @click="() => void handleAction('rename', item)"
                   >
-                    Rename
+                    {{ t('common.rename') }}
                   </UButton>
 
                   <UButton
@@ -294,7 +298,7 @@
                     icon="i-lucide-arrow-right-left"
                     @click="() => void handleAction('move', item)"
                   >
-                    Move
+                    {{ t('files.move') }}
                   </UButton>
 
                   <UButton
@@ -304,7 +308,7 @@
                     icon="i-lucide-trash"
                     @click="() => void handleAction('delete', item)"
                   >
-                    Delete
+                    {{ t('common.delete') }}
                   </UButton>
                 </div>
               </td>
@@ -335,7 +339,7 @@
                       class="block truncate text-sm font-semibold text-highlighted hover:underline"
                       @click.prevent="handleClick(item)"
                     >
-                      {{ item.name }}
+                      <bdi>{{ item.name }}</bdi>
                     </a>
                   </UTooltip>
                 </div>
@@ -373,7 +377,7 @@
               class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
             >
               <UTooltip :text="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')">
-                <span class="block truncate">{{ moment(item.mtime).fromNow() }}</span>
+                <span class="block truncate">{{ relativeTime(item.mtime) }}</span>
               </UTooltip>
             </div>
           </div>
@@ -392,7 +396,7 @@
               :download="downloadName(item)"
               class="w-full justify-center"
             >
-              Download
+              {{ t('common.download') }}
             </UButton>
 
             <UButton
@@ -403,7 +407,7 @@
               class="w-full justify-center"
               @click="() => void handleAction('rename', item)"
             >
-              Rename
+              {{ t('common.rename') }}
             </UButton>
 
             <UButton
@@ -414,7 +418,7 @@
               class="w-full justify-center"
               @click="() => void handleAction('move', item)"
             >
-              Move
+              {{ t('files.move') }}
             </UButton>
 
             <UButton
@@ -425,7 +429,7 @@
               class="w-full justify-center"
               @click="() => void handleAction('delete', item)"
             >
-              Delete
+              {{ t('common.delete') }}
             </UButton>
           </div>
         </div>
@@ -437,8 +441,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-filter"
-        title="No results"
-        :description="`No results found for '${localSearch}'.`"
+        :title="t('common.noResults')"
+        :description="t('files.noResultsFor', { query: localSearch })"
       />
     </div>
 
@@ -447,8 +451,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading content"
-      description="Loading file browser contents..."
+      :title="t('files.loading')"
+      :description="t('files.loadingDesc')"
     />
 
     <UAlert
@@ -456,8 +460,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="No Content"
-      description="Directory is empty."
+      :title="t('files.noContent')"
+      :description="t('files.empty')"
     />
 
     <UAlert
@@ -465,8 +469,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-info"
-      title="File controls disabled"
-      description="You can enable rename, delete, move, and create directory controls by setting YTP_BROWSER_CONTROL_ENABLED=true and restarting the application."
+      :title="t('files.controlsDisabled')"
+      :description="t('files.controlsDisabledDesc')"
     />
 
     <div v-if="pagination.total_pages > 1" class="flex justify-end">
@@ -527,7 +531,9 @@ import type { DropdownMenuItem } from '@nuxt/ui';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { FileItem } from '~/types/filebrowser';
 import { formatPageTitle } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+import { usePageShell } from '~/composables/usePageShell';
+const { locale, t } = useI18n();
 
 const route = useRoute();
 const toast = useNotification();
@@ -537,6 +543,7 @@ const browser = useBrowser();
 
 const display_style = useStorage<string>('browser_display_style', 'list');
 const isMobile = useMediaQuery({ maxWidth: 639 });
+const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 const show_filter = ref(false);
 const localSearch = ref('');
 const searchInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
@@ -555,30 +562,32 @@ const controlEnabled = computed(() => Boolean(config.app.browser_control_enabled
 const contentStyle = computed<'list' | 'grid'>(() =>
   isMobile.value ? 'grid' : 'list' === display_style.value ? 'list' : 'grid',
 );
-const pageShell = requirePageShell('files');
+const pageShell = usePageShell('files');
 const hasItems = computed(() => filteredItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const displayedItemPaths = computed(() => filteredItems.value.map((item) => item.path));
-const browserPageTitle = computed(() => `File Browser: /${sTrim(browserPath.value || '/', '/')}`);
+const browserPageTitle = computed(() =>
+  t('files.pageTitle', { path: sTrim(browserPath.value || '/', '/') }),
+);
 const currentDirectoryName = computed(
-  () => breadcrumbItems.value[breadcrumbItems.value.length - 1]?.name || 'Home',
+  () => breadcrumbItems.value[breadcrumbItems.value.length - 1]?.name || t('common.home'),
 );
 const breadcrumbTrailItems = computed(() => breadcrumbItems.value.slice(0, -1));
 const sortDirectionIcon = computed(() =>
   sort_order.value === 'asc' ? 'i-lucide-arrow-down' : 'i-lucide-arrow-up',
 );
 
-const sortOptions = [
-  { value: 'type', label: 'Type', icon: 'i-lucide-hash' },
-  { value: 'name', label: 'Name', icon: 'i-lucide-arrow-down-a-z' },
-  { value: 'size', label: 'Size', icon: 'i-lucide-scale' },
-  { value: 'date', label: 'Date', icon: 'i-lucide-calendar' },
-];
+const sortOptions = computed(() => [
+  { value: 'type', label: t('common.type'), icon: 'i-lucide-hash' },
+  { value: 'name', label: t('common.name'), icon: 'i-lucide-arrow-down-a-z' },
+  { value: 'size', label: t('common.size'), icon: 'i-lucide-scale' },
+  { value: 'date', label: t('common.date'), icon: 'i-lucide-calendar' },
+]);
 
 const breadcrumbItems = computed(() => makeBreadCrumb(browserPath.value));
 
 const sortGroups = computed<DropdownMenuItem[][]>(() => [
-  sortOptions.map((option) => ({
+  sortOptions.value.map((option) => ({
     label:
       sort_by.value === option.value
         ? `${option.label} (${sort_order.value === 'asc' ? 'ASC' : 'DESC'})`
@@ -592,14 +601,14 @@ const sortGroups = computed<DropdownMenuItem[][]>(() => [
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Move Selected',
+      label: t('common.moveSelected'),
       icon: 'i-lucide-arrow-right-left',
       color: 'primary',
       disabled: !hasSelected.value || isLoading.value,
       onSelect: () => void handleMoveSelected(),
     },
     {
-      label: 'Delete Selected',
+      label: t('common.deleteSelected'),
       icon: 'i-lucide-trash',
       disabled: !hasSelected.value || isLoading.value,
       onSelect: () => void handleDeleteSelected(),
@@ -637,13 +646,13 @@ const previewTitle = computed(() => {
 
   switch (model_item.value.type) {
     case 'video':
-      return 'Preview';
+      return t('files.preview');
     case 'text':
-      return 'File Contents';
+      return t('common.fileContents');
     case 'image':
-      return 'Image Preview';
+      return t('common.imagePreviewAlt');
     default:
-      return 'Preview';
+      return t('files.preview');
   }
 });
 
@@ -746,10 +755,10 @@ const closeModel = (): void => {
 const { handleOpenChange: handlePreviewOpenChange, requestClose: requestClosePreview } =
   useDirtyCloseGuard(previewOpen, {
     dirty: computed(() => Boolean(model_item.value?.type === 'video' && playingNow.value)),
-    title: 'Close player?',
-    message: 'Playback is active. Do you want to close the player?',
-    confirmText: 'Close player',
-    cancelText: 'Keep playing',
+    title: t('common.closePlayer'),
+    message: t('common.closePlayerDesc'),
+    confirmText: t('common.closePlayer'),
+    cancelText: t('common.keepPlaying'),
     onDiscard: async () => {
       closeModel();
     },
@@ -773,7 +782,7 @@ const downloadName = (item: FileItem): string => {
 };
 
 const itemSizeLabel = (item: FileItem): string => {
-  return item.type === 'file' ? formatBytes(item.size) : ucFirst(item.type);
+  return item.type === 'file' ? formatBytes(item.size, 2, t) : itemTypeLabel(item);
 };
 
 useHead(() => ({
@@ -783,7 +792,7 @@ useHead(() => ({
 const updateUrl = (dir: string, page?: number): void => {
   const normalizedDir = dir.replace(/^\/+/, '').replace(/\/+$/, '');
   const displayDir = normalizedDir ? normalizedDir : '/';
-  const title = `File Browser: /${sTrim(displayDir, '/')}`;
+  const title = t('files.pageTitle', { path: sTrim(displayDir, '/') });
   const stateUrl = buildStateUrl(dir, page);
   const fullUrl = window.location.origin + stateUrl;
 
@@ -882,7 +891,7 @@ const makeBreadCrumb = (path: string): { name: string; link: string; path: strin
   const normalizedPath = path.replace(/^\/+/, '').replace(/\/+$/, '');
   const links = [
     {
-      name: 'Home',
+      name: t('common.home'),
       link: baseLink,
       path: baseLink,
     },
@@ -931,18 +940,18 @@ const itemTypeIcon = (item: FileItem): string => {
 
 const itemTypeLabel = (item: FileItem): string => {
   if (item.type === 'link') {
-    return 'Link';
+    return t('files.link');
   }
 
   if (item.content_type === 'dir') {
-    return 'Folder';
+    return t('files.folder');
   }
 
   if (['video', 'audio', 'text', 'subtitle', 'metadata', 'image'].includes(item.content_type)) {
-    return ucFirst(item.content_type);
+    return t(`files.${item.content_type}`);
   }
 
-  return item.type === 'file' ? 'File' : ucFirst(item.type);
+  return item.type === 'file' ? t('common.file') : t('files.link');
 };
 
 const toggleFilter = async (): Promise<void> => {
@@ -978,11 +987,10 @@ const handleCreateDirectory = async (): Promise<void> => {
   }
 
   const { status, value: newDir } = await dialog.promptDialog({
-    title: 'Create New Directory',
-    message: `Enter name for new directory in '${browserPath.value || '/'}':`,
-    initial: '',
-    confirmText: 'Create',
-    cancelText: 'Cancel',
+    title: t('files.createDir'),
+    message: t('files.createDirDesc', { path: browserPath.value || '/' }),
+    confirmText: t('files.create'),
+    cancelText: t('common.cancel'),
   });
 
   if (status !== true || !newDir) {
@@ -1001,13 +1009,12 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if (action === 'rename') {
-    const moveSideCars = item.type === 'file' ? ' (and its sidecars)' : '';
     const { status, value: newName } = await dialog.promptDialog({
-      title: 'Rename Item',
-      message: `Enter new name for '${item.name}'${moveSideCars}:`,
+      title: t('common.rename'),
+      message: t('files.renameItemDesc', { name: item.name }),
       initial: item.name,
-      confirmText: 'Rename',
-      cancelText: 'Cancel',
+      confirmText: t('common.rename'),
+      cancelText: t('common.cancel'),
     });
 
     if (status !== true) {
@@ -1023,14 +1030,14 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
 
   if (action === 'delete') {
     const message = item.is_dir
-      ? `Delete '${item.name}' and all its contents?`
-      : `Delete file '${item.name}'?`;
+      ? t('files.deleteItemDesc', { name: item.name })
+      : t('files.deleteFileDesc', { name: item.name });
 
     const { status } = await dialog.confirmDialog({
-      title: 'Delete Confirmation',
+      title: t('common.deleteConfirmation'),
       message,
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
       confirmColor: 'error',
     });
 
@@ -1043,13 +1050,12 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if (action === 'move') {
-    const moveSideCars = item.type === 'file' ? ' (and its sidecars)' : '';
     const { status, value: newPath } = await dialog.promptDialog({
-      title: 'Move Item',
-      message: `Enter new path for '${item.name}'${moveSideCars}:`,
+      title: t('files.moveItem'),
+      message: t('files.moveItemDesc', { name: item.name }),
       initial: item.path.replace(/[^/]+$/, '') || '/',
-      confirmText: 'Move',
-      cancelText: 'Cancel',
+      confirmText: t('files.move'),
+      cancelText: t('common.cancel'),
     });
 
     if (status !== true) {
@@ -1065,12 +1071,12 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
 
 const handleDeleteSelected = async (): Promise<void> => {
   if (selectedElms.value.length < 1) {
-    toast.error('No items selected.');
+    toast.error(t('common.noItemsSelected'));
     return;
   }
 
   const message =
-    'Delete the following items?' +
+    t('files.deleteItemsConfirm') +
     '\n\n' +
     selectedElms.value
       .map((selectedPath) => {
@@ -1085,10 +1091,10 @@ const handleDeleteSelected = async (): Promise<void> => {
       .join('\n');
 
   const { status } = await dialog.confirmDialog({
-    title: 'Delete Confirmation',
+    title: t('common.deleteConfirmation'),
     message,
-    confirmText: 'Delete',
-    cancelText: 'Cancel',
+    confirmText: t('common.delete'),
+    cancelText: t('common.cancel'),
     confirmColor: 'error',
   });
 
@@ -1102,17 +1108,17 @@ const handleDeleteSelected = async (): Promise<void> => {
 
 const handleMoveSelected = async (): Promise<void> => {
   if (selectedElms.value.length < 1) {
-    toast.error('No items selected.');
+    toast.error(t('common.noItemsSelected'));
     return;
   }
 
   const { status, value: newPath } = await dialog.promptDialog({
-    title: 'Move Items',
-    message: 'Enter new path for selected items:',
+    title: t('files.moveItems'),
+    message: t('files.moveItemsDesc'),
     initial: browserPath.value || '/',
-    confirmText: 'Move',
+    confirmText: t('files.move'),
     confirmColor: 'error',
-    cancelText: 'Cancel',
+    cancelText: t('common.cancel'),
   });
 
   if (status !== true || !newPath || newPath === browserPath.value) {
