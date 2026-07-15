@@ -346,7 +346,7 @@ def extract_info_sync(
             name=logger_name,
         )
 
-        captured_logs: list[str] = kwargs.get("captured_logs", [])
+        captured_logs: list[str] = kwargs.pop("captured_logs", [])
         if capture_logs is not None:
             log_wrapper.add_target(
                 target=_LogCapture(captured_logs),
