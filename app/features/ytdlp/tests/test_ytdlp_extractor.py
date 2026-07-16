@@ -188,6 +188,27 @@ class TestExtractInfo:
         assert (logging.INFO, "[generic_browser] Using remote browser for https://example.com/video") in seen
         assert (logging.WARNING, "[generic_browser] Browser fallback warning") in seen
 
+    @patch("app.features.ytdlp.extractor.YTDLP")
+    def test_redirect_reuses_logs(self, mock_ytdlp_class):
+        def fake_extract_info(url, download=False):  # noqa: ARG001
+            logger = mock_ytdlp_class.call_args.kwargs["params"]["logger"]
+            logger.warning("visited %s", url)
+            if url == "https://example.com/redirect":
+                return {"_type": "url", "url": "https://example.com/video"}
+            return {"title": "Test Video", "id": "test123"}
+
+        mock_ytdlp = MagicMock()
+        mock_ytdlp.extract_info.side_effect = fake_extract_info
+        mock_ytdlp_class.return_value = mock_ytdlp
+
+        (result, logs) = extract_info_sync(
+            {}, "https://example.com/redirect", follow_redirect=True, capture_logs=logging.WARNING
+        )
+
+        assert result is not None
+        assert result["id"] == "test123"
+        assert logs == ["visited https://example.com/redirect", "visited https://example.com/video"]
+
     def test_process_safe_live(self) -> None:
         data = {
             "id": "live-id",
