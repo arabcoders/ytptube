@@ -79,7 +79,7 @@ class TestServeStaticFile:
         body = response.body
         assert isinstance(body, bytes)
         assert response.status == web.HTTPNotFound.status_code
-        assert b"missing.js" in body
+        assert b'"code": "NOT_FOUND"' in body
 
     @pytest.mark.asyncio
     async def test_missing_unknown_no_fallback(self, tmp_path: Path) -> None:
@@ -100,7 +100,7 @@ class TestServeStaticFile:
         body = response.body
         assert isinstance(body, bytes)
         assert response.status == web.HTTPNotFound.status_code
-        assert b"missing.abcd123" in body
+        assert b'"code": "NOT_FOUND"' in body
 
     @pytest.mark.asyncio
     async def test_symlink_outside_rejected(self, tmp_path: Path) -> None:
@@ -120,7 +120,7 @@ class TestServeStaticFile:
             body = response.body
             assert isinstance(body, bytes)
             assert response.status == web.HTTPNotFound.status_code
-            assert b"/leak.js" in body
+            assert b'"code": "NOT_FOUND"' in body
         finally:
             if (tmp_path / "leak.js").exists() or (tmp_path / "leak.js").is_symlink():
                 (tmp_path / "leak.js").unlink()
@@ -141,7 +141,7 @@ class TestServeStaticFile:
         body = response.body
         assert isinstance(body, bytes)
         assert response.status == web.HTTPNotFound.status_code
-        assert b"/api/missing" in body
+        assert b'"code": "NOT_FOUND"' in body
 
     @pytest.mark.asyncio
     async def test_dotted_browser_path_404(self, tmp_path: Path) -> None:
@@ -155,7 +155,7 @@ class TestServeStaticFile:
         body = response.body
         assert isinstance(body, bytes)
         assert response.status == web.HTTPNotFound.status_code
-        assert b"/browser/foo/bar.txt" in body
+        assert b'"code": "NOT_FOUND"' in body
 
     def test_registers_root_routes(self, tmp_path: Path) -> None:
         config = Config.get_instance()

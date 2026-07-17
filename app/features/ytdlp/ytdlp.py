@@ -97,7 +97,7 @@ class YTDLP(yt_dlp.YoutubeDL):
 
     def _delete_downloaded_files(self, *args, **kwargs) -> None:
         if self._interrupted:
-            self.to_screen("[info] Cancelled — skipping temp cleanup.")
+            self.to_screen("[info] Cancelled - skipping temp cleanup.")
             return None
 
         return super()._delete_downloaded_files(*args, **kwargs)

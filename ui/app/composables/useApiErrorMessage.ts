@@ -54,12 +54,15 @@ export const useApiErrorMessage = () => {
       const key = `errors.${payload.code}`;
 
       if (te(key)) {
-        return t(key, resolveParams(payload.params));
+        const detail = detailText(payload.detail);
+        const msg = t(key, resolveParams(payload.params));
+        return detail ? `${msg} - ${detail}` : msg;
       }
     }
 
     if (payload.error) {
-      return payload.error;
+      const detail = detailText(payload.detail);
+      return detail ? `${payload.error} - ${detail}` : payload.error;
     }
 
     if (payload.message) {

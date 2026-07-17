@@ -552,7 +552,7 @@ const fetchLogs = async (force = false): Promise<void> => {
 
     const response = await req.json();
     if (response.error) {
-      toast.error(response.error);
+      toast.error(await parse_api_error(response));
       return;
     }
 

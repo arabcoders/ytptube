@@ -3,7 +3,7 @@
 import time
 from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, needs_reextract
 from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
@@ -22,7 +22,7 @@ LOG = get_logger()
 LIGHT_EXTRACT_KEY = "_ytptube_light_extract"
 
 
-async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, str]:
+async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, Any]:
     """
     Process and add a video entry to the queue.
 
@@ -87,7 +87,7 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
         )
         err_msg: str = f"Item {_item.info.name()} is already in download queue."
         LOG.info(err_msg)
-        return {"status": "error", "msg": err_msg}
+        return {"status": "error", "msg": err_msg, "hidden": True}
     except KeyError:
         pass
 

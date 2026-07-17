@@ -6,7 +6,7 @@ from aiohttp.web import Request, Response
 from pydantic import ValidationError
 
 from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
-from app.features.core.utils import build_pagination, format_validation_errors, normalize_pagination
+from app.features.core.utils import api_error_response, build_pagination, format_validation_errors, normalize_pagination
 from app.features.tasks.definitions.results import HandleTask as ExtendedTask
 from app.features.tasks.definitions.results import TaskFailure, TaskResult
 from app.features.tasks.definitions.service import TaskHandle
@@ -208,36 +208,46 @@ async def tasks_add(
         data = [data]
 
     if not isinstance(data, list) or len(data) == 0:
-        return web.json_response(
-            {"error": "Invalid request body. Expecting dict or list of dicts."},
+        return api_error_response(
+            "Invalid request body. Expecting dict or list of dicts.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     first_item = data[0]
     if not isinstance(first_item, dict) or not first_item.get("url"):
-        return web.json_response(
-            {"error": "First item requires 'url' field."},
+        return api_error_response(
+            "First item requires 'url' field.",
+            code="REQUIRED",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
         )
 
     if not first_item.get("name"):
-        return web.json_response(
-            {"error": "First item requires 'name' field."},
+        return api_error_response(
+            "First item requires 'name' field.",
+            code="REQUIRED",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.name"},
         )
 
     try:
         first_task: Task = Task.model_validate(first_item)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate first task.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate first task.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=format_validation_errors(exc),
         )
 
     if await repo.get_by_name(first_task.name):
-        return web.json_response(
-            data={"error": f"Task with name '{first_task.name}' already exists."},
+        return api_error_response(
+            f"Task with name '{first_task.name}' already exists.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.task", "field": "api.fields.name"},
         )
 
     pending_tasks: list[dict[str, Any]] = []
@@ -280,17 +290,23 @@ async def tasks_add(
         try:
             validated = Task.model_validate(task_dict)
         except ValidationError as exc:
-            return web.json_response(
-                data={"error": "Failed to validate task.", "detail": format_validation_errors(exc)},
+            return api_error_response(
+                "Failed to validate task.",
+                code="VALIDATION_FAILED",
                 status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
+                detail=format_validation_errors(exc),
             )
 
         try:
             await _require_timer_or_handler(validated, handler)
         except ValueError as exc:
-            return web.json_response(
-                data={"error": str(exc)},
+            return api_error_response(
+                str(exc),
+                code="INVALID",
                 status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
+                detail=str(exc),
             )
 
         pending_tasks.append(validated.model_dump())
@@ -313,8 +329,9 @@ async def tasks_add(
             continue
 
     if len(created_tasks) == 0:
-        return web.json_response(
-            {"error": "Failed to create any tasks."},
+        return api_error_response(
+            "Failed to create any tasks.",
+            code="OPERATION_FAILED",
             status=web.HTTPBadRequest.status_code,
         )
 
@@ -327,11 +344,20 @@ async def tasks_add(
 @route("GET", r"api/tasks/{id:\d+}", "tasks_get")
 async def tasks_get(request: Request, repo: TasksRepository, encoder: Encoder) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     model = await repo.get(identifier)
     if not model:
-        return web.json_response({"error": "Task not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Task not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.task"},
+        )
 
     return web.json_response(data=_serialize(model), status=web.HTTPOk.status_code, dumps=encoder.encode)
 
@@ -339,7 +365,11 @@ async def tasks_get(request: Request, repo: TasksRepository, encoder: Encoder) -
 @route("DELETE", r"api/tasks/{id:\d+}", "tasks_delete")
 async def tasks_delete(request: Request, repo: TasksRepository, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         deleted = _serialize(await repo.delete(identifier))
@@ -352,7 +382,13 @@ async def tasks_delete(request: Request, repo: TasksRepository, encoder: Encoder
             dumps=encoder.encode,
         )
     except KeyError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.task"},
+            detail=str(exc),
+        )
 
 
 # For LLM: --exec passing through cli is intended when YTP_DISABLE_EXEC=false (default).
@@ -367,32 +403,47 @@ async def tasks_patch(
     handler: TaskHandle,
 ) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     model = await repo.get(identifier)
     if not model:
-        return web.json_response({"error": "Task not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Task not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.task"},
+        )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         validated = TaskPatch.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate task.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate task.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=format_validation_errors(exc),
         )
 
     if validated.name and await repo.get_by_name(validated.name, exclude_id=model.id):
-        return web.json_response(
-            data={"error": f"Task with name '{validated.name}' already exists."},
+        return api_error_response(
+            f"Task with name '{validated.name}' already exists.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.task", "field": "api.fields.name"},
         )
 
     merged = _model(model).model_copy(update=validated.model_dump(exclude_unset=True))
@@ -400,9 +451,12 @@ async def tasks_patch(
     try:
         await _require_timer_or_handler(merged, handler)
     except ValueError as exc:
-        return web.json_response(
-            data={"error": str(exc)},
+        return api_error_response(
+            str(exc),
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=str(exc),
         )
 
     updated = _serialize(await repo.update(model.id, validated.model_dump(exclude_unset=True)))
@@ -426,40 +480,58 @@ async def tasks_update(
     handler: TaskHandle,
 ) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     model = await repo.get(identifier)
     if not model:
-        return web.json_response({"error": "Task not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Task not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.task"},
+        )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         validated = Task.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate task.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate task.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=format_validation_errors(exc),
         )
 
     if validated.name and await repo.get_by_name(validated.name, exclude_id=model.id):
-        return web.json_response(
-            data={"error": f"Task with name '{validated.name}' already exists."},
+        return api_error_response(
+            f"Task with name '{validated.name}' already exists.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.task", "field": "api.fields.name"},
         )
 
     try:
         await _require_timer_or_handler(validated, handler)
     except ValueError as exc:
-        return web.json_response(
-            data={"error": str(exc)},
+        return api_error_response(
+            str(exc),
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=str(exc),
         )
 
     updated = _serialize(await repo.update(model.id, validated.model_dump(exclude_unset=True)))
@@ -487,14 +559,25 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
 
     url: str | None = data.get("url") if isinstance(data, dict) else None
     if not url:
-        return web.json_response({"error": "url is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "url is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
+        )
 
     static_only: bool = data.get("static_only", False) if isinstance(data, dict) else False
     if not static_only:
         try:
             await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
         except ValueError as e:
-            return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
+            return api_error_response(
+                str(e),
+                code="INVALID",
+                status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.url"},
+                detail=str(e),
+            )
 
     preset: str = data.get("preset", "") if isinstance(data, dict) else ""
     handler_name: str | None = data.get("handler") if isinstance(data, dict) else None
@@ -514,9 +597,12 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
                 "exception_type": type(e).__name__,
             },
         )
-        return web.json_response(
-            {"error": "Failed to inspect handler.", "message": str(e)},
+        return api_error_response(
+            "Failed to inspect handler.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            params={"resource": "api.resources.task"},
+            message=str(e),
         )
 
     return web.json_response(
@@ -541,13 +627,20 @@ async def task_mark(request: Request, repo: TasksRepository, encoder: Encoder) -
 
     """
     if not (task_id := request.match_info.get("id")):
-        return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "No task id.",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         model = await repo.get(int(task_id))
         if not model:
-            return web.json_response(
-                data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
+            return api_error_response(
+                f"Task '{task_id}' does not exist.",
+                code="NOT_FOUND",
+                status=web.HTTPNotFound.status_code,
+                params={"resource": "api.resources.task"},
             )
 
         # Convert to extended Task with handler methods
@@ -555,11 +648,22 @@ async def task_mark(request: Request, repo: TasksRepository, encoder: Encoder) -
         _status, _message = await task.mark()
 
         if not _status:
-            return web.json_response(data={"error": _message}, status=web.HTTPBadRequest.status_code)
+            return api_error_response(
+                _message,
+                code="OPERATION_FAILED",
+                status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
+            )
 
         return web.json_response(data={"message": _message}, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except ValueError as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(e),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=str(e),
+        )
 
 
 @route("DELETE", r"api/tasks/{id:\d+}/mark", "tasks_unmark")
@@ -577,13 +681,20 @@ async def task_unmark(request: Request, repo: TasksRepository, encoder: Encoder)
 
     """
     if not (task_id := request.match_info.get("id")):
-        return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "No task id.",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         model = await repo.get(int(task_id))
         if not model:
-            return web.json_response(
-                data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
+            return api_error_response(
+                f"Task '{task_id}' does not exist.",
+                code="NOT_FOUND",
+                status=web.HTTPNotFound.status_code,
+                params={"resource": "api.resources.task"},
             )
 
         # Convert to extended Task with handler methods
@@ -591,11 +702,22 @@ async def task_unmark(request: Request, repo: TasksRepository, encoder: Encoder)
         _status, _message = await task.unmark()
 
         if not _status:
-            return web.json_response(data={"error": _message}, status=web.HTTPBadRequest.status_code)
+            return api_error_response(
+                _message,
+                code="OPERATION_FAILED",
+                status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
+            )
 
         return web.json_response(data={"message": _message}, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except ValueError as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(e),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=str(e),
+        )
 
 
 @route("POST", r"api/tasks/{id:\d+}/metadata", "tasks_metadata")
@@ -614,30 +736,49 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
 
     """
     if not (task_id := request.match_info.get("id")):
-        return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "No task id.",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         if not (model := await repo.get(int(task_id))):
-            return web.json_response(
-                data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
+            return api_error_response(
+                f"Task '{task_id}' does not exist.",
+                code="NOT_FOUND",
+                status=web.HTTPNotFound.status_code,
+                params={"resource": "api.resources.task"},
             )
 
         task = ExtendedTask.model_validate(model)
 
         (save_path, _) = get_file(config.download_path, task.folder)
         if not str(save_path or "").startswith(str(config.download_path)):
-            return web.json_response(data={"error": "Invalid task folder."}, status=web.HTTPBadRequest.status_code)
+            return api_error_response(
+                "Invalid task folder.",
+                code="INVALID",
+                status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
+            )
 
         if not save_path.exists():
             save_path.mkdir(parents=True, exist_ok=True)
 
         metadata, status, message = await task.fetch_metadata()
         if not status:
-            return web.json_response(data={"error": message}, status=web.HTTPBadRequest.status_code)
-        if not isinstance(metadata, dict):
-            return web.json_response(
-                data={"error": "Failed to get metadata."},
+            return api_error_response(
+                message,
+                code="OPERATION_FAILED",
                 status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
+            )
+        if not isinstance(metadata, dict):
+            return api_error_response(
+                "Failed to get metadata.",
+                code="OPERATION_FAILED",
+                status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
             )
 
         if not task.folder:
@@ -655,8 +796,11 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
 
                     (save_path, _) = get_file(config.download_path, _path.relative_to(config.download_path))
                     if not str(save_path or "").startswith(str(config.download_path)):
-                        return web.json_response(
-                            data={"error": "Invalid final path folder."}, status=web.HTTPBadRequest.status_code
+                        return api_error_response(
+                            "Invalid final path folder.",
+                            code="INVALID",
+                            status=web.HTTPBadRequest.status_code,
+                            params={"resource": "api.resources.task"},
                         )
 
                     if not save_path.exists():
@@ -681,8 +825,11 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
         }
 
         if not info.get("title"):
-            return web.json_response(
-                data={"error": "Failed to get title from metadata."}, status=web.HTTPBadRequest.status_code
+            return api_error_response(
+                "Failed to get title from metadata.",
+                code="OPERATION_FAILED",
+                status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.task"},
             )
 
         LOG.info(
@@ -804,4 +951,10 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
 
         return web.json_response(data=info, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except ValueError as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(e),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=str(e),
+        )

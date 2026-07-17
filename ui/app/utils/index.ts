@@ -435,9 +435,6 @@ const getSeparatorsName = (value: string): string => {
  * @returns {Promise<convert_args_response>} The converted options
  */
 const convertCliOptions = async (opts: string): Promise<convert_args_response> => {
-  const { $i18n } = useNuxtApp();
-  const t = $i18n?.t ?? ((key: string) => key);
-
   const response = await request('/api/yt-dlp/convert', {
     method: 'POST',
     body: JSON.stringify({ args: opts }),
@@ -445,7 +442,7 @@ const convertCliOptions = async (opts: string): Promise<convert_args_response> =
 
   const data = await response.json();
   if (200 !== response.status) {
-    throw new Error(t('common.errorPrefix', { msg: `(${response.status}): ${data.error}` }));
+    throw new Error(await parse_api_error(data));
   }
 
   return data;
@@ -989,6 +986,8 @@ const parse_api_error = async (json: unknown): Promise<string> => {
       return String(err);
     });
     extra_detail = errors.join(', ');
+  } else if (typeof payload.detail === 'string' && payload.detail.trim()) {
+    extra_detail = payload.detail.trim();
   }
 
   if (payload.code) {
@@ -1016,10 +1015,6 @@ const parse_api_error = async (json: unknown): Promise<string> => {
 
   if (extra_detail) {
     return extra_detail;
-  }
-
-  if ('string' === typeof payload.detail) {
-    return payload.detail;
   }
 
   return t('common.unknownError');

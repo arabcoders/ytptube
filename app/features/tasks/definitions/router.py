@@ -5,7 +5,7 @@ from aiohttp.web import Request, Response
 from pydantic import ValidationError
 
 from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
-from app.features.core.utils import build_pagination, format_validation_errors, normalize_pagination
+from app.features.core.utils import api_error_response, build_pagination, format_validation_errors, normalize_pagination
 from app.features.tasks.definitions.repository import TaskDefinitionsRepository as Repo
 from app.features.tasks.definitions.schemas import (
     TaskDefinition,
@@ -43,15 +43,18 @@ async def task_definitions_list(request: Request, encoder: Encoder, repo: Repo) 
 async def task_definitions_get(request: Request, encoder: Encoder, repo: Repo) -> Response:
     identifier: str = request.match_info.get("id", "").strip()
     if not identifier:
-        return web.json_response(
-            data={"error": "Missing task definition identifier."},
+        return api_error_response(
+            "Missing task definition identifier.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     if not (model := await repo.get(identifier)):
-        return web.json_response(
-            data={"error": f"Task definition '{identifier}' not found."},
+        return api_error_response(
+            f"Task definition '{identifier}' not found.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.taskDefinition"},
         )
 
     definition = model_to_schema(model)
@@ -63,23 +66,28 @@ async def task_definitions_create(request: Request, encoder: Encoder, notify: Ev
     try:
         payload: Any = await request.json()
     except Exception:
-        return web.json_response(
-            data={"error": "Invalid JSON in request body."},
+        return api_error_response(
+            "Invalid JSON in request body.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     if not isinstance(payload, dict):
-        return web.json_response(
-            data={"error": "Invalid request body; expected JSON object."},
+        return api_error_response(
+            "Invalid request body; expected JSON object.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         definition_input = TaskDefinition.model_validate(payload)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate task definition.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate task definition.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=format_validation_errors(exc),
         )
 
     try:
@@ -93,15 +101,22 @@ async def task_definitions_create(request: Request, encoder: Encoder, notify: Ev
         )
         return web.json_response(data=definition, status=web.HTTPCreated.status_code, dumps=encoder.encode)
     except ValueError as exc:
-        return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=str(exc),
+        )
     except Exception as exc:
         LOG.exception(
             "Failed to create task definition '%s'.",
             getattr(definition_input, "name", None),
             extra={"definition": getattr(definition_input, "name", None), "exception_type": type(exc).__name__},
         )
-        return web.json_response(
-            data={"error": "Failed to create task definition."},
+        return api_error_response(
+            "Failed to create task definition.",
+            code="INTERNAL_ERROR",
             status=web.HTTPInternalServerError.status_code,
         )
 
@@ -109,31 +124,37 @@ async def task_definitions_create(request: Request, encoder: Encoder, notify: Ev
 @route("PUT", r"api/tasks/definitions/{id:\d+}", "task_definitions_update")
 async def task_definitions_update(request: Request, encoder: Encoder, notify: EventBus, repo: Repo) -> Response:
     if not (identifier := request.match_info.get("id", "").strip()):
-        return web.json_response(
-            data={"error": "Missing task definition identifier."},
+        return api_error_response(
+            "Missing task definition identifier.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         payload: dict | None = await request.json()
     except Exception:
-        return web.json_response(
-            data={"error": "Invalid JSON in request body."},
+        return api_error_response(
+            "Invalid JSON in request body.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     if not isinstance(payload, dict):
-        return web.json_response(
-            data={"error": "Invalid request body; expected JSON object."},
+        return api_error_response(
+            "Invalid request body; expected JSON object.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         definition_input: TaskDefinition = TaskDefinition.model_validate(payload)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate task definition.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate task definition.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=format_validation_errors(exc),
         )
 
     try:
@@ -144,9 +165,21 @@ async def task_definitions_update(request: Request, encoder: Encoder, notify: Ev
         )
         return web.json_response(data=definition, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except KeyError as exc:
-        return web.json_response(data={"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=str(exc),
+        )
     except ValueError as exc:
-        return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=str(exc),
+        )
     except Exception as exc:
         LOG.exception(
             "Failed to update task definition '%s'.",
@@ -157,8 +190,9 @@ async def task_definitions_update(request: Request, encoder: Encoder, notify: Ev
                 "exception_type": type(exc).__name__,
             },
         )
-        return web.json_response(
-            data={"error": "Failed to update task definition."},
+        return api_error_response(
+            "Failed to update task definition.",
+            code="INTERNAL_ERROR",
             status=web.HTTPInternalServerError.status_code,
         )
 
@@ -166,37 +200,45 @@ async def task_definitions_update(request: Request, encoder: Encoder, notify: Ev
 @route("PATCH", r"api/tasks/definitions/{id:\d+}", "task_definitions_patch")
 async def task_definitions_patch(request: Request, encoder: Encoder, notify: EventBus, repo: Repo) -> Response:
     if not (identifier := request.match_info.get("id", "").strip()):
-        return web.json_response(
-            data={"error": "Missing task definition identifier."},
+        return api_error_response(
+            "Missing task definition identifier.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     if not await repo.get(identifier):
-        return web.json_response(
-            data={"error": f"Task definition '{identifier}' not found."},
+        return api_error_response(
+            f"Task definition '{identifier}' not found.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.taskDefinition"},
         )
 
     try:
         payload: dict | None = await request.json()
     except Exception:
-        return web.json_response(
-            data={"error": "Invalid JSON in request body."},
+        return api_error_response(
+            "Invalid JSON in request body.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     if not isinstance(payload, dict):
-        return web.json_response(
-            data={"error": "Invalid request body; expected JSON object."},
+        return api_error_response(
+            "Invalid request body; expected JSON object.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         patch_input: TaskDefinitionPatch = TaskDefinitionPatch.model_validate(payload)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate task definition patch.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate task definition patch.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=format_validation_errors(exc),
         )
 
     try:
@@ -210,17 +252,30 @@ async def task_definitions_patch(request: Request, encoder: Encoder, notify: Eve
         )
         return web.json_response(data=definition, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except KeyError as exc:
-        return web.json_response(data={"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=str(exc),
+        )
     except ValueError as exc:
-        return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=str(exc),
+        )
     except Exception as exc:
         LOG.exception(
             "Failed to patch task definition '%s'.",
             identifier,
             extra={"definition_id": identifier, "exception_type": type(exc).__name__},
         )
-        return web.json_response(
-            data={"error": "Failed to patch task definition."},
+        return api_error_response(
+            "Failed to patch task definition.",
+            code="INTERNAL_ERROR",
             status=web.HTTPInternalServerError.status_code,
         )
 
@@ -228,8 +283,9 @@ async def task_definitions_patch(request: Request, encoder: Encoder, notify: Eve
 @route("DELETE", r"api/tasks/definitions/{id:\d+}", "task_definitions_delete")
 async def task_definitions_delete(request: Request, encoder: Encoder, notify: EventBus, repo: Repo) -> Response:
     if not (identifier := request.match_info.get("id", "").strip()):
-        return web.json_response(
-            data={"error": "Missing task definition identifier."},
+        return api_error_response(
+            "Missing task definition identifier.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
@@ -242,14 +298,21 @@ async def task_definitions_delete(request: Request, encoder: Encoder, notify: Ev
         )
         return web.json_response(data=definition, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except KeyError as exc:
-        return web.json_response(data={"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.taskDefinition"},
+            detail=str(exc),
+        )
     except Exception as exc:
         LOG.exception(
             "Failed to delete task definition '%s'.",
             identifier,
             extra={"definition_id": identifier, "exception_type": type(exc).__name__},
         )
-        return web.json_response(
-            data={"error": "Failed to delete task definition."},
+        return api_error_response(
+            "Failed to delete task definition.",
+            code="INTERNAL_ERROR",
             status=web.HTTPInternalServerError.status_code,
         )

@@ -9,6 +9,7 @@ from typing import Any
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.core.utils import api_error_response
 from app.features.presets.service import Presets
 from app.features.ytdlp.archiver import Archiver
 from app.features.ytdlp.extractor import fetch_info
@@ -105,13 +106,20 @@ async def archiver_get(request: Request) -> Response:
     """
     preset: str | None = request.query.get("preset")
     if not preset:
-        return web.json_response(data={"error": "preset is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "preset is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.preset"},
+        )
 
     archive_file: str | None = _get_preset_archive(preset)
     if not archive_file:
-        return web.json_response(
-            data={"error": f"Preset '{preset}' does not provide a download_archive."},
+        return api_error_response(
+            f"Preset '{preset}' does not provide a download_archive.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.preset"},
         )
 
     ids_param: str | None = request.query.get("ids")
@@ -120,9 +128,12 @@ async def archiver_get(request: Request) -> Response:
         ids_list = [s.strip() for s in ids_param.split(",") if s and s.strip()]
         ids, invalid = _normalize_ids(ids_list)
         if invalid:
-            return web.json_response(
-                data={"error": "invalid ids provided.", "invalid_items": invalid},
+            return api_error_response(
+                "invalid ids provided.",
+                code="INVALID",
                 status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.ids"},
+                extra={"invalid_items": invalid},
             )
 
     try:
@@ -144,9 +155,11 @@ async def archiver_get(request: Request) -> Response:
                 "ids": ids,
             },
         )
-        return web.json_response(
-            data={"error": f"Failed to read archive file for preset '{preset}'.", "message": str(e)},
+        return api_error_response(
+            f"Failed to read archive file for preset '{preset}'.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            message=str(e),
         )
 
 
@@ -160,24 +173,37 @@ async def archiver_add(request: Request) -> Response:
     post = await request.json()
     preset: str | None = post.get("preset") if isinstance(post, dict) else None
     if not preset:
-        return web.json_response(data={"error": "preset is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "preset is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.preset"},
+        )
 
     archive_file: str | None = _get_preset_archive(preset)
     if not archive_file:
-        return web.json_response(
-            data={"error": f"Preset '{preset}' does not provide a download_archive."},
+        return api_error_response(
+            f"Preset '{preset}' does not provide a download_archive.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.preset"},
         )
 
     items, invalid = _normalize_ids((post or {}).get("items", [])) if isinstance(post, dict) else ([], [])
     if invalid:
-        return web.json_response(
-            data={"error": "invalid ids provided.", "invalid_items": invalid},
+        return api_error_response(
+            "invalid ids provided.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+            extra={"invalid_items": invalid},
         )
     if len(items) < 1:
-        return web.json_response(
-            data={"error": "items is required and must be a non-empty list."}, status=web.HTTPBadRequest.status_code
+        return api_error_response(
+            "items is required and must be a non-empty list.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
         )
 
     skip_check: bool = bool(post.get("skip_check", False)) if isinstance(post, dict) else False
@@ -204,9 +230,11 @@ async def archiver_add(request: Request) -> Response:
                 "skip_check": skip_check,
             },
         )
-        return web.json_response(
-            data={"error": f"Failed to add items to archive for preset '{preset}'.", "message": str(e)},
+        return api_error_response(
+            f"Failed to add items to archive for preset '{preset}'.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            message=str(e),
         )
 
 
@@ -220,24 +248,37 @@ async def archiver_delete(request: Request) -> Response:
     post = await request.json()
     preset: str | None = post.get("preset") if isinstance(post, dict) else None
     if not preset:
-        return web.json_response(data={"error": "preset is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "preset is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.preset"},
+        )
 
     archive_file: str | None = _get_preset_archive(preset)
     if not archive_file:
-        return web.json_response(
-            data={"error": f"Preset '{preset}' does not provide a download_archive."},
+        return api_error_response(
+            f"Preset '{preset}' does not provide a download_archive.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.preset"},
         )
 
     items, invalid = _normalize_ids((post or {}).get("items", [])) if isinstance(post, dict) else ([], [])
     if invalid:
-        return web.json_response(
-            data={"error": "invalid ids provided.", "invalid_items": invalid},
+        return api_error_response(
+            "invalid ids provided.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+            extra={"invalid_items": invalid},
         )
     if len(items) < 1:
-        return web.json_response(
-            data={"error": "items is required and must be a non-empty list."}, status=web.HTTPBadRequest.status_code
+        return api_error_response(
+            "items is required and must be a non-empty list.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
         )
 
     try:
@@ -261,9 +302,11 @@ async def archiver_delete(request: Request) -> Response:
                 "item_count": len(items),
             },
         )
-        return web.json_response(
-            data={"error": f"Failed to delete items from archive for preset '{preset}'.", "message": str(e)},
+        return api_error_response(
+            f"Failed to delete items from archive for preset '{preset}'.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            message=str(e),
         )
 
 
@@ -283,7 +326,12 @@ async def convert(request: Request) -> Response:
     args: str | None = post.get("args")
 
     if not args:
-        return web.json_response(data={"error": "args param is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "args param is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.args"},
+        )
 
     try:
         response: dict[str, Any] = {"opts": {}, "output_template": None, "download_path": None}
@@ -319,13 +367,15 @@ async def convert(request: Request) -> Response:
         err = str(e).strip()
         err = err.split("\n")[-1] if "\n" in err else err
         err = err.replace("main.py: error: ", "").strip().capitalize()
-        return web.json_response(
-            data={"error": f"Failed to parse command options for yt-dlp. '{err}'."},
+        return api_error_response(
+            f"Failed to parse command options for yt-dlp. '{err}'.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.args"},
+            detail=err,
         )
 
 
-@route("GET", "api/yt-dlp/url/info/", "get_info")
 async def get_info(request: Request, cache: Cache, config: Config) -> Response:
     """
     Get the video info.
@@ -341,17 +391,26 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
     """
     url: str | None = request.query.get("url")
     if not url:
-        return web.json_response(
-            data={"status": False, "message": "URL is required.", "error": "URL is required."},
+        return api_error_response(
+            "URL is required.",
+            code="REQUIRED",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
+            message="URL is required.",
+            extra={"status": False},
         )
 
     try:
         await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
     except ValueError as e:
-        return web.json_response(
-            data={"status": False, "message": str(e), "error": str(e)},
+        return api_error_response(
+            str(e),
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
+            message=str(e),
+            detail=str(e),
+            extra={"status": False},
         )
 
     opts: YTDLPOpts = YTDLPOpts.get_instance()
@@ -359,9 +418,13 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
     preset: str = request.query.get("preset", config.default_preset)
     if not Presets.get_instance().get(preset):
         msg: str = f"Preset '{preset}' does not exist."
-        return web.json_response(
-            data={"status": False, "message": msg, "error": msg},
+        return api_error_response(
+            msg,
+            code="NOT_FOUND",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
+            message=msg,
+            extra={"status": False},
         )
 
     opts = opts.preset(preset)
@@ -374,9 +437,12 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
             err = err.replace("main.py: error: ", "").strip().capitalize()
-            return web.json_response(
-                data={"error": f"Failed to parse command options for yt-dlp. '{err}'."},
+            return api_error_response(
+                f"Failed to parse command options for yt-dlp. '{err}'.",
+                code="INVALID",
                 status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.args"},
+                detail=err,
             )
 
     try:
@@ -410,13 +476,12 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         )
 
         if not data or not isinstance(data, dict):
-            return web.json_response(
-                data={
-                    "status": False,
-                    "error": f"Failed to extract video info. {'. '.join(logs)}",
-                    "message": "Failed to extract video info.",
-                },
+            return api_error_response(
+                f"Failed to extract video info. {'. '.join(logs)}",
+                code="OPERATION_FAILED",
                 status=web.HTTPInternalServerError.status_code,
+                message="Failed to extract video info.",
+                extra={"status": False},
             )
 
         if data and "formats" in data:
@@ -467,13 +532,13 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
                 "has_cli_args": bool(cli_args),
             },
         )
-        return web.json_response(
-            data={
-                "error": "failed to get video info.",
-                "message": str(e),
-                "formats": [],
-            },
+        return api_error_response(
+            "failed to get video info.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            message=str(e),
+            detail=str(e),
+            extra={"formats": []},
         )
 
 
@@ -502,8 +567,9 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
     """
     data = (await request.json()) if request.body_exists else None
     if not data or not isinstance(data, list):
-        return web.json_response(
-            data={"error": "Invalid request. expecting list with URLs."},
+        return api_error_response(
+            "Invalid request. expecting list with URLs.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
@@ -541,19 +607,31 @@ async def make_command(request: Request, config: Config, encoder: Encoder) -> Re
 
     """
     if not config.console_enabled:
-        return web.json_response(data={"error": "Console is disabled."}, status=web.HTTPForbidden.status_code)
+        return api_error_response(
+            "Console is disabled.",
+            code="FEATURE_DISABLED",
+            status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.console"},
+        )
 
     data = (await request.json()) if request.body_exists else None
     if not data or not isinstance(data, dict):
-        return web.json_response(
-            data={"error": "Invalid request. expecting JSON body."},
+        return api_error_response(
+            "Invalid request. expecting JSON body.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         it = Item.format(data)
     except ValueError as e:
-        return web.json_response(data={"error": str(e), "data": data}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(e),
+            code="VALIDATION_FAILED",
+            status=web.HTTPBadRequest.status_code,
+            detail=str(e),
+            extra={"data": data},
+        )
 
     try:
         command, info = YTDLPCli(item=it, config=config).build()
@@ -571,9 +649,11 @@ async def make_command(request: Request, config: Config, encoder: Encoder) -> Re
                 "exception_type": type(e).__name__,
             },
         )
-        return web.json_response(
-            data={"error": "Failed to build CLI command"},
+        return api_error_response(
+            f"Failed to build CLI command: {e}",
+            code="OPERATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            detail=str(e),
         )
 
     if request.query.get("full", False):

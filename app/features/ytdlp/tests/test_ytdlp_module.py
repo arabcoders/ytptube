@@ -231,7 +231,7 @@ class TestYTDLP:
             # Should not call super method
             mock_super_delete.assert_not_called()
             # Should show message
-            mock_obj.to_screen.assert_called_once_with("[info] Cancelled — skipping temp cleanup.")
+            mock_obj.to_screen.assert_called_once_with("[info] Cancelled - skipping temp cleanup.")
             # Should return None
             assert result is None
 

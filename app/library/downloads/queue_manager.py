@@ -243,7 +243,17 @@ class DownloadQueue(metaclass=Singleton):
             dict[str, str]: Status dict with "status" and optional "msg" keys
 
         """
-        return await add_impl(queue=self, item=item, already=already, entry=entry)
+        result = await add_impl(queue=self, item=item, already=already, entry=entry)
+
+        if result.get("status") == "error" and not result.get("hidden"):
+            self._notify.emit(
+                Events.LOG_ERROR,
+                data={"preset": item.preset},
+                title="Download Error",
+                message=result.get("msg", "Unknown error"),
+            )
+
+        return result
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """

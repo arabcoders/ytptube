@@ -469,7 +469,7 @@ import {
 } from '~/utils/topLevelNavigation';
 
 const { t } = useI18n();
-const { isRtl, locale } = useAppLocale();
+const { isRtl, locale, locales, changeLocale } = useAppLocale();
 
 type SidebarSection = {
   id: string;
@@ -794,6 +794,20 @@ const routeSearchGroups = computed(() => [
       },
     ],
   },
+  {
+    id: 'language',
+    label: t('app.settings.language'),
+    items: locales.value
+      .filter((entry) => typeof entry !== 'string')
+      .map((entry) => {
+        const obj = entry as { name: string; code: string };
+        return {
+          label: `(${String(obj.code).toUpperCase()}) ${obj.name}`,
+          icon: obj.code === locale.value ? 'i-lucide-check' : 'i-lucide-globe',
+          onSelect: () => void switchLanguage(obj.code),
+        };
+      }),
+  },
 ]);
 
 const closeRouteSearch = async (): Promise<void> => {
@@ -818,6 +832,11 @@ const resumeDownloads = async (): Promise<void> => {
 const openSettings = async (): Promise<void> => {
   await closeRouteSearch();
   root.value?.open();
+};
+
+const switchLanguage = async (code: string): Promise<void> => {
+  await closeRouteSearch();
+  await changeLocale(code);
 };
 
 const handleRouteSelect = async (item: NavItem) => {

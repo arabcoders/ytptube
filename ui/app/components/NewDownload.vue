@@ -545,7 +545,7 @@ import type { item_request } from '~/types/item';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
 import { useDialog } from '~/composables/useDialog';
-import { getSeparatorsName, shortPath } from '~/utils';
+import { getSeparatorsName, parse_api_error, shortPath } from '~/utils';
 
 const { t } = useI18n();
 
@@ -937,7 +937,7 @@ const addDownload = async () => {
 
     const data = await response.json();
     if (!response.ok) {
-      toast.error(t('common.errorPrefix', { msg: data.error || t('queue.failedToAdd') }));
+      toast.error((await parse_api_error(data)) || t('queue.failedToAdd'));
       return;
     }
 

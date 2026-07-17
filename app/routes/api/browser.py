@@ -6,7 +6,7 @@ from urllib.parse import unquote_plus
 from aiohttp import web
 from aiohttp.web import Request, Response
 
-from app.features.core.utils import build_pagination, normalize_pagination
+from app.features.core.utils import api_error_response, build_pagination, normalize_pagination
 from app.features.streaming.library.ffprobe import ffprobe
 from app.library.cache import Cache
 from app.library.config import Config
@@ -37,7 +37,12 @@ async def get_ffprobe(request: Request, config: Config, encoder: Encoder, app: w
     """
     file: str | None = request.match_info.get("file")
     if not file:
-        return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     try:
         realFile, status = get_file(download_path=config.download_path, file=file)
@@ -54,11 +59,16 @@ async def get_ffprobe(request: Request, config: Config, encoder: Encoder, app: w
             )
 
         if web.HTTPNotFound.status_code == status:
-            return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+            return api_error_response(
+                f"File '{file}' does not exist.",
+                code="NOT_FOUND",
+                status=status,
+                params={"resource": "api.resources.file"},
+            )
 
         return web.json_response(data=await ffprobe(realFile), status=web.HTTPOk.status_code, dumps=encoder.encode)
     except Exception as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+        return api_error_response(str(e), code="INTERNAL_ERROR", status=web.HTTPInternalServerError.status_code)
 
 
 @route("GET", "api/file/info/{file:.*}", "file_info")
@@ -78,7 +88,12 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
     """
     file: str | None = request.match_info.get("file")
     if not file:
-        return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     try:
         realFile, status = get_file(download_path=config.download_path, file=file)
@@ -95,7 +110,12 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
             )
 
         if web.HTTPNotFound.status_code == status:
-            return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+            return api_error_response(
+                f"File '{file}' does not exist.",
+                code="NOT_FOUND",
+                status=status,
+                params={"resource": "api.resources.file"},
+            )
 
         ff_info = await ffprobe(realFile)
 
@@ -120,7 +140,7 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
             e,
             extra={"route": "file_info", "file_path": file},
         )
-        return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+        return api_error_response(str(e), code="INTERNAL_ERROR", status=web.HTTPInternalServerError.status_code)
 
 
 @route("GET", "api/file/browser/{path:.*}", "file_browser")
@@ -153,18 +173,27 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
     try:
         test.relative_to(root_dir)
     except Exception:
-        return web.json_response(
-            data={"error": f"path '{req_path}' does not exist."}, status=web.HTTPNotFound.status_code
+        return api_error_response(
+            f"path '{req_path}' does not exist.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
         )
 
     if not test.exists():
-        return web.json_response(
-            data={"error": f"path '{req_path}' does not exist."}, status=web.HTTPNotFound.status_code
+        return api_error_response(
+            f"path '{req_path}' does not exist.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
         )
 
     if not test.is_dir() and not test.is_symlink():
-        return web.json_response(
-            data={"error": f"path '{req_path}' is not a directory."}, status=web.HTTPBadRequest.status_code
+        return api_error_response(
+            f"path '{req_path}' is not a directory.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
         )
 
     try:
@@ -207,7 +236,7 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
             e,
             extra={"route": "file_browser", "request_path": req_path},
         )
-        return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+        return api_error_response(str(e), code="INTERNAL_ERROR", status=web.HTTPInternalServerError.status_code)
 
 
 @route("POST", "api/file/actions", "browser.file.actions")
@@ -226,8 +255,10 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
 
     """
     if not config.browser_control_enabled:
-        return web.json_response(
-            data={"error": "File browser actions is disabled."}, status=web.HTTPForbidden.status_code
+        return api_error_response(
+            "File browser actions is disabled.",
+            code="FORBIDDEN",
+            status=web.HTTPForbidden.status_code,
         )
 
     rootPath: Path = Path(config.download_path)
@@ -235,38 +266,46 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
     try:
         actions = await request.json()
         if not actions or not isinstance(actions, list):
-            return web.json_response(
-                data={"error": "Invalid parameters expecting list of dicts."}, status=web.HTTPBadRequest.status_code
+            return api_error_response(
+                "Invalid parameters expecting list of dicts.",
+                code="BAD_REQUEST",
+                status=web.HTTPBadRequest.status_code,
             )
     except Exception as e:
         LOG.debug(
             "Ignoring invalid file browser actions JSON.",
             extra={"route": "browser.file.actions", "error": str(e)},
         )
-        return web.json_response(data={"error": "Invalid JSON."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("Invalid JSON.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     # validate each action before performing any operations
     for params in actions:
         action = params.get("action").lower()
         if not action or action not in ["rename", "delete", "move", "directory"]:
-            return web.json_response(
-                data={"error": f"Invalid action '{action}'. Must be one of rename, delete, move, directory."},
+            return api_error_response(
+                f"Invalid action '{action}'. Must be one of rename, delete, move, directory.",
+                code="BAD_REQUEST",
                 status=web.HTTPBadRequest.status_code,
             )
 
         if "rename" == action and not params.get("new_name"):
-            return web.json_response(
-                data={"error": "New name is required for rename action."}, status=web.HTTPBadRequest.status_code
+            return api_error_response(
+                "New name is required for rename action.",
+                code="BAD_REQUEST",
+                status=web.HTTPBadRequest.status_code,
             )
 
         if "move" == action and not params.get("new_path"):
-            return web.json_response(
-                data={"error": "New path is required for move action."}, status=web.HTTPBadRequest.status_code
+            return api_error_response(
+                "New path is required for move action.",
+                code="BAD_REQUEST",
+                status=web.HTTPBadRequest.status_code,
             )
 
         if "directory" == action and not params.get("new_dir"):
-            return web.json_response(
-                data={"error": "New directory name is required for directory action."},
+            return api_error_response(
+                "New directory name is required for directory action.",
+                code="BAD_REQUEST",
                 status=web.HTTPBadRequest.status_code,
             )
 
@@ -615,7 +654,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
 async def prepare_zip_file(request: Request, config: Config, cache: Cache):
     json = await request.json()
     if not json or not isinstance(json, list):
-        return web.json_response({"error": "Invalid parameters."}, status=400)
+        return api_error_response("Invalid parameters.", code="BAD_REQUEST", status=400)
 
     files: list[Path] = []
     for f in json:
@@ -633,7 +672,7 @@ async def prepare_zip_file(request: Request, config: Config, cache: Cache):
                 files.extend(scf["file"] for scf in value if isinstance(scf, dict) and "file" in scf)
 
     if not files:
-        return web.json_response({"error": "No valid files."}, status=400)
+        return api_error_response("No valid files.", code="BAD_REQUEST", status=400)
 
     import uuid
 
@@ -651,17 +690,24 @@ async def prepare_zip_file(request: Request, config: Config, cache: Cache):
 async def stream_zip_download(request: Request, config: Config, cache: Cache) -> Response | web.StreamResponse:
     token: str | None = request.match_info.get("token")
     if not token:
-        return web.json_response({"error": "Download token is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "Download token is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.token"},
+        )
 
     files: Any | None = cache.get(f"download:{token}")
 
     if not files or not isinstance(files, list):
-        return web.json_response({"error": "Invalid or expired download token."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "Invalid or expired download token.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code
+        )
 
     files: list[Path] = [p for p in files if p.is_file() and p.exists()]
 
     if len(files) < 1:
-        return web.json_response({"error": "No valid files."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("No valid files.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     from zipstream import ZipStream
 

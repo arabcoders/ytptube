@@ -185,14 +185,56 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
   - `4xx` on client errors (e.g., missing parameters).  
   - `5xx` on server errors (e.g., unexpected failures).
 
-- **Error Responses**  
-  When an error occurs, responses follow a structure similar to:
+- **Error Responses**
+  All error responses return a JSON object with the following fields:
   ```json
   {
-    "error": "Description of the error",
+    "error": "Human-readable error message in English (fallback for non-i18n clients).",
+    "code": "STABLE_ERROR_CODE",
+    "params": {
+      "resource": "api.resources.preset",
+      "field": "api.fields.url"
+    },
+    "detail": "Additional dynamic context (string or validation error array).",
+    "message": "Optional secondary message (e.g. raw exception text)."
   }
   ```
-  with an appropriate HTTP status code.
+
+  **Field reference:**
+
+  | Field     | Type          | Always present | Description                                                    |
+  | --------- | ------------- | -------------- | -------------------------------------------------------------- |
+  | `error`   | string        | Yes            | English error message                                          |
+  | `code`    | string        | Yes            | Stable, machine-readable error code. See table below.          |
+  | `params`  | object        | No             | Interpolation parameters for localized templates.              |
+  | `detail`  | string\|array | No             | Dynamic error detail. For validation errors.                   |
+  | `message` | string        | No             | Secondary message (e.g. raw exception text from a dependency). |
+
+  **Stable error codes:**
+
+  | Code                | HTTP Status | Template                                             | Params                |
+  | ------------------- | ----------- | ---------------------------------------------------- | --------------------- |
+  | `BAD_REQUEST`       | 400         | `The request is invalid.`                            | none                  |
+  | `REQUIRED`          | 400         | `{field} is required.`                               | `field`               |
+  | `INVALID`           | 400         | `Invalid {field}.`                                   | `field`               |
+  | `VALIDATION_FAILED` | 400         | `Validation failed.`                                 | none (`detail` array) |
+  | `ALREADY_EXISTS`    | 409         | `{resource} already exists.`                         | `resource`            |
+  | `UNAUTHORIZED`      | 401         | `Authentication is required.`                        | none                  |
+  | `FORBIDDEN`         | 403         | `You do not have permission to perform this action.` | none                  |
+  | `FEATURE_DISABLED`  | 403         | `{feature} is disabled.`                             | `feature`             |
+  | `NOT_FOUND`         | 404         | `{resource} was not found.`                          | `resource`            |
+  | `OPERATION_FAILED`  | 400/500     | `Operation failed.`                                  | none                  |
+  | `TIMEOUT`           | 504         | `The operation timed out.`                           | none                  |
+  | `INTERNAL_ERROR`    | 500         | `Internal server error.`                             | none                  |
+
+  **`params` value conventions:**
+
+  - `api.resources.*` - e.g. `api.resources.preset`, `api.resources.task`, `api.resources.file`, `api.resources.item`
+  - `api.fields.*` - e.g. `api.fields.url`, `api.fields.name`, `api.fields.ids`, `api.fields.args`
+  - `api.features.*` - e.g. `api.features.console`, `api.features.monitoring`, `api.features.fileLogging`
+
+  Clients that implement i18n should resolve `api.*` param values to localized strings before interpolating them into 
+  the error code template. The English `error` field should only be used as a fallback.
 
 ---
 
@@ -236,10 +278,13 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
     "removed_options": ["option1", "option2"]  // optional, only if options were removed
 }
 ```
-or an error:
+or an error (see [Error Responses](#error-responses) for the full format):
 ```json
 {
-  "error": "Failed to parse command options for yt-dlp. '<reason>'."
+  "error": "Failed to parse command options for yt-dlp. '<reason>'.",
+  "code": "INVALID",
+  "params": { "field": "api.fields.args" },
+  "detail": "<reason>"
 }
 ```
 
@@ -2879,7 +2924,7 @@ or an error:
 **Purpose**: Time-series resource data for graphs. Requires `YTP_MONITOR_ENABLED=true`.
 
 **Query Parameters**:
-- `range` (optional): Time range suffix — `30s`, `5m`, `1h`, `30m` (default). Also accepts raw seconds.
+- `range` (optional): Time range suffix - `30s`, `5m`, `1h`, `30m` (default). Also accepts raw seconds.
 
 **Response**:
 ```json
@@ -3775,18 +3820,40 @@ Emitted when the download queue is resumed.
 
 ## Error Responses
 
-Most endpoints return standard error codes (`400`, `403`, `404`, `500`, etc.) and a JSON body on failure. For example:
+All endpoints use the standardized error response format documented in [Global Notes](#global-notes). Every error 
+response includes an English `error` fallback and a stable `code` for programmatic handling.
+
+**Example - validation error:**
 ```json
 {
-  "error": "url param is required."
+  "error": "Failed to validate preset.",
+  "code": "VALIDATION_FAILED",
+  "params": { "resource": "api.resources.preset" },
+  "detail": [
+    { "loc": ["name"], "msg": "Field required", "type": "missing" }
+  ]
 }
 ```
-with `400 Bad Request`, or:
+
+**Example - not found:**
 ```json
 {
-  "error": "Item not found."
+  "error": "Preset not found",
+  "code": "NOT_FOUND",
+  "params": { "resource": "api.resources.preset" }
 }
 ```
-with `404 Not Found`.
+
+**Example - invalid input with dynamic detail:**
+```json
+{
+  "error": "Failed to parse command options for yt-dlp. 'No such option: --max'.",
+  "code": "INVALID",
+  "params": { "field": "api.fields.args" },
+  "detail": "No such option: --max"
+}
+```
+
+See the [error code table](#error-responses) in Global Notes for the full list of codes and their expected params.
 
 ---

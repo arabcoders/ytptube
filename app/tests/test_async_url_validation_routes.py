@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator, cast
 
 import pytest
 
@@ -9,6 +9,9 @@ from app.features.conditions import router as conditions_router
 from app.features.tasks import router as tasks_router
 from app.features.ytdlp import router as ytdlp_router
 from app.library.config import Config
+
+if TYPE_CHECKING:
+    from aiohttp.web import Request
 
 
 @pytest.fixture(autouse=True)
@@ -61,10 +64,12 @@ async def test_inspect_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     request = _InspectReq({"url": "https://bad.example/task"})
     seen = _patch_thread(monkeypatch, tasks_router, config, "https://bad.example/task")
 
-    response = await tasks_router.task_handler_inspect(request, handler=None, encoder=None, config=config)
+    response = await tasks_router.task_handler_inspect(
+        cast("Request", request), handler=None, encoder=None, config=config
+    )
 
     assert response.status == 400
-    assert json.loads(response.body.decode("utf-8")) == {"error": "Invalid hostname."}
+    assert json.loads(response.body.decode("utf-8"))["error"] == "Invalid hostname."
     assert seen == {"to_thread": True, "validate": True}
 
 
@@ -74,10 +79,12 @@ async def test_conditions_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     request = _Req({"url": "https://bad.example/cond", "condition": "title ~= 'x'"})
     seen = _patch_thread(monkeypatch, conditions_router, config, "https://bad.example/cond")
 
-    response = await conditions_router.conditions_test(request, encoder=None, cache=None, config=config)
+    response = await conditions_router.conditions_test(
+        cast("Request", request), encoder=None, cache=None, config=config
+    )
 
     assert response.status == 400
-    assert json.loads(response.body.decode("utf-8")) == {"error": "Invalid hostname."}
+    assert json.loads(response.body.decode("utf-8"))["error"] == "Invalid hostname."
     assert seen == {"to_thread": True, "validate": True}
 
 
@@ -87,14 +94,10 @@ async def test_info_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     request = _QueryReq({"url": "https://bad.example/info"})
     seen = _patch_thread(monkeypatch, ytdlp_router, config, "https://bad.example/info")
 
-    response = await ytdlp_router.get_info(request, cache=None, config=config)
+    response = await ytdlp_router.get_info(cast("Request", request), cache=cast("Any", None), config=config)
 
     assert response.status == 400
-    assert json.loads(response.body.decode("utf-8")) == {
-        "status": False,
-        "message": "Invalid hostname.",
-        "error": "Invalid hostname.",
-    }
+    assert json.loads(cast("bytes", response.body).decode("utf-8"))["error"] == "Invalid hostname."
     assert seen == {"to_thread": True, "validate": True}
 
 

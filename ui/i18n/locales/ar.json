@@ -611,11 +611,25 @@
       "session": "الجلسة"
     },
     "fields": {
-      "id": "المعرف",
       "url": "الرابط",
       "name": "الاسم",
       "file": "الملف",
-      "json": "JSON"
+      "json": "JSON",
+      "ids": "المعرفات",
+      "type": "النوع",
+      "page": "الصفحة",
+      "per_page": "لكل صفحة",
+      "order": "الترتيب",
+      "limit": "الحد",
+      "mode": "الوضع",
+      "status": "الحالة",
+      "preset": "الإعداد المسبق",
+      "logLevel": "مستوى السجل",
+      "args": "الوسائط",
+      "command": "الأمر",
+      "duration": "المدة",
+      "segmentId": "معرف المقطع",
+      "token": "الرمز"
     },
     "features": {
       "console": "الطرفية",

@@ -8,6 +8,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 from aiohttp.web_runner import GracefulExit
 
+from app.features.core.utils import api_error_response
 from app.features.dl_fields.service import DLFields
 from app.features.presets.service import Presets
 from app.library.cache import Cache
@@ -116,10 +117,10 @@ async def downloads_pause(queue: DownloadQueue, encoder: Encoder, notify: EventB
 
     """
     if queue.is_paused():
-        return web.json_response(
-            {"message": "Non-active downloads are already paused."},
+        return api_error_response(
+            "Non-active downloads are already paused.",
+            code="INVALID",
             status=web.HTTPNotAcceptable.status_code,
-            dumps=encoder.encode,
         )
 
     queue.pause()
@@ -151,10 +152,10 @@ async def downloads_resume(queue: DownloadQueue, encoder: Encoder, notify: Event
 
     """
     if not queue.is_paused():
-        return web.json_response(
-            {"message": "Non-active downloads are not paused."},
+        return api_error_response(
+            "Non-active downloads are not paused.",
+            code="INVALID",
             status=web.HTTPNotAcceptable.status_code,
-            dumps=encoder.encode,
         )
 
     queue.resume()
@@ -186,9 +187,11 @@ async def shutdown_system(request: Request, config: Config, encoder: Encoder, no
 
     """
     if config.is_native is not True:
-        return web.json_response(
-            {"error": "Shutdown is only available in the native mode."},
+        return api_error_response(
+            "Shutdown is only available in the native mode.",
+            code="FEATURE_DISABLED",
             status=web.HTTPBadRequest.status_code,
+            params={"feature": "api.features.shutdown"},
         )
 
     app = request.app
@@ -294,23 +297,21 @@ async def system_diagnostics(
 
 async def _validate_terminal_command_request(request: Request) -> str | Response:
     if not request.can_read_body:
-        return web.json_response(
-            {"error": "Request body is required."},
-            status=web.HTTPBadRequest.status_code,
+        return api_error_response(
+            "Request body is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code
         )
 
     payload = await request.json()
     if not isinstance(payload, dict):
-        return web.json_response(
-            {"error": "Invalid request payload."},
-            status=web.HTTPBadRequest.status_code,
-        )
+        return api_error_response("Invalid request payload.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     raw_command = payload.get("command")
     if not isinstance(raw_command, str) or not raw_command.strip():
-        return web.json_response(
-            {"error": "Command is required."},
+        return api_error_response(
+            "Command is required.",
+            code="REQUIRED",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.command"},
         )
 
     return raw_command
@@ -321,9 +322,11 @@ async def create_terminal_session(
     request: Request, config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
 ) -> Response:
     if not config.console_enabled:
-        return web.json_response(
-            {"error": "Console feature is disabled."},
+        return api_error_response(
+            "Console feature is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.console"},
         )
 
     raw_command = await _validate_terminal_command_request(request)
@@ -333,9 +336,12 @@ async def create_terminal_session(
     try:
         metadata = await terminal_manager.create_session(raw_command)
     except TerminalSessionConflictError as exc:
-        return web.json_response(
-            {"error": str(exc)},
+        return api_error_response(
+            str(exc),
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.session"},
+            detail=str(exc),
         )
 
     return web.json_response(data=metadata, status=web.HTTPOk.status_code, dumps=encoder.encode)
@@ -346,9 +352,11 @@ async def list_terminal_sessions(
     config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
 ) -> Response:
     if not config.console_enabled:
-        return web.json_response(
-            {"error": "Console feature is disabled."},
+        return api_error_response(
+            "Console feature is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.console"},
         )
 
     items = await terminal_manager.list_sessions()
@@ -360,9 +368,11 @@ async def get_active_terminal_session(
     config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
 ) -> Response:
     if not config.console_enabled:
-        return web.json_response(
-            {"error": "Console feature is disabled."},
+        return api_error_response(
+            "Console feature is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.console"},
         )
 
     metadata = await terminal_manager.get_active_session()
@@ -374,17 +384,21 @@ async def get_terminal_session(
     request: Request, config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
 ) -> Response:
     if not config.console_enabled:
-        return web.json_response(
-            {"error": "Console feature is disabled."},
+        return api_error_response(
+            "Console feature is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.console"},
         )
 
     session_id = request.match_info.get("session_id", "")
     metadata = await terminal_manager.get_session(session_id)
     if metadata is None:
-        return web.json_response(
-            {"error": "Terminal session not found."},
+        return api_error_response(
+            "Terminal session not found.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.session"},
         )
 
     return web.json_response(data=metadata, status=web.HTTPOk.status_code, dumps=encoder.encode)
@@ -395,23 +409,30 @@ async def cancel_terminal_session(
     request: Request, config: Config, encoder: Encoder, terminal_manager: TerminalSessionManager
 ) -> Response:
     if not config.console_enabled:
-        return web.json_response(
-            {"error": "Console feature is disabled."},
+        return api_error_response(
+            "Console feature is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.console"},
         )
 
     session_id = request.match_info.get("session_id", "")
     try:
         await terminal_manager.cancel_session(session_id)
     except FileNotFoundError:
-        return web.json_response(
-            {"error": "Terminal session not found."},
+        return api_error_response(
+            "Terminal session not found.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.session"},
         )
     except RuntimeError as exc:
-        return web.json_response(
-            {"error": str(exc)},
+        return api_error_response(
+            str(exc),
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.session"},
+            detail=str(exc),
         )
 
     return web.json_response(
@@ -426,26 +447,27 @@ async def stream_terminal_session(
     request: Request, config: Config, terminal_manager: TerminalSessionManager
 ) -> Response | web.StreamResponse:
     if not config.console_enabled:
-        return web.json_response(
-            {"error": "Console feature is disabled."},
+        return api_error_response(
+            "Console feature is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.console"},
         )
 
     session_id = request.match_info.get("session_id", "")
     metadata = await terminal_manager.get_session(session_id)
     if metadata is None:
-        return web.json_response(
-            {"error": "Terminal session not found."},
+        return api_error_response(
+            "Terminal session not found.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.session"},
         )
 
     try:
         return await terminal_manager.stream_session(session_id=session_id, request=request)
     except ValueError as exc:
-        return web.json_response(
-            {"error": str(exc)},
-            status=web.HTTPBadRequest.status_code,
-        )
+        return api_error_response(str(exc), code="BAD_REQUEST", status=web.HTTPBadRequest.status_code, detail=str(exc))
 
 
 @route("GET", "api/system/limits", "system.limits")

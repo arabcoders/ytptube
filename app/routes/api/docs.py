@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.core.utils import api_error_response
 from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.cache import Cache
 from app.library.config import Config
@@ -36,23 +37,22 @@ async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
 
     """
     if not (file := request.path):
-        return web.json_response(
-            data={
-                "error": "Doc file is is required.",
-                "matcher": request.match_info,
-            },
+        return api_error_response(
+            "Doc file is is required.",
+            code="REQUIRED",
             status=web.HTTPForbidden.status_code,
+            params={"field": "api.fields.file"},
+            extra={"matcher": request.match_info},
         )
 
     file = file.removeprefix("/api/docs/") if file.startswith("/api/docs/") else file.removeprefix("/")
     if file not in STATIC_FILES:
-        return web.json_response(
-            data={
-                "error": "Doc file not found.",
-                "file": file,
-                "st": STATIC_FILES,
-            },
+        return api_error_response(
+            "Doc file not found.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
+            extra={"file": file, "st": STATIC_FILES},
         )
 
     cache_key = f"doc:{file}"
@@ -103,7 +103,9 @@ async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
             url,
             extra={"route": "docs.get", "doc_file": file, "url": url},
         )
-        return web.json_response(data={"error": "Failed to get doc."}, status=web.HTTPInternalServerError.status_code)
+        return api_error_response(
+            "Failed to get doc.", code="INTERNAL_ERROR", status=web.HTTPInternalServerError.status_code
+        )
 
 
 for file in STATIC_FILES:

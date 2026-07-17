@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 from aiohttp.web_response import StreamResponse
 
+from app.features.core.utils import api_error_response
 from app.features.streaming.library.m3u8 import M3u8
 from app.features.streaming.library.playlist import Playlist
 from app.features.streaming.library.segments import Segments
@@ -36,7 +37,12 @@ async def playlist_create(request: Request, config: Config, app: web.Application
     file: str | None = request.match_info.get("file")
 
     if not file:
-        return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     base_path: str = config.base_path.rstrip("/")
 
@@ -55,7 +61,12 @@ async def playlist_create(request: Request, config: Config, app: web.Application
             )
 
         if web.HTTPNotFound.status_code == status:
-            return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+            return api_error_response(
+                f"File '{file}' does not exist.",
+                code="NOT_FOUND",
+                status=status,
+                params={"resource": "api.resources.file"},
+            )
 
         return web.Response(
             text=await Playlist(download_path=Path(config.download_path), url=f"{base_path}/").make(file=realFile),
@@ -67,7 +78,13 @@ async def playlist_create(request: Request, config: Config, app: web.Application
             status=web.HTTPOk.status_code,
         )
     except StreamingError as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(e),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
+            detail=str(e),
+        )
 
 
 @route("GET", "api/player/m3u8/{mode}/{file:.*}.m3u8", "m3u8_create")
@@ -88,19 +105,32 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
     mode: str | None = request.match_info.get("mode")
 
     if mode not in ["video", "subtitle"]:
-        return web.json_response(
-            data={"error": "Only video and subtitle modes are supported."}, status=web.HTTPBadRequest.status_code
+        return api_error_response(
+            "Only video and subtitle modes are supported.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.mode"},
         )
 
     if not file:
-        return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     duration: float | None = None
     duration_arg = request.query.get("duration", None)
 
     if "subtitle" in mode:
         if not duration_arg:
-            return web.json_response(data={"error": "duration is required."}, status=web.HTTPBadRequest.status_code)
+            return api_error_response(
+                "duration is required.",
+                code="REQUIRED",
+                status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.duration"},
+            )
 
         duration = float(duration_arg)
 
@@ -123,11 +153,21 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
             )
 
         if web.HTTPNotFound.status_code == status:
-            return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+            return api_error_response(
+                f"File '{file}' does not exist.",
+                code="NOT_FOUND",
+                status=status,
+                params={"resource": "api.resources.file"},
+            )
 
         if "subtitle" in mode:
             if duration is None:
-                return web.json_response(data={"error": "duration is required."}, status=web.HTTPBadRequest.status_code)
+                return api_error_response(
+                    "duration is required.",
+                    code="REQUIRED",
+                    status=web.HTTPBadRequest.status_code,
+                    params={"field": "api.fields.duration"},
+                )
             text = await cls.make_subtitle(file=realFile, duration=duration)
         else:
             text = await cls.make_stream(file=realFile)
@@ -139,7 +179,13 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
             e,
             extra={"route": "streaming.playlist", "file_path": file, "mode": mode, "exception_type": type(e).__name__},
         )
-        return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(e),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
+            detail=str(e),
+        )
 
     return web.Response(
         text=text,
@@ -173,10 +219,20 @@ async def segments_stream(request: Request, config: Config, app: web.Application
     ac: int = int(request.query.get("ac", 0))
 
     if not file:
-        return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     if not segment:
-        return web.json_response(data={"error": "segment id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "segment id is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.segmentId"},
+        )
 
     realFile, status = get_file(download_path=config.download_path, file=file)
     if web.HTTPFound.status_code == status:
@@ -193,7 +249,12 @@ async def segments_stream(request: Request, config: Config, app: web.Application
         )
 
     if web.HTTPNotFound.status_code == status:
-        return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+        return api_error_response(
+            f"File '{file}' does not exist.",
+            code="NOT_FOUND",
+            status=status,
+            params={"resource": "api.resources.file"},
+        )
 
     mtime = realFile.stat().st_mtime
 
@@ -248,7 +309,12 @@ async def subtitles_get(request: Request, config: Config, app: web.Application) 
     file: str | None = request.match_info.get("file")
 
     if not file:
-        return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     realFile, status = get_file(download_path=config.download_path, file=file)
     if web.HTTPFound.status_code == status:
@@ -262,7 +328,12 @@ async def subtitles_get(request: Request, config: Config, app: web.Application) 
         )
 
     if web.HTTPNotFound.status_code == status:
-        return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+        return api_error_response(
+            f"File '{file}' does not exist.",
+            code="NOT_FOUND",
+            status=status,
+            params={"resource": "api.resources.file"},
+        )
 
     mtime = realFile.stat().st_mtime
 
@@ -306,7 +377,12 @@ async def subtitles_manifest_get(request: Request, config: Config, app: web.Appl
     file: str | None = request.match_info.get("file")
 
     if not file:
-        return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     realFile, status = get_file(download_path=config.download_path, file=file)
     if web.HTTPFound.status_code == status:
@@ -322,7 +398,12 @@ async def subtitles_manifest_get(request: Request, config: Config, app: web.Appl
         )
 
     if web.HTTPNotFound.status_code == status:
-        return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+        return api_error_response(
+            f"File '{file}' does not exist.",
+            code="NOT_FOUND",
+            status=status,
+            params={"resource": "api.resources.file"},
+        )
 
     tracks = [
         {
@@ -362,13 +443,20 @@ async def subtitles_track_get(request: Request, config: Config, app: web.Applica
     source_format: str | None = request.match_info.get("source_format")
 
     if not file:
-        return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "file is required",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     fmt = Subtitle.normalize_format(source_format or "")
     if fmt is None:
-        return web.json_response(
-            data={"error": "Only vtt, srt, and ass subtitle formats are supported."},
+        return api_error_response(
+            "Only vtt, srt, and ass subtitle formats are supported.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.type"},
         )
 
     realFile, status = get_file(download_path=config.download_path, file=file)
@@ -386,12 +474,19 @@ async def subtitles_track_get(request: Request, config: Config, app: web.Applica
         )
 
     if web.HTTPNotFound.status_code == status:
-        return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+        return api_error_response(
+            f"File '{file}' does not exist.",
+            code="NOT_FOUND",
+            status=status,
+            params={"resource": "api.resources.file"},
+        )
 
     if Subtitle.normalize_format(realFile.suffix) != fmt:
-        return web.json_response(
-            data={"error": f"Subtitle file '{file}' does not match requested source format '{fmt}'."},
+        return api_error_response(
+            f"Subtitle file '{file}' does not match requested source format '{fmt}'.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.type"},
         )
 
     mtime = realFile.stat().st_mtime

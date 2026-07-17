@@ -611,11 +611,25 @@
       "session": "Session"
     },
     "fields": {
-      "id": "ID",
       "url": "URL",
       "name": "Name",
       "file": "File",
-      "json": "JSON"
+      "json": "JSON",
+      "ids": "IDs",
+      "type": "Type",
+      "page": "Page",
+      "per_page": "Per page",
+      "order": "Order",
+      "limit": "Limit",
+      "mode": "Mode",
+      "status": "Status",
+      "preset": "Preset",
+      "logLevel": "Log level",
+      "args": "Args",
+      "command": "Command",
+      "duration": "Duration",
+      "segmentId": "Segment ID",
+      "token": "Token"
     },
     "features": {
       "console": "Console",

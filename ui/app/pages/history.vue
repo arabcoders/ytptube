@@ -868,6 +868,7 @@ import {
   makeDownload,
   request,
   uri,
+  parse_api_error,
 } from '~/utils';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
@@ -1436,7 +1437,7 @@ const archiveItem = async (item: StoreItem, opts = {}): Promise<void> => {
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(data.error);
+      toast.error(await parse_api_error(data));
       return;
     }
 
@@ -1657,7 +1658,7 @@ const removeFromArchive = async (
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(data.error);
+      toast.error(await parse_api_error(data));
       return;
     }
 
@@ -1707,7 +1708,7 @@ const generateNfo = async (item: StoreItem): Promise<void> => {
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(data.error || t('common.failedGenerateNfo'));
+      toast.error((await parse_api_error(data)) || t('common.failedGenerateNfo'));
       return;
     }
 

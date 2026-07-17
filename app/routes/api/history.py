@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 from aiohttp.web_response import StreamResponse
 
+from app.features.core.utils import api_error_response
 from app.features.presets.schemas import Preset
 from app.features.presets.service import Presets
 from app.features.streaming.library.thumbnail import ensure_thumb, pick_local_thumb
@@ -53,9 +54,11 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
     try:
         store_type: StoreType = StoreType.from_value(store_type)
     except ValueError:
-        return web.json_response(
-            data={"error": f"type must be one of {', '.join(StoreType.all())}."},
+        return api_error_response(
+            f"type must be one of {', '.join(StoreType.all())}.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.type"},
         )
 
     ds = queue.queue if store_type == StoreType.QUEUE else queue.done
@@ -65,24 +68,35 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
         per_page = int(request.query.get("per_page", config.default_pagination))
         order: str = request.query.get("order", "DESC").upper()
     except ValueError:
-        return web.json_response(
-            data={"error": "page and per_page must be valid integers."},
+        return api_error_response(
+            "page and per_page must be valid integers.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.page"},
         )
 
     if page < 1:
-        return web.json_response(data={"error": "page must be >= 1."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "page must be >= 1.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.page"},
+        )
 
     if per_page < 1 or per_page > 1000:
-        return web.json_response(
-            data={"error": "per_page must be between 1 and 1000."},
+        return api_error_response(
+            "per_page must be between 1 and 1000.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.per_page"},
         )
 
     if order not in ("ASC", "DESC"):
-        return web.json_response(
-            data={"error": "order must be ASC or DESC."},
+        return api_error_response(
+            "order must be ASC or DESC.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.order"},
         )
 
     status_filter = request.query.get("status", None)
@@ -137,8 +151,11 @@ async def items_live(request: Request, queue: DownloadQueue, encoder: Encoder, c
     try:
         limit = int(request.query.get("limit", config.queue_display_limit))
     except ValueError:
-        return web.json_response(
-            data={"error": "limit must be a valid integer."}, status=web.HTTPBadRequest.status_code
+        return api_error_response(
+            "limit must be a valid integer.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.limit"},
         )
 
     return web.json_response(
@@ -175,14 +192,21 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
     storeType = data.get("type", data.get("where"))
 
     if not storeType:
-        return web.json_response(data={"error": "Type is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "Type is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.type"},
+        )
 
     try:
         storeType: StoreType = StoreType.from_value(storeType)
     except ValueError:
-        return web.json_response(
-            data={"error": f"type must be one of '{StoreType.all()}'."},
+        return api_error_response(
+            f"type must be one of '{StoreType.all()}'.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.type"},
         )
 
     if ids:
@@ -207,8 +231,9 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
 
     status_filter = data.get("status")
     if not status_filter:
-        return web.json_response(
-            data={"error": "either 'ids' or 'status' filter is required."},
+        return api_error_response(
+            "either 'ids' or 'status' filter is required.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
@@ -279,14 +304,24 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     """
     id: str | None = request.match_info.get("id")
     if not id:
-        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("id is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     item: Download | None = await queue.done.get_by_id(id) or await queue.queue.get_by_id(id)
     if not item:
-        return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "item not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     if not item.info:
-        return web.json_response(data={"error": "item has no info."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "item has no info.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     info: dict = {
         **item.info.serialize(),
@@ -313,22 +348,37 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
 @route(["GET", "HEAD"], r"api/history/{id}/thumbnail", "history.item.thumbnail")
 async def item_thumbnail(request: Request, queue: DownloadQueue, config: Config) -> StreamResponse:
     if not (id := request.match_info.get("id")):
-        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("id is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     miss_key: str = f"thumb_missing:{id}"
     cache: Cache = Cache.get_instance()
 
     item: Download | None = await queue.done.get_by_id(id)
     if not item or not item.info:
-        return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "item not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     if cache.has(miss_key):
-        return web.json_response(data={"error": "thumbnail not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "thumbnail not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
+        )
 
     filepath: Path | None = item.info.get_file(download_path=Path(config.download_path))
     if not filepath or not filepath.exists() or not filepath.is_file():
         cache.set(miss_key, value=True, ttl=30.0)
-        return web.json_response(data={"error": "thumbnail not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "thumbnail not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
+        )
 
     cache.delete(miss_key)
 
@@ -359,7 +409,12 @@ async def item_thumbnail(request: Request, queue: DownloadQueue, config: Config)
     if generated and generated.exists() and generated.is_file():
         return web.FileResponse(path=str(generated))
 
-    return web.json_response(data={"error": "thumbnail not found."}, status=web.HTTPNotFound.status_code)
+    return api_error_response(
+        "thumbnail not found.",
+        code="NOT_FOUND",
+        status=web.HTTPNotFound.status_code,
+        params={"resource": "api.resources.file"},
+    )
 
 
 @route("POST", r"api/history/{id}/rename", "history.item.rename")
@@ -371,38 +426,62 @@ async def item_rename(
     config: Config,
 ) -> Response:
     if not (id := request.match_info.get("id")):
-        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("id is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     item: Download | None = await queue.done.get_by_id(id)
     if not item:
-        return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            f"item '{id}' not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     try:
         post: dict = await request.json()
         if not post:
-            return web.json_response(data={"error": "no data provided."}, status=web.HTTPBadRequest.status_code)
+            return api_error_response("no data provided.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
     except Exception:
-        return web.json_response(data={"error": "invalid JSON body."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("invalid JSON body.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     new_name: str = str(post.get("new_name") or "").strip()
     if not new_name:
-        return web.json_response(data={"error": "new_name is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "new_name is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.name"},
+        )
 
     filepath: Path | None = item.info.get_file(download_path=Path(config.download_path))
     if not filepath:
-        return web.json_response(data={"error": "item has no downloaded file."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "item has no downloaded file.",
+            code="NOT_FOUND",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.file"},
+        )
 
     try:
         renamed, sidecar_renamed = rename_file(filepath, new_name)
     except ValueError as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPConflict.status_code)
+        return api_error_response(
+            str(e),
+            code="ALREADY_EXISTS",
+            status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.file"},
+        )
     except OSError as e:
         LOG.exception(
             "Failed to rename history item file '%s'.",
             filepath,
             extra={"route": "history.item.rename", "item_id": id, "file_path": str(filepath), "new_name": new_name},
         )
-        return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+        return api_error_response(
+            str(e),
+            code="OPERATION_FAILED",
+            status=web.HTTPInternalServerError.status_code,
+        )
 
     item_dir: Path = (
         Path(item.info.download_dir)
@@ -457,15 +536,20 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
     """
     id: str | None = request.match_info.get("id")
     if not id:
-        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("id is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     item: Download | None = await queue.done.get_by_id(id)
     if not item:
-        return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "item not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     post = await request.json()
     if not post:
-        return web.json_response(data={"error": "no data provided."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("no data provided.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     updated = False
 
@@ -512,7 +596,12 @@ async def item_add(request: Request, queue: DownloadQueue, encoder: Encoder) -> 
     """
     url: str | None = request.query.get("url")
     if not url:
-        return web.json_response(data={"error": "url param is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "url param is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
+        )
 
     data: dict[str, str] = {"url": url}
 
@@ -520,16 +609,24 @@ async def item_add(request: Request, queue: DownloadQueue, encoder: Encoder) -> 
     if preset:
         exists: Preset | None = Presets.get_instance().get(preset)
         if not exists:
-            return web.json_response(
-                data={"status": False, "message": f"Preset '{preset}' does not exist."},
+            return api_error_response(
+                f"Preset '{preset}' does not exist.",
+                code="NOT_FOUND",
                 status=web.HTTPBadRequest.status_code,
+                params={"resource": "api.resources.preset"},
             )
         data["preset"] = preset
 
     try:
         status: dict[str, str] = await queue.add(item=Item.format(data))
     except ValueError as e:
-        return web.json_response(data={"status": False, "message": str(e)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(e),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
+            detail=str(e),
+        )
 
     return web.json_response(
         data={"status": status.get("status") == "ok", "message": status.get("msg", "URL added")},
@@ -568,7 +665,13 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
         try:
             items.append(Item.format(item))
         except ValueError as e:
-            return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
+            return api_error_response(
+                str(e),
+                code="INVALID",
+                status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.url"},
+                detail=str(e),
+            )
 
     if "true" == request.query.get("sync", "false").lower():
         status: list[dict] = await asyncio.wait_for(
@@ -630,10 +733,20 @@ async def items_start(request: Request, queue: DownloadQueue, encoder: Encoder) 
     """
     data = await request.json()
     if not (ids := data.get("ids", [])):
-        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ids array is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
 
     if not isinstance(ids, list):
-        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ids must be an array.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
 
     status: dict[str, str] = await queue.start_items(ids)
 
@@ -656,10 +769,20 @@ async def items_pause(request: Request, queue: DownloadQueue, encoder: Encoder) 
     """
     data = await request.json()
     if not (ids := data.get("ids", [])):
-        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ids array is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
 
     if not isinstance(ids, list):
-        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ids must be an array.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
 
     status: dict[str, str] = await queue.pause_items(ids)
 
@@ -682,10 +805,20 @@ async def items_cancel(request: Request, queue: DownloadQueue, encoder: Encoder)
     """
     data = await request.json()
     if not (ids := data.get("ids", [])):
-        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ids array is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
 
     if not isinstance(ids, list):
-        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ids must be an array.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
 
     status: dict[str, str] = await queue.cancel(ids)
 
@@ -707,37 +840,55 @@ async def item_archive_add(request: Request, queue: DownloadQueue, notify: Event
 
     """
     if not (id := request.match_info.get("id")):
-        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("id is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     try:
         item: Download | None = await queue.done.get_by_id(id)
         if not item:
-            return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+            return api_error_response(
+                f"item '{id}' not found.",
+                code="NOT_FOUND",
+                status=web.HTTPNotFound.status_code,
+                params={"resource": "api.resources.item"},
+            )
     except KeyError:
-        return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            f"item '{id}' not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     if not item.info.is_archivable:
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' does not have an archive file."},
+        return api_error_response(
+            f"item '{item.info.title}' does not have an archive file.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     if not item.info.archive_id:
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' does not have an archive ID."},
+        return api_error_response(
+            f"item '{item.info.title}' does not have an archive ID.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     if item.info.is_archived:
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' already archived."},
+        return api_error_response(
+            f"item '{item.info.title}' already archived.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     if not item.info.archive_add():
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' could not be added to archive."},
+        return api_error_response(
+            f"item '{item.info.title}' could not be added to archive.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     item.info.archive_status(force=True)
@@ -765,37 +916,55 @@ async def item_archive_delete(request: Request, queue: DownloadQueue, notify: Ev
 
     """
     if not (id := request.match_info.get("id")):
-        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("id is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     try:
         item: Download | None = await queue.done.get_by_id(id)
         if not item:
-            return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+            return api_error_response(
+                f"item '{id}' not found.",
+                code="NOT_FOUND",
+                status=web.HTTPNotFound.status_code,
+                params={"resource": "api.resources.item"},
+            )
     except KeyError:
-        return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            f"item '{id}' not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     if not item.info.is_archivable:
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' does not have an archive file."},
+        return api_error_response(
+            f"item '{item.info.title}' does not have an archive file.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     if not item.info.archive_id:
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' does not have an archive ID."},
+        return api_error_response(
+            f"item '{item.info.title}' does not have an archive ID.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     if not item.info.is_archived:
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' not archived."},
+        return api_error_response(
+            f"item '{item.info.title}' not archived.",
+            code="INVALID",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     if not item.info.archive_delete():
-        return web.json_response(
-            data={"error": f"item '{item.info.title}' not found in archive file."},
+        return api_error_response(
+            f"item '{item.info.title}' not found in archive file.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            params={"resource": "api.resources.item"},
         )
 
     item.info.archive_status(force=True)
@@ -829,26 +998,40 @@ async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
     from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
 
     if not (id := request.match_info.get("id")):
-        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response("id is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
     try:
         item: Download | None = await queue.done.get_by_id(id)
         if not item:
-            return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+            return api_error_response(
+                f"item '{id}' not found.",
+                code="NOT_FOUND",
+                status=web.HTTPNotFound.status_code,
+                params={"resource": "api.resources.item"},
+            )
     except KeyError:
-        return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            f"item '{id}' not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.item"},
+        )
 
     if not item.info.filename:
-        return web.json_response(
-            data={"error": "item has no downloaded file."},
+        return api_error_response(
+            "item has no downloaded file.",
+            code="NOT_FOUND",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.file"},
         )
 
     filepath = item.info.get_file()
     if not filepath or not filepath.exists():
-        return web.json_response(
-            data={"error": f"file '{item.info.filename}' not found."},
+        return api_error_response(
+            f"file '{item.info.filename}' not found.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
         )
 
     post = {}
@@ -860,9 +1043,11 @@ async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
 
     mode: str = str(post.get("type", "tv")).lower()
     if mode not in ("tv", "movie"):
-        return web.json_response(
-            data={"error": "type must be 'tv' or 'movie'."},
+        return api_error_response(
+            "type must be 'tv' or 'movie'.",
+            code="INVALID",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.mode"},
         )
 
     try:
@@ -875,8 +1060,9 @@ async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
         )
 
         if not info_dict:
-            return web.json_response(
-                data={"error": "failed to extract metadata from URL."},
+            return api_error_response(
+                "failed to extract metadata from URL.",
+                code="OPERATION_FAILED",
                 status=web.HTTPInternalServerError.status_code,
             )
 
@@ -888,11 +1074,16 @@ async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
             logger=LOG,
         )
 
-        return web.json_response(
-            data={"message": result["message"], "nfo_file": result.get("nfo_file")}
-            if result["success"]
-            else {"error": result["message"]},
-            status=web.HTTPOk.status_code if result["success"] else web.HTTPBadRequest.status_code,
+        if result["success"]:
+            return web.json_response(
+                data={"message": result["message"], "nfo_file": result.get("nfo_file")},
+                status=web.HTTPOk.status_code,
+            )
+
+        return api_error_response(
+            result["message"],
+            code="OPERATION_FAILED",
+            status=web.HTTPBadRequest.status_code,
         )
     except Exception as e:
         LOG.exception(
@@ -900,7 +1091,8 @@ async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
             id,
             extra={"route": "history.item.nfo.generate", "item_id": id, "file_path": str(filepath), "mode": mode},
         )
-        return web.json_response(
-            data={"error": f"failed to generate NFO: {e!s}"},
+        return api_error_response(
+            f"failed to generate NFO: {e!s}",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
         )

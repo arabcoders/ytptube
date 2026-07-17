@@ -5,7 +5,7 @@ from aiohttp.web import Request, Response
 from pydantic import ValidationError
 
 from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
-from app.features.core.utils import build_pagination, format_validation_errors, normalize_pagination
+from app.features.core.utils import api_error_response, build_pagination, format_validation_errors, normalize_pagination
 from app.features.presets.repository import PresetsRepository
 from app.features.presets.schemas import Preset, PresetList, PresetPatch
 from app.library.encoder import Encoder
@@ -33,7 +33,13 @@ async def presets_list(request: Request, encoder: Encoder, repo: PresetsReposito
             exclude_defaults=bool(request.query.get("exclude_defaults", False)),
         )
     except ValueError as exc:
-        return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
+            detail=str(exc),
+        )
 
     return web.json_response(
         data=PresetList(
@@ -48,10 +54,19 @@ async def presets_list(request: Request, encoder: Encoder, repo: PresetsReposito
 @route("GET", r"api/presets/{id:\d+}", "presets_get")
 async def presets_get(request: Request, encoder: Encoder, repo: PresetsRepository) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await repo.get(identifier)):
-        return web.json_response({"error": "Preset not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Preset not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.preset"},
+        )
 
     return web.json_response(data=_serialize(model), status=web.HTTPOk.status_code, dumps=encoder.encode)
 
@@ -61,17 +76,21 @@ async def presets_add(request: Request, encoder: Encoder, notify: EventBus, repo
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         item: Preset = Preset.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate preset.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate preset.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
+            detail=format_validation_errors(exc),
         )
 
     payload = item.model_dump(exclude_unset=True)
@@ -81,7 +100,13 @@ async def presets_add(request: Request, encoder: Encoder, notify: EventBus, repo
     try:
         saved = _serialize(await repo.create(payload))
     except ValueError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
+            detail=str(exc),
+        )
 
     notify.emit(
         Events.CONFIG_UPDATE,
@@ -93,36 +118,54 @@ async def presets_add(request: Request, encoder: Encoder, notify: EventBus, repo
 @route("PATCH", r"api/presets/{id:\d+}", "presets_patch")
 async def presets_patch(request: Request, encoder: Encoder, notify: EventBus, repo: PresetsRepository) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await repo.get(identifier)):
-        return web.json_response({"error": "Preset not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Preset not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.preset"},
+        )
 
     if model.default:
-        return web.json_response(
-            {"error": "Default presets cannot be modified."}, status=web.HTTPBadRequest.status_code
+        return api_error_response(
+            "Default presets cannot be modified.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
         )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         validated = PresetPatch.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate preset.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate preset.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
+            detail=format_validation_errors(exc),
         )
 
     if validated.name and await repo.get_by_name(validated.name, exclude_id=model.id):
-        return web.json_response(
-            data={"error": f"Preset with name '{validated.name}' already exists."},
+        return api_error_response(
+            f"Preset with name '{validated.name}' already exists.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.preset", "field": "api.fields.name"},
         )
 
     payload = validated.model_dump(exclude_unset=True)
@@ -138,36 +181,54 @@ async def presets_patch(request: Request, encoder: Encoder, notify: EventBus, re
 @route("PUT", r"api/presets/{id:\d+}", "presets_update")
 async def presets_update(request: Request, encoder: Encoder, notify: EventBus, repo: PresetsRepository) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await repo.get(identifier)):
-        return web.json_response({"error": "Preset not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Preset not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.preset"},
+        )
 
     if model.default:
-        return web.json_response(
-            {"error": "Default presets cannot be modified."}, status=web.HTTPBadRequest.status_code
+        return api_error_response(
+            "Default presets cannot be modified.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
         )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         validated = Preset.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate preset.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate preset.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
+            detail=format_validation_errors(exc),
         )
 
     if validated.name and await repo.get_by_name(validated.name, exclude_id=model.id):
-        return web.json_response(
-            data={"error": f"Preset with name '{validated.name}' already exists."},
+        return api_error_response(
+            f"Preset with name '{validated.name}' already exists.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.preset", "field": "api.fields.name"},
         )
 
     payload = validated.model_dump(exclude_unset=True)
@@ -184,13 +245,27 @@ async def presets_update(request: Request, encoder: Encoder, notify: EventBus, r
 @route("DELETE", r"api/presets/{id:\d+}", "presets_delete")
 async def presets_delete(request: Request, encoder: Encoder, notify: EventBus, repo: PresetsRepository) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await repo.get(identifier)):
-        return web.json_response({"error": "Preset not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Preset not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.preset"},
+        )
 
     if model.default:
-        return web.json_response({"error": "Default presets cannot be deleted."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "Default presets cannot be deleted.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.preset"},
+        )
 
     deleted = _serialize(await repo.delete(model.id))
     notify.emit(

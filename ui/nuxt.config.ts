@@ -86,6 +86,27 @@ export default defineNuxtConfig({
         file: 'ar.json',
         dir: 'rtl',
       },
+      {
+        code: 'fr',
+        name: 'Français',
+        language: 'fr',
+        file: 'fr.json',
+        dir: 'ltr',
+      },
+      {
+        code: 'zh',
+        name: '中文',
+        language: 'zh',
+        file: 'zh.json',
+        dir: 'ltr',
+      },
+      {
+        code: 'ja',
+        name: '日本語',
+        language: 'ja',
+        file: 'ja.json',
+        dir: 'ltr',
+      },
     ],
 
     detectBrowserLanguage: {

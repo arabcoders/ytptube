@@ -423,10 +423,13 @@ const themeItems = computed<Array<{ label: string; value: ThemeChoice }>>(() => 
 const localeItems = computed(() =>
   locales.value
     .filter((entry) => typeof entry !== 'string')
-    .map((entry) => ({
-      label: typeof entry === 'string' ? entry : (entry as { name: string }).name,
-      code: typeof entry === 'string' ? entry : (entry as { code: string }).code,
-    })),
+    .map((entry) => {
+      const obj = entry as { name: string; code: string };
+      return {
+        label: `(${String(obj.code).toUpperCase()}) ${obj.name}`,
+        code: obj.code,
+      };
+    }),
 );
 
 const settingsFieldUi = {

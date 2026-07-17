@@ -473,7 +473,7 @@ describe('network and id helpers', () => {
     const responseMock = { status: 400, json: jsonMock };
     fetchMock.mockResolvedValue(responseMock);
 
-    await expect(utils.convertCliOptions('--bad')).rejects.toThrow('common.errorPrefix');
+    await expect(utils.convertCliOptions('--bad')).rejects.toThrow('fail');
   });
 
 });
