@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "bcf6f2a536dd6cac02d9e56c393b438558f6a618",
+    "date": "2026-07-17T19:36:54+00:00",
+    "commits": [
+      {
+        "sha": "bcf6f2a5",
+        "full_sha": "bcf6f2a536dd6cac02d9e56c393b438558f6a618",
+        "message": "add support for i18n in backend error responses.",
+        "author": "arabcoders",
+        "date": "2026-07-17T19:36:54+00:00"
+      },
+      {
+        "sha": "beb2f0a5",
+        "full_sha": "beb2f0a55009e64ce9838a5fe471e70a745f9437",
+        "message": "feat: initial i18n support in frontend",
+        "author": "arabcoders",
+        "date": "2026-07-16T20:28:27+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.5.11",
     "full_sha": "550e01db770e2478549fc5c3c49bdfa4b697eb08",
     "date": "2026-07-16T16:10:53+00:00",
