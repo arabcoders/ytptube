@@ -376,6 +376,7 @@ async def convert(request: Request) -> Response:
         )
 
 
+@route("GET", "api/yt-dlp/url/info/", "get_info")
 async def get_info(request: Request, cache: Cache, config: Config) -> Response:
     """
     Get the video info.
