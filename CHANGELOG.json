@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "bcf6f2a536dd6cac02d9e56c393b438558f6a618",
-    "date": "2026-07-17T19:36:54+00:00",
+    "full_sha": "ffd4a51b3dcb0d31e34cdc25891a86dff8e977ed",
+    "date": "2026-07-18T15:38:38+00:00",
     "commits": [
+      {
+        "sha": "ffd4a51b",
+        "full_sha": "ffd4a51b3dcb0d31e34cdc25891a86dff8e977ed",
+        "message": "fix: regression from the recent i18n work",
+        "author": "arabcoders",
+        "date": "2026-07-18T15:38:38+00:00"
+      },
       {
         "sha": "bcf6f2a5",
         "full_sha": "bcf6f2a536dd6cac02d9e56c393b438558f6a618",
