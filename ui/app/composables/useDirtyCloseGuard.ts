@@ -15,6 +15,7 @@ type DirtyCloseGuardOptions = {
 
 export const useDirtyCloseGuard = (open: Ref<boolean>, options: DirtyCloseGuardOptions) => {
   const dialog = useDialog();
+  const { t } = useI18n();
   let pendingCloseRequest: Promise<boolean> | null = null;
 
   const isDirty = computed<boolean>(() => Boolean(toValue(options.dirty)));
@@ -27,10 +28,10 @@ export const useDirtyCloseGuard = (open: Ref<boolean>, options: DirtyCloseGuardO
     }
 
     const { status } = await dialog.confirmDialog({
-      title: options.title ?? 'Discard changes?',
-      message: options.message ?? 'You have unsaved changes. Do you want to discard them?',
-      confirmText: options.confirmText ?? 'Discard changes',
-      cancelText: options.cancelText ?? 'Keep editing',
+      title: options.title ?? t('common.pleaseConfirm'),
+      message: options.message ?? t('common.discardChanges'),
+      confirmText: options.confirmText ?? t('common.discardChangesConfirm'),
+      cancelText: options.cancelText ?? t('common.keepEditing'),
       confirmColor: options.confirmColor ?? 'warning',
     });
 

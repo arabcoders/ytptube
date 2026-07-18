@@ -26,7 +26,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -36,7 +36,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span>New Field</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -48,7 +48,9 @@
           class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            displayStyle === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UButton
@@ -61,7 +63,7 @@
           :disabled="isLoading"
           @click="() => void loadContent(page)"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -70,7 +72,7 @@
           ref="filterInput"
           v-model="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -90,7 +92,7 @@
           :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
-          {{ allSelected ? 'Unselect' : 'Select' }}
+          {{ allSelected ? t('common.unselect') : t('common.select') }}
         </UButton>
 
         <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
@@ -105,7 +107,7 @@
             icon="i-lucide-list"
             trailing-icon="i-lucide-chevron-down"
           >
-            Actions
+            {{ t('common.actions') }}
           </UButton>
         </UDropdownMenu>
       </div>
@@ -131,7 +133,7 @@
         <table class="min-w-235 w-full text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
@@ -141,8 +143,8 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">Field</th>
-              <th class="w-48 whitespace-nowrap">Actions</th>
+              <th class="w-full text-start">{{ t('customFields.field') }}</th>
+              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
             </tr>
           </thead>
 
@@ -150,7 +152,7 @@
             <tr
               v-for="field in filteredItems"
               :key="field.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -172,21 +174,21 @@
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                      <span>Order: {{ field.order }}</span>
+                      <span>{{ t('customFields.order', { order: field.order }) }}</span>
                     </span>
 
                     <span
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-shapes" class="size-3.5" />
-                      <span>Type: {{ field.kind }}</span>
+                      <span>{{ t('customFields.type', { type: field.kind }) }}</span>
                     </span>
 
                     <span
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-terminal" class="size-3.5" />
-                      <span>Option: {{ field.field }}</span>
+                      <span dir="ltr">{{ t('customFields.option', { option: field.field }) }}</span>
                     </span>
                   </div>
                 </div>
@@ -201,7 +203,7 @@
                     icon="i-lucide-file-up"
                     @click="exportItem(field)"
                   >
-                    Export
+                    {{ t('common.exportItem') }}
                   </UButton>
 
                   <UButton
@@ -211,7 +213,7 @@
                     icon="i-lucide-pencil"
                     @click="editItem(field)"
                   >
-                    Edit
+                    {{ t('common.edit') }}
                   </UButton>
 
                   <UButton
@@ -221,7 +223,7 @@
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(field)"
                   >
-                    Delete
+                    {{ t('common.delete') }}
                   </UButton>
                 </div>
               </td>
@@ -240,7 +242,7 @@
                 <div class="flex items-start gap-2">
                   <button
                     type="button"
-                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
                     @click="toggleExpand(field.id, 'title')"
                   >
                     <span :class="['block', expandClass(field.id, 'title')]">{{ field.name }}</span>
@@ -257,7 +259,7 @@
                   square
                   @click="exportItem(field)"
                 >
-                  <span>Export Field</span>
+                  <span>{{ t('common.exportItem') }}</span>
                 </UButton>
 
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -279,27 +281,29 @@
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>Order: {{ field.order }}</span>
+                  <span>{{ t('customFields.order', { order: field.order }) }}</span>
                 </span>
 
                 <span
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-shapes" class="size-3.5" />
-                  <span>Type: {{ field.kind }}</span>
+                  <span>{{ t('customFields.type', { type: field.kind }) }}</span>
                 </span>
               </div>
 
               <div class="feature-meta-grid">
                 <button
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(field.id, 'field')"
                 >
                   <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Associated option</div>
-                    <span :class="['block', expandClass(field.id, 'field')]">{{
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('customFields.associatedOption') }}
+                    </div>
+                    <span :class="['block', expandClass(field.id, 'field')]" dir="ltr">{{
                       field.field
                     }}</span>
                   </div>
@@ -308,7 +312,7 @@
                 <button
                   v-if="field.description"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(field.id, 'description')"
                 >
                   <UIcon
@@ -316,7 +320,9 @@
                     class="mt-0.5 size-4 shrink-0 text-toned"
                   />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Description</div>
+                    <div class="text-xs font-medium text-toned">
+                      {{ t('common.description') }}
+                    </div>
                     <span :class="['block', expandClass(field.id, 'description')]">
                       {{ field.description }}
                     </span>
@@ -335,7 +341,7 @@
                 class="w-full justify-center"
                 @click="editItem(field)"
               >
-                Edit
+                {{ t('common.edit') }}
               </UButton>
 
               <UButton
@@ -345,7 +351,7 @@
                 class="w-full justify-center"
                 @click="() => void deleteItem(field)"
               >
-                Delete
+                {{ t('common.delete') }}
               </UButton>
             </div>
           </div>
@@ -358,8 +364,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading data. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <div v-else-if="query && filteredItems.length < 1" class="space-y-3">
@@ -367,8 +373,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-search"
-        title="No Results"
-        :description="`No results found for the query: ${query}. Please try a different search term.`"
+        :title="t('common.noResults')"
+        :description="t('common.noResultsFor', { query })"
       />
     </div>
 
@@ -377,8 +383,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="No items"
-      description="There are no custom defined fields yet. Click the New Field button to add your first field."
+      :title="t('common.noItems')"
+      :description="t('common.empty')"
     />
 
     <div v-if="filteredItems.length > 0 && paging?.total_pages > 1" class="flex justify-end">
@@ -397,8 +403,8 @@
     <UModal
       v-if="editorOpen"
       :open="editorOpen"
-      :title="itemRef ? `Edit - ${item.name || 'Field'}` : 'Add new field'"
-      description="Custom fields allow you to add new fields to the download form."
+      :title="itemRef ? t('common.editTitle', { name: item.name || 'Field' }) : t('common.add')"
+      :description="itemRef ? t('common.updateDescription') : t('common.createDescription')"
       :dismissible="!dlFields.addInProgress.value"
       :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="handleEditorOpenChange"
@@ -409,10 +415,37 @@
           :addInProgress="dlFields.addInProgress.value"
           :reference="itemRef"
           :item="item as DLField"
-          @cancel="() => void requestCloseEditor()"
           @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-x"
+            :disabled="dlFields.addInProgress.value"
+            class="justify-center"
+            @click="() => void requestCloseEditor()"
+          >
+            {{ t('common.cancel') }}
+          </UButton>
+
+          <UButton
+            type="submit"
+            form="dlFieldForm"
+            color="primary"
+            icon="i-lucide-save"
+            :disabled="dlFields.addInProgress.value"
+            :loading="dlFields.addInProgress.value"
+            class="justify-center"
+          >
+            {{ t('common.save') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </main>
@@ -428,11 +461,12 @@ import { useDlFields } from '~/composables/useDlFields';
 import type { DLField } from '~/types/dl_fields';
 import type { APIResponse } from '~/types/responses';
 import { copyText, encode } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
 const box = useConfirm();
 const { toggleExpand, expandClass } = useExpandableMeta();
-const pageShell = requirePageShell('custom-fields');
+const pageShell = usePageShell('custom-fields');
 const displayStyle = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
 const isMobile = useMediaQuery({ maxWidth: 639 });
 const dlFields = useDlFields();
@@ -481,7 +515,7 @@ const contentStyle = computed<'list' | 'grid'>(() =>
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Remove Selected',
+      label: t('common.removeSelected'),
       icon: 'i-lucide-trash',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
@@ -502,7 +536,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(editorOpen, {
     dirty: editorDirty,
-    message: 'You have unsaved custom field changes. Do you want to discard them?',
+    message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();
     },
@@ -586,7 +620,7 @@ const toggleMasterSelection = (): void => {
 };
 
 const deleteItem = async (field: DLField): Promise<void> => {
-  if (true !== (await box.confirm(`Delete '${field.name}'?`))) {
+  if (true !== (await box.confirm(t('common.deleteNamedConfirm', { name: field.name })))) {
     return;
   }
 
@@ -599,9 +633,9 @@ const deleteSelected = async (): Promise<void> => {
   }
 
   const { status } = await confirmDialog({
-    title: 'Delete Selected Fields',
+    title: t('common.deleteSelected'),
     message:
-      `Delete ${selectedIds.value.length} field/s?` +
+      t('common.deleteCountConfirm', { count: selectedIds.value.length }) +
       '\n\n' +
       selectedIds.value
         .map((id) => {
@@ -610,7 +644,7 @@ const deleteSelected = async (): Promise<void> => {
         })
         .filter(Boolean)
         .join('\n'),
-    confirmText: 'Delete',
+    confirmText: t('common.delete'),
     confirmColor: 'error',
   });
 

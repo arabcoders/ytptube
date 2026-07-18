@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from app.features.conditions.schemas import Condition, ConditionList, ConditionPatch
 from app.features.conditions.service import Conditions
 from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
-from app.features.core.utils import build_pagination, format_validation_errors, normalize_pagination
+from app.features.core.utils import api_error_response, build_pagination, format_validation_errors, normalize_pagination
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
@@ -74,21 +74,38 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
     params = await request.json()
 
     if not isinstance(params, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     if not (url := params.get("url")):
-        return web.json_response({"error": "url is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "url is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
+        )
 
     if not (cond := params.get("condition")):
-        return web.json_response({"error": "condition is required."}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "condition is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.condition"},
+        )
 
     try:
         await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
     except ValueError as e:
-        return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(e),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.url"},
+            detail=str(e),
+        )
 
     try:
         preset: str = params.get("preset", config.default_preset)
@@ -107,8 +124,9 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
             )
 
             if not data:
-                return web.json_response(
-                    data={"error": f"Failed to extract info from '{url!s}'."},
+                return api_error_response(
+                    f"Failed to extract info from '{url!s}'.",
+                    code="OPERATION_FAILED",
                     status=web.HTTPBadRequest.status_code,
                 )
             cache.set(key=key, value=data, ttl=600)
@@ -126,14 +144,17 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
                 "exception_type": type(e).__name__,
             },
         )
-        return web.json_response(
-            data={"error": f"Failed to extract video info. '{e!s}'"},
+        return api_error_response(
+            f"Failed to extract video info. '{e!s}'",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
+            detail=str(e),
         )
 
     if not isinstance(data, dict):
-        return web.json_response(
-            data={"error": "Failed to extract video info."},
+        return api_error_response(
+            "Failed to extract video info.",
+            code="OPERATION_FAILED",
             status=web.HTTPInternalServerError.status_code,
         )
 
@@ -153,9 +174,11 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
                 "exception_type": type(e).__name__,
             },
         )
-        return web.json_response(
-            data={"error": str(e)},
+        return api_error_response(
+            str(e),
+            code="OPERATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            detail=str(e),
         )
 
     return web.json_response(
@@ -186,23 +209,33 @@ async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting list with dicts."},
+        return api_error_response(
+            "Invalid request body expecting list with dicts.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         item: Condition = Condition.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate condition.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate condition.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.condition"},
+            detail=format_validation_errors(exc),
         )
 
     try:
         saved = _serialize(await Conditions.get_instance().save(item=item.model_dump()))
     except ValueError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.condition"},
+            detail=str(exc),
+        )
 
     notify.emit(
         Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.CONDITIONS, action=CEAction.CREATE, data=saved)
@@ -224,10 +257,19 @@ async def conditions_get(request: Request, encoder: Encoder) -> Response:
 
     """
     if not (id := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await Conditions.get_instance().get(id)):
-        return web.json_response({"error": "Condition not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Condition not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.condition"},
+        )
 
     return web.json_response(data=_serialize(model), status=web.HTTPOk.status_code, dumps=encoder.encode)
 
@@ -247,7 +289,11 @@ async def conditions_delete(request: Request, encoder: Encoder, notify: EventBus
 
     """
     if not (id := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         deleted = _serialize(await Conditions.get_instance()._repo.delete(id))
@@ -256,7 +302,13 @@ async def conditions_delete(request: Request, encoder: Encoder, notify: EventBus
         )
         return web.json_response(data=deleted, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except KeyError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.condition"},
+            detail=str(exc),
+        )
 
 
 @route("PATCH", r"api/conditions/{id:\d+}", name="condition_patch")
@@ -274,16 +326,26 @@ async def conditions_patch(request: Request, encoder: Encoder, notify: EventBus)
 
     """
     if not (id := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await Conditions.get_instance().get(id)):
-        return web.json_response({"error": "Condition not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Condition not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.condition"},
+        )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting list with dicts."},
+        return api_error_response(
+            "Invalid request body expecting list with dicts.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
@@ -292,15 +354,20 @@ async def conditions_patch(request: Request, encoder: Encoder, notify: EventBus)
     try:
         validated = ConditionPatch.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate condition.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate condition.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.condition"},
+            detail=format_validation_errors(exc),
         )
 
     if validated.name and await service._repo.get_by_name(validated.name, exclude_id=model.id):
-        return web.json_response(
-            data={"error": f"Condition with name '{validated.name}' already exists."},
+        return api_error_response(
+            f"Condition with name '{validated.name}' already exists.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.condition", "field": "api.fields.name"},
         )
 
     updated = _serialize(await service._repo.update(model.id, validated.model_dump(exclude_unset=True)))
@@ -325,16 +392,26 @@ async def conditions_update(request: Request, encoder: Encoder, notify: EventBus
 
     """
     if not (id := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await Conditions.get_instance().get(id)):
-        return web.json_response({"error": "Condition not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Condition not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.condition"},
+        )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting list with dicts."},
+        return api_error_response(
+            "Invalid request body expecting list with dicts.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
@@ -343,15 +420,20 @@ async def conditions_update(request: Request, encoder: Encoder, notify: EventBus
     try:
         validated = Condition.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate condition.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate condition.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.condition"},
+            detail=format_validation_errors(exc),
         )
 
     if validated.name and await service._repo.get_by_name(validated.name, exclude_id=model.id):
-        return web.json_response(
-            data={"error": f"Condition with name '{validated.name}' already exists."},
+        return api_error_response(
+            f"Condition with name '{validated.name}' already exists.",
+            code="ALREADY_EXISTS",
             status=web.HTTPConflict.status_code,
+            params={"resource": "api.resources.condition", "field": "api.fields.name"},
         )
 
     updated = _serialize(await service._repo.update(model.id, validated.model_dump(exclude_unset=True)))

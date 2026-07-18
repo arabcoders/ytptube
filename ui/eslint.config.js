@@ -6,6 +6,9 @@ import tsParser from '@typescript-eslint/parser'
 
 export default withNuxt(
   {
+    ignores: ['app/utils/generatedIconCatalog.ts']
+  },
+  {
     languageOptions: {
       parser: vueParser,
       parserOptions: {

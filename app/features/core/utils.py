@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from aiohttp import web
+
 if TYPE_CHECKING:
     from aiohttp.web import Request
     from pydantic import ValidationError
@@ -75,6 +77,34 @@ def format_validation_errors(exc: ValidationError) -> list[dict[str, Any]]:
         }
         for error in exc.errors()
     ]
+
+
+def api_error_response(
+    error: str,
+    *,
+    code: str,
+    status: int,
+    params: dict[str, str | int | float | bool | None] | None = None,
+    detail: str | list[dict[str, Any]] | None = None,
+    message: str | None = None,
+    headers: dict[str, str] | None = None,
+    extra: dict[str, Any] | None = None,
+) -> web.Response:
+    data: dict[str, Any] = {"error": error, "code": code}
+
+    if params:
+        data["params"] = params
+
+    if detail is not None:
+        data["detail"] = detail
+
+    if message is not None:
+        data["message"] = message
+
+    if extra:
+        data.update(extra)
+
+    return web.json_response(data=data, status=status, headers=headers)
 
 
 def gen_random(length: int = 16) -> str:

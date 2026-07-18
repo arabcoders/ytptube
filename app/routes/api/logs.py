@@ -7,6 +7,7 @@ from pathlib import Path
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.core.utils import api_error_response
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.log import get_logger
@@ -157,7 +158,12 @@ async def logs(request: Request, config: Config, encoder: Encoder) -> Response:
 
     """
     if not config.file_logging:
-        return web.json_response(data={"error": "File logging is not enabled."}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "File logging is not enabled.",
+            code="FEATURE_DISABLED",
+            status=web.HTTPNotFound.status_code,
+            params={"feature": "api.features.fileLogging"},
+        )
 
     offset = int(request.query.get("offset", 0))
     limit = int(request.query.get("limit", 100))
@@ -201,16 +207,19 @@ async def get_logs_level(config: Config, encoder: Encoder) -> Response:
 @route("POST", "api/logs/level/{level}", "logs.level.set")
 async def set_logs_level(request: Request) -> Response:
     if not (level := request.match_info.get("level")):
-        return web.json_response(
-            {"error": "Log level is required."},
+        return api_error_response(
+            "Log level is required.",
+            code="REQUIRED",
             status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.logLevel"},
         )
 
     try:
         set_runtime_log_level(level)
     except ValueError as e:
-        return web.json_response(
-            {"error": f"{e!s} Available levels: {', '.join(SUPPORTED_LOG_LEVELS)}."},
+        return api_error_response(
+            f"{e!s} Available levels: {', '.join(SUPPORTED_LOG_LEVELS)}.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
@@ -220,16 +229,20 @@ async def set_logs_level(request: Request) -> Response:
 @route("GET", "api/logs/stream", "logs.stream")
 async def stream_logs(request: Request, config: Config, encoder: Encoder) -> Response | web.StreamResponse:
     if not config.file_logging:
-        return web.json_response(
-            data={"error": "File logging is not enabled."},
+        return api_error_response(
+            "File logging is not enabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPNotFound.status_code,
+            params={"feature": "api.features.fileLogging"},
         )
 
     log_file = Path(config.config_path) / "logs" / "app.jsonl"
     if not log_file.exists():
-        return web.json_response(
-            data={"error": "Log file is not available."},
+        return api_error_response(
+            "Log file is not available.",
+            code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
         )
 
     response = web.StreamResponse(

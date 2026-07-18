@@ -11,6 +11,7 @@
       autocomplete="off"
       class="w-full"
       :ui="ui"
+      dir="ltr"
       @focus="onFocus"
       @blur="onBlur"
       @input="onInput"
@@ -27,7 +28,7 @@
         v-for="(item, idx) in suggestions"
         :key="item"
         type="button"
-        class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
+        class="flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors"
         :class="
           idx === highlighted ? 'bg-elevated text-highlighted' : 'text-default hover:bg-elevated/60'
         "

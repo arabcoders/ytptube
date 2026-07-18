@@ -40,6 +40,8 @@ const throwInstead = ref(false);
  * Notification composable for showing success/error messages.
  */
 const notify = useNotification();
+const { $i18n } = useNuxtApp();
+const t = $i18n?.t ?? ((key: string) => key);
 
 /**
  * Sorts dl fields by order (ascending), then name (A-Z).
@@ -90,7 +92,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
   notify.error(message);
 };
@@ -199,7 +201,7 @@ const createDlField = async (
     const created = await parse_api_response<DLField>(json);
 
     updateDlFields(created);
-    notify.success('DL field created.');
+    notify.success(t('common.crudCreated', { type: t('customFields.field') }));
     lastError.value = null;
 
     if (callback) {
@@ -208,7 +210,7 @@ const createDlField = async (
 
     return created;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -250,7 +252,7 @@ const updateDlField = async (
     const updated = await parse_api_response<DLField>(json);
 
     updateDlFields(updated);
-    notify.success(`DL field '${updated.name}' updated.`);
+    notify.success(t('common.crudUpdated', { type: t('customFields.field'), name: updated.name }));
     lastError.value = null;
 
     if (callback) {
@@ -259,7 +261,7 @@ const updateDlField = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -301,7 +303,7 @@ const patchDlField = async (
     const updated = await parse_api_response<DLField>(json);
 
     updateDlFields(updated);
-    notify.success(`DL field '${updated.name}' updated.`);
+    notify.success(t('common.crudUpdated', { type: t('customFields.field'), name: updated.name }));
     lastError.value = null;
 
     if (callback) {
@@ -310,7 +312,7 @@ const patchDlField = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -339,7 +341,7 @@ const deleteDlField = async (
     await ensureSuccess(response);
 
     removeDlField(id);
-    notify.success('DL field deleted.');
+    notify.success(t('common.crudDeleted', { type: t('customFields.field') }));
     lastError.value = null;
 
     if (callback) {
@@ -348,7 +350,7 @@ const deleteDlField = async (
 
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {

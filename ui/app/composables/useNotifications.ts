@@ -44,6 +44,8 @@ const throwInstead = ref(false);
  * Notification composable for showing success/error messages.
  */
 const notify = useNotification();
+const { $i18n } = useNuxtApp();
+const t = $i18n?.t ?? ((key: string) => key);
 
 /**
  * Sorts notifications by name (A-Z).
@@ -88,7 +90,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
   notify.error(message);
 };
@@ -221,7 +223,7 @@ const createNotification = async (
     const created = await parse_api_response<notification>(json);
 
     updateNotifications(created);
-    notify.success('Notification target created.');
+    notify.success(t('common.crudCreated', { type: t('notificationsPage.target') }));
     lastError.value = null;
 
     if (callback) {
@@ -230,7 +232,7 @@ const createNotification = async (
 
     return created;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -271,7 +273,9 @@ const updateNotification = async (
     const updated = await parse_api_response<notification>(json);
 
     updateNotifications(updated);
-    notify.success(`Notification target '${updated.name}' updated.`);
+    notify.success(
+      t('common.crudUpdated', { type: t('notificationsPage.target'), name: updated.name }),
+    );
     lastError.value = null;
 
     if (callback) {
@@ -280,7 +284,7 @@ const updateNotification = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -321,7 +325,9 @@ const patchNotification = async (
     const updated = await parse_api_response<notification>(json);
 
     updateNotifications(updated);
-    notify.success(`Notification target '${updated.name}' updated.`);
+    notify.success(
+      t('common.crudUpdated', { type: t('notificationsPage.target'), name: updated.name }),
+    );
     lastError.value = null;
 
     if (callback) {
@@ -330,7 +336,7 @@ const patchNotification = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -359,7 +365,7 @@ const deleteNotification = async (
     await ensureSuccess(response);
 
     removeNotification(id);
-    notify.success('Notification target deleted.');
+    notify.success(t('common.crudDeleted', { type: t('notificationsPage.target') }));
     lastError.value = null;
 
     if (callback) {
@@ -368,7 +374,7 @@ const deleteNotification = async (
 
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {

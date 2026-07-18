@@ -1,7 +1,20 @@
-export type error_response = {
-  /** The error message */
-  error: string;
+export type ApiErrorPayload = {
+  error?: string;
+  message?: string;
+  code?: string;
+  params?: Record<string, string | number | boolean | null>;
+  detail?:
+    | string
+    | Array<{
+        loc?: Array<string | number>;
+        msg?: string;
+        type?: string;
+        code?: string;
+      }>;
+  technical_message?: string;
 };
+
+export type error_response = ApiErrorPayload;
 
 export type convert_args_response = {
   /** The converted CLI args */

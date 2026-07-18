@@ -4,6 +4,7 @@ import magic
 from aiohttp import web
 from aiohttp.web import Request, StreamResponse
 
+from app.features.core.utils import api_error_response
 from app.library.config import Config
 from app.library.log import get_logger
 from app.library.router import add_route
@@ -142,7 +143,12 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
         ):
             file_path = STATIC_STATE.index_file
         else:
-            return web.json_response({"error": "File not found.", "file": path}, status=web.HTTPNotFound.status_code)
+            return api_error_response(
+                "File not found.",
+                code="NOT_FOUND",
+                status=web.HTTPNotFound.status_code,
+                params={"resource": "api.resources.file"},
+            )
 
     response = web.FileResponse(
         path=file_path,

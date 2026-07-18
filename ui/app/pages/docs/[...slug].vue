@@ -10,16 +10,20 @@
           <div class="ytp-page-kicker">
             <span>{{ pageShell.sectionLabel }}</span>
             <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
+            <span
+              ><bdi>{{ pageShell.pageLabel }}</bdi></span
+            >
           </div>
 
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+          <p class="max-w-3xl text-sm text-toned">
+            <bdi>{{ pageShell.description }}</bdi>
+          </p>
         </div>
       </div>
     </div>
 
     <div class="ytp-card p-0 overflow-hidden">
-      <div class="min-w-0 max-w-full px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
+      <div class="min-w-0 max-w-full px-4 py-5 sm:px-6 sm:py-6 lg:px-7" dir="ltr">
         <Markdown :file="`/api/docs/${docEntry.file}`" />
       </div>
     </div>
@@ -30,9 +34,10 @@
 import Markdown from '~/components/Markdown.vue';
 import { getDocsEntryBySlug } from '~/composables/useDocs';
 import { formatPageTitle } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
 
 const route = useRoute();
+const { t } = useI18n();
 
 const docEntry = computed(() => {
   const entry = getDocsEntryBySlug(route.params.slug as string | string[] | undefined);
@@ -40,16 +45,16 @@ const docEntry = computed(() => {
   if (!entry) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Documentation not found',
+      statusMessage: t('docs.notFound'),
     });
   }
 
   return entry;
 });
 
-const pageShell = computed(() => requirePageShell(docEntry.value.id));
+const pageShell = computed(() => usePageShell(docEntry.value.id));
 
 useHead(() => ({
-  title: formatPageTitle(docEntry.value.title),
+  title: formatPageTitle(pageShell.value.pageLabel),
 }));
 </script>

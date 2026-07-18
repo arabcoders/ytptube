@@ -47,7 +47,10 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 };
 
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  const message =
+    error instanceof Error
+      ? error.message
+      : (useNuxtApp().$i18n?.t('common.unknownError') ?? 'common.unknownError');
   lastError.value = message;
   useNotification().error(message);
 };

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
 
+from app.features.core.utils import api_error_response
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.monitor import ResourceSample, ResourceTracker
@@ -44,9 +45,11 @@ def _parse_range(value: str) -> float | None:
 @route("GET", "api/stats/latest", "stats.latest")
 async def stats_latest(encoder: Encoder, config: Config) -> Response:
     if not config.monitor_enabled:
-        return web.json_response(
-            {"error": "Resource monitoring is disabled."},
+        return api_error_response(
+            "Resource monitoring is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.monitoring"},
         )
     tracker: ResourceTracker = ResourceTracker.get_instance()
     if not (data := tracker.latest()):
@@ -58,9 +61,11 @@ async def stats_latest(encoder: Encoder, config: Config) -> Response:
 @route("GET", "api/stats/history", "stats.history")
 async def stats_history(request: Request, encoder: Encoder, config: Config) -> Response:
     if not config.monitor_enabled:
-        return web.json_response(
-            {"error": "Resource monitoring is disabled."},
+        return api_error_response(
+            "Resource monitoring is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.monitoring"},
         )
 
     range_str: str = request.query.get("range", "30m")
@@ -73,9 +78,11 @@ async def stats_history(request: Request, encoder: Encoder, config: Config) -> R
 @route("GET", "api/stats/bottlenecks", "stats.bottlenecks")
 async def stats_bottlenecks(encoder: Encoder, config: Config) -> Response:
     if not config.monitor_enabled:
-        return web.json_response(
-            {"error": "Resource monitoring is disabled."},
+        return api_error_response(
+            "Resource monitoring is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.monitoring"},
         )
 
     tracker: ResourceTracker = ResourceTracker.get_instance()
@@ -86,9 +93,11 @@ async def stats_bottlenecks(encoder: Encoder, config: Config) -> Response:
 @route("GET", "api/stats/stream", "stats.stream")
 async def stats_stream(request: Request, encoder: Encoder, config: Config) -> StreamResponse | Response:
     if not config.monitor_enabled:
-        return web.json_response(
-            {"error": "Resource monitoring is disabled."},
+        return api_error_response(
+            "Resource monitoring is disabled.",
+            code="FEATURE_DISABLED",
             status=web.HTTPForbidden.status_code,
+            params={"feature": "api.features.monitoring"},
         )
 
     tracker: ResourceTracker = ResourceTracker.get_instance()

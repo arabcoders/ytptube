@@ -9,5 +9,5 @@
   "arrowParens": "always",
   "endOfLine": "lf",
   "experimentalSortPackageJson": false,
-  "ignorePatterns": []
+  "ignorePatterns": ["app/utils/generatedIconCatalog.ts"]
 }

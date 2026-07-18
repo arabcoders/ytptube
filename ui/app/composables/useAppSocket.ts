@@ -10,6 +10,9 @@ import type {
   WSEP as WSEP,
 } from '~/types/sockets';
 
+const t = (key: string, named: Record<string, unknown> = {}): string =>
+  useNuxtApp().$i18n?.t(key, named) ?? key;
+
 export type connectionStatus = 'connected' | 'disconnected' | 'connecting';
 
 type SocketHandler = (...args: unknown[]) => void;
@@ -242,7 +245,7 @@ const connect = () => {
   socket.value.addEventListener('close', () => {
     isConnected.value = false;
     connectionStatus.value = 'disconnected';
-    error.value = 'Disconnected from server.';
+    error.value = t('socket.disconnected');
     dispatch('disconnect', null);
     scheduleReconnect();
   });
@@ -250,9 +253,9 @@ const connect = () => {
   socket.value.addEventListener('error', () => {
     isConnected.value = false;
     connectionStatus.value = 'disconnected';
-    error.value = 'Connection error: Unknown error';
+    error.value = t('socket.connectionError', { error: t('common.unknownError') });
     error_count.value += 1;
-    dispatch('connect_error', { message: 'Unknown error' });
+    dispatch('connect_error', { message: t('common.unknownError') });
     scheduleReconnect();
   });
 
@@ -291,6 +294,7 @@ on('connected', () => {
 });
 
 on('item_added', (data: WSEP['item_added']) => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const queueState = getQueueState();
   const toast = getToast();
 
@@ -298,7 +302,7 @@ on('item_added', (data: WSEP['item_added']) => {
     queueState.add(data.data._id, data.data);
   }
 
-  toast.success(`Item queued: ${ag(data.data, 'title')}`);
+  toast.success(t('queue.itemQueued', { title: ag(data.data, 'title') }));
 });
 
 on(
@@ -329,6 +333,7 @@ on(
 );
 
 on('item_cancelled', (data: WSEP['item_cancelled']) => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const queueState = getQueueState();
   const toast = getToast();
   const id = data.data._id;
@@ -341,7 +346,9 @@ on('item_cancelled', (data: WSEP['item_cancelled']) => {
     return;
   }
 
-  toast.warning(`Download cancelled: ${ag(queueState.get(id, {} as StoreItem), 'title')}`);
+  toast.warning(
+    t('queue.downloadCancelled', { title: ag(queueState.get(id, {} as StoreItem), 'title') }),
+  );
 });
 
 on('item_deleted', (data: WSEP['item_deleted']) => {
@@ -411,17 +418,18 @@ on('item_moved', (data: WSEP['item_moved']) => {
 on(
   ['paused', 'resumed'],
   (event, data: WSEP['paused']) => {
+    const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
     const config = getConfig();
     const toast = getToast();
     const pausedState = Boolean(data.data.paused);
     config.update('paused', pausedState);
 
     if ('resumed' === event) {
-      toast.success('Download queue resumed.');
+      toast.success(t('queue.queueResumed'));
       return;
     }
 
-    toast.warning('Download queue paused.', { timeout: 10000 });
+    toast.warning(t('queue.queuePaused'), { timeout: 10000 });
   },
   true,
 );

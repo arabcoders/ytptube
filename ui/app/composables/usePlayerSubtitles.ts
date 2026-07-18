@@ -116,7 +116,8 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
         return;
       }
 
-      subtitleLoadError.value = 'Failed to load subtitles for this video.';
+      subtitleLoadError.value =
+        useNuxtApp().$i18n?.t('player.subtitleLoadFailed') ?? 'player.subtitleLoadFailed';
     } finally {
       if (requestId === subtitleRequestId) {
         subtitleLoading.value = false;
@@ -173,7 +174,8 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
       subtitleLoadError.value = '';
     } catch {
       if (requestId === assRequestId) {
-        subtitleLoadError.value = 'Failed to render ASS subtitles in the browser.';
+        subtitleLoadError.value =
+          useNuxtApp().$i18n?.t('player.subtitleRenderFailed') ?? 'player.subtitleRenderFailed';
       }
 
       destroyAssRenderer();

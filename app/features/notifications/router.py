@@ -5,7 +5,7 @@ from aiohttp.web import Request, Response
 from pydantic import ValidationError
 
 from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
-from app.features.core.utils import build_pagination, format_validation_errors, normalize_pagination
+from app.features.core.utils import api_error_response, build_pagination, format_validation_errors, normalize_pagination
 from app.features.notifications.schemas import Notification, NotificationEvents, NotificationList, NotificationPatch
 from app.features.notifications.service import Notifications
 from app.library.encoder import Encoder
@@ -58,23 +58,33 @@ async def notifications_add(request: Request, encoder: Encoder, notify: EventBus
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         item: Notification = Notification.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate notification.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate notification.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=format_validation_errors(exc),
         )
 
     try:
         saved = _serialize(await Notifications.get_instance().create(item))
     except ValueError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=str(exc),
+        )
 
     notify.emit(
         Events.CONFIG_UPDATE,
@@ -86,10 +96,19 @@ async def notifications_add(request: Request, encoder: Encoder, notify: EventBus
 @route("GET", r"api/notifications/{id:\d+}", "notification_get")
 async def notifications_get(request: Request, encoder: Encoder) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await Notifications.get_instance().get(identifier)):
-        return web.json_response({"error": "Notification not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Notification not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+        )
 
     return web.json_response(data=_serialize(model), status=web.HTTPOk.status_code, dumps=encoder.encode)
 
@@ -97,7 +116,11 @@ async def notifications_get(request: Request, encoder: Encoder) -> Response:
 @route("DELETE", r"api/notifications/{id:\d+}", "notification_delete")
 async def notifications_delete(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         deleted = _serialize(await Notifications.get_instance().delete(identifier))
@@ -111,31 +134,50 @@ async def notifications_delete(request: Request, encoder: Encoder, notify: Event
             dumps=encoder.encode,
         )
     except KeyError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=str(exc),
+        )
 
 
 @route("PATCH", r"api/notifications/{id:\d+}", "notification_patch")
 async def notifications_patch(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await Notifications.get_instance().get(identifier)):
-        return web.json_response({"error": "Notification not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Notification not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+        )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         validated = NotificationPatch.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate notification.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate notification.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=format_validation_errors(exc),
         )
 
     current = _model(model).model_dump()
@@ -165,9 +207,21 @@ async def notifications_patch(request: Request, encoder: Encoder, notify: EventB
     try:
         updated = _serialize(await Notifications.get_instance().update(model.id, current))
     except ValueError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=str(exc),
+        )
     except KeyError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=str(exc),
+        )
 
     notify.emit(
         Events.CONFIG_UPDATE,
@@ -183,33 +237,58 @@ async def notifications_patch(request: Request, encoder: Encoder, notify: EventB
 @route("PUT", r"api/notifications/{id:\d+}", "notification_update")
 async def notifications_update(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
-        return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "ID required",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
 
     if not (model := await Notifications.get_instance().get(identifier)):
-        return web.json_response({"error": "Notification not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "Notification not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+        )
 
     data = await request.json()
 
     if not isinstance(data, dict):
-        return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+        return api_error_response(
+            "Invalid request body expecting dict.",
+            code="BAD_REQUEST",
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
         validated = Notification.model_validate(data)
     except ValidationError as exc:
-        return web.json_response(
-            data={"error": "Failed to validate notification.", "detail": format_validation_errors(exc)},
+        return api_error_response(
+            "Failed to validate notification.",
+            code="VALIDATION_FAILED",
             status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=format_validation_errors(exc),
         )
 
     try:
         updated = _serialize(await Notifications.get_instance().update(model.id, validated))
     except ValueError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            str(exc),
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=str(exc),
+        )
     except KeyError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            str(exc),
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.notificationTarget"},
+            detail=str(exc),
+        )
 
     notify.emit(
         Events.CONFIG_UPDATE,

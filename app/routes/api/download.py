@@ -1,6 +1,7 @@
 from aiohttp import web
 from aiohttp.web import Request, Response, StreamResponse
 
+from app.features.core.utils import api_error_response
 from app.library.config import Config
 from app.library.log import get_logger
 from app.library.router import route
@@ -24,7 +25,12 @@ async def download_file(request: Request, config: Config, app: web.Application) 
 
     """
     if not (filename := request.match_info.get("filename")):
-        return web.json_response({"error": "Filename required"}, status=web.HTTPBadRequest.status_code)
+        return api_error_response(
+            "Filename required",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.file"},
+        )
 
     try:
         realFile, status = get_file(download_path=config.download_path, file=filename)
@@ -41,20 +47,29 @@ async def download_file(request: Request, config: Config, app: web.Application) 
             )
 
         if web.HTTPNotFound.status_code == status:
-            return web.json_response(data={"error": "File not found"}, status=status)
+            return api_error_response(
+                "File not found",
+                code="NOT_FOUND",
+                status=status,
+                params={"resource": "api.resources.file"},
+            )
     except Exception:
         LOG.exception(
             "Failed to retrieve download file '%s'.",
             filename,
             extra={"route": "download_static", "file_path": filename},
         )
-        return web.json_response(
-            data={"error": "Internal server error."},
-            status=web.HTTPInternalServerError.status_code,
+        return api_error_response(
+            "Internal server error.", code="INTERNAL_ERROR", status=web.HTTPInternalServerError.status_code
         )
 
     if not realFile.is_file():
-        return web.json_response({"error": "File not found"}, status=web.HTTPNotFound.status_code)
+        return api_error_response(
+            "File not found",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+            params={"resource": "api.resources.file"},
+        )
 
     from app.routes.api._static import EXT_TO_MIME
 

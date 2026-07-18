@@ -9,7 +9,7 @@
           color="success"
           variant="soft"
           orientation="horizontal"
-          title="A new WebUI version is installed."
+          :title="t('app.update.newVersionInstalled')"
         >
           <template #leading>
             <UIcon name="i-lucide-info" class="size-4 shrink-0 text-success" />
@@ -18,11 +18,11 @@
           <template #actions>
             <div class="flex items-center gap-3">
               <UButton to="/changelog" color="neutral" variant="link" size="sm" class="px-0">
-                View changelog
+                {{ t('app.update.viewChangelog') }}
               </UButton>
 
               <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
-                Reload app
+                {{ t('app.update.reloadApp') }}
               </UButton>
             </div>
           </template>
@@ -37,6 +37,8 @@
           <UDashboardSidebar
             v-model:open="showSidebar"
             side="left"
+            :toggle-side="sidebarMenuSide"
+            :menu="sidebarMenu"
             collapsible
             resizable
             :default-size="15"
@@ -51,7 +53,7 @@
                   to="/"
                   class="flex w-full min-w-0 items-center gap-2 rounded-xl transition-colors hover:bg-elevated/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   :class="collapsed ? 'justify-center p-1' : 'px-1.5 py-1'"
-                  aria-label="Go to home"
+                  :aria-label="t('common.home')"
                 >
                   <span
                     class="relative inline-flex shrink-0 items-center justify-center transition-all duration-200"
@@ -69,7 +71,7 @@
                     />
                     <span
                       aria-hidden="true"
-                      class="absolute right-0 bottom-0 size-2.5 rounded-full ring-2 ring-default"
+                      class="absolute inset-e-0 bottom-0 size-2.5 rounded-full ring-2 ring-default"
                       :class="connectionStatusDotClass"
                     />
                   </span>
@@ -91,9 +93,10 @@
                 <div v-for="section in sidebarSections" :key="section.id" class="space-y-2">
                   <p
                     v-if="false === collapsed && section.label"
-                    class="px-2 text-[11px] font-semibold tracking-[0.22em] text-toned uppercase"
+                    class="px-2 text-[11px] font-semibold text-toned"
+                    :class="isRtl ? 'tracking-normal' : 'tracking-[0.22em] uppercase'"
                   >
-                    {{ section.label }}
+                    {{ t(section.label) }}
                   </p>
 
                   <UNavigationMenu
@@ -126,7 +129,7 @@
                       icon="i-lucide-house"
                       class="lg:hidden"
                     >
-                      Home
+                      {{ t('common.home') }}
                     </UButton>
                     <UDashboardSidebarCollapse class="hidden lg:inline-flex" />
                   </div>
@@ -145,7 +148,7 @@
                         }
                       "
                     >
-                      <span class="hidden xl:inline">Limits</span>
+                      <span class="hidden xl:inline">{{ t('app.limits') }}</span>
                     </UButton>
 
                     <NotifyDropdown />
@@ -155,8 +158,8 @@
                       variant="ghost"
                       size="sm"
                       icon="i-lucide-search"
-                      aria-label="Search routes and actions"
-                      title="Search routes and actions"
+                      :aria-label="t('app.search')"
+                      :title="t('app.search')"
                       class="shrink-0 lg:hidden"
                       @click="
                         () => {
@@ -167,7 +170,9 @@
 
                     <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
 
-                    <ThemeButton label-class="hidden xl:inline" />
+                    <div class="hidden lg:block">
+                      <ThemeButton label-class="hidden xl:inline" />
+                    </div>
 
                     <UButton
                       color="neutral"
@@ -176,7 +181,7 @@
                       icon="i-lucide-refresh-cw"
                       @click="() => router.go(0)"
                     >
-                      <span class="hidden xl:inline">Reload</span>
+                      <span class="hidden xl:inline">{{ t('common.refresh') }}</span>
                     </UButton>
 
                     <UButton
@@ -186,7 +191,7 @@
                       icon="i-lucide-settings-2"
                       @click="root?.open()"
                     >
-                      <span class="hidden xl:inline">WebUI Settings</span>
+                      <span class="hidden xl:inline">{{ t('common.webuiSettings') }}</span>
                     </UButton>
 
                     <UButton
@@ -197,7 +202,7 @@
                       icon="i-lucide-power"
                       @click="shutdownApp"
                     >
-                      <span class="hidden xl:inline">Shutdown</span>
+                      <span class="hidden xl:inline">{{ t('common.shutdown') }}</span>
                     </UButton>
                   </div>
                 </template>
@@ -216,11 +221,7 @@
                       v-if="!config.is_loaded"
                       :color="config.is_loading ? 'info' : 'error'"
                       variant="soft"
-                      :title="
-                        config.is_loading
-                          ? 'Loading configuration...'
-                          : 'Failed to load configuration'
-                      "
+                      :title="config.is_loading ? t('app.config.loading') : t('app.config.failed')"
                     >
                       <template #leading>
                         <UIcon
@@ -237,36 +238,35 @@
                       <template #description>
                         <div class="space-y-3">
                           <p v-if="config.is_loading" class="text-sm text-default">
-                            This usually takes less than a few seconds. If this is taking too long,
+                            {{ t('app.config.loadingTextStart') }}
                             <button
                               type="button"
                               class="font-semibold text-highlighted underline-offset-2 hover:underline"
                               @click="() => router.go(0)"
                             >
-                              click here
+                              {{ t('app.config.clickHere') }}
                             </button>
-                            to reload the page.
+                            {{ t('app.config.loadingTextEnd') }}
                           </p>
 
                           <p v-else class="text-sm text-default">
-                            Failed to load the application configuration. This likely indicates a
-                            problem with the backend. Try to
+                            {{ t('app.config.failedTextStart') }}
                             <button
                               type="button"
                               class="font-semibold text-highlighted underline-offset-2 hover:underline"
                               @click="config.loadConfig(true)"
                             >
-                              reload configuration
+                              {{ t('app.config.reloadConfig') }}
                             </button>
-                            or
+                            {{ t('app.config.or') }}
                             <button
                               type="button"
                               class="font-semibold text-highlighted underline-offset-2 hover:underline"
                               @click="() => router.go(0)"
                             >
-                              reload the page
+                              {{ t('app.config.reloadPage') }}
                             </button>
-                            .
+                            {{ t('app.config.failedTextEnd') }}
                           </p>
 
                           <div
@@ -280,7 +280,7 @@
                               {{ socket.error_count }}
                             </span>
                             <span>
-                              {{ socket.error }}. Check the developer console for more information.
+                              {{ t('app.config.socketError', { error: socket.error }) }}
                             </span>
                           </div>
                         </div>
@@ -315,7 +315,7 @@
 
                           <UTooltip :text="buildTooltip">
                             <span class="text-xs has-tooltip">
-                              {{ config?.app?.app_version || 'unknown' }}
+                              {{ config?.app?.app_version || t('app.footer.versionUnknown') }}
                             </span>
                           </UTooltip>
                         </div>
@@ -325,7 +325,7 @@
                           class="flex flex-wrap items-center gap-2 text-xs"
                         >
                           <UIcon name="i-lucide-info" class="size-4 text-warning" />
-                          <span>Update available:</span>
+                          <span>{{ t('app.update.updateAvailable') }}</span>
                           <NuxtLink to="/changelog" class="font-semibold text-highlighted">
                             {{ config.app.new_version }}
                           </NuxtLink>
@@ -334,7 +334,7 @@
                         <button
                           v-else
                           type="button"
-                          class="inline-flex items-center gap-2 text-xs text-left transition-colors hover:text-highlighted disabled:opacity-60"
+                          class="inline-flex items-center gap-2 text-xs text-start transition-colors hover:text-highlighted disabled:opacity-60"
                           :disabled="checkingUpdates"
                           @click="checkForUpdates"
                         >
@@ -353,22 +353,23 @@
                           <UIcon name="i-lucide-clock-3" class="size-4" />
                           <UTooltip
                             :text="
-                              'Started: ' +
-                              moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z')
+                              t('common.started', {
+                                time: moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z'),
+                              })
                             "
                           >
                             <span class="has-tooltip">
-                              {{ moment.unix(config.app?.started).fromNow() }}
+                              {{ relativeTime(config.app?.started) }}
                             </span>
                           </UTooltip>
                         </p>
                       </div>
 
                       <div
-                        class="space-y-3 border-t border-default pt-4 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0"
+                        class="space-y-3 border-t border-default pt-4 lg:border-t-0 lg:border-s lg:ps-6 lg:pt-0"
                       >
                         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-toned">
-                          Powered by
+                          {{ t('app.footer.poweredBy') }}
                         </p>
 
                         <div class="space-y-2">
@@ -391,12 +392,12 @@
                             v-if="config.app?.yt_new_version"
                             class="flex flex-wrap items-center gap-2 text-xs"
                           >
-                            <UTooltip text="Restart container to update yt-dlp">
+                            <UTooltip :text="t('app.update.restartContainer')">
                               <span class="has-tooltip">
                                 <UIcon name="i-lucide-info" class="size-4 text-warning" />
                               </span>
                             </UTooltip>
-                            <span>Update available:</span>
+                            <span>{{ t('app.update.updateAvailable') }}</span>
                             <NuxtLink
                               :href="`https://github.com/yt-dlp/yt-dlp/releases/tag/${config.app.yt_new_version}`"
                               target="_blank"
@@ -422,14 +423,14 @@
             v-model:open="showRouteSearch"
             :groups="routeSearchGroups"
             shortcut="meta_k"
-            placeholder="Search routes and actions"
+            :placeholder="t('app.search')"
             :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
           />
 
           <UModal
             v-if="showLimits"
             :open="showLimits"
-            title="Download Limits"
+            :title="t('app.downloadLimits')"
             :ui="{ content: 'sm:max-w-4xl', body: 'p-0' }"
             @update:open="(open) => !open && (showLimits = false)"
           >
@@ -445,7 +446,7 @@
 
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
-import { ref, onBeforeUnmount, onMounted, readonly } from 'vue';
+import { ref, computed, onBeforeUnmount, onMounted, readonly } from 'vue';
 import moment from 'moment';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import AppRoot from '~/components/AppRoot.vue';
@@ -453,6 +454,7 @@ import ConnectionBanner from '~/components/ConnectionBanner.vue';
 import LimitsPage from '~/components/LimitsPage.vue';
 import ThemeButton from '~/components/ThemeButton.vue';
 import { formatPageTitle, parse_api_response, request, uri } from '~/utils';
+import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
 import { getSidebarSwipeMode } from '~/utils/sidebarSwipe';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
@@ -465,6 +467,9 @@ import {
   isNavItemActive,
   type NavItem,
 } from '~/utils/topLevelNavigation';
+
+const { t } = useI18n();
+const { isRtl, locale, locales, changeLocale } = useAppLocale();
 
 type SidebarSection = {
   id: string;
@@ -483,12 +488,15 @@ const router = useRouter();
 const root = ref<InstanceType<typeof AppRoot> | null>(null);
 const app_shutdown = ref<boolean>(false);
 const checkingUpdates = ref(false);
-const updateCheckMessage = ref('Up to date - Check now');
+const updateCheckMessageKey = ref('app.update.upToDate');
+const updateCheckMessage = computed(() => t(updateCheckMessageKey.value));
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
 const showLimits = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
+const sidebarMenuSide = computed<'left' | 'right'>(() => (isRtl.value ? 'right' : 'left'));
+const sidebarMenu = computed(() => ({ side: sidebarMenuSide.value }));
 
 const SwipeState = {
   mode: null as SwipeMode | null,
@@ -534,6 +542,8 @@ const handleSwipeStart = (event: TouchEvent): void => {
     showSidebar.value,
     touch.clientX,
     navigator,
+    isRtl.value,
+    window.innerWidth,
   );
 
   if (!swipeMode) {
@@ -566,12 +576,14 @@ const completeSwipe = (): void => {
   const deltaY = SwipeState.endY - SwipeState.startY;
   const isHorizontalOpenSwipe =
     swipeMode === 'open' &&
-    deltaX >= MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE &&
-    deltaX > Math.abs(deltaY);
+    (isRtl.value
+      ? deltaX <= -MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE && Math.abs(deltaX) > Math.abs(deltaY)
+      : deltaX >= MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE && deltaX > Math.abs(deltaY));
   const isHorizontalCloseSwipe =
     swipeMode === 'close' &&
-    deltaX <= -MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE &&
-    Math.abs(deltaX) > Math.abs(deltaY);
+    (isRtl.value
+      ? deltaX >= MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE && deltaX > Math.abs(deltaY)
+      : deltaX <= -MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE && Math.abs(deltaX) > Math.abs(deltaY));
 
   resetSwipe();
 
@@ -593,12 +605,14 @@ const handleSwipeCancel = (): void => {
   resetSwipe();
 };
 
-const dashboardSidebarUi = {
-  root: 'shell-surface border-r border-default bg-default/95 backdrop-blur-sm',
-  header: 'border-b border-default px-2.5 py-3',
-  body: 'gap-3 px-2.5 py-3',
-  footer: 'border-t border-default px-2.5 py-3',
-};
+const dashboardSidebarUi = computed(() => {
+  return {
+    root: 'shell-surface border-e border-default bg-default/95 backdrop-blur-sm',
+    header: 'border-b border-default px-2.5 py-3',
+    body: 'gap-3 px-2.5 py-3',
+    footer: 'border-t border-default px-2.5 py-3',
+  };
+});
 
 const dashboardNavbarUi = {
   root: 'border-b border-default bg-transparent px-4 py-3 sm:px-5 lg:px-6',
@@ -622,7 +636,7 @@ const navigationUi = (collapsed: boolean) => ({
 });
 
 const makeNavigationItem = (item: NavItem): NavigationMenuItem => ({
-  label: item.label,
+  label: t(item.label),
   icon: item.icon,
   to: item.to,
   value: item.id,
@@ -665,19 +679,28 @@ const sidebarItems = computed<
 
 const activeNavItem = computed(() => getActiveNavItem(route, navigationAvailability.value));
 
-const pageTitle = computed(
-  () => activeNavItem.value?.navbarTitle || activeNavItem.value?.label || 'YTPTube',
-);
+const pageTitle = computed(() => {
+  const item = activeNavItem.value;
+  if (!item) return 'YTPTube';
+  return t(item.navbarTitle ?? item.label);
+});
 
-const documentTitle = computed(() => activeNavItem.value?.pageLabel || pageTitle.value);
+const documentTitle = computed(() => {
+  const item = activeNavItem.value;
+  if (!item) return 'YTPTube';
+  return t(item.pageLabel || item.label);
+});
 
 useHead(() => ({
   title: formatPageTitle(documentTitle.value),
 }));
 
-const buildTooltip = computed(
-  () =>
-    `Build: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, SHA: ${config.app?.app_commit_sha}`,
+const buildTooltip = computed(() =>
+  t('common.buildInfo', {
+    date: config.app?.app_build_date,
+    branch: config.app?.app_branch,
+    sha: config.app?.app_commit_sha,
+  }),
 );
 
 const connectionStatusColor = computed(() => {
@@ -706,14 +729,14 @@ const connectionStatusDotClass = computed(() => {
 
 const connectionStatusLabel = computed(() => {
   if (socket.connectionStatus === 'connected') {
-    return 'Connected';
+    return t('app.connection.connected');
   }
 
   if (socket.connectionStatus === 'connecting') {
-    return 'Connecting...';
+    return t('app.connection.connecting');
   }
 
-  return 'Disconnected';
+  return t('app.connection.disconnected');
 });
 
 const sidebarSections = computed<Array<SidebarSection>>(() =>
@@ -727,13 +750,13 @@ const routeSearchGroups = computed(() => [
   ...sidebarItems.value
     .map((section) => ({
       id: section.id,
-      label: section.label,
+      label: t(section.label),
       items: section.items
         .flat()
         .filter((entry) => entry.searchable !== false)
         .map((entry) => ({
-          label: entry.label,
-          description: entry.description,
+          label: t(entry.label),
+          description: t(entry.description),
           icon: entry.icon,
           suffix: entry.to,
           onSelect: () => handleRouteSelect(entry),
@@ -742,18 +765,18 @@ const routeSearchGroups = computed(() => [
     .filter((section) => section.items.length > 0),
   {
     id: 'downloads',
-    label: 'Downloads',
+    label: t('common.downloads'),
     items: [
       config.paused
         ? {
-            label: 'Resume Downloads',
-            description: 'Resume globally paused downloads.',
+            label: t('app.resumeAll'),
+            description: t('app.resumeDesc'),
             icon: 'i-lucide-play',
             onSelect: () => void resumeDownloads(),
           }
         : {
-            label: 'Pause Downloads',
-            description: 'Globally pause all non-active downloads.',
+            label: t('app.pauseAll'),
+            description: t('app.pauseDesc'),
             icon: 'i-lucide-pause',
             onSelect: () => void pauseDownloads(),
           },
@@ -761,15 +784,29 @@ const routeSearchGroups = computed(() => [
   },
   {
     id: 'preferences',
-    label: 'Preferences',
+    label: t('common.webuiSettings'),
     items: [
       {
-        label: 'WebUI Settings',
-        description: 'Adjust interface behavior and download defaults.',
+        label: t('common.webuiSettings'),
+        description: t('app.settings.description'),
         icon: 'i-lucide-settings-2',
         onSelect: () => void openSettings(),
       },
     ],
+  },
+  {
+    id: 'language',
+    label: t('app.settings.language'),
+    items: locales.value
+      .filter((entry) => typeof entry !== 'string')
+      .map((entry) => {
+        const obj = entry as { name: string; code: string };
+        return {
+          label: `(${String(obj.code).toUpperCase()}) ${obj.name}`,
+          icon: obj.code === locale.value ? 'i-lucide-check' : 'i-lucide-globe',
+          onSelect: () => void switchLanguage(obj.code),
+        };
+      }),
   },
 ]);
 
@@ -797,6 +834,11 @@ const openSettings = async (): Promise<void> => {
   root.value?.open();
 };
 
+const switchLanguage = async (code: string): Promise<void> => {
+  await closeRouteSearch();
+  await changeLocale(code);
+};
+
 const handleRouteSelect = async (item: NavItem) => {
   await closeRouteSearch();
 
@@ -810,18 +852,18 @@ const checkForUpdates = async () => {
     return;
   }
 
-  const msg = 'Up to date - Check now';
+  const msg = 'app.update.upToDate';
 
   try {
     checkingUpdates.value = true;
-    updateCheckMessage.value = 'Checking...';
+    updateCheckMessageKey.value = 'app.update.checking';
 
     const response = await fetch('/api/system/check-updates', { method: 'POST' });
 
     if (!response.ok) {
       await response.json();
-      updateCheckMessage.value = 'Check failed';
-      setTimeout(() => (updateCheckMessage.value = msg), 3000);
+      updateCheckMessageKey.value = 'app.update.checkFailed';
+      setTimeout(() => (updateCheckMessageKey.value = msg), 3000);
       return;
     }
 
@@ -835,21 +877,21 @@ const checkForUpdates = async () => {
     }
 
     if ('update_available' === data.app.status) {
-      updateCheckMessage.value = 'Update found!';
+      updateCheckMessageKey.value = 'app.update.updateFound';
     } else if ('up_to_date' === data.app.status && 'up_to_date' === data.ytdlp?.status) {
-      updateCheckMessage.value = 'Up to date ✓';
-      setTimeout(() => (updateCheckMessage.value = msg), 3000);
+      updateCheckMessageKey.value = 'app.update.upToDateVerified';
+      setTimeout(() => (updateCheckMessageKey.value = msg), 3000);
     } else if ('up_to_date' === data.app.status && 'update_available' === data.ytdlp?.status) {
-      updateCheckMessage.value = 'Up to date ✓';
-      setTimeout(() => (updateCheckMessage.value = msg), 3000);
+      updateCheckMessageKey.value = 'app.update.upToDateVerified';
+      setTimeout(() => (updateCheckMessageKey.value = msg), 3000);
     } else {
-      updateCheckMessage.value = 'Check failed';
-      setTimeout(() => (updateCheckMessage.value = msg), 3000);
+      updateCheckMessageKey.value = 'app.update.checkFailed';
+      setTimeout(() => (updateCheckMessageKey.value = msg), 3000);
     }
   } catch (e) {
     console.error('Update check failed:', e);
-    updateCheckMessage.value = 'Check failed';
-    setTimeout(() => (updateCheckMessage.value = msg), 3000);
+    updateCheckMessageKey.value = 'app.update.checkFailed';
+    setTimeout(() => (updateCheckMessageKey.value = msg), 3000);
   } finally {
     checkingUpdates.value = false;
   }
@@ -909,15 +951,15 @@ const { newVersionIsAvailable } = useVersionUpdate();
 const shutdownApp = async () => {
   if (false === config.app.is_native) {
     await alertDialog({
-      title: 'Shutdown Unavailable',
-      message: 'The shutdown feature is only available when running as native application.',
+      title: t('app.shutdown.unavailable'),
+      message: t('app.shutdown.unavailableDesc'),
     });
     return;
   }
 
   const { status } = await confirmDialog({
-    title: 'Shutdown Application',
-    message: 'Are you sure you want to shutdown the application?',
+    title: t('app.shutdown.confirmTitle'),
+    message: t('app.shutdown.confirmMessage'),
   });
 
   if (false === status) {
@@ -929,8 +971,10 @@ const shutdownApp = async () => {
     if (!resp.ok) {
       const body = await resp.json();
       await alertDialog({
-        title: 'Shutdown Failed',
-        message: `Failed to shutdown the application: ${body.error || resp.statusText || resp.status}`,
+        title: t('app.shutdown.failedTitle'),
+        message: t('app.shutdown.failedMessage', {
+          reason: body.error || String(resp.statusText || resp.status),
+        }),
       });
       return;
     }
@@ -938,11 +982,13 @@ const shutdownApp = async () => {
     await nextTick();
   } catch (e: any) {
     await alertDialog({
-      title: 'Shutdown Failed',
-      message: `Failed to shutdown the application: ${e.message || e}`,
+      title: t('app.shutdown.failedTitle'),
+      message: t('app.shutdown.failedMessage', { reason: String(e.message || e) }),
     });
   }
 };
+
+const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 
 const reloadPage = () => window.location.reload();
 </script>

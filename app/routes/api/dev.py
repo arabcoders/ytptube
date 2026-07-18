@@ -3,6 +3,7 @@ import asyncio
 from aiohttp import web
 from aiohttp.web import Response
 
+from app.features.core.utils import api_error_response
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.log import get_logger
@@ -14,8 +15,9 @@ LOG = get_logger()
 @route("GET", "api/dev/loop/", "debug_loop")
 async def debug_asyncio(config: Config, encoder: Encoder) -> Response:
     if not config.is_dev():
-        return web.json_response(
-            data={"error": "This endpoint is only available in development mode."},
+        return api_error_response(
+            "This endpoint is only available in development mode.",
+            code="FORBIDDEN",
             status=web.HTTPForbidden.status_code,
         )
 

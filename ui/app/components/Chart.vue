@@ -1,7 +1,7 @@
 <template>
-  <div class="space-y-1">
+  <div dir="ltr" class="space-y-1">
     <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-toned">
-      <UIcon v-if="icon" :name="icon" class="mr-1 inline-block size-3" />
+      <UIcon v-if="icon" :name="icon" class="me-1 inline-block size-3" />
       {{ label }}
     </p>
     <div class="relative" @mousemove="onMouseMove" @mouseleave="onMouseLeave">
@@ -20,8 +20,8 @@
         <line
           v-for="t in yTicks"
           :key="'g' + t.value"
-          :x1="axisLeft"
-          :x2="plotRight"
+          :x1="axisX"
+          :x2="plotFar"
           :y1="t.y"
           :y2="t.y"
           stroke="oklch(0.55 0.02 280 / 0.12)"
@@ -29,16 +29,16 @@
         />
 
         <line
-          :x1="axisLeft"
-          :x2="axisLeft"
+          :x1="axisX"
+          :x2="axisX"
           :y1="plotTop"
           :y2="plotBottom"
           stroke="oklch(0.55 0.02 280 / 0.3)"
           stroke-width="1"
         />
         <line
-          :x1="axisLeft"
-          :x2="plotRight"
+          :x1="axisX"
+          :x2="plotFar"
           :y1="plotBottom"
           :y2="plotBottom"
           stroke="oklch(0.55 0.02 280 / 0.3)"
@@ -47,15 +47,15 @@
 
         <g v-for="t in yTicks" :key="'t' + t.value">
           <line
-            :x1="axisLeft"
-            :x2="axisLeft - 2"
+            :x1="axisX"
+            :x2="axisX - 2"
             :y1="t.y"
             :y2="t.y"
             stroke="oklch(0.55 0.02 280 / 0.4)"
             stroke-width="1"
           />
           <text
-            :x="axisLeft - 3"
+            :x="axisX - 3"
             :y="t.y + 3"
             text-anchor="end"
             font-size="5"
@@ -119,7 +119,7 @@
       <div
         v-if="hasData && timestamps.length >= 2"
         class="flex justify-between"
-        :style="{ paddingLeft: axisLeft + 'px', paddingRight: marginRight + 'px' }"
+        :style="{ paddingLeft: marginLeft + 'px', paddingRight: marginRight + 'px' }"
       >
         <span class="text-[8px] text-toned/60">{{ timeLabel(0) }}</span>
         <span class="text-[8px] text-toned/60">{{ timeLabel(timestamps.length - 1) }}</span>
@@ -180,11 +180,12 @@ const maxVal = computed(() => Math.max(...props.values, 1e-9));
 const minVal = computed(() => Math.min(...props.values));
 const valRange = computed(() => maxVal.value - minVal.value || 1);
 
-const axisLeft = marginLeft;
-const plotRight = props.width - marginRight;
+const axisX = marginLeft;
+const plotFar = props.width - marginRight;
+const plotWidth = plotFar - axisX;
+
 const plotTop = marginTop;
 const plotBottom = props.height - marginBottom;
-const plotW = plotRight - axisLeft;
 const plotH = plotBottom - plotTop;
 
 interface YTick {
@@ -206,8 +207,8 @@ const yTicks = computed<YTick[]>(() => {
 const valToFraction = (v: number): number => (v - minVal.value) / valRange.value;
 const yPos = (fraction: number): number => plotBottom - fraction * plotH;
 const xPos = (i: number): number => {
-  const step = plotW / Math.max(props.values.length - 1, 1);
-  return axisLeft + i * step;
+  const step = plotWidth / Math.max(props.values.length - 1, 1);
+  return axisX + i * step;
 };
 
 const linePoints = computed(() => {
@@ -222,7 +223,7 @@ const areaPath = computed(() => {
   const top = props.values
     .map((v, i) => `${xPos(i).toFixed(1)},${yPos(valToFraction(v)).toFixed(1)}`)
     .join(' L ');
-  return `M ${top} L ${plotRight.toFixed(1)},${plotBottom.toFixed(1)} L ${axisLeft.toFixed(1)},${plotBottom.toFixed(1)} Z`;
+  return `M ${top} L ${plotFar.toFixed(1)},${plotBottom.toFixed(1)} L ${axisX.toFixed(1)},${plotBottom.toFixed(1)} Z`;
 });
 
 const timeLabel = (i: number): string => {
@@ -233,15 +234,14 @@ const timeLabel = (i: number): string => {
 
 const fmt = (v: number): string => props.formatValue!(v);
 
-// Hover
 const hoverIdx = ref<number | null>(null);
 
 const hoverLabelX = computed(() => {
   if (hoverIdx.value == null) return 0;
   const x = xPos(hoverIdx.value);
   const lastIdx = props.values.length - 1;
-  if (hoverIdx.value === 0) return Math.max(x + 12, axisLeft + 12);
-  if (hoverIdx.value === lastIdx) return Math.min(x - 12, plotRight - 12);
+  if (hoverIdx.value === 0) return Math.max(x + 12, axisX + 12);
+  if (hoverIdx.value === lastIdx) return Math.min(x - 12, plotFar - 12);
   return x;
 });
 
@@ -262,13 +262,13 @@ const onMouseMove = (e: MouseEvent) => {
   const scaleX = props.width / rect.width;
   const svgX = (e.clientX - rect.left) * scaleX;
 
-  if (svgX < axisLeft || svgX > plotRight) {
+  if (svgX < axisX || svgX > plotFar) {
     hoverIdx.value = null;
     return;
   }
 
-  const step = plotW / Math.max(props.values.length - 1, 1);
-  const idx = Math.round((svgX - axisLeft) / step);
+  const step = plotWidth / Math.max(props.values.length - 1, 1);
+  const idx = Math.round((svgX - axisX) / step);
   hoverIdx.value = Math.max(0, Math.min(idx, props.values.length - 1));
 };
 

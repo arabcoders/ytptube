@@ -4,11 +4,11 @@
       <div class="min-w-0 space-y-2">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-lucide-gauge" class="size-4 text-toned" />
-          <span>Queue overview</span>
+          <span>{{ t('common.queueOverview') }}</span>
         </div>
 
         <p class="max-w-3xl text-sm text-toned">
-          Data is based on the current queue state and configured limits.
+          {{ t('common.limitsDataDesc') }}
         </p>
       </div>
 
@@ -21,7 +21,7 @@
         :disabled="limitsLoading"
         @click="void loadLimits(true)"
       >
-        Refresh
+        {{ t('common.refresh') }}
       </UButton>
     </div>
 
@@ -30,8 +30,7 @@
         <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-info" />
 
         <div class="space-y-1">
-          <p class="text-sm font-medium text-default">Loading limits</p>
-          <p class="text-xs">Fetching current queue state and runtime rules.</p>
+          <p class="text-sm font-medium text-default">{{ t('common.loadingData') }}</p>
         </div>
       </div>
     </div>
@@ -41,7 +40,7 @@
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
-      title="Failed to load limits"
+      :title="t('common.failedFetch')"
       :description="limitsError"
     />
 
@@ -51,7 +50,7 @@
         color="warning"
         variant="soft"
         icon="i-lucide-triangle-alert"
-        title="Showing last successful snapshot"
+        :title="t('common.showingLastSnapshot')"
         :description="limitsError"
       />
 
@@ -60,17 +59,17 @@
         color="warning"
         variant="soft"
         icon="i-lucide-pause"
-        title="Download queue is paused"
+        :title="t('common.downloadQueuePaused')"
       />
 
       <div class="ytp-card shadow-sm">
         <div class="grid gap-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           <section
-            class="space-y-4 border-b border-default px-4 py-4 sm:px-5 lg:border-r lg:border-b-0"
+            class="space-y-4 border-b border-default px-4 py-4 sm:px-5 lg:border-e lg:border-b-0"
           >
             <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
               <UIcon name="i-lucide-download" class="size-4 text-toned" />
-              <span>Download capacity</span>
+              <span>{{ t('common.downloadCapacity') }}</span>
             </div>
 
             <div class="space-y-3">
@@ -98,7 +97,7 @@
             <div class="space-y-3">
               <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
                 <UIcon name="i-lucide-settings-2" class="size-4 text-toned" />
-                <span>Extraction rules</span>
+                <span>{{ t('common.extractionRules') }}</span>
               </div>
 
               <div class="space-y-3">
@@ -125,7 +124,7 @@
             <div class="space-y-3 border-t border-default pt-4">
               <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
                 <UIcon name="i-lucide-clock-3" class="size-4 text-toned" />
-                <span>Premiere handling</span>
+                <span>{{ t('common.premiereHandling') }}</span>
               </div>
 
               <div class="space-y-3">
@@ -157,11 +156,11 @@
           <div class="min-w-0 space-y-2">
             <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
               <UIcon name="i-lucide-list" class="size-4 text-toned" />
-              <span>Per extractor</span>
+              <span>{{ t('common.perExtractor') }}</span>
             </div>
 
             <p class="text-sm text-toned" v-if="trackedExtractorCount">
-              Extractor-specific usage and overrides currently in effect.
+              {{ t('common.extractorUsageDesc') }}
             </p>
           </div>
 
@@ -172,14 +171,15 @@
                 ><span class="font-semibold">{{
                   limits.downloads.per_extractor.default_limit
                 }}</span
-                >/slots per extractor</span
+                >{{ t('common.slotsPerExtractor') }}</span
               >
             </span>
 
             <span class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1">
               <UIcon name="i-lucide-list" class="size-3.5 shrink-0" />
               <span
-                ><span class="font-semibold">{{ trackedExtractorCount }}</span> tracked</span
+                ><span class="font-semibold">{{ trackedExtractorCount }}</span>
+                {{ t('common.tracked') }}</span
               >
             </span>
           </div>
@@ -190,8 +190,8 @@
           color="info"
           variant="soft"
           icon="i-lucide-info"
-          title="No activity"
-          description="Overrides and extractor usage appear here once activity is detected."
+          :title="t('common.noActivity')"
+          :description="t('common.noActivityDesc')"
         />
 
         <div v-else class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
@@ -199,14 +199,14 @@
             <table class="min-w-180 w-full text-sm">
               <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
                 <tr
-                  class="text-left [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+                  class="text-start [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
                 >
-                  <th class="w-full min-w-56">Extractor</th>
-                  <th class="w-36 whitespace-nowrap">Source</th>
-                  <th class="w-24 whitespace-nowrap">Active</th>
-                  <th class="w-24 whitespace-nowrap">Limit</th>
-                  <th class="w-28 whitespace-nowrap">Available</th>
-                  <th class="w-24 whitespace-nowrap">Queued</th>
+                  <th class="w-full min-w-56">{{ t('common.extractor') }}</th>
+                  <th class="w-36 whitespace-nowrap">{{ t('common.source') }}</th>
+                  <th class="w-24 whitespace-nowrap">{{ t('common.active') }}</th>
+                  <th class="w-24 whitespace-nowrap">{{ t('common.limit') }}</th>
+                  <th class="w-28 whitespace-nowrap">{{ t('common.available') }}</th>
+                  <th class="w-24 whitespace-nowrap">{{ t('common.queued') }}</th>
                 </tr>
               </thead>
 
@@ -214,7 +214,7 @@
                 <tr
                   v-for="item in extractorItems"
                   :key="item.name"
-                  class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+                  class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
                 >
                   <td class="px-3 py-3 align-middle">
                     <div class="font-medium text-default">{{ item.name }}</div>
@@ -260,6 +260,8 @@ import moment from 'moment';
 import { parse_api_error, parse_api_response, request } from '~/utils';
 import type { SystemLimitsExtractor, SystemLimitsResponse } from '~/types/limits';
 
+const { t } = useI18n();
+
 type DetailRow = {
   label: string;
   description: string;
@@ -276,7 +278,7 @@ const formatDuration = (seconds: number): string => {
 };
 
 const extractorSourceLabel = (source: string): string => {
-  return source === 'env_override' ? 'Override' : 'Default';
+  return source === 'env_override' ? t('common.overrideSource') : t('common.defaultSource');
 };
 
 const extractorSourceIcon = (source: string): string => {
@@ -293,22 +295,22 @@ const capacityRows = computed<Array<DetailRow>>(() => {
 
   return [
     {
-      label: 'Regular workers',
-      description: 'Slots available.',
+      label: t('common.regularWorkers'),
+      description: t('common.slotsAvailable'),
       value: `${global.active}/${global.limit}`,
-      meta: `${global.available} available`,
+      meta: t('common.availableCount', { n: global.available }),
     },
     {
-      label: 'Waiting queue',
-      description: 'Downloads waiting for worker slot.',
+      label: t('common.waitingQueue'),
+      description: t('common.waitingQueueDesc'),
       value: `${global.queued}`,
-      meta: 'items queued',
+      meta: t('common.itemsQueued'),
     },
     {
-      label: 'Live downloads',
-      description: 'Streams bypass the worker slots limits.',
+      label: t('common.liveDownloads'),
+      description: t('common.liveDownloadsDesc'),
       value: `${global.live_active}`,
-      meta: 'live items',
+      meta: t('common.liveItems'),
     },
   ];
 });
@@ -320,20 +322,20 @@ const extractionRows = computed<Array<DetailRow>>(() => {
 
   return [
     {
-      label: 'Concurrent requests',
-      description: 'Maximum info extraction jobs running at once.',
+      label: t('common.concurrentRequests'),
+      description: t('common.concurrentRequestsDesc'),
       value: `${limits.value.extraction.concurrency}`,
     },
     {
-      label: 'Request timeout',
-      description: 'Per extraction attempt before the backend gives up.',
+      label: t('common.requestTimeout'),
+      description: t('common.requestTimeoutDesc'),
       value: `${limits.value.extraction.timeout_seconds}s`,
     },
     {
-      label: 'Cached info TTL',
-      description: 'How long extracted info can be reused before refresh.',
+      label: t('common.cachedInfoTtl'),
+      description: t('common.cachedInfoTtlDesc'),
       value: formatDuration(limits.value.extraction.info_cache_ttl_seconds),
-      meta: `${limits.value.extraction.info_cache_ttl_seconds} seconds`,
+      meta: t('common.secondsCount', { n: limits.value.extraction.info_cache_ttl_seconds }),
     },
   ];
 });
@@ -345,15 +347,15 @@ const premiereRows = computed<Array<DetailRow>>(() => {
 
   return [
     {
-      label: 'Initial premiere capture',
-      description: 'Whether the first premiere capture is delayed until the buffer window passes.',
-      value: limits.value.live.prevent_premiere ? 'Delayed' : 'Immediate',
+      label: t('common.initialPremiereCapture'),
+      description: t('common.initialPremiereCaptureDesc'),
+      value: limits.value.live.prevent_premiere ? t('common.delayed') : t('common.immediate'),
     },
     {
-      label: 'Premiere buffer',
-      description: 'Extra time added after the scheduled start before download begins.',
+      label: t('common.premiereBuffer'),
+      description: t('common.premiereBufferDesc'),
       value: `${limits.value.live.premiere_buffer_minutes}m`,
-      meta: `${limits.value.live.premiere_buffer_minutes} minute buffer`,
+      meta: t('common.minuteBufferCount', { n: limits.value.live.premiere_buffer_minutes }),
     },
   ];
 });
@@ -384,14 +386,14 @@ const loadLimits = async (force: boolean = false): Promise<void> => {
       try {
         limitsError.value = await parse_api_error(response.clone().json());
       } catch {
-        limitsError.value = response.statusText || 'Failed to load limits.';
+        limitsError.value = response.statusText || t('common.failedFetch');
       }
       return;
     }
 
     limits.value = await parse_api_response<SystemLimitsResponse>(response.json());
   } catch (e) {
-    limitsError.value = e instanceof Error ? e.message : 'Failed to load limits.';
+    limitsError.value = e instanceof Error ? e.message : t('common.failedFetch');
   } finally {
     limitsLoading.value = false;
   }

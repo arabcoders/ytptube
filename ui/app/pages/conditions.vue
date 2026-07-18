@@ -26,7 +26,7 @@
           icon="i-lucide-filter"
           @click="toggleFilterPanel"
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -36,7 +36,7 @@
           icon="i-lucide-plus"
           @click="openCreate"
         >
-          <span>New Condition</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -48,7 +48,9 @@
           class="hidden sm:inline-flex"
           @click="toggleDisplayStyle"
         >
-          <span class="hidden sm:inline">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            displayStyle === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UButton
@@ -61,7 +63,7 @@
           :disabled="isLoading"
           @click="() => void loadContent(page)"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -70,7 +72,7 @@
           ref="filterInput"
           v-model="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -90,7 +92,7 @@
           :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
           @click="toggleMasterSelection"
         >
-          {{ allSelected ? 'Unselect' : 'Select' }}
+          {{ allSelected ? t('common.unselect') : t('common.select') }}
         </UButton>
 
         <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
@@ -105,7 +107,7 @@
             icon="i-lucide-list"
             trailing-icon="i-lucide-chevron-down"
           >
-            Actions
+            {{ t('common.actions') }}
           </UButton>
         </UDropdownMenu>
       </div>
@@ -131,7 +133,7 @@
         <table class="min-w-235 w-full text-sm">
           <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
             <tr
-              class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
             >
               <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
@@ -141,8 +143,8 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">Condition</th>
-              <th class="w-48 whitespace-nowrap">Actions</th>
+              <th class="w-full text-start">{{ t('conditions.condition') }}</th>
+              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
             </tr>
           </thead>
 
@@ -150,7 +152,7 @@
             <tr
               v-for="cond in filteredItems"
               :key="cond.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
             >
               <td class="px-3 py-3 text-center align-middle">
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -179,7 +181,9 @@
                         class="size-3.5"
                         :class="cond.enabled !== false ? 'text-success' : 'text-error'"
                       />
-                      <span>{{ cond.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                      <span>{{
+                        cond.enabled !== false ? t('common.enabled') : t('common.disabled')
+                      }}</span>
                     </button>
 
                     <span
@@ -187,7 +191,7 @@
                       class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                      <span>Priority: {{ cond.priority }}</span>
+                      <span>{{ t('presets.priority', { priority: cond.priority }) }}</span>
                     </span>
                   </div>
                 </div>
@@ -202,7 +206,7 @@
                     icon="i-lucide-file-up"
                     @click="exportItem(cond)"
                   >
-                    <span class="hidden sm:inline">Export</span>
+                    <span class="hidden sm:inline">{{ t('common.exportItem') }}</span>
                   </UButton>
 
                   <UButton
@@ -212,7 +216,7 @@
                     icon="i-lucide-pencil"
                     @click="editItem(cond)"
                   >
-                    <span class="hidden sm:inline">Edit</span>
+                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
                   </UButton>
 
                   <UButton
@@ -222,7 +226,7 @@
                     icon="i-lucide-trash"
                     @click="() => void deleteItem(cond)"
                   >
-                    <span class="hidden sm:inline">Delete</span>
+                    <span class="hidden sm:inline">{{ t('common.delete') }}</span>
                   </UButton>
                 </div>
               </td>
@@ -241,7 +245,7 @@
                 <div class="flex items-start gap-2">
                   <button
                     type="button"
-                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
                     @click="toggleExpand(cond.id, 'name')"
                   >
                     <span :class="['block', expandClass(cond.id, 'name')]">{{ cond.name }}</span>
@@ -258,7 +262,7 @@
                   square
                   @click="exportItem(cond)"
                 >
-                  <span>Export Condition</span>
+                  <span>{{ t('common.exportItem') }}</span>
                 </UButton>
 
                 <label class="inline-flex cursor-pointer items-center justify-center">
@@ -287,7 +291,9 @@
                     class="size-3.5"
                     :class="cond.enabled !== false ? 'text-success' : 'text-error'"
                   />
-                  <span>{{ cond.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                  <span>{{
+                    cond.enabled !== false ? t('common.enabled') : t('common.disabled')
+                  }}</span>
                 </button>
 
                 <span
@@ -295,20 +301,20 @@
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
                   <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>Priority: {{ cond.priority }}</span>
+                  <span>{{ t('presets.priority', { priority: cond.priority }) }}</span>
                 </span>
               </div>
 
               <div class="feature-meta-grid">
                 <button
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(cond.id, 'filter')"
                 >
                   <UIcon name="i-lucide-filter" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">Filter</div>
-                    <span :class="['block', expandClass(cond.id, 'filter')]">{{
+                    <div class="text-xs font-medium text-toned">{{ t('common.filter') }}</div>
+                    <span :class="['block', expandClass(cond.id, 'filter')]" dir="ltr">{{
                       cond.filter
                     }}</span>
                   </div>
@@ -317,13 +323,15 @@
                 <button
                   v-if="cond.cli"
                   type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                   @click="toggleExpand(cond.id, 'cli')"
                 >
                   <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">CLI options</div>
-                    <span :class="['block', expandClass(cond.id, 'cli')]">{{ cond.cli }}</span>
+                    <div class="text-xs font-medium text-toned">{{ t('common.cliOptions') }}</div>
+                    <span :class="['block', expandClass(cond.id, 'cli')]" dir="ltr">{{
+                      cond.cli
+                    }}</span>
                   </div>
                 </button>
               </div>
@@ -331,12 +339,14 @@
               <button
                 v-if="cond.description"
                 type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
                 @click="toggleExpand(cond.id, 'description')"
               >
                 <UIcon name="i-lucide-align-left" class="mt-0.5 size-4 shrink-0 text-toned" />
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">Description</div>
+                  <div class="text-xs font-medium text-toned">
+                    {{ t('common.description') }}
+                  </div>
                   <span :class="['block', expandClass(cond.id, 'description')]">{{
                     cond.description
                   }}</span>
@@ -346,10 +356,11 @@
               <div
                 v-if="extrasEntries(cond.extras).length > 0"
                 class="rounded-md border border-default bg-muted/20 px-3 py-2"
+                dir="ltr"
               >
                 <div class="mb-2 flex items-center gap-2 text-toned">
                   <UIcon name="i-lucide-list" class="size-4" />
-                  <span class="text-sm font-medium">Extras</span>
+                  <span class="text-sm font-medium">{{ t('conditions.extras') }}</span>
                 </div>
 
                 <div class="flex flex-wrap gap-2">
@@ -377,7 +388,7 @@
                 class="w-full justify-center"
                 @click="editItem(cond)"
               >
-                Edit
+                {{ t('common.edit') }}
               </UButton>
 
               <UButton
@@ -387,7 +398,7 @@
                 class="w-full justify-center"
                 @click="() => void deleteItem(cond)"
               >
-                Delete
+                {{ t('common.delete') }}
               </UButton>
             </div>
           </div>
@@ -400,8 +411,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading data. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <div v-else-if="query && filteredItems.length < 1" class="space-y-3">
@@ -409,8 +420,8 @@
         color="warning"
         variant="soft"
         icon="i-lucide-search"
-        title="No Results"
-        :description="`No results found for the query: ${query}. Please try a different search term.`"
+        :title="t('common.noResults')"
+        :description="t('common.noResultsFor', { query })"
       />
     </div>
 
@@ -419,8 +430,8 @@
       color="warning"
       variant="soft"
       icon="i-lucide-circle-alert"
-      title="No items"
-      description="There are no custom defined conditions yet. Click the New Condition button to add your first condition."
+      :title="t('common.noItems')"
+      :description="t('common.empty')"
     />
 
     <div v-if="filteredItems.length > 0 && paging?.total_pages > 1" class="flex justify-end">
@@ -440,36 +451,19 @@
       v-if="filteredItems.length > 0 && !query"
       class="rounded-lg border border-info/30 bg-info/10 p-4 text-sm text-default"
     >
-      <ul class="list-disc space-y-2 pl-5 text-sm text-default">
-        <li>
-          Filtering is based on yt-dlp's <code>--match-filter</code> logic. Any expression that
-          works with yt-dlp will also work here, including the same boolean operators. We added
-          extended support for the <code>OR</code> ( <code>||</code> ) operator, which yt-dlp does
-          not natively support. This allows you to combine multiple conditions more flexibly.
-        </li>
-        <li>
-          The primary use case for this feature is to apply custom cli arguments to specific
-          returned info.
-        </li>
-        <li>
-          For example, i follow specific channel that sometimes region lock some videos, by using
-          the following filter i am able to bypass it
-          <code>availability = 'needs_auth' &amp; channel_id = 'channel_id'</code>. and set proxy
-          for that specific video, while leaving the rest of the videos to be downloaded normally.
-        </li>
-        <li>
-          The data which the filter is applied on is the same data that yt-dlp returns, simply,
-          click on the information button, and check the data to craft your filter. You will get
-          instant feedback if the filter matches or not.
-        </li>
+      <ul class="list-disc space-y-2 ps-5 text-sm text-default">
+        <li v-html="t('conditions.info1')" />
+        <li v-html="t('conditions.info2')" />
+        <li v-html="t('conditions.info3')" />
+        <li v-html="t('conditions.info4')" />
       </ul>
     </div>
 
     <UModal
       v-if="editorOpen"
       :open="editorOpen"
-      :title="itemRef ? `Edit - ${item.name || 'Condition'}` : 'Add new condition'"
-      description="Run yt-dlp custom match filter on returned info. and apply options."
+      :title="itemRef ? t('common.editTitle', { name: item.name || 'Condition' }) : t('common.add')"
+      :description="t('conditions.description')"
       :dismissible="!conditions.addInProgress.value"
       :ui="{ content: 'w-full sm:max-w-6xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="handleEditorOpenChange"
@@ -480,10 +474,37 @@
           :addInProgress="conditions.addInProgress.value"
           :reference="itemRef"
           :item="item as Condition"
-          @cancel="() => void requestCloseEditor()"
           @dirty-change="(dirty) => (editorDirty = dirty)"
           @submit="updateItem"
         />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-x"
+            :disabled="conditions.addInProgress.value"
+            class="justify-center"
+            @click="() => void requestCloseEditor()"
+          >
+            {{ t('common.cancel') }}
+          </UButton>
+
+          <UButton
+            type="submit"
+            form="conditionForm"
+            color="primary"
+            icon="i-lucide-save"
+            :disabled="conditions.addInProgress.value"
+            :loading="conditions.addInProgress.value"
+            class="justify-center"
+          >
+            {{ t('common.save') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
   </main>
@@ -499,12 +520,13 @@ import { useConditions } from '~/composables/useConditions';
 import type { Condition } from '~/types/conditions';
 import type { APIResponse } from '~/types/responses';
 import { cleanObject, copyText, encode } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
 type ConditionItemWithUI = Condition & { raw?: boolean };
 
 const box = useConfirm();
-const pageShell = requirePageShell('conditions');
+const pageShell = usePageShell('conditions');
 const displayStyle = useStorage<'list' | 'grid'>('conditions_display_style', 'grid');
 const isMobile = useMediaQuery({ maxWidth: 639 });
 const { toggleExpand, expandClass } = useExpandableMeta();
@@ -556,7 +578,7 @@ const contentStyle = computed<'list' | 'grid'>(() =>
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Remove Selected',
+      label: t('common.removeSelected'),
       icon: 'i-lucide-trash',
       disabled: !hasSelected.value || massDelete.value,
       onSelect: () => void deleteSelected(),
@@ -577,7 +599,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(editorOpen, {
     dirty: editorDirty,
-    message: 'You have unsaved condition changes. Do you want to discard them?',
+    message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();
     },
@@ -669,7 +691,7 @@ const extrasEntries = (extras?: Record<string, unknown>): Array<[string, unknown
 };
 
 const deleteItem = async (cond: Condition): Promise<void> => {
-  if (true !== (await box.confirm(`Delete '${cond.name}'?`))) {
+  if (true !== (await box.confirm(t('common.deleteNamedConfirm', { name: cond.name })))) {
     return;
   }
 
@@ -682,9 +704,9 @@ const deleteSelected = async (): Promise<void> => {
   }
 
   const { status } = await confirmDialog({
-    title: 'Delete Selected Conditions',
+    title: t('common.deleteSelected'),
     message:
-      `Delete ${selectedIds.value.length} condition/s?` +
+      t('common.deleteCountConfirm', { count: selectedIds.value.length }) +
       '\n\n' +
       selectedIds.value
         .map((id) => {
@@ -693,7 +715,7 @@ const deleteSelected = async (): Promise<void> => {
         })
         .filter(Boolean)
         .join('\n'),
-    confirmText: 'Delete',
+    confirmText: t('common.delete'),
     confirmColor: 'error',
   });
 

@@ -21,14 +21,12 @@
                     <div class="min-w-0 space-y-1">
                       <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
                         <UIcon name="i-lucide-link" class="size-4 text-toned" />
-                        <span>{{
-                          isMobile ? 'What would you like to download?' : greetingMessage
-                        }}</span>
+                        <span>{{ isMobile ? t('simple.mobileTitle') : greetingMessage }}</span>
                       </div>
                     </div>
 
                     <div class="flex shrink-0 items-center gap-1 sm:gap-2">
-                      <UTooltip v-if="!socketStore.isConnected" text="Reload queue">
+                      <UTooltip v-if="!socketStore.isConnected" :text="t('common.refreshQueue')">
                         <UButton
                           color="neutral"
                           variant="ghost"
@@ -39,13 +37,11 @@
                           :square="isMobile"
                           @click="() => refreshQueue()"
                         >
-                          <span v-if="!isMobile">Reload Queue</span>
+                          <span v-if="!isMobile">{{ t('common.refreshQueue') }}</span>
                         </UButton>
                       </UTooltip>
 
-                      <ThemeButton :square="isMobile" :show-label="!isMobile" />
-
-                      <UTooltip text="WebUI Settings">
+                      <UTooltip :text="t('common.webuiSettings')">
                         <UButton
                           color="neutral"
                           variant="ghost"
@@ -54,14 +50,16 @@
                           :square="isMobile"
                           @click="openSettings"
                         >
-                          <span v-if="!isMobile">WebUI Settings</span>
+                          <span v-if="!isMobile">{{ t('common.webuiSettings') }}</span>
                         </UButton>
                       </UTooltip>
                     </div>
                   </div>
 
                   <div class="flex items-stretch gap-2">
-                    <UTooltip :text="showExtras ? 'Hide extra options' : 'Show extra options'">
+                    <UTooltip
+                      :text="showExtras ? t('common.hideOptions') : t('common.showOptions')"
+                    >
                       <UButton
                         type="button"
                         color="neutral"
@@ -80,9 +78,10 @@
 
                     <UInput
                       id="download-url"
+                      dir="ltr"
                       v-model="formUrl"
                       type="url"
-                      placeholder="https://..."
+                      :placeholder="t('common.urlPlaceholder')"
                       size="lg"
                       required
                       :disabled="isFormDisabled"
@@ -99,16 +98,16 @@
                       :disabled="isFormDisabled || !formUrl.trim()"
                       class="shrink-0 justify-center min-w-20 sm:min-w-28"
                     >
-                      Add
+                      {{ t('common.add') }}
                     </UButton>
                   </div>
 
                   <div v-if="showExtras" class="space-y-3 ytp-border-top-soft pt-4">
-                    <UFormField label="Preset" :ui="fieldUi" class="w-full">
+                    <UFormField :label="t('common.presetLabel')" :ui="fieldUi" class="w-full">
                       <template #label>
                         <span class="inline-flex items-center gap-2 font-semibold">
                           <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
-                          <span>Preset</span>
+                          <span>{{ t('common.presetLabel') }}</span>
                         </span>
                       </template>
 
@@ -121,10 +120,10 @@
                         color="neutral"
                         size="lg"
                         class="w-full"
-                        :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-                        :search-input="{ placeholder: 'Search presets' }"
+                        :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
+                        :search-input="{ placeholder: t('common.searchPresets') }"
                         :disabled="isFormDisabled"
-                        placeholder="Select preset"
+                        :placeholder="t('common.selectPreset')"
                       />
                     </UFormField>
 
@@ -136,10 +135,9 @@
                         id="force_download"
                         v-model="dlFields['--no-download-archive']"
                         type="bool"
-                        label="Force download"
+                        :label="t('common.forceDownload')"
                         icon="i-lucide-download"
                         :disabled="isFormDisabled"
-                        description="Ignore archive and re-download."
                         compact
                       />
 
@@ -179,7 +177,7 @@
                       class="size-3.5 text-toned"
                     />
                     <UIcon name="i-lucide-list-video" class="size-4 text-toned" />
-                    <span>Queue</span>
+                    <span>{{ t('common.queue') }}</span>
                   </button>
 
                   <div class="flex flex-wrap items-center gap-2">
@@ -193,7 +191,7 @@
                       :loading="isRefreshing"
                       @click="() => loadMoreQueue()"
                     >
-                      Show more
+                      {{ t('common.showMore') }}
                     </UButton>
                   </div>
                 </div>
@@ -225,7 +223,7 @@
                                 <UIcon
                                   :name="progressIcon(item)"
                                   :class="[
-                                    'mr-1 size-4',
+                                    'me-1 size-4',
                                     ['i-lucide-settings-2', 'i-lucide-loader-circle'].includes(
                                       progressIcon(item),
                                     )
@@ -263,7 +261,7 @@
                                 </span>
                                 <img
                                   :src="resolveThumbnail(item)"
-                                  :alt="item.title || 'Video thumbnail'"
+                                  :alt="item.title || t('simple.videoThumbnail')"
                                   loading="lazy"
                                   class="aspect-video h-full w-full object-cover"
                                   @error="onImgError($event, item)"
@@ -273,7 +271,7 @@
                               <img
                                 v-else
                                 :src="resolveThumbnail(item)"
-                                :alt="item.title || 'Video thumbnail'"
+                                :alt="item.title || t('simple.videoThumbnail')"
                                 loading="lazy"
                                 class="aspect-video h-full w-full object-cover"
                                 @error="onImgError($event, item)"
@@ -296,7 +294,7 @@
                                     rel="noreferrer"
                                     class="block truncate text-sm font-semibold text-highlighted hover:underline"
                                   >
-                                    {{ item.title || 'Untitled' }}
+                                    {{ item.title || t('simple.untitled') }}
                                   </a>
                                 </UTooltip>
 
@@ -314,7 +312,9 @@
                                       :class="['size-3.5', getStatusIconAnimation(item)]"
                                     />
                                     <span>{{
-                                      downloadingStatuses.has(item.status) ? 'Active' : 'Queued'
+                                      downloadingStatuses.has(item.status)
+                                        ? t('common.active')
+                                        : t('common.queued')
                                     }}</span>
                                   </UBadge>
 
@@ -349,7 +349,7 @@
                                   </template>
                                 </template>
                                 <template v-else>
-                                  {{ getDescription(item) || 'No description available.' }}
+                                  {{ getDescription(item) || t('simple.noDescription') }}
                                 </template>
                               </p>
 
@@ -364,7 +364,7 @@
                                   icon="i-lucide-play-circle"
                                   @click="() => stateStore.startItems([item._id])"
                                 >
-                                  Start
+                                  {{ t('common.start') }}
                                 </UButton>
 
                                 <UButton
@@ -375,7 +375,7 @@
                                   icon="i-lucide-pause"
                                   @click="() => stateStore.pauseItems([item._id])"
                                 >
-                                  Pause
+                                  {{ t('common.pause') }}
                                 </UButton>
 
                                 <UButton
@@ -385,7 +385,7 @@
                                   icon="i-lucide-x"
                                   @click="() => stateStore.cancelItems([item._id])"
                                 >
-                                  {{ item.is_live ? 'Stop' : 'Cancel' }}
+                                  {{ item.is_live ? t('common.stop') : t('common.cancel') }}
                                 </UButton>
                               </div>
                             </div>
@@ -399,7 +399,7 @@
                       color="neutral"
                       variant="soft"
                       icon="i-lucide-inbox"
-                      title="Queue is empty"
+                      :title="t('simple.queueEmpty')"
                     />
                   </div>
                 </Transition>
@@ -419,7 +419,7 @@
                       class="size-3.5 text-toned"
                     />
                     <UIcon name="i-lucide-history" class="size-4 text-toned" />
-                    <span>History</span>
+                    <span>{{ t('common.history') }}</span>
                   </button>
 
                   <div v-if="!historyCollapsed" class="flex flex-wrap items-center gap-2">
@@ -452,7 +452,7 @@
                         () => reload({ order: 'DESC', perPage: configStore.app.default_pagination })
                       "
                     >
-                      Reload
+                      {{ t('common.refresh') }}
                     </UButton>
                   </div>
                 </div>
@@ -496,7 +496,7 @@
                                 </span>
                                 <img
                                   :src="resolveThumbnail(item)"
-                                  :alt="item.title || 'Video thumbnail'"
+                                  :alt="item.title || t('simple.videoThumbnail')"
                                   loading="lazy"
                                   class="aspect-video h-full w-full object-cover"
                                   @error="onImgError($event, item)"
@@ -506,7 +506,7 @@
                               <img
                                 v-else
                                 :src="resolveThumbnail(item)"
-                                :alt="item.title || 'Video thumbnail'"
+                                :alt="item.title || t('simple.videoThumbnail')"
                                 loading="lazy"
                                 class="aspect-video h-full w-full object-cover"
                                 @error="onImgError($event, item)"
@@ -529,7 +529,7 @@
                                     rel="noreferrer"
                                     class="block truncate text-sm font-semibold text-highlighted hover:underline"
                                   >
-                                    {{ item.title || 'Untitled' }}
+                                    {{ item.title || t('simple.untitled') }}
                                   </a>
                                 </UTooltip>
 
@@ -574,7 +574,7 @@
                                   </template>
                                 </template>
                                 <template v-else>
-                                  {{ getDescription(item) || 'No description available.' }}
+                                  {{ getDescription(item) || t('simple.noDescription') }}
                                 </template>
                               </p>
 
@@ -591,7 +591,7 @@
                                   :href="getDownloadLink(item)"
                                   :download="getDownloadName(item)"
                                 >
-                                  Download
+                                  {{ t('common.download') }}
                                 </UButton>
 
                                 <UButton
@@ -602,7 +602,7 @@
                                   icon="i-lucide-rotate-cw"
                                   @click="() => requeueItem(item)"
                                 >
-                                  Requeue
+                                  {{ t('simple.requeue') }}
                                 </UButton>
 
                                 <UButton
@@ -612,7 +612,7 @@
                                   icon="i-lucide-trash"
                                   @click="() => deleteHistoryItem(item)"
                                 >
-                                  Delete
+                                  {{ t('common.delete') }}
                                 </UButton>
                               </div>
                             </div>
@@ -626,7 +626,7 @@
                       color="info"
                       variant="soft"
                       icon="i-lucide-loader-circle"
-                      title="Loading history..."
+                      :title="t('history.loading')"
                     />
 
                     <UAlert
@@ -634,7 +634,7 @@
                       color="neutral"
                       variant="soft"
                       icon="i-lucide-history"
-                      title="History is empty"
+                      :title="t('simple.historyEmpty')"
                     />
 
                     <div v-if="historyPagination.total_pages > 1" class="flex justify-end py-2">
@@ -664,7 +664,7 @@
           <UModal
             v-if="videoItem"
             :open="videoOpen"
-            title="Video"
+            :title="t('simple.video')"
             :dismissible="true"
             :ui="{
               content: lightsOut ? 'w-full sm:max-w-5xl shadow-2xl' : 'w-full sm:max-w-5xl',
@@ -690,7 +690,7 @@
           <UModal
             v-if="embedUrl"
             :open="Boolean(embedUrl)"
-            title="Embed"
+            :title="t('simple.embed')"
             :dismissible="true"
             :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
             @update:open="(open) => !open && closePlayer()"
@@ -716,7 +716,6 @@ import type { item_request } from '~/types/item';
 import type { ItemStatus, StoreItem } from '~/types/store';
 import AppRoot from '~/components/AppRoot.vue';
 import ConnectionBanner from '~/components/ConnectionBanner.vue';
-import ThemeButton from '~/components/ThemeButton.vue';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { useHistoryState } from '~/composables/useHistoryState';
@@ -737,6 +736,7 @@ import {
   request,
   ucFirst,
 } from '~/utils';
+const { t } = useI18n();
 
 definePageMeta({ layout: 'empty' });
 
@@ -811,10 +811,10 @@ const historyIsLoading = computed(() => isLoading.value);
 const queueItems = computed<StoreItem[]>(() => Object.values(stateStore.queue));
 const queueCountLabel = computed(() => {
   if (stateStore.hasMore()) {
-    return `${stateStore.shown()} displayed / ${stateStore.count()} queued`;
+    return t('simple.queuedCount', { shown: stateStore.shown(), total: stateStore.count() });
   }
 
-  return `${stateStore.count()} queued`;
+  return t('simple.queuedCountShort', { count: stateStore.count() });
 });
 const historyEntries = computed<StoreItem[]>(() => historyItems.value);
 const hasAnyItems = computed(() => queueItems.value.length > 0 || historyEntries.value.length > 0);
@@ -832,18 +832,18 @@ const greetingMessage = computed(() => {
   const hour = new Date().getHours();
 
   if (hour >= 5 && hour < 12) {
-    return 'Good morning, what would you like to download?';
+    return t('simple.greetingMorning');
   }
 
   if (hour >= 12 && hour < 17) {
-    return 'Good afternoon, what would you like to download?';
+    return t('simple.greetingAfternoon');
   }
 
   if (hour >= 17 && hour < 21) {
-    return 'Good evening, what would you like to download?';
+    return t('simple.greetingEvening');
   }
 
-  return 'Hello, what would you like to download?';
+  return t('simple.greetingNight');
 });
 const sortedDLFields = computed(() =>
   [...configStore.dl_fields].sort((left, right) => (left.order || 0) - (right.order || 0)),
@@ -860,7 +860,7 @@ const refreshQueue = async (): Promise<void> => {
     await stateStore.loadQueue();
   } catch (error) {
     console.error('Failed to refresh queue:', error);
-    toast.error('Failed to refresh queue');
+    toast.error(t('common.failedRefresh'));
   } finally {
     isRefreshing.value = false;
   }
@@ -877,7 +877,7 @@ const loadMoreQueue = async (): Promise<void> => {
     await stateStore.loadMore();
   } catch (error) {
     console.error('Failed to load more queue items:', error);
-    toast.error('Failed to load more queue items');
+    toast.error(t('common.failedLoadMore'));
   } finally {
     isRefreshing.value = false;
   }
@@ -912,7 +912,7 @@ const addDownload = async (): Promise<void> => {
   const url = formUrl.value.trim();
 
   if (!url) {
-    toast.error('Please enter a valid URL.');
+    toast.error(t('common.enterValidUrl'));
     return;
   }
 
@@ -977,7 +977,7 @@ const addDownload = async (): Promise<void> => {
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(`Error: ${data?.error || 'Failed to add download.'}`);
+      toast.error(t('common.errorPrefix', { msg: data?.error || t('queue.failedToAdd') }));
       return;
     }
 
@@ -995,7 +995,7 @@ const addDownload = async (): Promise<void> => {
           return;
         }
 
-        toast.error(`Error: ${item.msg || 'Failed to add download.'}`);
+        toast.error(t('common.errorPrefix', { msg: item.msg || t('queue.failedToAdd') }));
       });
     }
 
@@ -1009,8 +1009,8 @@ const addDownload = async (): Promise<void> => {
       dlFields.value = {};
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to add download.';
-    toast.error(`Error: ${message}`);
+    const message = error instanceof Error ? error.message : t('queue.failedToAdd');
+    toast.error(t('common.errorPrefix', { msg: message }));
   } finally {
     addInProgress.value = false;
   }
@@ -1053,10 +1053,10 @@ const closePlayer = (): void => {
 const { handleOpenChange: handleVideoOpenChange, requestClose: requestCloseVideo } =
   useDirtyCloseGuard(videoOpen, {
     dirty: playingNow,
-    title: 'Close player?',
-    message: 'Playback is active. Do you want to close the player?',
-    confirmText: 'Close player',
-    cancelText: 'Keep playing',
+    title: t('common.closePlayer'),
+    message: t('common.closePlayerDesc'),
+    confirmText: t('common.closePlayer'),
+    cancelText: t('common.keepPlaying'),
     onDiscard: async () => {
       closePlayer();
     },
@@ -1096,30 +1096,31 @@ const getDurationLabel = (item: StoreItem): string | null => {
 };
 
 const statusOverrides: Record<string, string> = {
-  downloading: 'Downloading',
-  postprocessing: 'Post-processing',
-  preparing: 'Preparing',
-  finished: 'Completed',
-  error: 'Error',
-  cancelled: 'Cancelled',
-  not_live: 'Not live yet',
-  skip: 'Skipped',
+  downloading: 'common.downloading',
+  postprocessing: 'simple.statusPostprocessing',
+  preparing: 'simple.statusPreparing',
+  finished: 'common.completed',
+  error: 'common.error',
+  cancelled: 'common.cancelled',
+  not_live: 'simple.statusNotLive',
+  skip: 'common.skipped',
 };
 
 const getStatusLabel = (item: StoreItem): string => {
   if (item.status === null) {
-    return 'Queued';
+    return t('common.queued');
   }
 
   if (isDownloadSkipped(item)) {
-    return 'Download skipped';
+    return t('history.downloadSkipped');
   }
 
   if (item.status === 'error' && item.filename) {
-    return 'Partial Error';
+    return t('history.partialError');
   }
 
-  return statusOverrides[item.status] ?? ucFirst(item.status.replace(/_/g, ' '));
+  const key = statusOverrides[item.status];
+  return key ? t(key) : ucFirst(item.status.replace(/_/g, ' '));
 };
 
 const getQueueIcon = (item: StoreItem): string => {
@@ -1210,7 +1211,7 @@ const percentPipe = (value: number | null): string => {
 
 const ETAPipe = (value: number | null): string => {
   if (value === null || value === 0) {
-    return 'Live';
+    return t('common.live');
   }
 
   if (value < 60) {
@@ -1242,30 +1243,32 @@ const updateProgress = (item: StoreItem): string => {
   let text = '';
 
   if (!item.auto_start) {
-    return 'Manual start';
+    return t('queue.manualStart');
   }
 
   if (item.status === null && paused.value === true) {
-    return 'Global Pause';
+    return t('queue.globalPause');
   }
 
   if (item.status === 'postprocessing') {
-    return 'Post-processors are running.';
+    return t('queue.postProcessing');
   }
 
   if (item.status === 'preparing') {
-    return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
+    return ag(item, 'extras.external_downloader')
+      ? t('queue.externalDownloader')
+      : t('queue.preparing');
   }
 
   if (item.status !== null && item.is_live && !item.speed) {
-    return 'Recording live stream';
+    return t('queue.recordingLive');
   }
 
   if (item.status !== null) {
-    text += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : 'Live';
+    text += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : t('common.live');
   }
 
-  text += item.speed ? ` - ${speedPipe(item.speed)}` : ' - Waiting..';
+  text += item.speed ? ` - ${speedPipe(item.speed)}` : t('queue.waiting');
 
   if (item.status !== null && item.eta) {
     text += ` - ${ETAPipe(item.eta)}`;
@@ -1316,16 +1319,16 @@ const getDownloadLink = (item: StoreItem): string => {
 
 const getDownloadName = (item: StoreItem): string => {
   if (!item.filename) {
-    return 'download';
+    return t('common.download');
   }
 
   const segments = item.filename.split('/');
-  return segments[segments.length - 1] || 'download';
+  return segments[segments.length - 1] || t('common.download');
 };
 
 const requeueItem = async (item: StoreItem): Promise<void> => {
   if (!item.url) {
-    toast.error('Unable to requeue item; missing URL.');
+    toast.error(t('simple.abilityRequeue'));
     return;
   }
 
@@ -1351,7 +1354,7 @@ const requeueItem = async (item: StoreItem): Promise<void> => {
 const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
   await remove({ ids: [item._id], removeFile: app.value.remove_files });
   await reload({ order: 'DESC', perPage: configStore.app.default_pagination });
-  toast.info('Removed from history queue.');
+  toast.info(t('simple.removedFromHistory'));
 };
 
 const handleHistoryItemMoved = moveHandler(() => historyInitialized.value);

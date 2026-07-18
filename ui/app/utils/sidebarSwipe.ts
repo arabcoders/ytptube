@@ -36,9 +36,19 @@ const getSidebarSwipeMode = (
   sidebarOpen: boolean,
   touchX: number,
   nav?: NavigatorLike,
+  isRtl?: boolean,
+  screenWidth?: number,
 ): SidebarSwipeMode | null => {
   if (sidebarOpen) {
     return 'close';
+  }
+
+  if (isRtl && screenWidth) {
+    const rightEdge = screenWidth - MOBILE_SIDEBAR_EDGE_WIDTH;
+    const reservedEdge = isAppleMobileTouchNavigator(nav)
+      ? screenWidth - IOS_NAVIGATION_EDGE_WIDTH
+      : screenWidth;
+    return touchX >= rightEdge && touchX < reservedEdge ? 'open' : null;
   }
 
   return canStartSidebarOpenSwipe(touchX, nav) ? 'open' : null;

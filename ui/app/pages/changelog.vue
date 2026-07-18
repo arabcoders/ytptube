@@ -30,14 +30,14 @@
             }
           "
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <USwitch
           v-model="latestOnly"
           color="primary"
           size="sm"
-          :label="latestOnly ? 'Latest Only' : 'All Loaded'"
+          :label="latestOnly ? t('changelog.latestOnly') : t('changelog.allLoaded')"
           :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
         />
 
@@ -46,7 +46,7 @@
           id="filter"
           v-model.lazy="query"
           type="search"
-          placeholder="Filter changelog entries"
+          :placeholder="t('changelog.filterPlaceholder')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -59,8 +59,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Loading"
-      description="Loading data. Please wait..."
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <template v-else>
@@ -69,7 +69,7 @@
           <section class="space-y-3">
             <button
               type="button"
-              class="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+              class="flex w-full flex-wrap items-center justify-between gap-3 text-start"
               @click="toggleRelease(log.tag)"
             >
               <div class="flex min-w-0 items-center gap-3">
@@ -86,10 +86,13 @@
                   </h2>
 
                   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-toned">
-                    <UTooltip v-if="log.date" :text="`Release Date: ${log.date}`">
+                    <UTooltip
+                      v-if="log.date"
+                      :text="t('changelog.releaseDateValue', { date: log.date })"
+                    >
                       <span class="inline-flex cursor-help items-center gap-1.5">
                         <UIcon name="i-lucide-calendar-days" class="size-3.5 text-muted" />
-                        <span>{{ moment(log.date).fromNow() }}</span>
+                        <span>{{ relativeTime(log.date) }}</span>
                       </span>
                     </UTooltip>
                   </div>
@@ -104,11 +107,11 @@
                   size="sm"
                   icon="i-lucide-check"
                 >
-                  Installed
+                  {{ t('changelog.installed') }}
                 </UBadge>
 
                 <UBadge color="neutral" variant="outline" size="sm" icon="i-lucide-list">
-                  {{ log.commits?.length || 0 }} commits
+                  {{ t('changelog.commits', { count: log.commits?.length || 0 }) }}
                 </UBadge>
 
                 <UIcon
@@ -126,6 +129,7 @@
                 v-for="commit in log.commits"
                 :key="commit.sha"
                 class="rounded-md border border-default bg-elevated/20 px-3 py-3 transition-colors hover:bg-elevated/35"
+                dir="ltr"
               >
                 <NuxtLink
                   :to="`${REPO}/commit/${commit.full_sha}`"
@@ -143,12 +147,12 @@
                     <span>{{ commit.author }}</span>
                   </span>
 
-                  <UTooltip :text="`Date: ${commit.date}`">
+                  <UTooltip :text="t('changelog.date', { date: commit.date })">
                     <time
                       class="inline-flex cursor-help items-center gap-1 rounded-sm border border-default px-2 py-1"
                     >
                       <UIcon name="i-lucide-clock-3" class="size-3.5 text-muted" />
-                      <span>{{ moment(commit.date).fromNow() }}</span>
+                      <span>{{ relativeTime(commit.date) }}</span>
                     </time>
                   </UTooltip>
 
@@ -168,7 +172,7 @@
                     class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1 font-medium"
                   >
                     <UIcon name="i-lucide-check" class="size-3.5 text-success" />
-                    <span>Installed</span>
+                    <span>{{ t('changelog.installed') }}</span>
                   </span>
                 </div>
               </article>
@@ -183,8 +187,8 @@
           color="warning"
           variant="soft"
           icon="i-lucide-search"
-          title="No Results"
-          :description="`No changelog entries found for the query: ${query}.`"
+          :title="t('common.noResults')"
+          :description="t('changelog.noResultsFor', { query })"
         />
 
         <UAlert
@@ -192,8 +196,8 @@
           color="warning"
           variant="soft"
           icon="i-lucide-circle-alert"
-          title="No changelog entries"
-          description="No changelog data is available right now."
+          :title="t('changelog.noItems')"
+          :description="t('changelog.empty')"
         />
       </div>
     </template>
@@ -201,15 +205,17 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { changelogs, changeset } from '~/types/changelogs';
 import { request, ucFirst, uri } from '~/utils';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+import { usePageShell } from '~/composables/usePageShell';
+const { locale, t } = useI18n();
 
 const toast = useNotification();
 const config = useYtpConfig();
-const pageShell = requirePageShell('changelog');
+const pageShell = usePageShell('changelog');
+const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 
 const PROJECT = 'ytptube';
 const REPO = `https://github.com/arabcoders/${PROJECT}`;
@@ -300,7 +306,7 @@ const loadContent = async (): Promise<void> => {
     }
   } catch (error: any) {
     console.error(error);
-    toast.error(`Failed to fetch changelog. ${error.message}`);
+    toast.error(t('changelog.failedFetch', { error: error.message }));
   } finally {
     isLoading.value = false;
   }

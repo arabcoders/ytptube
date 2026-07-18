@@ -13,6 +13,7 @@ from aiohttp.web_log import AccessLogger
 from aiohttp.web_request import BaseRequest
 from aiohttp.web_response import StreamResponse
 
+from app.features.core.utils import api_error_response
 from app.library.log import get_logger
 from app.library.Services import Services
 
@@ -24,6 +25,24 @@ from .router import RouteType, get_routes
 from .Utils import decrypt_data, encrypt_data, get_file, load_modules
 
 LOG = get_logger("http")
+
+_HTTP_STATUS_CODES: dict[int, str] = {
+    400: "BAD_REQUEST",
+    401: "UNAUTHORIZED",
+    403: "FORBIDDEN",
+    404: "BAD_REQUEST",
+    405: "BAD_REQUEST",
+    409: "ALREADY_EXISTS",
+    500: "INTERNAL_ERROR",
+    501: "INTERNAL_ERROR",
+    502: "INTERNAL_ERROR",
+    503: "INTERNAL_ERROR",
+    504: "TIMEOUT",
+}
+
+
+def _http_status_to_code(status: int) -> str:
+    return _HTTP_STATUS_CODES.get(status, "INTERNAL_ERROR")
 
 
 class HttpAccessLogger(AccessLogger):
@@ -225,20 +244,21 @@ class HttpAPI:
                         )
 
             if auth_header is None:
-                return web.json_response(
+                return api_error_response(
+                    "Authorization Required.",
+                    code="UNAUTHORIZED",
                     status=web.HTTPUnauthorized.status_code,
-                    headers={
-                        "WWW-Authenticate": 'Basic realm="Authorization Required."',
-                    },
-                    data={"error": "Authorization Required."},
+                    headers={"WWW-Authenticate": 'Basic realm="Authorization Required."'},
                 )
 
             auth_type, encoded_credentials = auth_header.split(" ", 1)
 
             if "basic" != auth_type.lower():
-                return web.json_response(
-                    data={"error": "Unsupported authentication method.", "method": auth_type},
+                return api_error_response(
+                    "Unsupported authentication method.",
+                    code="UNAUTHORIZED",
                     status=web.HTTPUnauthorized.status_code,
+                    message=auth_type,
                 )
 
             decoded_credentials = base64.b64decode(encoded_credentials).decode("utf-8")
@@ -248,12 +268,11 @@ class HttpAPI:
             pass_match = hmac.compare_digest(user_password, password)
 
             if not (user_match and pass_match):
-                return web.json_response(
-                    data={"error": "Unauthorized (Invalid credentials)."},
+                return api_error_response(
+                    "Unauthorized (Invalid credentials).",
+                    code="UNAUTHORIZED",
                     status=web.HTTPUnauthorized.status_code,
-                    headers={
-                        "WWW-Authenticate": 'Basic realm="Authorization Required."',
-                    },
+                    headers={"WWW-Authenticate": 'Basic realm="Authorization Required."'},
                 )
 
             response: StreamResponse = await handler(request)
@@ -383,7 +402,12 @@ class HttpAPI:
                 else:
                     raise
         except web.HTTPException as e:
-            return web.json_response(data={"error": str(e)}, status=e.status_code)
+            return api_error_response(
+                str(e),
+                code=_http_status_to_code(e.status_code),
+                status=e.status_code,
+                detail=str(e),
+            )
         except Exception as e:
             LOG.exception(
                 "Failed to handle request '%s %s'.",
@@ -391,8 +415,9 @@ class HttpAPI:
                 request.rel_url,
                 extra={"route": str(request.rel_url), "method": request.method, "exception_type": type(e).__name__},
             )
-            response = web.json_response(
-                data={"error": "Internal Server Error"},
+            response = api_error_response(
+                "Internal Server Error",
+                code="INTERNAL_ERROR",
                 status=web.HTTPInternalServerError.status_code,
             )
 

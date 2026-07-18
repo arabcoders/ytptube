@@ -153,6 +153,8 @@ class TestPresetRoutes:
 
         assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort field"
         assert "sort" in payload["error"], "Should explain invalid sort field"
+        assert payload["code"] == "INVALID"
+        assert payload["params"] == {"resource": "api.resources.preset"}
 
     async def test_list_route_bad_order(self, repo):
         request = MagicMock(spec=Request)
@@ -163,6 +165,7 @@ class TestPresetRoutes:
 
         assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort direction"
         assert "order" in payload["error"], "Should explain invalid sort direction"
+        assert payload["code"] == "INVALID"
 
     async def test_list_route_exclude_defaults(self, repo):
         await repo.create({"name": "System Default", "default": True, "priority": 10})

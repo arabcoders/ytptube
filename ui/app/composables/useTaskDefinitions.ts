@@ -38,6 +38,9 @@ const lastError = ref<string | null>(null);
  */
 const throwInstead = ref(false);
 
+const { $i18n } = useNuxtApp();
+const t = $i18n?.t ?? ((key: string) => key);
+
 /**
  * Notification composable for showing success/error messages.
  */
@@ -80,7 +83,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
   useNotification().error(message);
 };
@@ -193,7 +196,7 @@ const createDefinition = async (
       updated_at: payload.updated_at,
     });
 
-    useNotification().success('Task definition created.');
+    useNotification().success(t('common.crudCreated', { type: t('taskDefinitions.definition') }));
     lastError.value = null;
     return payload;
   } catch (error) {
@@ -233,7 +236,9 @@ const updateDefinition = async (
       updated_at: payload.updated_at,
     });
 
-    useNotification().success('Task definition updated.');
+    useNotification().success(
+      t('common.crudUpdated', { type: t('taskDefinitions.definition'), name: payload.name }),
+    );
     lastError.value = null;
     return payload;
   } catch (error) {
@@ -254,7 +259,7 @@ const deleteDefinition = async (id: number): Promise<boolean> => {
     await ensureSuccess(response);
 
     removeSummary(id);
-    useNotification().success('Task definition deleted.');
+    useNotification().success(t('common.crudDeleted', { type: t('taskDefinitions.definition') }));
     lastError.value = null;
     return true;
   } catch (error) {
@@ -294,7 +299,11 @@ const toggleEnabled = async (
       updated_at: payload.updated_at,
     });
 
-    useNotification().success(`Task definition ${enabled ? 'enabled' : 'disabled'}.`);
+    useNotification().success(
+      t(enabled ? 'common.crudEnabled' : 'common.crudDisabled', {
+        type: t('taskDefinitions.definition'),
+      }),
+    );
     lastError.value = null;
     return payload;
   } catch (error) {

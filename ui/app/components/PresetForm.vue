@@ -14,7 +14,7 @@
             }
           "
         >
-          {{ showImport ? 'Hide' : 'Show' }} import
+          {{ showImport ? t('common.hideImport') : t('common.showImport') }}
         </UButton>
       </div>
 
@@ -23,28 +23,25 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-copy" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Import from pre-existing preset</span>
+              <span class="font-semibold text-default">{{ t('common.importPreset') }}</span>
             </div>
           </template>
 
           <template #description>
-            <span>
-              Select a preset to import its data. Warning: This will overwrite the current form
-              data.
-            </span>
+            <span>{{ t('common.importPresetDesc') }}</span>
           </template>
 
           <USelectMenu
             v-model="selectedPreset"
             :items="importPresetItems"
-            placeholder="Select a preset"
+            :placeholder="t('common.selectPreset')"
             value-key="value"
             label-key="label"
             color="neutral"
             size="lg"
             class="w-full"
-            :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-            :search-input="{ placeholder: 'Search presets' }"
+            :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
+            :search-input="{ placeholder: t('common.searchPresets') }"
             @update:model-value="() => void importExistingPreset()"
           />
         </UFormField>
@@ -53,20 +50,18 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Import string</span>
+              <span class="font-semibold text-default">{{ t('common.importString') }}</span>
             </div>
           </template>
 
           <template #description>
-            <span>
-              Paste shared preset string here to import it. Warning: This will overwrite the current
-              form data.
-            </span>
+            <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
           <div class="flex flex-col gap-2 sm:flex-row">
             <UInput
               id="import_string"
+              dir="ltr"
               v-model="importString"
               type="text"
               autocomplete="off"
@@ -85,7 +80,7 @@
               class="justify-center sm:min-w-28"
               @click="() => void importItem()"
             >
-              Import
+              {{ t('common.import') }}
             </UButton>
           </div>
         </UFormField>
@@ -95,12 +90,12 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-type" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Name</span>
+            <span class="font-semibold text-default">{{ t('common.name') }}</span>
           </div>
         </template>
 
         <template #description>
-          <span>Names are stored in lowercase with underscores (no spaces).</span>
+          <span>{{ t('common.presetNameDesc') }}</span>
         </template>
 
         <UInput
@@ -118,12 +113,12 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Priority</span>
+            <span class="font-semibold text-default">{{ t('common.priority') }}</span>
           </div>
         </template>
 
         <template #description>
-          <span>Higher priority presets appear first in the list.</span>
+          <span>{{ t('common.presetPriorityDesc') }}</span>
         </template>
 
         <UInput
@@ -139,20 +134,16 @@
         />
       </UFormField>
 
-      <UFormField
-        class="w-full"
-        :ui="fieldUi"
-        description="Use this defined path if none are given with the URL."
-      >
+      <UFormField class="w-full" :ui="fieldUi" :description="t('common.presetPathDesc')">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Download path</span>
+            <span class="font-semibold text-default">{{ t('common.downloadPath') }}</span>
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <UTooltip :text="`Full Path: ${config.app.download_path}`">
+        <div class="flex flex-col gap-2 sm:flex-row" dir="ltr">
+          <UTooltip :text="t('common.fullPath', { path: config.app.download_path })">
             <div
               class="inline-flex min-h-11 items-center rounded-md border border-default bg-muted/30 px-3 text-sm text-toned"
             >
@@ -163,30 +154,27 @@
           <FolderInput
             id="folder"
             v-model="form.folder"
-            placeholder="Leave empty to use default download path"
+            :placeholder="t('common.leaveEmptyDefault')"
             :disabled="addInProgress"
             :ui="inputUi"
           />
         </div>
       </UFormField>
 
-      <UFormField
-        class="w-full"
-        :ui="fieldUi"
-        description="Use this output template if none are given with URL."
-      >
+      <UFormField class="w-full" :ui="fieldUi" :description="t('common.presetTemplateDesc')">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-file-code-2" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Output template</span>
+            <span class="font-semibold text-default">{{ t('common.outputTemplate') }}</span>
           </div>
         </template>
 
         <UInput
           id="output_template"
+          dir="ltr"
           v-model="form.template"
           type="text"
-          placeholder="Leave empty to use default template."
+          :placeholder="t('common.leaveEmptyDefaultTemplate')"
           size="lg"
           :disabled="addInProgress"
           class="w-full"
@@ -200,22 +188,22 @@
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-            <span class="font-semibold text-default">Command options for yt-dlp</span>
+            <span class="font-semibold text-default">{{ t('common.cliOptions') }}</span>
           </div>
         </template>
 
         <template #description>
           <p class="text-sm text-toned">
             <button type="button" class="text-primary hover:underline" @click="showOptions = true">
-              View all options</button
-            >. Not all options are supported;
+              {{ t('common.cliOptionsViewAll') }}</button
+            >{{ t('common.cliOptionsDescPrefix') }}
             <a
               target="_blank"
               class="text-primary hover:underline"
               href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
             >
-              some are ignored.
-            </a>
+              {{ t('common.cliOptionsDescIgnored') }}</a
+            >.
           </p>
         </template>
         <TextareaAutocomplete
@@ -233,17 +221,17 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
-              <span>Cookies</span>
+              <span>{{ t('common.cookiesLabel') }}</span>
             </div>
           </template>
           <template #description>
             <p class="text-sm text-toned">
-              Use this cookies if none are given with the URL.
+              {{ t('common.cookiesDesc') }}
               <NuxtLink
                 target="_blank"
                 to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
                 class="text-sm text-primary hover:underline"
-                >Recommended addon</NuxtLink
+                >{{ t('common.recommendedAddon') }}</NuxtLink
               >
             </p>
           </template>
@@ -253,7 +241,7 @@
               class="text-sm font-medium text-primary hover:underline"
               @click="triggerCookieUpload"
             >
-              Upload file
+              {{ t('common.uploadFile') }}
             </button>
           </template>
           <TextDropzone
@@ -262,8 +250,9 @@
             :rows="7"
             v-model="form.cookies"
             :disabled="addInProgress"
+            dir="ltr"
             @error="(msg: string) => toast.error(msg)"
-            placeholder="Leave empty to use default cookies. Or drag & drop a cookie file here."
+            :placeholder="t('common.cookiesPlaceholder')"
           />
         </UFormField>
       </div>
@@ -273,21 +262,18 @@
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-message-square-text" class="size-4 text-toned" />
-              <span class="font-semibold text-default">Description</span>
+              <span class="font-semibold text-default">{{ t('common.description') }}</span>
             </div>
           </template>
-
           <template #description>
-            <p class="text-sm text-toned">
-              Use this field to help users to understand how to use this preset.
-            </p>
+            <span>&nbsp;</span>
           </template>
 
           <UTextarea
             id="description"
             v-model="form.description"
             :disabled="addInProgress"
-            placeholder="Extras instructions for users to follow"
+            :placeholder="t('common.extrasInstructions')"
             :rows="7"
             size="lg"
             variant="outline"
@@ -299,44 +285,15 @@
       </div>
     </div>
 
-    <div
-      class="flex flex-col-reverse gap-2 border-t border-default pt-5 sm:flex-row sm:justify-end"
-    >
-      <UButton
-        type="button"
-        color="neutral"
-        variant="outline"
-        size="lg"
-        icon="i-lucide-x"
-        :disabled="addInProgress"
-        class="justify-center"
-        @click="emitter('cancel')"
-      >
-        Cancel
-      </UButton>
-
-      <UButton
-        type="submit"
-        color="primary"
-        size="lg"
-        icon="i-lucide-save"
-        :disabled="addInProgress"
-        :loading="addInProgress"
-        class="justify-center"
-      >
-        Save
-      </UButton>
-    </div>
-
     <UModal
       v-if="showOptions"
       v-model:open="showOptions"
-      title="yt-dlp options"
+      :title="t('common.cliOptions')"
       :dismissible="true"
       :ui="{ content: 'sm:max-w-6xl', body: 'p-0' }"
     >
       <template #description>
-        <span class="sr-only">Browse available yt-dlp flags and descriptions.</span>
+        <span class="sr-only">{{ t('common.browseYtdlpFlags') }}</span>
       </template>
 
       <template #body>
@@ -355,8 +312,9 @@ import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset } from '~/types/presets';
 import { normalizePresetName, shortPath } from '~/utils';
 
+const { t } = useI18n();
+
 const emitter = defineEmits<{
-  (event: 'cancel'): void;
   (event: 'dirty-change', dirty: boolean): void;
   (event: 'submit', payload: { reference: number | null; preset: Preset }): void;
 }>();
@@ -489,10 +447,10 @@ const confirmImportOverwrite = async (): Promise<boolean> => {
   }
 
   const { status } = await dialog.confirmDialog({
-    title: 'Overwrite current form?',
-    message: 'Importing will overwrite the current preset form fields.',
-    confirmText: 'Overwrite',
-    cancelText: 'Cancel',
+    title: t('common.overwriteForm'),
+    message: t('common.overwriteFormDesc'),
+    confirmText: t('common.overwrite'),
+    cancelText: t('common.cancel'),
     confirmColor: 'warning',
   });
 
@@ -521,14 +479,14 @@ const convertOptions = async (args: string): Promise<Record<string, any> | null>
 const checkInfo = async (): Promise<void> => {
   for (const key of ['name']) {
     if (!form[key as keyof Preset]) {
-      toast.error(`The ${key} field is required.`);
+      toast.error(t('common.fieldRequired', { field: key }));
       return;
     }
   }
 
   const normalizedName = normalizePresetName(String(form.name));
   if (!normalizedName) {
-    toast.error('The name field is required.');
+    toast.error(t('common.validationNameRequired'));
     return;
   }
 
@@ -553,7 +511,7 @@ const checkInfo = async (): Promise<void> => {
   );
 
   if (usedName) {
-    toast.error('The preset name is already in use.');
+    toast.error(t('common.presetNameAlreadyInUse'));
     return;
   }
 
@@ -570,7 +528,7 @@ const checkInfo = async (): Promise<void> => {
 const importItem = async (): Promise<void> => {
   const value = importString.value.trim();
   if (!value) {
-    toast.error('The import string is required.');
+    toast.error(t('common.validationImportRequired'));
     return;
   }
 
@@ -583,7 +541,7 @@ const importItem = async (): Promise<void> => {
 
     if (!item?._type || 'preset' !== item._type) {
       toast.error(
-        `Invalid import string. Expected type 'preset', got '${item._type ?? 'unknown'}'.`,
+        t('common.validationInvalidImport', { expected: 'preset', type: item._type ?? 'unknown' }),
       );
       return;
     }
@@ -611,7 +569,7 @@ const importItem = async (): Promise<void> => {
     showImport.value = false;
   } catch (error: any) {
     console.error(error);
-    toast.error(`Failed to parse. ${error.message}`);
+    toast.error(t('common.validationImportParseFailed', { error: error.message }));
   }
 };
 
@@ -627,7 +585,7 @@ const importExistingPreset = async (): Promise<void> => {
 
   const preset = findPreset(selectedPreset.value);
   if (!preset) {
-    toast.error('Preset not found.');
+    toast.error(t('common.presetNotFoundShort'));
     return;
   }
 

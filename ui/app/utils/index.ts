@@ -6,11 +6,11 @@ const AG_SEPARATOR = '.';
 const APP_TITLE = 'YTPTube';
 
 const separators = [
-  { name: 'Comma', value: ',' },
-  { name: 'Semicolon', value: ';' },
-  { name: 'Colon', value: ':' },
-  { name: 'Pipe', value: '|' },
-  { name: 'Space', value: ' ' },
+  { name: 'common.sepComma', value: ',' },
+  { name: 'common.sepSemicolon', value: ';' },
+  { name: 'common.sepColon', value: ':' },
+  { name: 'common.sepPipe', value: '|' },
+  { name: 'common.sepSpace', value: ' ' },
 ];
 
 /**
@@ -320,16 +320,18 @@ const dirname = (filePath: string): string => {
  */
 const copyText = (str: string, notify: boolean = true, store: boolean = false): void => {
   const toast = useNotification();
+  const { $i18n } = useNuxtApp();
+  const t = $i18n?.t ?? ((key: string) => key);
 
   if (navigator.clipboard) {
     navigator.clipboard
       .writeText(str)
       .then(() => {
-        if (notify) toast.success('Text copied to clipboard.');
+        if (notify) toast.success(t('common.copiedToClipboard'));
       })
       .catch((error) => {
         console.error('Failed to copy.', error);
-        if (notify) toast.error('Failed to copy to clipboard.');
+        if (notify) toast.error(t('common.copyFailed'));
       });
     return;
   }
@@ -342,8 +344,7 @@ const copyText = (str: string, notify: boolean = true, store: boolean = false): 
   document.body.removeChild(el);
 
   if (notify) {
-    const toast = useNotification();
-    toast.success('Text copied to clipboard.', { store });
+    toast.success(t('common.copiedToClipboard'), { store });
   }
 };
 
@@ -421,7 +422,9 @@ const prettyName = (name: string): string =>
  */
 const getSeparatorsName = (value: string): string => {
   const sep = separators.find((s) => s.value === value);
-  return sep ? `${sep.name} (${value})` : 'Unknown';
+  if (!sep) return useNuxtApp().$i18n?.t('common.unknown') ?? 'Unknown';
+  const tr = useNuxtApp().$i18n?.t ?? ((k: string) => k);
+  return `${tr(sep.name)} (${value})`;
 };
 
 /**
@@ -439,7 +442,7 @@ const convertCliOptions = async (opts: string): Promise<convert_args_response> =
 
   const data = await response.json();
   if (200 !== response.status) {
-    throw new Error(`Error: (${response.status}): ${data.error}`);
+    throw new Error(await parse_api_error(data));
   }
 
   return data;
@@ -487,22 +490,36 @@ const makeDownload = (
   return uri('m3u8' === base || true === playlist ? `${url}.m3u8` : url);
 };
 
+const SIZE_UNIT_KEYS = [
+  'common.bytes',
+  'common.kib',
+  'common.mib',
+  'common.gib',
+  'common.tib',
+  'common.pib',
+  'common.eib',
+  'common.zib',
+  'common.yib',
+] as const;
+
 /**
- * Format bytes to a human-readable string.
+ * Convert bytes to human readable format.
  *
  * @param bytes - The number of bytes.
  * @param decimals - Number of decimal places to include.
+ * @param t - Optional i18n translate function for localized units.
  * @returns A formatted size string (e.g., '2.00 MiB').
  */
-const formatBytes = (bytes: number, decimals: number = 2): string => {
+const formatBytes = (bytes: number, decimals: number = 2, t?: (key: string) => string): string => {
   if (!+bytes) {
-    return '0 Bytes';
+    return t ? `0 ${t('common.bytes')}` : '0 Bytes';
   }
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  const unit = t ? t(SIZE_UNIT_KEYS[i]!) : sizes[i];
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${unit}`;
 };
 
 /**
@@ -942,13 +959,19 @@ const parse_api_error = async (json: unknown): Promise<string> => {
     json = await (json as Promise<unknown>);
   }
 
+  const { $i18n } = useNuxtApp();
+  const t = $i18n?.t ?? ((key: string) => key);
+  const te = ($i18n as { te?: (key: string) => boolean } | undefined)?.te ?? (() => false);
+
   if (!json || 'object' !== typeof json) {
-    return 'Unknown error occurred';
+    return t('common.unknownError');
   }
 
   const payload = json as {
     error?: string;
     message?: string;
+    code?: string;
+    params?: Record<string, string | number | boolean | null>;
     detail?: string | Array<{ loc: string[]; msg: string; type: string }>;
   };
 
@@ -963,6 +986,24 @@ const parse_api_error = async (json: unknown): Promise<string> => {
       return String(err);
     });
     extra_detail = errors.join(', ');
+  } else if (typeof payload.detail === 'string' && payload.detail.trim()) {
+    extra_detail = payload.detail.trim();
+  }
+
+  if (payload.code) {
+    const key = `errors.${payload.code}`;
+    if (te(key)) {
+      const params = Object.fromEntries(
+        Object.entries(payload.params ?? {}).map(([paramKey, value]) => {
+          if (typeof value === 'string' && value.startsWith('api.') && te(value)) {
+            return [paramKey, t(value)];
+          }
+
+          return [paramKey, value];
+        }),
+      );
+      return String(t(key, params) + (extra_detail ? ` - ${extra_detail}` : ''));
+    }
   }
 
   if (payload.error) {
@@ -976,11 +1017,7 @@ const parse_api_error = async (json: unknown): Promise<string> => {
     return extra_detail;
   }
 
-  if ('string' === typeof payload.detail) {
-    return payload.detail;
-  }
-
-  return 'Unknown error occurred';
+  return t('common.unknownError');
 };
 
 const formatPageTitle = (title?: string | null): string => {

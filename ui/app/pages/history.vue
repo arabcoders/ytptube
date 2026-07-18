@@ -31,7 +31,7 @@
           icon="i-lucide-plus"
           @click="addNewDownload"
         >
-          <span>Add</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -45,7 +45,7 @@
             }
           "
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -56,7 +56,9 @@
           class="hidden sm:inline-flex"
           @click="changeDisplay"
         >
-          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            display_style === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UButton
@@ -68,7 +70,7 @@
           :disabled="isLoading"
           @click="() => reload({ order: 'DESC', perPage: config.app.default_pagination })"
         >
-          <span>Reload</span>
+          <span>{{ t('common.refresh') }}</span>
         </UButton>
 
         <UInput
@@ -76,7 +78,7 @@
           id="filter"
           v-model.lazy="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -112,7 +114,7 @@
             :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
             @click="toggleMasterSelection"
           >
-            {{ masterSelectAll ? 'Unselect' : 'Select' }}
+            {{ masterSelectAll ? t('common.unselect') : t('common.select') }}
           </UButton>
 
           <UBadge v-if="selectedElms.length > 0" color="error" variant="soft" size="sm">
@@ -127,7 +129,7 @@
               icon="i-lucide-list"
               trailing-icon="i-lucide-chevron-down"
             >
-              Actions
+              {{ t('common.actions') }}
             </UButton>
           </UDropdownMenu>
         </div>
@@ -138,7 +140,7 @@
         color="info"
         variant="soft"
         icon="i-lucide-loader-circle"
-        title="Loading history..."
+        :title="t('history.loading')"
       />
 
       <div
@@ -149,13 +151,13 @@
           <table class="min-w-210 table-fixed w-full text-sm">
             <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
               <tr
-                class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+                class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
               >
                 <th class="w-12">
                   <button
                     type="button"
                     class="cursor-pointer"
-                    :aria-label="masterSelectAll ? 'Unselect all items' : 'Select all items'"
+                    :aria-label="masterSelectAll ? t('common.unselectAll') : t('common.selectAll')"
                     @click="toggleMasterSelection"
                   >
                     <UIcon
@@ -164,11 +166,11 @@
                     />
                   </button>
                 </th>
-                <th class="text-left">Title</th>
-                <th class="w-32 whitespace-nowrap">Status</th>
-                <th class="w-36 whitespace-nowrap">Created</th>
-                <th class="w-36 whitespace-nowrap">Size/Starts</th>
-                <th class="w-80 whitespace-nowrap">Actions</th>
+                <th class="text-start">{{ t('common.history') }}</th>
+                <th class="w-32 whitespace-nowrap">{{ t('common.status') }}</th>
+                <th class="w-36 whitespace-nowrap">{{ t('common.created') }}</th>
+                <th class="w-36 whitespace-nowrap">{{ t('history.sizeStarts') }}</th>
+                <th class="w-80 whitespace-nowrap">{{ t('common.actions') }}</th>
               </tr>
             </thead>
 
@@ -176,9 +178,9 @@
               <tr
                 v-for="item in displayedItems"
                 :key="item._id"
-                class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+                class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
               >
-                <td class="border-r border-default/60 px-3 py-3 text-center align-top">
+                <td class="border-e border-default/60 px-3 py-3 text-center align-top">
                   <label class="inline-flex cursor-pointer items-center justify-center">
                     <input
                       :id="`checkbox-${item._id}`"
@@ -190,7 +192,7 @@
                   </label>
                 </td>
 
-                <td class="w-0 border-r border-default/60 px-3 py-3 align-top">
+                <td class="w-0 border-e border-default/60 px-3 py-3 align-top">
                   <div class="flex min-w-0 items-start justify-between gap-3">
                     <div class="min-w-0 flex-1">
                       <UTooltip
@@ -249,8 +251,10 @@
                                 }}</UBadge>
                               </div>
 
-                              <p v-if="getItemPath(item)" class="text-xs text-toned">
-                                <span class="font-semibold text-default">Path:</span>
+                              <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                                <span class="font-semibold text-default">{{
+                                  t('queue.path')
+                                }}</span>
                                 {{ getItemPath(item) }}
                               </p>
                             </div>
@@ -291,7 +295,7 @@
                   </p>
                 </td>
 
-                <td class="border-r border-default/60 px-3 py-3 text-center align-top text-sm">
+                <td class="border-e border-default/60 px-3 py-3 text-center align-top text-sm">
                   <div class="inline-flex items-center gap-2 text-default">
                     <span class="inline-flex items-center">
                       <UIcon
@@ -304,7 +308,7 @@
                 </td>
 
                 <td
-                  class="border-r border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
+                  class="border-e border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
                 >
                   <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                     <span :date-datetime="item.datetime" v-rtime="item.datetime" />
@@ -312,14 +316,21 @@
                 </td>
 
                 <td
-                  class="border-r border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
+                  class="border-e border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
                 >
                   <template
                     v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)"
                   >
                     <UTooltip
-                      :text="`Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`"
+                      :text="
+                        t('history.retryAt', {
+                          date: moment(item.live_in || item.extras?.release_in).format(
+                            'YYYY-M-DD H:mm Z',
+                          ),
+                        })
+                      "
                     >
+                      >
                       <span
                         :date-datetime="item.live_in || item.extras?.release_in"
                         v-rtime="item.live_in || item.extras?.release_in"
@@ -328,7 +339,9 @@
                   </template>
 
                   <template v-else>
-                    {{ item.file_size ? formatBytes(item.file_size) : 'N/A' }}
+                    {{
+                      item.file_size ? formatBytes(item.file_size, 2, t) : t('common.notAvailable')
+                    }}
                   </template>
                 </td>
 
@@ -342,7 +355,7 @@
                       icon="i-lucide-rotate-cw"
                       @click="() => retryItem(item, true)"
                     >
-                      Retry
+                      {{ t('common.retry') }}
                     </UButton>
 
                     <UButton
@@ -364,7 +377,7 @@
                       :href="makeDownload(config, item)"
                       :download="item.filename?.split('/').reverse()[0]"
                     >
-                      Download
+                      {{ t('common.download') }}
                     </UButton>
 
                     <UButton
@@ -374,7 +387,7 @@
                       icon="i-lucide-trash"
                       @click="() => removeItem(item)"
                     >
-                      Remove
+                      {{ t('common.remove') }}
                     </UButton>
 
                     <UDropdownMenu v-if="item.url" :items="itemActionGroups(item)" :modal="false">
@@ -385,7 +398,7 @@
                         icon="i-lucide-settings-2"
                         trailing-icon="i-lucide-chevron-down"
                       >
-                        Actions
+                        {{ t('common.actions') }}
                       </UButton>
                     </UDropdownMenu>
                   </div>
@@ -434,8 +447,8 @@
                       <UCard class="max-w-137.5" :ui="{ body: 'space-y-3 p-4' }">
                         <div class="space-y-2">
                           <p class="text-sm font-semibold text-highlighted">{{ item.title }}</p>
-                          <p class="text-xs text-toned">
-                            <span class="font-semibold text-default">Path:</span>
+                          <p class="text-xs text-toned" dir="ltr">
+                            <span class="font-semibold text-default">{{ t('queue.path') }}</span>
                             {{ getItemPath(item) }}
                           </p>
                         </div>
@@ -562,7 +575,13 @@
                   @click="toggleExpand(item._id, 'retry_at')"
                 >
                   <UTooltip
-                    :text="`Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`"
+                    :text="
+                      t('history.retryAt', {
+                        date: moment(item.live_in || item.extras?.release_in).format(
+                          'YYYY-M-DD H:mm Z',
+                        ),
+                      })
+                    "
                   >
                     <span class="inline-flex w-full items-center justify-center gap-2">
                       <UIcon name="i-lucide-calendar" class="size-4 shrink-0 text-toned" />
@@ -629,7 +648,7 @@
                   <span class="inline-flex w-full items-center justify-center gap-2">
                     <UIcon name="i-lucide-hard-drive" class="size-4 shrink-0 text-toned" />
                     <span :class="['min-w-0 text-center', expandClass(item._id, 'size')]">
-                      {{ formatBytes(item.file_size) }}
+                      {{ formatBytes(item.file_size, 2, t) }}
                     </span>
                   </span>
                 </button>
@@ -666,7 +685,7 @@
                     class="w-full justify-center"
                     @click="() => retryItem(item, false)"
                   >
-                    Retry
+                    {{ t('common.retry') }}
                   </UButton>
 
                   <UButton
@@ -677,7 +696,7 @@
                     class="w-full justify-center"
                     @click="() => shareUrl(item)"
                   >
-                    Share
+                    {{ t('common.share') }}
                   </UButton>
 
                   <UButton
@@ -690,7 +709,7 @@
                     :href="makeDownload(config, item)"
                     :download="item.filename?.split('/').reverse()[0]"
                   >
-                    Download
+                    {{ t('common.download') }}
                   </UButton>
 
                   <UButton
@@ -700,7 +719,7 @@
                     class="w-full justify-center"
                     @click="() => removeItem(item)"
                   >
-                    {{ config.app.remove_files ? 'Remove' : 'Clear' }}
+                    {{ config.app.remove_files ? t('common.remove') : t('common.clear') }}
                   </UButton>
 
                   <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
@@ -711,7 +730,7 @@
                       trailing-icon="i-lucide-chevron-down"
                       class="w-full justify-center"
                     >
-                      Actions
+                      {{ t('common.actions') }}
                     </UButton>
                   </UDropdownMenu>
                 </div>
@@ -727,26 +746,26 @@
           color="warning"
           variant="soft"
           icon="i-lucide-search"
-          title="Filter results"
+          :title="t('queue.filterTitle')"
         >
           <template #description>
             <div class="space-y-3 text-sm text-default">
               <p>
-                No results found for: <code>{{ query }}</code
+                {{ t('queue.noResultsFor') }} <code>{{ query }}</code
                 >.
               </p>
 
               <p>
-                You can search using any value shown in the item's <code>Local Information</code>.
-                You can also do a targeted search using <code><u>key</u>:value</code>.
+                {{ t('queue.filterHelp') }}
+                {{ t('queue.filterKeyValue') }}
               </p>
 
               <div>
-                <p class="mb-1 font-medium">Examples:</p>
-                <ul class="list-disc space-y-1 pl-5">
-                  <li><code>youtube.com</code> - items containing that text</li>
-                  <li><code>is_live:true</code> - only live downloads</li>
-                  <li><code>source_name:task_name</code> - items added by the specified task.</li>
+                <p class="mb-1 font-medium">{{ t('queue.filterExamples') }}</p>
+                <ul class="list-disc space-y-1 ps-5">
+                  <li><code>youtube.com</code> - {{ t('queue.filterExample1') }}</li>
+                  <li><code>is_live:true</code> - {{ t('queue.filterExample2') }}</li>
+                  <li><code>source_name:task_name</code> - {{ t('queue.filterExample3') }}</li>
                 </ul>
               </div>
             </div>
@@ -756,8 +775,8 @@
         <UEmpty
           v-else
           icon="i-lucide-triangle-alert"
-          title="No items"
-          description="Download history is empty."
+          :title="t('common.noItems')"
+          :description="t('history.empty')"
           class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
         />
       </div>
@@ -781,7 +800,7 @@
       v-if="video_item"
       :open="videoOpen"
       :dismissible="true"
-      :title="video_item?.title || 'Player'"
+      :title="video_item?.title || t('history.player')"
       :ui="{ content: lightsOut ? 'sm:max-w-5xl shadow-2xl' : 'sm:max-w-5xl', body: 'p-0' }"
       @update:open="handleVideoOpenChange"
     >
@@ -804,7 +823,7 @@
       v-if="embed_url"
       :open="Boolean(embed_url)"
       :dismissible="true"
-      title="Embedded player"
+      :title="t('common.embeddedPlayer')"
       :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
       @update:open="(open) => !open && (embed_url = '')"
     >
@@ -849,10 +868,12 @@ import {
   makeDownload,
   request,
   uri,
+  parse_api_error,
 } from '~/utils';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
 const config = useYtpConfig();
 const stateStore = useQueueState();
@@ -887,7 +908,7 @@ const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
 const show_popover = useStorage<boolean>('show_popover', true);
 
-const pageShell = requirePageShell('history');
+const pageShell = usePageShell('history');
 const info_view = ref<{ url: string; preset: string; cli: string; useUrl: boolean }>({
   url: '',
   preset: '',
@@ -974,10 +995,10 @@ const closeVideo = (): void => {
 const { handleOpenChange: handleVideoOpenChange, requestClose: requestCloseVideo } =
   useDirtyCloseGuard(videoOpen, {
     dirty: playingNow,
-    title: 'Close player?',
-    message: 'Playback is active. Do you want to close the player?',
-    confirmText: 'Close player',
-    cancelText: 'Keep playing',
+    title: t('common.closePlayer'),
+    message: t('common.closePlayerDesc'),
+    confirmText: t('common.closePlayer'),
+    cancelText: t('common.keepPlaying'),
     onDiscard: async () => {
       closeVideo();
     },
@@ -1087,13 +1108,13 @@ const bulkActionGroups = computed(() => {
   const groups: Array<Array<Record<string, unknown>>> = [
     [
       {
-        label: 'Download',
+        label: t('common.download'),
         icon: 'i-lucide-download',
         disabled: !hasSelected.value || selectedDownloadableCount.value < 1,
         onSelect: () => void downloadSelected(),
       },
       {
-        label: config.app.remove_files ? 'Remove' : 'Clear',
+        label: config.app.remove_files ? t('common.remove') : t('common.clear'),
         icon: 'i-lucide-trash',
         disabled: !hasSelected.value,
         onSelect: deleteSelectedItems,
@@ -1105,7 +1126,7 @@ const bulkActionGroups = computed(() => {
 
   if (hasCompleted.value) {
     cleanupActions.push({
-      label: 'Clear Completed',
+      label: t('common.clearCompleted'),
       icon: 'i-lucide-circle-check-big',
       onSelect: clearCompleted,
     });
@@ -1114,12 +1135,12 @@ const bulkActionGroups = computed(() => {
   if (hasIncomplete.value) {
     cleanupActions.push(
       {
-        label: 'Clear Incomplete',
+        label: t('common.clearIncomplete'),
         icon: 'i-lucide-circle-x',
         onSelect: clearIncomplete,
       },
       {
-        label: 'Retry Incomplete',
+        label: t('common.retryIncomplete'),
         icon: 'i-lucide-rotate-cw',
         onSelect: retryIncomplete,
       },
@@ -1139,7 +1160,7 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
 
   if (item.filename) {
     mediaActions.push({
-      label: 'Play video',
+      label: t('common.playVideo'),
       icon: 'i-lucide-play',
       onSelect: () => {
         video_item.value = item;
@@ -1148,26 +1169,26 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
 
     if ('error' === item.status) {
       mediaActions.push({
-        label: 'Retry download',
+        label: t('common.retryDownload'),
         icon: 'i-lucide-rotate-cw',
         onSelect: () => void retryItem(item, true),
       });
     }
 
     mediaActions.push({
-      label: 'Generate NFO',
+      label: t('common.generateNfo'),
       icon: 'i-lucide-file-code-2',
       onSelect: () => void generateNfo(item),
     });
 
     mediaActions.push({
-      label: 'Rename file',
+      label: t('common.renameFile'),
       icon: 'i-lucide-pencil',
       onSelect: () => void renameFile(item),
     });
   } else if (isEmbedable(item.url)) {
     mediaActions.push({
-      label: 'Play video',
+      label: t('common.playVideo'),
       icon: 'i-lucide-play',
       onSelect: () => {
         embed_url.value = getEmbedable(item.url) as string;
@@ -1181,17 +1202,17 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
 
   groups.push([
     {
-      label: 'yt-dlp Information',
+      label: t('common.ytdlpInformation'),
       icon: 'i-lucide-info',
       onSelect: () => view_info(item.url, false, item.preset, item.cli),
     },
     {
-      label: 'Local Information',
+      label: t('common.localInformation'),
       icon: 'i-lucide-info',
       onSelect: () => view_info(`/api/history/${item._id}`, true),
     },
     {
-      label: 'Add to download form',
+      label: t('common.addToDownloadForm'),
       icon: 'i-lucide-copy',
       onSelect: () => void retryItem(item, true),
     },
@@ -1200,7 +1221,7 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
   if (item.is_archivable && !item.is_archived) {
     groups.push([
       {
-        label: 'Add to archive',
+        label: t('common.addToArchive'),
         icon: 'i-lucide-archive',
         onSelect: () => void addArchiveDialog(item),
       },
@@ -1210,7 +1231,7 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
   if (item.is_archivable && item.is_archived) {
     groups.push([
       {
-        label: 'Remove from archive',
+        label: t('common.removeFromArchive'),
         icon: 'i-lucide-archive-x',
         onSelect: () => void removeFromArchiveDialog(item),
       },
@@ -1230,14 +1251,17 @@ const showMessage = (item: StoreItem): boolean => {
 
 const deleteSelectedItems = async (): Promise<void> => {
   if (selectedElms.value.length < 1) {
-    toast.error('No items selected.');
+    toast.error(t('common.noItemsSelected'));
     return;
   }
 
-  let message = `${config.app.remove_files ? 'Remove' : 'Clear'} '${selectedElms.value.length}' items?`;
+  let message = t('history.confirmActionCount', {
+    action: config.app.remove_files ? t('common.remove') : t('common.clear'),
+    count: selectedElms.value.length,
+  });
 
   if (true === config.app.remove_files) {
-    message += ' This will remove any associated files if they exists.';
+    message += t('history.removeFilesWarning');
   }
 
   if (false === (await box.confirm(message))) {
@@ -1250,7 +1274,7 @@ const deleteSelectedItems = async (): Promise<void> => {
 };
 
 const clearCompleted = async (): Promise<void> => {
-  const message = 'Clear all completed downloads? No files will be removed.';
+  const message = t('history.clearCompletedConfirm');
 
   if (false === (await box.confirm(message))) {
     return;
@@ -1264,7 +1288,7 @@ const clearCompleted = async (): Promise<void> => {
 };
 
 const clearIncomplete = async (): Promise<void> => {
-  if (false === (await box.confirm('Clear all incomplete downloads?'))) {
+  if (false === (await box.confirm(t('history.clearIncompleteConfirm')))) {
     return;
   }
 
@@ -1340,45 +1364,45 @@ const setIconColor = (item: StoreItem): string => {
 const setStatus = (item: StoreItem): string => {
   if ('finished' === item.status) {
     if (isDownloadSkipped(item)) {
-      return 'Download skipped';
+      return t('history.downloadSkipped');
     }
 
     if (item.extras?.is_premiere) {
-      return 'Premiered';
+      return t('history.premiered');
     }
 
-    return item.is_live ? 'Streamed' : 'Completed';
+    return item.is_live ? t('history.streamed') : t('common.completed');
   }
 
   if ('error' === item.status) {
     if (item.filename) {
-      return 'Partial Error';
+      return t('history.partialError');
     }
 
-    return 'Error';
+    return t('common.error');
   }
 
   if ('cancelled' === item.status) {
-    return 'Cancelled';
+    return t('common.cancelled');
   }
 
   if ('not_live' === item.status) {
     if (item.extras?.is_premiere) {
-      return 'Premiere';
+      return t('history.premiere');
     }
 
-    return 'Live';
+    return t('common.live');
   }
 
   if ('skip' === item.status) {
-    return 'Skipped';
+    return t('common.skipped');
   }
 
-  return item.status || 'Unknown';
+  return item.status || t('history.unknown');
 };
 
 const retryIncomplete = async (): Promise<void> => {
-  if (false === (await box.confirm('Retry all incomplete downloads?'))) {
+  if (false === (await box.confirm(t('history.retryIncompleteConfirm')))) {
     return;
   }
 
@@ -1393,11 +1417,11 @@ const retryIncomplete = async (): Promise<void> => {
 
 const addArchiveDialog = async (item: StoreItem): Promise<void> => {
   const { status, value } = await confirmDialog({
-    title: 'Archive Item',
-    message: `Archive '${item.title || item.id || item.url || '??'}'?`,
-    confirmText: 'Archive',
+    title: t('history.archiveTitle'),
+    message: t('history.archiveConfirm', { title: item.title || item.id || item.url || '??' }),
+    confirmText: t('history.archiveLabel'),
     confirmColor: 'warning',
-    options: [{ key: 'remove_history', label: 'Also, Remove from history.' }],
+    options: [{ key: 'remove_history', label: t('history.removeFromHistory') }],
   });
 
   if (!status) {
@@ -1413,11 +1437,13 @@ const archiveItem = async (item: StoreItem, opts = {}): Promise<void> => {
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(data.error);
+      toast.error(await parse_api_error(data));
       return;
     }
 
-    toast.success(data.message ?? `Archived '${item.title || item.id || item.url || '??'}'.`);
+    toast.success(
+      data.message ?? t('history.archived', { title: item.title || item.id || item.url || '??' }),
+    );
   } catch (error: any) {
     console.error(error);
     return;
@@ -1431,11 +1457,12 @@ const archiveItem = async (item: StoreItem, opts = {}): Promise<void> => {
 };
 
 const removeItem = async (item: StoreItem): Promise<void> => {
-  let message = `${config.app.remove_files ? 'Remove' : 'Clear'} '${item.title || item.id || item.url || '??'}'?`;
-
-  if (item.status === 'finished' && config.app.remove_files) {
-    message += ' This will remove any associated files if they exists.';
-  }
+  const action = config.app.remove_files ? t('common.remove') : t('common.clear');
+  const title = item.title || item.id || item.url || '??';
+  const message =
+    item.status === 'finished' && config.app.remove_files
+      ? t('history.itemActionConfirmWithFiles', { action, title })
+      : t('history.itemActionConfirm', { action, title });
 
   if (false === (await box.confirm(message))) {
     return;
@@ -1475,7 +1502,7 @@ const retryItem = async (
   await reload({ order: 'DESC', perPage: config.app.default_pagination });
 
   if (true === re_add) {
-    toast.info('Cleared the item from history, and added it to the new download form.');
+    toast.info(t('common.itemAddedToForm'));
     await toNewDownload(item_req);
     return;
   }
@@ -1510,7 +1537,7 @@ const onImgError = (event: Event, item: StoreItem): void => {
 
 const downloadSelected = async (): Promise<void> => {
   if (selectedElms.value.length < 1) {
-    toast.error('No items selected.');
+    toast.error(t('common.noItemsSelected'));
     return;
   }
 
@@ -1536,7 +1563,7 @@ const downloadSelected = async (): Promise<void> => {
     const json = await response.json();
 
     if (!response.ok) {
-      toast.error(json.error || 'Failed to start download.');
+      toast.error(json.error || t('common.failedStartDownload'));
       return;
     }
 
@@ -1550,7 +1577,7 @@ const downloadSelected = async (): Promise<void> => {
     body?.removeChild(link);
   } catch (error: any) {
     console.error(error);
-    toast.error(`Error: ${error.message}`);
+    toast.error(t('common.errorPrefix', { msg: error.message }));
   }
 };
 
@@ -1599,18 +1626,18 @@ const messageClass = (
 
 const removeFromArchiveDialog = async (item: StoreItem): Promise<void> => {
   const options = [
-    { key: 'remove_history', label: 'Remove from history.' },
-    { key: 're_add', label: 'Re-add to download form.' },
+    { key: 'remove_history', label: t('history.removeFromHistory') },
+    { key: 're_add', label: t('common.readdToForm') },
   ];
 
   if (config.app.remove_files) {
-    options.push({ key: 'dont_remove_file', label: "Don't remove associated files." });
+    options.push({ key: 'dont_remove_file', label: t('history.dontRemoveFiles') });
   }
 
   const { status, value } = await confirmDialog({
-    title: 'Remove from Archive',
-    message: `Remove '${item.title || item.id || item.url || '??'}' from archive?`,
-    confirmText: 'Remove',
+    title: t('history.removeFromArchiveTitle'),
+    message: t('history.removedFromArchive', { title: item.title || item.id || item.url || '??' }),
+    confirmText: t('common.remove'),
     confirmColor: 'error',
     options,
   });
@@ -1631,16 +1658,17 @@ const removeFromArchive = async (
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(data.error);
+      toast.error(await parse_api_error(data));
       return;
     }
 
     toast.success(
-      data.message || `Removed '${item.title || item.id || item.url || '??'}' from archive.`,
+      data.message ||
+        t('history.removedFromArchive', { title: item.title || item.id || item.url || '??' }),
     );
   } catch (error: any) {
     console.error(error);
-    toast.error(`Error: ${error.message}`);
+    toast.error(t('common.errorPrefix', { msg: error.message }));
     return;
   }
 
@@ -1672,7 +1700,7 @@ const isQueuedAnimation = (item: StoreItem): string => {
 
 const generateNfo = async (item: StoreItem): Promise<void> => {
   try {
-    toast.info('Generating please wait...', { timeout: 2000 });
+    toast.info(t('common.generating'), { timeout: 2000 });
     const response = await request(`/api/history/${item._id}/nfo`, {
       method: 'POST',
       body: JSON.stringify({ type: 'tv', overwrite: true }),
@@ -1680,13 +1708,13 @@ const generateNfo = async (item: StoreItem): Promise<void> => {
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(data.error || 'Failed to generate NFO');
+      toast.error((await parse_api_error(data)) || t('common.failedGenerateNfo'));
       return;
     }
 
-    toast.success(data.message || 'NFO file generated');
+    toast.success(data.message || t('common.nfoGenerated'));
   } catch (error: any) {
-    toast.error(`Error: ${error.message}`);
+    toast.error(t('common.errorPrefix', { msg: error.message }));
   }
 };
 
@@ -1697,11 +1725,11 @@ const renameFile = async (item: StoreItem): Promise<void> => {
 
   const currentName = item.filename.split('/').pop() || item.filename;
   const { status, value: newName } = await promptDialog({
-    title: 'Rename File',
-    message: `Enter new name for '${currentName}' (and its sidecars):`,
+    title: t('history.renameFileTitle'),
+    message: t('files.renameItemDesc', { name: currentName }),
     initial: currentName,
-    confirmText: 'Rename',
-    cancelText: 'Cancel',
+    confirmText: t('common.rename'),
+    cancelText: t('common.cancel'),
   });
 
   if (!status) {
@@ -1715,7 +1743,7 @@ const renameFile = async (item: StoreItem): Promise<void> => {
 
   const success = await rename(item, trimmedName);
   if (success) {
-    toast.success(`Renamed '${currentName}'.`);
+    toast.success(t('common.renamed', { name: currentName }));
   }
 };
 </script>

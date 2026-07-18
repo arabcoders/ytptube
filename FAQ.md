@@ -148,7 +148,7 @@ a tool that by design can execute commands. Auth is the mechanism that controls 
 
 **If you expose YTPTube to untrusted networks**, do one of the following:
 
-1. **Enable authentication** — set both `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD`.
+1. **Enable authentication** set both `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD`.
 2. **Put it behind a reverse proxy** with its own authentication layer (see [Run behind reverse proxy](#run-behind-reverse-proxy)).
 3. **Keep it on a private network** with no public exposure.
 
@@ -764,3 +764,28 @@ services:
 > [!NOTE]
 > The browser extractor is slower than the normal extractor flow and should only be used when a site actually needs a real browser session.
 > playwright require same version for both the server and the client, so make sure to use the same version in the container and in your local environment if you want to test it locally.
+
+---
+
+# How do I change the UI language?
+
+YTPTube supports multiple languages with RTL support. Currently the following languages are available:
+
+**Available languages:**
+- English (default)
+- العربية (Arabic, RTL)
+- Français (French)
+- 中文 (Chinese)
+- 日本語 (Japanese)
+
+**Changing the language:**
+
+1. Open the **Settings** panel (gear icon in the sidebar).
+2. Select your preferred language from the **Language** dropdown.
+3. The UI updates immediately and your choice is saved in a browser cookie (`ytptube_locale`).
+
+**Automatic detection:**
+
+On first visit, YTPTube attempts to detect your browser's preferred language and switches automatically if a matching 
+translation is available.
+

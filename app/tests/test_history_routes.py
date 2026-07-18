@@ -154,7 +154,7 @@ async def test_item_rename_needs_name() -> None:
 
     assert response.status == 400
     body = json.loads(response.body.decode("utf-8"))
-    assert body == {"error": "no data provided."}
+    assert body["error"] == "no data provided."
 
 
 @pytest.mark.asyncio
@@ -170,7 +170,7 @@ async def test_item_rename_missing() -> None:
 
     assert response.status == 404
     body = json.loads(response.body.decode("utf-8"))
-    assert body == {"error": "item 'missing' not found."}
+    assert body["error"] == "item 'missing' not found."
 
 
 @pytest.mark.asyncio
@@ -189,7 +189,7 @@ async def test_item_rename_needs_file() -> None:
 
     assert response.status == 400
     body = json.loads(response.body.decode("utf-8"))
-    assert body == {"error": "item has no downloaded file."}
+    assert body["error"] == "item has no downloaded file."
 
 
 @pytest.mark.asyncio
@@ -241,11 +241,11 @@ async def test_item_rename_conflict() -> None:
 
         response = await item_rename(request, queue, encoder, notify, config)
 
-        assert response.status == 409
-        body = json.loads(response.body.decode("utf-8"))
-        assert body == {"error": "Destination 'renamed.mp4' already exists"}
-        queue.done.put.assert_not_awaited()
-        notify.emit.assert_not_called()
+    assert response.status == 409
+    body = json.loads(response.body.decode("utf-8"))
+    assert body["error"] == "Destination 'renamed.mp4' already exists"
+    queue.done.put.assert_not_awaited()
+    notify.emit.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -321,9 +321,9 @@ async def test_item_thumbnail_no_thumb(monkeypatch: pytest.MonkeyPatch) -> None:
 
         response = await item_thumbnail(request, queue, config)
 
-        assert response.status == 404
-        body = json.loads(response.body.decode("utf-8"))
-        assert body == {"error": "thumbnail not found."}
+    assert response.status == 404
+    body = json.loads(response.body.decode("utf-8"))
+    assert body["error"] == "thumbnail not found."
 
 
 @pytest.mark.asyncio

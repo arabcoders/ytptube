@@ -5,6 +5,7 @@ from urllib.parse import urlparse, urlsplit, urlunsplit
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.core.utils import api_error_response
 from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.ag_utils import ag
 from app.library.cache import Cache
@@ -100,15 +101,17 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
             if not cache.has(CACHE_KEY_BING):
                 response = await client.request(method="GET", url=backend, headers=request_headers)
                 if response.status_code != web.HTTPOk.status_code:
-                    return web.json_response(
-                        data={"error": "failed to retrieve the random background image."},
+                    return api_error_response(
+                        "failed to retrieve the random background image.",
+                        code="OPERATION_FAILED",
                         status=web.HTTPInternalServerError.status_code,
                     )
 
                 img_url: str | None = ag(response.json(), "images.0.url")
                 if not img_url:
-                    return web.json_response(
-                        data={"error": "failed to retrieve the random background image."},
+                    return api_error_response(
+                        "failed to retrieve the random background image.",
+                        code="OPERATION_FAILED",
                         status=web.HTTPInternalServerError.status_code,
                     )
 
@@ -121,8 +124,9 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 safe_backend = _safe_url(backend)
 
         if not isinstance(backend, str) or not backend:
-            return web.json_response(
-                data={"error": "failed to retrieve the random background image."},
+            return api_error_response(
+                "failed to retrieve the random background image.",
+                code="OPERATION_FAILED",
                 status=web.HTTPInternalServerError.status_code,
             )
 
@@ -140,8 +144,9 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
         )
 
         if response.status_code != web.HTTPOk.status_code:
-            return web.json_response(
-                data={"error": "failed to retrieve the random background image."},
+            return api_error_response(
+                "failed to retrieve the random background image.",
+                code="OPERATION_FAILED",
                 status=web.HTTPInternalServerError.status_code,
             )
 
@@ -179,8 +184,9 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
             safe_backend,
             extra={"route": "images.background.random", "url": safe_backend, "exception_type": type(exc).__name__},
         )
-        return web.json_response(
-            data={"error": "failed to retrieve the random background image."},
+        return api_error_response(
+            "failed to retrieve the random background image.",
+            code="INTERNAL_ERROR",
             status=web.HTTPInternalServerError.status_code,
         )
     finally:

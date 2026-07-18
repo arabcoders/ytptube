@@ -1,6 +1,20 @@
-import moment from 'moment';
+import type { Ref, WatchStopHandle } from 'vue';
+import { watch } from 'vue';
+import { formatRelativeTime } from '~/utils/relativeTime';
 
-type RTimeElement = HTMLElement & { _next_timer?: number };
+type RTimeElementState = HTMLElement & { _next_timer?: number; _stop_rtime?: WatchStopHandle };
+
+type I18nPlugin = {
+  locale?: Ref<string> | string;
+};
+
+const readLocale = (source: Ref<string> | string | undefined): string => {
+  if (!source) {
+    return 'en';
+  }
+
+  return typeof source === 'string' ? source : source.value;
+};
 
 const parseInterval = (arg: string | undefined): number => {
   if (!arg) {
@@ -31,41 +45,43 @@ const parseInterval = (arg: string | undefined): number => {
 };
 
 export default defineNuxtPlugin((nuxtApp) => {
+  const i18n = nuxtApp.$i18n as I18nPlugin | undefined;
+
   nuxtApp.vueApp.directive('rtime', {
-    mounted(el: RTimeElement, binding) {
+    mounted(el: RTimeElementState, binding) {
       const intervalMs = parseInterval(binding.arg);
       const update = () => {
         const val = binding.value;
-        if (Number.isFinite(val)) {
-          el.textContent = moment.unix(val as number).fromNow();
-          return;
-        }
-        el.textContent = moment(val).fromNow();
+        el.textContent = formatRelativeTime(val, readLocale(i18n?.locale));
       };
 
       update();
       el._next_timer = window.setInterval(update, intervalMs);
+      if (i18n?.locale && typeof i18n.locale !== 'string') {
+        el._stop_rtime = watch(i18n.locale, update);
+      }
     },
-    updated(el: RTimeElement, binding) {
+    updated(el: RTimeElementState, binding) {
       if (binding.oldValue !== binding.value) {
         if (null != el._next_timer) clearInterval(el._next_timer);
+        el._stop_rtime?.();
 
         const intervalMs = parseInterval(binding.arg);
         const update = () => {
           const val = binding.value;
-          if (Number.isFinite(val)) {
-            el.textContent = moment.unix(val as number).fromNow();
-            return;
-          }
-          el.textContent = moment(val).fromNow();
+          el.textContent = formatRelativeTime(val, readLocale(i18n?.locale));
         };
 
         update();
         el._next_timer = window.setInterval(update, intervalMs);
+        if (i18n?.locale && typeof i18n.locale !== 'string') {
+          el._stop_rtime = watch(i18n.locale, update);
+        }
       }
     },
-    beforeUnmount(el: RTimeElement) {
+    beforeUnmount(el: RTimeElementState) {
       if (null != el._next_timer) clearInterval(el._next_timer);
+      el._stop_rtime?.();
     },
   });
 

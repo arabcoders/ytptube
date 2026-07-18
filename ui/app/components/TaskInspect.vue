@@ -1,22 +1,22 @@
 <template>
   <div class="space-y-5">
-    <form class="space-y-5" @submit.prevent="onSubmit">
+    <form id="taskInspectForm" class="space-y-5" @submit.prevent="onSubmit">
       <div class="grid gap-4 lg:grid-cols-2">
         <UFormField
-          label="URL"
+          :label="t('common.url')"
           :ui="fieldUi"
           :error="urlError || undefined"
-          description="Enter the URL of the resource you want to inspect."
           class="lg:col-span-2"
         >
           <UInput
             id="url"
             v-model="url"
             type="url"
-            placeholder="https://..."
+            :placeholder="t('common.urlPlaceholder')"
             class="w-full"
             :ui="inputUi"
             :disabled="loading"
+            dir="ltr"
           >
             <template #leading>
               <UIcon name="i-lucide-link" class="size-4 text-toned" />
@@ -25,70 +25,46 @@
         </UFormField>
 
         <UFormField
-          label="Preset"
+          :label="t('common.presetLabel')"
           :ui="fieldUi"
-          description="Select a preset to apply its settings during inspection. In real scenario, the preset will be based on what is selected when creating the task."
+          :description="t('common.inspectPresetDesc')"
         >
           <USelectMenu
             id="preset"
             v-model="preset"
             :items="presetItems"
-            placeholder="Select a preset"
+            :placeholder="t('common.selectPreset')"
             value-key="value"
             label-key="label"
             color="neutral"
             class="w-full"
             size="lg"
-            :ui="{ content: 'min-w-[13rem]', item: 'pl-6' }"
-            :search-input="{ placeholder: 'Search presets' }"
+            :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
+            :search-input="{ placeholder: t('common.searchPresets') }"
             :disabled="loading"
           />
         </UFormField>
 
         <UFormField
-          label="Handler (For testing)"
+          :label="t('common.inspectHandler')"
           :ui="fieldUi"
-          description="In real scenario, the system auto-detects the appropriate handler based on the URL. This field is for testing purposes only."
+          :description="t('common.inspectHandlerDesc')"
         >
           <UInput
             id="handler"
             v-model="handler"
             type="text"
-            placeholder="Handler class name"
+            :placeholder="t('tasks.handlerPlaceholder')"
             class="w-full"
             :ui="inputUi"
             :disabled="loading"
+            dir="ltr"
           >
             <template #leading>
               <UIcon name="i-lucide-rss" class="size-4 text-toned" />
             </template>
           </UInput>
         </UFormField>
-      </div>
-
-      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-rotate-ccw"
-          :disabled="loading"
-          class="justify-center"
-          @click="onReset"
-        >
-          Reset
-        </UButton>
-
-        <UButton
-          type="submit"
-          color="primary"
-          icon="i-lucide-search"
-          :loading="loading"
-          :disabled="loading"
-          class="justify-center"
-        >
-          Inspect
-        </UButton>
       </div>
     </form>
 
@@ -97,8 +73,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      title="Inspecting"
-      description="Inspecting.. please wait."
+      :title="t('common.inspecting')"
+      :description="t('common.inspectingDesc')"
     />
 
     <UAlert
@@ -106,20 +82,21 @@
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
-      title="Error"
+      :title="t('common.errorPrefix', { msg: '' })"
       :description="errorDescription"
     />
 
     <div v-else-if="response" class="space-y-3">
       <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
         <UIcon name="i-lucide-braces" class="size-4 text-toned" />
-        <span>Result:</span>
+        <span>{{ t('common.result') }}</span>
       </div>
 
       <div class="overflow-hidden ytp-frame">
         <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
           <pre
             class="min-w-0 max-w-full overflow-x-auto p-4 text-xs leading-6 text-default"
+            dir="ltr"
           ><code>{{ formattedResponse }}</code></pre>
         </div>
       </div>
@@ -131,6 +108,8 @@
 import { computed, ref, watch } from 'vue';
 import { request } from '~/utils';
 import type { TaskInspectRequest, TaskInspectResponse } from '~/types/task_inspect';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   url?: string;
@@ -226,7 +205,7 @@ async function onSubmit() {
   response.value = null;
 
   if (!url.value || !validateUrl(url.value)) {
-    urlError.value = 'Please enter a valid URL.';
+    urlError.value = t('common.enterValidUrl');
     return;
   }
 
@@ -246,7 +225,7 @@ async function onSubmit() {
     });
     response.value = await res.json();
   } catch (err: any) {
-    response.value = { error: err?.message || 'Unknown error' };
+    response.value = { error: err?.message || t('common.unknownError') };
   } finally {
     loading.value = false;
   }
@@ -259,4 +238,6 @@ const onReset = () => {
   response.value = null;
   urlError.value = '';
 };
+
+defineExpose({ loading, onReset, onSubmit });
 </script>

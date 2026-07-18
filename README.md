@@ -39,6 +39,7 @@ Example of the Simple mode interface.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
 * A bundled executable version for Windows, macOS and Linux. `MacOS version is untested`.
 * Use playwright or selenium for extractors that require a browser. see [related FAQ](FAQ.md#how-to-use-the-browser-extractor).
+* Multi-language UI. See [language FAQ](FAQ.md#how-do-i-change-the-ui-language).
 
 Please read the [FAQ](FAQ.md) for more information.
 

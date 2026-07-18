@@ -21,18 +21,18 @@
             class="size-4 animate-spin text-info"
             aria-hidden="true"
           />
-          <span>Shutdown in progress</span>
+          <span>{{ t('common.shutdownInProgress') }}</span>
         </div>
 
         <div class="space-y-3">
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted sm:text-4xl">
-            Goodbye!
+            {{ t('common.goodbye') }}
           </h1>
 
-          <p class="text-base leading-7 text-default sm:text-lg">YTPTube is shutting down.</p>
+          <p class="text-base leading-7 text-default sm:text-lg">{{ t('common.shuttingDown') }}</p>
 
           <p class="max-w-lg text-sm leading-6 text-toned sm:text-base">
-            You may now close this window. Thanks for using YTPTube.
+            {{ t('common.closeWindow') }}
           </p>
         </div>
 
@@ -40,12 +40,14 @@
           color="info"
           variant="soft"
           icon="i-lucide-power"
-          title="Wrapping things up"
-          description="The native app is closing background services and should exit shortly."
+          :title="t('common.wrappingUp')"
+          :description="t('common.closingServices')"
         />
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const { t } = useI18n();
+</script>

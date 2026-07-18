@@ -174,12 +174,13 @@ async def add(
         try:
             arg_converter(args=item.cli, level=True)
         except Exception as e:
+            msg = f"Invalid command options for yt-dlp '{item.cli}'. {e!s}"
             LOG.error(
                 "Invalid yt-dlp command options for '%s'.",
                 item.url,
                 extra={"url": item.url, "preset": item.preset, "exception_type": type(e).__name__},
             )
-            return {"status": "error", "msg": f"Invalid command options for yt-dlp '{item.cli}'. {e!s}"}
+            return {"status": "error", "msg": msg}
 
     if _preset:
         if _preset.folder and not item.folder:
@@ -522,7 +523,11 @@ async def add(
                 }
             },
         )
-        return {"status": "error", "msg": "Video has been downloaded already and recorded in archive.log file."}
+        return {
+            "status": "error",
+            "msg": "Video has been downloaded already and recorded in archive.log file.",
+            "hidden": True,
+        }
     except yt_dlp.utils.YoutubeDLError as exc:
         LOG.exception(
             "Failed to extract media info for '%s'.",

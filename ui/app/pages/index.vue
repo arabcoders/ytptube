@@ -29,7 +29,7 @@
             }
           "
         >
-          <span>Filter</span>
+          <span>{{ t('common.filter') }}</span>
         </UButton>
 
         <UButton
@@ -40,7 +40,7 @@
           icon="i-lucide-pause"
           @click="() => pauseDownload()"
         >
-          <span>Pause</span>
+          <span>{{ t('common.pause') }}</span>
         </UButton>
 
         <UButton
@@ -51,7 +51,7 @@
           icon="i-lucide-play"
           @click="() => resumeDownload()"
         >
-          <span>Resume</span>
+          <span>{{ t('common.resume') }}</span>
         </UButton>
 
         <UButton
@@ -65,7 +65,7 @@
             }
           "
         >
-          <span>Add</span>
+          <span>{{ t('common.add') }}</span>
         </UButton>
 
         <UButton
@@ -76,7 +76,9 @@
           class="hidden sm:inline-flex"
           @click="changeDisplay"
         >
-          <span class="hidden sm:inline">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+          <span class="hidden sm:inline">{{
+            display_style === 'list' ? t('common.list') : t('common.grid')
+          }}</span>
         </UButton>
 
         <UInput
@@ -84,7 +86,7 @@
           id="filter"
           v-model.lazy="query"
           type="search"
-          placeholder="Filter displayed content"
+          :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
@@ -105,7 +107,7 @@
     <UEmpty
       v-if="!hasQueueContent"
       icon="i-lucide-triangle-alert"
-      title="No active or queued downloads yet"
+      :title="t('queue.empty')"
       class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 
@@ -120,7 +122,7 @@
             :loading="isRefreshing"
             @click="() => refreshQueue()"
           >
-            Refresh
+            {{ t('common.refresh') }}
           </UButton>
         </div>
 
@@ -136,7 +138,7 @@
               :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
               @click="toggleMasterSelection"
             >
-              {{ masterSelectAll ? 'Unselect' : 'Select' }}
+              {{ masterSelectAll ? t('common.unselect') : t('common.select') }}
             </UButton>
 
             <UBadge v-if="selectedElms.length > 0" color="error" variant="soft" size="sm">
@@ -151,7 +153,7 @@
                 icon="i-lucide-list"
                 trailing-icon="i-lucide-chevron-down"
               >
-                Actions
+                {{ t('common.actions') }}
               </UButton>
             </UDropdownMenu>
           </div>
@@ -172,7 +174,7 @@
               :loading="isRefreshing"
               @click="() => loadMoreQueue()"
             >
-              Show more
+              {{ t('common.showMore') }}
             </UButton>
           </div>
         </div>
@@ -185,13 +187,15 @@
             <table class="min-w-210 table-fixed w-full text-sm">
               <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
                 <tr
-                  class="text-center [&>th]:border-r [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-r-0"
+                  class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
                 >
                   <th class="w-12">
                     <button
                       type="button"
                       class="cursor-pointer"
-                      :aria-label="masterSelectAll ? 'Unselect all items' : 'Select all items'"
+                      :aria-label="
+                        masterSelectAll ? t('common.unselectAll') : t('common.selectAll')
+                      "
                       @click="toggleMasterSelection"
                     >
                       <UIcon
@@ -200,11 +204,11 @@
                       />
                     </button>
                   </th>
-                  <th class="w-full text-left">Video Title</th>
-                  <th class="w-56">Progress</th>
-                  <th class="w-32 whitespace-nowrap">Status</th>
-                  <th class="w-36 whitespace-nowrap">Created</th>
-                  <th class="w-80 whitespace-nowrap">Actions</th>
+                  <th class="w-full text-start">{{ t('queue.videoTitle') }}</th>
+                  <th class="w-56">{{ t('queue.progress') }}</th>
+                  <th class="w-32 whitespace-nowrap">{{ t('common.status') }}</th>
+                  <th class="w-36 whitespace-nowrap">{{ t('common.created') }}</th>
+                  <th class="w-80 whitespace-nowrap">{{ t('common.actions') }}</th>
                 </tr>
               </thead>
 
@@ -212,9 +216,9 @@
                 <tr
                   v-for="item in displayedItems"
                   :key="item._id"
-                  class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-r [&>td]:border-default/60 [&>td:last-child]:border-r-0"
+                  class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
                 >
-                  <td class="border-r border-default/60 px-3 py-3 text-center align-top">
+                  <td class="border-e border-default/60 px-3 py-3 text-center align-top">
                     <label class="inline-flex cursor-pointer items-center justify-center">
                       <input
                         :id="`checkbox-${item._id}`"
@@ -226,7 +230,7 @@
                     </label>
                   </td>
 
-                  <td class="border-r border-default/60 px-3 py-3 align-top">
+                  <td class="border-e border-default/60 px-3 py-3 align-top">
                     <div class="flex items-start justify-between gap-3">
                       <div class="min-w-0 flex-1">
                         <UTooltip :text="`[${item.preset}] - ${item.title}`">
@@ -248,7 +252,7 @@
                           variant="soft"
                           size="sm"
                         >
-                          {{ formatBytes(item.downloaded_bytes) }}
+                          {{ formatBytes(item.downloaded_bytes, 2, t) }}
                         </UBadge>
 
                         <UPopover
@@ -276,12 +280,16 @@
                                 </div>
 
                                 <p v-if="item.extras?.duration" class="text-xs text-toned">
-                                  <span class="font-semibold text-default">Duration:</span>
+                                  <span class="font-semibold text-default">{{
+                                    t('queue.duration')
+                                  }}</span>
                                   {{ formatTime(item.extras.duration) }}
                                 </p>
 
-                                <p v-if="getItemPath(item)" class="text-xs text-toned">
-                                  <span class="font-semibold text-default">Path:</span>
+                                <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                                  <span class="font-semibold text-default">{{
+                                    t('queue.path')
+                                  }}</span>
                                   {{ getItemPath(item) }}
                                 </p>
                               </div>
@@ -305,9 +313,9 @@
                     </div>
                   </td>
 
-                  <td class="w-56 border-r border-default/60 px-3 py-3 align-top">
+                  <td class="w-56 border-e border-default/60 px-3 py-3 align-top">
                     <div
-                      class="queue-progress queue-progress--compact w-56 rounded-md border border-default bg-muted/20"
+                      class="queue-progress queue-progress--compact w-full rounded-md border border-default bg-muted/20"
                     >
                       <div
                         class="queue-progress__bar bg-success/35"
@@ -318,7 +326,7 @@
                           <UIcon
                             :name="progressIcon(item)"
                             :class="[
-                              'mr-1 size-4',
+                              'me-1 size-4',
                               ['i-lucide-settings-2', 'i-lucide-loader-circle'].includes(
                                 progressIcon(item),
                               )
@@ -332,7 +340,7 @@
                     </div>
                   </td>
 
-                  <td class="border-r border-default/60 px-3 py-3 text-center align-top text-sm">
+                  <td class="border-e border-default/60 px-3 py-3 text-center align-top text-sm">
                     <div class="inline-flex items-center gap-2 text-default whitespace-nowrap">
                       <span class="inline-flex items-center">
                         <UIcon
@@ -345,7 +353,7 @@
                   </td>
 
                   <td
-                    class="border-r border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
+                    class="border-e border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
                   >
                     <UTooltip :text="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
                       <span :data-datetime="item.datetime" v-rtime="item.datetime" />
@@ -361,7 +369,7 @@
                         icon="i-lucide-circle-off"
                         @click="() => void confirmCancel(item)"
                       >
-                        {{ item.is_live ? 'Stop Stream' : 'Cancel' }}
+                        {{ item.is_live ? t('common.stopStream') : t('common.cancel') }}
                       </UButton>
 
                       <UButton
@@ -372,7 +380,7 @@
                         icon="i-lucide-circle-play"
                         @click="() => startItem(item)"
                       >
-                        Start
+                        {{ t('common.start') }}
                       </UButton>
 
                       <UButton
@@ -383,7 +391,7 @@
                         icon="i-lucide-pause"
                         @click="() => pauseItem(item)"
                       >
-                        Pause
+                        {{ t('common.pause') }}
                       </UButton>
 
                       <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
@@ -394,7 +402,7 @@
                           icon="i-lucide-settings-2"
                           trailing-icon="i-lucide-chevron-down"
                         >
-                          Actions
+                          {{ t('common.actions') }}
                         </UButton>
                       </UDropdownMenu>
                     </div>
@@ -453,8 +461,8 @@
                               }}</UBadge>
                             </div>
 
-                            <p v-if="getItemPath(item)" class="text-xs text-toned">
-                              <span class="font-semibold text-default">Path:</span>
+                            <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                              <span class="font-semibold text-default">{{ t('queue.path') }}</span>
                               {{ getItemPath(item) }}
                             </p>
                           </div>
@@ -541,7 +549,7 @@
                       <UIcon
                         :name="progressIcon(item)"
                         :class="[
-                          'mr-1 size-4',
+                          'me-1 size-4',
                           progressIcon(item) === 'i-lucide-settings-2' ? 'animate-spin' : '',
                         ]"
                       />
@@ -609,7 +617,7 @@
                     <span class="inline-flex w-full items-center justify-center gap-2">
                       <UIcon name="i-lucide-hard-drive" class="size-4 shrink-0 text-toned" />
                       <span :class="['min-w-0 text-center', expandClass(item._id, 'size')]">
-                        {{ formatBytes(item.downloaded_bytes) }}
+                        {{ formatBytes(item.downloaded_bytes, 2, t) }}
                       </span>
                     </span>
                   </button>
@@ -625,7 +633,7 @@
                     class="w-full justify-center"
                     @click="() => void confirmCancel(item)"
                   >
-                    {{ item.is_live ? 'Stop Stream' : 'Cancel' }}
+                    {{ item.is_live ? t('common.stopStream') : t('common.cancel') }}
                   </UButton>
 
                   <UButton
@@ -636,7 +644,7 @@
                     class="w-full justify-center"
                     @click="() => startItem(item)"
                   >
-                    Start
+                    {{ t('common.start') }}
                   </UButton>
 
                   <UButton
@@ -647,7 +655,7 @@
                     class="w-full justify-center"
                     @click="() => pauseItem(item)"
                   >
-                    Pause
+                    {{ t('common.pause') }}
                   </UButton>
 
                   <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
@@ -658,7 +666,7 @@
                       trailing-icon="i-lucide-chevron-down"
                       class="w-full justify-center"
                     >
-                      Actions
+                      {{ t('common.actions') }}
                     </UButton>
                   </UDropdownMenu>
                 </div>
@@ -673,26 +681,26 @@
             color="warning"
             variant="soft"
             icon="i-lucide-search"
-            title="Filter results"
+            :title="t('queue.filterTitle')"
           >
             <template #description>
               <div class="space-y-3 text-sm text-default">
                 <p>
-                  No results found for: <code>{{ query }}</code
+                  {{ t('queue.noResultsFor') }} <code>{{ query }}</code
                   >.
                 </p>
 
                 <p>
-                  You can search using any value shown in the item's <code>Local Information</code>.
-                  You can also do a targeted search using <code><u>key</u>:value</code>.
+                  {{ t('queue.filterHelp') }}
+                  {{ t('queue.filterKeyValue') }}
                 </p>
 
                 <div>
-                  <p class="mb-1 font-medium">Examples:</p>
-                  <ul class="list-disc space-y-1 pl-5">
-                    <li><code>youtube.com</code> - items containing that text</li>
-                    <li><code>is_live:true</code> - only live downloads</li>
-                    <li><code>source_name:task_name</code> - items added by the specified task.</li>
+                  <p class="mb-1 font-medium">{{ t('queue.filterExamples') }}</p>
+                  <ul class="list-disc space-y-1 ps-5">
+                    <li><code>youtube.com</code> - {{ t('queue.filterExample1') }}</li>
+                    <li><code>is_live:true</code> - {{ t('queue.filterExample2') }}</li>
+                    <li><code>source_name:task_name</code> - {{ t('queue.filterExample3') }}</li>
                   </ul>
                 </div>
               </div>
@@ -702,8 +710,8 @@
           <UEmpty
             v-else
             icon="i-lucide-triangle-alert"
-            title="No items"
-            description="Download queue is empty."
+            :title="t('common.noItems')"
+            :description="t('queue.emptyDesc')"
             class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
           />
         </div>
@@ -712,7 +720,7 @@
           v-if="embed_url"
           :open="Boolean(embed_url)"
           :dismissible="true"
-          title="Embedded player"
+          :title="t('common.embeddedPlayer')"
           :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
           @update:open="(open) => !open && (embed_url = '')"
         >
@@ -754,7 +762,8 @@ import {
   ucFirst,
 } from '~/utils';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
-import { requirePageShell } from '~/utils/topLevelNavigation';
+import { usePageShell } from '~/composables/usePageShell';
+const { t } = useI18n();
 
 const config = useYtpConfig();
 const stateStore = useQueueState();
@@ -779,7 +788,7 @@ const autoRefreshEnabled = useStorage<boolean>('queue_auto_refresh', true);
 const autoRefreshDelay = useStorage<number>('queue_auto_refresh_delay', 10000);
 const isMobile = useMediaQuery({ maxWidth: 639 });
 
-const pageShell = requirePageShell('downloads');
+const pageShell = usePageShell('downloads');
 const formSection = ref<HTMLElement | null>(null);
 const info_view = ref<{ url: string; preset: string; cli: string; useUrl: boolean }>({
   url: '',
@@ -816,10 +825,10 @@ const displayedItems = computed<StoreItem[]>(() => {
 
 const queueCountLabel = computed(() => {
   if (stateStore.hasMore()) {
-    return `Queued: ${stateStore.shown()} displayed / ${stateStore.count()} total`;
+    return t('queue.queuedCount', { shown: stateStore.shown(), total: stateStore.count() });
   }
 
-  return `Queued: ${stateStore.count()}`;
+  return t('queue.queuedCountShort', { count: stateStore.count() });
 });
 
 const hasItems = computed(() => displayedItems.value.length > 0);
@@ -845,7 +854,7 @@ const refreshQueue = async (): Promise<void> => {
   try {
     await stateStore.loadQueue();
   } catch {
-    toast.error('Failed to refresh queue');
+    toast.error(t('common.failedRefresh'));
   } finally {
     isRefreshing.value = false;
   }
@@ -861,7 +870,7 @@ const loadMoreQueue = async (): Promise<void> => {
   try {
     await stateStore.loadMore();
   } catch {
-    toast.error('Failed to load more queue items');
+    toast.error(t('common.failedLoadMore'));
   } finally {
     isRefreshing.value = false;
   }
@@ -1006,11 +1015,11 @@ const resumeDownload = async (): Promise<void> => {
 
 const pauseDownload = async (): Promise<void> => {
   const { status } = await confirmDialog({
-    title: 'Pause Downloads',
-    confirmText: 'Pause',
-    cancelText: 'Cancel',
+    title: t('queue.pauseDownloadsTitle'),
+    confirmText: t('common.pause'),
+    cancelText: t('common.cancel'),
     confirmColor: 'warning',
-    message: 'Are you sure you want to pause all non-active downloads?',
+    message: t('queue.pauseDownloadsDesc'),
   });
 
   if (!status) {
@@ -1079,7 +1088,7 @@ const bulkActionGroups = computed(() => {
 
   if (hasManualStart.value) {
     groups[0]?.push({
-      label: 'Start',
+      label: t('common.start'),
       icon: 'i-lucide-circle-play',
       disabled: !hasSelected.value,
       onSelect: () => startItems(),
@@ -1088,7 +1097,7 @@ const bulkActionGroups = computed(() => {
 
   if (hasPausable.value) {
     groups[0]?.push({
-      label: 'Pause',
+      label: t('common.pause'),
       icon: 'i-lucide-pause',
       disabled: !hasSelected.value,
       onSelect: () => pauseSelected(),
@@ -1096,7 +1105,7 @@ const bulkActionGroups = computed(() => {
   }
 
   groups[0]?.push({
-    label: selectedLiveOnly ? 'Stop' : 'Cancel',
+    label: selectedLiveOnly ? t('common.stop') : t('common.cancel'),
     icon: 'i-lucide-circle-off',
     disabled: !hasSelected.value,
     onSelect: () => cancelSelected(),
@@ -1111,7 +1120,7 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
 
   if (isEmbedable(item.url)) {
     primaryActions.push({
-      label: 'Play video',
+      label: t('common.playVideo'),
       icon: 'i-lucide-play',
       onSelect: () => {
         embed_url.value = getEmbedable(item.url) as string;
@@ -1120,14 +1129,14 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
   }
 
   primaryActions.push({
-    label: item.is_live ? 'Stop Stream' : 'Cancel Download',
+    label: item.is_live ? t('common.stopStream') : t('common.cancelDownload'),
     icon: 'i-lucide-circle-off',
     onSelect: () => confirmCancel(item),
   });
 
   if (canStartItem(item)) {
     primaryActions.push({
-      label: 'Start Download',
+      label: t('common.startDownload'),
       icon: 'i-lucide-circle-play',
       onSelect: () => startItem(item),
     });
@@ -1135,7 +1144,7 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
 
   if (canPauseItem(item)) {
     primaryActions.push({
-      label: 'Pause Download',
+      label: t('common.pauseDownload'),
       icon: 'i-lucide-pause',
       onSelect: () => pauseItem(item),
     });
@@ -1145,12 +1154,12 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
 
   groups.push([
     {
-      label: 'yt-dlp Information',
+      label: t('common.ytdlpInformation'),
       icon: 'i-lucide-info',
       onSelect: () => view_info(item.url, false, item.preset, item.cli),
     },
     {
-      label: 'Local Information',
+      label: t('common.localInformation'),
       icon: 'i-lucide-info',
       onSelect: () => view_info(`/api/history/${item._id}`, true),
     },
@@ -1197,27 +1206,27 @@ const setIconAnimation = (item: StoreItem): string => {
 
 const setStatus = (item: StoreItem): string => {
   if (!item.auto_start) {
-    return 'Pending';
+    return t('queue.pending');
   }
 
   if (null === item.status && true === config.paused) {
-    return 'Paused';
+    return t('common.paused');
   }
 
   if ('downloading' === item.status && item.is_live) {
-    return 'Streaming';
+    return t('common.streaming');
   }
 
   if ('started' === item.status) {
-    return 'Starting';
+    return t('common.starting');
   }
 
   if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader') ? 'External-DL' : 'Preparing..';
+    return ag(item, 'extras.external_downloader') ? t('queue.externalDL') : t('queue.preparing');
   }
 
   if (!item.status) {
-    return 'Unknown...';
+    return t('common.unknownError');
   }
 
   return ucFirst(item.status);
@@ -1241,7 +1250,7 @@ const setIconColor = (item: StoreItem): string => {
 
 const ETAPipe = (value: number | null): string => {
   if (null === value || 0 === value) {
-    return 'Live';
+    return t('common.live');
   }
 
   if (value < 60) {
@@ -1311,40 +1320,42 @@ const progressIcon = (item: StoreItem): string => {
 
 const progressText = (item: StoreItem): string => {
   if (!item.auto_start) {
-    return 'Manual start';
+    return t('queue.manualStart');
   }
 
   if (null === item.status && true === config.paused) {
-    return 'Global Pause';
+    return t('queue.globalPause');
   }
 
   if ('started' === item.status) {
-    return 'Starting';
+    return t('common.starting');
   }
 
   if ('postprocessing' === item.status) {
     if (item.postprocessor) {
-      return `PP: ${item.postprocessor}`;
+      return t('queue.ppLabel', { pp: item.postprocessor });
     }
 
-    return 'Post-processors are running.';
+    return t('queue.postProcessing');
   }
 
   if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
+    return ag(item, 'extras.external_downloader')
+      ? t('queue.externalDownloader')
+      : t('queue.preparing');
   }
 
   if (null != item.status && item.is_live && !item.speed) {
-    return 'Recording live stream';
+    return t('queue.recordingLive');
   }
 
   let value = '';
 
   if (null != item.status) {
-    value += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : 'Live';
+    value += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : t('common.live');
   }
 
-  value += item.speed ? ` - ${speedPipe(item.speed)}` : ' - Waiting..';
+  value += item.speed ? ` - ${speedPipe(item.speed)}` : t('queue.waiting');
 
   if (null != item.status && item.eta) {
     value += ` - ${ETAPipe(item.eta)}`;
@@ -1354,7 +1365,10 @@ const progressText = (item: StoreItem): string => {
 };
 
 const confirmCancel = async (item: StoreItem): Promise<boolean> => {
-  if (true !== (await box.confirm(`${item.is_live ? 'Stop' : 'Cancel'} '${item.title}'?`))) {
+  if (
+    true !==
+    (await box.confirm(`${item.is_live ? t('common.stop') : t('common.cancel')} '${item.title}'?`))
+  ) {
     return false;
   }
 
@@ -1373,7 +1387,7 @@ const cancelSelected = async (): Promise<boolean> => {
   if (
     true !==
     (await box.confirm(
-      `${selectedLiveOnly ? 'Stop' : 'Cancel'} '${selectedElms.value.length}' selected items?`,
+      `${selectedLiveOnly ? t('common.stop') : t('common.cancel')} '${selectedElms.value.length}' selected items?`,
     ))
   ) {
     return false;
@@ -1411,11 +1425,11 @@ const startItems = async (): Promise<void> => {
   selectedElms.value = [];
 
   if (eligible.length < 1) {
-    toast.error('No eligible items to start.');
+    toast.error(t('common.noEligibleStart'));
     return;
   }
 
-  if (true !== (await box.confirm(`Start '${eligible.length}' selected items?`))) {
+  if (true !== (await box.confirm(t('queue.startSelectedConfirm', { count: eligible.length })))) {
     return;
   }
 
@@ -1435,11 +1449,11 @@ const pauseSelected = async (): Promise<void> => {
   selectedElms.value = [];
 
   if (eligible.length < 1) {
-    toast.error('No eligible items to pause.');
+    toast.error(t('common.noEligiblePause'));
     return;
   }
 
-  if (true !== (await box.confirm(`Pause '${eligible.length}' selected items?`))) {
+  if (true !== (await box.confirm(t('queue.pauseSelectedConfirm', { count: eligible.length })))) {
     return;
   }
 
@@ -1478,7 +1492,8 @@ const onImgError = (event: Event): void => {
 
 .queue-progress__bar {
   position: absolute;
-  inset: 0 auto 0 0;
+  inset-block: 0;
+  inset-inline-start: 0;
 }
 
 .queue-progress__label {

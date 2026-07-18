@@ -1,6 +1,7 @@
 <template>
   <div class="relative w-full">
     <UInput
+      dir="ltr"
       :id="id"
       ref="inputRef"
       v-model="model"
@@ -25,14 +26,16 @@
     <div
       v-if="showList && filteredOptions.length"
       ref="dropdownRef"
-      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md ytp-floating-surface"
+      class="absolute inset-x-0 z-20 max-h-40 overflow-y-auto rounded-md ytp-floating-surface"
+      :class="preferUp ? 'bottom-full mb-1' : 'top-full mt-1'"
+      dir="ltr"
       role="menu"
     >
       <button
         v-for="(option, idx) in filteredOptions"
         :key="option.value"
         type="button"
-        class="flex w-full items-start justify-between gap-4 px-3 py-2 text-left text-sm transition-colors"
+        class="flex w-full items-start justify-between gap-4 px-3 py-2 text-start text-sm transition-colors"
         :class="
           idx === highlightedIndex
             ? 'bg-elevated text-highlighted'
@@ -69,6 +72,7 @@ const props = withDefaults(
     multiple?: boolean;
     openOnFocus?: boolean;
     allowShortFlags?: boolean;
+    preferUp?: boolean;
   }>(),
   {
     placeholder: '',
@@ -79,11 +83,21 @@ const props = withDefaults(
     multiple: true,
     openOnFocus: false,
     allowShortFlags: false,
+    preferUp: false,
   },
 );
 
-const { placeholder, disabled, id, icon, iconClass, multiple, openOnFocus, allowShortFlags } =
-  toRefs(props);
+const {
+  placeholder,
+  disabled,
+  id,
+  icon,
+  iconClass,
+  multiple,
+  openOnFocus,
+  allowShortFlags,
+  preferUp,
+} = toRefs(props);
 
 const model = defineModel<string>();
 

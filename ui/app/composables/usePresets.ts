@@ -36,6 +36,10 @@ const lastError = ref<string | null>(null);
  * If true, methods will throw errors instead of returning null/false (for testing)
  */
 const throwInstead = ref(false);
+
+const { $i18n } = useNuxtApp();
+const t = $i18n?.t ?? ((key: string) => key);
+
 /**
  * Notification composable for showing success/error messages.
  */
@@ -89,7 +93,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
   useNotification().error(message);
 };
@@ -203,7 +207,7 @@ const createPreset = async (
     const created = await parse_api_response<Preset>(json);
 
     updatePresets(created);
-    useNotification().success('Preset created.');
+    useNotification().success(t('common.crudCreated', { type: t('common.presetLabel') }));
     lastError.value = null;
 
     if (callback) {
@@ -212,7 +216,7 @@ const createPreset = async (
 
     return created;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -258,7 +262,9 @@ const updatePreset = async (
     const updated = await parse_api_response<Preset>(json);
 
     updatePresets(updated);
-    useNotification().success(`Preset '${updated.name}' updated.`);
+    useNotification().success(
+      t('common.crudUpdated', { type: t('common.presetLabel'), name: updated.name }),
+    );
     lastError.value = null;
 
     if (callback) {
@@ -267,7 +273,7 @@ const updatePreset = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -313,7 +319,9 @@ const patchPreset = async (
     const updated = await parse_api_response<Preset>(json);
 
     updatePresets(updated);
-    useNotification().success(`Preset '${updated.name}' updated.`);
+    useNotification().success(
+      t('common.crudUpdated', { type: t('common.presetLabel'), name: updated.name }),
+    );
     lastError.value = null;
 
     if (callback) {
@@ -322,7 +330,7 @@ const patchPreset = async (
 
     return updated;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
@@ -351,7 +359,7 @@ const deletePreset = async (
     await ensureSuccess(response);
 
     removePreset(id);
-    useNotification().success('Preset deleted.');
+    useNotification().success(t('common.crudDeleted', { type: t('common.presetLabel') }));
     lastError.value = null;
 
     if (callback) {
@@ -360,7 +368,7 @@ const deletePreset = async (
 
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
     handleError(error);
 
     if (callback) {
