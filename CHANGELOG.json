@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "c830741743eb583dfd4173595da5ed31fc0d1dd7",
+    "date": "2026-07-19T16:02:32+00:00",
+    "commits": [
+      {
+        "sha": "c8307417",
+        "full_sha": "c830741743eb583dfd4173595da5ed31fc0d1dd7",
+        "message": "refactor: minor locale change",
+        "author": "arabcoders",
+        "date": "2026-07-19T16:02:32+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.6.0",
     "full_sha": "f6736168e5ebb310cfb9537ec86a3974cde95aa5",
     "date": "2026-07-18T16:49:30+00:00",
