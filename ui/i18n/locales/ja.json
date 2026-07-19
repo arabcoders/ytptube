@@ -1111,7 +1111,7 @@
     "helpChildren": "<strong>子プロセス</strong> - <code>ffmpeg</code>、<code>yt-dlp</code>、ブラウザなどのサブプロセス。これらのリソース使用量はアプリ合計に含まれ、総負荷の大半を占めることが多いため個別にリスト表示されます。",
     "helpPool": "<strong>プール</strong> - <em>一時停止中</em> は新しいダウンロードが開始されないことを意味します。<em>実行中</em> はワーカーが新しいアイテムを受け入れていることを意味します。",
     "helpBottlenecks": "<strong>ボトルネック</strong> - CPU、メモリ、I/O、ネットワークの競合について直近 30 サンプルを分析します。概要に問題を説明し、詳細にはサンプルウィンドウからの測定値を含みます。",
-    "diskFree": "{total} GiB 中 {free} GiB 空き",
+    "diskFree": "{total} 中 {free} 空き",
     "networkStats": "受信 {down}  送信 {up}",
     "connections": "接続数: {count}",
     "diskTemp": "温度",

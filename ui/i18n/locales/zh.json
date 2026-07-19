@@ -1111,7 +1111,7 @@
     "helpChildren": "<strong>子进程</strong> - 诸如 <code>ffmpeg</code>、<code>yt-dlp</code> 或浏览器之类的子进程。它们的资源使用量已包含在应用总计中，并单独列出，因为它们通常主导总负载。",
     "helpPool": "<strong>池</strong> - <em>已暂停</em> 表示没有新的下载开始；<em>运行中</em> 表示工作进程正在接收新项目。",
     "helpBottlenecks": "<strong>瓶颈</strong> - 分析最近 30 个样本的 CPU、内存、I/O 或网络争用。摘要描述问题；详情包含来自采样窗口的测量数据。",
-    "diskFree": "{total} GiB 中 {free} GiB 可用",
+    "diskFree": "{total} 中 {free} 可用",
     "networkStats": "下行 {down}  上行 {up}",
     "connections": "连接数：{count}",
     "diskTemp": "临时",

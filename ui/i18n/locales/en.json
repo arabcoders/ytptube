@@ -1111,7 +1111,7 @@
     "helpChildren": "<strong>Child Processes</strong> - Sub-processes like <code>ffmpeg</code>, <code>yt-dlp</code>, or browsers. Their resource usage is included in app totals and listed separately because they often dominate total load.",
     "helpPool": "<strong>Pool</strong> - <em>Paused</em> means no new downloads start; <em>Running</em> means workers are accepting new items.",
     "helpBottlenecks": "<strong>Bottlenecks</strong> - Analyses the last 30 samples for CPU, memory, I/O, or network contention. The summary describes the issue; details include measurements from the sample window.",
-    "diskFree": "{free} GiB free of {total} GiB",
+    "diskFree": "{free} free of {total}",
     "networkStats": "Down {down}  Up {up}",
     "connections": "Connections: {count}",
     "diskTemp": "Temp",

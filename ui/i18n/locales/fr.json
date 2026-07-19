@@ -1111,7 +1111,7 @@
     "helpChildren": "<strong>Processus enfants</strong> - Sous-processus comme <code>ffmpeg</code>, <code>yt-dlp</code> ou les navigateurs. Leur utilisation des ressources est incluse dans les totaux de l'application et listée séparément car ils dominent souvent la charge totale.",
     "helpPool": "<strong>Pool</strong> - <em>En pause</em> signifie qu'aucun nouveau téléchargement ne démarre ; <em>En cours</em> signifie que les workers acceptent de nouveaux éléments.",
     "helpBottlenecks": "<strong>Goulots d'étranglement</strong> - Analyse les 30 derniers échantillons pour la contention CPU, mémoire, E/S ou réseau. Le résumé décrit le problème ; les détails incluent les mesures de la fenêtre d'échantillonnage.",
-    "diskFree": "{free} GiB libres sur {total} GiB",
+    "diskFree": "{free} libres sur {total}",
     "networkStats": "Descendant {down}  Montant {up}",
     "connections": "Connexions : {count}",
     "diskTemp": "Temp",
