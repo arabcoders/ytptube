@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "c830741743eb583dfd4173595da5ed31fc0d1dd7",
-    "date": "2026-07-19T16:02:32+00:00",
+    "full_sha": "77c573c61fb0ab79d4619ee0777aaf4787e9cdef",
+    "date": "2026-07-22T06:01:14+00:00",
     "commits": [
+      {
+        "sha": "77c573c6",
+        "full_sha": "77c573c61fb0ab79d4619ee0777aaf4787e9cdef",
+        "message": "refactor: standardize the settings inputs forms",
+        "author": "arabcoders",
+        "date": "2026-07-22T06:01:14+00:00"
+      },
       {
         "sha": "c8307417",
         "full_sha": "c830741743eb583dfd4173595da5ed31fc0d1dd7",
