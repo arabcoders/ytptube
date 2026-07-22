@@ -72,7 +72,7 @@
               class="w-full"
               size="lg"
               :ui="settingsSwitchUi"
-              :label="page_anims ? t('app.settings.animationsOn') : t('app.settings.animationsOff')"
+              :label="page_anims ? t('common.enabled') : t('common.disabled')"
               :description="t('app.settings.animationsDesc')"
             />
           </div>
@@ -132,7 +132,8 @@
               class="w-full"
               size="lg"
               :ui="settingsSwitchUi"
-              :label="bg_enable ? t('app.settings.bgShown') : t('app.settings.bgHidden')"
+              :label="bg_enable ? t('common.shown') : t('common.hidden')"
+              :description="t('app.settings.bgDesc')"
             />
 
             <UButton
@@ -199,9 +200,7 @@
               class="w-full"
               size="lg"
               :ui="settingsSwitchUi"
-              :label="
-                show_thumbnail ? t('app.settings.showThumbnails') : t('app.settings.hideThumbnails')
-              "
+              :label="show_thumbnail ? t('common.shown') : t('common.hidden')"
               :description="t('app.settings.thumbnailsDesc')"
             />
 
@@ -227,7 +226,7 @@
               class="w-full"
               size="lg"
               :ui="settingsSwitchUi"
-              :label="show_popover ? t('app.settings.popoverOn') : t('app.settings.popoverOff')"
+              :label="show_popover ? t('common.enabled') : t('common.disabled')"
               :description="t('app.settings.popoverDesc')"
             />
           </div>
@@ -247,11 +246,7 @@
               class="w-full"
               size="lg"
               :ui="settingsSwitchUi"
-              :label="
-                queue_auto_refresh
-                  ? t('app.settings.autoRefreshEnabled')
-                  : t('app.settings.autoRefreshDisabled')
-              "
+              :label="queue_auto_refresh ? t('common.enabled') : t('common.disabled')"
               :description="t('app.settings.autoRefreshDesc')"
             />
 
@@ -293,7 +288,8 @@
               class="w-full"
               size="lg"
               :ui="settingsSwitchUi"
-              :label="allow_toasts ? t('app.settings.notifyShown') : t('app.settings.notifyHidden')"
+              :label="allow_toasts ? t('common.enabled') : t('common.disabled')"
+              :description="t('app.settings.notifyDesc')"
             />
 
             <UFormField
@@ -343,11 +339,8 @@
               class="w-full"
               size="lg"
               :ui="settingsSwitchUi"
-              :label="
-                toast_dismiss_on_click
-                  ? t('app.settings.dismissOnClick')
-                  : t('app.settings.keepOnClick')
-              "
+              :label="toast_dismiss_on_click ? t('common.enabled') : t('common.disabled')"
+              :description="t('app.settings.dismissOnClickDesc')"
             />
           </div>
         </div>
