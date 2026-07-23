@@ -386,6 +386,9 @@ class ItemDTO:
 
     force_start: bool = False
     """ If the scheduler should bypass worker limits for this item. """
+
+    queue_position: int | None = None
+    """ Persisted position used to order queued items. """
     is_archivable: bool | None = None
     """ If the item can be archived. """
     is_archived: bool | None = None

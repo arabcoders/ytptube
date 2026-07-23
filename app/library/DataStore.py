@@ -182,6 +182,32 @@ class DataStore:
         self._dict.pop(key, None)
         await self._connection.enqueue_delete(str(self._type), key)
 
+    async def position(self, ids: list[str], position: str) -> list[str]:
+        """Move selected queue items to the front or back of pending items."""
+        if StoreType.QUEUE != self._type or not ids or position not in ("front", "back"):
+            return []
+
+        selected = set(ids)
+        entries = list(self._dict.items())
+        active = [(key, item) for key, item in entries if item.started()]
+        pending = [(key, item) for key, item in entries if not item.started()]
+        promoted = [(key, item) for key, item in pending if key in selected and not item.is_cancelled()]
+        if not promoted:
+            return []
+
+        promoted_ids = [key for key, _ in promoted]
+        promoted_set = set(promoted_ids)
+        remaining = [(key, item) for key, item in pending if key not in promoted_set]
+        ordered = active + promoted + remaining if position == "front" else active + remaining + promoted
+        self._dict.clear()
+
+        for queue_position, (key, item) in enumerate(ordered):
+            self._dict[key] = item
+            item.info.queue_position = queue_position
+            await self._connection.enqueue_upsert(str(self._type), _strip_transient_fields(item.info))
+
+        return promoted_ids
+
     def next(self):
         return next(iter(self._dict.items()))
 

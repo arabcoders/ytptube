@@ -1095,11 +1095,27 @@ const bulkActionGroups = computed(() => {
     });
   }
 
+  if (stateStore.hasActive()) {
+    groups[0]?.push({
+      label: t('queue.forceStart'),
+      icon: 'i-lucide-zap',
+      disabled: !hasSelected.value,
+      onSelect: () => forceStartItems(),
+    });
+  }
+
   groups[0]?.push({
-    label: t('queue.forceStart'),
-    icon: 'i-lucide-zap',
+    label: t('queue.moveToFront'),
+    icon: 'i-lucide-arrow-up-to-line',
     disabled: !hasSelected.value,
-    onSelect: () => forceStartItems(),
+    onSelect: () => positionItems('front'),
+  });
+
+  groups[0]?.push({
+    label: t('queue.moveToBack'),
+    icon: 'i-lucide-arrow-down-to-line',
+    disabled: !hasSelected.value,
+    onSelect: () => positionItems('back'),
   });
 
   if (hasPausable.value) {
@@ -1150,11 +1166,29 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
   }
 
   if (!item.status) {
-    primaryActions.push({
-      label: t('queue.forceStart'),
-      icon: 'i-lucide-zap',
-      onSelect: () => forceStartItem(item),
-    });
+    if (stateStore.hasActive()) {
+      primaryActions.push({
+        label: t('queue.forceStart'),
+        icon: 'i-lucide-zap',
+        onSelect: () => forceStartItem(item),
+      });
+    }
+
+    if (stateStore.canPosition(item._id) && !stateStore.isFirst(item._id)) {
+      primaryActions.push({
+        label: t('queue.moveToFront'),
+        icon: 'i-lucide-arrow-up-to-line',
+        onSelect: () => positionItem(item, 'front'),
+      });
+    }
+
+    if (stateStore.canPosition(item._id) && !stateStore.isLastPending(item._id)) {
+      primaryActions.push({
+        label: t('queue.moveToBack'),
+        icon: 'i-lucide-arrow-down-to-line',
+        onSelect: () => positionItem(item, 'back'),
+      });
+    }
   }
 
   if (canPauseItem(item)) {
@@ -1427,6 +1461,8 @@ const cancelItems = (item: string | string[]): void => {
 const startItem = async (item: StoreItem): Promise<void> => await stateStore.startItems([item._id]);
 const forceStartItem = async (item: StoreItem): Promise<void> =>
   await stateStore.forceStartItems([item._id]);
+const positionItem = async (item: StoreItem, position: 'front' | 'back'): Promise<void> =>
+  await stateStore.positionItems([item._id], position);
 const pauseItem = async (item: StoreItem): Promise<void> => await stateStore.pauseItems([item._id]);
 
 const startItems = async (): Promise<void> => {
@@ -1476,6 +1512,25 @@ const forceStartItems = async (): Promise<void> => {
   }
 
   await stateStore.forceStartItems(eligible);
+};
+
+const positionItems = async (position: 'front' | 'back'): Promise<void> => {
+  if (selectedElms.value.length < 1) {
+    return;
+  }
+
+  const eligible = selectedElms.value.filter((id) => {
+    const item = stateStore.get(id);
+    return Boolean(item && !item.status);
+  });
+
+  selectedElms.value = [];
+  if (eligible.length < 1) {
+    toast.error(t('common.noEligibleStart'));
+    return;
+  }
+
+  await stateStore.positionItems(eligible, position);
 };
 
 const pauseSelected = async (): Promise<void> => {
