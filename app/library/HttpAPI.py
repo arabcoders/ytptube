@@ -128,7 +128,7 @@ class HttpAPI:
 
         self.add_routes(app)
 
-        async def on_prepare(request: Request, response: Response):
+        async def on_prepare(request: Request, response: StreamResponse):
             if "Server" in response.headers:
                 del response.headers["Server"]
 

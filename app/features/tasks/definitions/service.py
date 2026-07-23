@@ -6,7 +6,7 @@ import inspect
 import pkgutil
 import random
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.features.tasks.definitions.handlers._base_handler import BaseHandler
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
@@ -602,7 +602,7 @@ class TaskHandle:
                     continue
 
                 if callable(getattr(cls, "can_handle", None)) and callable(getattr(cls, "extract", None)):
-                    handlers.append(cls)
+                    handlers.append(cast("type[BaseHandler]", cls))
 
         return handlers
 

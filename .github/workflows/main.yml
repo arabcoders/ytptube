@@ -69,7 +69,7 @@ jobs:
         run: pip install uv
 
       - name: Install Python dependencies
-        run: uv sync
+        run: uv sync --dev
 
       - name: Run Python linting
         run: uv run ruff check app/
