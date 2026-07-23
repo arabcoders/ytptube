@@ -12,6 +12,13 @@
         "date": "2026-07-22T06:01:14+00:00"
       },
       {
+        "sha": "87ea71b9",
+        "full_sha": "87ea71b965878c9df8929a8d230f2595e3942c96",
+        "message": "fix: scope FlareSolverr cookies to target host and handle solve failures\n\nTwo related fixes to the FlareSolverr Cloudflare solver:\n\n1. Only forward cookies whose domain matches the target host. Previously the\n   entire cookiejar (e.g. cookies loaded from cookies.txt for unrelated sites)\n   was sent to FlareSolverr. FlareSolverr passes every cookie to a real Chrome\n   instance navigating to the target URL, and Chrome rejects a cookie whose\n   domain does not match the page with \"invalid cookie domain\", aborting the\n   whole solve with an HTTP 500.\n\n2. Handle HTTP/transport errors from FlareSolverr gracefully. FlareSolverr\n   signals solve failures with an HTTP 500 plus a JSON body describing why, but\n   urllib raised HTTPError before the existing status check could read it, so a\n   solve failure crashed the whole extraction with a misleading \"Unexpected\n   error / report to yt-dlp\" message. We now catch it, log the reported reason,\n   and return None so yt-dlp degrades to the original Cloudflare error.\n\nAdds tests for the domain filter and the HTTP 500 / connection-error paths.\n\nClaude-Session: https://claude.ai/code/session_01DB7CX9iqNmU2QgdUEDLByC",
+        "author": "Rob K",
+        "date": "2026-07-21T20:54:56+00:00"
+      },
+      {
         "sha": "c8307417",
         "full_sha": "c830741743eb583dfd4173595da5ed31fc0d1dd7",
         "message": "refactor: minor locale change",
