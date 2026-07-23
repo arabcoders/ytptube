@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "77c573c61fb0ab79d4619ee0777aaf4787e9cdef",
-    "date": "2026-07-22T06:01:14+00:00",
+    "full_sha": "c422bf3f42f13bf8f98ef9b7442bd7f7e88ad9e4",
+    "date": "2026-07-23T15:45:10+00:00",
     "commits": [
+      {
+        "sha": "c422bf3f",
+        "full_sha": "c422bf3f42f13bf8f98ef9b7442bd7f7e88ad9e4",
+        "message": "chore: update GitHub Actions to use latest action versions",
+        "author": "arabcoders",
+        "date": "2026-07-23T15:45:10+00:00"
+      },
+      {
+        "sha": "27a80b35",
+        "full_sha": "27a80b3598483d11fcfaaee2a4a028157bec8c82",
+        "message": "refactor: add mutex to same host solving in cf solver",
+        "author": "arabcoders",
+        "date": "2026-07-23T15:26:40+00:00"
+      },
       {
         "sha": "77c573c6",
         "full_sha": "77c573c61fb0ab79d4619ee0777aaf4787e9cdef",
