@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+import urllib.error
 import urllib.request
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
@@ -15,6 +16,35 @@ if TYPE_CHECKING:
 
 CACHE: Cache = Cache()
 LOG = get_logger()
+
+
+def _host_matches_cookie_domain(host: str, cookie_domain: str | None) -> bool:
+    """
+    Determine whether a cookie belongs to the given request host.
+
+    FlareSolverr hands every cookie we send to a real Chrome instance navigating to the target
+    URL. Chrome rejects cookies whose domain does not match the page being loaded with an
+    ``invalid cookie domain`` error, which aborts the whole solve with an HTTP 500. So we only
+    forward cookies whose domain matches the target host.
+
+    Args:
+        host (str): The hostname of the target URL.
+        cookie_domain (str | None): The cookie's domain attribute.
+
+    Returns:
+        bool: True if the cookie applies to the host, False otherwise.
+
+    """
+    host = (host or "").lower().strip(".")
+    domain = (cookie_domain or "").lower().strip(".")
+    if not host:
+        return False
+
+    # Host-only cookie (no domain) applies to the target by default.
+    if not domain:
+        return True
+
+    return host == domain or host.endswith(f".{domain}")
 
 
 def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> dict[str, Any] | None:
@@ -54,7 +84,19 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
     }
 
     if cookies:
-        payload["cookies"] = cookies
+        # Only forward cookies that belong to the target host. Sending a cookie for an unrelated
+        # domain makes FlareSolverr's Chrome reject it and fail the whole solve with an HTTP 500.
+        scoped_cookies = [c for c in cookies if _host_matches_cookie_domain(host, c.get("domain"))]
+        dropped: int = len(cookies) - len(scoped_cookies)
+        if dropped:
+            LOG.debug(
+                "Dropped %d cookie(s) not matching host '%s' before calling FlareSolverr.",
+                dropped,
+                host,
+                extra={"host": host, "dropped": dropped},
+            )
+        if scoped_cookies:
+            payload["cookies"] = scoped_cookies
 
     if user_agent:
         payload.setdefault("headers", {})["User-Agent"] = user_agent
@@ -70,8 +112,35 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
         "Solving Cloudflare challenge for '%s' via FlareSolverr.", host, extra={"host": host, "endpoint": endpoint}
     )
     start_time = time.time()
-    with urllib.request.urlopen(req, timeout=float(config.flaresolverr_client_timeout)) as resp:  # noqa: S310
-        result = json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=float(config.flaresolverr_client_timeout)) as resp:  # noqa: S310
+            result = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        # FlareSolverr signals solve failures with an HTTP 500 and a JSON body describing why.
+        # urlopen raises before we can read that body, so pull the message out of the error here
+        # and degrade gracefully instead of letting the exception abort the whole extraction.
+        message: str | None = None
+        try:
+            message = json.loads(e.read().decode("utf-8")).get("message")
+        except Exception:
+            message = None
+
+        LOG.error(
+            "FlareSolverr returned HTTP %s while solving challenge for '%s': %s",
+            e.code,
+            host,
+            message or e.reason,
+            extra={"host": host, "endpoint": endpoint, "status_code": e.code, "solver_message": message},
+        )
+        return None
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        LOG.error(
+            "Failed to reach FlareSolverr for '%s': %s",
+            host,
+            e,
+            extra={"host": host, "endpoint": endpoint, "error": str(e)},
+        )
+        return None
 
     if "ok" != result.get("status"):
         LOG.error(
