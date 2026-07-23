@@ -117,6 +117,47 @@ class TestCfSolverFunction:
         assert len(cookies_arg) > 0
         assert "existing" == cookies_arg[0]["name"]
 
+    @patch("app.library.cf_solver_handler.solver")
+    def test_cf_solver_passes_all_cookies_from_jar(self, mock_solver, cf_handler_module):
+        mock_solver.return_value = {"cookies": [], "userAgent": "Mozilla/5.0"}
+
+        handler = cf_handler_module.CFSolverRH(logger=Mock())
+        cookiejar = http.cookiejar.CookieJar()
+        for name, domain in (("a", "example.com"), ("b", "other.com"), ("c", ".example.com")):
+            cookiejar.set_cookie(
+                http.cookiejar.Cookie(
+                    version=0,
+                    name=name,
+                    value="v",
+                    port=None,
+                    port_specified=False,
+                    domain=domain,
+                    domain_specified=True,
+                    domain_initial_dot=domain.startswith("."),
+                    path="/",
+                    path_specified=True,
+                    secure=False,
+                    expires=None,
+                    discard=True,
+                    comment=None,
+                    comment_url=None,
+                    rest={},
+                    rfc2109=False,
+                )
+            )
+        handler._get_cookiejar = Mock(return_value=cookiejar)
+
+        request = Mock()
+        request.url = "https://example.com/path"
+        request.headers = {"User-Agent": "test"}
+        response = Mock()
+
+        cf_handler_module.cf_solver(request, response, handler)
+
+        cookies_arg = mock_solver.call_args[0][1]
+        cookie_names = {c["name"] for c in cookies_arg}
+        assert {"a", "b", "c"} == cookie_names
+
 
 class TestSetCfHandler:
     """Test set_cf_handler function."""

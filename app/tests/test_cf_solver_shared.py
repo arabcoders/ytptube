@@ -25,6 +25,11 @@ class TestHostMatchesCookieDomain:
             ("www.pexels.com", None, True),
             ("www.pexels.com", "notpexels.com", False),
             ("", ".pexels.com", False),
+            ("www.youtube.com", ".youtube.com", True),
+            ("youtube.com", ".youtube.com", True),
+            ("consent.youtube.com", ".youtube.com", True),
+            ("m.youtube.com", "youtube.com", True),
+            ("www.youtube.com", ".google.com", False),
         ],
     )
     def test_matches(self, host, domain, expected):
@@ -51,10 +56,8 @@ class TestSolver:
         mock_config_cls.get_instance.return_value = _make_config()
         mock_cache.get.return_value = None
 
-        resp = io.BytesIO(json.dumps({"status": "ok", "solution": {"cookies": [], "userAgent": "UA"}}).encode())
-        resp.__enter__ = lambda self=resp: self
-        resp.__exit__ = lambda *a: False
-        mock_urlopen.return_value = resp
+        resp_data = json.dumps({"status": "ok", "solution": {"cookies": [], "userAgent": "UA"}}).encode()
+        mock_urlopen.return_value.__enter__.return_value.read.return_value = resp_data
 
         cookies = [
             {"name": "cf_bm_pexels", "value": "a", "domain": ".pexels.com", "path": "/"},
@@ -81,7 +84,7 @@ class TestSolver:
             url="http://flaresolverr:8191/v1",
             code=500,
             msg="Internal Server Error",
-            hdrs=None,
+            hdrs=Mock(),
             fp=io.BytesIO(body),
         )
 
@@ -97,6 +100,37 @@ class TestSolver:
         mock_config_cls.get_instance.return_value = _make_config()
         mock_cache.get.return_value = None
         mock_urlopen.side_effect = urllib.error.URLError("connection refused")
+
+        result = solver("https://www.pexels.com/video/x-123/", [], "UA")
+        assert result is None
+
+    @patch("app.library.cf_solver_shared.CACHE")
+    @patch("app.library.cf_solver_shared.urllib.request.urlopen")
+    @patch("app.library.config.Config")
+    def test_all_cookies_filtered_out(self, mock_config_cls, mock_urlopen, mock_cache):
+        mock_config_cls.get_instance.return_value = _make_config()
+        mock_cache.get.return_value = None
+
+        resp_data = json.dumps({"status": "ok", "solution": {"cookies": [], "userAgent": "UA"}}).encode()
+        mock_urlopen.return_value.__enter__.return_value.read.return_value = resp_data
+
+        cookies = [
+            {"name": "vuid", "value": "b", "domain": ".vimeo.com", "path": "/"},
+            {"name": "g_state", "value": "c", "domain": "vimeo.com", "path": "/"},
+        ]
+
+        solver("https://www.pexels.com/video/x-123/", cookies, "UA")
+
+        sent = json.loads(mock_urlopen.call_args[0][0].data.decode())
+        assert "cookies" not in sent
+
+    @patch("app.library.cf_solver_shared.CACHE")
+    @patch("app.library.cf_solver_shared.urllib.request.urlopen")
+    @patch("app.library.config.Config")
+    def test_os_error_returns_none(self, mock_config_cls, mock_urlopen, mock_cache):
+        mock_config_cls.get_instance.return_value = _make_config()
+        mock_cache.get.return_value = None
+        mock_urlopen.side_effect = OSError("connection reset")
 
         result = solver("https://www.pexels.com/video/x-123/", [], "UA")
         assert result is None
