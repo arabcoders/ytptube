@@ -1551,6 +1551,7 @@ class TestQueueManager:
             template="",
             cli=[],
             auto_start=True,
+            force_start=False,
         )
 
     @staticmethod

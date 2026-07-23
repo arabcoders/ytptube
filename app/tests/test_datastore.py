@@ -192,6 +192,34 @@ class TestDataStore:
         await store._connection.close()
 
     @pytest.mark.asyncio
+    async def test_position_preserves_active_order(self) -> None:
+        store = await make_store_async(StoreType.QUEUE)
+
+        active = StubDownload(info=make_item(id="active", url="http://active"), started=True)
+        middle = StubDownload(info=make_item(id="middle", url="http://middle"))
+        last = StubDownload(info=make_item(id="last", url="http://last"))
+        await store.put(active)
+        await store.put(middle)
+        await store.put(last)
+
+        promoted = await store.position([last.info._id], "front")
+        await store._connection.flush()
+
+        assert promoted == [last.info._id]
+        assert list(store._dict) == [active.info._id, last.info._id, middle.info._id]
+
+        moved_back = await store.position([last.info._id], "back")
+        await store._connection.flush()
+
+        assert moved_back == [last.info._id]
+        assert list(store._dict) == [active.info._id, middle.info._id, last.info._id]
+
+        reloaded = DataStore(StoreType.QUEUE, store._connection)
+        await reloaded.load()
+        assert list(reloaded._dict) == [active.info._id, middle.info._id, last.info._id]
+        await store._connection.close()
+
+    @pytest.mark.asyncio
     async def test_has_downloads_and_get_next_download(self) -> None:
         store = await make_store_async(StoreType.QUEUE)
 

@@ -328,7 +328,7 @@
       </div>
 
       <div class="space-y-5">
-        <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+        <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
           <div class="rounded-lg border border-default bg-muted/20 p-3">
             <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">

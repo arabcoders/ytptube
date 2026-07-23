@@ -53,7 +53,7 @@ git checkout -b feature/descriptive-name
 * Add or update tests for all changes:
   * New features **MUST** include tests
   * Bug fixes **MUST** include a regression test
-* Ensure all linting and tests pass
+* Ensure all linting, type checking, and tests pass
 * Keep changes focused and atomic
 
 ### 4. Submit a Pull Request
@@ -69,6 +69,7 @@ git checkout -b feature/descriptive-name
 - [ ] Targets `dev` branch
 - [ ] Tests added/updated and passing
 - [ ] Linting passes
+- [ ] Type checking passes
 - [ ] Documentation updated (if needed)
 
 ---
@@ -125,6 +126,7 @@ You are **not required** to disclose AI usage. However, if code quality suggests
 
 All contributions must include appropriate tests:
 
+* **All changes:** Type checking must pass (`uv run ty check app/`)
 * **New features:** Full test coverage including edge cases
 * **Bug fixes:** Regression test that fails before the fix and passes after
 * **Refactors:** Existing tests must continue to pass

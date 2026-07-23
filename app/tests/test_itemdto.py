@@ -12,6 +12,11 @@ def _archive_path(tmp_path: Path) -> str:
 
 
 class TestItemFormatAndBasics:
+    def test_format_force_start(self) -> None:
+        item = Item.format({"url": "https://example.com/video", "force_start": True})
+
+        assert item.force_start is True
+
     @patch("app.features.presets.service.Presets.get_instance")
     def test_format_validates_and_normalizes(self, mock_presets_get):
         # Preset exists and is not default => allowed

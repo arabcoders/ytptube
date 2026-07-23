@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache, wraps
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from Crypto.Cipher import AES
 
@@ -1400,7 +1400,7 @@ def init_class[T](cls: type[T], data: dict, _fields=None) -> T:
     """
     from dataclasses import fields
 
-    _classMembers = _fields if _fields is not None else {f.name for f in fields(cls)}
+    _classMembers = _fields if _fields is not None else {f.name for f in fields(cast("Any", cls))}
     return cls(**{k: v for k, v in data.items() if k in _classMembers})
 
 

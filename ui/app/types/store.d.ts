@@ -77,6 +77,10 @@ type StoreItem = {
   cli: string;
   /** If the item is auto-started */
   auto_start: boolean;
+  /** If the item bypasses worker and extractor limits when dispatched */
+  force_start: boolean;
+  /** Persisted ordering position for queued items */
+  queue_position: number | null;
   /** Options for the item */
   options: Record<string, unknown>;
   /** Sidecar associated with the item. */

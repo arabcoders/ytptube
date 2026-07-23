@@ -139,6 +139,76 @@ class DownloadQueue(metaclass=Singleton):
 
         return status
 
+    async def force_start_items(self, ids: list[str]) -> dict[str, str]:
+        """Start queued downloads using the scheduler hot path."""
+        status: dict[str, str] = {"status": "ok"}
+        started = False
+
+        for item_id in ids:
+            try:
+                item: Download = await self.queue.get(key=item_id)
+            except KeyError as e:
+                status[item_id] = f"not found: {e!s}"
+                status["status"] = "error"
+                continue
+
+            if item.started() or item.is_cancelled():
+                status[item_id] = "already started"
+                continue
+
+            item.info.auto_start = True
+            item.info.force_start = True
+            updated: Download = await self.queue.put(item)
+            self._notify.emit(Events.ITEM_UPDATED, data=updated.info)
+            status[item_id] = "started"
+            started = True
+
+        if started:
+            self.pool.trigger_download()
+
+        return status
+
+    async def position_items(self, ids: list[str], position: str) -> dict[str, str]:
+        """Move pending downloads to the front or back of the pending queue."""
+        status: dict[str, str] = {"status": "ok"}
+        promotable: list[str] = []
+
+        for item_id in ids:
+            try:
+                item: Download = await self.queue.get(key=item_id)
+            except KeyError as e:
+                status[item_id] = f"not found: {e!s}"
+                status["status"] = "error"
+                continue
+
+            if item.started():
+                status[item_id] = "already started"
+                continue
+
+            if item.is_cancelled():
+                status[item_id] = "cancelled"
+                continue
+
+            promotable.append(item_id)
+
+        positioned: list[str] = await self.queue.position(promotable, position)
+        for item_id in positioned:
+            status[item_id] = "moved_front" if position == "front" else "moved_back"
+
+        if positioned:
+            for item_id in positioned:
+                item = await self.queue.get(key=item_id)
+                self._notify.emit(Events.ITEM_UPDATED, data=item.info)
+            self._notify.emit(
+                Events.QUEUE_REORDERED,
+                data={"ids": positioned, "order": [item_id for item_id, _ in self.queue.items()]},
+                title="Queue Reordered",
+                message="The download queue order has been updated.",
+            )
+            self.pool.trigger_download()
+
+        return status
+
     async def pause_items(self, ids: list[str]) -> dict[str, str]:
         """
         Pause one or more queued downloads that were added with auto_started=True.

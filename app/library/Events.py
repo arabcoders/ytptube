@@ -42,6 +42,7 @@ class Events:
     ITEM_PAUSED: str = "item_paused"
     ITEM_RESUMED: str = "item_resumed"
     ITEM_MOVED: str = "item_moved"
+    QUEUE_REORDERED: str = "queue_reordered"
     ITEM_STATUS: str = "item_status"
     ITEM_ERROR: str = "item_error"
 
@@ -92,6 +93,7 @@ class Events:
             Events.ITEM_DELETED,
             Events.ITEM_BULK_DELETED,
             Events.ITEM_MOVED,
+            Events.QUEUE_REORDERED,
             Events.ITEM_STATUS,
             Events.PAUSED,
             Events.RESUMED,

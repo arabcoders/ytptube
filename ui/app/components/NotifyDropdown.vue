@@ -27,9 +27,27 @@
             <p class="text-xs text-toned">{{ t('app.notifications.subtitle') }}</p>
           </div>
 
-          <UBadge :color="severityTone" variant="soft" size="sm">
-            {{ t('app.notifications.unread', { count: store.unreadCount }) }}
-          </UBadge>
+          <div class="flex items-center gap-1">
+            <UTooltip
+              :text="
+                allow_toasts
+                  ? t('common.pause') + ' ' + t('common.notifications')
+                  : t('common.resume') + ' ' + t('common.notifications')
+              "
+            >
+              <UButton
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                square
+                :icon="allow_toasts ? 'i-lucide-bell' : 'i-lucide-bell-off'"
+                @click="toggleToasts"
+              />
+            </UTooltip>
+            <UBadge :color="severityTone" variant="soft" size="sm">
+              {{ t('app.notifications.unread', { count: store.unreadCount }) }}
+            </UBadge>
+          </div>
         </template>
 
         <template #default>
@@ -149,12 +167,19 @@
 
 <script setup lang="ts">
 import moment from 'moment';
+import { useStorage } from '@vueuse/core';
 import { useNotificationCenter } from '~/composables/useNotificationCenter';
 import type { notificationType } from '~/composables/useNotification';
 
 const { t } = useI18n();
 
 const store = useNotificationCenter();
+
+const allow_toasts = useStorage<boolean>('allow_toasts', true);
+
+const toggleToasts = () => {
+  allow_toasts.value = !allow_toasts.value;
+};
 
 const scrollEl = ref<HTMLElement | null>(null);
 const copiedId = ref<string | null>(null);

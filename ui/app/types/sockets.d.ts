@@ -43,6 +43,7 @@ export type WSEP = {
     to: 'queue' | 'history';
     item: StoreItem;
   }>;
+  queue_reordered: EventPayload<{ ids: string[]; order: string[] }>;
   item_status: EventPayload<{ status?: string; msg?: string; preset?: string }>;
   paused: EventPayload<{ paused?: boolean }>;
   resumed: EventPayload<{ paused?: boolean }>;

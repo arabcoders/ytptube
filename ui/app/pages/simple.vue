@@ -300,25 +300,6 @@
 
                                 <div class="flex flex-wrap items-center gap-2 text-xs">
                                   <UBadge
-                                    :color="
-                                      downloadingStatuses.has(item.status) ? 'info' : 'warning'
-                                    "
-                                    variant="soft"
-                                    size="sm"
-                                    class="gap-1"
-                                  >
-                                    <UIcon
-                                      :name="getQueueIcon(item)"
-                                      :class="['size-3.5', getStatusIconAnimation(item)]"
-                                    />
-                                    <span>{{
-                                      downloadingStatuses.has(item.status)
-                                        ? t('common.active')
-                                        : t('common.queued')
-                                    }}</span>
-                                  </UBadge>
-
-                                  <UBadge
                                     :color="getStatusColor(item)"
                                     variant="soft"
                                     size="sm"
@@ -365,6 +346,47 @@
                                   @click="() => stateStore.startItems([item._id])"
                                 >
                                   {{ t('common.start') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="!item.status && stateStore.hasActive()"
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-zap"
+                                  @click="() => stateStore.forceStartItems([item._id])"
+                                >
+                                  {{ t('queue.forceStart') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="
+                                    !item.status &&
+                                    stateStore.canPosition(item._id) &&
+                                    !stateStore.isFirst(item._id)
+                                  "
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-arrow-up-to-line"
+                                  @click="() => stateStore.positionItems([item._id], 'front')"
+                                >
+                                  {{ t('queue.moveToFront') }}
+                                </UButton>
+
+                                <UButton
+                                  v-if="
+                                    !item.status &&
+                                    stateStore.canPosition(item._id) &&
+                                    !stateStore.isLastPending(item._id)
+                                  "
+                                  color="neutral"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-arrow-down-to-line"
+                                  @click="() => stateStore.positionItems([item._id], 'back')"
+                                >
+                                  {{ t('queue.moveToBack') }}
                                 </UButton>
 
                                 <UButton
@@ -1121,14 +1143,6 @@ const getStatusLabel = (item: StoreItem): string => {
 
   const key = statusOverrides[item.status];
   return key ? t(key) : ucFirst(item.status.replace(/_/g, ' '));
-};
-
-const getQueueIcon = (item: StoreItem): string => {
-  if (downloadingStatuses.has(item.status)) {
-    return item.is_live ? 'i-lucide-globe' : 'i-lucide-download';
-  }
-
-  return 'i-lucide-clock-3';
 };
 
 const getStatusIcon = (item: StoreItem): string => {

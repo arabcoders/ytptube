@@ -141,6 +141,25 @@ const addAll = (data: Record<KeyType, StoreItem>, meta: QueueMeta = {}): void =>
   applyMeta(meta);
 };
 
+const reorder = (order: string[]): void => {
+  const next: Record<KeyType, StoreItem> = {};
+
+  for (const key of order) {
+    if (state.queue[key]) {
+      next[key] = state.queue[key];
+    }
+  }
+
+  for (const [key, item] of Object.entries(state.queue)) {
+    if (!next[key]) {
+      next[key] = item;
+    }
+  }
+
+  state.queue = next;
+  syncLoaded();
+};
+
 const count = (): number => {
   return state.total;
 };
@@ -151,6 +170,20 @@ const isLoaded = (): boolean => {
 
 const shown = (): number => {
   return visibleCount();
+};
+
+const isFirst = (key: KeyType): boolean => Object.keys(state.queue)[0] === key;
+
+const canPosition = (key: KeyType): boolean =>
+  Object.entries(state.queue).some(
+    ([otherKey, item]) => otherKey !== key && !isActive(item) && !item.status,
+  );
+
+const hasActive = (): boolean => Object.values(state.queue).some((item) => isActive(item));
+
+const isLastPending = (key: KeyType): boolean => {
+  const pending = Object.entries(state.queue).filter(([, item]) => !isActive(item) && !item.status);
+  return pending.at(-1)?.[0] === key;
 };
 
 const hasMore = (): boolean => {
@@ -294,6 +327,82 @@ const startItems = async (ids: string[]): Promise<void> => {
   }
 };
 
+const forceStartItems = async (ids: string[]): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
+  const toast = useNotification();
+
+  try {
+    const response = await request('/api/history/force-start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      toast.error(error.error || t('queue.failedToForceStart'));
+      throw new Error(error.error || t('queue.failedToForceStart'));
+    }
+
+    const result = (await response.json()) as Record<string, string>;
+    for (const id of ids) {
+      if ('started' === result[id]) {
+        const item = get(id);
+        if (item) {
+          update(id, { ...item, auto_start: true, force_start: true });
+        }
+      }
+    }
+
+    toast.success(t('queue.forceStartedCount', { count: ids.length }));
+  } catch (error) {
+    console.error('Failed to force start items:', error);
+    throw error;
+  }
+};
+
+const positionItems = async (ids: string[], position: 'front' | 'back'): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
+  const socket = useAppSocket();
+  const toast = useNotification();
+
+  try {
+    const response = await request('/api/history/position', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, position }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      toast.error(error.error || t('queue.failedToPosition'));
+      throw new Error(error.error || t('queue.failedToPosition'));
+    }
+
+    const result = (await response.json()) as Record<string, string>;
+    const moved = ids.filter(
+      (id) => result[id] === ('front' === position ? 'moved_front' : 'moved_back'),
+    );
+    if (moved.length > 0 && !socket.isConnected) {
+      await loadQueue();
+      toast.success(
+        t(`queue.positioned${'front' === position ? 'Front' : 'Back'}Count`, {
+          count: moved.length,
+        }),
+      );
+    } else if (moved.length > 0) {
+      toast.success(
+        t(`queue.positioned${'front' === position ? 'Front' : 'Back'}Count`, {
+          count: moved.length,
+        }),
+      );
+    }
+  } catch (error) {
+    console.error('Failed to position items:', error);
+    throw error;
+  }
+};
+
 const pauseItems = async (ids: string[]): Promise<void> => {
   const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const socket = useAppSocket();
@@ -390,15 +499,22 @@ const queueStateApi = proxyRefs({
   has,
   clearAll,
   addAll,
+  reorder,
   count,
   isLoaded,
   shown,
+  isFirst,
+  canPosition,
+  hasActive,
+  isLastPending,
   hasMore,
   needsBackfill,
   loadQueue,
   loadMore,
   addDownload,
   startItems,
+  forceStartItems,
+  positionItems,
   pauseItems,
   cancelItems,
 });

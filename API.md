@@ -28,7 +28,9 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/{id}/rename](#post-apihistoryidrename)
     - [GET /api/history](#get-apihistory)
     - [GET /api/history/live](#get-apihistorylive)
-    - [POST /api/history/start](#post-apihistorystart)
+     - [POST /api/history/start](#post-apihistorystart)
+     - [POST /api/history/force-start](#post-apihistoryforce-start)
+     - [POST /api/history/position](#post-apihistoryposition)
     - [POST /api/history/pause](#post-apihistorypause)
     - [POST /api/history/cancel](#post-apihistorycancel)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
@@ -834,6 +836,41 @@ This endpoint returns the current state of active downloads from memory.
 **Notes**:
 - Items must exist in the queue
 - Sets `auto_start: false` for the specified items
+
+---
+
+### POST /api/history/force-start
+**Purpose**: Force one or more queued downloads through the scheduler hot path.
+
+**Body**:
+```json
+{
+  "ids": ["<id1>", "<id2>", ...]
+}
+```
+
+**Notes**:
+- Items must exist in the queue.
+- Sets `auto_start: true` and bypasses worker and extractor limits.
+- The global queue pause is still respected.
+
+---
+
+### POST /api/history/position
+**Purpose**: Move one or more pending downloads to the front or back of the pending queue.
+
+**Body**:
+```json
+{
+  "ids": ["<id1>", "<id2>", ...],
+  "position": "front"
+}
+```
+
+**Notes**:
+- Active downloads retain their current order.
+- Front-positioned items are placed immediately after active downloads.
+- `position` must be either `front` or `back`.
 
 ---
 

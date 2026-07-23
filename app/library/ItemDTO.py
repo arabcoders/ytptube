@@ -51,6 +51,9 @@ class Item:
     auto_start: bool = True
     """If the item should be started automatically."""
 
+    force_start: bool = False
+    """If the scheduler should bypass worker limits for this item."""
+
     def serialize(self) -> dict:
         """
         Serialize the item to a dictionary.
@@ -199,6 +202,9 @@ class Item:
 
         if isinstance(item.get("auto_start"), bool):
             data["auto_start"] = item["auto_start"]
+
+        if isinstance(item.get("force_start"), bool):
+            data["force_start"] = item["force_start"]
 
         extras: dict | None = item.get("extras")
         if isinstance(extras, dict) and len(extras) > 0:
@@ -377,6 +383,12 @@ class ItemDTO:
     """ The command options for yt-dlp to be used for this download. """
     auto_start: bool = True
     """ If the item should be started automatically. """
+
+    force_start: bool = False
+    """ If the scheduler should bypass worker limits for this item. """
+
+    queue_position: int | None = None
+    """ Persisted position used to order queued items. """
     is_archivable: bool | None = None
     """ If the item can be archived. """
     is_archived: bool | None = None

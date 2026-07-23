@@ -789,6 +789,63 @@ async def items_pause(request: Request, queue: DownloadQueue, encoder: Encoder) 
     return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
+@route("POST", "api/history/force-start", "items_force_start")
+async def items_force_start(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """Start queued downloads while bypassing worker and extractor limits."""
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return api_error_response(
+            "ids array is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
+
+    if not isinstance(ids, list):
+        return api_error_response(
+            "ids must be an array.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
+
+    status: dict[str, str] = await queue.force_start_items(ids)
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", "api/history/position", "items_position")
+async def items_position(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """Move queued downloads to the front or back of pending downloads."""
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return api_error_response(
+            "ids array is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
+
+    if not isinstance(ids, list):
+        return api_error_response(
+            "ids must be an array.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
+
+    position = data.get("position")
+    if position not in ("front", "back"):
+        return api_error_response(
+            "position must be 'front' or 'back'.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.position"},
+        )
+
+    status: dict[str, str] = await queue.position_items(ids, position)
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
 @route("POST", "api/history/cancel", "items_cancel")
 async def items_cancel(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
     """

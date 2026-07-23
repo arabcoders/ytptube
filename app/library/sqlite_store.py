@@ -152,10 +152,15 @@ class SqliteStore(metaclass=ThreadSafe):
 
     async def fetch_saved(self, type_value: str) -> list[tuple[str, ItemDTO]]:
         conn = await self.get_connection()
+        query = (
+            'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value '
+            "ORDER BY CASE WHEN json_extract(data, '$.queue_position') IS NULL THEN 1 ELSE 0 END, "
+            "CAST(json_extract(data, '$.queue_position') AS INTEGER) ASC, \"created_at\" ASC"
+            if type_value == "queue"
+            else 'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value ORDER BY "created_at" ASC'
+        )
         result = await conn.execute(
-            text(
-                'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = :type_value ORDER BY "created_at" ASC'
-            ),
+            text(query),
             {"type_value": type_value},
         )
         rows = result.mappings().all()

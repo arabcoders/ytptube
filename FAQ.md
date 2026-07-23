@@ -46,10 +46,10 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_YTDLP_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package     | `false`               |
 | YTP_YTDLP_VERSION               | The version of yt-dlp to use. Defaults to latest version            | `(not_set)`           |
 | YTP_BROWSER_URL                 | Remote browser endpoint for the bundled `browser` extractor         | `(not_set)`           |
-| YTP_FLARESOLVERR_URL            | FlareSolverr endpoint URL.                                          | `(not_set)`           |
-| YTP_FLARESOLVERR_MAX_TIMEOUT    | Max FlareSolverr challenge timeout in seconds                       | `120`                 |
-| YTP_FLARESOLVERR_CLIENT_TIMEOUT | HTTP client timeout (seconds) when calling FlareSolverr             | `120`                 |
-| YTP_FLARESOLVERR_CACHE_TTL      | The cache TTL (in seconds) for FlareSolverr solutions               | `600`                 |
+| YTP_FLARESOLVERR_URL            | FlareSolverr or Trawl endpoint URL.                                 | `(not_set)`           |
+| YTP_FLARESOLVERR_MAX_TIMEOUT    | Max FlareSolverr/Trawl challenge timeout in seconds                 | `120`                 |
+| YTP_FLARESOLVERR_CLIENT_TIMEOUT | HTTP client timeout (seconds) when calling FlareSolverr/Trawl       | `120`                 |
+| YTP_FLARESOLVERR_CACHE_TTL      | The cache TTL (in seconds) for FlareSolverr/Trawl solutions         | `600`                 |
 | YTP_BASE_PATH                   | Set this if you are serving YTPTube from sub-folder                 | `/`                   |
 | YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial youtube premiere stream from being downloaded  | `false`               |
 | YTP_QUEUE_DISPLAY_LIMIT         | Max queued downloads returned to the UI. `0` = unlimited            | `100`                 |
@@ -631,8 +631,8 @@ This will help in case the premiere has a longer loading screen than usual.
 
 # How to bypass CF challenges?
 
-You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) and then set the `YTP_FLARESOLVERR_URL` 
-environment variable to point to your FlareSolverr instance. For example:
+You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or a compatible alternative such as [Trawl](https://github.com/germondai/trawl) (which handles newer Cloudflare challenge formats) and then set the `YTP_FLARESOLVERR_URL` 
+environment variable to point to your instance. For example:
 
 ```yaml
 services:
@@ -658,7 +658,7 @@ services:
     restart: unless-stopped    
 ```
 
-For more information please visit [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) project.
+For more information please visit [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or [Trawl](https://github.com/germondai/trawl) projects.
 
 # How to use the browser extractor?
 

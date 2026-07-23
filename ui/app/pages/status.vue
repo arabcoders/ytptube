@@ -311,7 +311,9 @@
             :key="String(path)"
             :label="diskLabel(String(path), disk)"
             :value="`${disk.used_percent}%`"
-            :hint="t('status.diskFree', { free: disk.free_gb, total: disk.total_gb })"
+            :hint="
+              t('status.diskFree', { free: fmtGib(disk.free_gb), total: fmtGib(disk.total_gb) })
+            "
             icon="i-lucide-folder"
             :color="
               disk.used_percent > 90 ? 'error' : disk.used_percent > 75 ? 'warning' : 'neutral'
@@ -596,12 +598,23 @@ const fmtPct = (v: number | null | undefined): string => {
 
 const fmtMb = (v: number | null | undefined): string => {
   if (v == null) return '\u2014';
+  if (v >= 1024 * 1024) return `${(v / 1024 / 1024).toFixed(1)} ${t('common.tib')}`;
   if (v >= 1024) return `${(v / 1024).toFixed(1)} ${t('common.gib')}`;
   return `${Math.round(v)} ${t('common.mib')}`;
 };
 
+const fmtGib = (v: number | null | undefined): string => {
+  if (v == null) return '\u2014';
+  if (v >= 1024) return `${(v / 1024).toFixed(2)} ${t('common.tib')}`;
+  return `${Math.round(v)} ${t('common.gib')}`;
+};
+
 const fmtBps = (v: number | null | undefined): string => {
   if (v == null || v === 0) return `0 ${t('common.bytes')}${t('common.perSec')}`;
+  const GIB = 1024 * 1024 * 1024;
+  const TIB = GIB * 1024;
+  if (v >= TIB) return `${(v / TIB).toFixed(1)} ${t('common.tib')}${t('common.perSec')}`;
+  if (v >= GIB) return `${(v / GIB).toFixed(1)} ${t('common.gib')}${t('common.perSec')}`;
   if (v >= 1024 * 1024)
     return `${(v / 1024 / 1024).toFixed(1)} ${t('common.mib')}${t('common.perSec')}`;
   if (v >= 1024) return `${(v / 1024).toFixed(1)} ${t('common.kib')}${t('common.perSec')}`;
@@ -639,10 +652,15 @@ const threadNames = (child: ChildProcess): string =>
 
 const fmtChartPct = (v: number): string => `${Math.round(v)}%`;
 const fmtChartMb = (v: number): string => {
+  if (v >= 1024 * 1024) return `${(v / 1024 / 1024).toFixed(1)}${t('common.tib')[0]}`;
   if (v >= 1024) return `${(v / 1024).toFixed(1)}${t('common.gib')[0]}`;
   return `${Math.round(v)}${t('common.mib')[0]}`;
 };
 const fmtChartBps = (v: number): string => {
+  const GIB = 1024 * 1024 * 1024;
+  const TIB = GIB * 1024;
+  if (v >= TIB) return `${(v / TIB).toFixed(1)}${t('common.tib')[0]}`;
+  if (v >= GIB) return `${(v / GIB).toFixed(1)}${t('common.gib')[0]}`;
   if (v >= 1024 * 1024) return `${(v / 1024 / 1024).toFixed(1)}${t('common.mib')[0]}`;
   if (v >= 1024) return `${(v / 1024).toFixed(1)}${t('common.kib')[0]}`;
   return `${Math.round(v)}`;

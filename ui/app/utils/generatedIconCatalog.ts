@@ -7,18 +7,21 @@ export const bundledIconNames = [
   "lucide:archive-x",
   "lucide:arrow-down",
   "lucide:arrow-down-a-z",
+  "lucide:arrow-down-to-line",
   "lucide:arrow-left",
   "lucide:arrow-right",
   "lucide:arrow-right-left",
   "lucide:arrow-up",
   "lucide:arrow-up-down",
   "lucide:arrow-up-right",
+  "lucide:arrow-up-to-line",
   "lucide:at-sign",
   "lucide:badge-alert",
   "lucide:badge-check",
   "lucide:badge-info",
   "lucide:ban",
   "lucide:bell",
+  "lucide:bell-off",
   "lucide:bell-ring",
   "lucide:book-open",
   "lucide:box",
@@ -177,7 +180,8 @@ export const bundledIconNames = [
   "lucide:workflow",
   "lucide:wrap-text",
   "lucide:wrench",
-  "lucide:x"
+  "lucide:x",
+  "lucide:zap"
 ] as const;
 
 export const bundledUiIconNames = [
@@ -187,18 +191,21 @@ export const bundledUiIconNames = [
   "i-lucide-archive-x",
   "i-lucide-arrow-down",
   "i-lucide-arrow-down-a-z",
+  "i-lucide-arrow-down-to-line",
   "i-lucide-arrow-left",
   "i-lucide-arrow-right",
   "i-lucide-arrow-right-left",
   "i-lucide-arrow-up",
   "i-lucide-arrow-up-down",
   "i-lucide-arrow-up-right",
+  "i-lucide-arrow-up-to-line",
   "i-lucide-at-sign",
   "i-lucide-badge-alert",
   "i-lucide-badge-check",
   "i-lucide-badge-info",
   "i-lucide-ban",
   "i-lucide-bell",
+  "i-lucide-bell-off",
   "i-lucide-bell-ring",
   "i-lucide-book-open",
   "i-lucide-box",
@@ -357,7 +364,8 @@ export const bundledUiIconNames = [
   "i-lucide-workflow",
   "i-lucide-wrap-text",
   "i-lucide-wrench",
-  "i-lucide-x"
+  "i-lucide-x",
+  "i-lucide-zap"
 ] as const;
 
 const bundledUiIconSet = new Set<string>(bundledUiIconNames);

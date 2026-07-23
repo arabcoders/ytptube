@@ -305,6 +305,8 @@ on('item_added', (data: WSEP['item_added']) => {
   toast.success(t('queue.itemQueued', { title: ag(data.data, 'title') }));
 });
 
+on('queue_reordered', (data: WSEP['queue_reordered']) => getQueueState().reorder(data.data.order));
+
 on(
   ['log_info', 'log_success', 'log_warning', 'log_error'],
   (event, data: WSEP['log_info']) => {
