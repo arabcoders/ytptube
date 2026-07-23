@@ -74,6 +74,9 @@ jobs:
       - name: Run Python linting
         run: uv run ruff check app/
 
+      - name: Run Python type checking
+        run: uv run ty check app/
+
       - name: Run Python tests
         run: uv run pytest app/tests/ -v --tb=short
 

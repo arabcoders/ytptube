@@ -13,6 +13,13 @@ mock.module('~/composables/useYtpConfig', () => ({
   useYtpConfig: () => configState,
 }))
 
+mock.module('vue-i18n', () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+    locale: { value: 'en' },
+  }),
+}))
+
 let usePresetOptions: typeof import('~/composables/usePresetOptions').usePresetOptions
 
 beforeAll(async () => {
