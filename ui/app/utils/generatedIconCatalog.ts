@@ -178,7 +178,8 @@ export const bundledIconNames = [
   "lucide:workflow",
   "lucide:wrap-text",
   "lucide:wrench",
-  "lucide:x"
+  "lucide:x",
+  "lucide:zap"
 ] as const;
 
 export const bundledUiIconNames = [
@@ -359,7 +360,8 @@ export const bundledUiIconNames = [
   "i-lucide-workflow",
   "i-lucide-wrap-text",
   "i-lucide-wrench",
-  "i-lucide-x"
+  "i-lucide-x",
+  "i-lucide-zap"
 ] as const;
 
 const bundledUiIconSet = new Set<string>(bundledUiIconNames);

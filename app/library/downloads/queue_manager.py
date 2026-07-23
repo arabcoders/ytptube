@@ -139,6 +139,35 @@ class DownloadQueue(metaclass=Singleton):
 
         return status
 
+    async def force_start_items(self, ids: list[str]) -> dict[str, str]:
+        """Start queued downloads using the scheduler hot path."""
+        status: dict[str, str] = {"status": "ok"}
+        started = False
+
+        for item_id in ids:
+            try:
+                item: Download = await self.queue.get(key=item_id)
+            except KeyError as e:
+                status[item_id] = f"not found: {e!s}"
+                status["status"] = "error"
+                continue
+
+            if item.started() or item.is_cancelled():
+                status[item_id] = "already started"
+                continue
+
+            item.info.auto_start = True
+            item.info.force_start = True
+            updated: Download = await self.queue.put(item)
+            self._notify.emit(Events.ITEM_UPDATED, data=updated.info)
+            status[item_id] = "started"
+            started = True
+
+        if started:
+            self.pool.trigger_download()
+
+        return status
+
     async def pause_items(self, ids: list[str]) -> dict[str, str]:
         """
         Pause one or more queued downloads that were added with auto_started=True.

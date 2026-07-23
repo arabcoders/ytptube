@@ -1095,6 +1095,13 @@ const bulkActionGroups = computed(() => {
     });
   }
 
+  groups[0]?.push({
+    label: t('queue.forceStart'),
+    icon: 'i-lucide-zap',
+    disabled: !hasSelected.value,
+    onSelect: () => forceStartItems(),
+  });
+
   if (hasPausable.value) {
     groups[0]?.push({
       label: t('common.pause'),
@@ -1139,6 +1146,14 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
       label: t('common.startDownload'),
       icon: 'i-lucide-circle-play',
       onSelect: () => startItem(item),
+    });
+  }
+
+  if (!item.status) {
+    primaryActions.push({
+      label: t('queue.forceStart'),
+      icon: 'i-lucide-zap',
+      onSelect: () => forceStartItem(item),
     });
   }
 
@@ -1410,6 +1425,8 @@ const cancelItems = (item: string | string[]): void => {
 };
 
 const startItem = async (item: StoreItem): Promise<void> => await stateStore.startItems([item._id]);
+const forceStartItem = async (item: StoreItem): Promise<void> =>
+  await stateStore.forceStartItems([item._id]);
 const pauseItem = async (item: StoreItem): Promise<void> => await stateStore.pauseItems([item._id]);
 
 const startItems = async (): Promise<void> => {
@@ -1434,6 +1451,31 @@ const startItems = async (): Promise<void> => {
   }
 
   await stateStore.startItems(eligible);
+};
+
+const forceStartItems = async (): Promise<void> => {
+  if (selectedElms.value.length < 1) {
+    return;
+  }
+
+  const eligible = selectedElms.value.filter((id) => {
+    const item = stateStore.get(id);
+    return Boolean(item && !item.status);
+  });
+
+  selectedElms.value = [];
+  if (eligible.length < 1) {
+    toast.error(t('common.noEligibleStart'));
+    return;
+  }
+
+  if (
+    true !== (await box.confirm(t('queue.forceStartSelectedConfirm', { count: eligible.length })))
+  ) {
+    return;
+  }
+
+  await stateStore.forceStartItems(eligible);
 };
 
 const pauseSelected = async (): Promise<void> => {

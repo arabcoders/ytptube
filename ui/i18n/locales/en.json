@@ -804,6 +804,10 @@
     }
   },
   "queue": {
+    "forceStart": "Force start",
+    "forceStartSelectedConfirm": "Force start {count} selected item(s)? This bypasses worker limits but not the global queue pause.",
+    "forceStartedCount": "Force started {count} item(s).",
+    "failedToForceStart": "Failed to force start downloads.",
     "description": "Active and queued downloads.",
     "add": "Add download",
     "added": "Download added successfully.",

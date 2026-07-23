@@ -294,6 +294,40 @@ const startItems = async (ids: string[]): Promise<void> => {
   }
 };
 
+const forceStartItems = async (ids: string[]): Promise<void> => {
+  const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
+  const toast = useNotification();
+
+  try {
+    const response = await request('/api/history/force-start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      toast.error(error.error || t('queue.failedToForceStart'));
+      throw new Error(error.error || t('queue.failedToForceStart'));
+    }
+
+    const result = (await response.json()) as Record<string, string>;
+    for (const id of ids) {
+      if ('started' === result[id]) {
+        const item = get(id);
+        if (item) {
+          update(id, { ...item, auto_start: true, force_start: true });
+        }
+      }
+    }
+
+    toast.success(t('queue.forceStartedCount', { count: ids.length }));
+  } catch (error) {
+    console.error('Failed to force start items:', error);
+    throw error;
+  }
+};
+
 const pauseItems = async (ids: string[]): Promise<void> => {
   const t = useNuxtApp().$i18n?.t ?? ((key: string) => key);
   const socket = useAppSocket();
@@ -399,6 +433,7 @@ const queueStateApi = proxyRefs({
   loadMore,
   addDownload,
   startItems,
+  forceStartItems,
   pauseItems,
   cancelItems,
 });

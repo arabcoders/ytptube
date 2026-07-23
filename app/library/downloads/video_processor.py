@@ -145,6 +145,7 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
         options=options,
         cli=item.cli,
         auto_start=item.auto_start,
+        force_start=item.force_start,
         extras=merge_dict(item.extras, get_extras(entry)),
     )
 

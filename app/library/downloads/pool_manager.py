@@ -110,10 +110,14 @@ class PoolManager:
 
                 extractor: str = entry.info.get_extractor() or "unknown"
 
-                # Live downloads bypass all limits.
-                if entry.is_live:
+                # Live and explicitly forced downloads bypass worker limits, but
+                # still wait above for the global queue pause to be released.
+                if entry.is_live or entry.info.force_start:
+                    if entry.info.force_start:
+                        entry.info.force_start = False
+                        await self.queue.queue.put(entry)
                     task: asyncio.Task[None] = asyncio.create_task(
-                        self._download_file(_id, entry), name=f"download_live_{extractor}_{_id}"
+                        self._download_file(_id, entry), name=f"download_hot_{extractor}_{_id}"
                     )
                     task.add_done_callback(lambda t: handle_task_exception(t, LOG))
                     items_processed += 1

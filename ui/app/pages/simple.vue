@@ -368,6 +368,17 @@
                                 </UButton>
 
                                 <UButton
+                                  v-if="!item.status"
+                                  color="warning"
+                                  variant="soft"
+                                  size="xs"
+                                  icon="i-lucide-zap"
+                                  @click="() => stateStore.forceStartItems([item._id])"
+                                >
+                                  {{ t('queue.forceStart') }}
+                                </UButton>
+
+                                <UButton
                                   v-if="!item.status && item.auto_start === true"
                                   color="neutral"
                                   variant="soft"
