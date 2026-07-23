@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "b2091c68a54e001790c81f7b1d2387663464052a",
-    "date": "2026-07-23T22:53:54+00:00",
+    "full_sha": "a249e4570ee1b393eb9ae3538734da333d574d61",
+    "date": "2026-07-23T23:01:45+00:00",
     "commits": [
+      {
+        "sha": "a249e457",
+        "full_sha": "a249e4570ee1b393eb9ae3538734da333d574d61",
+        "message": "test: add beforeEach setup for useI18n in usePresetOptions tests",
+        "author": "arabcoders",
+        "date": "2026-07-23T23:01:45+00:00"
+      },
       {
         "sha": "b2091c68",
         "full_sha": "b2091c68a54e001790c81f7b1d2387663464052a",
