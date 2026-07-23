@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "17452a402e9396125a684db14151545c19068e5e",
-    "date": "2026-07-23T22:00:48+00:00",
+    "full_sha": "e3eefb092309f5ea4796367760afe08f018dd058",
+    "date": "2026-07-23T22:50:24+00:00",
     "commits": [
+      {
+        "sha": "e3eefb09",
+        "full_sha": "e3eefb092309f5ea4796367760afe08f018dd058",
+        "message": "feat: ability to change items position",
+        "author": "arabcoders",
+        "date": "2026-07-23T22:50:24+00:00"
+      },
       {
         "sha": "17452a40",
         "full_sha": "17452a402e9396125a684db14151545c19068e5e",
