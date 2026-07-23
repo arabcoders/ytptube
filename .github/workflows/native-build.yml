@@ -44,13 +44,13 @@ jobs:
 
     steps:
       - name: Checkout source repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG_NAME }}
 
       - name: Overwrite app.spec from workflow branch
         if: ${{ github.event.inputs.useWorkflowSpec == 'true' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
           sparse-checkout: |
@@ -96,7 +96,7 @@ jobs:
 
       - name: Cache Python venv
         id: cache-python
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .venv
           key: uv-${{ runner.os }}-${{ matrix.arch }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
@@ -104,7 +104,7 @@ jobs:
             uv-${{ runner.os }}-${{ matrix.arch }}-${{ env.PYTHON_VERSION }}-
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: "x64"
@@ -120,7 +120,7 @@ jobs:
 
       - name: Cache bun installation
         id: cache-bun
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-${{ matrix.arch }}-bun-${{ hashFiles('**/bun.lock') }}
@@ -133,7 +133,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -172,7 +172,7 @@ jobs:
           uv run pyinstaller ./app.spec
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}
           path: dist/YTPTube/**
@@ -217,7 +217,7 @@ jobs:
 
       - name: Upload to GitHub Release
         if: startsWith(env.TAG_NAME, 'v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
