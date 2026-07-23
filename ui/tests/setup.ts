@@ -52,6 +52,5 @@ if (!globalThis.Notification) {
 }
 
 const i18nT = (key: string): string => key
-
 globalThis.useNuxtApp = (() => ({ $i18n: { t: i18nT } })) as any
 globalThis.useI18n = (() => ({ t: i18nT, locale: { value: 'en' } })) as any

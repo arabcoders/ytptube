@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, mock } from 'bun:test'
+import { beforeAll, beforeEach, describe, expect, it, mock } from 'bun:test'
 
 import type { Preset } from '~/types/presets'
 
@@ -24,6 +24,13 @@ let usePresetOptions: typeof import('~/composables/usePresetOptions').usePresetO
 
 beforeAll(async () => {
   ;({ usePresetOptions } = await import('~/composables/usePresetOptions'))
+})
+
+beforeEach(() => {
+  globalThis.useI18n = () => ({
+    t: (key: string) => key,
+    locale: { value: 'en' },
+  })
 })
 
 const buildPreset = (name: string, isDefault: boolean): Preset => ({
