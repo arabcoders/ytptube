@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "e3eefb092309f5ea4796367760afe08f018dd058",
-    "date": "2026-07-23T22:50:24+00:00",
+    "full_sha": "b2091c68a54e001790c81f7b1d2387663464052a",
+    "date": "2026-07-23T22:53:54+00:00",
     "commits": [
+      {
+        "sha": "b2091c68",
+        "full_sha": "b2091c68a54e001790c81f7b1d2387663464052a",
+        "message": "chore: add permissions to update-yt-dlp workflow",
+        "author": "arabcoders",
+        "date": "2026-07-23T22:53:54+00:00"
+      },
       {
         "sha": "e3eefb09",
         "full_sha": "e3eefb092309f5ea4796367760afe08f018dd058",
