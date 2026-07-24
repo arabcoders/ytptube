@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "936d4dea9ed39691d0bac867ca80726a9acf4a9d",
+    "date": "2026-07-24T16:08:55+00:00",
+    "commits": [
+      {
+        "sha": "936d4dea",
+        "full_sha": "936d4dea9ed39691d0bac867ca80726a9acf4a9d",
+        "message": "refactor: improve changelog page",
+        "author": "arabcoders",
+        "date": "2026-07-24T16:08:55+00:00"
+      },
+      {
+        "sha": "c5f6d95b",
+        "full_sha": "c5f6d95b6a2e9615187fa548351d7e2dd84d88df",
+        "message": "refactor: fix few missing i18n keys",
+        "author": "arabcoders",
+        "date": "2026-07-24T15:50:06+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.6.1",
     "full_sha": "e6293c0451f3863e97b230059747a40006e950cd",
     "date": "2026-07-23T23:20:16+00:00",
