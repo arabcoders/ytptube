@@ -1303,28 +1303,28 @@ const ETAPipe = (value: number | null): string => {
   }
 
   if (value < 60) {
-    return `${Math.round(value)}s`;
+    return `${Math.round(value)}${t('common.secAbbr')}`;
   }
 
   if (value < 3600) {
-    return `${Math.floor(value / 60)}m ${Math.round(value % 60)}s`;
+    return `${Math.floor(value / 60)}${t('common.minAbbr')} ${Math.round(value % 60)}${t('common.secAbbr')}`;
   }
 
   const hours = Math.floor(value / 3600);
   const minutes = value % 3600;
-  return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`;
+  return `${hours}${t('common.hourAbbr')} ${Math.floor(minutes / 60)}${t('common.minAbbr')} ${Math.round(minutes % 60)}${t('common.secAbbr')}`;
 };
 
 const speedPipe = (value: number | null): string => {
   if (null === value || 0 === value) {
-    return '0KB/s';
+    return `0 ${t('common.kib')}${t('common.perSec')}`;
   }
 
   const k = 1024;
   const dm = 2;
-  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s'];
+  const sizes = ['bytes', 'kib', 'mib', 'gib', 'tib', 'pib', 'eib', 'zib', 'yib'] as const;
   const i = Math.floor(Math.log(value) / Math.log(k));
-  return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))} ${t(`common.${sizes[i]}`)}${t('common.perSec')}`;
 };
 
 const percentPipe = (value: number | null): string => {
@@ -1416,7 +1416,12 @@ const progressText = (item: StoreItem): string => {
 const confirmCancel = async (item: StoreItem): Promise<boolean> => {
   if (
     true !==
-    (await box.confirm(`${item.is_live ? t('common.stop') : t('common.cancel')} '${item.title}'?`))
+    (await box.confirm(
+      t('common.confirmActionNamed', {
+        action: item.is_live ? t('common.stop') : t('common.cancel'),
+        name: item.title,
+      }),
+    ))
   ) {
     return false;
   }
@@ -1436,7 +1441,10 @@ const cancelSelected = async (): Promise<boolean> => {
   if (
     true !==
     (await box.confirm(
-      `${selectedLiveOnly ? t('common.stop') : t('common.cancel')} '${selectedElms.value.length}' selected items?`,
+      t('common.confirmActionSelected', {
+        action: selectedLiveOnly ? t('common.stop') : t('common.cancel'),
+        count: selectedElms.value.length,
+      }),
     ))
   ) {
     return false;

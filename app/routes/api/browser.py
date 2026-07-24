@@ -111,10 +111,10 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
 
         if web.HTTPNotFound.status_code == status:
             return api_error_response(
-                f"File '{file}' does not exist.",
-                code="NOT_FOUND",
+                f"File '{file}' is no longer available.",
+                code="FILE_UNAVAILABLE",
                 status=status,
-                params={"resource": "api.resources.file"},
+                params={"file": file},
             )
 
         ff_info = await ffprobe(realFile)

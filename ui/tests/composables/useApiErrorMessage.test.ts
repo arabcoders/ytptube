@@ -41,6 +41,11 @@ describe('useApiErrorMessage', () => {
     expect(result).toBe('errors.NOT_FOUND:{"resource":"label:api.resources.file"}');
   });
 
+  it('returns localized unavailable-file message', () => {
+    const result = messageFor({ code: 'FILE_UNAVAILABLE', params: { file: 'video.mp4' } });
+    expect(result).toBe('errors.FILE_UNAVAILABLE:{"file":"video.mp4"}');
+  });
+
   it('resolves api param labels before interpolation', () => {
     const result = messageFor({
       code: 'NOT_FOUND',
