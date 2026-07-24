@@ -1180,8 +1180,6 @@
   },
   "changelog": {
     "description": "آخر تغييرات المشروع",
-    "latestOnly": "الأحدث فقط",
-    "allLoaded": "الكل محمل",
     "filterPlaceholder": "تصفية مدخلات سجل التغييرات",
     "releaseDate": "تاريخ الإصدار:",
     "releaseDateValue": "تاريخ الإصدار: {date}",

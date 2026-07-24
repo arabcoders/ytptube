@@ -1180,8 +1180,6 @@
   },
   "changelog": {
     "description": "Latest project changes",
-    "latestOnly": "Latest Only",
-    "allLoaded": "All Loaded",
     "filterPlaceholder": "Filter changelog entries",
     "releaseDate": "Release Date:",
     "releaseDateValue": "Release Date: {date}",

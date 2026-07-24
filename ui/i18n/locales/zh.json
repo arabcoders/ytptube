@@ -1180,8 +1180,6 @@
   },
   "changelog": {
     "description": "最新的项目变更",
-    "latestOnly": "仅最新",
-    "allLoaded": "已全部加载",
     "filterPlaceholder": "筛选更新日志条目",
     "releaseDate": "发布日期：",
     "releaseDateValue": "发布日期：{date}",

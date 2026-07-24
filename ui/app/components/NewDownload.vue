@@ -409,12 +409,13 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-default pt-4">
-          <UDropdownMenu class="sm:hidden" :items="mobileActionGroups" :modal="false">
+          <UDropdownMenu class="w-full sm:hidden" :items="mobileActionGroups" :modal="false">
             <UButton
               color="neutral"
               variant="outline"
               icon="i-lucide-ellipsis"
               trailing-icon="i-lucide-chevron-down"
+              class="w-full justify-center"
             >
               {{ t('common.actions') }}
             </UButton>

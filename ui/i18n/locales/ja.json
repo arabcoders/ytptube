@@ -1180,8 +1180,6 @@
   },
   "changelog": {
     "description": "最新のプロジェクト変更",
-    "latestOnly": "最新のみ",
-    "allLoaded": "すべて読み込み済み",
     "filterPlaceholder": "変更履歴エントリをフィルター",
     "releaseDate": "リリース日:",
     "releaseDateValue": "リリース日: {date}",

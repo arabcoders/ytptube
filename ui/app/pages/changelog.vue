@@ -33,14 +33,6 @@
           <span>{{ t('common.filter') }}</span>
         </UButton>
 
-        <USwitch
-          v-model="latestOnly"
-          color="primary"
-          size="sm"
-          :label="latestOnly ? t('changelog.latestOnly') : t('changelog.allLoaded')"
-          :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
-        />
-
         <UInput
           v-if="toggleFilter && logs.length > 0"
           id="filter"
@@ -128,23 +120,53 @@
               <article
                 v-for="commit in log.commits"
                 :key="commit.sha"
-                class="rounded-md border border-default bg-elevated/20 px-3 py-3 transition-colors hover:bg-elevated/35"
+                class="min-w-0 max-w-full rounded-md border border-default bg-elevated/20 px-3 py-3 transition-colors hover:bg-elevated/35"
                 dir="ltr"
               >
                 <NuxtLink
                   :to="`${REPO}/commit/${commit.full_sha}`"
                   target="_blank"
-                  class="block min-w-0 text-sm font-medium leading-5 text-highlighted transition hover:text-primary"
+                  class="block min-w-0 max-w-full wrap-break-word text-sm font-medium leading-5 text-highlighted transition hover:text-primary"
                 >
-                  {{ formatCommitMessage(commit.message) }}
+                  {{ formatCommitMessage(commit.message).title }}
                 </NuxtLink>
 
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-toned">
+                <div
+                  v-if="formatCommitMessage(commit.message).description.length > 0"
+                  class="mt-2 min-w-0 max-w-full"
+                >
+                  <button
+                    type="button"
+                    class="inline-flex max-w-full items-center gap-1 text-xs text-toned hover:text-primary"
+                    :aria-expanded="isCommitDescriptionOpen(commit.sha)"
+                    :aria-label="t('common.showMore')"
+                    @click="toggleCommitDescription(commit.sha)"
+                  >
+                    <UIcon
+                      name="i-lucide-chevron-right"
+                      :class="[
+                        'size-3.5 transition-transform',
+                        isCommitDescriptionOpen(commit.sha) ? 'rotate-90' : '',
+                      ]"
+                    />
+                    <span>{{ t('common.showMore') }}</span>
+                  </button>
+
+                  <Markdown
+                    v-if="isCommitDescriptionOpen(commit.sha)"
+                    :markdown="formatCommitMessage(commit.message).description.join('\n\n')"
+                    class="changelog-commit-markdown mt-1 text-sm text-toned"
+                  />
+                </div>
+
+                <div
+                  class="mt-2 flex min-w-0 max-w-full flex-wrap items-center gap-2 text-xs text-toned"
+                >
                   <span
-                    class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1"
+                    class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-sm border border-default px-2 py-1"
                   >
                     <UIcon name="i-lucide-user" class="size-3.5 text-muted" />
-                    <span>{{ commit.author }}</span>
+                    <span class="wrap-break-word">{{ commit.author }}</span>
                   </span>
 
                   <UTooltip :text="t('changelog.date', { date: commit.date })">
@@ -206,6 +228,7 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
+import Markdown from '~/components/Markdown.vue';
 import type { changelogs, changeset } from '~/types/changelogs';
 import { request, ucFirst, uri } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
@@ -229,8 +252,9 @@ const app_sha = ref('');
 const isLoading = ref(true);
 const query = ref('');
 const toggleFilter = ref(false);
-const latestOnly = useStorage<boolean>('changelog_latest_only', true);
-const openReleases = useStorage<string[]>('changelog_open_releases', []);
+const openReleases = useStorage<string[]>('changelog_open_releases_v2', []);
+const openCommitDescriptions = ref<string[]>([]);
+let openDefaultsInitialized = false;
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -238,9 +262,7 @@ watch(toggleFilter, () => {
   }
 });
 
-const visibleLogs = computed<changelogs>(() =>
-  latestOnly.value ? logs.value.slice(0, DEFAULT_LIMIT) : logs.value,
-);
+const visibleLogs = computed<changelogs>(() => logs.value.slice(0, DEFAULT_LIMIT));
 
 const filteredLogs = computed<changelogs>(() => {
   const q = query.value?.toLowerCase();
@@ -268,12 +290,37 @@ const filteredLogs = computed<changelogs>(() => {
     .filter((log): log is changeset => log !== null);
 });
 
-watch(filteredLogs, (items) => {
-  if (openReleases.value.length > 0 || items.length < 1) {
+const compareVersions = (left: string, right: string): number => {
+  const leftParts = left
+    .replace(/^v/i, '')
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0);
+  const rightParts = right
+    .replace(/^v/i, '')
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0);
+
+  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+
+  return 0;
+};
+
+watch([visibleLogs, app_version], ([items, currentVersion]) => {
+  if (openDefaultsInitialized || !currentVersion || items.length < 1) {
     return;
   }
 
-  openReleases.value = items.slice(0, 3).map((log) => log.tag);
+  const installedIndex = items.findIndex((log) => isInstalled(log));
+  openReleases.value =
+    installedIndex >= 0
+      ? items.slice(0, installedIndex + 1).map((log) => log.tag)
+      : items.filter((log) => compareVersions(log.tag, currentVersion) >= 0).map((log) => log.tag);
+  openDefaultsInitialized = true;
 });
 
 const isReleaseOpen = (tag: string): boolean => openReleases.value.includes(tag);
@@ -287,7 +334,30 @@ const toggleRelease = (tag: string): void => {
   openReleases.value = [...openReleases.value, tag];
 };
 
-const formatCommitMessage = (message: string): string => `${ucFirst(message).replace(/\.$/, '')}.`;
+const isCommitDescriptionOpen = (sha: string): boolean =>
+  openCommitDescriptions.value.includes(sha);
+
+const toggleCommitDescription = (sha: string): void => {
+  if (isCommitDescriptionOpen(sha)) {
+    openCommitDescriptions.value = openCommitDescriptions.value.filter((entry) => entry !== sha);
+    return;
+  }
+
+  openCommitDescriptions.value = [...openCommitDescriptions.value, sha];
+};
+
+const formatCommitMessage = (message: string): { title: string; description: string[] } => {
+  const lines = message
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const title = lines.shift() || '';
+
+  return {
+    title: `${ucFirst(title).replace(/\.$/, '')}.`,
+    description: lines,
+  };
+};
 
 const loadContent = async (): Promise<void> => {
   if (app_version.value === '' || logs.value.length > 0) {

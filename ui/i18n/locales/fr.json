@@ -1180,8 +1180,6 @@
   },
   "changelog": {
     "description": "Dernières modifications du projet",
-    "latestOnly": "Dernières uniquement",
-    "allLoaded": "Tout chargé",
     "filterPlaceholder": "Filtrer les entrées du journal",
     "releaseDate": "Date de publication :",
     "releaseDateValue": "Date de publication : {date}",
