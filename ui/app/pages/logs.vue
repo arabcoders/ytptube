@@ -194,16 +194,27 @@
                       {{ logTimeLabel(entry.log.datetime) }}
                     </span>
                   </UTooltip>
-                  <UButton
-                    color="neutral"
-                    variant="soft"
-                    size="xs"
-                    icon="i-lucide-panel-right-open"
-                    class="inline-flex align-[-0.2em]"
-                    @click="openLogDetails(entry.log)"
+                  <UDropdownMenu
+                    :items="logMenuItems(entry.log)"
+                    :content="{ align: 'start' }"
+                    :modal="false"
                   >
-                    {{ t('logs.details') }}
-                  </UButton>
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      icon="i-lucide-ellipsis-vertical"
+                      trailing-icon="i-lucide-chevron-down"
+                      class="inline-flex h-5! align-[-0.2em] opacity-70 hover:opacity-100"
+                      :ui="{
+                        base: 'min-h-0 min-w-0',
+                        leadingIcon: 'size-3',
+                        trailingIcon: 'size-3',
+                      }"
+                    >
+                      <span class="text-[10px] font-medium">{{ t('common.actions') }}</span>
+                    </UButton>
+                  </UDropdownMenu>
                   <span
                     :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
                     @click="openLogDetails(entry.log)"
@@ -383,6 +394,25 @@ const copyMenuItems = computed(() => [
     },
   ],
 ]);
+const logMenuItems = (log: log_line) => [
+  [
+    {
+      label: t('logs.details'),
+      icon: 'i-lucide-panel-right-open',
+      onSelect: () => openLogDetails(log),
+    },
+    {
+      label: t('logs.copyRendered'),
+      icon: 'i-lucide-file-text',
+      onSelect: () => copyText(formatLogLine(log)),
+    },
+    {
+      label: t('logs.copyRaw'),
+      icon: 'i-lucide-file-code',
+      onSelect: () => copyText(JSON.stringify(log)),
+    },
+  ],
+];
 const levelCounts = computed<Record<LogLevel, number>>(() => {
   const counts: Record<LogLevel, number> = {
     debug: 0,
