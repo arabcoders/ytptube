@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <UAlert
+      v-if="validationError && hasEditorContent"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      :title="validationError"
+      class="sticky top-0 z-10 shadow-sm"
+    />
+
     <div class="flex flex-wrap items-center gap-2">
       <UButton
         type="button"
@@ -571,7 +580,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'submit', payload: TaskDefinitionDocument): void;
-  (e: 'dirty-change', dirty: boolean): void;
+  (e: 'dirty-change' | 'valid-change', value: boolean): void;
   (e: 'import-existing', id: number): void;
 }>();
 
@@ -875,6 +884,61 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
   };
 };
 
+const hasEditorContent = computed(() => {
+  if (mode.value === 'advanced') {
+    return Boolean(jsonText.value.trim());
+  }
+
+  return Boolean(
+    guiState.name.trim() ||
+    guiState.matchText.trim() ||
+    guiState.containerSelector.trim() ||
+    guiState.engineUrl.trim() ||
+    guiState.requestUrl.trim() ||
+    guiState.fields.some((field) => field.key.trim() || field.expression.trim()),
+  );
+});
+
+const validationError = computed(() => {
+  if (mode.value === 'gui') {
+    try {
+      fromGui(guiState);
+      return '';
+    } catch (error) {
+      return error instanceof Error ? error.message : t('common.unableToBuildDef');
+    }
+  }
+
+  if (!jsonText.value.trim()) {
+    return t('common.validationDefinitionEmpty');
+  }
+
+  try {
+    const parsed = JSON.parse(jsonText.value) as unknown;
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+      return t('common.validationDefinitionObject');
+    }
+  } catch (error) {
+    return error instanceof Error ? error.message : t('common.invalidJsonDocument');
+  }
+
+  return '';
+});
+watch(
+  validationError,
+  (value) => {
+    emit('valid-change', !value);
+    if (!value) {
+      if (mode.value === 'gui') {
+        guiError.value = null;
+      } else {
+        errorMessage.value = null;
+      }
+    }
+  },
+  { immediate: true },
+);
+
 const normalizeRequestConfig = (request: any): any => {
   if (!request || typeof request !== 'object') {
     return request;
@@ -995,6 +1059,7 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
     nextTick(() => {
       markClean();
       emit('dirty-change', false);
+      emit('valid-change', !validationError.value);
     });
     return;
   }
@@ -1023,6 +1088,7 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
   nextTick(() => {
     markClean();
     emit('dirty-change', false);
+    emit('valid-change', !validationError.value);
   });
 };
 
@@ -1105,7 +1171,7 @@ const switchMode = (next: EditorMode): void => {
 };
 
 const submit = (): void => {
-  if (isBusy.value) {
+  if (isBusy.value || validationError.value) {
     return;
   }
 

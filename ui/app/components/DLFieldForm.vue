@@ -1,5 +1,21 @@
 <template>
   <form id="dlFieldForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <UAlert
+      v-if="
+        formError &&
+        (String(form.name).trim() ||
+          String(form.description).trim() ||
+          String(form.field).trim() ||
+          String(form.icon || '').trim() ||
+          form.order !== 1)
+      "
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      :title="formError"
+      class="sticky top-0 z-10 shadow-sm"
+    />
+
     <div class="grid gap-4 md:grid-cols-2">
       <div v-if="reference" class="md:col-span-2 flex justify-end">
         <UButton
@@ -134,7 +150,7 @@
           v-model="form.field"
           :options="ytDlpOptions"
           :disabled="addInProgress"
-          :placeholder="t('common.selectOption')"
+          :placeholder="t('common.selectYtdlpOption')"
           :multiple="false"
           :openOnFocus="true"
           :preferUp="true"
@@ -203,7 +219,7 @@ import { decode } from '~/utils';
 import { bundledUiIconNames, isBundledUiIcon } from '~/utils/generatedIconCatalog';
 
 const emitter = defineEmits<{
-  (e: 'dirty-change', dirty: boolean): void;
+  (e: 'dirty-change' | 'valid-change', value: boolean): void;
   (e: 'submit', payload: { reference: number | null | undefined; item: DLField }): void;
 }>();
 
@@ -313,6 +329,33 @@ function normalizeField(value?: Partial<DLField> | null): DLField {
   ) as DLField;
 }
 
+const formError = computed(() => {
+  for (const key of ['name', 'field', 'kind', 'description'] as const) {
+    if (!String(form[key]).trim()) {
+      return t('common.fieldRequired', { field: key });
+    }
+  }
+
+  if (!form.order || form.order < 1) {
+    return t('common.validationOrderPositive');
+  }
+
+  if (!fieldTypes.includes(form.kind)) {
+    return t('common.validationInvalidFieldType', { kind: form.kind });
+  }
+
+  if (!/^--[a-zA-Z0-9-]+$/.test(form.field)) {
+    return t('common.validationInvalidFieldFormat');
+  }
+
+  if (form.icon && !isBundledUiIcon(form.icon)) {
+    return t('common.validationInvalidIcon');
+  }
+
+  return '';
+});
+watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
+
 const importItem = async (): Promise<void> => {
   const value = importString.value.trim();
   if (!value) {
@@ -349,30 +392,7 @@ const importItem = async (): Promise<void> => {
 };
 
 const checkInfo = (): void => {
-  for (const key of ['name', 'field', 'kind', 'description'] as const) {
-    if (!form[key]) {
-      toast.error(t('common.fieldRequired', { field: key }));
-      return;
-    }
-  }
-
-  if (!form.order || form.order < 1) {
-    toast.error(t('common.validationOrderPositive'));
-    return;
-  }
-
-  if (!fieldTypes.includes(form.kind)) {
-    toast.error(t('common.validationInvalidFieldType', { kind: form.kind }));
-    return;
-  }
-
-  if (!/^--[a-zA-Z0-9-]+$/.test(form.field)) {
-    toast.error(t('common.validationInvalidFieldFormat'));
-    return;
-  }
-
-  if (form.icon && !isBundledUiIcon(form.icon)) {
-    toast.error(t('common.validationInvalidIcon'));
+  if (formError.value) {
     return;
   }
 

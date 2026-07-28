@@ -437,6 +437,7 @@
           :submitting="editorSubmitting"
           @submit="submitDefinition"
           @dirty-change="(dirty) => (editorDirty = dirty)"
+          @valid-change="(value) => (editorValid = value)"
           @import-existing="importExistingDefinition"
         />
       </template>
@@ -488,7 +489,7 @@
               color="neutral"
               variant="outline"
               icon="i-lucide-x"
-              :disabled="editorSubmitting"
+              :disabled="editorLoading || editorSubmitting"
               class="justify-center"
               @click="() => void requestCloseEditor()"
             >
@@ -500,7 +501,7 @@
               color="primary"
               icon="i-lucide-save"
               :loading="editorSubmitting"
-              :disabled="definitionEditor?.isBusy"
+              :disabled="definitionEditor?.isBusy || !editorValid"
               class="justify-center"
               @click="definitionEditor?.submit()"
             >
@@ -615,6 +616,7 @@ const { confirmDialog } = useDialog();
 
 const isEditorOpen = ref(false);
 const editorDirty = ref(false);
+const editorValid = ref(false);
 const editorMode = ref<'create' | 'edit'>('create');
 const editorLoading = ref(false);
 const editorSubmitting = ref(false);
@@ -695,6 +697,7 @@ const showImportByDefault = computed(
 
 const discardEditor = (): void => {
   editorDirty.value = false;
+  editorValid.value = false;
   workingDefinition.value = null;
   workingId.value = null;
   editorLoading.value = false;
@@ -758,6 +761,7 @@ const toggleMasterSelection = (): void => {
 
 const openCreate = (): void => {
   editorDirty.value = false;
+  editorValid.value = false;
   editorMode.value = 'create';
   workingId.value = null;
   workingDefinition.value = cloneDocument(DEFAULT_DEFINITION);
@@ -769,6 +773,7 @@ const openCreate = (): void => {
 
 const openEdit = async (summary: TaskDefinitionSummary): Promise<void> => {
   editorDirty.value = false;
+  editorValid.value = false;
   editorMode.value = 'edit';
   workingId.value = summary.id;
   workingDefinition.value = null;
@@ -800,6 +805,7 @@ const importExistingDefinition = async (id: number): Promise<void> => {
   }
 
   editorDirty.value = false;
+  editorValid.value = false;
   editorMode.value = 'create';
   workingId.value = null;
   workingDefinition.value = {
@@ -820,6 +826,7 @@ const closeEditor = (): void => {
   }
 
   editorDirty.value = false;
+  editorValid.value = false;
   isEditorOpen.value = false;
   workingDefinition.value = null;
   workingId.value = null;

@@ -416,6 +416,7 @@
           :reference="itemRef"
           :item="item as DLField"
           @dirty-change="(dirty) => (editorDirty = dirty)"
+          @valid-change="(value) => (editorValid = value)"
           @submit="updateItem"
         />
       </template>
@@ -439,7 +440,7 @@
             form="dlFieldForm"
             color="primary"
             icon="i-lucide-save"
-            :disabled="dlFields.addInProgress.value"
+            :disabled="dlFields.addInProgress.value || !editorValid"
             :loading="dlFields.addInProgress.value"
             class="justify-center"
           >
@@ -482,6 +483,7 @@ const item = ref<Partial<DLField>>({});
 const itemRef = ref<number | null | undefined>(null);
 const editorOpen = ref(false);
 const editorDirty = ref(false);
+const editorValid = ref(false);
 const query = ref('');
 const showFilter = ref(false);
 const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
@@ -529,6 +531,7 @@ const modalKey = computed(
 
 const discardEditor = (): void => {
   editorDirty.value = false;
+  editorValid.value = false;
   item.value = {};
   itemRef.value = null;
 };
@@ -594,6 +597,7 @@ const resetEditor = (): void => {
   item.value = {};
   itemRef.value = null;
   editorDirty.value = false;
+  editorValid.value = false;
 };
 
 const closeEditor = (): void => {
