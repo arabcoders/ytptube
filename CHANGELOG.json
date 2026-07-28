@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "6047bdf981f6619e5001739a8d6ec2621118ca3c",
-    "date": "2026-07-28T05:53:13+00:00",
+    "full_sha": "ace722b5b0552e57640579f76d60fdae814fcce4",
+    "date": "2026-07-28T15:53:10+00:00",
     "commits": [
+      {
+        "sha": "ace722b5",
+        "full_sha": "ace722b5b0552e57640579f76d60fdae814fcce4",
+        "message": "feat: add cookie override via conditions",
+        "author": "arabcoders",
+        "date": "2026-07-28T15:53:10+00:00"
+      },
+      {
+        "sha": "3110edf1",
+        "full_sha": "3110edf118a20d4d26c5f3f9f895bcf1ba6657aa",
+        "message": "refactor: add in form validation",
+        "author": "arabcoders",
+        "date": "2026-07-28T15:50:38+00:00"
+      },
       {
         "sha": "6047bdf9",
         "full_sha": "6047bdf981f6619e5001739a8d6ec2621118ca3c",
