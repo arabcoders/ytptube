@@ -339,6 +339,7 @@ will be added to the command.
 - `preset=<preset-name>` (optional) - The preset to use for extracting info.
 - `force=true` (optional) - Force fetch new info instead of using cache.
 - `args=<yt-dlp-command-opts>` (optional) - The yt-dlp command options to apply to the info extraction.
+- `entries=true` (optional) - Preserve playlist entries in the response for playlist selection.
 
 **Response** (example):
 ```json

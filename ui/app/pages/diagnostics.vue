@@ -173,7 +173,7 @@ import type { DiagnosticCheck, DiagnosticStatus } from '~/types/diagnostics';
 import { usePageShell } from '~/composables/usePageShell';
 import { copyText } from '~/utils';
 
-const { t } = useI18n();
+const { t, loadLocaleMessages } = useI18n();
 type SummaryCard = {
   label: string;
   description: string;
@@ -318,21 +318,6 @@ const runtimeRows = computed<Array<DetailRow>>(() => {
   ];
 });
 
-const SHARE_STATUS: Record<DiagnosticStatus, string> = {
-  pass: 'PASS',
-  fail: 'FAIL',
-  warn: 'WARN',
-  skip: 'SKIP',
-};
-
-const SHARE_SECTION_LABELS: Record<string, string> = {
-  core: 'Core',
-  youtube: 'YouTube',
-  notifications: 'Notifications',
-  advanced: 'Advanced',
-  custom: 'Custom',
-};
-
 const shareText = computed(() => {
   const current = report.value;
   if (!current) {
@@ -416,12 +401,12 @@ const shareText = computed(() => {
   }
 
   for (const section of featureSections.value) {
-    lines.push('', SHARE_SECTION_LABELS[section.id] ?? section.id);
+    lines.push('', t(`diagnostics.feature.${section.id}.label`, {}, { locale: 'en' }));
 
     for (const item of section.items) {
       const versionSuffix = formatShareVersion(item);
       lines.push(
-        `- [${SHARE_STATUS[item.status] ?? item.status}] ${item.label} (${item.required ? 'required' : 'optional'})${versionSuffix}`,
+        `- [${t(`diagnostics.${item.status}`, {}, { locale: 'en' })}] ${item.label} (${t(item.required ? 'diagnostics.required' : 'common.optional', {}, { locale: 'en' })})${versionSuffix}`,
       );
     }
   }
@@ -536,7 +521,8 @@ const formatShareVersion = (item: DiagnosticCheck): string => {
   return ` [${String(version)}]`;
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await loadLocaleMessages('en');
   void load(true);
 });
 </script>

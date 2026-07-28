@@ -30,9 +30,7 @@
           <div class="flex items-center gap-1">
             <UTooltip
               :text="
-                allow_toasts
-                  ? t('common.pause') + ' ' + t('common.notifications')
-                  : t('common.resume') + ' ' + t('common.notifications')
+                allow_toasts ? t('common.pauseNotifications') : t('common.resumeNotifications')
               "
             >
               <UButton

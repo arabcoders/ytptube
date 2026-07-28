@@ -5,16 +5,28 @@
         <div class="space-y-4">
           <UFormField class="w-full" :ui="downloadFieldUi">
             <template #label>
-              <span class="inline-flex items-center gap-2 font-semibold">
+              <div class="flex flex-wrap items-center gap-2">
                 <UTooltip :text="t('common.downloadUrlHint')">
                   <UIcon name="i-lucide-link" class="size-4 text-toned" />
                 </UTooltip>
-                <span>
-                  {{ t('common.urlsSeparatedBy', { separator: getSeparatorsName(separator) }) }}
-                </span>
-              </span>
+                <span class="font-semibold text-default">{{ t('common.url') }}</span>
+                <span class="text-toned">-</span>
+                <button
+                  type="button"
+                  class="font-medium text-primary hover:underline disabled:cursor-not-allowed"
+                  :class="{ 'opacity-50': !hasValidUrl }"
+                  :disabled="addInProgress || !hasValidUrl"
+                  @click="openPlaylistPicker"
+                >
+                  {{ t('common.pickPlaylistVideos') }}
+                </button>
+              </div>
             </template>
-
+            <template #description>
+              <span>{{
+                t('common.urlsSeparatedBy', { separator: getSeparatorsName(separator) })
+              }}</span>
+            </template>
             <div class="flex flex-row gap-2 items-start">
               <div class="min-w-0 flex-1">
                 <UTextarea
@@ -409,12 +421,13 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-default pt-4">
-          <UDropdownMenu class="sm:hidden" :items="mobileActionGroups" :modal="false">
+          <UDropdownMenu class="w-full sm:hidden" :items="mobileActionGroups" :modal="false">
             <UButton
               color="neutral"
               variant="outline"
               icon="i-lucide-ellipsis"
               trailing-icon="i-lucide-chevron-down"
+              class="w-full justify-center"
             >
               {{ t('common.actions') }}
             </UButton>
@@ -426,7 +439,7 @@
               color="neutral"
               variant="outline"
               icon="i-lucide-info"
-              :disabled="addInProgress || !hasValidUrl"
+              :disabled="addInProgress || !hasSingleUrl"
               @click="emitter('getInfo', splitUrls(form.url || '')[0] || '', form.preset, form.cli)"
             >
               {{ t('common.ytdlpInformation') }}
@@ -532,6 +545,16 @@
         </div>
       </template>
     </UModal>
+
+    <PlaylistPicker
+      v-if="showPlaylistPicker"
+      :link="splitUrls(form.url || '')[0] || ''"
+      :preset="form.preset"
+      :cli="form.cli"
+      @closeModel="() => void requestClosePlaylistPicker()"
+      @dirty-change="playlistPickerDirty = $event"
+      @picked="form.url = $event.join('\n')"
+    />
   </main>
 </template>
 
@@ -539,7 +562,9 @@
 import { useStorage } from '@vueuse/core';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import TextDropzone from '~/components/TextDropzone.vue';
+import PlaylistPicker from '~/components/PlaylistPicker.vue';
 import { useConditions } from '~/composables/useConditions';
+import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { Condition } from '~/types/conditions';
 import type { item_request } from '~/types/item';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
@@ -571,6 +596,19 @@ const testResultsClasses = useStorage<string>('modal_text_classes', '');
 const addInProgress = ref<boolean>(false);
 const showOptions = ref<boolean>(false);
 const showTestResults = ref<boolean>(false);
+const showPlaylistPicker = ref<boolean>(false);
+const playlistPickerDirty = ref<boolean>(false);
+
+const openPlaylistPicker = (): void => {
+  showPlaylistPicker.value = true;
+};
+
+const { requestClose: requestClosePlaylistPicker } = useDirtyCloseGuard(showPlaylistPicker, {
+  dirty: playlistPickerDirty,
+  onDiscard: () => {
+    playlistPickerDirty.value = false;
+  },
+});
 const testResultsData = ref<any>(null);
 const dlFieldsExtra = ['--no-download-archive', '--no-continue'];
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
@@ -740,7 +778,7 @@ const mobileActionGroups = computed(() => {
       {
         label: t('common.ytdlpInformation'),
         icon: 'i-lucide-info',
-        disabled: addInProgress.value || !hasValidUrl.value,
+        disabled: addInProgress.value || !hasSingleUrl.value,
         onSelect: () =>
           emitter(
             'getInfo',
@@ -1285,6 +1323,7 @@ const sortedDLFields = computed(() =>
   [...config.dl_fields].sort((a, b) => (a.order || 0) - (b.order || 0)),
 );
 const hasValidUrl = computed(() => form.value.url && form.value.url.trim().length > 0);
+const hasSingleUrl = computed(() => splitUrls(form.value.url || '').length === 1);
 
 watch(isMultiLineInput, async (newValue) => {
   await nextTick();

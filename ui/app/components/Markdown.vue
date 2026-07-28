@@ -271,7 +271,7 @@
 </style>
 
 <template>
-  <div class="relative min-h-64 min-w-0">
+  <div class="relative min-w-0">
     <div v-if="isLoading" class="flex min-h-64 items-center justify-center text-toned">
       <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin" />
     </div>
@@ -318,7 +318,7 @@ type MarkdownToken = {
   _isExternalImage?: boolean;
 };
 
-const props = defineProps<{ file: string }>();
+const props = defineProps<{ file?: string; markdown?: string }>();
 
 const content = ref('');
 const error = ref('');
@@ -422,7 +422,21 @@ const createMarkdownParser = () => {
   return parser;
 };
 
-const loader = async (file: string) => {
+const loader = async (file?: string, markdown?: string) => {
+  if (markdown !== undefined) {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      content.value = String(createMarkdownParser().parse(markdown));
+    } catch (e: unknown) {
+      console.error(e);
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      isLoading.value = false;
+    }
+    return;
+  }
+
   if (!file) {
     content.value = '';
     error.value = '';
@@ -482,13 +496,13 @@ const handleClick = async (event: MouseEvent) => {
 };
 
 watch(
-  () => props.file,
-  async (file) => {
+  [() => props.file, () => props.markdown],
+  async ([file, markdown]) => {
     if (import.meta.server) {
       return;
     }
 
-    await loader(file);
+    await loader(file, markdown);
   },
   { immediate: true },
 );

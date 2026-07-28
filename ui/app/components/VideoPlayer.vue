@@ -365,6 +365,7 @@ import {
 import { usePlayerShortcutHelp } from '~/composables/usePlayerShortcutHelp';
 import { usePlayerShortcuts } from '~/composables/usePlayerShortcuts';
 import { usePlayerSubtitles } from '~/composables/usePlayerSubtitles';
+import { useApiErrorMessage } from '~/composables/useApiErrorMessage';
 import {
   canRequestFullscreen,
   exitDocumentFullscreen,
@@ -377,6 +378,7 @@ import { nextTapVisible } from '~/utils/playerControls';
 
 import type { StoreItem } from '~/types/store';
 import type { FileInfo, PlayerSourceElement } from '~/types/video';
+import type { ApiErrorPayload } from '~/types/responses';
 
 const { t } = useI18n();
 const config = useYtpConfig();
@@ -389,6 +391,7 @@ const emitter = defineEmits<{
 }>();
 
 const showShortcutHelp = usePlayerShortcutHelp();
+const { messageFor } = useApiErrorMessage();
 
 const playerContainer = ref<HTMLElement | null>(null);
 const videoElement = ref<HTMLVideoElement | null>(null);
@@ -1105,11 +1108,11 @@ async function loadPlayerInfo() {
   loadingError.value = '';
 
   const req = await request(currentPlaybackUrl('api/file/info'));
-  const response: FileInfo = await req.json();
+  const response = (await req.json()) as FileInfo & ApiErrorPayload;
 
   if (!req.ok) {
     loading.value = false;
-    loadingError.value = response?.error || t('common.failedFetch');
+    loadingError.value = messageFor(response, 'common.failedFetch');
     emitter('error', loadingError.value);
     emitter('closeModel');
     return;
