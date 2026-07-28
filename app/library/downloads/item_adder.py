@@ -490,6 +490,10 @@ async def add(
                         f"Preset '{target_preset}' specified in condition '{condition.name}' does not exist. Ignoring set_preset."
                     )
 
+            condition_cookies = condition.extras.get("set_cookies")
+            if isinstance(condition_cookies, str) and condition_cookies.strip():
+                item = item.new_with(cookies=condition_cookies)
+
             return await add(queue=queue, item=item.new_with(requeued=True, cli=condition.cli), already=already)
 
         _status, _msg = ytdlp_reject(entry=entry, yt_params=yt_conf)

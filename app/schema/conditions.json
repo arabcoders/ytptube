@@ -74,6 +74,17 @@
         "enabled": false,
         "priority": 0,
         "description": "Apply audio-only preset for videos in the Music category."
+      },
+      {
+        "id": "c4d5e6f7-8901-4567-2def-345678901234",
+        "name": "Use authenticated cookies",
+        "filter": "availability = 'needs_auth'",
+        "extras": {
+          "set_cookies": "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tTRUE\t0\tsession\tvalue"
+        },
+        "enabled": true,
+        "priority": 5,
+        "description": "Override the selected preset cookies for authenticated downloads."
       }
     ]
   }
