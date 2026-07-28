@@ -554,6 +554,7 @@
           :item="target"
           :allowedEvents="allowedEvents"
           @dirty-change="(dirty) => (editorDirty = dirty)"
+          @valid-change="(value) => (editorValid = value)"
           @submit="updateItem"
         />
       </template>
@@ -577,7 +578,7 @@
             form="notificationForm"
             color="primary"
             icon="i-lucide-save"
-            :disabled="addInProgress"
+            :disabled="addInProgress || !editorValid"
             :loading="addInProgress"
             class="justify-center"
           >
@@ -626,6 +627,7 @@ const targetRef = ref<number | undefined>(undefined);
 const target = ref<notification>(defaultState());
 const editorOpen = ref(false);
 const editorDirty = ref(false);
+const editorValid = ref(false);
 const sendingTest = ref(false);
 const query = ref('');
 const showFilter = ref(false);
@@ -646,6 +648,7 @@ const modalKey = computed(
 
 const discardEditor = (): void => {
   editorDirty.value = false;
+  editorValid.value = false;
   target.value = defaultState();
   targetRef.value = undefined;
 };
@@ -740,6 +743,7 @@ const resetEditor = (): void => {
   target.value = defaultState();
   targetRef.value = undefined;
   editorDirty.value = false;
+  editorValid.value = false;
 };
 
 const closeEditor = (): void => {

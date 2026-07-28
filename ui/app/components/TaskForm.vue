@@ -1,6 +1,15 @@
 <template>
   <form id="taskForm" autocomplete="off" class="space-y-4" @submit.prevent="checkInfo">
     <UAlert
+      v-if="formError && hasFormContent"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      :title="formError"
+      class="sticky top-0 z-10 shadow-sm"
+    />
+
+    <UAlert
       v-if="!isMultiLineInput && form.url && is_yt_handle(form.url)"
       color="warning"
       variant="soft"
@@ -460,7 +469,7 @@ const props = defineProps<{
 }>();
 
 const emitter = defineEmits<{
-  (e: 'dirty-change', dirty: boolean): void;
+  (e: 'dirty-change' | 'valid-change', value: boolean): void;
   (
     e: 'submit',
     payload: { reference: number | null | undefined; task: Task | Task[]; archive_all?: boolean },
@@ -677,6 +686,40 @@ const hasFormContent = computed(() => {
   );
 });
 
+const formError = computed(() => {
+  const urls = splitUrls(form.url || '');
+  if (urls.length === 0) {
+    return t('common.validationUrlRequired');
+  }
+
+  if (!canUseMultiUrl.value && urls.length > 1) {
+    return t('common.multipleUrlsAddOnly');
+  }
+
+  if (!String(form.name).trim()) {
+    return t('common.validationNameRequired');
+  }
+
+  if (form.timer) {
+    try {
+      CronExpressionParser.parse(form.timer);
+    } catch (error) {
+      return t('common.validationInvalidCron', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  try {
+    new URL(urls[0] || '');
+  } catch {
+    return t('common.invalidUrl');
+  }
+
+  return '';
+});
+watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
+
 const confirmImportOverwrite = async (): Promise<boolean> => {
   if (!hasFormContent.value) {
     return true;
@@ -696,41 +739,13 @@ const confirmImportOverwrite = async (): Promise<boolean> => {
 const checkInfo = async (): Promise<void> => {
   const urls = splitUrls(form.url || '');
 
-  if (urls.length === 0) {
-    toast.error(t('common.validationUrlRequired'));
-    return;
-  }
-
-  if (!canUseMultiUrl.value && urls.length > 1) {
-    toast.error(t('common.multipleUrlsAddOnly'));
-    return;
-  }
-
-  if (!form.name) {
-    toast.error(t('common.validationNameRequired'));
+  if (formError.value) {
     return;
   }
 
   if (form.folder) {
     form.folder = form.folder.trim();
     await nextTick();
-  }
-
-  if (form.timer) {
-    try {
-      CronExpressionParser.parse(form.timer);
-    } catch (error: any) {
-      console.error(error);
-      toast.error(t('common.validationInvalidCron', { error: error.message }));
-      return;
-    }
-  }
-
-  try {
-    new URL(urls[0] || '');
-  } catch {
-    toast.error(t('common.invalidUrl'));
-    return;
   }
 
   if (form.cli && '' !== form.cli) {

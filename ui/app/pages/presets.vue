@@ -465,6 +465,7 @@
           :reference="editor.reference.value"
           :preset="editor.preset.value"
           @dirty-change="(dirty) => (editor.dirty.value = dirty)"
+          @valid-change="(value) => (editorValid = value)"
           @submit="editor.submit"
         />
       </template>
@@ -488,7 +489,7 @@
             form="presetForm"
             color="primary"
             icon="i-lucide-save"
-            :disabled="editor.addInProgress.value"
+            :disabled="editor.addInProgress.value || !editorValid"
             :loading="editor.addInProgress.value"
             class="justify-center"
           >
@@ -517,6 +518,7 @@ const presetsStore = usePresets();
 const config = useYtpConfig();
 const box = useConfirm();
 const editor = usePresetEditor();
+const editorValid = ref(false);
 const pageShell = usePageShell('presets');
 const route = useRoute();
 const router = useRouter();
@@ -584,6 +586,12 @@ const syncPageQuery = async (pageNumber: number): Promise<void> => {
 
   await router.replace({ query: nextQuery });
 };
+
+watch(editor.isOpen, (value) => {
+  if (!value) {
+    editorValid.value = false;
+  }
+});
 
 watch(showFilter, (value) => {
   if (!value) {

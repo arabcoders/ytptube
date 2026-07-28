@@ -372,7 +372,7 @@
                     size="sm"
                   >
                     <span class="font-semibold">{{ key }}</span
-                    >: {{ value }}
+                    >: {{ key === 'set_cookies' ? t('presets.cookiesConfigured') : value }}
                   </UBadge>
                 </div>
               </div>
@@ -475,6 +475,7 @@
           :reference="itemRef"
           :item="item as Condition"
           @dirty-change="(dirty) => (editorDirty = dirty)"
+          @valid-change="(value) => (editorValid = value)"
           @submit="updateItem"
         />
       </template>
@@ -498,7 +499,7 @@
             form="conditionForm"
             color="primary"
             icon="i-lucide-save"
-            :disabled="conditions.addInProgress.value"
+            :disabled="conditions.addInProgress.value || !editorValid"
             :loading="conditions.addInProgress.value"
             class="justify-center"
           >
@@ -543,6 +544,7 @@ const item = ref<Partial<Condition>>({});
 const itemRef = ref<number | null | undefined>(null);
 const editorOpen = ref(false);
 const editorDirty = ref(false);
+const editorValid = ref(false);
 const query = ref('');
 const showFilter = ref(false);
 const filterInput = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
@@ -592,6 +594,7 @@ const modalKey = computed(
 
 const discardEditor = (): void => {
   editorDirty.value = false;
+  editorValid.value = false;
   item.value = {};
   itemRef.value = null;
 };
@@ -657,6 +660,7 @@ const resetEditor = (): void => {
   item.value = {};
   itemRef.value = null;
   editorDirty.value = false;
+  editorValid.value = false;
 };
 
 const closeEditor = (): void => {
@@ -776,13 +780,22 @@ const toggleEnabled = async (cond: Condition): Promise<void> => {
 };
 
 const exportItem = (cond: Condition): void => {
+  const extras = Object.fromEntries(
+    Object.entries(cond.extras || {}).filter(([key]) => key !== 'set_cookies'),
+  );
+  const exported = Object.fromEntries(
+    Object.entries(cond).filter(
+      ([key, value]) => !!value && key !== 'extras' && !['id', ...removeKeys].includes(key),
+    ),
+  );
+
+  if (Object.keys(extras).length > 0) {
+    exported.extras = extras;
+  }
+
   copyText(
     encode({
-      ...Object.fromEntries(
-        Object.entries(cond).filter(
-          ([key, value]) => !!value && !['id', ...removeKeys].includes(key),
-        ),
-      ),
+      ...exported,
       _type: 'condition',
       _version: '1.2',
     }),

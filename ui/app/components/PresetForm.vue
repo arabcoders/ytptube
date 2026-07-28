@@ -1,5 +1,14 @@
 <template>
   <form id="presetForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <UAlert
+      v-if="formError && hasFormContent"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      :title="formError"
+      class="sticky top-0 z-10 shadow-sm"
+    />
+
     <div class="grid gap-4 md:grid-cols-2">
       <div v-if="reference" class="md:col-span-2 flex justify-end">
         <UButton
@@ -315,7 +324,7 @@ import { normalizePresetName, shortPath } from '~/utils';
 const { t } = useI18n();
 
 const emitter = defineEmits<{
-  (event: 'dirty-change', dirty: boolean): void;
+  (event: 'dirty-change' | 'valid-change', value: boolean): void;
   (event: 'submit', payload: { reference: number | null; preset: Preset }): void;
 }>();
 
@@ -437,9 +446,30 @@ const hasFormContent = computed(() => {
     form.folder ||
     form.cookies ||
     form.description ||
-    (form.priority ?? 0) > 0,
+    form.priority !== 0,
   );
 });
+
+const formError = computed(() => {
+  if (!String(form.name).trim() || !normalizePresetName(String(form.name))) {
+    return t('common.validationNameRequired');
+  }
+
+  if (
+    presets.value.some(
+      (item) => item.id !== props.reference && item.name === normalizePresetName(String(form.name)),
+    )
+  ) {
+    return t('common.presetNameAlreadyInUse');
+  }
+
+  if (!Number.isInteger(form.priority) || form.priority < 0) {
+    return t('common.validationNonNegativeInteger', { field: t('common.priority') });
+  }
+
+  return '';
+});
+watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
 
 const confirmImportOverwrite = async (): Promise<boolean> => {
   if (!hasFormContent.value) {
@@ -477,19 +507,11 @@ const convertOptions = async (args: string): Promise<Record<string, any> | null>
 };
 
 const checkInfo = async (): Promise<void> => {
-  for (const key of ['name']) {
-    if (!form[key as keyof Preset]) {
-      toast.error(t('common.fieldRequired', { field: key }));
-      return;
-    }
-  }
-
-  const normalizedName = normalizePresetName(String(form.name));
-  if (!normalizedName) {
-    toast.error(t('common.validationNameRequired'));
+  if (formError.value) {
     return;
   }
 
+  const normalizedName = normalizePresetName(String(form.name));
   form.name = normalizedName;
 
   if (form.folder) {
@@ -506,15 +528,6 @@ const checkInfo = async (): Promise<void> => {
   }
 
   const copy: Preset = JSON.parse(JSON.stringify(form));
-  const usedName = presets.value.some(
-    (item) => item.id !== props.reference && item.name === normalizedName,
-  );
-
-  if (usedName) {
-    toast.error(t('common.presetNameAlreadyInUse'));
-    return;
-  }
-
   for (const key in copy) {
     const value = copy[key as keyof Preset];
     if (typeof value === 'string') {

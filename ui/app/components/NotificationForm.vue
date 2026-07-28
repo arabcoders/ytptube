@@ -1,5 +1,14 @@
 <template>
   <form id="notificationForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <UAlert
+      v-if="formError && hasFormContent"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      :title="formError"
+      class="sticky top-0 z-10 shadow-sm"
+    />
+
     <div class="grid gap-4 md:grid-cols-2">
       <div v-if="reference" class="md:col-span-2 flex justify-end">
         <UButton
@@ -394,7 +403,7 @@ import type { notification, notificationRequestHeaderItem } from '~/types/notifi
 const { t } = useI18n();
 
 const emitter = defineEmits<{
-  (event: 'dirty-change', dirty: boolean): void;
+  (event: 'dirty-change' | 'valid-change', value: boolean): void;
   (event: 'submit', payload: { reference: number | undefined; item: notification }): void;
 }>();
 
@@ -505,50 +514,58 @@ const hasFormContent = computed(() => {
   return Boolean(
     form.name ||
     form.request.url ||
+    form.request.method !== 'POST' ||
+    form.request.type !== 'json' ||
     (requestType.value === 'form' ? form.request.data_key : '') ||
     form.on.length > 0 ||
     form.presets.length > 0 ||
+    !form.enabled ||
     form.request.headers.some((header) => header.key || header.value),
   );
 });
+
+const formError = computed(() => {
+  if (!String(form.name).trim()) {
+    return t('common.fieldRequired', { field: 'name' });
+  }
+
+  if (!String(form.request.url).trim()) {
+    return t('common.fieldRequired', { field: 'request.url' });
+  }
+
+  if (isAppriseTarget.value) {
+    return '';
+  }
+
+  if (!form.request.method) {
+    return t('common.fieldRequired', { field: 'request.method' });
+  }
+
+  if (!form.request.type) {
+    return t('common.fieldRequired', { field: 'request.type' });
+  }
+
+  if (requestType.value === 'form' && !String(form.request.data_key).trim()) {
+    return t('common.fieldRequired', { field: 'request.data_key' });
+  }
+
+  try {
+    new URL(form.request.url);
+  } catch {
+    return t('common.invalidUrl');
+  }
+
+  return '';
+});
+watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
 
 const addHeader = (): void => {
   form.request.headers.push({ key: '', value: '' });
 };
 
 const checkInfo = async (): Promise<void> => {
-  const required = !isAppriseTarget.value
-    ? [
-        'name',
-        'request.url',
-        'request.method',
-        'request.type',
-        ...(requestType.value === 'form' ? ['request.data_key'] : []),
-      ]
-    : ['name', 'request.url'];
-
-  for (const key of required) {
-    if (key.includes('.')) {
-      const [parent, child] = key.split('.') as ['request', keyof notification['request'] & string];
-      const parentObject = form[parent] as Record<string, unknown> | undefined;
-
-      if (!parentObject || !parentObject[child]) {
-        toast.error(t('common.fieldRequired', { field: `${parent}.${child}` }));
-        return;
-      }
-    } else if (!(form as Record<string, unknown>)[key]) {
-      toast.error(t('common.fieldRequired', { field: key }));
-      return;
-    }
-  }
-
-  if (!isAppriseTarget.value) {
-    try {
-      new URL(form.request.url);
-    } catch {
-      toast.error(t('common.invalidUrl'));
-      return;
-    }
+  if (formError.value) {
+    return;
   }
 
   const copy = normalizeNotification(form);

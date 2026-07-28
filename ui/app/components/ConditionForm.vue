@@ -1,5 +1,24 @@
 <template>
   <form id="conditionForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <UAlert
+      v-if="
+        formError &&
+        (String(form.name).trim() ||
+          String(form.filter).trim() ||
+          String(form.cli).trim() ||
+          String(form.description).trim() ||
+          Object.keys(form.extras).length ||
+          form.priority !== 0 ||
+          !form.enabled ||
+          newExtraValue.trim())
+      "
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      :title="formError"
+      class="sticky top-0 z-10 shadow-sm"
+    />
+
     <div class="grid gap-4 md:grid-cols-2">
       <div v-if="reference" class="md:col-span-2 flex justify-end">
         <UButton
@@ -206,16 +225,14 @@
               </div>
             </template>
 
-            <UInput
+            <USelect
               :model-value="entry[0]"
-              type="text"
-              placeholder="key_name"
+              :items="extraOptionItems"
+              value-key="value"
               size="lg"
-              :disabled="addInProgress"
+              disabled
               class="w-full"
               :ui="inputUi"
-              dir="ltr"
-              @update:model-value="(value) => updateExtraKey(String(value), entry[0])"
             />
           </UFormField>
 
@@ -227,7 +244,32 @@
               </div>
             </template>
 
+            <div
+              v-if="booleanExtraKeys.includes(entry[0])"
+              class="flex h-10 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
+            >
+              <span class="text-sm text-default">{{
+                entry[1] === true ? t('common.yesLabel') : t('common.noLabel')
+              }}</span>
+              <USwitch
+                :model-value="entry[1] === true"
+                :disabled="addInProgress"
+                @update:model-value="(value) => updateExtraValue(entry[0], Boolean(value))"
+              />
+            </div>
+            <UTextarea
+              v-else-if="entry[0] === 'set_cookies'"
+              :model-value="String(entry[1] ?? '')"
+              placeholder="value"
+              :disabled="addInProgress"
+              class="w-full"
+              :ui="textareaUi"
+              dir="ltr"
+              :rows="8"
+              @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
+            />
             <UInput
+              v-else
               :model-value="String(entry[1] ?? '')"
               type="text"
               placeholder="value"
@@ -264,16 +306,16 @@
             </div>
           </template>
 
-          <UInput
+          <USelect
             v-model="newExtraKey"
-            type="text"
-            placeholder="new_key"
+            :items="extraOptionItems.filter((item) => form.extras[item.value] === undefined)"
+            value-key="value"
+            :placeholder="t('common.selectOption')"
             size="lg"
             :disabled="addInProgress"
             class="w-full"
             :ui="inputUi"
-            dir="ltr"
-            @keyup.enter="addExtra"
+            @update:model-value="(value) => selectNewExtra(String(value))"
           />
         </UFormField>
 
@@ -285,7 +327,31 @@
             </div>
           </template>
 
+          <div
+            v-if="booleanExtraKeys.includes(newExtraKey)"
+            class="flex h-10 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
+          >
+            <span class="text-sm text-default">{{
+              newExtraValue === 'true' ? t('common.yesLabel') : t('common.noLabel')
+            }}</span>
+            <USwitch
+              :model-value="newExtraValue === 'true'"
+              :disabled="addInProgress"
+              @update:model-value="(value) => (newExtraValue = String(Boolean(value)))"
+            />
+          </div>
+          <UTextarea
+            v-else-if="newExtraKey.trim() === 'set_cookies'"
+            v-model="newExtraValue"
+            placeholder="value"
+            :disabled="addInProgress"
+            class="w-full"
+            :ui="textareaUi"
+            dir="ltr"
+            :rows="8"
+          />
           <UInput
+            v-else
             v-model="newExtraValue"
             type="text"
             placeholder="new_value"
@@ -298,7 +364,25 @@
           />
         </UFormField>
 
-        <div class="flex items-end">
+        <div class="flex items-end gap-2">
+          <UButton
+            v-if="newExtraKey"
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-rotate-ccw"
+            class="justify-center"
+            :disabled="addInProgress"
+            @click="
+              () => {
+                newExtraKey = '';
+                newExtraValue = '';
+              }
+            "
+          >
+            {{ t('common.reset') }}
+          </UButton>
+
           <UButton
             type="button"
             color="neutral"
@@ -311,16 +395,6 @@
             {{ t('common.add') }}
           </UButton>
         </div>
-      </div>
-
-      <div class="rounded-lg border border-info/30 bg-info/10 p-4 text-sm text-default">
-        <ul class="list-disc space-y-2 ps-5 text-sm text-default">
-          <li v-html="t('common.extraOptionsInfo1')"></li>
-          <li v-html="t('common.extraOptionsInfo2')"></li>
-          <li class="font-semibold text-error" v-html="t('common.extraOptionsInfo3')"></li>
-          <li v-html="t('common.extraOptionsInfo4')"></li>
-          <li v-html="t('common.extraOptionsInfo5')"></li>
-        </ul>
       </div>
     </div>
 
@@ -487,7 +561,7 @@ import { match_str } from '~/utils/ytdlp';
 const { t } = useI18n();
 
 const emitter = defineEmits<{
-  (e: 'dirty-change', dirty: boolean): void;
+  (e: 'dirty-change' | 'valid-change', value: boolean): void;
   (e: 'submit', payload: { reference: number | null | undefined; item: Condition }): void;
 }>();
 
@@ -620,6 +694,57 @@ function normalizeCondition(value?: Partial<Condition> | null): Condition {
 }
 
 const extrasEntries = computed(() => Object.entries(form.extras || {}));
+const booleanExtraKeys = ['ignore_download', 'no_archive'];
+const extraOptionItems = computed(() => [
+  {
+    label: 'ignore_download',
+    value: 'ignore_download',
+    description: t('common.conditionExtraIgnoreDownload'),
+  },
+  {
+    label: 'no_archive',
+    value: 'no_archive',
+    description: t('common.conditionExtraNoArchive'),
+  },
+  {
+    label: 'set_preset',
+    value: 'set_preset',
+    description: t('common.conditionExtraSetPreset'),
+  },
+  {
+    label: 'set_cookies',
+    value: 'set_cookies',
+    description: t('common.conditionExtraSetCookies'),
+  },
+]);
+const formError = computed(() => {
+  if (!newExtraKey.value.trim() && newExtraValue.value.trim()) {
+    return t('common.bothKeyValueRequired');
+  }
+
+  if (newExtraKey.value.trim() && newExtraValue.value.trim()) {
+    return t('common.conditionActionNotAdded');
+  }
+
+  if (!String(form.name).trim()) {
+    return t('common.fieldRequired', { field: t('common.name') });
+  }
+
+  if (!String(form.filter).trim()) {
+    return t('common.fieldRequired', { field: t('common.conditionFilter') });
+  }
+
+  if (!Number.isInteger(form.priority) || form.priority < 0) {
+    return t('common.validationNonNegativeInteger', { field: t('common.priority') });
+  }
+
+  if (!String(form.cli).trim() && Object.keys(form.extras).length < 1) {
+    return t('common.optionsOrExtraRequired');
+  }
+
+  return '';
+});
+watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
 
 const logicTest = computed(() => {
   if (Object.keys(testData.value.data?.data ?? {}).length < 1) {
@@ -638,15 +763,7 @@ const logicTest = computed(() => {
 });
 
 const checkInfo = async (): Promise<void> => {
-  for (const key of ['name', 'filter'] as const) {
-    if (!form[key]) {
-      toast.error(t('common.fieldRequired', { field: key }));
-      return;
-    }
-  }
-
-  if ((!form.cli || '' === form.cli.trim()) && Object.keys(form.extras).length < 1) {
-    toast.error(t('common.optionsOrExtraRequired'));
+  if (formError.value) {
     return;
   }
 
@@ -761,8 +878,6 @@ const showData = (): string => {
   return JSON.stringify(testData.value.data.data, null, 2);
 };
 
-const validateKey = (key: string): boolean => /^[a-z][a-z0-9_]*$/.test(key);
-
 const parseValue = (value: string): string | number | boolean => {
   if (!isNaN(Number(value)) && !isNaN(parseFloat(value))) {
     return Number(value);
@@ -781,15 +896,10 @@ const parseValue = (value: string): string | number | boolean => {
 
 const addExtra = (): void => {
   const key = newExtraKey.value.trim();
-  const value = newExtraValue.value.trim();
+  const value = newExtraValue.value;
 
-  if (!key || !value) {
+  if (!key || !value.trim()) {
     toast.error(t('common.bothKeyValueRequired'));
-    return;
-  }
-
-  if (!validateKey(key)) {
-    toast.error(t('common.keyMustBeLowercase'));
     return;
   }
 
@@ -798,9 +908,14 @@ const addExtra = (): void => {
     return;
   }
 
-  form.extras = { ...form.extras, [key]: parseValue(value) };
+  form.extras = { ...form.extras, [key]: key === 'set_cookies' ? value : parseValue(value.trim()) };
   newExtraKey.value = '';
   newExtraValue.value = '';
+};
+
+const selectNewExtra = (key: string): void => {
+  newExtraKey.value = key;
+  newExtraValue.value = booleanExtraKeys.includes(key) ? 'true' : '';
 };
 
 const removeExtra = (key: string): void => {
@@ -808,31 +923,17 @@ const removeExtra = (key: string): void => {
   form.extras = rest;
 };
 
-const updateExtraKey = (newKeyValue: string, oldKey: string): void => {
-  const newKey = newKeyValue.trim();
-  if (!newKey || newKey === oldKey) {
-    return;
-  }
-
-  if (!validateKey(newKey)) {
-    toast.error(t('common.keyFormatLetters'));
-    return;
-  }
-
-  if (form.extras[newKey] !== undefined) {
-    toast.error(t('common.keyAlreadyExists', { key: newKey }));
-    return;
-  }
-
-  const value = form.extras[oldKey];
-  const { [oldKey]: _, ...rest } = form.extras;
-  form.extras = { ...rest, [newKey]: value };
-};
-
-const updateExtraValue = (key: string, rawValue: string): void => {
+const updateExtraValue = (key: string, rawValue: string | boolean): void => {
   form.extras = {
     ...form.extras,
-    [key]: rawValue.trim() ? parseValue(rawValue.trim()) : '',
+    [key]:
+      typeof rawValue === 'boolean'
+        ? rawValue
+        : key === 'set_cookies'
+          ? rawValue
+          : rawValue.trim()
+            ? parseValue(rawValue.trim())
+            : '',
   };
 };
 

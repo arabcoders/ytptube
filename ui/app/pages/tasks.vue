@@ -698,6 +698,7 @@
           :reference="taskRef"
           :task="task as Task"
           @dirty-change="(dirty) => (editorDirty = dirty)"
+          @valid-change="(value) => (editorValid = value)"
           @submit="updateItem"
         />
       </template>
@@ -721,7 +722,7 @@
             form="taskForm"
             color="primary"
             icon="i-lucide-save"
-            :disabled="addInProgress"
+            :disabled="addInProgress || !editorValid"
             :loading="addInProgress"
             class="justify-center"
           >
@@ -834,6 +835,7 @@ const taskRef = ref<number | null>(null);
 const toggleForm = ref(false);
 const taskInspect = ref<InstanceType<typeof TaskInspect> | null>(null);
 const editorDirty = ref(false);
+const editorValid = ref(false);
 const selectedElms = ref<number[]>([]);
 const massRun = ref(false);
 const massDelete = ref(false);
@@ -858,6 +860,7 @@ const formKey = computed(() => `${taskRef.value ?? 'new'}:${editorSessionId.valu
 
 const discardEditor = (): void => {
   editorDirty.value = false;
+  editorValid.value = false;
   task.value = createEmptyTask();
   taskRef.value = null;
 };
@@ -1058,6 +1061,7 @@ const resetForm = (closeForm: boolean = false) => {
   task.value = createEmptyTask();
   taskRef.value = null;
   editorDirty.value = false;
+  editorValid.value = false;
 
   if (closeForm) {
     toggleForm.value = false;
@@ -1204,6 +1208,7 @@ const updateItem = async ({
 
 const editItem = (item: Task) => {
   editorDirty.value = false;
+  editorValid.value = false;
   task.value = { ...item };
   taskRef.value = item.id ?? null;
   editorSessionId.value += 1;

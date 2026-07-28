@@ -69,6 +69,49 @@ class TestConditionIgnoreMatching:
 
 class TestConditionIgnorePropagation:
     @pytest.mark.asyncio
+    async def test_add_sets_condition_cookies(self, tmp_path: Path) -> None:
+        queue = Mock()
+        queue.config = Mock(temp_path=str(tmp_path), ignore_archived_items=False, ytdlp_debug=False)
+        queue._notify = Mock()
+
+        item = Item(url="https://example.com/watch?v=test", preset="default")
+        item.get_ytdlp_opts = Mock(return_value=Mock(get_all=Mock(return_value={})))
+        item.get_archive_id = Mock(return_value=None)
+        item.get_archive_file = Mock(return_value=None)
+        item.is_archived = Mock(return_value=False)
+
+        cookies = "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tTRUE\t0\tsession\tvalue\n"
+        condition = SimpleNamespace(
+            name="Authenticated",
+            cli="",
+            extras={"set_cookies": cookies},
+        )
+        matcher = Mock(match=AsyncMock(return_value=condition))
+        requeued: dict[str, Any] = {}
+
+        async def capture_requeue(*, item: Item, **_kwargs: Any) -> dict[str, str]:
+            requeued["item"] = item
+            return {"status": "ok"}
+
+        original_add = add
+        with (
+            patch(
+                "app.library.downloads.item_adder.Presets.get_instance", return_value=Mock(get=Mock(return_value=None))
+            ),
+            patch("app.library.downloads.item_adder.Conditions.get_instance", return_value=matcher),
+            patch("app.library.downloads.item_adder.add", new=capture_requeue),
+        ):
+            result = await original_add(
+                queue=queue,
+                item=item,
+                entry={"id": "video-1", "duration": 60},
+            )
+
+        assert result == {"status": "ok"}
+        assert requeued["item"].cookies == cookies
+        assert requeued["item"].requeued is True
+
+    @pytest.mark.asyncio
     async def test_add_passes_ignore(self, tmp_path: Path) -> None:
         queue = Mock()
         queue.config = Mock(temp_path=str(tmp_path), ignore_archived_items=False, ytdlp_debug=False)
