@@ -417,6 +417,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
     opts: YTDLPOpts = YTDLPOpts.get_instance()
 
     preset: str = request.query.get("preset", config.default_preset)
+    include_entries: bool = request.query.get("entries", "").lower() in {"1", "true", "yes"}
     if not Presets.get_instance().get(preset):
         msg: str = f"Preset '{preset}' does not exist."
         return api_error_response(
@@ -447,7 +448,8 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             )
 
     try:
-        key: str = cache.hash(f"{preset}:{url}:{cli_args or ''}")
+        cache_suffix = ":entries" if include_entries else ""
+        key: str = cache.hash(f"{preset}:{url}:{cli_args or ''}{cache_suffix}")
 
         if cache.has(key) and not request.query.get("force", False):
             data: Any | None = cache.get(key)
@@ -472,7 +474,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             debug=False,
             no_archive=True,
             follow_redirect=True,
-            sanitize_info=True,
+            sanitize_info=not include_entries,
             capture_logs=logging.WARNING,
         )
 
