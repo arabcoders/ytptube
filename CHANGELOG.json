@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a413e4164b3b96b663a7091d631c901ce1445e93",
-    "date": "2026-07-27T19:43:12+00:00",
+    "full_sha": "6047bdf981f6619e5001739a8d6ec2621118ca3c",
+    "date": "2026-07-28T05:53:13+00:00",
     "commits": [
+      {
+        "sha": "6047bdf9",
+        "full_sha": "6047bdf981f6619e5001739a8d6ec2621118ca3c",
+        "message": "feat: add playlist video picker",
+        "author": "arabcoders",
+        "date": "2026-07-28T05:53:13+00:00"
+      },
       {
         "sha": "a413e416",
         "full_sha": "a413e4164b3b96b663a7091d631c901ce1445e93",
