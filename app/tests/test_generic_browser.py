@@ -33,16 +33,16 @@ def _make_ie(config: dict[str, str | None] | None = None) -> Any:
 
 def test_cfg_env(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "  selenium+http://browser:4444/wd/hub  ")
+    monkeypatch.setenv("YTP_BROWSER_URL", "  selenium+http://browser:9222  ")
 
-    assert ie._get_config("url", "YTP_BROWSER_URL") == "selenium+http://browser:4444/wd/hub"
+    assert ie._get_config("url", "YTP_BROWSER_URL") == "selenium+http://browser:9222"
 
 
 def test_cfg_arg_wins(monkeypatch: pytest.MonkeyPatch) -> None:
-    ie = _make_ie({"url": "selenium+http://arg:4444/wd/hub"})
-    monkeypatch.setenv("YTP_BROWSER_URL", "selenium+http://env:4444/wd/hub")
+    ie = _make_ie({"url": "selenium+http://arg:9222"})
+    monkeypatch.setenv("YTP_BROWSER_URL", "selenium+http://env:9222")
 
-    assert ie._get_config("url", "YTP_BROWSER_URL") == "selenium+http://arg:4444/wd/hub"
+    assert ie._get_config("url", "YTP_BROWSER_URL") == "selenium+http://arg:9222"
 
 
 def test_wait_config() -> None:
@@ -95,15 +95,15 @@ def test_safe_url() -> None:
     ie = _make_ie()
 
     assert (
-        ie._safe_url("playwright+ws://user:pass@10.0.0.6:9222/chrome/playwright?token=abc#frag")
-        == "playwright+ws://***:***@10.0.0.6:9222/chrome/playwright?***#***"
+        ie._safe_url("playwright+http://user:pass@10.0.0.6:9222/cdp?token=abc#frag")
+        == "playwright+http://***:***@10.0.0.6:9222/cdp?***#***"
     )
 
 
 def test_real_extract_env(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
 
-    monkeypatch.setenv("YTP_BROWSER_URL", "selenium+http://browser:4444/wd/hub")
+    monkeypatch.setenv("YTP_BROWSER_URL", "selenium+http://browser:9222")
     monkeypatch.setattr(generic_browser.SeleniumDriver, "is_available", staticmethod(lambda: False))
 
     with pytest.raises(generic_browser.ExtractorError, match="No matching browser driver available"):
@@ -122,7 +122,7 @@ def test_log_connect_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     ie.__wrapped__ = Mock()
     ie.__wrapped__._real_extract = Mock(return_value={"id": "fallback"})
-    monkeypatch.setenv("YTP_BROWSER_URL", "selenium+http://browser:4444/wd/hub")
+    monkeypatch.setenv("YTP_BROWSER_URL", "selenium+http://browser:9222")
     monkeypatch.setattr(generic_browser.SeleniumDriver, "is_available", staticmethod(lambda: True))
 
     class BrokenDriver:
@@ -145,7 +145,7 @@ def test_log_connect_fail(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_log_session_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser/path?token=secret")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser/path?token=secret")
 
     session = Mock()
     session.goto.side_effect = RuntimeError("page crashed")
@@ -165,16 +165,16 @@ def test_log_session_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     assert session.close.call_count == 1
     ie.report_warning.assert_called_once_with(
         "Browser extractor session failed for url='https://example.com/watch' "
-        "browser_url='playwright+ws://browser/path?***' driver=FakeDriver error=page crashed",
+        "browser_url='playwright+http://browser/path?***' driver=FakeDriver error=page crashed",
         "vid",
     )
-    ie.write_debug.assert_any_call("Selected driver FakeDriver for playwright+ws://browser/path?***")
+    ie.write_debug.assert_any_call("Selected driver FakeDriver for playwright+http://browser/path?***")
     ie.write_debug.assert_any_call("Loading page https://example.com/watch")
 
 
 def test_log_close_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser/path?token=secret")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser/path?token=secret")
 
     session = Mock()
     session.content.return_value = ""
@@ -195,14 +195,14 @@ def test_log_close_fail(monkeypatch: pytest.MonkeyPatch) -> None:
 
     ie.report_warning.assert_called_once_with(
         "Browser session close failed for url='https://example.com/watch' "
-        "browser_url='playwright+ws://browser/path?***' driver=FakeDriver error=close failed",
+        "browser_url='playwright+http://browser/path?***' driver=FakeDriver error=close failed",
         "vid",
     )
 
 
 def test_log_non_html(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser")
 
     session = Mock()
     session.content.return_value = "plain text body"
@@ -229,7 +229,7 @@ def test_log_non_html(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_html_meta(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser")
     ie._looks_like_html = lambda webpage: True
     ie._generic_title = generic_browser.GenericIE._generic_title.__get__(ie, generic_browser.GenericBrowserIE)
 
@@ -283,7 +283,7 @@ def test_no_media_fallback_outside_session(monkeypatch: pytest.MonkeyPatch) -> N
     ie._extract_network_formats = generic_browser.GenericBrowserIE._extract_network_formats.__get__(
         ie, generic_browser.GenericBrowserIE
     )
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser")
 
     session = Mock()
     session.content.return_value = ""
@@ -316,7 +316,7 @@ def test_status_fallback(monkeypatch: pytest.MonkeyPatch, status: int) -> None:
     ie._extract_network_formats = generic_browser.GenericBrowserIE._extract_network_formats.__get__(
         ie, generic_browser.GenericBrowserIE
     )
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser")
 
     session = Mock()
     session.goto.return_value = status
@@ -352,7 +352,7 @@ def test_status_terminal(monkeypatch: pytest.MonkeyPatch, status: int) -> None:
     ie._extract_network_formats = generic_browser.GenericBrowserIE._extract_network_formats.__get__(
         ie, generic_browser.GenericBrowserIE
     )
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser")
 
     session = Mock()
     session.goto.return_value = status
@@ -382,7 +382,7 @@ def test_status_terminal(monkeypatch: pytest.MonkeyPatch, status: int) -> None:
 
 def test_wait_passed(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie({"wait": "2.5"})
-    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+ws://browser")
+    monkeypatch.setenv("YTP_BROWSER_URL", "playwright+http://browser")
 
     session = Mock()
     session.content.return_value = ""
@@ -442,21 +442,21 @@ def test_select_driver_selenium(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     monkeypatch.setattr(generic_browser.SeleniumDriver, "is_available", staticmethod(lambda: True))
 
-    assert ie._select_driver("selenium+http://browser:4444/wd/hub") is generic_browser.SeleniumDriver
+    assert ie._select_driver("selenium+http://browser:9222") is generic_browser.SeleniumDriver
 
 
 def test_select_driver_playwright_ws(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     monkeypatch.setattr(generic_browser.PlaywrightDriver, "is_available", staticmethod(lambda: True))
 
-    assert ie._select_driver("playwright+ws://playwright:3000/") is generic_browser.PlaywrightDriver
+    assert ie._select_driver("playwright+http://playwright:9222/") is generic_browser.PlaywrightDriver
 
 
 def test_select_driver_playwright_cdp(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     monkeypatch.setattr(generic_browser.PlaywrightDriver, "is_available", staticmethod(lambda: True))
 
-    assert ie._select_driver("playwright+cdp://chrome:9222/") is generic_browser.PlaywrightDriver
+    assert ie._select_driver("playwright+http://chrome:9222/") is generic_browser.PlaywrightDriver
 
 
 def _playwright_mocks(monkeypatch: pytest.MonkeyPatch, contexts: list[Mock]) -> tuple[Mock, Mock]:
@@ -467,7 +467,7 @@ def _playwright_mocks(monkeypatch: pytest.MonkeyPatch, contexts: list[Mock]) -> 
     starter.start.return_value = playwright
     browser = Mock()
     browser.contexts = contexts
-    playwright.chromium.connect.return_value = browser
+    playwright.chromium.connect_over_cdp.return_value = browser
 
     monkeypatch.setattr(sync_api, "sync_playwright", lambda: starter)
     monkeypatch.setattr(generic_browser.PlaywrightDriver, "is_available", staticmethod(lambda: True))
@@ -479,7 +479,7 @@ def test_playwright_reuses_context(monkeypatch: pytest.MonkeyPatch) -> None:
     page = context.new_page.return_value
     playwright, browser = _playwright_mocks(monkeypatch, [context])
 
-    session = generic_browser.PlaywrightDriver.connect("playwright+ws://browser")
+    session = generic_browser.PlaywrightDriver.connect("playwright+http://browser")
     session.close()
     session.close()
 
@@ -496,7 +496,7 @@ def test_playwright_owns_fallback_context(monkeypatch: pytest.MonkeyPatch) -> No
     context = browser.new_context.return_value
     page = context.new_page.return_value
 
-    session = generic_browser.PlaywrightDriver.connect("playwright+ws://browser")
+    session = generic_browser.PlaywrightDriver.connect("playwright+http://browser")
     session.close()
 
     browser.new_context.assert_called_once_with()
@@ -508,9 +508,9 @@ def test_playwright_owns_fallback_context(monkeypatch: pytest.MonkeyPatch) -> No
 
 def test_playwright_connect_cleanup(monkeypatch: pytest.MonkeyPatch) -> None:
     playwright, _ = _playwright_mocks(monkeypatch, [])
-    playwright.chromium.connect.side_effect = RuntimeError("connect failed")
+    playwright.chromium.connect_over_cdp.side_effect = RuntimeError("connect failed")
 
     with pytest.raises(RuntimeError, match="connect failed"):
-        generic_browser.PlaywrightDriver.connect("playwright+ws://browser")
+        generic_browser.PlaywrightDriver.connect("playwright+http://browser")
 
     playwright.stop.assert_called_once_with()

@@ -105,14 +105,8 @@ def _parse_browser_url(value: str) -> tuple[str, str]:
     if value.startswith(("selenium+http://", "selenium+https://")):
         return "selenium", value.removeprefix("selenium+")
 
-    if value.startswith(("playwright+ws://", "playwright+wss://")):
+    if value.startswith(("playwright+http://", "playwright+https://")):
         return "playwright", value.removeprefix("playwright+")
-
-    if value.startswith("playwright+cdp://"):
-        return "playwright", f"http://{value.removeprefix('playwright+cdp://')}"
-
-    if value.startswith("playwright+cdp+"):
-        return "playwright", value.removeprefix("playwright+cdp+")
 
     return "unknown", value
 
