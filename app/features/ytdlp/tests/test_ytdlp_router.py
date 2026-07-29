@@ -78,6 +78,8 @@ async def test_info_preserves_playlist_entries(monkeypatch: pytest.MonkeyPatch) 
     assert call is not None
     assert call.kwargs["sanitize_info"] is False
     assert "noplaylist" not in call.kwargs["config"]
+    assert call.kwargs["config"]["extract_flat"] == "in_playlist"
+    assert call.kwargs["config"]["skip_download"] is True
     assert call.kwargs["config"]["extractor_args"]["generic"]["wait"] == ["10"]
     assert cache.keys[0].endswith(":entries")
 

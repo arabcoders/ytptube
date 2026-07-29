@@ -470,6 +470,8 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         ytdlp_opts: dict = opts.get_all()
         if include_entries:
             ytdlp_opts.pop("noplaylist", None)
+            ytdlp_opts["extract_flat"] = "in_playlist"
+            ytdlp_opts["skip_download"] = True
             extractor_args = ytdlp_opts.setdefault("extractor_args", {})
             generic_args = extractor_args.setdefault("generic", {})
             wait_values = generic_args.get("wait")
