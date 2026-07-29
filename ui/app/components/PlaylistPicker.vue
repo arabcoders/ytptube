@@ -76,8 +76,12 @@
           color="error"
           variant="soft"
           icon="i-lucide-circle-alert"
-          :title="errorMessage"
-        />
+          :title="t('common.unableToLoadInfo')"
+        >
+          <template #description>
+            <p class="whitespace-pre-line wrap-break-word">{{ errorMessage }}</p>
+          </template>
+        </UAlert>
 
         <UEmpty
           v-else-if="filteredEntries.length === 0"
@@ -86,40 +90,54 @@
           class="py-12"
         />
 
-        <div v-else class="max-h-[55vh] overflow-y-auto">
+        <div v-else ref="entryScrollEl" class="max-h-[55vh] overflow-y-auto">
           <div class="space-y-2">
-            <label
+            <LateLoader
               v-for="entry in filteredEntries"
               :key="entry.key"
-              class="flex cursor-pointer items-center gap-3 rounded-lg border border-default p-2 transition-colors hover:bg-elevated/50"
+              :root="entryScrollEl"
+              :min-height="90"
+              unrender
             >
-              <UCheckbox
-                :model-value="selected.has(entry.key)"
-                :aria-label="entry.title"
-                @update:model-value="toggleEntry(entry.key, $event)"
-              />
-              <img
-                :src="entry.thumbnail || '/images/placeholder.png'"
-                :alt="''"
-                class="aspect-video w-24 shrink-0 rounded-md object-cover sm:w-32"
-                loading="lazy"
-                @error="useFallbackImage"
-              />
-              <div class="min-w-0 flex-1 space-y-1">
-                <span class="block text-sm font-medium text-default">{{ entry.title }}</span>
-                <div class="flex flex-wrap items-center gap-2">
-                  <UBadge v-if="entry.duration" color="info" variant="soft" size="xs">
-                    {{ formatTime(entry.duration) }}
-                  </UBadge>
-                  <UBadge v-if="entry.viewCount" color="neutral" variant="soft" size="xs">
-                    <span class="inline-flex items-center gap-1">
-                      <UIcon name="i-lucide-eye" class="size-3" />
-                      {{ entry.viewCount.toLocaleString() }}
-                    </span>
-                  </UBadge>
+              <label
+                class="flex cursor-pointer items-center gap-3 rounded-lg border border-default p-2 transition-colors hover:bg-elevated/50"
+              >
+                <UCheckbox
+                  :model-value="selected.has(entry.key)"
+                  :aria-label="entry.title"
+                  @update:model-value="toggleEntry(entry.key, $event)"
+                />
+                <img
+                  :src="entry.thumbnail || '/images/placeholder.png'"
+                  :alt="''"
+                  class="aspect-video w-24 shrink-0 rounded-md object-cover sm:w-32"
+                  loading="lazy"
+                  @error="useFallbackImage"
+                />
+                <div class="min-w-0 flex-1 space-y-1">
+                  <span class="block text-sm font-medium text-default">{{ entry.title }}</span>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <UBadge v-if="entry.duration" color="info" variant="soft" size="xs">
+                      {{ formatTime(entry.duration) }}
+                    </UBadge>
+                    <UBadge v-if="entry.viewCount" color="neutral" variant="soft" size="xs">
+                      <span class="inline-flex items-center gap-1">
+                        <UIcon name="i-lucide-eye" class="size-3" />
+                        {{ entry.viewCount.toLocaleString() }}
+                      </span>
+                    </UBadge>
+                    <UTooltip v-if="entry.published" :text="formatPublished(entry.published, true)">
+                      <UBadge color="neutral" variant="soft" size="xs">
+                        <span class="inline-flex items-center gap-1">
+                          <UIcon name="i-lucide-calendar" class="size-3" />
+                          {{ formatPublished(entry.published) }}
+                        </span>
+                      </UBadge>
+                    </UTooltip>
+                  </div>
                 </div>
-              </div>
-            </label>
+              </label>
+            </LateLoader>
           </div>
         </div>
       </div>
@@ -153,6 +171,7 @@
 </template>
 
 <script setup lang="ts">
+import moment from 'moment';
 import { formatTime, parse_api_error, request } from '~/utils';
 
 type RawEntry = {
@@ -163,6 +182,8 @@ type RawEntry = {
   thumbnails?: unknown;
   duration?: unknown;
   view_count?: unknown;
+  published?: unknown;
+  metadata?: unknown;
 };
 
 type PlaylistEntry = {
@@ -172,6 +193,7 @@ type PlaylistEntry = {
   thumbnail: string;
   duration: number | null;
   viewCount: number | null;
+  published: string | null;
 };
 
 const props = defineProps<{
@@ -190,6 +212,7 @@ const { t } = useI18n();
 const toast = useNotification();
 const query = ref('');
 const entries = ref<PlaylistEntry[]>([]);
+const entryScrollEl = ref<HTMLElement | null>(null);
 const selected = ref<Set<string>>(new Set());
 const isLoading = ref(false);
 const errorMessage = ref('');
@@ -240,6 +263,65 @@ const normalizeThumbnail = (entry: RawEntry): string => {
   return thumbnail?.url || '';
 };
 
+const normalizeEntry = (
+  entry: RawEntry,
+  index: number,
+  keyPrefix: string,
+): PlaylistEntry | null => {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+
+  const metadata =
+    entry.metadata && typeof entry.metadata === 'object' ? (entry.metadata as RawEntry) : undefined;
+  const url = typeof entry.webpage_url === 'string' ? entry.webpage_url : entry.url;
+  if (typeof url !== 'string' || !url) {
+    return null;
+  }
+
+  const rawTitle = typeof entry.title === 'string' ? entry.title : '';
+  const indexTitle = Number.isInteger(index) ? `(${index + 1})` : '';
+  const title = rawTitle || indexTitle || url;
+  const thumbnail = normalizeThumbnail(entry) || (metadata ? normalizeThumbnail(metadata) : '');
+  const duration =
+    typeof entry.duration === 'number'
+      ? entry.duration
+      : metadata && typeof metadata.duration === 'number'
+        ? metadata.duration
+        : null;
+  const viewCount =
+    typeof entry.view_count === 'number'
+      ? entry.view_count
+      : metadata && typeof metadata.view_count === 'number'
+        ? metadata.view_count
+        : null;
+  const published =
+    typeof entry.published === 'string'
+      ? entry.published
+      : metadata && typeof metadata.published === 'string'
+        ? metadata.published
+        : null;
+
+  return {
+    key: `${keyPrefix}:${index}:${url}`,
+    url,
+    title,
+    thumbnail,
+    duration,
+    viewCount,
+    published,
+  };
+};
+
+const formatPublished = (value: string, full: boolean = false): string => {
+  const date = moment(value);
+  if (!date.isValid()) {
+    return value;
+  }
+
+  return date.format(full ? 'YYYY-MM-DD HH:mm:ss Z' : 'YYYY-MM-DD');
+};
+
 const normalizeEntries = (value: unknown): PlaylistEntry[] => {
   if (
     !value ||
@@ -250,30 +332,29 @@ const normalizeEntries = (value: unknown): PlaylistEntry[] => {
   }
 
   return (value as { entries: RawEntry[] }).entries.flatMap((entry, index) => {
-    if (!entry || typeof entry !== 'object') {
-      return [];
-    }
-
-    const url = typeof entry.webpage_url === 'string' ? entry.webpage_url : entry.url;
-    if (typeof url !== 'string' || !url) {
-      return [];
-    }
-
-    const rawTitle = typeof entry.title === 'string' ? entry.title : '';
-    const indexTitle = Number.isInteger(index) ? `(${index + 1})` : '';
-    const title = rawTitle || indexTitle || url;
-
-    return [
-      {
-        key: `${index}:${url}`,
-        url,
-        title,
-        thumbnail: normalizeThumbnail(entry),
-        duration: typeof entry.duration === 'number' ? entry.duration : null,
-        viewCount: typeof entry.view_count === 'number' ? entry.view_count : null,
-      },
-    ];
+    const normalized = normalizeEntry(entry, index, 'ytdlp');
+    return normalized ? [normalized] : [];
   });
+};
+
+const normalizeTaskEntries = (value: unknown): PlaylistEntry[] => {
+  if (!value || typeof value !== 'object' || !Array.isArray((value as { items?: unknown }).items)) {
+    return [];
+  }
+
+  return (value as { items: RawEntry[] }).items.flatMap((entry, index) => {
+    const normalized = normalizeEntry(entry, index, 'task');
+    return normalized ? [normalized] : [];
+  });
+};
+
+const normalizeSingleEntry = (value: unknown): PlaylistEntry[] => {
+  if (!value || typeof value !== 'object' || 'video' !== (value as { _type?: unknown })._type) {
+    return [];
+  }
+
+  const normalized = normalizeEntry(value as RawEntry, 0, 'single');
+  return normalized ? [normalized] : [];
 };
 
 const loadEntries = async (): Promise<void> => {
@@ -290,17 +371,58 @@ const loadEntries = async (): Promise<void> => {
     if (props.preset) params.set('preset', props.preset);
     if (props.cli) params.set('args', props.cli);
 
-    const response = await request(`/api/yt-dlp/url/info?${params.toString()}`);
-    const body = await response.json();
-    if (!response.ok) {
-      throw new Error(await parse_api_error(body));
+    let body: unknown = null;
+    const extractionErrors: string[] = [];
+    let normalizedEntries: PlaylistEntry[] = [];
+
+    try {
+      const response = await request(`/api/yt-dlp/url/info?${params.toString()}`);
+      body = await response.json();
+
+      if (response.ok) {
+        const info = body as { title?: unknown };
+        playlistTitle.value = typeof info.title === 'string' ? info.title : '';
+        normalizedEntries = normalizeEntries(body);
+      } else {
+        extractionErrors.push(await parse_api_error(body));
+      }
+    } catch (error: unknown) {
+      extractionErrors.push(error instanceof Error ? error.message : t('common.failedFetch'));
     }
 
-    playlistTitle.value = typeof body.title === 'string' ? body.title : '';
-    entries.value = normalizeEntries(body);
-    if (entries.value.length === 0) {
-      errorMessage.value = t('common.noPlaylistEntries');
+    if (normalizedEntries.length === 0) {
+      try {
+        const inspectResponse = await request('/api/tasks/inspect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: props.link,
+            preset: props.preset,
+            handler: 'RssGenericHandler',
+          }),
+        });
+
+        const inspectBody = await inspectResponse.json();
+        if (inspectResponse.ok) {
+          normalizedEntries = normalizeTaskEntries(inspectBody);
+        } else {
+          extractionErrors.push(await parse_api_error(inspectBody));
+        }
+      } catch (error: unknown) {
+        extractionErrors.push(error instanceof Error ? error.message : t('common.failedFetch'));
+      }
     }
+
+    if (normalizedEntries.length === 0) {
+      normalizedEntries = normalizeSingleEntry(body);
+    }
+
+    if (normalizedEntries.length === 0) {
+      const errors = [...new Set(extractionErrors.filter(Boolean))];
+      throw new Error(errors.join('\n\n') || t('common.noPlaylistEntries'));
+    }
+
+    entries.value = normalizedEntries;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : t('common.failedFetch');
     errorMessage.value = message;

@@ -41,7 +41,7 @@ class _Options:
         return self
 
     def get_all(self) -> dict[str, Any]:
-        return {}
+        return {"noplaylist": True}
 
 
 @pytest.mark.asyncio
@@ -71,4 +71,5 @@ async def test_info_preserves_playlist_entries(monkeypatch: pytest.MonkeyPatch) 
     call = fetch.await_args
     assert call is not None
     assert call.kwargs["sanitize_info"] is False
+    assert "noplaylist" not in call.kwargs["config"]
     assert cache.keys[0].endswith(":entries")

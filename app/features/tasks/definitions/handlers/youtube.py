@@ -63,6 +63,7 @@ class YoutubeHandler(BaseHandler):
         ns: dict[str, str] = {
             "atom": "http://www.w3.org/2005/Atom",
             "yt": "http://www.youtube.com/xml/schemas/2015",
+            "media": "http://search.yahoo.com/mrss/",
         }
 
         items: list[dict[str, str]] = []
@@ -93,13 +94,24 @@ class YoutubeHandler(BaseHandler):
 
             title_elem: Element[str] | None = entry.find("atom:title", ns)
             title: str = title_elem.text if title_elem is not None and title_elem.text else ""
+            thumbnail_elem = entry.find("media:group/media:thumbnail", ns)
+            thumbnail = thumbnail_elem.get("url", "") if thumbnail_elem is not None else ""
 
             pub_elem: Element[str] | None = entry.find("atom:published", ns)
             published: str = pub_elem.text if pub_elem is not None and pub_elem.text else ""
 
             real_count += 1
 
-            items.append({"id": vid, "url": url, "title": title, "published": published, "archive_id": archive_id})
+            items.append(
+                {
+                    "id": vid,
+                    "url": url,
+                    "title": title,
+                    "published": published,
+                    "archive_id": archive_id,
+                    "thumbnail": thumbnail,
+                }
+            )
 
         return feed_url, items, real_count
 
@@ -138,7 +150,15 @@ class YoutubeHandler(BaseHandler):
             archive_id: str | None = entry.get("archive_id")
             metadata: dict[str, Any] = {"published": entry.get("published")}
 
-            task_items.append(TaskItem(url=url, title=entry.get("title"), archive_id=archive_id, metadata=metadata))
+            task_items.append(
+                TaskItem(
+                    url=url,
+                    title=entry.get("title"),
+                    archive_id=archive_id,
+                    thumbnail=entry.get("thumbnail"),
+                    metadata=metadata,
+                )
+            )
 
         return TaskResult(items=task_items, metadata={"feed_url": feed_url, "entry_count": real_count})
 

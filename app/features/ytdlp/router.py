@@ -467,6 +467,8 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             return web.json_response(text=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
 
         ytdlp_opts: dict = opts.get_all()
+        if include_entries:
+            ytdlp_opts.pop("noplaylist", None)
 
         (data, logs) = await fetch_info(
             config=ytdlp_opts,

@@ -1342,6 +1342,7 @@ JSON object with fields to update:
       "url": "https://example.com/video/1",
       "title": "Example title",
       "archive_id": "generic 1",
+      "thumbnail": "https://example.com/video-1.jpg",
       "metadata": {
         "source_id": "...",
         "source_name": "...",
