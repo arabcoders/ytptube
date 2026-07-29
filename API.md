@@ -28,10 +28,10 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/{id}/rename](#post-apihistoryidrename)
     - [GET /api/history](#get-apihistory)
     - [GET /api/history/live](#get-apihistorylive)
-     - [POST /api/history/start](#post-apihistorystart)
-     - [POST /api/history/force-start](#post-apihistoryforce-start)
-     - [POST /api/history/position](#post-apihistoryposition)
+    - [POST /api/history/start](#post-apihistorystart)
     - [POST /api/history/pause](#post-apihistorypause)
+    - [POST /api/history/force-start](#post-apihistoryforce-start)
+    - [POST /api/history/position](#post-apihistoryposition)
     - [POST /api/history/cancel](#post-apihistorycancel)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
@@ -1342,6 +1342,7 @@ JSON object with fields to update:
       "url": "https://example.com/video/1",
       "title": "Example title",
       "archive_id": "generic 1",
+      "thumbnail": "https://example.com/video-1.jpg",
       "metadata": {
         "source_id": "...",
         "source_name": "...",

@@ -37,11 +37,17 @@ class _Presets:
 
 
 class _Options:
+    def __init__(self, wait: str | None = None) -> None:
+        self.wait = wait
+
     def preset(self, _name: str) -> _Options:
         return self
 
     def get_all(self) -> dict[str, Any]:
-        return {}
+        opts: dict[str, Any] = {"noplaylist": True}
+        if self.wait is not None:
+            opts["extractor_args"] = {"generic": {"wait": [self.wait]}}
+        return opts
 
 
 @pytest.mark.asyncio
@@ -71,4 +77,35 @@ async def test_info_preserves_playlist_entries(monkeypatch: pytest.MonkeyPatch) 
     call = fetch.await_args
     assert call is not None
     assert call.kwargs["sanitize_info"] is False
+    assert "noplaylist" not in call.kwargs["config"]
+    assert call.kwargs["config"]["extract_flat"] == "in_playlist"
+    assert call.kwargs["config"]["skip_download"] is True
+    assert call.kwargs["config"]["extractor_args"]["generic"]["wait"] == ["10"]
     assert cache.keys[0].endswith(":entries")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("wait", "expected"), [("3", "3"), ("30", "10")])
+async def test_info_caps_browser_wait(
+    monkeypatch: pytest.MonkeyPatch,
+    wait: str,
+    expected: str,
+) -> None:
+    fetch = AsyncMock(return_value=({"title": "Playlist", "entries": []}, []))
+    config = SimpleNamespace(default_preset="default", allow_internal_urls=False)
+
+    monkeypatch.setattr(router, "validate_url", lambda *_args: True)
+    monkeypatch.setattr(router.Presets, "get_instance", lambda: _Presets())
+    monkeypatch.setattr(router.YTDLPOpts, "get_instance", lambda: _Options(wait))
+    monkeypatch.setattr(router, "fetch_info", fetch)
+
+    response = await router.get_info(
+        _Request({"url": "https://example.com/playlist", "entries": "true"}),
+        _Cache(),
+        config,
+    )
+
+    assert response.status == 200
+    call = fetch.await_args
+    assert call is not None
+    assert call.kwargs["config"]["extractor_args"]["generic"]["wait"] == [expected]

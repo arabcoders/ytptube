@@ -731,6 +731,25 @@ If you want to set the browser extractor options directly on the yt-dlp side, yo
 
 The explicit `--extractor-args` value takes priority over `YTP_BROWSER_URL`.
 
+### Browser wait
+
+Use the `wait` extractor argument to limit how long the browser waits for media after navigation. The value is in
+seconds, defaults to `60`, and accepts values from `0` through `300`. This is a maximum: extraction continues
+immediately when media is found.
+
+```bash
+--extractor-args "generic:url=playwright+cdp://chrome:9222/;wait=3"
+```
+
+When `YTP_BROWSER_URL` already defines the browser endpoint, only the wait value is needed:
+
+```bash
+--extractor-args "generic:wait=3"
+```
+
+The `/api/yt-dlp/url/info` endpoint accepts this through its `args` query parameter. Browser navigation responses with
+status `404`, `410`, `500`, `502`, `503`, or `504` skip the wait regardless of this setting.
+
 ## Example compose setup
 
 ```yaml
@@ -788,4 +807,3 @@ YTPTube supports multiple languages with RTL support. Currently the following la
 
 On first visit, YTPTube attempts to detect your browser's preferred language and switches automatically if a matching 
 translation is available.
-

@@ -1,6 +1,7 @@
 import hashlib
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
+from urllib.parse import urljoin
 from xml.etree.ElementTree import Element
 
 import httpx
@@ -14,16 +15,13 @@ from app.library.log import get_logger
 
 from ._base_handler import BaseHandler
 
-if TYPE_CHECKING:
-    from xml.etree.ElementTree import Element
-
 LOG = get_logger()
 CACHE: Cache = Cache()
 
 
 class RssGenericHandler(BaseHandler):
     FEED_PATTERN: re.Pattern[str] = re.compile(
-        r"\.(rss|atom)(\?.*)?$|handler=rss",
+        r"\.(rss|atom|xml)(\?.*)?$|handler=rss",
         re.IGNORECASE,
     )
 
@@ -34,7 +32,7 @@ class RssGenericHandler(BaseHandler):
             task.name,
             extra={"task_name": task.name, "url": task.url},
         )
-        return RssGenericHandler.parse(task.url) is not None
+        return task.name == "Inspector" or RssGenericHandler.parse(task.url) is not None
 
     @staticmethod
     async def _get(
@@ -74,6 +72,7 @@ class RssGenericHandler(BaseHandler):
             "rss": "http://www.rssboard.org/specification",
             "content": "http://purl.org/rss/1.0/modules/content/",
             "media": "http://search.yahoo.com/mrss/",
+            "itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd",
         }
 
         items: list[dict[str, str]] = []
@@ -108,11 +107,13 @@ class RssGenericHandler(BaseHandler):
                 title_elem: Element | None = entry.find("atom:title", ns)
                 title: str = title_elem.text if title_elem is not None and title_elem.text else ""
 
+                thumbnail = RssGenericHandler._thumbnail(entry, ns, feed_url)
+
                 pub_elem: Element | None = entry.find("atom:published", ns)
                 published: str = pub_elem.text if pub_elem is not None and pub_elem.text else ""
 
                 real_count += 1
-                items.append({"url": url, "title": title, "published": published})
+                items.append({"url": url, "title": title, "published": published, "thumbnail": thumbnail})
         else:
             # Try to parse as RSS feed
             rss_items = root.findall(".//item")
@@ -155,8 +156,10 @@ class RssGenericHandler(BaseHandler):
                 pub_elem = item.find("pubDate")
                 published: str = pub_elem.text if pub_elem is not None and pub_elem.text else ""
 
+                thumbnail = RssGenericHandler._thumbnail(item, ns, feed_url)
+
                 real_count += 1
-                items.append({"url": url, "title": title, "published": published})
+                items.append({"url": url, "title": title, "published": published, "thumbnail": thumbnail})
 
         return feed_url, items, real_count
 
@@ -175,6 +178,8 @@ class RssGenericHandler(BaseHandler):
 
         """
         parsed: dict[str, str] | None = RssGenericHandler.parse(task.url)
+        if not parsed and task.name == "Inspector":
+            parsed = {"url": task.url}
         if not parsed:
             return TaskFailure(message="Unrecognized RSS/Atom feed URL.")
 
@@ -256,13 +261,16 @@ class RssGenericHandler(BaseHandler):
                     archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
                     CACHE.set(cache_key, archive_id)
 
-            metadata: dict[str, Any] = {k: v for k, v in entry.items() if k not in {"url", "title", "published"}}
+            metadata: dict[str, Any] = {
+                k: v for k, v in entry.items() if k not in {"url", "title", "published", "thumbnail"}
+            }
 
             task_items.append(
                 TaskItem(
                     url=url,
                     title=entry.get("title"),
                     archive_id=archive_id,
+                    thumbnail=entry.get("thumbnail"),
                     metadata={"published": entry.get("published"), **metadata},
                 )
             )
@@ -271,6 +279,31 @@ class RssGenericHandler(BaseHandler):
             items=task_items,
             metadata={"feed_url": feed_url, "entry_count": real_count},
         )
+
+    @staticmethod
+    def _thumbnail(entry: Element, ns: dict[str, str], base_url: str) -> str:
+        candidates = (
+            entry.find("media:thumbnail", ns),
+            entry.find("media:group/media:thumbnail", ns),
+            entry.find("itunes:image", ns),
+            entry.find("media:content", ns),
+        )
+
+        for element in candidates:
+            if element is None:
+                continue
+
+            value = element.get("url") or element.get("href")
+            if value:
+                return urljoin(base_url, value)
+
+        for link in entry.findall("atom:link", ns) + entry.findall("link"):
+            if link.get("rel") == "enclosure" and link.get("type", "").startswith("image/"):
+                value = link.get("href") or link.get("url")
+                if value:
+                    return urljoin(base_url, value)
+
+        return ""
 
     @staticmethod
     def parse(url: str) -> dict[str, str] | None:
@@ -304,7 +337,7 @@ class RssGenericHandler(BaseHandler):
             ("https://www.example.com/test.atom#handler=rss", True),
             ("https://www.example.com/test.atom?handler=rss", True),
             ("https://www.example.com/feed.rss?version=2.0", True),
-            ("https://www.example.com/test.xml", False),
+            ("https://www.example.com/test.xml", True),
             ("https://www.example.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw", False),
             ("https://www.example.com/playlist?list=PLBCF2DAC6FFB574DE", False),
             ("https://www.example.com/user/SomeUser", False),

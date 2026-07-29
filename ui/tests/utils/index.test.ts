@@ -349,12 +349,18 @@ describe('data conversion helpers', () => {
   });
 
   it('detect_download_skipped', () => {
-    expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: true } as any)).toBe(true);
+    expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: true } as any)).toBe(
+      true,
+    );
   });
 
   it('ignore_non_skipped', () => {
-    expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: false } as any)).toBe(false);
-    expect(utils.isDownloadSkipped({ status: 'downloading', download_skipped: true } as any)).toBe(false);
+    expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: false } as any)).toBe(
+      false,
+    );
+    expect(utils.isDownloadSkipped({ status: 'downloading', download_skipped: true } as any)).toBe(
+      false,
+    );
     expect(utils.isDownloadSkipped(undefined as any)).toBe(false);
   });
 });
@@ -435,6 +441,39 @@ describe('dom and browser helpers', () => {
 });
 
 describe('network and id helpers', () => {
+  it('localize_api_error_with_detail', async () => {
+    const originalUseNuxtApp = globalThis.useNuxtApp;
+    globalThis.useNuxtApp = (() => ({
+      $i18n: {
+        t: (key: string) => ('errors.OPERATION_FAILED' === key ? 'Operation failed.' : key),
+        te: (key: string) => 'errors.OPERATION_FAILED' === key,
+      },
+    })) as any;
+
+    try {
+      const message = await utils.parse_api_error({
+        code: 'OPERATION_FAILED',
+        message: 'Failed to extract video info.',
+        error: 'Failed to extract video info. Playwright version mismatch.',
+      });
+
+      expect(message).toBe(
+        'Operation failed. - Failed to extract video info. Playwright version mismatch.',
+      );
+    } finally {
+      globalThis.useNuxtApp = originalUseNuxtApp;
+    }
+  });
+
+  it('combine_api_message_and_error', async () => {
+    const message = await utils.parse_api_error({
+      message: 'Failed to fetch RSS/Atom feed.',
+      error: "Client error '404 Not Found'",
+    });
+
+    expect(message).toBe("Failed to fetch RSS/Atom feed. - Client error '404 Not Found'");
+  });
+
   it('prefix_base_url', async () => {
     const responseMock = { status: 200 } as Response;
     fetchMock.mockResolvedValue(responseMock);
@@ -475,7 +514,6 @@ describe('network and id helpers', () => {
 
     await expect(utils.convertCliOptions('--bad')).rejects.toThrow('fail');
   });
-
 });
 
 describe('async helpers', () => {

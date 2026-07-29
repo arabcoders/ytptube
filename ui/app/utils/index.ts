@@ -990,6 +990,8 @@ const parse_api_error = async (json: unknown): Promise<string> => {
     extra_detail = payload.detail.trim();
   }
 
+  let message = '';
+
   if (payload.code) {
     const key = `errors.${payload.code}`;
     if (te(key)) {
@@ -1002,19 +1004,31 @@ const parse_api_error = async (json: unknown): Promise<string> => {
           return [paramKey, value];
         }),
       );
-      return String(t(key, params) + (extra_detail ? ` - ${extra_detail}` : ''));
+      message = String(t(key, params));
     }
   }
 
-  if (payload.error) {
-    return String(payload.error + (extra_detail ? ` - ${extra_detail}` : ''));
-  }
-  if (payload.message) {
-    return String(payload.message + (extra_detail ? ` - ${extra_detail}` : ''));
+  if (!message) {
+    message = payload.message || payload.error || '';
   }
 
-  if (extra_detail) {
-    return extra_detail;
+  const details: string[] = [];
+  const addDetail = (value: string | undefined): void => {
+    const detail = value?.trim();
+    if (detail && detail !== message && !details.includes(detail)) {
+      details.push(detail);
+    }
+  };
+
+  addDetail(payload.error);
+  addDetail(extra_detail);
+
+  if (message) {
+    return [message, ...details].join(' - ');
+  }
+
+  if (details.length > 0) {
+    return details.join(' - ');
   }
 
   return t('common.unknownError');

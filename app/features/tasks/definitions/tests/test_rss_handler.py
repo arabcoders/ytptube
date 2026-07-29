@@ -56,11 +56,12 @@ class TestRssHandlerExtraction:
     async def test_rss_atom_feed_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Test extraction from Atom feed."""
         atom_feed = """<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
   <title>Example Feed</title>
   <entry>
     <title>Video 1</title>
     <link href="https://www.youtube.com/watch?v=abc123" rel="alternate" />
+    <media:thumbnail url="https://example.com/video-1.jpg" />
     <published>2024-01-01T00:00:00Z</published>
   </entry>
   <entry>
@@ -90,9 +91,37 @@ class TestRssHandlerExtraction:
         assert len(result.items) == 2
         assert result.items[0].title == "Video 1"
         assert result.items[0].url == "https://www.youtube.com/watch?v=abc123"
+        assert result.items[0].thumbnail == "https://example.com/video-1.jpg"
         assert result.items[1].title == "Video 2"
         assert result.items[1].url == "https://www.youtube.com/watch?v=def456"
         assert result.metadata["entry_count"] == 2
+
+    @pytest.mark.asyncio
+    async def test_inspector_accepts_unqualified_atom_feed(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        atom_feed = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <title>Video</title>
+    <link href="https://www.youtube.com/watch?v=abc123" />
+  </entry>
+</feed>
+        """.strip()
+
+        async def fake_request(**kwargs):  # noqa: ARG001
+            return DummyResponse(atom_feed)
+
+        monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
+
+        task = HandleTask(id=None, name="Inspector", url="https://example.com/content", preset="default")
+
+        result = await RssGenericHandler.extract(task)
+
+        assert isinstance(result, TaskResult)
+        assert len(result.items) == 1
+        assert result.items[0].title == "Video"
 
     @pytest.mark.asyncio
     async def test_rss_feed_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
