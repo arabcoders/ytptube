@@ -1,5 +1,6 @@
 import base64
 import importlib.util
+import math
 import os
 import re
 import time
@@ -68,6 +69,10 @@ API_RESOURCE_TYPES: set[str] = {"fetch", "xhr"}
 
 POST_MEDIA_POLL_INTERVAL_MS = 250
 POST_MEDIA_POLL_ATTEMPTS = 8
+BROWSER_WAIT_SECONDS = 60.0
+BROWSER_WAIT_MAX_SECONDS = 300.0
+NETWORK_IDLE_SLICE_MS = 500
+HARD_HTTP_STATUSES: set[int] = {404, 410, 500, 502, 503, 504}
 
 MEDIA_CANDIDATE_EXTS: list[str] = [
     "m3u8",
@@ -132,26 +137,34 @@ def _wait_for_network_idle(
     idle_timeout: int = 30000,
     api_poll_interval: int = 500,
     api_poll_attempts: int = 10,
-    max_total_timeout: int = 60,
+    max_total_timeout: float = BROWSER_WAIT_SECONDS,
     pending_api: set[str] | None = None,
 ):
     """Shared network-idle waiting logic for all driver sessions."""
-    deadline = time.monotonic() + max_total_timeout
+    deadline = time.monotonic() + max(0, max_total_timeout)
 
-    def bounded_timeout_ms(requested_ms: int) -> int:
-        remaining_ms = int((deadline - time.monotonic()) * 1000)
-        if remaining_ms <= 0:
-            msg: str = f"Browser wait timed out after {max_total_timeout}s"
-            raise Exception(msg)
-        return max(1, min(requested_ms, remaining_ms))
+    def bounded_timeout_ms(requested_ms: int, phase_deadline: float | None = None) -> int:
+        end = min(deadline, phase_deadline) if phase_deadline is not None else deadline
+        remaining_ms = int((end - time.monotonic()) * 1000)
+        return max(0, min(requested_ms, remaining_ms))
 
     def wait_for_late_media() -> None:
         for _ in range(POST_MEDIA_POLL_ATTEMPTS):
             if _has_possible_media(requests_list):
                 return
-            time.sleep(bounded_timeout_ms(POST_MEDIA_POLL_INTERVAL_MS) / 1000)
+            if not (timeout_ms := bounded_timeout_ms(POST_MEDIA_POLL_INTERVAL_MS)):
+                return
+            time.sleep(timeout_ms / 1000)
 
-    wait_fn(bounded_timeout_ms(idle_timeout))
+    if _has_possible_media(requests_list):
+        return
+
+    idle_deadline = min(deadline, time.monotonic() + idle_timeout / 1000)
+    while timeout_ms := bounded_timeout_ms(NETWORK_IDLE_SLICE_MS, idle_deadline):
+        if wait_fn(timeout_ms):
+            break
+        if _has_possible_media(requests_list):
+            return
 
     for _ in range(api_poll_attempts):
         if _has_possible_media(requests_list):
@@ -160,12 +173,17 @@ def _wait_for_network_idle(
         if pending_api is not None and len(pending_api) == 0:
             break
 
-        time.sleep(bounded_timeout_ms(api_poll_interval) / 1000)
+        if not (timeout_ms := bounded_timeout_ms(api_poll_interval)):
+            return
+        wait_fn(timeout_ms)
 
     if _has_possible_media(requests_list):
         return
 
-    wait_for_media_fn(bounded_timeout_ms(10000))
+    if not (timeout_ms := bounded_timeout_ms(10000)):
+        return
+    if wait_for_media_fn(timeout_ms):
+        return
     wait_for_late_media()
 
 
@@ -199,31 +217,62 @@ class PlaywrightDriver:
             msg = "Playwright is not installed"
             raise ImportError(msg)
 
-        from playwright.sync_api import sync_playwright
-
-        p = sync_playwright().start()
-
-        if ws_url.startswith("playwright+ws://"):
-            browser_url = f"ws://{ws_url.removeprefix('playwright+ws://')}"
-            browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
-        elif ws_url.startswith("playwright+wss://"):
-            browser_url = f"wss://{ws_url.removeprefix('playwright+wss://')}"
-            browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
-        elif ws_url.startswith("playwright+cdp://"):
-            browser_url = f"http://{ws_url.removeprefix('playwright+cdp://')}"
-            browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
-        elif ws_url.startswith("playwright+cdp+"):
-            browser_url = ws_url.removeprefix("playwright+cdp+")
-            browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
-        else:
+        if not ws_url.startswith(PLAYWRIGHT_PREFIXES):
             msg = (
                 "Invalid Playwright browser URL. Use playwright+ws://, playwright+wss://, "
                 "playwright+cdp://, or playwright+cdp+http(s|ws|wss)://"
             )
             raise ValueError(msg)
 
-        context = browser.new_context()
-        page = context.new_page()
+        from playwright.sync_api import sync_playwright
+
+        p = sync_playwright().start()
+        browser = None
+        context = None
+        page = None
+        owns_context = False
+
+        try:
+            if ws_url.startswith("playwright+ws://"):
+                browser_url = f"ws://{ws_url.removeprefix('playwright+ws://')}"
+                browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
+            elif ws_url.startswith("playwright+wss://"):
+                browser_url = f"wss://{ws_url.removeprefix('playwright+wss://')}"
+                browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
+            elif ws_url.startswith("playwright+cdp://"):
+                browser_url = f"http://{ws_url.removeprefix('playwright+cdp://')}"
+                browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
+            else:
+                browser_url = ws_url.removeprefix("playwright+cdp+")
+                browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
+
+            if browser.contexts:
+                context = browser.contexts[0]
+            else:
+                context = browser.new_context()
+                owns_context = True
+            page = context.new_page()
+        except Exception:
+            if page is not None:
+                try:
+                    page.close()
+                except Exception:
+                    pass
+            if owns_context and context is not None:
+                try:
+                    context.close()
+                except Exception:
+                    pass
+            if browser is not None:
+                try:
+                    browser.close()
+                except Exception:
+                    pass
+            try:
+                p.stop()
+            except Exception:
+                pass
+            raise
 
         requests_list: list[dict] = []
         pending_api: set[str] = set()
@@ -272,8 +321,11 @@ class PlaywrightDriver:
         page.on("response", on_response)
 
         class Session:
-            def goto(self, target_url: str):
-                page.goto(target_url, wait_until="domcontentloaded")
+            closed = False
+
+            def goto(self, target_url: str) -> int | None:
+                response = page.goto(target_url, wait_until="domcontentloaded")
+                return response.status if response else None
 
             def wait_for_network_idle(
                 self,
@@ -285,8 +337,9 @@ class PlaywrightDriver:
                 def wait_fn(timeout_ms):
                     try:
                         page.wait_for_load_state("networkidle", timeout=timeout_ms)
+                        return True
                     except Exception:
-                        pass
+                        return False
 
                 def wait_for_media_fn(timeout_ms):
                     try:
@@ -298,8 +351,9 @@ class PlaywrightDriver:
                             }""",
                             timeout=timeout_ms,
                         )
+                        return True
                     except Exception:
-                        pass
+                        return False
 
                 _wait_for_network_idle(
                     requests_list,
@@ -322,9 +376,21 @@ class PlaywrightDriver:
                 return _build_media_requests(requests_list, page.evaluate(MEDIA_ELEMENT_JS))
 
             def close(self):
-                context.close()
-                browser.close()
-                p.stop()
+                if self.closed:
+                    return
+                self.closed = True
+
+                try:
+                    page.close()
+                finally:
+                    try:
+                        if owns_context:
+                            context.close()
+                    finally:
+                        try:
+                            browser.close()
+                        finally:
+                            p.stop()
 
         return Session()
 
@@ -367,8 +433,15 @@ class SeleniumDriver:
                 pass
 
         class Session:
-            def goto(self, target_url: str):
+            def goto(self, target_url: str) -> int | None:
                 driver.get(target_url)
+                try:
+                    status = driver.execute_script(
+                        "return performance.getEntriesByType('navigation')[0]?.responseStatus || null;"
+                    )
+                    return int(status) if status else None
+                except Exception:
+                    return None
 
             def wait_for_network_idle(
                 self,
@@ -378,7 +451,9 @@ class SeleniumDriver:
                 max_total_timeout=60,
             ):
                 def wait_fn(timeout_ms):
-                    time.sleep(min(2, timeout_ms / 1000))
+                    time.sleep(min(0.25, timeout_ms / 1000))
+                    capture_requests()
+                    return True
 
                 def wait_for_media_fn(timeout_ms):
                     try:
@@ -390,8 +465,9 @@ class SeleniumDriver:
                             )
                         )
                         capture_requests()
+                        return True
                     except Exception:
-                        pass
+                        return False
 
                 # Wrap capture_requests into each poll iteration via a custom pending_api proxy
                 class _PendingProxy(set):
@@ -448,6 +524,22 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
 
         return value
 
+    def _get_wait(self) -> float:
+        value = self._configuration_arg("wait", [None])[0]
+        if value is None:
+            return BROWSER_WAIT_SECONDS
+
+        try:
+            wait = float(value)
+        except (TypeError, ValueError) as e:
+            msg = f"Invalid browser wait value {value!r}; expected seconds between 0 and {BROWSER_WAIT_MAX_SECONDS:g}"
+            raise ExtractorError(msg, expected=True) from e
+
+        if not math.isfinite(wait) or not 0 <= wait <= BROWSER_WAIT_MAX_SECONDS:
+            msg = f"Invalid browser wait value {value!r}; expected seconds between 0 and {BROWSER_WAIT_MAX_SECONDS:g}"
+            raise ExtractorError(msg, expected=True)
+        return wait
+
     def _safe_url(self, browser_url: str) -> str:
         try:
             parsed = urllib.parse.urlsplit(browser_url)
@@ -472,6 +564,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             return self._fallback_extract(url)
 
         safe_url = self._safe_url(browser_url)
+        wait = self._get_wait()
 
         video_id: str = self._generic_id(url)
         timeout: int | None = self._get_timeout_ms()
@@ -494,16 +587,19 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             self.report_warning(f"Remote browser unavailable: {message}, marking as failed.", video_id)
             return self._fallback_extract(url)
 
+        fallback_status: int | None = None
         try:
             self.report_extraction(url)
             self.write_debug(f"Loading page {url}")
-            session.goto(url)
+            status = session.goto(url)
+            fallback_status = status if isinstance(status, int) else None
 
-            session.wait_for_network_idle(
-                api_poll_attempts=10,
-                api_poll_interval=500,
-                max_total_timeout=60,
-            )
+            if fallback_status not in HARD_HTTP_STATUSES:
+                session.wait_for_network_idle(
+                    api_poll_attempts=10,
+                    api_poll_interval=500,
+                    max_total_timeout=wait,
+                )
 
             webpage = session.content()
             requests = self._merge_requests(session.get_requests(), session.get_media_requests())
@@ -556,15 +652,22 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 if network_info.get("_type") == "playlist" and network_info.get("entries"):
                     return self.playlist_result(network_info["entries"], **info_dict)
                 info_dict.update(network_info)
+                return info_dict
 
-            return info_dict
+            fallback_status = fallback_status or next(
+                (
+                    status
+                    for req in reversed(requests)
+                    if req.get("resourceType") == "document"
+                    and isinstance(status := req.get("response", {}).get("status"), int)
+                ),
+                None,
+            )
         except Exception as e:
             self.report_warning(
-                "Browser extractor session failed for url=%r browser_url=%r driver=%s error=%s",
-                url,
-                safe_url,
-                driver.__name__,
-                e,
+                f"Browser extractor session failed for url={url!r} browser_url={safe_url!r} "
+                f"driver={driver.__name__} error={e!s}",
+                video_id,
             )
             raise
         finally:
@@ -572,12 +675,19 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 session.close()
             except Exception as e:
                 self.report_warning(
-                    "Browser session close failed for url=%r browser_url=%r driver=%s error=%s",
-                    url,
-                    safe_url,
-                    driver.__name__,
-                    e,
+                    f"Browser session close failed for url={url!r} browser_url={safe_url!r} "
+                    f"driver={driver.__name__} error={e!s}",
+                    video_id,
                 )
+
+        if fallback_status is not None and not (200 <= fallback_status <= 301 or fallback_status in {400, 401}):
+            msg = f"Remote browser returned HTTP Error {fallback_status}"
+            raise ExtractorError(msg, expected=True)
+
+        self.report_warning(
+            "Generic browser extractor found no media formats; falling back to generic extractor.", video_id
+        )
+        return self._fallback_extract(url)
 
     def _select_driver(self, ws_url: str):
         if ws_url.startswith(("selenium+http://", "selenium+https://")):
@@ -668,10 +778,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
 
         if not formats:
             self.write_debug(f"No media formats found in {len(requests)} browser request(s)")
-            self.report_warning(
-                "Generic browser extractor found no media formats. falling back to generic extractor.", video_id
-            )
-            return self._fallback_extract(self._url)
+            return None
 
         if not has_manifest_formats and len(direct_formats) > 1:
             base_title = (base_info.get("title") or "").strip() or video_id

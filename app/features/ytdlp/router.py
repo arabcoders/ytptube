@@ -24,6 +24,7 @@ from app.library.router import route
 from app.library.Utils import validate_url
 
 LOG = get_logger()
+ENTRIES_BROWSER_WAIT = 10
 
 
 def _get_preset_archive(preset: str) -> str | None:
@@ -469,6 +470,17 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         ytdlp_opts: dict = opts.get_all()
         if include_entries:
             ytdlp_opts.pop("noplaylist", None)
+            extractor_args = ytdlp_opts.setdefault("extractor_args", {})
+            generic_args = extractor_args.setdefault("generic", {})
+            wait_values = generic_args.get("wait")
+            if not wait_values:
+                generic_args["wait"] = [str(ENTRIES_BROWSER_WAIT)]
+            else:
+                try:
+                    if float(wait_values[0]) > ENTRIES_BROWSER_WAIT:
+                        generic_args["wait"] = [str(ENTRIES_BROWSER_WAIT)]
+                except (TypeError, ValueError):
+                    pass
 
         (data, logs) = await fetch_info(
             config=ytdlp_opts,
