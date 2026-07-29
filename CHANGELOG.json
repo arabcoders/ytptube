@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "7b32980d4e2bc8b113c36fc8da1ecaedcc3d6220",
-    "date": "2026-07-29T06:40:42+00:00",
+    "full_sha": "b4c2ba72ebd54af2c192005f99177d0029c5266d",
+    "date": "2026-07-29T14:28:53+00:00",
     "commits": [
+      {
+        "sha": "b4c2ba72",
+        "full_sha": "b4c2ba72ebd54af2c192005f99177d0029c5266d",
+        "message": "refactor: update generic browser extractor to use only cdp proto",
+        "author": "arabcoders",
+        "date": "2026-07-29T14:28:53+00:00"
+      },
       {
         "sha": "7b32980d",
         "full_sha": "7b32980d4e2bc8b113c36fc8da1ecaedcc3d6220",
