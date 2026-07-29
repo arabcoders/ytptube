@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "7b32980d4e2bc8b113c36fc8da1ecaedcc3d6220",
+    "date": "2026-07-29T06:40:42+00:00",
+    "commits": [
+      {
+        "sha": "7b32980d",
+        "full_sha": "7b32980d4e2bc8b113c36fc8da1ecaedcc3d6220",
+        "message": "refactor: force flat playlist for info api",
+        "author": "arabcoders",
+        "date": "2026-07-29T06:40:42+00:00"
+      },
+      {
+        "sha": "496e6c17",
+        "full_sha": "496e6c170d2d022b4d1982d108423a31e71fe5d6",
+        "message": "fix: reduce and make configurable the wait time for generic browser extractor.",
+        "author": "arabcoders",
+        "date": "2026-07-29T06:28:02+00:00"
+      },
+      {
+        "sha": "3880c6f1",
+        "full_sha": "3880c6f1d946b877d7234d4f87cb641968595865",
+        "message": "refactor: playlist video picker support generic xml feeds",
+        "author": "arabcoders",
+        "date": "2026-07-29T05:36:23+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.6.2",
     "full_sha": "59016ef30875553d0a67d48716ccf6eec36f432c",
     "date": "2026-07-28T19:01:08+00:00",
