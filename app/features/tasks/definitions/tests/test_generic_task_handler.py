@@ -318,6 +318,8 @@ async def test_generic_task_handler_inspect(monkeypatch):
                         "fields": {
                             "link": {"type": "jsonpath", "expression": "url"},
                             "title": {"type": "jsonpath", "expression": "title"},
+                            "thumbnail": {"type": "jsonpath", "expression": "thumbnail"},
+                            "description": {"type": "jsonpath", "expression": "description"},
                         },
                     }
                 }
@@ -338,7 +340,16 @@ async def test_generic_task_handler_inspect(monkeypatch):
     )
 
     async def fake_fetch_content(url, definition, ytdlp_opts):  # noqa: ARG001
-        return "", {"items": [{"url": "/video/1", "title": "First"}]}
+        return "", {
+            "items": [
+                {
+                    "url": "/video/1",
+                    "title": "First",
+                    "thumbnail": "https://example.com/first.jpg",
+                    "description": "First description",
+                }
+            ]
+        }
 
     monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fake_fetch_content))
 
@@ -355,6 +366,8 @@ async def test_generic_task_handler_inspect(monkeypatch):
         item = result.items[0]
         assert item.url == "https://example.com/video/1"
         assert item.title == "First"
+        assert item.thumbnail == "https://example.com/first.jpg"
+        assert item.description == "First description"
 
 
 def test_parse_items_json_list():

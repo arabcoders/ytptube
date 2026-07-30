@@ -1,5 +1,7 @@
 import re
+from html import unescape
 from typing import TYPE_CHECKING
+from urllib.parse import urljoin
 from xml.etree.ElementTree import Element
 
 import httpx
@@ -20,7 +22,9 @@ LOG = get_logger()
 class TwitchHandler(BaseHandler):
     FEED: str = "https://twitchrss.appspot.com/vodonly/{handle}"
 
-    RX: re.Pattern[str] = re.compile(r"^https?:\/\/(?:www\.|m\.)?twitch\.tv\/(?P<id>[a-z0-9_]{3,25})(?:\/.*)?$")
+    RX: re.Pattern[str] = re.compile(
+        r"^https?://(?:www\.|m\.)?twitch\.tv/(?P<id>[a-z0-9_]{3,25})(?:/[^?#]*)?(?:[?#].*)?$", re.IGNORECASE
+    )
 
     @staticmethod
     async def can_handle(task: HandleTask) -> bool:
@@ -49,6 +53,8 @@ class TwitchHandler(BaseHandler):
         items: list[dict[str, str]] = []
         has_items = False
 
+        ns = {"media": "http://search.yahoo.com/mrss/", "content": "http://purl.org/rss/1.0/modules/content/"}
+
         for entry in root.findall("channel/item"):
             link_elem: Element[str] | None = entry.find("link")
             url: str = link_elem.text.strip() if link_elem is not None and link_elem.text else ""
@@ -75,6 +81,20 @@ class TwitchHandler(BaseHandler):
 
             title_elem: Element[str] | None = entry.find("title")
             title: str = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
+            description_elem = entry.find("description")
+            if description_elem is None:
+                description_elem = entry.find("content:encoded", ns)
+            raw_description = unescape(description_elem.text or "") if description_elem is not None else ""
+            image_match = re.search(r"<img\b[^>]*\bsrc\s*=\s*['\"]([^'\"]+)", raw_description, re.IGNORECASE)
+            thumbnail_elem = entry.find("media:thumbnail", ns)
+            thumbnail = (
+                urljoin(feed_url, thumbnail_elem.get("url") or thumbnail_elem.get("href") or "")
+                if thumbnail_elem is not None
+                else ""
+            )
+            if image_match:
+                thumbnail = urljoin(feed_url, unescape(image_match.group(1)))
+            description = " ".join(re.sub(r"<[^>]+>", " ", raw_description).split())
 
             has_items = True
 
@@ -88,7 +108,16 @@ class TwitchHandler(BaseHandler):
                 )
                 continue
 
-            items.append({"id": vid, "url": url, "title": title, "archive_id": archive_id})
+            items.append(
+                {
+                    "id": vid,
+                    "url": url,
+                    "title": title,
+                    "archive_id": archive_id,
+                    "thumbnail": thumbnail,
+                    "description": description,
+                }
+            )
 
         return feed_url, items, has_items
 
@@ -125,7 +154,15 @@ class TwitchHandler(BaseHandler):
                 continue
 
             archive_id: str | None = entry.get("archive_id")
-            task_items.append(TaskItem(url=url, title=entry.get("title"), archive_id=archive_id))
+            task_items.append(
+                TaskItem(
+                    url=url,
+                    title=entry.get("title"),
+                    archive_id=archive_id,
+                    thumbnail=entry.get("thumbnail"),
+                    description=entry.get("description"),
+                )
+            )
 
         return TaskResult(items=task_items, metadata={"feed_url": feed_url, "has_entries": has_items})
 
@@ -159,6 +196,8 @@ class TwitchHandler(BaseHandler):
             ("http://m.twitch.tv/test_username,", True),
             ("https://www.twitch.tv/test_username/", True),
             ("https://twitch.tv/test_username/", True),
+            ("https://twitch.tv/test_username?handler=rss", True),
+            ("https://twitch.tv/test_username/videos#handler=rss", True),
             ("http://m.twitch.tv/test_username/,", True),
             ("twitch.tv/test_username/", False),
         ]

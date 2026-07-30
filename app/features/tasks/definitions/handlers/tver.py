@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urljoin
 
 import httpx
 
@@ -21,7 +22,9 @@ class TverHandler(BaseHandler):
         "Referer": "https://tver.jp/",
     }
 
-    RX: re.Pattern[str] = re.compile(r"^https?:\/\/(?:www\.|m\.)?tver\.jp\/series\/(?P<id>sr[a-z0-9_]+)$")
+    RX: re.Pattern[str] = re.compile(
+        r"^https?://(?:www\.|m\.)?tver\.jp/series/(?P<id>sr[a-z0-9_]+)/?(?:[?#].*)?$", re.IGNORECASE
+    )
 
     @staticmethod
     async def can_handle(task: HandleTask) -> bool:
@@ -145,6 +148,18 @@ class TverHandler(BaseHandler):
                 url = f"https://tver.jp/episodes/{episode_id}"
 
                 title = content.pop("title", "")
+                thumbnail = content.get("thumbnailPath")
+                thumbnail = (
+                    f"https://image-cdn.tver.jp/w=800{thumbnail}"
+                    if isinstance(thumbnail, str) and thumbnail.startswith("/")
+                    else urljoin("https://image-cdn.tver.jp/w=800/", thumbnail)
+                    if isinstance(thumbnail, str)
+                    else ""
+                )
+                description = next(
+                    (content.get(key) for key in ("description", "synopsis", "episodeDescription") if content.get(key)),
+                    "",
+                )
 
                 id_dict = get_archive_id(url)
                 archive_id = id_dict.get("archive_id")
@@ -158,7 +173,15 @@ class TverHandler(BaseHandler):
 
                 has_items = True
                 items.append(
-                    {"id": episode_id, "url": url, "title": title, "archive_id": archive_id, "metadata": content}
+                    {
+                        "id": episode_id,
+                        "url": url,
+                        "title": title,
+                        "archive_id": archive_id,
+                        "thumbnail": thumbnail,
+                        "description": description,
+                        "metadata": content,
+                    }
                 )
 
         except Exception as exc:
@@ -214,7 +237,16 @@ class TverHandler(BaseHandler):
             metadata = entry.get("metadata", {})
             if not isinstance(metadata, dict):
                 metadata = {}
-            task_items.append(TaskItem(url=url, title=entry.get("title"), archive_id=archive_id, metadata=metadata))
+            task_items.append(
+                TaskItem(
+                    url=url,
+                    title=entry.get("title"),
+                    archive_id=archive_id,
+                    thumbnail=entry.get("thumbnail"),
+                    description=entry.get("description"),
+                    metadata=metadata,
+                )
+            )
 
         return TaskResult(items=task_items, metadata={"feed_url": feed_url, "has_entries": has_items})
 
@@ -247,6 +279,8 @@ class TverHandler(BaseHandler):
             ("https://www.tver.jp/series/sr1jg44pbb", True),
             ("https://m.tver.jp/series/sr_test_id", True),
             ("http://tver.jp/series/sr123abc456", True),
+            ("https://tver.jp/series/sr123abc456?handler=rss", True),
+            ("https://tver.jp/series/sr123abc456#handler=rss", True),
             ("https://tver.jp/videos/sr123abc456", False),
             ("https://youtube.com/watch?v=123", False),
         ]

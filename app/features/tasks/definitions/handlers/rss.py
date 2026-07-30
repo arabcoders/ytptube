@@ -32,7 +32,7 @@ class RssGenericHandler(BaseHandler):
             task.name,
             extra={"task_name": task.name, "url": task.url},
         )
-        return task.name == "Inspector" or RssGenericHandler.parse(task.url) is not None
+        return RssGenericHandler.parse(task.url) is not None
 
     @staticmethod
     async def _get(
@@ -106,6 +106,16 @@ class RssGenericHandler(BaseHandler):
 
                 title_elem: Element | None = entry.find("atom:title", ns)
                 title: str = title_elem.text if title_elem is not None and title_elem.text else ""
+                description_elem = entry.find("media:group/media:description", ns)
+                if description_elem is None:
+                    description_elem = entry.find("media:description", ns)
+                if description_elem is None:
+                    description_elem = entry.find("atom:summary", ns)
+                if description_elem is None:
+                    description_elem = entry.find("atom:content", ns)
+                description: str = (
+                    description_elem.text if description_elem is not None and description_elem.text else ""
+                )
 
                 thumbnail = RssGenericHandler._thumbnail(entry, ns, feed_url)
 
@@ -113,7 +123,15 @@ class RssGenericHandler(BaseHandler):
                 published: str = pub_elem.text if pub_elem is not None and pub_elem.text else ""
 
                 real_count += 1
-                items.append({"url": url, "title": title, "published": published, "thumbnail": thumbnail})
+                items.append(
+                    {
+                        "url": url,
+                        "title": title,
+                        "description": description,
+                        "published": published,
+                        "thumbnail": thumbnail,
+                    }
+                )
         else:
             # Try to parse as RSS feed
             rss_items = root.findall(".//item")
@@ -152,6 +170,16 @@ class RssGenericHandler(BaseHandler):
 
                 title_elem = item.find("title")
                 title: str = title_elem.text if title_elem is not None and title_elem.text else ""
+                description_elem = item.find("media:group/media:description", ns)
+                if description_elem is None:
+                    description_elem = item.find("media:description", ns)
+                if description_elem is None:
+                    description_elem = item.find("description")
+                if description_elem is None:
+                    description_elem = item.find("content:encoded", ns)
+                description: str = (
+                    description_elem.text if description_elem is not None and description_elem.text else ""
+                )
 
                 pub_elem = item.find("pubDate")
                 published: str = pub_elem.text if pub_elem is not None and pub_elem.text else ""
@@ -159,7 +187,15 @@ class RssGenericHandler(BaseHandler):
                 thumbnail = RssGenericHandler._thumbnail(item, ns, feed_url)
 
                 real_count += 1
-                items.append({"url": url, "title": title, "published": published, "thumbnail": thumbnail})
+                items.append(
+                    {
+                        "url": url,
+                        "title": title,
+                        "description": description,
+                        "published": published,
+                        "thumbnail": thumbnail,
+                    }
+                )
 
         return feed_url, items, real_count
 
@@ -262,7 +298,7 @@ class RssGenericHandler(BaseHandler):
                     CACHE.set(cache_key, archive_id)
 
             metadata: dict[str, Any] = {
-                k: v for k, v in entry.items() if k not in {"url", "title", "published", "thumbnail"}
+                k: v for k, v in entry.items() if k not in {"url", "title", "description", "published", "thumbnail"}
             }
 
             task_items.append(
@@ -271,6 +307,7 @@ class RssGenericHandler(BaseHandler):
                     title=entry.get("title"),
                     archive_id=archive_id,
                     thumbnail=entry.get("thumbnail"),
+                    description=entry.get("description"),
                     metadata={"published": entry.get("published"), **metadata},
                 )
             )

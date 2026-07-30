@@ -26,10 +26,11 @@ class DummyOpts:
 @pytest.mark.asyncio
 async def test_twitch_handler_inspect(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     feed = """
-    <rss><channel>
+    <rss xmlns:media="http://search.yahoo.com/mrss/"><channel>
       <item>
         <link>https://www.twitch.tv/videos/111</link>
         <title>First VOD</title>
+        <description>&lt;a href="https://www.twitch.tv/videos/111"&gt;&lt;img src="https://example.com/first.jpg" /&gt;&lt;/a&gt;</description>
       </item>
       <item>
         <link>https://www.twitch.tv/videos/222</link>
@@ -59,4 +60,6 @@ async def test_twitch_handler_inspect(monkeypatch: pytest.MonkeyPatch, tmp_path:
     assert len(result.items) == 2
     assert result.items[0].url == "https://www.twitch.tv/videos/111"
     assert result.items[0].title == "First VOD"
+    assert result.items[0].description == ""
+    assert result.items[0].thumbnail == "https://example.com/first.jpg"
     assert result.metadata.get("has_entries") is True

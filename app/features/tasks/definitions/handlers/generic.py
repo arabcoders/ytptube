@@ -250,7 +250,9 @@ class GenericTaskHandler(BaseHandler):
                     CACHE.set(cache_key, archive_id)
 
             metadata: dict[str, str] = {
-                k: v for k, v in entry.items() if k not in {"link", "url", "title", "published", "archive_id"}
+                k: v
+                for k, v in entry.items()
+                if k not in {"link", "url", "title", "published", "archive_id", "thumbnail", "description"}
             }
 
             task_items.append(
@@ -258,6 +260,8 @@ class GenericTaskHandler(BaseHandler):
                     url=url,
                     title=entry.get("title"),
                     archive_id=archive_id,
+                    thumbnail=entry.get("thumbnail"),
+                    description=entry.get("description"),
                     metadata={"published": entry.get("published"), **metadata},
                 )
             )

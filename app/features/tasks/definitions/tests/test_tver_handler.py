@@ -133,6 +133,10 @@ async def test_tver_handler_extract(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     assert len(result.items) == 2
     assert result.items[0].url == "https://tver.jp/episodes/eppcxhym1e"
     assert "木村拓哉がタクシー 運転手！目黒蓮が木村と二人旅" == result.items[0].title
+    assert (
+        result.items[0].thumbnail
+        == "https://image-cdn.tver.jp/w=800/images/content/thumbnail/episode/xlarge/eppcxhym1e.jpg?v=84b0ee80"
+    )
 
     assert result.items[1].url == "https://tver.jp/episodes/epejwb9mvx"
     assert (

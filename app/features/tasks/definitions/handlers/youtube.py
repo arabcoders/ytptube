@@ -94,6 +94,8 @@ class YoutubeHandler(BaseHandler):
 
             title_elem: Element[str] | None = entry.find("atom:title", ns)
             title: str = title_elem.text if title_elem is not None and title_elem.text else ""
+            description_elem = entry.find("media:group/media:description", ns)
+            description: str = description_elem.text if description_elem is not None and description_elem.text else ""
             thumbnail_elem = entry.find("media:group/media:thumbnail", ns)
             thumbnail = thumbnail_elem.get("url", "") if thumbnail_elem is not None else ""
 
@@ -107,6 +109,7 @@ class YoutubeHandler(BaseHandler):
                     "id": vid,
                     "url": url,
                     "title": title,
+                    "description": description,
                     "published": published,
                     "archive_id": archive_id,
                     "thumbnail": thumbnail,
@@ -156,6 +159,7 @@ class YoutubeHandler(BaseHandler):
                     title=entry.get("title"),
                     archive_id=archive_id,
                     thumbnail=entry.get("thumbnail"),
+                    description=entry.get("description"),
                     metadata=metadata,
                 )
             )
