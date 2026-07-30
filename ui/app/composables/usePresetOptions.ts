@@ -2,7 +2,6 @@ import { computed, toValue, type MaybeRefOrGetter } from 'vue';
 
 import { useYtpConfig } from '~/composables/useYtpConfig';
 import type { Preset } from '~/types/presets';
-import { prettyName } from '~/utils';
 
 type PresetSelectItem = {
   type?: 'label' | 'item';
@@ -60,7 +59,7 @@ export const usePresetOptions = (
 
       items.push({ type: 'label', label: group.label });
       group.list.forEach((preset) => {
-        items.push({ label: prettyName(preset.name), value: preset.name });
+        items.push({ label: preset.name, value: preset.name });
       });
     });
 

@@ -116,6 +116,13 @@
                 />
                 <div class="min-w-0 flex-1 space-y-1">
                   <span class="block text-sm font-medium text-default">{{ entry.title }}</span>
+                  <p
+                    v-if="entry.description"
+                    class="line-clamp-2 text-xs text-toned"
+                    :title="entry.description"
+                  >
+                    {{ entry.description }}
+                  </p>
                   <div class="flex flex-wrap items-center gap-2">
                     <UBadge v-if="entry.duration" color="info" variant="soft" size="xs">
                       {{ formatTime(entry.duration) }}
@@ -125,6 +132,20 @@
                         <UIcon name="i-lucide-eye" class="size-3" />
                         {{ entry.viewCount.toLocaleString() }}
                       </span>
+                    </UBadge>
+                    <UBadge v-if="entry.seriesTitle" color="neutral" variant="soft" size="xs">
+                      {{ entry.seriesTitle }}
+                    </UBadge>
+                    <UBadge v-if="entry.broadcasterName" color="neutral" variant="soft" size="xs">
+                      {{ entry.broadcasterName }}
+                    </UBadge>
+                    <UBadge
+                      v-if="entry.broadcastDateLabel"
+                      color="neutral"
+                      variant="soft"
+                      size="xs"
+                    >
+                      {{ entry.broadcastDateLabel }}
                     </UBadge>
                     <UTooltip v-if="entry.published" :text="formatPublished(entry.published, true)">
                       <UBadge color="neutral" variant="soft" size="xs">
@@ -178,11 +199,15 @@ type RawEntry = {
   url?: unknown;
   webpage_url?: unknown;
   title?: unknown;
+  description?: unknown;
   thumbnail?: unknown;
   thumbnails?: unknown;
   duration?: unknown;
   view_count?: unknown;
   published?: unknown;
+  broadcastDateLabel?: unknown;
+  seriesTitle?: unknown;
+  broadcasterName?: unknown;
   metadata?: unknown;
 };
 
@@ -190,10 +215,14 @@ type PlaylistEntry = {
   key: string;
   url: string;
   title: string;
+  description: string;
   thumbnail: string;
   duration: number | null;
   viewCount: number | null;
   published: string | null;
+  broadcastDateLabel: string;
+  seriesTitle: string;
+  broadcasterName: string;
 };
 
 const props = defineProps<{
@@ -239,6 +268,10 @@ const filteredEntries = computed(() => {
   return entries.value.filter(
     (entry) =>
       entry.title.toLocaleLowerCase().includes(value) ||
+      entry.description.toLocaleLowerCase().includes(value) ||
+      entry.seriesTitle.toLocaleLowerCase().includes(value) ||
+      entry.broadcasterName.toLocaleLowerCase().includes(value) ||
+      entry.broadcastDateLabel.toLocaleLowerCase().includes(value) ||
       entry.url.toLocaleLowerCase().includes(value),
   );
 });
@@ -280,6 +313,12 @@ const normalizeEntry = (
   }
 
   const rawTitle = typeof entry.title === 'string' ? entry.title : '';
+  const description =
+    typeof entry.description === 'string'
+      ? entry.description
+      : metadata && typeof metadata.description === 'string'
+        ? metadata.description
+        : '';
   const indexTitle = Number.isInteger(index) ? `(${index + 1})` : '';
   const title = rawTitle || indexTitle || url;
   const thumbnail = normalizeThumbnail(entry) || (metadata ? normalizeThumbnail(metadata) : '');
@@ -301,15 +340,37 @@ const normalizeEntry = (
       : metadata && typeof metadata.published === 'string'
         ? metadata.published
         : null;
+  const broadcastDateLabel =
+    typeof entry.broadcastDateLabel === 'string'
+      ? entry.broadcastDateLabel
+      : metadata && typeof metadata.broadcastDateLabel === 'string'
+        ? metadata.broadcastDateLabel
+        : '';
+  const seriesTitle =
+    typeof entry.seriesTitle === 'string'
+      ? entry.seriesTitle
+      : metadata && typeof metadata.seriesTitle === 'string'
+        ? metadata.seriesTitle
+        : '';
+  const broadcasterName =
+    typeof entry.broadcasterName === 'string'
+      ? entry.broadcasterName
+      : metadata && typeof metadata.broadcasterName === 'string'
+        ? metadata.broadcasterName
+        : '';
 
   return {
     key: `${keyPrefix}:${index}:${url}`,
     url,
     title,
+    description,
     thumbnail,
     duration,
     viewCount,
     published,
+    broadcastDateLabel,
+    seriesTitle,
+    broadcasterName,
   };
 };
 
@@ -357,6 +418,36 @@ const normalizeSingleEntry = (value: unknown): PlaylistEntry[] => {
   return normalized ? [normalized] : [];
 };
 
+const usesDirectRssInspect = (link: string): boolean => {
+  try {
+    const url = new URL(link);
+    const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+    return (
+      url.searchParams.get('handler')?.toLowerCase() === 'rss' ||
+      new URLSearchParams(hash).get('handler')?.toLowerCase() === 'rss'
+    );
+  } catch {
+    return /(?:[?#&])handler=rss(?:[&#]|$)/i.test(link);
+  }
+};
+
+const removeHandlerMarker = (link: string): string => {
+  try {
+    const url = new URL(link);
+    url.searchParams.delete('handler');
+
+    if (url.hash.startsWith('#')) {
+      const hash = new URLSearchParams(url.hash.slice(1));
+      hash.delete('handler');
+      url.hash = hash.toString();
+    }
+
+    return url.toString();
+  } catch {
+    return link.replace(/([?#&])handler=rss(?:[&#]|$)/i, '$1').replace(/[?#&]$/, '');
+  }
+};
+
 const loadEntries = async (): Promise<void> => {
   query.value = '';
   entries.value = [];
@@ -366,39 +457,18 @@ const loadEntries = async (): Promise<void> => {
   isLoading.value = true;
 
   try {
-    const params = new URLSearchParams({ url: props.link });
-    params.set('entries', 'true');
-    if (props.preset) params.set('preset', props.preset);
-    if (props.cli) params.set('args', props.cli);
-
     let body: unknown = null;
     const extractionErrors: string[] = [];
     let normalizedEntries: PlaylistEntry[] = [];
 
-    try {
-      const response = await request(`/api/yt-dlp/url/info?${params.toString()}`);
-      body = await response.json();
-
-      if (response.ok) {
-        const info = body as { title?: unknown };
-        playlistTitle.value = typeof info.title === 'string' ? info.title : '';
-        normalizedEntries = normalizeEntries(body);
-      } else {
-        extractionErrors.push(await parse_api_error(body));
-      }
-    } catch (error: unknown) {
-      extractionErrors.push(error instanceof Error ? error.message : t('common.failedFetch'));
-    }
-
-    if (normalizedEntries.length === 0) {
+    const inspect = async (url: string = props.link): Promise<void> => {
       try {
         const inspectResponse = await request('/api/tasks/inspect', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            url: props.link,
+            url,
             preset: props.preset,
-            handler: 'RssGenericHandler',
           }),
         });
 
@@ -410,6 +480,34 @@ const loadEntries = async (): Promise<void> => {
         }
       } catch (error: unknown) {
         extractionErrors.push(error instanceof Error ? error.message : t('common.failedFetch'));
+      }
+    };
+
+    if (usesDirectRssInspect(props.link)) {
+      await inspect(removeHandlerMarker(props.link));
+    } else {
+      const params = new URLSearchParams({ url: props.link });
+      params.set('entries', 'true');
+      if (props.preset) params.set('preset', props.preset);
+      if (props.cli) params.set('args', props.cli);
+
+      try {
+        const response = await request(`/api/yt-dlp/url/info?${params.toString()}`);
+        body = await response.json();
+
+        if (response.ok) {
+          const info = body as { title?: unknown };
+          playlistTitle.value = typeof info.title === 'string' ? info.title : '';
+          normalizedEntries = normalizeEntries(body);
+        } else {
+          extractionErrors.push(await parse_api_error(body));
+        }
+      } catch (error: unknown) {
+        extractionErrors.push(error instanceof Error ? error.message : t('common.failedFetch'));
+      }
+
+      if (normalizedEntries.length === 0) {
+        await inspect();
       }
     }
 

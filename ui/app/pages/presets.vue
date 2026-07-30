@@ -167,7 +167,7 @@
               <td class="px-3 py-3 align-middle">
                 <div class="space-y-1">
                   <div class="font-semibold text-highlighted">
-                    {{ prettyName(item.name) }}
+                    {{ item.name }}
                   </div>
 
                   <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
@@ -247,7 +247,7 @@
                     @click="toggleExpand(item.id, 'title')"
                   >
                     <span :class="['block', expandClass(item.id, 'title')]">
-                      {{ prettyName(item.name) }}
+                      {{ item.name }}
                     </span>
                   </button>
                 </div>
@@ -508,7 +508,6 @@ import type { Preset } from '~/types/presets';
 import { useDialog } from '~/composables/useDialog';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useConfirm } from '~/composables/useConfirm';
-import { prettyName } from '~/utils';
 import { usePageShell } from '~/composables/usePageShell';
 const { t } = useI18n();
 
@@ -650,7 +649,7 @@ const deleteSelected = async (): Promise<void> => {
       selectedIds.value
         .map((id) => {
           const item = filteredPresets.value.find((preset) => preset.id === id);
-          return item ? `${item.id}: ${prettyName(item.name)}` : '';
+          return item ? `${item.id}: ${item.name}` : '';
         })
         .filter(Boolean)
         .join('\n'),

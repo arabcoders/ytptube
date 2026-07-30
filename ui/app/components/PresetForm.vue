@@ -115,6 +115,7 @@
           :disabled="addInProgress"
           class="w-full"
           :ui="inputUi"
+          @update:model-value="normalizeName"
         />
       </UFormField>
 
@@ -450,6 +451,10 @@ const hasFormContent = computed(() => {
   );
 });
 
+const normalizeName = (value: string): void => {
+  form.name = normalizePresetName(value);
+};
+
 const formError = computed(() => {
   if (!String(form.name).trim() || !normalizePresetName(String(form.name))) {
     return t('common.validationNameRequired');
@@ -560,7 +565,7 @@ const importItem = async (): Promise<void> => {
     }
 
     if (item.name) {
-      form.name = item.name;
+      form.name = normalizePresetName(item.name);
     }
     if (item.cli) {
       form.cli = item.cli;

@@ -61,6 +61,8 @@ class TestRssHandlerExtraction:
   <entry>
     <title>Video 1</title>
     <link href="https://www.youtube.com/watch?v=abc123" rel="alternate" />
+    <summary>Atom summary</summary>
+    <media:group><media:description>YouTube description</media:description></media:group>
     <media:thumbnail url="https://example.com/video-1.jpg" />
     <published>2024-01-01T00:00:00Z</published>
   </entry>
@@ -92,6 +94,7 @@ class TestRssHandlerExtraction:
         assert result.items[0].title == "Video 1"
         assert result.items[0].url == "https://www.youtube.com/watch?v=abc123"
         assert result.items[0].thumbnail == "https://example.com/video-1.jpg"
+        assert result.items[0].description == "YouTube description"
         assert result.items[1].title == "Video 2"
         assert result.items[1].url == "https://www.youtube.com/watch?v=def456"
         assert result.metadata["entry_count"] == 2
@@ -133,6 +136,7 @@ class TestRssHandlerExtraction:
     <item>
       <title>Video 1</title>
       <link>https://www.youtube.com/watch?v=abc123</link>
+      <description>RSS description</description>
       <pubDate>Mon, 01 Jan 2024 00:00:00 +0000</pubDate>
     </item>
     <item>
@@ -163,6 +167,7 @@ class TestRssHandlerExtraction:
         assert len(result.items) == 2
         assert result.items[0].title == "Video 1"
         assert result.items[0].url == "https://www.youtube.com/watch?v=abc123"
+        assert result.items[0].description == "RSS description"
         assert result.items[1].title == "Video 2"
         assert result.items[1].url == "https://www.youtube.com/watch?v=def456"
         assert result.metadata["entry_count"] == 2
@@ -201,6 +206,9 @@ class TestRssHandlerExtraction:
         )
 
         assert await RssGenericHandler.can_handle(non_feed_task) is False
+
+        unqualified_task = HandleTask(id=3, name="Inspector", url="https://example.com/content", preset="default")
+        assert await RssGenericHandler.can_handle(unqualified_task) is False
 
 
 class TestRssHandlerEdgeCases:

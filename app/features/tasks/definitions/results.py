@@ -185,6 +185,8 @@ class TaskItem:
     "The archive ID of the item."
     thumbnail: str | None = None
     "The thumbnail URL of the item, when available."
+    description: str | None = None
+    "The item description, when available."
     metadata: dict[str, Any] = field(default_factory=dict)
     "Additional metadata related to the item."
 

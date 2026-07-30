@@ -1,10 +1,12 @@
 import base64
 import importlib.util
+import json
 import math
 import os
 import re
 import time
 import urllib.parse
+import urllib.request
 from typing import Any
 
 from yt_dlp.extractor.generic import GenericIE
@@ -108,13 +110,8 @@ MEDIA_ELEMENT_JS: str = """() => {
 }"""
 
 PLAYWRIGHT_PREFIXES: tuple[str, ...] = (
-    "playwright+ws://",
-    "playwright+wss://",
-    "playwright+cdp://",
-    "playwright+cdp+http://",
-    "playwright+cdp+https://",
-    "playwright+cdp+ws://",
-    "playwright+cdp+wss://",
+    "playwright+http://",
+    "playwright+https://",
 )
 
 
@@ -218,10 +215,7 @@ class PlaywrightDriver:
             raise ImportError(msg)
 
         if not ws_url.startswith(PLAYWRIGHT_PREFIXES):
-            msg = (
-                "Invalid Playwright browser URL. Use playwright+ws://, playwright+wss://, "
-                "playwright+cdp://, or playwright+cdp+http(s|ws|wss)://"
-            )
+            msg = "Invalid Playwright browser URL. Use playwright+http(s)://"
             raise ValueError(msg)
 
         from playwright.sync_api import sync_playwright
@@ -233,18 +227,8 @@ class PlaywrightDriver:
         owns_context = False
 
         try:
-            if ws_url.startswith("playwright+ws://"):
-                browser_url = f"ws://{ws_url.removeprefix('playwright+ws://')}"
-                browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
-            elif ws_url.startswith("playwright+wss://"):
-                browser_url = f"wss://{ws_url.removeprefix('playwright+wss://')}"
-                browser = p.chromium.connect(browser_url, timeout=timeout or 30000)
-            elif ws_url.startswith("playwright+cdp://"):
-                browser_url = f"http://{ws_url.removeprefix('playwright+cdp://')}"
-                browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
-            else:
-                browser_url = ws_url.removeprefix("playwright+cdp+")
-                browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
+            browser_url = ws_url.removeprefix("playwright+")
+            browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
 
             if browser.contexts:
                 context = browser.contexts[0]
@@ -401,14 +385,33 @@ class SeleniumDriver:
         return importlib.util.find_spec("selenium.webdriver") is not None
 
     @staticmethod
-    def connect(ws_url: str, timeout: int | None = None):
-        _ = timeout
+    def connect(ws_url: str, timeout: int | None = None):  # noqa: ARG004
         from selenium import webdriver
         from selenium.webdriver.chrome.options import Options
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support.ui import WebDriverWait
 
-        driver = webdriver.Remote(command_executor=ws_url, options=Options())
+        browser_url = ws_url.removeprefix("selenium+")
+        with urllib.request.urlopen(  # noqa: S310
+            f"{browser_url.rstrip('/')}/json/version", timeout=5
+        ) as response:
+            browser_info = json.loads(response.read().decode("utf-8"))
+        version_match = re.search(r"Chrome/(\d+)", str(browser_info.get("Browser", "")))
+        if not version_match:
+            msg = f"Could not determine Chrome version at {browser_url}"
+            raise RuntimeError(msg)
+
+        chrome_options = Options()
+        chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+        chrome_options.browser_version = version_match.group(1)
+        chrome_options.add_experimental_option(
+            "debuggerAddress",
+            urllib.parse.urlsplit(browser_url).netloc or browser_url,
+        )
+        driver = webdriver.Chrome(options=chrome_options)
+
+        original_window = driver.current_window_handle
+        driver.switch_to.new_window("tab")
         requests_list: list[dict] = []
 
         def capture_requests():
@@ -433,6 +436,8 @@ class SeleniumDriver:
                 pass
 
         class Session:
+            driver: Any
+
             def goto(self, target_url: str) -> int | None:
                 driver.get(target_url)
                 try:
@@ -499,9 +504,19 @@ class SeleniumDriver:
                     return []
 
             def close(self):
-                driver.quit()
+                try:
+                    driver.close()
+                finally:
+                    try:
+                        driver.switch_to.window(original_window)
+                    finally:
+                        # Stop the local ChromeDriver service without sending
+                        # QUIT to the shared CDP browser.
+                        driver.service.stop()
 
-        return Session()
+        session = Session()
+        session.driver = driver
+        return session
 
 
 class GenericBrowserIE(GenericIE, plugin_name="browser"):
@@ -696,10 +711,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         if ws_url.startswith(PLAYWRIGHT_PREFIXES):
             return PlaywrightDriver if PlaywrightDriver.is_available() else None
 
-        msg = (
-            "Invalid browser URL. Use selenium+http(s)://, playwright+ws(s)://, "
-            "playwright+cdp://, or playwright+cdp+http(s|ws|wss)://"
-        )
+        msg = "Invalid browser URL. Use selenium+http(s):// or playwright+http(s)://"
         raise ExtractorError(msg)
 
     def _extract_network_formats(

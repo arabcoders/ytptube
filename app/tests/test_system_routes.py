@@ -235,8 +235,9 @@ class TestSystemDiagnosticsEndpoint:
         Cache.get_instance().clear()
 
     @pytest.mark.asyncio
-    async def test_diagnostics_always_200(self, tmp_path: Path):
+    async def test_diagnostics_always_200(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         config = Config.get_instance()
+        monkeypatch.delenv("YTP_BROWSER_URL", raising=False)
         config.config_path = str(tmp_path / "config")
         config.download_path = str(tmp_path / "downloads")
         config.temp_path = str(tmp_path / "tmp")

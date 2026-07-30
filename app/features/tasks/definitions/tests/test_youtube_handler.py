@@ -26,10 +26,11 @@ class DummyOpts:
 @pytest.mark.asyncio
 async def test_youtube_handler_inspect(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     feed = """
-    <feed xmlns='http://www.w3.org/2005/Atom' xmlns:yt='http://www.youtube.com/xml/schemas/2015'>
+    <feed xmlns='http://www.w3.org/2005/Atom' xmlns:yt='http://www.youtube.com/xml/schemas/2015' xmlns:media='http://search.yahoo.com/mrss/'>
       <entry>
         <yt:videoId>abc123</yt:videoId>
         <title>First Video</title>
+        <media:group><media:description>YouTube description</media:description></media:group>
         <published>2024-01-01T00:00:00Z</published>
       </entry>
       <entry>
@@ -62,5 +63,6 @@ async def test_youtube_handler_inspect(monkeypatch: pytest.MonkeyPatch, tmp_path
     first = result.items[0]
     assert first.url == "https://www.youtube.com/watch?v=abc123"
     assert first.title == "First Video"
+    assert first.description == "YouTube description"
     assert first.metadata.get("published") == "2024-01-01T00:00:00Z"
     assert result.metadata.get("entry_count") == 2

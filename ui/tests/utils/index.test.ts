@@ -158,6 +158,11 @@ describe('object access helpers', () => {
 });
 
 describe('string manipulation helpers', () => {
+  it('normalizes_preset_names', () => {
+    expect(utils.normalizePresetName('  My Preset  ')).toBe('my_preset');
+    expect(utils.normalizePresetName('already_normalized')).toBe('already_normalized');
+  });
+
   it('replace_tokens', () => {
     const result = utils.r('Hello {user.name}!', { user: { name: 'YTPTube' } });
     expect(result).toBe('Hello YTPTube!');
