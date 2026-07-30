@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "b4c2ba72ebd54af2c192005f99177d0029c5266d",
-    "date": "2026-07-29T14:28:53+00:00",
+    "full_sha": "2c3355be4cad9d63e8121e1c79cfd267a86174d9",
+    "date": "2026-07-30T05:29:58+00:00",
     "commits": [
+      {
+        "sha": "2c3355be",
+        "full_sha": "2c3355be4cad9d63e8121e1c79cfd267a86174d9",
+        "message": "refactor: improve playlist picker metadata and support all handlers.",
+        "author": "arabcoders",
+        "date": "2026-07-30T05:29:58+00:00"
+      },
+      {
+        "sha": "b3bf2982",
+        "full_sha": "b3bf2982ef0e4e91a61710d3d589510c8f6fd24b",
+        "message": "refactor: normalize preset name display",
+        "author": "arabcoders",
+        "date": "2026-07-30T04:30:34+00:00"
+      },
       {
         "sha": "b4c2ba72",
         "full_sha": "b4c2ba72ebd54af2c192005f99177d0029c5266d",
