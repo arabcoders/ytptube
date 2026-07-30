@@ -251,7 +251,7 @@
                         class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                       >
                         <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                        <span class="capitalize">
+                        <span>
                           {{ t('common.presetLabel') }}:
                           {{ item.preset ?? config.app.default_preset }}
                         </span>
@@ -472,7 +472,7 @@
                 >
                   <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
                   <span class="min-w-0 flex-1">
-                    <span :class="['min-w-0 capitalize', expandClass(item.id, 'preset')]">
+                    <span :class="['min-w-0', expandClass(item.id, 'preset')]">
                       {{ t('common.presetLabel') }}: {{ item.preset ?? config.app.default_preset }}
                     </span>
                   </span>

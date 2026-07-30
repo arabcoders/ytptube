@@ -2,7 +2,7 @@ import { computed, ref } from 'vue';
 
 import type { Preset } from '~/types/presets';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
-import { cleanObject, prettyName } from '~/utils';
+import { cleanObject } from '~/utils';
 
 type EditablePreset = Partial<Preset> & {
   raw?: boolean;
@@ -62,9 +62,7 @@ export const usePresetEditor = () => {
   });
 
   const modalTitle = computed(() =>
-    reference.value
-      ? t('common.editTitle', { name: prettyName(preset.value.name || '') })
-      : t('common.add'),
+    reference.value ? t('common.editTitle', { name: preset.value.name || '' }) : t('common.add'),
   );
 
   const modalDescription = computed(() => {

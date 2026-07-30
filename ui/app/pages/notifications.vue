@@ -865,9 +865,7 @@ const joinEvents = (events: string[]): string =>
   !events || events.length < 1 ? t('common.all') : events.map((event) => ucFirst(event)).join(', ');
 
 const joinPresets = (presets: string[]): string =>
-  !presets || presets.length < 1
-    ? t('common.all')
-    : presets.map((preset) => ucFirst(preset)).join(', ');
+  !presets || presets.length < 1 ? t('common.all') : presets.join(', ');
 
 const headerKeys = (item: notification): string[] =>
   item.request?.headers?.map((header) => header.key).filter(Boolean) ?? [];
