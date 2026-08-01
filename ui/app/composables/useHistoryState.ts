@@ -210,6 +210,23 @@ const update = (id: string, data: StoreItem): void => {
   items.value = [...items.value.slice(0, index), data, ...items.value.slice(index + 1)];
 };
 
+const drop = (id: string): void => {
+  const index = items.value.findIndex((item) => item._id === id);
+  if (index === -1) {
+    return;
+  }
+
+  items.value = [...items.value.slice(0, index), ...items.value.slice(index + 1)];
+
+  pagination.value.total = Math.max(0, pagination.value.total - 1);
+  pagination.value.total_pages = Math.max(
+    1,
+    Math.ceil(pagination.value.total / pagination.value.per_page),
+  );
+  pagination.value.has_next = pagination.value.page < pagination.value.total_pages;
+  pagination.value.has_prev = pagination.value.page > 1;
+};
+
 const upsert = (item: StoreItem): void => {
   const existingIndex = items.value.findIndex((existing) => existing._id === item._id);
 
@@ -262,6 +279,7 @@ export const useHistoryState = () => {
     rename,
     reset,
     update,
+    drop,
     upsert,
     moveHandler,
   };

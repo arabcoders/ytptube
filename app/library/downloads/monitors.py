@@ -15,6 +15,21 @@ if TYPE_CHECKING:
 
 LOG = get_logger()
 
+RETRYABLE_ERRORS = (
+    "http error 403",
+    "http error 410",
+    "http error 416",
+    "bytes read",
+)
+
+
+def is_retryable_error(error: str | None) -> bool:
+    if not error:
+        return False
+
+    error = error.lower()
+    return any(marker in error for marker in RETRYABLE_ERRORS)
+
 
 async def check_for_stale(queue: "DownloadQueue") -> None:
     """
@@ -225,6 +240,107 @@ async def check_live(queue: "DownloadQueue") -> None:
                         "title": item.info.title,
                         "url": item.info.url,
                         "preset": item.info.preset,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
+
+
+async def check_retries(queue: "DownloadQueue") -> None:
+    """Requeue failed non-live downloads up to the configured retry limit."""
+    retry_limit: int = queue.config.retry
+    if retry_limit < 1 or queue.is_paused():
+        return
+
+    items = await queue.done.get_many_by_status("error")
+    for id, item in items:
+        if item.info.status != "error" or item.is_live or not is_retryable_error(item.info.error):
+            continue
+
+        retry_attempt = item.info.extras.get("retry_attempt", 0)
+        if not isinstance(retry_attempt, int) or retry_attempt >= retry_limit:
+            continue
+
+        retry_attempt += 1
+        cli = item.info.cli
+        ytdlp_opts = item.info.get_ytdlp_opts().get_all()
+        fresh = (
+            queue.config.retry_fresh
+            and retry_attempt == retry_limit
+            and ytdlp_opts.get("continuedl", True) is not False
+        )
+        if fresh:
+            cli: str = f"{cli}\n--no-continue".strip()
+
+        extras = {**item.info.extras, "retry_attempt": retry_attempt}
+        LOG.info(
+            "Retrying failed download '%s' (%d/%d)%s.",
+            item.info.title,
+            retry_attempt,
+            retry_limit,
+            " from scratch" if fresh else "",
+            extra={
+                "download": {
+                    "download_id": id,
+                    "item_id": item.info.id,
+                    "title": item.info.title,
+                    "url": item.info.url,
+                    "preset": item.info.preset,
+                    "retry_attempt": retry_attempt,
+                    "retry_limit": retry_limit,
+                    "fresh": fresh,
+                }
+            },
+        )
+
+        try:
+            await queue.clear([id], remove_file=False)
+            result: dict[str, str] = await queue.add(
+                item=Item(
+                    url=item.info.url,
+                    preset=item.info.preset,
+                    folder=item.info.folder,
+                    cookies=item.info.cookies or "",
+                    template=item.info.template or "",
+                    cli=cli,
+                    extras=extras,
+                    requeued=True,
+                )
+            )
+            if "ok" != result.get("status"):
+                await queue.done.put(item)
+                LOG.error(
+                    "Failed to retry download '%s' from '%s'. %s",
+                    item.info.title,
+                    item.info.url,
+                    result.get("msg", "Failed to requeue download."),
+                    extra={
+                        "download": {
+                            "download_id": id,
+                            "item_id": item.info.id,
+                            "title": item.info.title,
+                            "url": item.info.url,
+                            "preset": item.info.preset,
+                            "retry_attempt": retry_attempt,
+                            "retry_limit": retry_limit,
+                        }
+                    },
+                )
+        except Exception as e:
+            await queue.done.put(item)
+            LOG.exception(
+                "Failed to retry download '%s' from '%s'.",
+                item.info.title,
+                item.info.url,
+                extra={
+                    "download": {
+                        "download_id": id,
+                        "item_id": item.info.id,
+                        "title": item.info.title,
+                        "url": item.info.url,
+                        "preset": item.info.preset,
+                        "retry_attempt": retry_attempt,
+                        "retry_limit": retry_limit,
                         "exception_type": type(e).__name__,
                     }
                 },

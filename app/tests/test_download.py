@@ -73,6 +73,90 @@ class TestNestedLogger:
         assert msgs[2] == "info message", "info message should have [info] prefix stripped"
 
 
+class TestScheduledRetry:
+    @staticmethod
+    def queue(*, retry: int = 2, retry_fresh: bool = True, attempt: int = 0, continuedl: bool = True):
+        from app.library.downloads.monitors import RETRYABLE_ERRORS
+
+        info = make_item()
+        info.status = "error"
+        info.error = f"ERROR: {RETRYABLE_ERRORS[0]}"
+        info.extras = {"retry_attempt": attempt}
+        info.cli = "--format best"
+        cast(Any, info).get_ytdlp_opts = lambda: SimpleNamespace(get_all=lambda: {"continuedl": continuedl})
+        item = SimpleNamespace(info=info, is_live=False)
+        queue = SimpleNamespace(
+            config=SimpleNamespace(retry=retry, retry_fresh=retry_fresh),
+            is_paused=lambda: False,
+            done=SimpleNamespace(empty=lambda: True, items=lambda: [], put=AsyncMock()),
+            clear=AsyncMock(),
+            add=AsyncMock(return_value={"status": "ok"}),
+        )
+        queue.done.get_many_by_status = AsyncMock(return_value=[(info._id, item)])
+        return queue
+
+    def test_retryable_error(self) -> None:
+        from app.library.downloads.monitors import is_retryable_error
+
+        assert is_retryable_error("HTTP Error 403: Forbidden")
+        assert is_retryable_error("4102066 bytes read, 6199501 more expected")
+        assert not is_retryable_error("Unable to extract video")
+
+    @pytest.mark.asyncio
+    async def test_retry(self) -> None:
+        from app.library.downloads.monitors import check_retries
+
+        queue = self.queue()
+        await check_retries(queue)
+
+        retry = queue.add.await_args.kwargs["item"]
+        assert retry.extras["retry_attempt"] == 1
+        assert retry.cli == "--format best"
+        assert retry.requeued is True
+
+    @pytest.mark.asyncio
+    async def test_retry_fresh(self) -> None:
+        from app.library.downloads.monitors import check_retries
+
+        queue = self.queue(attempt=1)
+        await check_retries(queue)
+
+        retry = queue.add.await_args.kwargs["item"]
+        assert retry.extras["retry_attempt"] == 2
+        assert retry.cli == "--format best\n--no-continue"
+
+    @pytest.mark.asyncio
+    async def test_retry_already_fresh(self) -> None:
+        from app.library.downloads.monitors import check_retries
+
+        queue = self.queue(retry=1, continuedl=False)
+        await check_retries(queue)
+
+        retry = queue.add.await_args.kwargs["item"]
+        assert retry.extras["retry_attempt"] == 1
+        assert retry.cli == "--format best"
+
+    @pytest.mark.asyncio
+    async def test_retry_limit(self) -> None:
+        from app.library.downloads.monitors import check_retries
+
+        queue = self.queue(attempt=2)
+        await check_retries(queue)
+
+        queue.clear.assert_not_awaited()
+        queue.add.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_retry_skips_live(self) -> None:
+        from app.library.downloads.monitors import check_retries
+
+        queue = self.queue()
+        queue.done.get_many_by_status.return_value[0][1].is_live = True
+        await check_retries(queue)
+
+        queue.add.assert_not_awaited()
+
+
 class TestDownloadHooks:
     @pytest.fixture(autouse=True)
     def cfg_and_bus(self, monkeypatch: pytest.MonkeyPatch):
@@ -1507,6 +1591,22 @@ class TestStatusTracker:
 
 
 class TestQueueManager:
+    def test_attach_schedules_retries(self) -> None:
+        from app.library.downloads.monitors import check_retries
+
+        queue = object.__new__(DownloadQueue)
+        queue.config = SimpleNamespace(retry=2, auto_clear_history_days=0)
+        queue._notify = Mock()
+
+        with (
+            patch("app.library.downloads.queue_manager.Scheduler") as scheduler,
+            patch("app.library.downloads.queue_manager.Services"),
+        ):
+            queue.attach(Mock())
+
+        jobs = [call.kwargs["id"] for call in scheduler.get_instance.return_value.add.call_args_list]
+        assert check_retries.__name__ in jobs
+
     class LiveStore:
         def __init__(self, items: dict[str, Download]) -> None:
             self._items = items

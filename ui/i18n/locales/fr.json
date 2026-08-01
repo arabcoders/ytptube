@@ -8,6 +8,7 @@
     "confirm": "Confirmer",
     "reset": "Réinitialiser",
     "retry": "Réessayer",
+    "retryCount": "Réessayé {count} fois",
     "loading": "Chargement…",
     "unknownError": "Une erreur inconnue s'est produite.",
     "unknown": "Inconnu",

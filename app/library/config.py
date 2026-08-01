@@ -51,6 +51,12 @@ class Config(metaclass=Singleton):
     download_info_expires: int = 10800
     """How long (in seconds) the download info is valid before it needs to be re-extracted."""
 
+    retry: int = 0
+    """Number of additional attempts allowed for retryable download failures."""
+
+    retry_fresh: bool = False
+    """Use a fresh download on the final retry attempt."""
+
     temp_path: str = "/tmp"
     """The path to the temporary directory."""
 
@@ -299,6 +305,7 @@ class Config(metaclass=Singleton):
         "extract_info_timeout",
         "debugpy_port",
         "download_info_expires",
+        "retry",
         "auto_clear_history_days",
         "default_pagination",
         "queue_display_limit",
@@ -327,6 +334,7 @@ class Config(metaclass=Singleton):
         "ytdlp_auto_update",
         "prevent_live_premiere",
         "temp_disabled",
+        "retry_fresh",
         "allow_internal_urls",
         "simple_mode",
         "ignore_archived_items",
@@ -367,6 +375,8 @@ class Config(metaclass=Singleton):
         "app_branch",
         "default_pagination",
         "queue_display_limit",
+        "retry",
+        "retry_fresh",
         "check_for_updates",
         "new_version",
         "yt_new_version",

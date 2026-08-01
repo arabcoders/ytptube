@@ -34,6 +34,8 @@ const state = reactive<ConfigState>({
     simple_mode: false,
     default_pagination: 50,
     queue_display_limit: 100,
+    retry: 0,
+    retry_fresh: false,
     log_level: '',
     runtime_log_level: '',
     check_for_updates: true,
