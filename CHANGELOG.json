@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "f9c1384ac63c1a1a1de0c6682ddf71cf0135f260",
+    "date": "2026-08-01T16:19:18+00:00",
+    "commits": [
+      {
+        "sha": "f9c1384a",
+        "full_sha": "f9c1384ac63c1a1a1de0c6682ddf71cf0135f260",
+        "message": "feat: add download retry",
+        "author": "arabcoders",
+        "date": "2026-08-01T16:19:18+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.6.3",
     "full_sha": "4fc6701eb61af78fe6dfb67834741a51a0dc1e09",
     "date": "2026-07-30T06:03:26+00:00",
