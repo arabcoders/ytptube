@@ -8,6 +8,7 @@
     "confirm": "Confirm",
     "reset": "Reset",
     "retry": "Retry",
+    "retryCount": "Retried {count} times",
     "loading": "Loading…",
     "unknownError": "An unknown error occurred.",
     "unknown": "Unknown",

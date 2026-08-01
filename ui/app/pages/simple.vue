@@ -312,6 +312,20 @@
                                     <span>{{ getStatusLabel(item) }}</span>
                                   </UBadge>
 
+                                  <UBadge
+                                    v-if="
+                                      item.extras?.retry_attempt && item.extras.retry_attempt > 1
+                                    "
+                                    color="warning"
+                                    variant="soft"
+                                    size="sm"
+                                    icon="i-lucide-rotate-cw"
+                                  >
+                                    {{
+                                      t('common.retryCount', { count: item.extras.retry_attempt })
+                                    }}
+                                  </UBadge>
+
                                   <span
                                     class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
                                     :date-datetime="item.datetime"
@@ -567,6 +581,20 @@
                                       :class="['size-3.5', getStatusIconAnimation(item)]"
                                     />
                                     <span>{{ getStatusLabel(item) }}</span>
+                                  </UBadge>
+
+                                  <UBadge
+                                    v-if="
+                                      item.extras?.retry_attempt && item.extras.retry_attempt > 1
+                                    "
+                                    color="warning"
+                                    variant="soft"
+                                    size="sm"
+                                    icon="i-lucide-rotate-cw"
+                                  >
+                                    {{
+                                      t('common.retryCount', { count: item.extras.retry_attempt })
+                                    }}
                                   </UBadge>
 
                                   <span

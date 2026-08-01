@@ -47,6 +47,10 @@ type AppConfig = {
   default_pagination: number;
   /** Maximum number of queued downloads loaded into the UI. 0 means unlimited. */
   queue_display_limit: number;
+  /** Number of additional attempts allowed for retryable download failures. */
+  retry: number;
+  /** Use a fresh download on the final retry attempt. */
+  retry_fresh: boolean;
   /** Configured default log level */
   log_level: 'debug' | 'info' | 'warning' | 'error' | '';
   /** Active runtime log level */

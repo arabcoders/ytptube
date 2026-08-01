@@ -18,7 +18,7 @@ from app.library.Utils import calc_download_path
 
 from .core import Download
 from .item_adder import add as add_impl
-from .monitors import check_for_stale, check_live, cleanup_thumbnails, delete_old_history
+from .monitors import check_for_stale, check_live, check_retries, cleanup_thumbnails, delete_old_history
 from .pool_manager import PoolManager
 
 if TYPE_CHECKING:
@@ -66,6 +66,13 @@ class DownloadQueue(metaclass=Singleton):
             func=functools.partial(check_live, self),
             id=check_live.__name__,
         )
+
+        if self.config.retry > 0:
+            Scheduler.get_instance().add(
+                timer="* * * * *",
+                func=functools.partial(check_retries, self),
+                id=check_retries.__name__,
+            )
 
         Scheduler.get_instance().add(
             timer="10 */1 * * *",

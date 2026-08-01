@@ -105,15 +105,16 @@ type StoreItem = {
     uploader?: string;
     /** Actual media properties from the completed file */
     media_profile?: MediaProfile;
-    /** Uploader name if available */
+    /** If the item has an audio stream */
     is_audio?: boolean;
-    /** If the item has audio stream */
+    /** If the item has a video stream */
     is_video?: boolean;
-    /** If the item has video stream */
-    live_in?: string;
     /** Live stream start time if available */
-    is_premiere?: boolean;
+    live_in?: string;
     /** If the item is a premiere */
+    is_premiere?: boolean;
+    /** Current automatic download retry attempt */
+    retry_attempt?: number;
   };
   /** The item temporary filename */
   tmpfilename?: string | null;

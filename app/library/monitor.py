@@ -441,7 +441,7 @@ class ResourceTracker(metaclass=Singleton):
 
     def sample(self) -> ResourceSample | None:
         now: float = time.time()
-        elapsed: None | float = None if self._last_ts is None else max(0.001, now - self._last_ts)
+        elapsed: float | None = None if self._last_ts is None else max(0.001, now - self._last_ts)
 
         tree = _process_tree_stats(
             self._proc,

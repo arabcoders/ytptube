@@ -211,11 +211,26 @@
                     </div>
 
                     <div
-                      v-if="item.extras?.duration || mediaProfileLabel(item) || show_popover"
+                      v-if="
+                        item.extras?.duration ||
+                        mediaProfileLabel(item) ||
+                        show_popover ||
+                        (item.extras?.retry_attempt && item.extras.retry_attempt > 1)
+                      "
                       class="flex shrink-0 items-center gap-2"
                     >
                       <UBadge v-if="item.extras?.duration" color="info" variant="soft" size="sm">
                         {{ formatTime(item.extras.duration) }}
+                      </UBadge>
+
+                      <UBadge
+                        v-if="item.extras?.retry_attempt && item.extras.retry_attempt > 1"
+                        color="warning"
+                        variant="soft"
+                        size="sm"
+                        icon="i-lucide-rotate-cw"
+                      >
+                        {{ t('common.retryCount', { count: item.extras.retry_attempt }) }}
                       </UBadge>
 
                       <UBadge
@@ -624,6 +639,17 @@
                     </span>
                   </span>
                 </button>
+
+                <UBadge
+                  v-if="item.extras?.retry_attempt && item.extras.retry_attempt > 1"
+                  color="warning"
+                  variant="soft"
+                  size="sm"
+                  class="min-w-32 flex-1 justify-center"
+                  icon="i-lucide-rotate-cw"
+                >
+                  {{ t('common.retryCount', { count: item.extras.retry_attempt }) }}
+                </UBadge>
 
                 <button
                   v-if="mediaProfileLabel(item)"

@@ -369,7 +369,7 @@ class MiniFilter:
             try:
                 numeric_comparison = int(comparison_value)
             except ValueError:
-                numeric_comparison: int | None | float = parse_filesize(comparison_value) or parse_duration(
+                numeric_comparison: int | float | None = parse_filesize(comparison_value) or parse_duration(
                     comparison_value
                 )
 

@@ -357,6 +357,11 @@ on('item_deleted', (data: WSEP['item_deleted']) => {
   const queueState = getQueueState();
   const id = data.data._id;
 
+  const historyState = getHistoryState();
+  if (historyState.isLoaded.value) {
+    historyState.drop(id);
+  }
+
   if (!queueState.isLoaded()) {
     return;
   }

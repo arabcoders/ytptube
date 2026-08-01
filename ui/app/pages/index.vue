@@ -255,6 +255,16 @@
                           {{ formatBytes(item.downloaded_bytes, 2, t) }}
                         </UBadge>
 
+                        <UBadge
+                          v-if="item.extras?.retry_attempt && item.extras.retry_attempt > 1"
+                          color="warning"
+                          variant="soft"
+                          size="sm"
+                          icon="i-lucide-rotate-cw"
+                        >
+                          {{ t('common.retryCount', { count: item.extras.retry_attempt }) }}
+                        </UBadge>
+
                         <UPopover
                           v-if="show_popover"
                           :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
@@ -437,6 +447,16 @@
                   <div class="flex max-w-full flex-wrap items-center justify-end gap-1 sm:shrink-0">
                     <UBadge v-if="item.extras?.duration" color="info" variant="soft" size="sm">
                       {{ formatTime(item.extras.duration) }}
+                    </UBadge>
+
+                    <UBadge
+                      v-if="item.extras?.retry_attempt && item.extras.retry_attempt > 1"
+                      color="warning"
+                      variant="soft"
+                      size="sm"
+                      icon="i-lucide-rotate-cw"
+                    >
+                      {{ t('common.retryCount', { count: item.extras.retry_attempt }) }}
                     </UBadge>
 
                     <UPopover
