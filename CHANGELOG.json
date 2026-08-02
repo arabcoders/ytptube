@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "66216061a1d80ff6ea54d7380f4e9255e06a22c1",
+    "date": "2026-08-02T18:43:50+00:00",
+    "commits": [
+      {
+        "sha": "66216061",
+        "full_sha": "66216061a1d80ff6ea54d7380f4e9255e06a22c1",
+        "message": "docs: update README to clarify multi-language UI support",
+        "author": "arabcoders",
+        "date": "2026-08-02T18:43:50+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.6.4",
     "full_sha": "761807fb613940cc28ec768e3bd9691d0e7e7f08",
     "date": "2026-08-01T17:02:35+00:00",
