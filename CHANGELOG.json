@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "382bd819d81e86d9793208b7119b237aefbc8572",
+    "date": "2026-08-03T21:46:34+00:00",
+    "commits": [
+      {
+        "sha": "382bd819",
+        "full_sha": "382bd819d81e86d9793208b7119b237aefbc8572",
+        "message": "refactor: followup to the previous ualert migration commit some requests still used toasts for errors",
+        "author": "arabcoders",
+        "date": "2026-08-03T21:46:34+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.6.5",
     "full_sha": "456ba8ae54b1dc8239979678f3daac2aaceab659",
     "date": "2026-08-03T18:51:40+00:00",
