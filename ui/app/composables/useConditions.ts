@@ -1,7 +1,7 @@
 import { ref, readonly } from 'vue';
 
 import { useNotification } from '~/composables/useNotification';
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
+import { request, parse_list_response, parse_api_response, ensure_api_success } from '~/utils';
 import type {
   Condition,
   ConditionTestRequest,
@@ -69,41 +69,17 @@ const sortConditions = (items: Array<Condition>): Array<Condition> => {
 };
 
 /**
- * Safely reads JSON from a Response, returns null on error.
- * @param response Fetch Response object
- * @returns Parsed JSON or null
- */
-const readJson = async (response: Response): Promise<unknown> => {
-  try {
-    const clone = response.clone();
-    return await clone.json();
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Throws an error if the response is not OK, using API error message if available.
- * @param response Fetch Response object
- * @throws Error with message from API or status code
- */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (response.ok) {
-    return;
-  }
-
-  const payload = await readJson(response);
-  const message = await parse_api_error(payload);
-  throw new Error(message);
-};
-
-/**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
-const handleError = (error: unknown): void => {
+const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
+  return message;
+};
+
+const handleError = (error: unknown): void => {
+  const message = setError(error);
   useNotification().error(message);
 };
 
@@ -153,7 +129,7 @@ const loadConditions = async (
       url += `&per_page=${perPage}`;
     }
     const response = await request(url);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const { items, pagination: paginationData } = await parse_list_response<Condition>(json);
@@ -177,7 +153,7 @@ const loadConditions = async (
 const getCondition = async (id: number): Promise<Condition | null> => {
   try {
     const response = await request(`/api/conditions/${id}`);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const condition = await parse_api_response<Condition>(json);
@@ -208,7 +184,7 @@ const createCondition = async (
       body: JSON.stringify(condition),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const created = await parse_api_response<Condition>(json);
@@ -224,14 +200,13 @@ const createCondition = async (
     return created;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -259,7 +234,7 @@ const updateCondition = async (
       body: JSON.stringify(condition),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const updated = await parse_api_response<Condition>(json);
@@ -277,14 +252,13 @@ const updateCondition = async (
     return updated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -312,7 +286,7 @@ const patchCondition = async (
       body: JSON.stringify(patch),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const updated = await parse_api_response<Condition>(json);
@@ -330,14 +304,13 @@ const patchCondition = async (
     return updated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -355,7 +328,7 @@ const deleteCondition = async (
 ): Promise<boolean> => {
   try {
     const response = await request(`/api/conditions/${id}`, { method: 'DELETE' });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     removeCondition(id);
     useNotification().success(t('common.crudDeleted', { type: t('conditions.condition') }));
@@ -393,7 +366,7 @@ const testCondition = async (
       body: JSON.stringify(testRequest),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const result = await parse_api_response<ConditionTestResponse>(json);

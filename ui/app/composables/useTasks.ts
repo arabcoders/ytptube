@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue';
 import { useNotification } from '~/composables/useNotification';
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
+import { request, parse_list_response, parse_api_response, ensure_api_success } from '~/utils';
 import type {
   Task,
   TaskPatch,
@@ -63,41 +63,17 @@ const sortTasks = (items: Array<Task>): Array<Task> => {
 };
 
 /**
- * Safely reads JSON from a Response, returns null on error.
- * @param response Fetch Response object
- * @returns Parsed JSON or null
- */
-const readJson = async (response: Response): Promise<unknown> => {
-  try {
-    const clone = response.clone();
-    return await clone.json();
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Throws an error if the response is not OK, using API error message if available.
- * @param response Fetch Response object
- * @throws Error with message from API or status code
- */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (response.ok) {
-    return;
-  }
-
-  const payload = await readJson(response);
-  const message = await parse_api_error(payload);
-  throw new Error(message);
-};
-
-/**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
-const handleError = (error: unknown): void => {
+const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
+  return message;
+};
+
+const handleError = (error: unknown): void => {
+  const message = setError(error);
   useNotification().error(message);
 };
 
@@ -143,7 +119,7 @@ const loadTasks = async (
       url += `&per_page=${perPage}`;
     }
     const response = await request(url);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const { items, pagination: paginationData } = await parse_list_response<Task>(json);
@@ -167,7 +143,7 @@ const loadTasks = async (
 const getTask = async (id: number): Promise<Task | null> => {
   try {
     const response = await request(`/api/tasks/${id}`);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const task = await parse_api_response<Task>(json);
@@ -199,7 +175,7 @@ const createTask = async (
       method: 'POST',
       body: JSON.stringify(task),
     });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const created = await parse_api_response<Task | Array<Task>>(json);
@@ -227,14 +203,13 @@ const createTask = async (
     return created;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -261,7 +236,7 @@ const updateTask = async (
       method: 'PUT',
       body: JSON.stringify(taskData),
     });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const updated = await parse_api_response<Task>(json);
@@ -279,14 +254,13 @@ const updateTask = async (
     return updated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -310,7 +284,7 @@ const patchTask = async (
       method: 'PATCH',
       body: JSON.stringify(patch),
     });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const updated = await parse_api_response<Task>(json);
@@ -328,14 +302,13 @@ const patchTask = async (
     return updated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -353,7 +326,7 @@ const deleteTask = async (
 ): Promise<boolean> => {
   try {
     const response = await request(`/api/tasks/${id}`, { method: 'DELETE' });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     removeTask(id);
     useNotification().success(t('common.crudDeleted', { type: t('tasks.task') }));
@@ -409,7 +382,7 @@ const inspectTaskHandler = async (
 const markTaskItems = async (id: number): Promise<string | null> => {
   try {
     const response = await request(`/api/tasks/${id}/mark`, { method: 'POST' });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const message = json.message || t('tasks.allMarkedDownloaded');
@@ -432,7 +405,7 @@ const markTaskItems = async (id: number): Promise<string | null> => {
 const unmarkTaskItems = async (id: number): Promise<string | null> => {
   try {
     const response = await request(`/api/tasks/${id}/mark`, { method: 'DELETE' });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const message = json.message || t('tasks.allRemovedArchive');
@@ -455,7 +428,7 @@ const unmarkTaskItems = async (id: number): Promise<string | null> => {
 const generateTaskMetadata = async (id: number): Promise<TaskMetadataResponse | null> => {
   try {
     const response = await request(`/api/tasks/${id}/metadata`, { method: 'POST' });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const metadata = await parse_api_response<TaskMetadataResponse>(json);

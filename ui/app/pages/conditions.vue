@@ -469,6 +469,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
+        <FormSubmitError :message="submission.message.value" />
         <ConditionForm
           :key="modalKey"
           :addInProgress="conditions.addInProgress.value"
@@ -519,7 +520,6 @@ import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useConfirm } from '~/composables/useConfirm';
 import { useConditions } from '~/composables/useConditions';
 import type { Condition } from '~/types/conditions';
-import type { APIResponse } from '~/types/responses';
 import { cleanObject, copyText, encode } from '~/utils';
 import { usePageShell } from '~/composables/usePageShell';
 const { t } = useI18n();
@@ -527,11 +527,13 @@ const { t } = useI18n();
 type ConditionItemWithUI = Condition & { raw?: boolean };
 
 const box = useConfirm();
+const toast = useNotification();
 const pageShell = usePageShell('conditions');
 const displayStyle = useStorage<'list' | 'grid'>('conditions_display_style', 'grid');
 const isMobile = useMediaQuery({ maxWidth: 639 });
 const { toggleExpand, expandClass } = useExpandableMeta();
 const conditions = useConditions();
+const submission = useFormSubmit();
 const route = useRoute();
 const router = useRouter();
 const { confirmDialog } = useDialog();
@@ -657,6 +659,7 @@ const loadContent = async (pageNumber = 1): Promise<void> => {
 };
 
 const resetEditor = (): void => {
+  submission.clear();
   item.value = {};
   itemRef.value = null;
   editorDirty.value = false;
@@ -755,20 +758,17 @@ const updateItem = async ({
   item: Condition;
 }): Promise<void> => {
   updatedItem = cleanObject(updatedItem, removeKeys) as Condition;
-  const callback = (response: APIResponse) => {
-    if (response.success) {
-      closeEditor();
-    }
-  };
+  const result = reference
+    ? await submission.run(() => conditions.patchCondition(reference, updatedItem))
+    : await submission.run(() => conditions.createCondition(updatedItem));
 
-  if (reference) {
-    await conditions.patchCondition(reference, updatedItem, callback);
-  } else {
-    await conditions.createCondition(updatedItem, callback);
+  if (result) {
+    closeEditor();
   }
 };
 
 const editItem = (value: Condition): void => {
+  submission.clear();
   editorDirty.value = false;
   item.value = JSON.parse(JSON.stringify(value)) as Condition;
   itemRef.value = value.id;
@@ -776,7 +776,11 @@ const editItem = (value: Condition): void => {
 };
 
 const toggleEnabled = async (cond: Condition): Promise<void> => {
-  await conditions.patchCondition(cond.id!, { enabled: !cond.enabled });
+  try {
+    await conditions.patchCondition(cond.id!, { enabled: !cond.enabled });
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('common.unknownError'));
+  }
 };
 
 const exportItem = (cond: Condition): void => {

@@ -272,12 +272,13 @@ describe('useTasks', () => {
       const newTask = { ...mockTask }
       delete (newTask as any).id
 
-      const result = await tasks.createTask(newTask)
-
-      expect(result).toBeNull()
+      await expect(tasks.createTask(newTask)).rejects.toThrow(
+        'Task requires a timer when no supported handler matches the URL.',
+      )
       expect(tasks.lastError.value).toBe(
         'Task requires a timer when no supported handler matches the URL.',
       )
+      expect(errorMock).not.toHaveBeenCalled()
       requestSpy.mockRestore()
     })
 
@@ -316,9 +317,9 @@ describe('useTasks', () => {
       const tasks = useTasks()
       const updated = { ...mockTask, timer: '', handler_enabled: false }
 
-      const result = await tasks.updateTask(1, updated)
-
-      expect(result).toBeNull()
+      await expect(tasks.updateTask(1, updated)).rejects.toThrow(
+        'Task requires a timer when the handler is disabled.',
+      )
       expect(tasks.lastError.value).toBe('Task requires a timer when the handler is disabled.')
       requestSpy.mockRestore()
     })
@@ -372,9 +373,9 @@ describe('useTasks', () => {
       )
 
       const tasks = useTasks()
-      const result = await tasks.patchTask(1, { timer: '' })
-
-      expect(result).toBeNull()
+      await expect(tasks.patchTask(1, { timer: '' })).rejects.toThrow(
+        'Task requires a timer when no supported handler matches the URL.',
+      )
       expect(tasks.lastError.value).toBe(
         'Task requires a timer when no supported handler matches the URL.',
       )
@@ -676,13 +677,13 @@ describe('useTasks', () => {
 
       const tasks = useTasks()
       tasks.clearError()
-      
+
       const newTask = { ...mockTask, name: '', url: '' }
       delete (newTask as any).id
 
-      const result = await tasks.createTask(newTask)
-
-      expect(result).toBeNull()
+      await expect(tasks.createTask(newTask)).rejects.toThrow(
+        'name: Field required, url: Invalid URL format',
+      )
       expect(tasks.lastError.value).toBe('name: Field required, url: Invalid URL format')
       expect(tasks.lastError.value).toContain('name: Field required')
       expect(tasks.lastError.value).toContain('url: Invalid URL format')
@@ -730,7 +731,7 @@ describe('useTasks', () => {
       const newTask = { ...mockTask }
       delete (newTask as any).id
 
-      await tasks.createTask(newTask)
+      await expect(tasks.createTask(newTask)).rejects.toThrow('Bad request')
 
       expect(tasks.addInProgress.value).toBe(false)
       requestSpy.mockRestore()

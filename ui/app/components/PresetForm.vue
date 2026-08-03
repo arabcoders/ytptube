@@ -1,5 +1,6 @@
 <template>
   <form id="presetForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <FormSubmitError :message="action.message.value" />
     <UAlert
       v-if="formError && hasFormContent"
       color="warning"
@@ -261,7 +262,7 @@
             v-model="form.cookies"
             :disabled="addInProgress"
             dir="ltr"
-            @error="(msg: string) => toast.error(msg)"
+            @error="showActionError"
             :placeholder="t('common.cookiesPlaceholder')"
           />
         </UFormField>
@@ -336,9 +337,9 @@ const props = defineProps<{
 }>();
 
 const config = useYtpConfig();
-const toast = useNotification();
 const dialog = useDialog();
 const { presets, findPreset, selectItems } = usePresetOptions();
+const action = useFormSubmit();
 
 const form = reactive<Preset>({
   name: '',
@@ -412,6 +413,7 @@ watch(
 
     importString.value = '';
     selectedPreset.value = '';
+    action.clear();
     nextTick(() => {
       markClean();
       emitter('dirty-change', false);
@@ -437,6 +439,10 @@ watch(
 
 const triggerCookieUpload = (): void => {
   cookiesDropzoneRef.value?.triggerFileSelect();
+};
+
+const showActionError = (message: string): void => {
+  action.setError(new Error(message));
 };
 
 const hasFormContent = computed(() => {
@@ -493,6 +499,7 @@ const confirmImportOverwrite = async (): Promise<boolean> => {
 };
 
 const convertOptions = async (args: string): Promise<Record<string, any> | null> => {
+  action.clear();
   try {
     const response = await convertCliOptions(args);
 
@@ -505,13 +512,14 @@ const convertOptions = async (args: string): Promise<Record<string, any> | null>
     }
 
     return response.opts as Record<string, any>;
-  } catch (error: any) {
-    toast.error(error.message);
+  } catch (error) {
+    showActionError(error instanceof Error ? error.message : t('common.unknownError'));
     return null;
   }
 };
 
 const checkInfo = async (): Promise<void> => {
+  action.clear();
   if (formError.value) {
     return;
   }
@@ -544,9 +552,10 @@ const checkInfo = async (): Promise<void> => {
 };
 
 const importItem = async (): Promise<void> => {
+  action.clear();
   const value = importString.value.trim();
   if (!value) {
-    toast.error(t('common.validationImportRequired'));
+    showActionError(t('common.validationImportRequired'));
     return;
   }
 
@@ -558,8 +567,11 @@ const importItem = async (): Promise<void> => {
     const item = decode(value) as Preset & ImportedItem;
 
     if (!item?._type || 'preset' !== item._type) {
-      toast.error(
-        t('common.validationInvalidImport', { expected: 'preset', type: item._type ?? 'unknown' }),
+      showActionError(
+        t('common.validationInvalidImport', {
+          expected: 'preset',
+          type: item?._type ?? 'unknown',
+        }),
       );
       return;
     }
@@ -585,13 +597,19 @@ const importItem = async (): Promise<void> => {
 
     importString.value = '';
     showImport.value = false;
-  } catch (error: any) {
+    action.clear();
+  } catch (error) {
     console.error(error);
-    toast.error(t('common.validationImportParseFailed', { error: error.message }));
+    showActionError(
+      t('common.validationImportParseFailed', {
+        error: error instanceof Error ? error.message : t('common.unknownError'),
+      }),
+    );
   }
 };
 
 const importExistingPreset = async (): Promise<void> => {
+  action.clear();
   if (!selectedPreset.value) {
     return;
   }
@@ -603,7 +621,7 @@ const importExistingPreset = async (): Promise<void> => {
 
   const preset = findPreset(selectedPreset.value);
   if (!preset) {
-    toast.error(t('common.presetNotFoundShort'));
+    showActionError(t('common.presetNotFoundShort'));
     return;
   }
 
@@ -616,6 +634,7 @@ const importExistingPreset = async (): Promise<void> => {
 
   await nextTick();
   selectedPreset.value = '';
+  action.clear();
 };
 
 onMounted(() => {

@@ -1,11 +1,11 @@
 <template>
   <form id="taskForm" autocomplete="off" class="space-y-4" @submit.prevent="checkInfo">
     <UAlert
-      v-if="formError && hasFormContent"
+      v-if="displayError && hasFormContent"
       color="warning"
       variant="soft"
       icon="i-lucide-triangle-alert"
-      :title="formError"
+      :title="displayError"
       class="sticky top-0 z-10 shadow-sm"
     />
 
@@ -209,7 +209,7 @@
 
       <div class="space-y-5">
         <div class="grid gap-4 xl:grid-cols-2">
-          <UFormField class="w-full" :ui="fieldUi">
+          <UFormField class="w-full" :ui="fieldUi" :error="timerError || undefined">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-clock-3" class="size-4 text-toned" />
@@ -513,6 +513,7 @@ const CHANNEL_REGEX =
 const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i;
 
 const form = reactive<Task>(createDefaultTask(props.task));
+const timerError = ref('');
 
 const dirtySource = computed(() => ({
   reference: props.reference ?? null,
@@ -528,6 +529,7 @@ const fieldUi = {
   container: 'space-y-2',
   description: 'text-sm text-toned',
   hint: 'text-sm text-toned',
+  error: 'text-sm text-error',
 };
 
 const editorFieldUi = {
@@ -718,7 +720,11 @@ const formError = computed(() => {
 
   return '';
 });
-watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
+const displayError = computed(() => formError.value || timerError.value);
+watch(displayError, (value) => emitter('valid-change', !value), { immediate: true });
+watch([() => form.url, () => form.preset, () => form.timer, () => form.handler_enabled], () => {
+  timerError.value = '';
+});
 
 const confirmImportOverwrite = async (): Promise<boolean> => {
   if (!hasFormContent.value) {
@@ -738,6 +744,7 @@ const confirmImportOverwrite = async (): Promise<boolean> => {
 
 const checkInfo = async (): Promise<void> => {
   const urls = splitUrls(form.url || '');
+  timerError.value = '';
 
   if (formError.value) {
     return;
@@ -758,8 +765,8 @@ const checkInfo = async (): Promise<void> => {
 
   try {
     await requireTimerForTask(form);
-  } catch (error: any) {
-    toast.error(error.message);
+  } catch (error) {
+    timerError.value = error instanceof Error ? error.message : t('common.unknownError');
     return;
   }
 
@@ -798,8 +805,8 @@ const checkInfo = async (): Promise<void> => {
 
   try {
     await Promise.all(tasks.map((item) => requireTimerForTask(item)));
-  } catch (error: any) {
-    toast.error(error.message);
+  } catch (error) {
+    timerError.value = error instanceof Error ? error.message : t('common.unknownError');
     return;
   }
 

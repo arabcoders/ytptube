@@ -17,6 +17,7 @@
             <div class="mx-auto w-full transition-all duration-300" :class="formContainerClass">
               <div class="ytp-card p-4 sm:p-5">
                 <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
+                  <FormSubmitError :message="submitError" />
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0 space-y-1">
                       <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
@@ -836,6 +837,7 @@ const videoOpen = computed<boolean>({
 const formUrl = ref('');
 const formPreset = ref(app.value.default_preset || '');
 const addInProgress = ref(false);
+const submitError = ref('');
 const showExtras = ref(false);
 const isRefreshing = ref(false);
 const historyInitialized = ref(false);
@@ -960,9 +962,10 @@ const stopAutoRefresh = (): void => {
 
 const addDownload = async (): Promise<void> => {
   const url = formUrl.value.trim();
+  submitError.value = '';
 
   if (!url) {
-    toast.error(t('common.enterValidUrl'));
+    submitError.value = t('common.enterValidUrl');
     return;
   }
 
@@ -1027,11 +1030,14 @@ const addDownload = async (): Promise<void> => {
     const data = await response.json();
 
     if (!response.ok) {
-      toast.error(t('common.errorPrefix', { msg: data?.error || t('queue.failedToAdd') }));
+      submitError.value = t('common.errorPrefix', {
+        msg: data?.error || t('queue.failedToAdd'),
+      });
       return;
     }
 
     let had_errors = false;
+    const errors: string[] = [];
 
     if (200 === response.status && Array.isArray(data)) {
       data.forEach((item: Record<string, any>) => {
@@ -1045,9 +1051,12 @@ const addDownload = async (): Promise<void> => {
           return;
         }
 
-        toast.error(t('common.errorPrefix', { msg: item.msg || t('queue.failedToAdd') }));
+        const message = t('common.errorPrefix', { msg: item.msg || t('queue.failedToAdd') });
+        errors.push(message);
       });
     }
+
+    submitError.value = errors.join('\n');
 
     if (202 === response.status) {
       toast.success(data.message, { timeout: 2000 });
@@ -1060,7 +1069,7 @@ const addDownload = async (): Promise<void> => {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : t('queue.failedToAdd');
-    toast.error(t('common.errorPrefix', { msg: message }));
+    submitError.value = t('common.errorPrefix', { msg: message });
   } finally {
     addInProgress.value = false;
   }

@@ -692,6 +692,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
+        <FormSubmitError :message="submission.message.value" />
         <TaskForm
           :key="formKey"
           :addInProgress="addInProgress"
@@ -807,6 +808,7 @@ const display_style = useStorage<'list' | 'grid' | 'cards'>('tasks_display_style
 const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const tasksComposable = useTasks();
+const submission = useFormSubmit();
 const {
   tasks,
   pagination: paging,
@@ -1058,6 +1060,7 @@ const loadContent = async (pageNumber = page.value, fromMounted: boolean = false
 };
 
 const resetForm = (closeForm: boolean = false) => {
+  submission.clear();
   task.value = createEmptyTask();
   taskRef.value = null;
   editorDirty.value = false;
@@ -1147,7 +1150,13 @@ const toggleFlag = async (item: Task, field: 'enabled' | 'auto_start' | 'handler
   }
 
   const currentValue = item[field] !== false;
-  const updated = await tasksComposable.patchTask(item.id, { [field]: !currentValue });
+  let updated: Task | null = null;
+  try {
+    updated = await tasksComposable.patchTask(item.id, { [field]: !currentValue });
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('common.unknownError'));
+    return;
+  }
 
   if (updated) {
     item[field] = updated[field];
@@ -1171,13 +1180,9 @@ const updateItem = async ({
   task: Task | Task[];
   archive_all?: boolean;
 }) => {
-  let createdOrUpdated: Task | Task[] | null = null;
-
-  if (reference) {
-    createdOrUpdated = await tasksComposable.updateTask(reference, task as Task);
-  } else {
-    createdOrUpdated = await tasksComposable.createTask(task);
-  }
+  const createdOrUpdated = reference
+    ? await submission.run(() => tasksComposable.updateTask(reference, task as Task))
+    : await submission.run(() => tasksComposable.createTask(task));
 
   if (!createdOrUpdated) {
     return;
@@ -1207,6 +1212,7 @@ const updateItem = async ({
 };
 
 const editItem = (item: Task) => {
+  submission.clear();
   editorDirty.value = false;
   editorValid.value = false;
   task.value = { ...item };

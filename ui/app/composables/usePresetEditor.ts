@@ -36,6 +36,7 @@ const sanitizePreset = (item: Preset | EditablePreset): Partial<Preset> => {
 export const usePresetEditor = () => {
   const { t } = useI18n();
   const presetsStore = usePresets();
+  const submission = useFormSubmit();
 
   const isOpen = ref(false);
   const reference = ref<number | null>(null);
@@ -44,6 +45,7 @@ export const usePresetEditor = () => {
   const sessionId = ref(0);
 
   const discardEditor = (): void => {
+    submission.clear();
     dirty.value = false;
     reference.value = null;
     preset.value = makeEmptyPreset();
@@ -114,14 +116,16 @@ export const usePresetEditor = () => {
     const cleaned = sanitizePreset(currentPreset) as Preset;
 
     if (currentReference) {
-      const updated = await presetsStore.updatePreset(currentReference, cleaned);
+      const updated = await submission.run(() =>
+        presetsStore.updatePreset(currentReference, cleaned as Preset),
+      );
       if (updated) {
         close();
       }
       return updated;
     }
 
-    const created = await presetsStore.createPreset(cleaned);
+    const created = await submission.run(() => presetsStore.createPreset(cleaned));
     if (created) {
       close();
     }
@@ -138,6 +142,7 @@ export const usePresetEditor = () => {
     isDirty,
     dirty,
     addInProgress: presetsStore.addInProgress,
+    submitError: submission.message,
     openCreate,
     openEdit,
     close,

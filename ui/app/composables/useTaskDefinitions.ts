@@ -1,7 +1,7 @@
 import { ref, readonly } from 'vue';
 
 import { useNotification } from '~/composables/useNotification';
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
+import { request, parse_list_response, parse_api_response, ensure_api_success } from '~/utils';
 import type {
   TaskDefinitionDetailed,
   TaskDefinitionDocument,
@@ -61,30 +61,17 @@ const sortSummaries = (items: Array<TaskDefinitionSummary>): Array<TaskDefinitio
 };
 
 /**
- * Throws an error if the response is not OK, using API error message if available.
- * @param response Fetch Response object
- * @throws Error with message from API or status code
- */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (response.ok) {
-    return;
-  }
-
-  const payload = await response
-    .clone()
-    .json()
-    .catch(() => null);
-  const message = await parse_api_error(payload);
-  throw new Error(message);
-};
-
-/**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
-const handleError = (error: unknown): void => {
+const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
+  return message;
+};
+
+const handleError = (error: unknown): void => {
+  const message = setError(error);
   useNotification().error(message);
 };
 
@@ -130,7 +117,7 @@ const loadDefinitions = async (
       url += `&per_page=${perPage}`;
     }
     const response = await request(url);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const { items, pagination: paginationData } =
@@ -155,7 +142,7 @@ const loadDefinitions = async (
 const getDefinition = async (id: number): Promise<TaskDefinitionDetailed | null> => {
   try {
     const response = await request(`/api/tasks/definitions/${id}`);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const payload = await response.json();
     const detailed = await parse_api_response<TaskDefinitionDetailed>(payload);
@@ -182,7 +169,7 @@ const createDefinition = async (
       body: JSON.stringify(definition),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const payload = await parse_api_response<TaskDefinitionDetailed>(response.json());
 
@@ -200,9 +187,8 @@ const createDefinition = async (
     lastError.value = null;
     return payload;
   } catch (error) {
-    handleError(error);
-    if (throwInstead.value) throw error;
-    return null;
+    setError(error);
+    throw error;
   }
 };
 
@@ -222,7 +208,7 @@ const updateDefinition = async (
       body: JSON.stringify(definition),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const payload = await parse_api_response<TaskDefinitionDetailed>(response.json());
 
@@ -242,9 +228,8 @@ const updateDefinition = async (
     lastError.value = null;
     return payload;
   } catch (error) {
-    handleError(error);
-    if (throwInstead.value) throw error;
-    return null;
+    setError(error);
+    throw error;
   }
 };
 
@@ -256,7 +241,7 @@ const updateDefinition = async (
 const deleteDefinition = async (id: number): Promise<boolean> => {
   try {
     const response = await request(`/api/tasks/definitions/${id}`, { method: 'DELETE' });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     removeSummary(id);
     useNotification().success(t('common.crudDeleted', { type: t('taskDefinitions.definition') }));
@@ -285,7 +270,7 @@ const toggleEnabled = async (
       body: JSON.stringify({ enabled }),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const payload = await parse_api_response<TaskDefinitionDetailed>(response.json());
 
