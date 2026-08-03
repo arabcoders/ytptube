@@ -1,5 +1,6 @@
 <template>
   <form id="notificationForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <FormSubmitError :message="action.message.value" @dismiss="action.clear" />
     <UAlert
       v-if="formError && hasFormContent"
       color="warning"
@@ -414,7 +415,6 @@ const props = defineProps<{
   addInProgress?: boolean;
 }>();
 
-const toast = useNotification();
 const box = useConfirm();
 const { isApprise } = useNotifications();
 const { filterPresets, hasPreset } = usePresetOptions();
@@ -431,6 +431,7 @@ const importString = ref('');
 const requestType = computed(() => form.request.type);
 
 const form = reactive<notification>(normalizeNotification(props.item));
+const action = useFormSubmit();
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -461,6 +462,7 @@ const { isDirty, markClean } = useDirtyState(dirtySource);
 watch(
   () => props.item,
   (value) => {
+    action.clear();
     Object.assign(form, normalizeNotification(value));
 
     importString.value = '';
@@ -564,6 +566,7 @@ const addHeader = (): void => {
 };
 
 const checkInfo = async (): Promise<void> => {
+  action.clear();
   if (formError.value) {
     return;
   }
@@ -587,9 +590,10 @@ const checkInfo = async (): Promise<void> => {
 };
 
 const importItem = async (): Promise<void> => {
+  action.clear();
   const value = importString.value.trim();
   if (!value) {
-    toast.error(t('common.validationImportRequired'));
+    action.setError(new Error(t('common.validationImportRequired')));
     return;
   }
 
@@ -597,8 +601,10 @@ const importItem = async (): Promise<void> => {
     const item = decode(value) as notification & ImportedItem;
 
     if ('notification' !== item._type) {
-      toast.error(
-        t('common.validationInvalidImport', { expected: 'notification', type: item._type }),
+      action.setError(
+        new Error(
+          t('common.validationInvalidImport', { expected: 'notification', type: item._type }),
+        ),
       );
       importString.value = '';
       return;
@@ -614,8 +620,15 @@ const importItem = async (): Promise<void> => {
 
     importString.value = '';
     showImport.value = false;
-  } catch (error: any) {
-    toast.error(t('common.failedImportNotification', { error: error.message }));
+    action.clear();
+  } catch (error) {
+    action.setError(
+      new Error(
+        t('common.failedImportNotification', {
+          error: error instanceof Error ? error.message : t('common.unknownError'),
+        }),
+      ),
+    );
   }
 };
 

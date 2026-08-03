@@ -1,6 +1,6 @@
 <template>
   <form id="presetForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
-    <FormSubmitError :message="action.message.value" />
+    <FormSubmitError :message="action.message.value" @dismiss="action.clear" />
     <UAlert
       v-if="formError && hasFormContent"
       color="warning"

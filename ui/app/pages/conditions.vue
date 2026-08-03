@@ -469,7 +469,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <FormSubmitError :message="submission.message.value" />
+        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
         <ConditionForm
           :key="modalKey"
           :addInProgress="conditions.addInProgress.value"

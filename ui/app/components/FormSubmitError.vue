@@ -21,11 +21,15 @@
 const props = defineProps<{
   message?: string | null;
 }>();
+const emit = defineEmits<{
+  dismiss: [];
+}>();
 
 const dismissed = ref(false);
 
 const dismiss = (): void => {
   dismissed.value = true;
+  emit('dismiss');
 };
 
 watch(

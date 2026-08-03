@@ -1,6 +1,6 @@
 <template>
   <main class="space-y-4">
-    <FormSubmitError :message="submitError" />
+    <FormSubmitError :message="submitError" @dismiss="submitError = ''" />
     <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
       <div class="ytp-card p-4 sm:p-6 space-y-4">
         <div class="space-y-4">
@@ -1137,6 +1137,7 @@ onMounted(async () => {
 });
 
 const runCliCommand = async (): Promise<void> => {
+  submitError.value = '';
   if (!form.value.url) {
     toast.warning(t('common.enterUrlFirst'));
     return;
@@ -1205,9 +1206,7 @@ const runCliCommand = async (): Promise<void> => {
     const json = (await resp.json()) as { command?: string; error?: string };
 
     if (!resp.ok) {
-      toast.error(
-        t('common.errorPrefix', { msg: json.error || t('common.failedGenerateCommand') }),
-      );
+      submitError.value = await parse_api_error(json);
       return;
     }
 
@@ -1216,11 +1215,12 @@ const runCliCommand = async (): Promise<void> => {
     await nextTick();
     await navigateTo('/console');
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('common.failedCreateCommand'));
+    submitError.value = error instanceof Error ? error.message : t('common.failedCreateCommand');
   }
 };
 
 const testDownloadOptions = async (): Promise<void> => {
+  submitError.value = '';
   if (!form.value.url) {
     toast.warning(t('common.enterUrlFirst'));
     return;
@@ -1273,9 +1273,7 @@ const testDownloadOptions = async (): Promise<void> => {
     const json = await resp.json();
 
     if (!resp.ok) {
-      toast.error(
-        t('common.errorPrefix', { msg: json.error || t('common.failedGenerateCommand') }),
-      );
+      submitError.value = await parse_api_error(json);
       return;
     }
 
@@ -1285,7 +1283,7 @@ const testDownloadOptions = async (): Promise<void> => {
     };
     showTestResults.value = true;
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('common.failedTestOptions'));
+    submitError.value = error instanceof Error ? error.message : t('common.failedTestOptions');
   }
 };
 

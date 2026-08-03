@@ -410,7 +410,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <FormSubmitError :message="submission.message.value" />
+        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
         <DLFieldForm
           :key="modalKey"
           :addInProgress="dlFields.addInProgress.value"

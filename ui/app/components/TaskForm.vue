@@ -1,5 +1,6 @@
 <template>
   <form id="taskForm" autocomplete="off" class="space-y-4" @submit.prevent="checkInfo">
+    <FormSubmitError :message="action.message.value" @dismiss="action.clear" />
     <UAlert
       v-if="displayError && hasFormContent"
       color="warning"
@@ -460,7 +461,7 @@ import { CronExpressionParser } from 'cron-parser';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { ExportedTask, Task } from '~/types/tasks';
-import { shortPath } from '~/utils';
+import { ensure_api_success, shortPath } from '~/utils';
 
 const props = defineProps<{
   reference?: number | null | undefined;
@@ -514,6 +515,7 @@ const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i;
 
 const form = reactive<Task>(createDefaultTask(props.task));
 const timerError = ref('');
+const action = useFormSubmit();
 
 const dirtySource = computed(() => ({
   reference: props.reference ?? null,
@@ -578,6 +580,7 @@ const getUrlElement = (): HTMLInputElement | HTMLTextAreaElement | null => {
 watch(
   () => props.task,
   (value) => {
+    action.clear();
     Object.assign(form, createDefaultTask(value));
     if (!value?.preset) {
       form.preset = toRaw(config.app.default_preset);
@@ -744,6 +747,7 @@ const confirmImportOverwrite = async (): Promise<boolean> => {
 
 const checkInfo = async (): Promise<void> => {
   const urls = splitUrls(form.url || '');
+  action.clear();
   timerError.value = '';
 
   if (formError.value) {
@@ -826,9 +830,10 @@ const checkInfo = async (): Promise<void> => {
 };
 
 const importItem = async (): Promise<void> => {
+  action.clear();
   const val = import_string.value.trim();
   if (!val) {
-    toast.error(t('common.validationImportRequired'));
+    action.setError(new Error(t('common.validationImportRequired')));
     return;
   }
 
@@ -840,7 +845,9 @@ const importItem = async (): Promise<void> => {
     const item = decode(val) as ExportedTask;
 
     if ('task' !== item._type) {
-      toast.error(t('common.validationInvalidImport', { expected: 'task', type: item._type }));
+      action.setError(
+        new Error(t('common.validationInvalidImport', { expected: 'task', type: item._type })),
+      );
       import_string.value = '';
       return;
     }
@@ -867,9 +874,16 @@ const importItem = async (): Promise<void> => {
 
     import_string.value = '';
     showImport.value = false;
-  } catch (error: any) {
+    action.clear();
+  } catch (error) {
     console.error(error);
-    toast.error(t('common.validationImportParseFailed', { error: error.message }));
+    action.setError(
+      new Error(
+        t('common.validationImportParseFailed', {
+          error: error instanceof Error ? error.message : t('common.unknownError'),
+        }),
+      ),
+    );
   }
 };
 
@@ -886,8 +900,8 @@ const convertOptions = async (args: string): Promise<Record<string, any> | null>
     }
 
     return response.opts as Record<string, any>;
-  } catch (error: any) {
-    toast.error(error.message);
+  } catch (error) {
+    action.setError(error);
     return null;
   }
 };
@@ -911,6 +925,7 @@ const is_generic_rss = (url: string): boolean => {
 };
 
 const convert_url = async (url: string): Promise<string> => {
+  action.clear();
   if (!url || '' === url) {
     return url;
   }
@@ -927,15 +942,16 @@ const convert_url = async (url: string): Promise<string> => {
   try {
     convertInProgress.value = true;
     const resp = await request('/api/yt-dlp/url/info?' + params.toString());
+    await ensure_api_success(resp);
     const body = await resp.json();
     const channel_id = ag(body, 'channel_id', null);
 
     if (channel_id) {
       return url.replace(`/@${m.groups.handle}`, `/channel/${channel_id}`);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error(error);
-    toast.error(t('common.errorPrefix', { msg: error.message }));
+    action.setError(error);
   } finally {
     convertInProgress.value = false;
   }

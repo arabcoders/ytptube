@@ -536,11 +536,16 @@ describe('network and id helpers', () => {
   });
 
   it('throw_cli_error', async () => {
-    const jsonMock = mock().mockResolvedValue({ error: 'fail' });
+    const jsonMock = mock().mockResolvedValue({
+      error: "Failed to parse command options for yt-dlp. 'No such option: --foo'.",
+      code: 'INVALID',
+      params: { field: 'api.fields.args' },
+      detail: 'No such option: --foo',
+    });
     const responseMock = { status: 400, json: jsonMock };
     fetchMock.mockResolvedValue(responseMock);
 
-    await expect(utils.convertCliOptions('--bad')).rejects.toThrow('fail');
+    await expect(utils.convertCliOptions('--foo')).rejects.toThrow('No such option: --foo');
   });
 });
 

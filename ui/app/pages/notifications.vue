@@ -547,7 +547,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <FormSubmitError :message="submission.message.value" />
+        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
         <NotificationForm
           :key="modalKey"
           :addInProgress="addInProgress"
