@@ -428,6 +428,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
+        <FormSubmitError :message="submission.message.value" />
         <TaskDefinitionEditor
           ref="definitionEditor"
           :document="workingDefinition"
@@ -600,6 +601,7 @@ const pageShell = usePageShell('task-definitions');
 const { toggleExpand, expandClass } = useExpandableMeta();
 
 const taskDefs = useTaskDefinitionsComposable();
+const submission = useFormSubmit();
 const definitionsRef = taskDefs.definitions;
 const isLoading = taskDefs.isLoading;
 const lastError = taskDefs.lastError;
@@ -760,6 +762,7 @@ const toggleMasterSelection = (): void => {
 };
 
 const openCreate = (): void => {
+  submission.clear();
   editorDirty.value = false;
   editorValid.value = false;
   editorMode.value = 'create';
@@ -772,6 +775,7 @@ const openCreate = (): void => {
 };
 
 const openEdit = async (summary: TaskDefinitionSummary): Promise<void> => {
+  submission.clear();
   editorDirty.value = false;
   editorValid.value = false;
   editorMode.value = 'edit';
@@ -826,6 +830,7 @@ const closeEditor = (): void => {
   }
 
   editorDirty.value = false;
+  submission.clear();
   editorValid.value = false;
   isEditorOpen.value = false;
   workingDefinition.value = null;
@@ -841,12 +846,13 @@ const submitDefinition = async (definition: TaskDefinitionDocument): Promise<voi
 
   try {
     if (editorMode.value === 'create') {
-      const created = await createDefinition(definition);
+      const created = await submission.run(() => createDefinition(definition));
       if (created) {
         shouldClose = true;
       }
     } else if (workingId.value) {
-      const updated = await updateDefinition(workingId.value, definition);
+      const id = workingId.value;
+      const updated = await submission.run(() => updateDefinition(id, definition));
       if (updated) {
         shouldClose = true;
       }

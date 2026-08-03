@@ -547,6 +547,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
+        <FormSubmitError :message="submission.message.value" />
         <NotificationForm
           :key="modalKey"
           :addInProgress="addInProgress"
@@ -615,12 +616,12 @@ const displayStyleState = useStorage<'list' | 'grid' | 'cards'>(
 const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const notificationsStore = useNotifications();
+const submission = useFormSubmit();
 const notifications = notificationsStore.notifications;
 const paging = notificationsStore.pagination;
 const allowedEvents = notificationsStore.events;
 const isLoading = notificationsStore.isLoading;
 const addInProgress = notificationsStore.addInProgress;
-const lastError = notificationsStore.lastError;
 
 const page = ref(1);
 const targetRef = ref<number | undefined>(undefined);
@@ -740,6 +741,7 @@ const loadContent = async (pageNumber = page.value): Promise<void> => {
 };
 
 const resetEditor = (): void => {
+  submission.clear();
   target.value = defaultState();
   targetRef.value = undefined;
   editorDirty.value = false;
@@ -766,6 +768,7 @@ const toggleMasterSelection = (): void => {
 };
 
 const editItem = (item: notification): void => {
+  submission.clear();
   editorDirty.value = false;
   target.value = JSON.parse(JSON.stringify(item)) as notification;
   targetRef.value = item.id ?? undefined;
@@ -836,7 +839,11 @@ const toggleEnabled = async (item: notification): Promise<void> => {
     return;
   }
 
-  await notificationsStore.patchNotification(item.id, { enabled: !item.enabled });
+  try {
+    await notificationsStore.patchNotification(item.id, { enabled: !item.enabled });
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('common.unknownError'));
+  }
 };
 
 const updateItem = async ({
@@ -846,13 +853,11 @@ const updateItem = async ({
   reference: number | undefined;
   item: notification;
 }): Promise<void> => {
-  if (reference) {
-    await notificationsStore.updateNotification(reference, item);
-  } else {
-    await notificationsStore.createNotification(item);
-  }
+  const result = reference
+    ? await submission.run(() => notificationsStore.updateNotification(reference, item))
+    : await submission.run(() => notificationsStore.createNotification(item));
 
-  if (!lastError.value) {
+  if (result) {
     closeEditor();
   }
 };

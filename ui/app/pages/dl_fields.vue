@@ -410,6 +410,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
+        <FormSubmitError :message="submission.message.value" />
         <DLFieldForm
           :key="modalKey"
           :addInProgress="dlFields.addInProgress.value"
@@ -460,7 +461,6 @@ import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDlFields } from '~/composables/useDlFields';
 import type { DLField } from '~/types/dl_fields';
-import type { APIResponse } from '~/types/responses';
 import { copyText, encode } from '~/utils';
 import { usePageShell } from '~/composables/usePageShell';
 const { t } = useI18n();
@@ -471,6 +471,7 @@ const pageShell = usePageShell('custom-fields');
 const displayStyle = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
 const isMobile = useMediaQuery({ maxWidth: 639 });
 const dlFields = useDlFields();
+const submission = useFormSubmit();
 const route = useRoute();
 const router = useRouter();
 const { confirmDialog } = useDialog();
@@ -594,6 +595,7 @@ const loadContent = async (pageNumber = 1): Promise<void> => {
 };
 
 const resetEditor = (): void => {
+  submission.clear();
   item.value = {};
   itemRef.value = null;
   editorDirty.value = false;
@@ -683,20 +685,17 @@ const updateItem = async ({
   reference: number | null | undefined;
   item: DLField;
 }): Promise<void> => {
-  const callback = (response: APIResponse) => {
-    if (response.success) {
-      closeEditor();
-    }
-  };
+  const result = reference
+    ? await submission.run(() => dlFields.patchDlField(reference, updatedItem))
+    : await submission.run(() => dlFields.createDlField(updatedItem));
 
-  if (reference) {
-    await dlFields.patchDlField(reference, updatedItem, callback);
-  } else {
-    await dlFields.createDlField(updatedItem, callback);
+  if (result) {
+    closeEditor();
   }
 };
 
 const editItem = (field: DLField): void => {
+  submission.clear();
   editorDirty.value = false;
   item.value = JSON.parse(JSON.stringify(field)) as DLField;
   itemRef.value = field.id;

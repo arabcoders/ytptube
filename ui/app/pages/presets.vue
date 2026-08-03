@@ -459,6 +459,7 @@
       @update:open="(open) => void editor.handleOpenChange(open)"
     >
       <template #body>
+        <FormSubmitError :message="editor.submitError.value" />
         <PresetForm
           :key="editor.modalKey.value"
           :addInProgress="editor.addInProgress.value"

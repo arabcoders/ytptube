@@ -479,6 +479,29 @@ describe('network and id helpers', () => {
     expect(message).toBe("Failed to fetch RSS/Atom feed. - Client error '404 Not Found'");
   });
 
+  it('preserve_api_error_fields', async () => {
+    const payload = {
+      message: 'Validation failed.',
+      detail: [{ loc: ['body', 'timer'], msg: 'Timer is required.', type: 'value_error' }],
+    };
+    const response = {
+      ok: false,
+      status: 422,
+      clone: () => ({ json: async () => payload }),
+    } as unknown as Response;
+
+    try {
+      await utils.ensure_api_success(response);
+      throw new Error('Expected ensure_api_success to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(utils.ApiError);
+      expect((error as InstanceType<typeof utils.ApiError>).status).toBe(422);
+      expect((error as InstanceType<typeof utils.ApiError>).fields).toEqual({
+        timer: 'Timer is required.',
+      });
+    }
+  });
+
   it('prefix_base_url', async () => {
     const responseMock = { status: 200 } as Response;
     fetchMock.mockResolvedValue(responseMock);

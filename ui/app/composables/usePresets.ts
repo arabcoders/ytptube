@@ -1,7 +1,7 @@
 import { ref, readonly } from 'vue';
 
 import { useNotification } from '~/composables/useNotification';
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
+import { request, parse_list_response, parse_api_response, ensure_api_success } from '~/utils';
 import type { Preset, PresetRequest } from '~/types/presets';
 import type { APIResponse, Pagination } from '~/types/responses';
 
@@ -60,41 +60,17 @@ const sortPresets = (items: Array<Preset>): Array<Preset> => {
 };
 
 /**
- * Safely reads JSON from a Response, returns null on error.
- * @param response Fetch Response object
- * @returns Parsed JSON or null
- */
-const readJson = async (response: Response): Promise<unknown> => {
-  try {
-    const clone = response.clone();
-    return await clone.json();
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Throws an error if the response is not OK, using API error message if available.
- * @param response Fetch Response object
- * @throws Error with message from API or status code
- */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (response.ok) {
-    return;
-  }
-
-  const payload = await readJson(response);
-  const message = await parse_api_error(payload);
-  throw new Error(message);
-};
-
-/**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
-const handleError = (error: unknown): void => {
+const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
+  return message;
+};
+
+const handleError = (error: unknown): void => {
+  const message = setError(error);
   useNotification().error(message);
 };
 
@@ -146,7 +122,7 @@ const loadPresets = async (
     }
 
     const response = await request(url);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const { items, pagination: paginationData } = await parse_list_response<Preset>(json);
@@ -170,7 +146,7 @@ const loadPresets = async (
 const getPreset = async (id: number): Promise<Preset | null> => {
   try {
     const response = await request(`/api/presets/${id}`);
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const preset = await parse_api_response<Preset>(json);
@@ -201,7 +177,7 @@ const createPreset = async (
       body: JSON.stringify(preset),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const created = await parse_api_response<Preset>(json);
@@ -217,14 +193,13 @@ const createPreset = async (
     return created;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -256,7 +231,7 @@ const updatePreset = async (
       body: JSON.stringify(payload),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const updated = await parse_api_response<Preset>(json);
@@ -274,14 +249,13 @@ const updatePreset = async (
     return updated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    handleError(error);
+    setError(error);
 
     if (callback) {
       callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error;
-    return null;
+    throw error;
   } finally {
     addInProgress.value = false;
   }
@@ -313,7 +287,7 @@ const patchPreset = async (
       body: JSON.stringify(payload),
     });
 
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     const json = await response.json();
     const updated = await parse_api_response<Preset>(json);
@@ -356,7 +330,7 @@ const deletePreset = async (
 ): Promise<boolean> => {
   try {
     const response = await request(`/api/presets/${id}`, { method: 'DELETE' });
-    await ensureSuccess(response);
+    await ensure_api_success(response);
 
     removePreset(id);
     useNotification().success(t('common.crudDeleted', { type: t('common.presetLabel') }));

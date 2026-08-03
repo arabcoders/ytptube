@@ -1,5 +1,5 @@
 import { useStorage } from '@vueuse/core';
-import type { convert_args_response, Paginated } from '~/types/responses';
+import type { ApiErrorPayload, convert_args_response, Paginated } from '~/types/responses';
 import type { StoreItem } from '~/types/store';
 
 const AG_SEPARATOR = '.';
@@ -1034,6 +1034,65 @@ const parse_api_error = async (json: unknown): Promise<string> => {
   return t('common.unknownError');
 };
 
+class ApiError extends Error {
+  readonly status: number;
+  readonly payload: ApiErrorPayload | null;
+  readonly fields: Record<string, string>;
+
+  constructor(
+    message: string,
+    options: {
+      status?: number;
+      payload?: ApiErrorPayload | null;
+      cause?: unknown;
+    } = {},
+  ) {
+    super(message, { cause: options.cause });
+    this.name = 'ApiError';
+    this.status = options.status ?? 0;
+    this.payload = options.payload ?? null;
+    this.fields = {};
+
+    if (Array.isArray(this.payload?.detail)) {
+      for (const item of this.payload.detail) {
+        const field = item.loc?.at(-1);
+        if (field !== undefined && item.msg) {
+          this.fields[String(field)] = item.msg;
+        }
+      }
+    }
+  }
+}
+
+const to_api_error = (error: unknown): ApiError => {
+  if (error instanceof ApiError) {
+    return error;
+  }
+
+  const { $i18n } = useNuxtApp();
+  const t = $i18n?.t ?? ((key: string) => key);
+  const message = error instanceof Error ? error.message : t('common.unknownError');
+  return new ApiError(message, { cause: error });
+};
+
+const ensure_api_success = async (response: Response): Promise<void> => {
+  if (response.ok) {
+    return;
+  }
+
+  let payload: ApiErrorPayload | null = null;
+  try {
+    payload = (await response.clone().json()) as ApiErrorPayload;
+  } catch {
+    // The status still provides useful context when the response has no JSON body.
+  }
+
+  throw new ApiError(await parse_api_error(payload), {
+    status: response.status,
+    payload,
+  });
+};
+
 const formatPageTitle = (title?: string | null): string => {
   const normalized = title?.trim();
 
@@ -1095,5 +1154,8 @@ export {
   parse_list_response,
   parse_api_response,
   parse_api_error,
+  ApiError,
+  to_api_error,
+  ensure_api_success,
   formatPageTitle,
 };

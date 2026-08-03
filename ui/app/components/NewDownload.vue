@@ -1,5 +1,6 @@
 <template>
   <main class="space-y-4">
+    <FormSubmitError :message="submitError" />
     <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
       <div class="ytp-card p-4 sm:p-6 space-y-4">
         <div class="space-y-4">
@@ -399,7 +400,7 @@
                 :rows="5"
                 :placeholder="getDefault('cookies', t('common.cookiesPlaceholder'))"
                 class="w-full"
-                @error="(msg: string) => toast.error(msg)"
+                @error="(message: string) => (submitError = message)"
               />
             </UFormField>
           </div>
@@ -594,6 +595,7 @@ const storedCommand = useStorage<string>('console_command', '');
 const testResultsClasses = useStorage<string>('modal_text_classes', '');
 
 const addInProgress = ref<boolean>(false);
+const submitError = ref('');
 const showOptions = ref<boolean>(false);
 const showTestResults = ref<boolean>(false);
 const showPlaylistPicker = ref<boolean>(false);
@@ -909,6 +911,7 @@ const splitUrls = (urlString: string): Array<string> => {
 };
 
 const addDownload = async () => {
+  submitError.value = '';
   if (form.value.folder) {
     form.value.folder = form.value.folder.trim();
   }
@@ -975,11 +978,12 @@ const addDownload = async () => {
 
     const data = await response.json();
     if (!response.ok) {
-      toast.error((await parse_api_error(data)) || t('queue.failedToAdd'));
+      submitError.value = (await parse_api_error(data)) || t('queue.failedToAdd');
       return;
     }
 
     let had_errors = false;
+    const errors: string[] = [];
 
     if (200 === response.status) {
       data.forEach((item: Record<string, any>) => {
@@ -993,9 +997,12 @@ const addDownload = async () => {
           return;
         }
 
-        toast.error(t('common.errorPrefix', { msg: item.msg || t('queue.failedToAdd') }));
+        const message = t('common.errorPrefix', { msg: item.msg || t('queue.failedToAdd') });
+        errors.push(message);
       });
     }
+
+    submitError.value = errors.join('\n');
 
     if (202 === response.status) {
       toast.success(data.message, { timeout: 2000 });
@@ -1005,9 +1012,10 @@ const addDownload = async () => {
       form.value.url = '';
       emitter('clear_form');
     }
-  } catch (e: any) {
-    console.error(e);
-    toast.error(t('common.errorPrefix', { msg: e.message }));
+  } catch (error) {
+    console.error(error);
+    const message = error instanceof Error ? error.message : t('queue.failedToAdd');
+    submitError.value = t('common.errorPrefix', { msg: message });
   } finally {
     addInProgress.value = false;
   }
@@ -1050,8 +1058,8 @@ const convertOptions = async (args: string) => {
     }
 
     return response.opts;
-  } catch (e: any) {
-    toast.error(e.message);
+  } catch (error) {
+    submitError.value = error instanceof Error ? error.message : t('common.unknownError');
   }
 
   return null;

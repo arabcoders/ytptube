@@ -71,17 +71,7 @@
           <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-toned" />
         </div>
 
-        <UAlert
-          v-else-if="errorMessage"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          :title="t('common.unableToLoadInfo')"
-        >
-          <template #description>
-            <p class="whitespace-pre-line wrap-break-word">{{ errorMessage }}</p>
-          </template>
-        </UAlert>
+        <FormSubmitError v-else-if="errorMessage" :message="errorMessage" />
 
         <UEmpty
           v-else-if="filteredEntries.length === 0"
@@ -238,7 +228,6 @@ const emitter = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const toast = useNotification();
 const query = ref('');
 const entries = ref<PlaylistEntry[]>([]);
 const entryScrollEl = ref<HTMLElement | null>(null);
@@ -524,7 +513,6 @@ const loadEntries = async (): Promise<void> => {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : t('common.failedFetch');
     errorMessage.value = message;
-    toast.error(t('common.errorPrefix', { msg: message }));
   } finally {
     isLoading.value = false;
   }

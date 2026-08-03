@@ -16,6 +16,8 @@ Example of the regular view interface.
 Example of the Simple mode interface.
 ![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_simple.jpg)
 
+The YTPTube frontend is available in English, العربية, Français, 中文, and 日本語. See the [language FAQ](FAQ.md#how-do-i-change-the-ui-language).
+
 # YTPTube Features.
 
 * Multi-download support.
@@ -39,7 +41,6 @@ Example of the Simple mode interface.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
 * A bundled executable version for Windows, macOS and Linux. `MacOS version is untested`.
 * Use playwright or selenium for extractors that require a browser. see [related FAQ](FAQ.md#how-to-use-the-browser-extractor).
-* Multi-language UI. See [language FAQ](FAQ.md#how-do-i-change-the-ui-language).
 
 Please read the [FAQ](FAQ.md) for more information.
 
