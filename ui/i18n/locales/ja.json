@@ -239,6 +239,7 @@
     "ok": "OK",
     "discardChangesConfirm": "変更を破棄",
     "keepEditing": "編集を続ける",
+    "dontAskAgain": "今後確認しない",
     "alert": "アラート",
     "inputRequired": "入力が必要です",
     "dialog": "ダイアログ",
@@ -776,6 +777,10 @@
     },
     "settings": {
       "subtitle": "インターフェースの動作を調整します。",
+      "unsavedChanges": "フォームガード",
+      "unsavedChangesDesc": "確認なしで閉じるフォームを管理します。",
+      "resetUnsavedChanges": "破棄の確認を再び表示",
+      "dirtyVideoPlayer": "ビデオプレーヤー",
       "description": "インターフェースの動作とダウンロードのデフォルトを調整します。",
       "closeAria": "設定を閉じる",
       "pageView": "ページ表示",

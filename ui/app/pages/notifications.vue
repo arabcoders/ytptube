@@ -547,7 +547,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <FormSubmitError :message="submission.message.value" />
+        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
         <NotificationForm
           :key="modalKey"
           :addInProgress="addInProgress"
@@ -657,6 +657,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(editorOpen, {
     dirty: editorDirty,
+    preferenceKey: 'notifications',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

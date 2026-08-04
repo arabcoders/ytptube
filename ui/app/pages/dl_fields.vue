@@ -410,7 +410,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <FormSubmitError :message="submission.message.value" />
+        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
         <DLFieldForm
           :key="modalKey"
           :addInProgress="dlFields.addInProgress.value"
@@ -540,6 +540,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(editorOpen, {
     dirty: editorDirty,
+    preferenceKey: 'dl-fields',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

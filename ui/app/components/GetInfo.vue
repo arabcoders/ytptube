@@ -157,8 +157,6 @@ const wrap = useStorage<boolean>('getinfo_wrap', false);
 const contentView = ref<HTMLElement | null>(null);
 let latestRequestId = 0;
 
-const toast = useNotification();
-
 const modalUi = {
   content: 'w-full sm:max-w-5xl',
   body: 'p-4 sm:p-5',
@@ -302,7 +300,6 @@ const loadInfo = async (): Promise<void> => {
     console.error(error);
     const message = error instanceof Error ? error.message : t('common.failedFetch');
     errorMessage.value = message;
-    toast.error(t('common.errorPrefix', { msg: message }));
   } finally {
     if (requestId === latestRequestId) {
       isLoading.value = false;

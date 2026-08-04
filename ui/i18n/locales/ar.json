@@ -239,6 +239,7 @@
     "ok": "موافق",
     "discardChangesConfirm": "تجاهل التغييرات",
     "keepEditing": "متابعة التحرير",
+    "dontAskAgain": "لا تسأل مرة أخرى",
     "alert": "تنبيه",
     "inputRequired": "الإدخال مطلوب",
     "dialog": "حوار",
@@ -776,6 +777,10 @@
     },
     "settings": {
       "subtitle": "تعديل سلوك الواجهة.",
+      "unsavedChanges": "حماية النماذج",
+      "unsavedChangesDesc": "إدارة النماذج التي يمكن إغلاقها دون تأكيد.",
+      "resetUnsavedChanges": "إظهار تأكيدات التجاهل مجددًا",
+      "dirtyVideoPlayer": "مشغل الفيديو",
       "description": "تعديل سلوك الواجهة وافتراضيات التنزيل.",
       "closeAria": "إغلاق الإعدادات",
       "pageView": "عرض الصفحة",

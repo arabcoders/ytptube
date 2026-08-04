@@ -755,6 +755,7 @@ const closeModel = (): void => {
 const { handleOpenChange: handlePreviewOpenChange, requestClose: requestClosePreview } =
   useDirtyCloseGuard(previewOpen, {
     dirty: computed(() => Boolean(model_item.value?.type === 'video' && playingNow.value)),
+    preferenceKey: 'player',
     title: t('common.closePlayer'),
     message: t('common.closePlayerDesc'),
     confirmText: t('common.closePlayer'),

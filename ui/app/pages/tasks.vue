@@ -692,7 +692,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <FormSubmitError :message="submission.message.value" />
+        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
         <TaskForm
           :key="formKey"
           :addInProgress="addInProgress"
@@ -870,6 +870,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(toggleForm, {
     dirty: editorDirty,
+    preferenceKey: 'tasks',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

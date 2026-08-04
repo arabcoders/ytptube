@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, afterEach, describe, expect, it, mock } from 'bun:test';
 import { ref } from 'vue';
 
-type DialogResult = { status: boolean; value: null };
+type DialogResult = { status: boolean; value: Record<string, boolean> | null };
 type RouteGuard = () => Promise<boolean> | boolean;
 
 let beforeRouteLeaveHandler: RouteGuard | null = null;
@@ -31,9 +31,10 @@ mock.module('~/composables/useDialog', () => ({
 }));
 
 let useDirtyCloseGuard: typeof import('~/composables/useDirtyCloseGuard').useDirtyCloseGuard;
+let useDirtyCloseGuardPreferences: typeof import('~/composables/useDirtyCloseGuard').useDirtyCloseGuardPreferences;
 
 beforeAll(async () => {
-  ({ useDirtyCloseGuard } = await import('~/composables/useDirtyCloseGuard'));
+  ({ useDirtyCloseGuard, useDirtyCloseGuardPreferences } = await import('~/composables/useDirtyCloseGuard'));
 });
 
 beforeEach(() => {
@@ -41,6 +42,8 @@ beforeEach(() => {
   beforeRouteUpdateHandler = null;
   unmountHandlers = [];
   confirmDialogMock.mockReset();
+  localStorage.clear();
+  useDirtyCloseGuardPreferences().value = {};
   confirmDialogMock.mockImplementation(() => Promise.resolve({ status: true, value: null }));
 });
 
@@ -62,6 +65,7 @@ describe('useDirtyCloseGuard', () => {
 
     useDirtyCloseGuard(open, {
       dirty,
+      preferenceKey: 'test-form',
       onDiscard,
     });
 
@@ -83,6 +87,7 @@ describe('useDirtyCloseGuard', () => {
 
     useDirtyCloseGuard(open, {
       dirty,
+      preferenceKey: 'test-form',
     });
 
     expect(beforeRouteUpdateHandler).not.toBeNull();
@@ -100,6 +105,7 @@ describe('useDirtyCloseGuard', () => {
 
     useDirtyCloseGuard(open, {
       dirty,
+      preferenceKey: 'test-form',
     });
 
     const guardedEvent = new window.Event('beforeunload', { cancelable: true });
@@ -147,6 +153,7 @@ describe('useDirtyCloseGuard', () => {
 
     const guard = useDirtyCloseGuard(open, {
       dirty,
+      preferenceKey: 'test-form',
       onDiscard,
     });
 
@@ -168,11 +175,47 @@ describe('useDirtyCloseGuard', () => {
 
     useDirtyCloseGuard(open, {
       dirty,
+      preferenceKey: 'test-form',
     });
 
     expect(await beforeRouteLeaveHandler?.()).toBe(true);
     expect(await beforeRouteUpdateHandler?.()).toBe(true);
     expect(confirmDialogMock).not.toHaveBeenCalled();
     expect(open.value).toBe(true);
+  });
+
+  it('skips_confirmations_after_opt_in', async () => {
+    const open = ref(true);
+    const dirty = ref(true);
+    const onDiscard = mock(() => {});
+
+    useDirtyCloseGuardPreferences().value = { 'opt-in-form': true };
+
+    const guard = useDirtyCloseGuard(open, {
+      dirty,
+      preferenceKey: 'opt-in-form',
+      onDiscard,
+    });
+
+    expect(await guard.requestClose()).toBe(true);
+    expect(onDiscard).toHaveBeenCalledTimes(1);
+    expect(confirmDialogMock).not.toHaveBeenCalled();
+  });
+
+  it('does_not_persist_cancelled_choice', async () => {
+    const open = ref(true);
+    const dirty = ref(true);
+
+    confirmDialogMock.mockImplementationOnce(() =>
+      Promise.resolve({ status: false, value: { skip: true } }),
+    );
+
+    const guard = useDirtyCloseGuard(open, {
+      dirty,
+      preferenceKey: 'cancel-form',
+    });
+
+    expect(await guard.requestClose()).toBe(false);
+    expect(confirmDialogMock).toHaveBeenCalledTimes(1);
   });
 });

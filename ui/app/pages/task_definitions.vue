@@ -428,7 +428,7 @@
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <FormSubmitError :message="submission.message.value" />
+        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
         <TaskDefinitionEditor
           ref="definitionEditor"
           :document="workingDefinition"
@@ -710,6 +710,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(isEditorOpen, {
     dirty: editorDirty,
+    preferenceKey: 'task-definitions',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

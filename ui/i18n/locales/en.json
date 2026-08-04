@@ -239,6 +239,7 @@
     "ok": "OK",
     "discardChangesConfirm": "Discard changes",
     "keepEditing": "Keep editing",
+    "dontAskAgain": "Don't ask again",
     "alert": "Alert",
     "inputRequired": "Input required",
     "dialog": "Dialog",
@@ -776,6 +777,10 @@
     },
     "settings": {
       "subtitle": "Adjust interface behavior.",
+      "unsavedChanges": "Form Guard",
+      "unsavedChangesDesc": "Manage which forms can be closed without confirmation.",
+      "resetUnsavedChanges": "Show discard confirmations again",
+      "dirtyVideoPlayer": "Video player",
       "description": "Adjust interface behavior and download defaults.",
       "closeAria": "Close settings",
       "pageView": "Page View",

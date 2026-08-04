@@ -1,5 +1,6 @@
 <template>
   <form id="dlFieldForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <FormSubmitError :message="action.message.value" @dismiss="action.clear" />
     <UAlert
       v-if="
         formError &&
@@ -229,7 +230,6 @@ const props = defineProps<{
   addInProgress?: boolean;
 }>();
 
-const toast = useNotification();
 const box = useConfirm();
 const config = useYtpConfig();
 const { t } = useI18n();
@@ -241,6 +241,7 @@ const fieldTypeItems = computed(() => [
   { label: t('common.fieldTypeBool'), value: 'bool' },
 ]);
 const form = reactive<DLField>(normalizeField(props.item));
+const action = useFormSubmit();
 const ytDlpOptions = ref<AutoCompleteOptions>([]);
 const iconOptions: AutoCompleteOptions = bundledUiIconNames.map((name) => ({
   value: name,
@@ -276,6 +277,7 @@ const selectUi = {
 watch(
   () => props.item,
   (value) => {
+    action.clear();
     Object.assign(form, normalizeField(value));
 
     importString.value = '';
@@ -357,9 +359,10 @@ const formError = computed(() => {
 watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
 
 const importItem = async (): Promise<void> => {
+  action.clear();
   const value = importString.value.trim();
   if (!value) {
-    toast.error(t('common.validationImportRequired'));
+    action.setError(new Error(t('common.validationImportRequired')));
     return;
   }
 
@@ -367,11 +370,13 @@ const importItem = async (): Promise<void> => {
     const item = decode(value) as DLField & ImportedItem;
 
     if (!item._type || item._type !== 'dl_field') {
-      toast.error(
-        t('common.validationInvalidImport', {
-          expected: 'dl_field',
-          type: item._type ?? 'unknown',
-        }),
+      action.setError(
+        new Error(
+          t('common.validationInvalidImport', {
+            expected: 'dl_field',
+            type: item._type ?? 'unknown',
+          }),
+        ),
       );
       return;
     }
@@ -386,12 +391,20 @@ const importItem = async (): Promise<void> => {
     Object.assign(form, normalizeField(item));
     importString.value = '';
     showImport.value = false;
-  } catch (error: any) {
-    toast.error(t('common.validationImportParseFailed', { error: error.message }));
+    action.clear();
+  } catch (error) {
+    action.setError(
+      new Error(
+        t('common.validationImportParseFailed', {
+          error: error instanceof Error ? error.message : t('common.unknownError'),
+        }),
+      ),
+    );
   }
 };
 
 const checkInfo = (): void => {
+  action.clear();
   if (formError.value) {
     return;
   }

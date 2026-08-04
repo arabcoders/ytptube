@@ -71,7 +71,11 @@
           <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-toned" />
         </div>
 
-        <FormSubmitError v-else-if="errorMessage" :message="errorMessage" />
+        <FormSubmitError
+          v-else-if="errorMessage"
+          :message="errorMessage"
+          @dismiss="errorMessage = ''"
+        />
 
         <UEmpty
           v-else-if="filteredEntries.length === 0"

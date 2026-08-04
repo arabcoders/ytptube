@@ -239,6 +239,7 @@
     "ok": "OK",
     "discardChangesConfirm": "Annuler les modifications",
     "keepEditing": "Continuer la modification",
+    "dontAskAgain": "Ne plus demander",
     "alert": "Alerte",
     "inputRequired": "Saisie requise",
     "dialog": "Boîte de dialogue",
@@ -776,6 +777,10 @@
     },
     "settings": {
       "subtitle": "Ajustez le comportement de l'interface.",
+      "unsavedChanges": "Protection des formulaires",
+      "unsavedChangesDesc": "Gérez les formulaires qui peuvent être fermés sans confirmation.",
+      "resetUnsavedChanges": "Afficher à nouveau les confirmations",
+      "dirtyVideoPlayer": "Lecteur vidéo",
       "description": "Ajustez le comportement de l'interface et les valeurs par défaut de téléchargement.",
       "closeAria": "Fermer les paramètres",
       "pageView": "Vue de page",

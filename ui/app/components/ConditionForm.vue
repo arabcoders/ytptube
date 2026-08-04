@@ -1,5 +1,6 @@
 <template>
   <form id="conditionForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <FormSubmitError :message="action.message.value" @dismiss="action.clear" />
     <UAlert
       v-if="
         formError &&
@@ -428,10 +429,11 @@
       :title="t('common.testCondition')"
       :dismissible="!testData.in_progress"
       :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && (testData.show = false)"
+      @update:open="handleTestOpen"
     >
       <template #body>
         <form id="conditionTestForm" autocomplete="off" class="space-y-5" @submit.prevent="runTest">
+          <FormSubmitError :message="testAction.message.value" @dismiss="testAction.clear" />
           <UFormField :ui="fieldUi">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
@@ -571,12 +573,13 @@ const props = defineProps<{
   addInProgress?: boolean;
 }>();
 
-const toast = useNotification();
 const showImport = useStorage('showImport', false);
 const box = useConfirm();
 const config = useYtpConfig();
 
 const form = reactive<Condition>(normalizeCondition(props.item));
+const action = useFormSubmit();
+const testAction = useFormSubmit();
 const importString = ref('');
 const newExtraKey = ref('');
 const newExtraValue = ref('');
@@ -634,6 +637,8 @@ const textareaUi = {
 watch(
   () => props.item,
   (value) => {
+    action.clear();
+    testAction.clear();
     Object.assign(form, normalizeCondition(value));
 
     importString.value = '';
@@ -763,6 +768,7 @@ const logicTest = computed(() => {
 });
 
 const checkInfo = async (): Promise<void> => {
+  action.clear();
   if (formError.value) {
     return;
   }
@@ -792,22 +798,23 @@ const convertOptions = async (args: string): Promise<Record<string, unknown> | n
   try {
     const response = await convertCliOptions(args);
     return response.opts as Record<string, unknown>;
-  } catch (error: any) {
-    toast.error(error.message);
+  } catch (error) {
+    action.setError(error);
     return null;
   }
 };
 
 const runTest = async (): Promise<void> => {
+  testAction.clear();
   if (!testData.value.url) {
-    toast.error(t('common.urlRequiredForTest'), { force: true });
+    testAction.setError(new Error(t('common.urlRequiredForTest')));
     return;
   }
 
   try {
     new URL(testData.value.url);
   } catch {
-    toast.error(t('common.invalidUrl'), { force: true });
+    testAction.setError(new Error(t('common.invalidUrl')));
     return;
   }
 
@@ -820,25 +827,30 @@ const runTest = async (): Promise<void> => {
       body: JSON.stringify({ url: testData.value.url, condition: form.filter }),
     });
 
+    await ensure_api_success(response);
     const json = await response.json();
-    if (!response.ok) {
-      toast.error(json.message || json.error || t('common.unknownError'), { force: true });
-      return;
-    }
 
     testData.value.data = json as ConditionTestResponse;
     testData.value.changed = false;
-  } catch (error: any) {
-    toast.error(t('common.failedTestCondition', { error: error.message }));
+  } catch (error) {
+    testAction.setError(error);
   } finally {
     testData.value.in_progress = false;
   }
 };
 
+const handleTestOpen = (open: boolean): void => {
+  testData.value.show = open;
+  if (!open) {
+    testAction.clear();
+  }
+};
+
 const importItem = async (): Promise<void> => {
+  action.clear();
   const value = importString.value.trim();
   if (!value) {
-    toast.error(t('common.validationImportRequired'));
+    action.setError(new Error(t('common.validationImportRequired')));
     return;
   }
 
@@ -846,11 +858,13 @@ const importItem = async (): Promise<void> => {
     const item = decode(value) as Condition & ImportedItem;
 
     if (!item._type || item._type !== 'condition') {
-      toast.error(
-        t('common.validationInvalidImport', {
-          expected: 'condition',
-          type: item._type ?? 'unknown',
-        }),
+      action.setError(
+        new Error(
+          t('common.validationInvalidImport', {
+            expected: 'condition',
+            type: item._type ?? 'unknown',
+          }),
+        ),
       );
       return;
     }
@@ -865,8 +879,15 @@ const importItem = async (): Promise<void> => {
     Object.assign(form, normalizeCondition(item));
     importString.value = '';
     showImport.value = false;
-  } catch (error: any) {
-    toast.error(t('common.validationImportParseFailed', { error: error.message }));
+    action.clear();
+  } catch (error) {
+    action.setError(
+      new Error(
+        t('common.validationImportParseFailed', {
+          error: error instanceof Error ? error.message : t('common.unknownError'),
+        }),
+      ),
+    );
   }
 };
 
@@ -899,16 +920,17 @@ const addExtra = (): void => {
   const value = newExtraValue.value;
 
   if (!key || !value.trim()) {
-    toast.error(t('common.bothKeyValueRequired'));
+    action.setError(new Error(t('common.bothKeyValueRequired')));
     return;
   }
 
   if (form.extras[key] !== undefined) {
-    toast.error(t('common.keyAlreadyExists', { key }));
+    action.setError(new Error(t('common.keyAlreadyExists', { key })));
     return;
   }
 
   form.extras = { ...form.extras, [key]: key === 'set_cookies' ? value : parseValue(value.trim()) };
+  action.clear();
   newExtraKey.value = '';
   newExtraValue.value = '';
 };

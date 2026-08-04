@@ -17,7 +17,7 @@
             <div class="mx-auto w-full transition-all duration-300" :class="formContainerClass">
               <div class="ytp-card p-4 sm:p-5">
                 <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
-                  <FormSubmitError :message="submitError" />
+                  <FormSubmitError :message="submitError" @dismiss="submitError = ''" />
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0 space-y-1">
                       <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
@@ -1112,6 +1112,7 @@ const closePlayer = (): void => {
 const { handleOpenChange: handleVideoOpenChange, requestClose: requestCloseVideo } =
   useDirtyCloseGuard(videoOpen, {
     dirty: playingNow,
+    preferenceKey: 'player',
     title: t('common.closePlayer'),
     message: t('common.closePlayerDesc'),
     confirmText: t('common.closePlayer'),
