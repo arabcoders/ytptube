@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "382bd819d81e86d9793208b7119b237aefbc8572",
-    "date": "2026-08-03T21:46:34+00:00",
+    "full_sha": "f65e5f621d97f1592805c7b47c9120a4511a3eb3",
+    "date": "2026-08-04T14:16:28+00:00",
     "commits": [
+      {
+        "sha": "f65e5f62",
+        "full_sha": "f65e5f621d97f1592805c7b47c9120a4511a3eb3",
+        "message": "refactor: allow skipping form guards",
+        "author": "arabcoders",
+        "date": "2026-08-04T14:16:28+00:00"
+      },
       {
         "sha": "382bd819",
         "full_sha": "382bd819d81e86d9793208b7119b237aefbc8572",
