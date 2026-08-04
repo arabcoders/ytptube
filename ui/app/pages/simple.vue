@@ -1112,6 +1112,7 @@ const closePlayer = (): void => {
 const { handleOpenChange: handleVideoOpenChange, requestClose: requestCloseVideo } =
   useDirtyCloseGuard(videoOpen, {
     dirty: playingNow,
+    preferenceKey: 'player',
     title: t('common.closePlayer'),
     message: t('common.closePlayerDesc'),
     confirmText: t('common.closePlayer'),

@@ -870,6 +870,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(toggleForm, {
     dirty: editorDirty,
+    preferenceKey: 'tasks',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

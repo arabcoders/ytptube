@@ -540,6 +540,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(editorOpen, {
     dirty: editorDirty,
+    preferenceKey: 'dl-fields',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

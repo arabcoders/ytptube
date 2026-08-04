@@ -239,6 +239,7 @@
     "ok": "确定",
     "discardChangesConfirm": "丢弃更改",
     "keepEditing": "继续编辑",
+    "dontAskAgain": "不再询问",
     "alert": "提醒",
     "inputRequired": "需要输入",
     "dialog": "对话框",
@@ -776,6 +777,10 @@
     },
     "settings": {
       "subtitle": "调整界面行为。",
+      "unsavedChanges": "表单保护",
+      "unsavedChangesDesc": "管理哪些表单可以无需确认直接关闭。",
+      "resetUnsavedChanges": "再次显示丢弃确认",
+      "dirtyVideoPlayer": "视频播放器",
       "description": "调整界面行为和下载默认设置。",
       "closeAria": "关闭设置",
       "pageView": "页面视图",

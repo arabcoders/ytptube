@@ -710,6 +710,7 @@ const discardEditor = (): void => {
 const { handleOpenChange: handleEditorOpenChange, requestClose: requestCloseEditor } =
   useDirtyCloseGuard(isEditorOpen, {
     dirty: editorDirty,
+    preferenceKey: 'task-definitions',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

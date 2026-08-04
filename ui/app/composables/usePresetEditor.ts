@@ -57,6 +57,7 @@ export const usePresetEditor = () => {
     handleOpenChange,
   } = useDirtyCloseGuard(isOpen, {
     dirty,
+    preferenceKey: 'presets',
     message: t('common.discardChanges'),
     onDiscard: async () => {
       discardEditor();

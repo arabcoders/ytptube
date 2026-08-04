@@ -607,6 +607,7 @@ const openPlaylistPicker = (): void => {
 
 const { requestClose: requestClosePlaylistPicker } = useDirtyCloseGuard(showPlaylistPicker, {
   dirty: playlistPickerDirty,
+  preferenceKey: 'playlist-picker',
   onDiscard: () => {
     playlistPickerDirty.value = false;
   },

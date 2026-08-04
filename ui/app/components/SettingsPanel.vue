@@ -344,6 +344,43 @@
             />
           </div>
         </div>
+
+        <div class="ytp-card w-full">
+          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-shield-alert" class="size-4 text-toned" />
+              <span class="text-sm font-semibold text-highlighted">{{
+                t('app.settings.unsavedChanges')
+              }}</span>
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5 space-y-4">
+            <p class="text-sm text-toned">{{ t('app.settings.unsavedChangesDesc') }}</p>
+            <div class="space-y-3">
+              <USwitch
+                v-for="item in dirtyCloseItems"
+                :key="item.key"
+                :model-value="true === dirtyCloseSkips[item.key]"
+                class="w-full"
+                size="lg"
+                :ui="settingsSwitchUi"
+                :label="item.label"
+                @update:model-value="(value) => setDirtyCloseSkip(item.key, value)"
+              />
+            </div>
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-rotate-ccw"
+              class="w-full justify-center"
+              :disabled="0 === Object.keys(dirtyCloseSkips).length"
+              @click="resetDirtyCloseSkips"
+            >
+              {{ t('app.settings.resetUnsavedChanges') }}
+            </UButton>
+          </div>
+        </div>
       </div>
     </template>
   </USlideover>
@@ -354,6 +391,7 @@ import { watch, onMounted, onBeforeUnmount, ref, computed } from 'vue';
 import { useStorage } from '@vueuse/core';
 import { useNotification } from '~/composables/useNotification';
 import type { notificationTarget, toastPosition } from '~/composables/useNotification';
+import { useDirtyCloseGuardPreferences } from '~/composables/useDirtyCloseGuard';
 import { useMode, type Mode } from '~/composables/useMode';
 
 const { t } = useI18n();
@@ -395,7 +433,19 @@ const savingMode = ref(false);
 const page_anims = useStorage<boolean>('page_anims', true);
 const queue_auto_refresh = useStorage<boolean>('queue_auto_refresh', true);
 const queue_auto_refresh_delay = useStorage<number>('queue_auto_refresh_delay', 10000);
+const dirtyCloseSkips = useDirtyCloseGuardPreferences();
 const isSecureContext = ref<boolean>(false);
+
+const dirtyCloseItems = computed(() => [
+  { key: 'conditions', label: t('app.nav.labels.conditions') },
+  { key: 'tasks', label: t('app.nav.labels.tasks') },
+  { key: 'dl-fields', label: t('common.fields') },
+  { key: 'task-definitions', label: t('app.nav.labels.taskDefinitions') },
+  { key: 'notifications', label: t('common.notifications') },
+  { key: 'presets', label: t('common.presets') },
+  { key: 'playlist-picker', label: t('common.pickPlaylistVideos') },
+  { key: 'player', label: t('app.settings.dirtyVideoPlayer') },
+]);
 
 const themePreference = computed<ThemeChoice>({
   get: () => {
@@ -472,6 +522,20 @@ const saveMode = async (): Promise<void> => {
   } finally {
     savingMode.value = false;
   }
+};
+
+const resetDirtyCloseSkips = (): void => {
+  dirtyCloseSkips.value = {};
+};
+
+const setDirtyCloseSkip = (key: string, value: boolean): void => {
+  const next = Object.fromEntries(
+    Object.entries(dirtyCloseSkips.value).filter(([entry]) => entry !== key),
+  );
+  if (value) {
+    next[key] = true;
+  }
+  dirtyCloseSkips.value = next;
 };
 
 const thumbnailRatioItems = [
