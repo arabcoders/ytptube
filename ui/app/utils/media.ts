@@ -29,7 +29,7 @@ const save = (id: string | null | undefined, time: number): void => {
     return;
   }
 
-  getCache().set(`${KEY}${id}`, time, 3600 * 24);
+  getCache().set(`${KEY}${id}`, time, 24 * 60 * 60 * 1000);
 };
 
 const clear = (id: string | null | undefined): void => {
