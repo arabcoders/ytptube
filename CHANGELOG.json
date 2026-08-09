@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "f65e5f621d97f1592805c7b47c9120a4511a3eb3",
-    "date": "2026-08-04T14:16:28+00:00",
+    "full_sha": "f333a621d96e68040d82705a9baba2f068be1874",
+    "date": "2026-08-08T15:02:12+00:00",
     "commits": [
+      {
+        "sha": "f333a621",
+        "full_sha": "f333a621d96e68040d82705a9baba2f068be1874",
+        "message": "refactor: resume playing video if player was closed",
+        "author": "arabcoders",
+        "date": "2026-08-08T15:02:12+00:00"
+      },
       {
         "sha": "f65e5f62",
         "full_sha": "f65e5f621d97f1592805c7b47c9120a4511a3eb3",
