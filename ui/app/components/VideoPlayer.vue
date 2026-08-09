@@ -607,7 +607,11 @@ function handleVideoLoadedMetadata() {
       showControls();
     });
   } else {
-    restoreStoredProgress();
+    const shouldResume = id.value !== '' && read(id.value) > 0;
+    if (shouldResume) {
+      active.value = true;
+    }
+    void restoreStoredProgress(shouldResume);
   }
 }
 
@@ -704,7 +708,7 @@ function handleMediaVolumeChange(event: Event) {
   updateMediaSessionPosition(target);
 }
 
-function restoreStoredProgress() {
+async function restoreStoredProgress(autoPlay = false) {
   if (!id.value || !videoElement.value) {
     return;
   }
@@ -714,9 +718,16 @@ function restoreStoredProgress() {
     return;
   }
 
-  void seekTo(saved).finally(() => {
-    syncVideoState();
-  });
+  await seekTo(saved);
+  if (autoPlay) {
+    try {
+      await videoElement.value.play();
+    } catch {}
+  }
+  syncVideoState();
+  if (autoPlay) {
+    showControls();
+  }
 }
 
 function readSwitchTime() {

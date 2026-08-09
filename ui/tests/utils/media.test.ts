@@ -4,8 +4,9 @@ const store = new Map<string, unknown>();
 
 const cache = {
   get: mock(<T>(key: string) => (store.has(key) ? (store.get(key) as T) : null)),
-  set: mock((key: string, value: unknown) => {
+  set: mock((key: string, value: unknown, ttl: number | null = null) => {
     store.set(key, value);
+    return ttl;
   }),
   remove: mock((key: string) => {
     store.delete(key);
@@ -55,6 +56,7 @@ describe('media utils', () => {
   it('store_resume_state', () => {
     media.save('item-1', 42);
     expect(media.read('item-1')).toBe(42);
+    expect(cache.set).toHaveBeenCalledWith('video:item-1', 42, 24 * 60 * 60 * 1000);
   });
 
   it('clear_resume_state', () => {

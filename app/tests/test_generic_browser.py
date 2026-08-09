@@ -9,7 +9,7 @@ from app.yt_dlp_plugins.extractor import generic_browser
 
 
 def _make_ie(config: dict[str, str | None] | None = None) -> Any:
-    ie = object.__new__(generic_browser.GenericBrowserIE)
+    ie: Any = object.__new__(generic_browser.GenericBrowserIE)
     values = config or {}
     ie._configuration_arg = lambda name, default: [values.get(name)]
     ie._generic_id = lambda url: "vid"

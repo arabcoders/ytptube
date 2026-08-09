@@ -1594,7 +1594,7 @@ class TestQueueManager:
     def test_attach_schedules_retries(self) -> None:
         from app.library.downloads.monitors import check_retries
 
-        queue = object.__new__(DownloadQueue)
+        queue: Any = object.__new__(DownloadQueue)
         queue.config = SimpleNamespace(retry=2, auto_clear_history_days=0)
         queue._notify = Mock()
 
@@ -1659,7 +1659,7 @@ class TestQueueManager:
         return TestQueueManager._video_item()
 
     def test_live_queue_caps_visible_items(self) -> None:
-        queue_manager = object.__new__(DownloadQueue)
+        queue_manager: Any = object.__new__(DownloadQueue)
         items: dict[str, Any] = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
         queue_manager.queue = self.LiveStore(items)
         queue_manager.pool = Mock()
@@ -1675,7 +1675,7 @@ class TestQueueManager:
         assert snapshot["queue_limit"] == 2
 
     def test_live_queue_keeps_active(self) -> None:
-        queue_manager = object.__new__(DownloadQueue)
+        queue_manager: Any = object.__new__(DownloadQueue)
         items: dict[str, Any] = {f"id{i}": Mock(info=make_item(id=f"id{i}", title=f"Video {i}")) for i in range(5)}
         queue_manager.queue = self.LiveStore(items)
         queue_manager.pool = Mock()
@@ -2011,7 +2011,7 @@ class TestQueueManager:
     async def test_cleanup_thumbnails(self, tmp_path: Path) -> None:
         from app.library.downloads.monitors import cleanup_thumbnails
 
-        queue_manager = object.__new__(DownloadQueue)
+        queue_manager: Any = object.__new__(DownloadQueue)
         queue_manager.config = SimpleNamespace(temp_path=str(tmp_path), thumb_sidecar=False)
         queue_manager.done = Mock()
 
