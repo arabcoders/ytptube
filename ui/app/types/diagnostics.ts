@@ -37,6 +37,10 @@ export type DiagnosticRuntime = {
   python_minimum: string;
   is_native: boolean;
   console_enabled: boolean;
+  open_files: {
+    soft_limit: number | null;
+    hard_limit: number | null;
+  };
 };
 
 export type DiagnosticRequirements = {

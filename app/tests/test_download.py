@@ -362,6 +362,61 @@ class TestDownloadStale:
             mock_start.assert_called_once()
 
 
+class TestDownloadClose:
+    @staticmethod
+    def make_download(*, started: bool = True) -> tuple[Any, Mock, Mock]:
+        download: Any = object.__new__(Download)
+        download.info = make_item()
+        download.id = download.info._id
+        download.logger = Mock()
+        download.status_queue = Mock()
+        download._status_tracker = Mock()
+        download._hook_handlers = Mock()
+        download._temp_manager = Mock()
+        download._process_manager = Mock(cancel_in_progress=False)
+        download._process_manager.started.return_value = started
+        download._process_manager.close = AsyncMock()
+        return download, download.status_queue, download._status_tracker
+
+    @pytest.mark.asyncio
+    async def test_close_queue(self) -> None:
+        download, status_queue, tracker = self.make_download()
+
+        assert await download.close() is True
+
+        tracker.cancel_update_task.assert_called_once_with()
+        tracker.put_terminator.assert_called_once_with()
+        status_queue.close.assert_called_once_with()
+        status_queue.join_thread.assert_called_once_with()
+        assert download.status_queue is None
+        assert download._status_tracker is None
+        assert download._hook_handlers is None
+
+    @pytest.mark.asyncio
+    async def test_close_queue_on_error(self) -> None:
+        download, status_queue, tracker = self.make_download()
+        download._process_manager.close.side_effect = RuntimeError("close failed")
+
+        assert await download.close() is False
+
+        tracker.put_terminator.assert_called_once_with()
+        status_queue.close.assert_called_once_with()
+        status_queue.join_thread.assert_called_once_with()
+        assert download.status_queue is None
+
+    @pytest.mark.asyncio
+    async def test_close_partial_queue(self) -> None:
+        download, status_queue, _ = self.make_download(started=False)
+        download._status_tracker = None
+
+        assert await download.close() is False
+
+        status_queue.put.assert_called_once()
+        assert isinstance(status_queue.put.call_args.args[0], Terminator)
+        status_queue.close.assert_called_once_with()
+        status_queue.join_thread.assert_called_once_with()
+
+
 class TestDownloadFlow:
     def test_download_bootstraps_before_options(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from app.features.presets.models import PresetModel

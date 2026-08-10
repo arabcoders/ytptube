@@ -274,6 +274,8 @@ class TestSystemDiagnosticsEndpoint:
         assert checks["deno"]["status"] == "pass"
         assert checks["deno"]["details"]["version"] == "2.3.0"
         assert checks["yt_dlp_cli"]["status"] == "skip"
+        assert body["runtime"]["open_files"]["soft_limit"] is not None
+        assert body["runtime"]["open_files"]["hard_limit"] is not None
 
     @pytest.mark.asyncio
     async def test_diagnostics_error_payload(self):

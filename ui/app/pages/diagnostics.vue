@@ -340,6 +340,7 @@ const shareText = computed(() => {
     `- Host: ${current.runtime.platform} ${current.runtime.platform_release} (${current.runtime.platform_machine})`,
     `- Python: ${current.requirements.python.current}`,
     `- Started: ${formatIsoTimestamp(current.runtime.started)}`,
+    `- Open files: ${current.runtime.open_files.soft_limit ?? 'Unknown'} soft / ${current.runtime.open_files.hard_limit ?? 'Unknown'} hard`,
   ];
 
   if (current.stats?.enabled) {

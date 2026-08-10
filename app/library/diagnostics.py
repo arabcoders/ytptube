@@ -607,6 +607,7 @@ def _make_runtime(config: Config) -> dict[str, Any]:
         "python_minimum": f"{MIN_PYTHON[0]}.{MIN_PYTHON[1]}",
         "is_native": config.is_native,
         "console_enabled": config.console_enabled,
+        "open_files": _open_file_limits(),
     }
 
 
@@ -631,6 +632,16 @@ def _avg(rows: list[dict[str, Any]], key: str) -> float | None:
 def _max(rows: list[dict[str, Any]], key: str) -> float | None:
     values = [value for row in rows if (value := row.get(key)) is not None]
     return round(max(values), 2) if values else None
+
+
+def _open_file_limits() -> dict[str, int | None]:
+    try:
+        import resource
+    except ImportError:
+        return {"soft_limit": None, "hard_limit": None}
+
+    soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    return {"soft_limit": soft_limit, "hard_limit": hard_limit}
 
 
 def _stats_summary(history: list[dict[str, Any]]) -> dict[str, Any]:
