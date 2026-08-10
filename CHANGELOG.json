@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "1119a48f9550f1a2cdbe49d5605644dd2c6fa89d",
+    "date": "2026-08-10T09:53:24+00:00",
+    "commits": [
+      {
+        "sha": "1119a48f",
+        "full_sha": "1119a48f9550f1a2cdbe49d5605644dd2c6fa89d",
+        "message": "fix: close status queues after download. Closes #653",
+        "author": "arabcoders",
+        "date": "2026-08-10T09:53:24+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.6.6",
     "full_sha": "83cee1d7d6bce6065a38c34bb39e38028328bfef",
     "date": "2026-08-09T17:16:24+00:00",
