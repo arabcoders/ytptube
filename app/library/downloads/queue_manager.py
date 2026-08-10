@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import glob
 from datetime import UTC, datetime
@@ -20,6 +21,7 @@ from .core import Download
 from .item_adder import add as add_impl
 from .monitors import check_for_stale, check_live, check_retries, cleanup_thumbnails, delete_old_history
 from .pool_manager import PoolManager
+from .utils import handle_task_exception
 
 if TYPE_CHECKING:
     from app.library.DataStore import StoreType
@@ -42,6 +44,8 @@ class DownloadQueue(metaclass=Singleton):
         "DataStore for the download queue."
         self.pool = PoolManager(queue=self, config=self.config)
         "Pool manager for coordinating download execution."
+        self._retry_lock = asyncio.Lock()
+        self._retry_limit = asyncio.Semaphore(max(1, self.config.extract_info_concurrency))
 
     @staticmethod
     def get_instance(config: Config | None = None) -> "DownloadQueue":
@@ -145,6 +149,66 @@ class DownloadQueue(metaclass=Singleton):
             self.pool.trigger_download()
 
         return status
+
+    async def retry(self, ids: list[str] | None = None, status: str | None = None) -> int:
+        async with self._retry_lock:
+            items = await (self.done.get_many_by_ids(ids) if ids else self.done.get_many_by_status(status or ""))
+            if not items:
+                return 0
+
+            keys = [key for key, _ in items]
+            refs = [{"id": key, "title": item.info.title, "url": item.info.url} for key, item in items]
+            self._notify.emit(
+                Events.LOG_INFO,
+                data={"items": refs},
+                title="History Retry Started",
+                message=f"Retrying {len(items)} history item{'s' if len(items) != 1 else ''}.",
+            )
+            LOG.info("Retrying %d history item(s).", len(items), extra={"items": refs})
+
+            deleted = await self.done.bulk_delete(keys)
+            if deleted < 1:
+                return 0
+
+            self._notify.emit(
+                Events.ITEM_BULK_DELETED,
+                data={"count": deleted, "ids": keys},
+                title="History Retry Started",
+                message=f"Removed {deleted} item{'s' if deleted != 1 else ''} from history for retry.",
+            )
+            task = asyncio.create_task(self._finish_retry(items), name="retry_history")
+            task.add_done_callback(lambda done: handle_task_exception(done, LOG))
+            return deleted
+
+    async def _finish_retry(self, items: list[tuple[str, Download]]) -> None:
+        async def add(item: Download) -> dict[str, str]:
+            async with self._retry_limit:
+                return await self.add(
+                    Item(
+                        url=item.info.url,
+                        preset=item.info.preset,
+                        folder=item.info.folder,
+                        cookies=item.info.cookies or "",
+                        template=item.info.template or "",
+                        cli=item.info.cli or "",
+                        extras={**item.info.extras},
+                        requeued=True,
+                        auto_start=item.info.auto_start,
+                    )
+                )
+
+        results = await asyncio.gather(
+            *(add(item) for _, item in items),
+            return_exceptions=True,
+        )
+        ok = sum(isinstance(result, dict) and result.get("status") == "ok" for result in results)
+        failed = len(items) - ok
+        self._notify.emit(
+            Events.LOG_SUCCESS if failed == 0 else Events.LOG_ERROR,
+            data={"status": "ok" if failed == 0 else "error", "succeeded": ok, "failed": failed},
+            title="History Retry Finished",
+            message=f"Retried {ok} of {len(items)} history item{'s' if len(items) != 1 else ''}.",
+        )
 
     async def force_start_items(self, ids: list[str]) -> dict[str, str]:
         """Start queued downloads using the scheduler hot path."""

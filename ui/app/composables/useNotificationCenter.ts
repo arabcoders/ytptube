@@ -81,15 +81,9 @@ const severityIcon = computed<string>(() => {
 });
 
 const sortedNotifications = computed<notification[]>(() => {
-  return [...notifications.value].sort((left, right) => {
-    const severityDiff = NOTIFICATION_META[right.level].level - NOTIFICATION_META[left.level].level;
-
-    if (0 !== severityDiff) {
-      return severityDiff;
-    }
-
-    return new Date(right.created).getTime() - new Date(left.created).getTime();
-  });
+  return [...notifications.value].sort(
+    (left, right) => new Date(right.created).getTime() - new Date(left.created).getTime(),
+  );
 });
 
 const add = (level: notificationType, message: string, seen: boolean = false): string => {

@@ -12,7 +12,7 @@ from app.library.cache import Cache
 from app.library.ItemDTO import ItemDTO
 from app.library.encoder import Encoder
 from app.routes.api import history
-from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_live
+from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_live, items_retry
 from app.tests.helpers import temporary_test_dir
 
 
@@ -83,6 +83,36 @@ async def test_items_delete_ids() -> None:
     queue.clear_bulk.assert_awaited_once_with(["a", "b"], remove_file=False)
     body = json.loads(response.body.decode("utf-8"))
     assert body == {"items": {}, "deleted": 2}
+
+
+@pytest.mark.asyncio
+async def test_retry_ids() -> None:
+    request = _FakeRequest(payload={"ids": ["a", "b"]})
+    queue = Mock(retry=AsyncMock(return_value=2))
+
+    response = await items_retry(request, queue, Encoder())
+
+    assert response.status == 202
+    queue.retry.assert_awaited_once_with(ids=["a", "b"], status=None)
+
+
+@pytest.mark.asyncio
+async def test_retry_status() -> None:
+    request = _FakeRequest(payload={"status": "!finished,!skip"})
+    queue = Mock(retry=AsyncMock(return_value=12))
+
+    response = await items_retry(request, queue, Encoder())
+
+    assert response.status == 202
+    queue.retry.assert_awaited_once_with(ids=None, status="!finished,!skip")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("payload", [{}, {"ids": "a"}, {"ids": [1]}, {"ids": [" "]}, {"status": 1}])
+async def test_retry_invalid(payload: dict[str, Any]) -> None:
+    response = await items_retry(_FakeRequest(payload=payload), Mock(), Encoder())
+
+    assert response.status == 400
 
 
 @pytest.mark.asyncio

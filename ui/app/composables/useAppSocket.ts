@@ -372,6 +372,13 @@ on('item_deleted', (data: WSEP['item_deleted']) => {
   }
 });
 
+on('item_bulk_deleted', (data: WSEP['item_bulk_deleted']) => {
+  const historyState = getHistoryState();
+  for (const id of data.data.ids ?? []) {
+    historyState.drop(id);
+  }
+});
+
 on('item_updated', (data: WSEP['item_updated']) => {
   const queueState = getQueueState();
 

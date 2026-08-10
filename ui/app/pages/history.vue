@@ -368,7 +368,7 @@
                       variant="outline"
                       size="xs"
                       icon="i-lucide-rotate-cw"
-                      @click="() => retryItem(item, true)"
+                      @click="() => retryItem(item, false)"
                     >
                       {{ t('common.retry') }}
                     </UButton>
@@ -921,6 +921,7 @@ const {
   load,
   reload,
   remove,
+  retry,
   rename,
   moveHandler,
 } = useHistoryState();
@@ -1105,6 +1106,12 @@ const selectedDownloadableCount = computed(() =>
     return item?.filename ? count + 1 : count;
   }, 0),
 );
+const retryIds = computed(() =>
+  selectedElms.value.filter((id) => {
+    const item = findHistoryItem(id);
+    return item && item.status !== 'finished' && item.status !== 'skip';
+  }),
+);
 
 const thumbnailRatioClass = computed(() =>
   thumbnail_ratio.value === 'is-16by9' ? 'aspect-video' : 'aspect-[3/1]',
@@ -1124,9 +1131,12 @@ const toggleMasterSelection = (): void => {
 const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
 const getListImage = (item: StoreItem): string => getHistoryImage(item, false) || '';
 const getGridImage = (item: StoreItem): string => getHistoryImage(item) || '';
-const showRetryAction = (item: StoreItem): boolean => !item.filename && !isDownloadSkipped(item);
+const showRetryAction = (item: StoreItem): boolean =>
+  !item.filename && item.status !== 'skip' && !isDownloadSkipped(item);
 
-const hasIncomplete = computed(() => historyItems.value.some((item) => item.status !== 'finished'));
+const hasIncomplete = computed(() =>
+  historyItems.value.some((item) => item.status !== 'finished' && item.status !== 'skip'),
+);
 const hasCompleted = computed(() =>
   historyItems.value.some((item) => item.status === 'finished' || item.status === 'skip'),
 );
@@ -1139,6 +1149,12 @@ const bulkActionGroups = computed(() => {
         icon: 'i-lucide-download',
         disabled: !hasSelected.value || selectedDownloadableCount.value < 1,
         onSelect: () => void downloadSelected(),
+      },
+      {
+        label: t('common.retry'),
+        icon: 'i-lucide-rotate-cw',
+        disabled: retryIds.value.length < 1,
+        onSelect: retrySelected,
       },
       {
         label: config.app.remove_files ? t('common.remove') : t('common.clear'),
@@ -1433,13 +1449,29 @@ const retryIncomplete = async (): Promise<void> => {
     return;
   }
 
-  for (const item of historyItems.value) {
-    if ('finished' === item.status) {
-      continue;
-    }
+  selectedElms.value = [];
+  await retry({ status: '!finished,!skip' });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
+};
 
-    await retryItem(item);
+const retrySelected = async (): Promise<void> => {
+  const ids = [...retryIds.value];
+  if (ids.length < 1) {
+    toast.error(t('common.noItemsSelected'));
+    return;
   }
+
+  const message = t('history.confirmActionCount', {
+    action: t('common.retry'),
+    count: ids.length,
+  });
+  if (false === (await box.confirm(message))) {
+    return;
+  }
+
+  selectedElms.value = [];
+  await retry({ ids });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const addArchiveDialog = async (item: StoreItem): Promise<void> => {
@@ -1509,6 +1541,12 @@ const retryItem = async (
   re_add: boolean = false,
   remove_file: boolean = false,
 ): Promise<void> => {
+  if (!re_add) {
+    await retry({ ids: [item._id] });
+    await reload({ order: 'DESC', perPage: config.app.default_pagination });
+    return;
+  }
+
   const item_req: item_request = {
     url: item.url,
     preset: item.preset,

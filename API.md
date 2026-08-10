@@ -33,6 +33,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/force-start](#post-apihistoryforce-start)
     - [POST /api/history/position](#post-apihistoryposition)
     - [POST /api/history/cancel](#post-apihistorycancel)
+    - [POST /api/history/retry](#post-apihistoryretry)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
     - [POST /api/history/{id}/nfo](#post-apihistoryidnfo)
@@ -903,6 +904,36 @@ This endpoint returns the current state of active downloads from memory.
 **Notes**:
 - Items must exist in the queue
 - Stops active downloads if they are currently running
+
+---
+
+### POST /api/history/retry
+**Purpose**: Remove history items and requeue them asynchronously.
+
+**Body**:
+```json
+{
+  "ids": ["<id1>", "<id2>"]
+}
+```
+
+Or select all matching history items:
+
+```json
+{
+  "status": "!finished,!skip"
+}
+```
+
+**Response** (`202 Accepted`):
+```json
+{
+  "status": "accepted",
+  "count": 100
+}
+```
+**Notes**:
+- The server logs each item ID, title, and URL before deleting the history records.
 
 ---
 

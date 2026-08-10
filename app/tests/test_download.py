@@ -85,7 +85,7 @@ class TestScheduledRetry:
         info.cli = "--format best"
         cast(Any, info).get_ytdlp_opts = lambda: SimpleNamespace(get_all=lambda: {"continuedl": continuedl})
         item = SimpleNamespace(info=info, is_live=False)
-        queue = SimpleNamespace(
+        queue: Any = SimpleNamespace(
             config=SimpleNamespace(retry=retry, retry_fresh=retry_fresh),
             is_paused=lambda: False,
             done=SimpleNamespace(empty=lambda: True, items=lambda: [], put=AsyncMock()),
@@ -155,6 +155,79 @@ class TestScheduledRetry:
         await check_retries(queue)
 
         queue.add.assert_not_awaited()
+
+
+class TestRetry:
+    @pytest.mark.asyncio
+    async def test_batch(self) -> None:
+        info = make_item()
+        info.status = "error"
+        item = Download(info=info)
+        queue: Any = SimpleNamespace(
+            done=SimpleNamespace(
+                get_many_by_ids=AsyncMock(return_value=[(info._id, item)]),
+                get_many_by_status=AsyncMock(),
+                bulk_delete=AsyncMock(return_value=1),
+            ),
+            add=AsyncMock(return_value={"status": "ok"}),
+            config=SimpleNamespace(extract_info_concurrency=2),
+            _notify=Mock(),
+            _retry_lock=asyncio.Lock(),
+            _retry_limit=asyncio.Semaphore(2),
+        )
+        queue._finish_retry = DownloadQueue._finish_retry.__get__(queue)
+
+        with patch("app.library.downloads.queue_manager.asyncio.create_task") as spawn:
+            count = await DownloadQueue.retry(queue, ids=[info._id])
+            await spawn.call_args.args[0]
+
+        assert count == 1
+        queue.done.bulk_delete.assert_awaited_once_with([info._id])
+        retry = queue.add.await_args.args[0]
+        assert retry.url == info.url
+        assert retry.requeued is True
+        events = queue._notify.emit.call_args_list
+        assert events[0].args[0] == Events.LOG_INFO
+        assert events[0].kwargs["data"]["items"][0]["title"] == info.title
+        assert events[-1].args[0] == Events.LOG_SUCCESS
+
+    @pytest.mark.asyncio
+    async def test_limit(self) -> None:
+        active = 0
+        peak = 0
+
+        async def add(_: Item) -> dict[str, str]:
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0.01)
+            active -= 1
+            return {"status": "ok"}
+
+        items = []
+        for index in range(5):
+            info = make_item(id=str(index))
+            info.status = "error"
+            items.append((info._id, Download(info=info)))
+
+        queue: Any = SimpleNamespace(
+            add=add,
+            config=SimpleNamespace(extract_info_concurrency=2),
+            _notify=Mock(),
+            _retry_limit=asyncio.Semaphore(2),
+        )
+        await asyncio.gather(DownloadQueue._finish_retry(queue, items), DownloadQueue._finish_retry(queue, items))
+
+        assert peak == 2
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        queue: Any = SimpleNamespace(
+            done=SimpleNamespace(get_many_by_ids=AsyncMock(return_value=[])),
+            _retry_lock=asyncio.Lock(),
+        )
+
+        assert await DownloadQueue.retry(queue, ids=["missing"]) == 0
 
 
 class TestDownloadHooks:

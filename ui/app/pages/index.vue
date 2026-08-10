@@ -45,8 +45,8 @@
 
         <UButton
           v-else
-          color="neutral"
-          variant="outline"
+          color="primary"
+          variant="solid"
           size="sm"
           icon="i-lucide-play"
           @click="() => resumeDownload()"
