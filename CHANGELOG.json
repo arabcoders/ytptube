@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "8b8e5755df31510a4e8b83a9fb3c333817d350d5",
-    "date": "2026-08-11T16:16:27+00:00",
+    "full_sha": "cd1f828e056a615aa9753d0da5d938bfb2fb8e79",
+    "date": "2026-08-11T19:00:47+00:00",
     "commits": [
+      {
+        "sha": "cd1f828e",
+        "full_sha": "cd1f828e056a615aa9753d0da5d938bfb2fb8e79",
+        "message": "refactor: reduce frontend bundle sizes",
+        "author": "arabcoders",
+        "date": "2026-08-11T19:00:47+00:00"
+      },
       {
         "sha": "8b8e5755",
         "full_sha": "8b8e5755df31510a4e8b83a9fb3c333817d350d5",
