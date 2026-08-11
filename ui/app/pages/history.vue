@@ -325,7 +325,7 @@
                 <td
                   class="border-e border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
                 >
-                  <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                  <UTooltip :text="formatDateTime(item.datetime, locale)">
                     <span :date-datetime="item.datetime" v-rtime="item.datetime" />
                   </UTooltip>
                 </td>
@@ -339,9 +339,7 @@
                     <UTooltip
                       :text="
                         t('history.retryAt', {
-                          date: moment(item.live_in || item.extras?.release_in).format(
-                            'YYYY-M-DD H:mm Z',
-                          ),
+                          date: formatDateTime(item.live_in || item.extras?.release_in, locale),
                         })
                       "
                     >
@@ -592,9 +590,7 @@
                   <UTooltip
                     :text="
                       t('history.retryAt', {
-                        date: moment(item.live_in || item.extras?.release_in).format(
-                          'YYYY-M-DD H:mm Z',
-                        ),
+                        date: formatDateTime(item.live_in || item.extras?.release_in, locale),
                       })
                     "
                   >
@@ -614,7 +610,7 @@
                   class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
                   @click="toggleExpand(item._id, 'datetime')"
                 >
-                  <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                  <UTooltip :text="formatDateTime(item.datetime, locale)">
                     <span class="inline-flex w-full items-center justify-center gap-2">
                       <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
                       <span
@@ -831,7 +827,7 @@
       @update:open="handleVideoOpenChange"
     >
       <template #body>
-        <VideoPlayer
+        <LazyVideoPlayer
           type="default"
           :isMuted="false"
           autoplay="true"
@@ -854,11 +850,11 @@
       @update:open="(open) => !open && (embed_url = '')"
     >
       <template #body>
-        <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+        <LazyEmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
       </template>
     </UModal>
 
-    <GetInfo
+    <LazyGetInfo
       v-if="info_view.url"
       :link="info_view.url"
       :preset="info_view.preset"
@@ -871,7 +867,6 @@
 
 <script setup lang="ts">
 import { toRaw } from 'vue';
-import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
@@ -898,8 +893,9 @@ import {
 } from '~/utils';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
+import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 const config = useYtpConfig();
 const stateStore = useQueueState();

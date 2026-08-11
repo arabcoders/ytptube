@@ -167,11 +167,11 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
 import StatCard from '~/components/StatCard.vue';
 import type { DiagnosticCheck, DiagnosticStatus } from '~/types/diagnostics';
 import { usePageShell } from '~/composables/usePageShell';
 import { copyText } from '~/utils';
+import { formatUtc } from '~/utils/date';
 
 const { t, loadLocaleMessages } = useI18n();
 type SummaryCard = {
@@ -468,7 +468,7 @@ const formatIsoTimestamp = (value: number | undefined): string => {
     return 'Unknown';
   }
 
-  return moment.unix(value).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+  return formatUtc(value);
 };
 
 const formatDuration = (value: number | undefined): string => {

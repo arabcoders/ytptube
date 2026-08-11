@@ -215,10 +215,10 @@
               </td>
 
               <td class="px-3 py-3 text-center align-middle whitespace-nowrap">
-                <UTooltip :text="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')">
+                <UTooltip :text="formatDateTime(definition.updated_at, locale)">
                   <span
                     class="inline-flex"
-                    :date-datetime="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                    :date-datetime="toIsoString(definition.updated_at)"
                     v-rtime="definition.updated_at"
                   />
                 </UTooltip>
@@ -429,7 +429,7 @@
     >
       <template #body>
         <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
-        <TaskDefinitionEditor
+        <LazyTaskDefinitionEditor
           ref="definitionEditor"
           :document="workingDefinition"
           :initial-show-import="showImportByDefault"
@@ -521,7 +521,7 @@
       @update:open="(open) => !open && (inspect = false)"
     >
       <template #body>
-        <TaskInspect ref="taskInspect" />
+        <LazyTaskInspect ref="taskInspect" />
       </template>
 
       <template #footer>
@@ -557,7 +557,6 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
-import moment from 'moment';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
 
@@ -566,16 +565,17 @@ import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
 import { useDialog } from '~/composables/useDialog';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { copyText, encode } from '~/utils';
+import { formatDateTime, toIsoString } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
-import TaskDefinitionEditor from '~/components/TaskDefinitionEditor.vue';
-import TaskInspect from '~/components/TaskInspect.vue';
+import type TaskDefinitionEditor from '~/components/TaskDefinitionEditor.vue';
+import type TaskInspect from '~/components/TaskInspect.vue';
 import type {
   TaskDefinitionDetailed,
   TaskDefinitionDocument,
   TaskDefinitionSummary,
 } from '~/types/task_definitions';
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   name: 'New Definition',

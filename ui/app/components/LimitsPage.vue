@@ -256,11 +256,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import moment from 'moment';
 import { parse_api_error, parse_api_response, request } from '~/utils';
+import { humanizeDuration } from '~/utils/date';
 import type { SystemLimitsExtractor, SystemLimitsResponse } from '~/types/limits';
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 type DetailRow = {
   label: string;
@@ -274,7 +274,7 @@ const limitsLoading = ref(false);
 const limitsError = ref('');
 
 const formatDuration = (seconds: number): string => {
-  return moment.duration(seconds, 'seconds').humanize();
+  return humanizeDuration(seconds, locale.value);
 };
 
 const extractorSourceLabel = (source: string): string => {

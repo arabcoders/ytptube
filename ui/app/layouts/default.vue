@@ -354,7 +354,7 @@
                           <UTooltip
                             :text="
                               t('common.started', {
-                                time: moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z'),
+                                time: formatDateTime(config.app?.started, locale),
                               })
                             "
                           >
@@ -412,9 +412,7 @@
                   </footer>
                 </div>
 
-                <ClientOnly>
-                  <Dialog />
-                </ClientOnly>
+                <Dialog />
               </div>
             </template>
           </UDashboardPanel>
@@ -435,7 +433,7 @@
             @update:open="(open) => !open && (showLimits = false)"
           >
             <template #body>
-              <LimitsPage />
+              <LazyLimitsPage />
             </template>
           </UModal>
         </UDashboardGroup>
@@ -447,14 +445,13 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
 import { ref, computed, onBeforeUnmount, onMounted, readonly } from 'vue';
-import moment from 'moment';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import AppRoot from '~/components/AppRoot.vue';
 import ConnectionBanner from '~/components/ConnectionBanner.vue';
-import LimitsPage from '~/components/LimitsPage.vue';
 import ThemeButton from '~/components/ThemeButton.vue';
 import { formatPageTitle, parse_api_response, request, uri } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+import { formatDateTime } from '~/utils/date';
 import { getSidebarSwipeMode } from '~/utils/sidebarSwipe';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';

@@ -203,8 +203,8 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
 import { formatTime, parse_api_error, request } from '~/utils';
+import { formatDateOnly, formatDateTime, parseDate } from '~/utils/date';
 import { playlistExtras } from '~/utils/playlist';
 
 type RawEntry = {
@@ -252,7 +252,7 @@ const emitter = defineEmits<{
   (event: 'picked', entries: Array<{ url: string; extras: Record<string, unknown> }>): void;
 }>();
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const query = ref('');
 const entries = ref<PlaylistEntry[]>([]);
 const entryScrollEl = ref<HTMLElement | null>(null);
@@ -395,12 +395,14 @@ const normalizeEntry = (
 };
 
 const formatPublished = (value: string, full: boolean = false): string => {
-  const date = moment(value);
-  if (!date.isValid()) {
+  const date = parseDate(value);
+  if (!date) {
     return value;
   }
 
-  return date.format(full ? 'YYYY-MM-DD HH:mm:ss Z' : 'YYYY-MM-DD');
+  return full
+    ? formatDateTime(date, locale.value, { seconds: true })
+    : formatDateOnly(date, locale.value);
 };
 
 const normalizeEntries = (value: unknown): PlaylistEntry[] => {

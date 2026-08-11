@@ -95,7 +95,7 @@
     </div>
 
     <div v-if="config.showForm" ref="formSection" class="page-form-wrap scroll-mt-24">
-      <NewDownload
+      <LazyNewDownload
         :item="item_form"
         @clear_form="item_form = {}"
         @getInfo="
@@ -365,7 +365,7 @@
                   <td
                     class="border-e border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
                   >
-                    <UTooltip :text="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
+                    <UTooltip :text="formatLongDateTime(item.datetime, locale)">
                       <span :data-datetime="item.datetime" v-rtime="item.datetime" />
                     </UTooltip>
                   </td>
@@ -616,7 +616,7 @@
                     class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
                     @click="toggleExpand(item._id, 'datetime')"
                   >
-                    <UTooltip :text="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
+                    <UTooltip :text="formatLongDateTime(item.datetime, locale)">
                       <span class="inline-flex w-full items-center justify-center gap-2">
                         <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
                         <span
@@ -745,13 +745,13 @@
           @update:open="(open) => !open && (embed_url = '')"
         >
           <template #body>
-            <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+            <LazyEmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
           </template>
         </UModal>
       </div>
     </section>
 
-    <GetInfo
+    <LazyGetInfo
       v-if="info_view.url"
       :link="info_view.url"
       :preset="info_view.preset"
@@ -763,7 +763,6 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDialog } from '~/composables/useDialog';
@@ -782,8 +781,9 @@ import {
   ucFirst,
 } from '~/utils';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
+import { formatLongDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 const config = useYtpConfig();
 const stateStore = useQueueState();

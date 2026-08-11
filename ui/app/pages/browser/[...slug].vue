@@ -261,7 +261,7 @@
               </td>
 
               <td class="px-3 py-3 text-center align-middle text-toned whitespace-nowrap">
-                <UTooltip :text="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')">
+                <UTooltip :text="formatDateTime(item.mtime, locale, { seconds: true })">
                   <span>{{ relativeTime(item.mtime) }}</span>
                 </UTooltip>
               </td>
@@ -376,7 +376,7 @@
             <div
               class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
             >
-              <UTooltip :text="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')">
+              <UTooltip :text="formatDateTime(item.mtime, locale, { seconds: true })">
                 <span class="block truncate">{{ relativeTime(item.mtime) }}</span>
               </UTooltip>
             </div>
@@ -495,7 +495,7 @@
       @update:open="handlePreviewOpenChange"
     >
       <template #body>
-        <VideoPlayer
+        <LazyVideoPlayer
           v-if="model_item?.type === 'video'"
           type="default"
           :isMuted="false"
@@ -515,7 +515,7 @@
       </template>
     </UModal>
 
-    <GetInfo
+    <LazyGetInfo
       v-if="model_item?.type === 'text'"
       :link="model_item.filename"
       :useUrl="true"
@@ -525,13 +525,13 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { FileItem } from '~/types/filebrowser';
 import { formatPageTitle } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 const { locale, t } = useI18n();
 

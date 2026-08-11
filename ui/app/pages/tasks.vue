@@ -693,7 +693,7 @@
     >
       <template #body>
         <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
-        <TaskForm
+        <LazyTaskForm
           :key="formKey"
           :addInProgress="addInProgress"
           :reference="taskRef"
@@ -742,7 +742,7 @@
       @update:open="(open) => !open && (inspectTask = null)"
     >
       <template #body>
-        <TaskInspect ref="taskInspect" :url="inspectTask.url" :preset="inspectTask.preset" />
+        <LazyTaskInspect ref="taskInspect" :url="inspectTask.url" :preset="inspectTask.preset" />
       </template>
 
       <template #footer>
@@ -783,7 +783,7 @@ import { CronExpressionParser } from 'cron-parser';
 import { useConfirm } from '~/composables/useConfirm';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useTasks } from '~/composables/useTasks';
-import TaskInspect from '~/components/TaskInspect.vue';
+import type TaskInspect from '~/components/TaskInspect.vue';
 import type { ExportedTask, Task } from '~/types/tasks';
 import type { WSEP } from '~/types/sockets';
 import { sleep } from '~/utils';
