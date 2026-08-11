@@ -584,7 +584,14 @@ class TaskHandle:
         if extraction.metadata:
             combined_metadata.update(extraction.metadata)
 
-        return TaskResult(items=list(extraction.items), metadata=combined_metadata)
+        items = list(extraction.items)
+        archive_file = task.get_ytdlp_opts().get_all().get("download_archive")
+        archive_ids = [item.archive_id for item in items if item.archive_id]
+        archived = set(archive_read(archive_file, archive_ids)) if archive_file and archive_ids else set()
+        for item in items:
+            item.is_archived = item.archive_id in archived if item.archive_id else False
+
+        return TaskResult(items=items, metadata=combined_metadata)
 
     def _discover(self) -> list[type[BaseHandler]]:
         """Discover all available task handlers."""

@@ -21,6 +21,8 @@
     "failedFetch": "加载数据失败。",
     "playlistPickerDesc": "选择要从此播放列表下载的视频。",
     "pickPlaylistVideos": "选择播放列表视频",
+    "alreadyDownloaded": "已下载",
+    "playlistMetadataNotice": "可用的播放列表元数据和索引会被保留。之后编辑网址将丢弃这些元数据。",
     "playlistSelectionCount": "已选择 {selected} / {total}",
     "pickSelected": "选择所选视频",
     "noPlaylistEntries": "未找到播放列表视频。",

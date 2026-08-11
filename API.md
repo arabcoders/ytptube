@@ -348,6 +348,17 @@ will be added to the command.
   "title": "...",
   "duration": 123.4,
   "extractor": "youtube",
+  "is_archived": false,
+  "entries": [
+    {
+      "url": "https://youtube.com/watch?v=...",
+      "archive_id": "youtube ...",
+      "is_archived": false,
+      "playlist": "...",
+      "playlist_index": 1,
+      "playlist_count": 10
+    }
+  ],
   "_cached": {
     "status": "miss|hit",
     "preset": "<preset-name>",
@@ -1373,6 +1384,7 @@ JSON object with fields to update:
       "url": "https://example.com/video/1",
       "title": "Example title",
       "archive_id": "generic 1",
+      "is_archived": false,
       "thumbnail": "https://example.com/video-1.jpg",
       "metadata": {
         "source_id": "...",
