@@ -456,6 +456,19 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 continue
 
             new_path: Path = path.parent.joinpath(new_name)
+
+            root_real: Path = Path(config.download_path).resolve()
+            resolved_new: Path = new_path.resolve(strict=False)
+            if resolved_new.parent != path.parent.resolve() or not resolved_new.is_relative_to(root_real):
+                record(
+                    path,
+                    ok=False,
+                    error="New name must not contain path separators.",
+                    action=action,
+                    extra={"new_name": new_name},
+                )
+                continue
+
             if new_path.exists():
                 record(
                     new_path, ok=False, error="Destination already exists.", action=action, extra={"new_path": new_path}
