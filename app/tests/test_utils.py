@@ -1482,6 +1482,26 @@ class TestGetFile:
         assert isinstance(result_path, Path)
         assert status_code == 404
 
+    def test_get_file_leading_slash(self):
+        test_file = self.download_path / "test.txt"
+        test_file.write_text("content")
+
+        result_path, status_code = get_file(self.download_path, "/test.txt")
+
+        assert result_path == test_file
+        assert status_code == 200
+
+    def test_get_file_destination(self):
+        result_path, status_code = get_file(self.download_path, "new/test.txt", exists=False)
+
+        assert result_path == self.download_path / "new" / "test.txt"
+        assert status_code == 200
+
+    def test_get_file_destination_traversal(self):
+        _, status_code = get_file(self.download_path, "../outside.txt", exists=False)
+
+        assert status_code == 404
+
 
 class TestGet:
     """Test the get function for nested data access."""
@@ -2123,6 +2143,28 @@ class TestCreateCookiesFile:
 
 class TestRenameFile:
     """Test rename_file function."""
+
+    @pytest.mark.parametrize(
+        "new_name",
+        [
+            "../outside.mp4",
+            "sub/file.mp4",
+            "sub/../video.mp4",
+            "/tmp/outside.mp4",
+            "video.mp4/",
+            "video\x00.mp4",
+            ".",
+            "..",
+        ],
+    )
+    def test_traversal(self, tmp_path: Path, new_name: str):
+        test_file = tmp_path / "video.mp4"
+        test_file.write_text("test content")
+
+        with pytest.raises(ValueError, match="must not contain path separators"):
+            rename_file(test_file, new_name)
+
+        assert test_file.exists()
 
     def test_rename_single_file_no_sidecars(self, tmp_path: Path):
         """Test renaming a single file without sidecar files."""

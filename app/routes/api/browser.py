@@ -455,11 +455,22 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 record(path, ok=False, error="New name is required for rename action.", action=action)
                 continue
 
-            new_path: Path = path.parent.joinpath(new_name)
+            if not isinstance(new_name, str) or Path(new_name).parts != (new_name,):
+                record(
+                    path,
+                    ok=False,
+                    error="New name must not contain path separators.",
+                    action=action,
+                    extra={"new_name": new_name},
+                )
+                continue
 
-            root_real: Path = Path(config.download_path).resolve()
-            resolved_new: Path = new_path.resolve(strict=False)
-            if resolved_new.parent != path.parent.resolve() or not resolved_new.is_relative_to(root_real):
+            new_path, status = get_file(
+                config.download_path,
+                path.parent.joinpath(new_name).relative_to(config.download_path),
+                exists=False,
+            )
+            if web.HTTPOk.status_code != status or new_path.parent != path.parent.resolve():
                 record(
                     path,
                     ok=False,

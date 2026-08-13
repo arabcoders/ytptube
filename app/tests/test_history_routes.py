@@ -279,6 +279,27 @@ async def test_item_rename_conflict() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("new_name", ["../outside.mp4", "sub/file.mp4", "/tmp/outside.mp4", "video\x00.mp4"])
+async def test_item_rename_traversal(new_name: str) -> None:
+    with temporary_test_dir("history-rename-traversal") as temp_dir:
+        media = temp_dir / "video.mp4"
+        media.write_text("video")
+        request = _FakeRequest(payload={"new_name": new_name})
+        request.match_info["id"] = "item-1"
+        item = _make_download(filename="video.mp4", download_dir=str(temp_dir))
+        queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item), put=AsyncMock()))
+        notify = Mock()
+
+        response = await item_rename(request, queue, Encoder(), notify, SimpleNamespace(download_path=str(temp_dir)))
+
+        assert response.status == 400
+        assert json.loads(response.body)["code"] == "INVALID"
+        assert media.exists()
+        queue.done.put.assert_not_awaited()
+        notify.emit.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_item_thumbnail_sidecar() -> None:
     with temporary_test_dir("history-thumb-sidecar") as temp_dir:
         media = temp_dir / "video.mp4"
