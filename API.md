@@ -645,7 +645,7 @@ or an error:
 ```
 
 **Error Responses**:
-- `400 Bad Request` if `id` or `new_name` is missing, or the item has no downloaded file.
+- `400 Bad Request` if `id` or `new_name` is missing, `new_name` is not a filename, or the item has no downloaded file.
 - `404 Not Found` if the item does not exist.
 - `409 Conflict` if the rename destination already exists.
 - `500 Internal Server Error` if the filesystem rename fails unexpectedly.
@@ -1928,7 +1928,7 @@ GET /api/file/browser/videos?sort_by=date&sort_order=desc
 ```
 
 Actions and required fields:
-- `rename`: `{ "action": "rename", "path": "...", "new_name": "<name>" }`
+- `rename`: `{ "action": "rename", "path": "...", "new_name": "<name>" }`. `new_name` must be a filename without path separators.
 - `delete`: `{ "action": "delete", "path": "..." }`
 - `move`: `{ "action": "move", "path": "...", "new_path": "<dir-relative-to-download_path>" }`
 - `directory`: `{ "action": "directory", "path": "...", "new_dir": "<subdir/to/create>" }`

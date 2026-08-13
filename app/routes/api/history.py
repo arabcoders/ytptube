@@ -462,6 +462,19 @@ async def item_rename(
             params={"resource": "api.resources.file"},
         )
 
+    new_path = filepath.parent / new_name
+    try:
+        valid_parent = new_path.resolve(strict=False).parent == filepath.parent.resolve()
+    except (OSError, ValueError):
+        valid_parent = False
+    if Path(new_name).parts != (new_name,) or not valid_parent:
+        return api_error_response(
+            "New name must not contain path separators.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.name"},
+        )
+
     try:
         renamed, sidecar_renamed = rename_file(filepath, new_name)
     except ValueError as e:
