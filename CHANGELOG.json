@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "1fbf0eeae09180f8c878315d8bcd9c1c8de64c04",
-    "date": "2026-08-11T19:12:37+00:00",
+    "full_sha": "4956a2af903dd19267da474f116efd497c8da1ab",
+    "date": "2026-08-13T06:04:20+00:00",
     "commits": [
+      {
+        "sha": "4956a2af",
+        "full_sha": "4956a2af903dd19267da474f116efd497c8da1ab",
+        "message": "fix(security): prevent path traversal in file renames",
+        "author": "arabcoders",
+        "date": "2026-08-13T06:04:20+00:00"
+      },
+      {
+        "sha": "532522f2",
+        "full_sha": "532522f2e4bda530745538ed5a0f51d68ab4d423",
+        "message": "fix: prevent path traversal in file browser rename action\n\nThe rename branch of the file browser actions endpoint joined the\nuser-supplied new_name directly onto the item parent directory and\nrenamed the file without checking that the destination stayed inside\nthe download root. A new_name containing path separators (for example\n\"../../evil\") escaped the download directory, allowing a file to be\nmoved to an arbitrary location on the same filesystem.\n\nThe move and directory actions already validate their destinations\nwith is_relative_to(root). This applies the same check to rename and\nadditionally requires the new name to stay within the same directory.",
+        "author": "Bunlong Heng",
+        "date": "2026-08-12T22:28:55+00:00"
+      },
       {
         "sha": "1fbf0eea",
         "full_sha": "1fbf0eeae09180f8c878315d8bcd9c1c8de64c04",
