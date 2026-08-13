@@ -325,7 +325,7 @@
                 <td
                   class="border-e border-default/60 px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap"
                 >
-                  <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                  <UTooltip :text="formatDateTime(item.datetime, locale)">
                     <span :date-datetime="item.datetime" v-rtime="item.datetime" />
                   </UTooltip>
                 </td>
@@ -339,9 +339,7 @@
                     <UTooltip
                       :text="
                         t('history.retryAt', {
-                          date: moment(item.live_in || item.extras?.release_in).format(
-                            'YYYY-M-DD H:mm Z',
-                          ),
+                          date: formatDateTime(item.live_in || item.extras?.release_in, locale),
                         })
                       "
                     >
@@ -368,7 +366,7 @@
                       variant="outline"
                       size="xs"
                       icon="i-lucide-rotate-cw"
-                      @click="() => retryItem(item, true)"
+                      @click="() => retryItem(item, false)"
                     >
                       {{ t('common.retry') }}
                     </UButton>
@@ -592,9 +590,7 @@
                   <UTooltip
                     :text="
                       t('history.retryAt', {
-                        date: moment(item.live_in || item.extras?.release_in).format(
-                          'YYYY-M-DD H:mm Z',
-                        ),
+                        date: formatDateTime(item.live_in || item.extras?.release_in, locale),
                       })
                     "
                   >
@@ -614,7 +610,7 @@
                   class="rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
                   @click="toggleExpand(item._id, 'datetime')"
                 >
-                  <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                  <UTooltip :text="formatDateTime(item.datetime, locale)">
                     <span class="inline-flex w-full items-center justify-center gap-2">
                       <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
                       <span
@@ -831,7 +827,7 @@
       @update:open="handleVideoOpenChange"
     >
       <template #body>
-        <VideoPlayer
+        <LazyVideoPlayer
           type="default"
           :isMuted="false"
           autoplay="true"
@@ -854,11 +850,11 @@
       @update:open="(open) => !open && (embed_url = '')"
     >
       <template #body>
-        <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+        <LazyEmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
       </template>
     </UModal>
 
-    <GetInfo
+    <LazyGetInfo
       v-if="info_view.url"
       :link="info_view.url"
       :preset="info_view.preset"
@@ -871,7 +867,6 @@
 
 <script setup lang="ts">
 import { toRaw } from 'vue';
-import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
@@ -898,8 +893,9 @@ import {
 } from '~/utils';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
+import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 const config = useYtpConfig();
 const stateStore = useQueueState();
@@ -921,6 +917,7 @@ const {
   load,
   reload,
   remove,
+  retry,
   rename,
   moveHandler,
 } = useHistoryState();
@@ -1105,6 +1102,12 @@ const selectedDownloadableCount = computed(() =>
     return item?.filename ? count + 1 : count;
   }, 0),
 );
+const retryIds = computed(() =>
+  selectedElms.value.filter((id) => {
+    const item = findHistoryItem(id);
+    return item && item.status !== 'finished' && item.status !== 'skip';
+  }),
+);
 
 const thumbnailRatioClass = computed(() =>
   thumbnail_ratio.value === 'is-16by9' ? 'aspect-video' : 'aspect-[3/1]',
@@ -1124,9 +1127,12 @@ const toggleMasterSelection = (): void => {
 const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
 const getListImage = (item: StoreItem): string => getHistoryImage(item, false) || '';
 const getGridImage = (item: StoreItem): string => getHistoryImage(item) || '';
-const showRetryAction = (item: StoreItem): boolean => !item.filename && !isDownloadSkipped(item);
+const showRetryAction = (item: StoreItem): boolean =>
+  !item.filename && item.status !== 'skip' && !isDownloadSkipped(item);
 
-const hasIncomplete = computed(() => historyItems.value.some((item) => item.status !== 'finished'));
+const hasIncomplete = computed(() =>
+  historyItems.value.some((item) => item.status !== 'finished' && item.status !== 'skip'),
+);
 const hasCompleted = computed(() =>
   historyItems.value.some((item) => item.status === 'finished' || item.status === 'skip'),
 );
@@ -1139,6 +1145,12 @@ const bulkActionGroups = computed(() => {
         icon: 'i-lucide-download',
         disabled: !hasSelected.value || selectedDownloadableCount.value < 1,
         onSelect: () => void downloadSelected(),
+      },
+      {
+        label: t('common.retry'),
+        icon: 'i-lucide-rotate-cw',
+        disabled: retryIds.value.length < 1,
+        onSelect: retrySelected,
       },
       {
         label: config.app.remove_files ? t('common.remove') : t('common.clear'),
@@ -1433,13 +1445,29 @@ const retryIncomplete = async (): Promise<void> => {
     return;
   }
 
-  for (const item of historyItems.value) {
-    if ('finished' === item.status) {
-      continue;
-    }
+  selectedElms.value = [];
+  await retry({ status: '!finished,!skip' });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
+};
 
-    await retryItem(item);
+const retrySelected = async (): Promise<void> => {
+  const ids = [...retryIds.value];
+  if (ids.length < 1) {
+    toast.error(t('common.noItemsSelected'));
+    return;
   }
+
+  const message = t('history.confirmActionCount', {
+    action: t('common.retry'),
+    count: ids.length,
+  });
+  if (false === (await box.confirm(message))) {
+    return;
+  }
+
+  selectedElms.value = [];
+  await retry({ ids });
+  await reload({ order: 'DESC', perPage: config.app.default_pagination });
 };
 
 const addArchiveDialog = async (item: StoreItem): Promise<void> => {
@@ -1509,6 +1537,12 @@ const retryItem = async (
   re_add: boolean = false,
   remove_file: boolean = false,
 ): Promise<void> => {
+  if (!re_add) {
+    await retry({ ids: [item._id] });
+    await reload({ order: 'DESC', perPage: config.app.default_pagination });
+    return;
+  }
+
   const item_req: item_request = {
     url: item.url,
     preset: item.preset,

@@ -12,7 +12,7 @@ from app.library.cache import Cache
 from app.library.ItemDTO import ItemDTO
 from app.library.encoder import Encoder
 from app.routes.api import history
-from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_live
+from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_live, items_retry
 from app.tests.helpers import temporary_test_dir
 
 
@@ -83,6 +83,36 @@ async def test_items_delete_ids() -> None:
     queue.clear_bulk.assert_awaited_once_with(["a", "b"], remove_file=False)
     body = json.loads(response.body.decode("utf-8"))
     assert body == {"items": {}, "deleted": 2}
+
+
+@pytest.mark.asyncio
+async def test_retry_ids() -> None:
+    request = _FakeRequest(payload={"ids": ["a", "b"]})
+    queue = Mock(retry=AsyncMock(return_value=2))
+
+    response = await items_retry(request, queue, Encoder())
+
+    assert response.status == 202
+    queue.retry.assert_awaited_once_with(ids=["a", "b"], status=None)
+
+
+@pytest.mark.asyncio
+async def test_retry_status() -> None:
+    request = _FakeRequest(payload={"status": "!finished,!skip"})
+    queue = Mock(retry=AsyncMock(return_value=12))
+
+    response = await items_retry(request, queue, Encoder())
+
+    assert response.status == 202
+    queue.retry.assert_awaited_once_with(ids=None, status="!finished,!skip")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("payload", [{}, {"ids": "a"}, {"ids": [1]}, {"ids": [" "]}, {"status": 1}])
+async def test_retry_invalid(payload: dict[str, Any]) -> None:
+    response = await items_retry(_FakeRequest(payload=payload), Mock(), Encoder())
+
+    assert response.status == 400
 
 
 @pytest.mark.asyncio
@@ -246,6 +276,27 @@ async def test_item_rename_conflict() -> None:
     assert body["error"] == "Destination 'renamed.mp4' already exists"
     queue.done.put.assert_not_awaited()
     notify.emit.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("new_name", ["../outside.mp4", "sub/file.mp4", "/tmp/outside.mp4", "video\x00.mp4"])
+async def test_item_rename_traversal(new_name: str) -> None:
+    with temporary_test_dir("history-rename-traversal") as temp_dir:
+        media = temp_dir / "video.mp4"
+        media.write_text("video")
+        request = _FakeRequest(payload={"new_name": new_name})
+        request.match_info["id"] = "item-1"
+        item = _make_download(filename="video.mp4", download_dir=str(temp_dir))
+        queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item), put=AsyncMock()))
+        notify = Mock()
+
+        response = await item_rename(request, queue, Encoder(), notify, SimpleNamespace(download_path=str(temp_dir)))
+
+        assert response.status == 400
+        assert json.loads(response.body)["code"] == "INVALID"
+        assert media.exists()
+        queue.done.put.assert_not_awaited()
+        notify.emit.assert_not_called()
 
 
 @pytest.mark.asyncio

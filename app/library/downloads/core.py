@@ -590,21 +590,20 @@ class Download:
 
     async def close(self) -> bool:
         """Close download process and clean up resources."""
-        if not self.started() or self._process_manager.cancel_in_progress:
+        started = self.started()
+        if self._process_manager.cancel_in_progress or (not started and self.status_queue is None):
             return False
 
+        closed = False
         try:
             if self._status_tracker:
                 self._status_tracker.cancel_update_task()
 
-            await self._process_manager.close()
-
-            if self._status_tracker:
-                self._status_tracker.put_terminator()
+            if started:
+                await self._process_manager.close()
 
             self._temp_manager.delete_temp()
-
-            return True
+            closed = started
         except Exception as e:
             self.logger.exception(
                 f"Failed to close download process for '{self.info.title}'.",
@@ -619,8 +618,29 @@ class Download:
                     }
                 },
             )
+        finally:
+            status_queue = self.status_queue
+            try:
+                if self._status_tracker:
+                    self._status_tracker.put_terminator()
+                elif status_queue:
+                    status_queue.put(Terminator())
 
-        return False
+                if status_queue:
+                    status_queue.close()
+                    status_queue.join_thread()
+            except (OSError, ValueError):
+                self.logger.exception(
+                    "Failed to close the status queue for '%s'.",
+                    self.info.title,
+                    extra={"download": {"download_id": self.id, "item_id": self.info.id, "title": self.info.title}},
+                )
+            finally:
+                self.status_queue = None
+                self._status_tracker = None
+                self._hook_handlers = None
+
+        return closed
 
     def running(self) -> bool:
         return self._process_manager.running()

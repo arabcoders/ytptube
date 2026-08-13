@@ -21,6 +21,8 @@
     "failedFetch": "Failed to load data.",
     "playlistPickerDesc": "Select the videos to download from this playlist.",
     "pickPlaylistVideos": "Pick playlist videos",
+    "alreadyDownloaded": "Already downloaded",
+    "playlistMetadataNotice": "Available playlist metadata and indexes are preserved. Editing the URLs afterward discards this metadata.",
     "playlistSelectionCount": "{selected} of {total} selected",
     "pickSelected": "Pick selected",
     "noPlaylistEntries": "No playlist videos found.",

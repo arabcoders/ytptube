@@ -279,19 +279,19 @@
       </div>
     </div>
 
-    <LogDetailModal v-model="detailsOpen" :log="selectedLog" />
+    <LazyLogDetailModal v-if="detailsOpen" v-model="detailsOpen" :log="selectedLog" />
   </main>
 </template>
 
 <script setup lang="ts">
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { EventSourceMessage } from '@microsoft/fetch-event-source';
-import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import type { log_line } from '~/types/logs';
 import { copyText, parse_api_error, request, uri } from '~/utils';
 import { usePageShell } from '~/composables/usePageShell';
-const { t } = useI18n();
+import { formatClock, formatDateTime } from '~/utils/date';
+const { locale, t } = useI18n();
 
 type FilteredLogEntry = {
   log: log_line;
@@ -782,10 +782,10 @@ const startLogStream = async (): Promise<void> => {
 };
 
 const logTimeLabel = (value?: string): string =>
-  value ? moment(value).format('HH:mm:ss') : '00:00:00';
+  value ? formatClock(value, locale.value) : '00:00:00';
 
 const logTimeTitle = (value?: string): string =>
-  value ? moment(value).format('YYYY-MM-DD HH:mm:ss Z') : t('logs.noTimestamp');
+  value ? formatDateTime(value, locale.value, { seconds: true }) : t('logs.noTimestamp');
 
 const exceptionSummary = (log: log_line): string => {
   const type = log.exception?.type?.trim() ?? '';

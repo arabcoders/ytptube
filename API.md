@@ -33,6 +33,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/force-start](#post-apihistoryforce-start)
     - [POST /api/history/position](#post-apihistoryposition)
     - [POST /api/history/cancel](#post-apihistorycancel)
+    - [POST /api/history/retry](#post-apihistoryretry)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
     - [POST /api/history/{id}/nfo](#post-apihistoryidnfo)
@@ -347,6 +348,17 @@ will be added to the command.
   "title": "...",
   "duration": 123.4,
   "extractor": "youtube",
+  "is_archived": false,
+  "entries": [
+    {
+      "url": "https://youtube.com/watch?v=...",
+      "archive_id": "youtube ...",
+      "is_archived": false,
+      "playlist": "...",
+      "playlist_index": 1,
+      "playlist_count": 10
+    }
+  ],
   "_cached": {
     "status": "miss|hit",
     "preset": "<preset-name>",
@@ -633,7 +645,7 @@ or an error:
 ```
 
 **Error Responses**:
-- `400 Bad Request` if `id` or `new_name` is missing, or the item has no downloaded file.
+- `400 Bad Request` if `id` or `new_name` is missing, `new_name` is not a filename, or the item has no downloaded file.
 - `404 Not Found` if the item does not exist.
 - `409 Conflict` if the rename destination already exists.
 - `500 Internal Server Error` if the filesystem rename fails unexpectedly.
@@ -903,6 +915,36 @@ This endpoint returns the current state of active downloads from memory.
 **Notes**:
 - Items must exist in the queue
 - Stops active downloads if they are currently running
+
+---
+
+### POST /api/history/retry
+**Purpose**: Remove history items and requeue them asynchronously.
+
+**Body**:
+```json
+{
+  "ids": ["<id1>", "<id2>"]
+}
+```
+
+Or select all matching history items:
+
+```json
+{
+  "status": "!finished,!skip"
+}
+```
+
+**Response** (`202 Accepted`):
+```json
+{
+  "status": "accepted",
+  "count": 100
+}
+```
+**Notes**:
+- The server logs each item ID, title, and URL before deleting the history records.
 
 ---
 
@@ -1342,6 +1384,7 @@ JSON object with fields to update:
       "url": "https://example.com/video/1",
       "title": "Example title",
       "archive_id": "generic 1",
+      "is_archived": false,
       "thumbnail": "https://example.com/video-1.jpg",
       "metadata": {
         "source_id": "...",
@@ -1885,7 +1928,7 @@ GET /api/file/browser/videos?sort_by=date&sort_order=desc
 ```
 
 Actions and required fields:
-- `rename`: `{ "action": "rename", "path": "...", "new_name": "<name>" }`
+- `rename`: `{ "action": "rename", "path": "...", "new_name": "<name>" }`. `new_name` must be a filename without path separators.
 - `delete`: `{ "action": "delete", "path": "..." }`
 - `move`: `{ "action": "move", "path": "...", "new_path": "<dir-relative-to-download_path>" }`
 - `directory`: `{ "action": "directory", "path": "...", "new_dir": "<subdir/to/create>" }`

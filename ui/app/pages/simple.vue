@@ -724,7 +724,7 @@
             @update:open="handleVideoOpenChange"
           >
             <template #body>
-              <VideoPlayer
+              <LazyVideoPlayer
                 type="default"
                 :isMuted="false"
                 autoplay="true"
@@ -747,13 +747,11 @@
             @update:open="(open) => !open && closePlayer()"
           >
             <template #body>
-              <EmbedPlayer :url="embedUrl" @closeModel="closePlayer" />
+              <LazyEmbedPlayer :url="embedUrl" @closeModel="closePlayer" />
             </template>
           </UModal>
 
-          <ClientOnly>
-            <Dialog />
-          </ClientOnly>
+          <Dialog />
         </div>
       </div>
     </AppRoot>
@@ -773,7 +771,6 @@ import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { usePresetOptions } from '~/composables/usePresetOptions';
 import { useNotification } from '~/composables/useNotification';
-import EmbedPlayer from '~/components/EmbedPlayer.vue';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
 import {

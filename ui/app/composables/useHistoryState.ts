@@ -158,6 +158,21 @@ const remove = async (
   }
 };
 
+const retry = async (options: { ids?: string[]; status?: string }): Promise<number> => {
+  try {
+    const response = await request('/api/history/retry', {
+      method: 'POST',
+      body: JSON.stringify(options),
+    });
+    await ensureSuccess(response);
+    const result = (await response.json()) as { count?: number };
+    return Number(result.count ?? 0);
+  } catch (error) {
+    handleError(error);
+    return 0;
+  }
+};
+
 const rename = async (item: StoreItem, newName: string): Promise<boolean> => {
   const trimmedName = newName.trim();
   if (!trimmedName || trimmedName === item.filename?.split('/').pop()) {
@@ -276,6 +291,7 @@ export const useHistoryState = () => {
     load,
     reload,
     remove,
+    retry,
     rename,
     reset,
     update,

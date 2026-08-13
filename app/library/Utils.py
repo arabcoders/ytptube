@@ -680,6 +680,14 @@ def rename_file(old_path: Path, new_name: str) -> tuple[Path, list[tuple[Path, P
 
     """
     new_path: Path = old_path.parent / new_name
+    name_parts = Path(new_name).parts
+    try:
+        valid_parent = new_path.resolve(strict=False).parent == old_path.parent.resolve()
+    except (OSError, ValueError):
+        valid_parent = False
+    if not new_name or name_parts != (new_name,) or not valid_parent:
+        msg = "New name must not contain path separators."
+        raise ValueError(msg)
 
     if new_path.exists():
         msg: str = f"Destination '{new_name}' already exists"
@@ -922,13 +930,14 @@ def get_mime_type(metadata: dict, file_path: Path) -> str:
     return "application/octet-stream"
 
 
-def get_file(download_path: str | Path, file: str | Path) -> tuple[Path, int]:
+def get_file(download_path: str | Path, file: str | Path, exists: bool = True) -> tuple[Path, int]:
     """
     Get the real file path.
 
     Args:
         download_path (str|Path): Base download path.
         file (str|Path): File path.
+        exists (bool): Whether the file must already exist.
 
     Returns:
         Path: Real file path.
@@ -940,7 +949,7 @@ def get_file(download_path: str | Path, file: str | Path) -> tuple[Path, int]:
 
     try:
         realFile: Path = Path(calc_download_path(base_path=download_path, folder=str(file), create_path=False))
-        if realFile.exists():
+        if not exists or realFile.exists():
             return (realFile, 200)
     except Exception as e:
         LOG.exception(

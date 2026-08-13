@@ -21,6 +21,8 @@
     "failedFetch": "فشل تحميل البيانات.",
     "playlistPickerDesc": "حدد مقاطع الفيديو لتنزيلها من قائمة التشغيل هذه.",
     "pickPlaylistVideos": "اختيار مقاطع فيديو من قائمة التشغيل",
+    "alreadyDownloaded": "تم تنزيله بالفعل",
+    "playlistMetadataNotice": "يتم الاحتفاظ ببيانات قائمة التشغيل والفهارس المتاحة. يؤدي تعديل عناوين URL بعد ذلك إلى تجاهل هذه البيانات.",
     "playlistSelectionCount": "تم تحديد {selected} من أصل {total}",
     "pickSelected": "اختيار المحدد",
     "noPlaylistEntries": "لم يتم العثور على مقاطع فيديو في قائمة التشغيل.",

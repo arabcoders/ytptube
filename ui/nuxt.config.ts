@@ -158,7 +158,6 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: [
-        'moment',
         '@microsoft/fetch-event-source',
         '@xterm/addon-fit',
         '@xterm/xterm',
@@ -177,7 +176,7 @@ export default defineNuxtConfig({
       allowedHosts: true,
     },
     build: {
-      chunkSizeWarningLimit: 2000,
+      chunkSizeWarningLimit: 550,
       rollupOptions: {
         onwarn(warning, warn) {
           if ('SOURCEMAP_BROKEN' === warning.code) {
@@ -194,6 +193,14 @@ export default defineNuxtConfig({
   experimental: {
     checkOutdatedBuildInterval: 1000 * 60 * 60,
     payloadExtraction: 'client',
+    defaults: {
+      nuxtLink: {
+        prefetchOn: {
+          interaction: true,
+          visibility: false,
+        },
+      },
+    },
   },
   typescript: {
     typeCheck: true,

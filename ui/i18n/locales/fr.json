@@ -21,6 +21,8 @@
     "failedFetch": "Échec du chargement des données.",
     "playlistPickerDesc": "Sélectionnez les vidéos à télécharger depuis cette playlist.",
     "pickPlaylistVideos": "Choisir des vidéos de la playlist",
+    "alreadyDownloaded": "Déjà téléchargé",
+    "playlistMetadataNotice": "Les métadonnées et index disponibles de la playlist sont conservés. Modifier ensuite les URL supprime ces métadonnées.",
     "playlistSelectionCount": "{selected} sur {total} sélectionnées",
     "pickSelected": "Choisir la sélection",
     "noPlaylistEntries": "Aucune vidéo trouvée dans la playlist.",

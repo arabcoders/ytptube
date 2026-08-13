@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import json
 import logging
 import time
@@ -25,6 +26,41 @@ from app.library.Utils import validate_url
 
 LOG = get_logger()
 ENTRIES_BROWSER_WAIT = 10
+
+
+def _annotate_archive(data: dict[str, Any], archive_file: str | None) -> dict[str, Any]:
+    annotated = copy.deepcopy(data)
+    archive_ids: list[str] = []
+
+    def annotate_entries(entries: list[Any]) -> None:
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            archive_id = None
+            if isinstance(entry.get("id"), str) and isinstance(entry.get("ie_key"), str):
+                archive_id = f"{entry['ie_key'].lower()} {entry['id']}"
+                archive_ids.append(archive_id)
+            entry["archive_id"] = archive_id
+            entry["is_archived"] = False
+            if isinstance(entry.get("entries"), list):
+                annotate_entries(entry["entries"])
+
+    def mark_entries(entries: list[Any], archived: set[str]) -> None:
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            entry["is_archived"] = entry.get("archive_id") in archived
+            if isinstance(entry.get("entries"), list):
+                mark_entries(entry["entries"], archived)
+
+    if isinstance(annotated.get("entries"), list):
+        annotate_entries(annotated["entries"])
+    archived = set(archive_read(archive_file, archive_ids)) if archive_file and archive_ids else set()
+    if isinstance(annotated.get("entries"), list):
+        mark_entries(annotated["entries"], archived)
+    archive_id = annotated.get("archive_id")
+    annotated["is_archived"] = bool(archive_id and archive_id in archived) if archive_file else False
+    return annotated
 
 
 def _get_preset_archive(preset: str) -> str | None:
@@ -456,6 +492,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             data: Any | None = cache.get(key)
             if data is None:
                 data = {}
+            data = _annotate_archive(data, opts.get_all().get("download_archive"))
             data["_cached"] = {
                 "status": "hit",
                 "preset": preset,
@@ -523,20 +560,20 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             "expires": time.time() + 300,
         }
 
-        data["is_archived"] = False
-
         archive_file: str | None = ytdlp_opts.get("download_archive")
         data["archive_file"] = archive_file or None
 
         if archive_file and (archive_id := get_archive_id(url=url).get("archive_id")):
             data["archive_id"] = archive_id
-            data["is_archived"] = len(archive_read(archive_file, [archive_id])) > 0
 
         data = OrderedDict(sorted(data.items(), key=lambda item: len(str(item[1]))))
 
         cache.set(key=key, value=data, ttl=300)
 
-        return web.json_response(text=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
+        return web.json_response(
+            text=json.dumps(_annotate_archive(data, archive_file), indent=4, default=str),
+            status=web.HTTPOk.status_code,
+        )
     except Exception as e:
         LOG.exception(
             "Failed to get video info for '%s': %s.",

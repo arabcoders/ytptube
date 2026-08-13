@@ -183,6 +183,8 @@ class TaskItem:
     "The title of the item."
     archive_id: str | None = None
     "The archive ID of the item."
+    is_archived: bool = False
+    "Whether the item is present in the selected preset archive."
     thumbnail: str | None = None
     "The thumbnail URL of the item, when available."
     description: str | None = None

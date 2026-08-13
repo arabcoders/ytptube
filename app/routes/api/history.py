@@ -462,6 +462,19 @@ async def item_rename(
             params={"resource": "api.resources.file"},
         )
 
+    new_path = filepath.parent / new_name
+    try:
+        valid_parent = new_path.resolve(strict=False).parent == filepath.parent.resolve()
+    except (OSError, ValueError):
+        valid_parent = False
+    if Path(new_name).parts != (new_name,) or not valid_parent:
+        return api_error_response(
+            "New name must not contain path separators.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.name"},
+        )
+
     try:
         renamed, sidecar_renamed = rename_file(filepath, new_name)
     except ValueError as e:
@@ -880,6 +893,45 @@ async def items_cancel(request: Request, queue: DownloadQueue, encoder: Encoder)
     status: dict[str, str] = await queue.cancel(ids)
 
     return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", "api/history/retry", "items_retry")
+async def items_retry(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    data = await request.json()
+    ids = data.get("ids")
+    status = data.get("status")
+
+    if ids is not None and (
+        not isinstance(ids, list) or not all(isinstance(item_id, str) and item_id.strip() for item_id in ids)
+    ):
+        return api_error_response(
+            "ids must be an array.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.ids"},
+        )
+
+    if not ids and not status:
+        return api_error_response(
+            "either 'ids' or 'status' is required.",
+            code="REQUIRED",
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    if status is not None and (not isinstance(status, str) or not status.strip()):
+        return api_error_response(
+            "status must be a non-empty string.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "api.fields.status"},
+        )
+
+    count = await queue.retry(ids=ids or None, status=None if ids else status)
+    return web.json_response(
+        data={"status": "accepted", "count": count},
+        status=web.HTTPAccepted.status_code,
+        dumps=encoder.encode,
+    )
 
 
 @route("POST", r"api/history/{id}/archive", "history.item.archive.add")

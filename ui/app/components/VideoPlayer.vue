@@ -352,7 +352,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
-import Hls from 'hls.js';
+import type Hls from 'hls.js';
 import {
   disableOpacity,
   enableOpacity,
@@ -1228,14 +1228,14 @@ async function src_error(event: Event) {
   }
 
   console.warn('Source failed to load, attempting HLS fallback via hls.js...', event);
-  attach_hls(currentPlaybackUrl('m3u8', true));
+  await attach_hls(currentPlaybackUrl('m3u8', true));
 }
 
-function attach_hls(
+async function attach_hls(
   link: string,
   time = pendingSeek ?? readSwitchTime(),
   play = pendingPlay || isPlaying(),
-) {
+): Promise<void> {
   if (!videoElement.value) {
     return;
   }
@@ -1245,6 +1245,11 @@ function attach_hls(
 
   if (hls) {
     hls.destroy();
+  }
+
+  const { default: Hls } = await import('hls.js');
+  if (!videoElement.value || destroyed.value) {
+    return;
   }
 
   hls = new Hls({
@@ -1281,7 +1286,7 @@ function forceSwitchToHls() {
     return;
   }
 
-  attach_hls(currentPlaybackUrl('m3u8', true));
+  void attach_hls(currentPlaybackUrl('m3u8', true));
 }
 
 usePlayerShortcuts({

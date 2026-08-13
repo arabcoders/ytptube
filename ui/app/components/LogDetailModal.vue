@@ -24,7 +24,7 @@
             :label="t('common.date')"
             :value="relativeTime(log.datetime)"
             icon="i-lucide-clock"
-            :tooltip="moment(log.datetime).format('YYYY-MM-DD HH:mm:ss Z')"
+            :tooltip="formatDateTime(log.datetime, locale, { seconds: true })"
           />
         </div>
 
@@ -384,7 +384,7 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
+import { formatDateTime } from '~/utils/date';
 import { useStorage } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import StatCard from '~/components/StatCard.vue';

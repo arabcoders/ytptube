@@ -85,7 +85,7 @@ class TestScheduledRetry:
         info.cli = "--format best"
         cast(Any, info).get_ytdlp_opts = lambda: SimpleNamespace(get_all=lambda: {"continuedl": continuedl})
         item = SimpleNamespace(info=info, is_live=False)
-        queue = SimpleNamespace(
+        queue: Any = SimpleNamespace(
             config=SimpleNamespace(retry=retry, retry_fresh=retry_fresh),
             is_paused=lambda: False,
             done=SimpleNamespace(empty=lambda: True, items=lambda: [], put=AsyncMock()),
@@ -155,6 +155,79 @@ class TestScheduledRetry:
         await check_retries(queue)
 
         queue.add.assert_not_awaited()
+
+
+class TestRetry:
+    @pytest.mark.asyncio
+    async def test_batch(self) -> None:
+        info = make_item()
+        info.status = "error"
+        item = Download(info=info)
+        queue: Any = SimpleNamespace(
+            done=SimpleNamespace(
+                get_many_by_ids=AsyncMock(return_value=[(info._id, item)]),
+                get_many_by_status=AsyncMock(),
+                bulk_delete=AsyncMock(return_value=1),
+            ),
+            add=AsyncMock(return_value={"status": "ok"}),
+            config=SimpleNamespace(extract_info_concurrency=2),
+            _notify=Mock(),
+            _retry_lock=asyncio.Lock(),
+            _retry_limit=asyncio.Semaphore(2),
+        )
+        queue._finish_retry = DownloadQueue._finish_retry.__get__(queue)
+
+        with patch("app.library.downloads.queue_manager.asyncio.create_task") as spawn:
+            count = await DownloadQueue.retry(queue, ids=[info._id])
+            await spawn.call_args.args[0]
+
+        assert count == 1
+        queue.done.bulk_delete.assert_awaited_once_with([info._id])
+        retry = queue.add.await_args.args[0]
+        assert retry.url == info.url
+        assert retry.requeued is True
+        events = queue._notify.emit.call_args_list
+        assert events[0].args[0] == Events.LOG_INFO
+        assert events[0].kwargs["data"]["items"][0]["title"] == info.title
+        assert events[-1].args[0] == Events.LOG_SUCCESS
+
+    @pytest.mark.asyncio
+    async def test_limit(self) -> None:
+        active = 0
+        peak = 0
+
+        async def add(_: Item) -> dict[str, str]:
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0.01)
+            active -= 1
+            return {"status": "ok"}
+
+        items = []
+        for index in range(5):
+            info = make_item(id=str(index))
+            info.status = "error"
+            items.append((info._id, Download(info=info)))
+
+        queue: Any = SimpleNamespace(
+            add=add,
+            config=SimpleNamespace(extract_info_concurrency=2),
+            _notify=Mock(),
+            _retry_limit=asyncio.Semaphore(2),
+        )
+        await asyncio.gather(DownloadQueue._finish_retry(queue, items), DownloadQueue._finish_retry(queue, items))
+
+        assert peak == 2
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        queue: Any = SimpleNamespace(
+            done=SimpleNamespace(get_many_by_ids=AsyncMock(return_value=[])),
+            _retry_lock=asyncio.Lock(),
+        )
+
+        assert await DownloadQueue.retry(queue, ids=["missing"]) == 0
 
 
 class TestDownloadHooks:
@@ -360,6 +433,61 @@ class TestDownloadStale:
             # Verify process was actually started
             mock_create.assert_called_once()
             mock_start.assert_called_once()
+
+
+class TestDownloadClose:
+    @staticmethod
+    def make_download(*, started: bool = True) -> tuple[Any, Mock, Mock]:
+        download: Any = object.__new__(Download)
+        download.info = make_item()
+        download.id = download.info._id
+        download.logger = Mock()
+        download.status_queue = Mock()
+        download._status_tracker = Mock()
+        download._hook_handlers = Mock()
+        download._temp_manager = Mock()
+        download._process_manager = Mock(cancel_in_progress=False)
+        download._process_manager.started.return_value = started
+        download._process_manager.close = AsyncMock()
+        return download, download.status_queue, download._status_tracker
+
+    @pytest.mark.asyncio
+    async def test_close_queue(self) -> None:
+        download, status_queue, tracker = self.make_download()
+
+        assert await download.close() is True
+
+        tracker.cancel_update_task.assert_called_once_with()
+        tracker.put_terminator.assert_called_once_with()
+        status_queue.close.assert_called_once_with()
+        status_queue.join_thread.assert_called_once_with()
+        assert download.status_queue is None
+        assert download._status_tracker is None
+        assert download._hook_handlers is None
+
+    @pytest.mark.asyncio
+    async def test_close_queue_on_error(self) -> None:
+        download, status_queue, tracker = self.make_download()
+        download._process_manager.close.side_effect = RuntimeError("close failed")
+
+        assert await download.close() is False
+
+        tracker.put_terminator.assert_called_once_with()
+        status_queue.close.assert_called_once_with()
+        status_queue.join_thread.assert_called_once_with()
+        assert download.status_queue is None
+
+    @pytest.mark.asyncio
+    async def test_close_partial_queue(self) -> None:
+        download, status_queue, _ = self.make_download(started=False)
+        download._status_tracker = None
+
+        assert await download.close() is False
+
+        status_queue.put.assert_called_once()
+        assert isinstance(status_queue.put.call_args.args[0], Terminator)
+        status_queue.close.assert_called_once_with()
+        status_queue.join_thread.assert_called_once_with()
 
 
 class TestDownloadFlow:

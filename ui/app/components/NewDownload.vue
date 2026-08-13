@@ -11,16 +11,6 @@
                   <UIcon name="i-lucide-link" class="size-4 text-toned" />
                 </UTooltip>
                 <span class="font-semibold text-default">{{ t('common.url') }}</span>
-                <span class="text-toned">-</span>
-                <button
-                  type="button"
-                  class="font-medium text-primary hover:underline disabled:cursor-not-allowed"
-                  :class="{ 'opacity-50': !hasValidUrl }"
-                  :disabled="addInProgress || !hasValidUrl"
-                  @click="openPlaylistPicker"
-                >
-                  {{ t('common.pickPlaylistVideos') }}
-                </button>
               </div>
             </template>
             <template #description>
@@ -49,6 +39,7 @@
                     base: 'min-h-[7.25rem] bg-elevated/60 ring-default focus-visible:ring-primary',
                   }"
                   @keydown="handleKeyDown"
+                  @update:model-value="clearPickedEntries"
                   autofocus
                 />
                 <UInput
@@ -69,21 +60,31 @@
                   }"
                   @keydown="handleKeyDown"
                   @paste="handlePaste"
+                  @update:model-value="clearPickedEntries"
                   autofocus
                 />
               </div>
 
-              <UButton
-                type="submit"
-                color="primary"
-                icon="i-lucide-plus"
-                :loading="addInProgress"
-                :disabled="addInProgress || !hasValidUrl"
-                size="lg"
-                class="justify-center sm:min-w-28"
-              >
-                {{ t('common.add') }}
-              </UButton>
+              <UFieldGroup size="lg">
+                <UButton
+                  type="submit"
+                  color="primary"
+                  :loading="addInProgress"
+                  :disabled="addInProgress || !hasValidUrl"
+                  class="justify-center sm:min-w-28"
+                >
+                  {{ t('common.download') }}
+                </UButton>
+                <UDropdownMenu :items="downloadActionGroups" :modal="false">
+                  <UButton
+                    color="primary"
+                    icon="i-lucide-chevron-down"
+                    :aria-label="t('common.pickPlaylistVideos')"
+                    :disabled="addInProgress || !hasValidUrl"
+                    square
+                  />
+                </UDropdownMenu>
+              </UFieldGroup>
             </div>
           </UFormField>
 
@@ -554,7 +555,7 @@
       :cli="form.cli"
       @closeModel="() => void requestClosePlaylistPicker()"
       @dirty-change="playlistPickerDirty = $event"
-      @picked="form.url = $event.join('\n')"
+      @picked="setPickedEntries"
     />
   </main>
 </template>
@@ -600,9 +601,25 @@ const showOptions = ref<boolean>(false);
 const showTestResults = ref<boolean>(false);
 const showPlaylistPicker = ref<boolean>(false);
 const playlistPickerDirty = ref<boolean>(false);
+const pickedEntries = ref<Array<{ url: string; extras: Record<string, unknown> }>>([]);
+const applyingPickedEntries = ref(false);
 
 const openPlaylistPicker = (): void => {
   showPlaylistPicker.value = true;
+};
+
+const setPickedEntries = (
+  entries: Array<{ url: string; extras: Record<string, unknown> }>,
+): void => {
+  pickedEntries.value = entries;
+  applyingPickedEntries.value = true;
+  form.value.url = entries.map((entry) => entry.url).join('\n');
+  applyingPickedEntries.value = false;
+};
+
+const clearPickedEntries = (): void => {
+  if (applyingPickedEntries.value) return;
+  pickedEntries.value = [];
 };
 
 const { requestClose: requestClosePlaylistPicker } = useDirtyCloseGuard(showPlaylistPicker, {
@@ -822,6 +839,17 @@ const mobileActionGroups = computed(() => {
   return groups;
 });
 
+const downloadActionGroups = computed(() => [
+  [
+    {
+      label: t('common.pickPlaylistVideos'),
+      icon: 'i-lucide-list-video',
+      disabled: addInProgress.value || !hasValidUrl.value,
+      onSelect: openPlaylistPicker,
+    },
+  ],
+]);
+
 const is_valid_dl_field = (dl_field: string): boolean => {
   if (dlFieldsExtra.includes(dl_field)) {
     return true;
@@ -952,7 +980,7 @@ const addDownload = async () => {
 
   const request_data = [] as Array<item_request>;
 
-  splitUrls(form.value.url).forEach(async (url: string) => {
+  splitUrls(form.value.url).forEach((url: string, index: number) => {
     const data = {
       url: url,
       preset: form.value.preset || config.app.default_preset,
@@ -963,8 +991,12 @@ const addDownload = async () => {
       auto_start: auto_start.value,
     } as item_request;
 
-    if (form.value?.extras && Object.keys(form.value.extras).length > 0) {
-      data.extras = form.value.extras;
+    const extras = {
+      ...(form.value?.extras || {}),
+      ...(pickedEntries.value[index]?.extras || {}),
+    };
+    if (Object.keys(extras).length > 0) {
+      data.extras = extras;
     }
 
     request_data.push(data);
@@ -1011,6 +1043,7 @@ const addDownload = async () => {
 
     if (false === had_errors) {
       form.value.url = '';
+      pickedEntries.value = [];
       emitter('clear_form');
     }
   } catch (error) {
@@ -1041,6 +1074,7 @@ const resetConfig = async () => {
     folder: '',
     extras: {},
   } as item_request;
+  pickedEntries.value = [];
   dlFields.value = {};
   showAdvanced.value = false;
   toast.success(t('common.resetConfigDone'));

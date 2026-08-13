@@ -67,6 +67,14 @@
           </div>
         </div>
 
+        <UAlert
+          v-if="!isLoading && entries.length > 0"
+          color="info"
+          variant="soft"
+          icon="i-lucide-info"
+          :description="t('common.playlistMetadataNotice')"
+        />
+
         <div v-if="isLoading" class="flex min-h-80 items-center justify-center">
           <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-toned" />
         </div>
@@ -94,7 +102,7 @@
               unrender
             >
               <label
-                class="flex cursor-pointer items-center gap-3 rounded-lg border border-default p-2 transition-colors hover:bg-elevated/50"
+                class="flex cursor-pointer items-center gap-3 border border-default p-2 transition-colors hover:bg-elevated/50"
               >
                 <UCheckbox
                   :model-value="selected.has(entry.key)"
@@ -132,6 +140,15 @@
                     </UBadge>
                     <UBadge v-if="entry.broadcasterName" color="neutral" variant="soft" size="xs">
                       {{ entry.broadcasterName }}
+                    </UBadge>
+                    <UBadge
+                      v-if="entry.isArchived"
+                      color="success"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-check"
+                    >
+                      {{ t('common.alreadyDownloaded') }}
                     </UBadge>
                     <UBadge
                       v-if="entry.broadcastDateLabel"
@@ -186,8 +203,9 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
 import { formatTime, parse_api_error, request } from '~/utils';
+import { formatDateOnly, formatDateTime, parseDate } from '~/utils/date';
+import { playlistExtras } from '~/utils/playlist';
 
 type RawEntry = {
   url?: unknown;
@@ -203,6 +221,7 @@ type RawEntry = {
   seriesTitle?: unknown;
   broadcasterName?: unknown;
   metadata?: unknown;
+  [key: string]: unknown;
 };
 
 type PlaylistEntry = {
@@ -217,6 +236,8 @@ type PlaylistEntry = {
   broadcastDateLabel: string;
   seriesTitle: string;
   broadcasterName: string;
+  isArchived: boolean;
+  extras: Record<string, unknown>;
 };
 
 const props = defineProps<{
@@ -228,10 +249,10 @@ const props = defineProps<{
 const emitter = defineEmits<{
   (event: 'closeModel'): void;
   (event: 'dirty-change', dirty: boolean): void;
-  (event: 'picked', urls: string[]): void;
+  (event: 'picked', entries: Array<{ url: string; extras: Record<string, unknown> }>): void;
 }>();
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const query = ref('');
 const entries = ref<PlaylistEntry[]>([]);
 const entryScrollEl = ref<HTMLElement | null>(null);
@@ -293,6 +314,8 @@ const normalizeEntry = (
   entry: RawEntry,
   index: number,
   keyPrefix: string,
+  playlist: RawEntry | null = null,
+  total: number = 0,
 ): PlaylistEntry | null => {
   if (!entry || typeof entry !== 'object') {
     return null;
@@ -351,6 +374,8 @@ const normalizeEntry = (
       : metadata && typeof metadata.broadcasterName === 'string'
         ? metadata.broadcasterName
         : '';
+  const extras = playlistExtras(entry, playlist, index, total);
+  const isArchived = entry.is_archived === true || metadata?.is_archived === true;
 
   return {
     key: `${keyPrefix}:${index}:${url}`,
@@ -364,16 +389,20 @@ const normalizeEntry = (
     broadcastDateLabel,
     seriesTitle,
     broadcasterName,
+    isArchived,
+    extras,
   };
 };
 
 const formatPublished = (value: string, full: boolean = false): string => {
-  const date = moment(value);
-  if (!date.isValid()) {
+  const date = parseDate(value);
+  if (!date) {
     return value;
   }
 
-  return date.format(full ? 'YYYY-MM-DD HH:mm:ss Z' : 'YYYY-MM-DD');
+  return full
+    ? formatDateTime(date, locale.value, { seconds: true })
+    : formatDateOnly(date, locale.value);
 };
 
 const normalizeEntries = (value: unknown): PlaylistEntry[] => {
@@ -385,8 +414,9 @@ const normalizeEntries = (value: unknown): PlaylistEntry[] => {
     return [];
   }
 
-  return (value as { entries: RawEntry[] }).entries.flatMap((entry, index) => {
-    const normalized = normalizeEntry(entry, index, 'ytdlp');
+  const playlist = value as RawEntry & { entries: RawEntry[] };
+  return playlist.entries.flatMap((entry, index) => {
+    const normalized = normalizeEntry(entry, index, 'ytdlp', playlist, playlist.entries.length);
     return normalized ? [normalized] : [];
   });
 };
@@ -563,7 +593,9 @@ const pickEntries = (): void => {
   const selectedKeys = selected.value;
   emitter(
     'picked',
-    entries.value.filter((entry) => selectedKeys.has(entry.key)).map((entry) => entry.url),
+    entries.value
+      .filter((entry) => selectedKeys.has(entry.key))
+      .map(({ url, extras }) => ({ url, extras })),
   );
   emitter('dirty-change', false);
   emitter('closeModel');

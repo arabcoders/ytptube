@@ -83,7 +83,7 @@
                 >
                   <template #description>
                     <span class="flex items-center gap-1 text-xs text-toned">
-                      <UTooltip :text="moment(item.created).format('YYYY-M-DD H:mm Z')">
+                      <UTooltip :text="formatDateTime(item.created, locale)">
                         <span :date-datetime="item.created" v-rtime="item.created" />
                       </UTooltip>
                       <span>-</span>
@@ -164,12 +164,12 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment';
+import { formatDateTime } from '~/utils/date';
 import { useStorage } from '@vueuse/core';
 import { useNotificationCenter } from '~/composables/useNotificationCenter';
 import type { notificationType } from '~/composables/useNotification';
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 const store = useNotificationCenter();
 

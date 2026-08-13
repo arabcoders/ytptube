@@ -249,28 +249,25 @@
                                       <UTooltip
                                         v-if="item.finishedAt || item.startedAt || item.createdAt"
                                         :text="
-                                          moment
-                                            .unix(
-                                              item.finishedAt ||
-                                                item.startedAt ||
-                                                item.createdAt ||
-                                                0,
-                                            )
-                                            .format('YYYY-M-DD H:mm Z')
+                                          formatDateTime(
+                                            item.finishedAt ||
+                                              item.startedAt ||
+                                              item.createdAt ||
+                                              0,
+                                            locale,
+                                          )
                                         "
                                       >
                                         <span class="inline-flex items-center gap-1.5 cursor-help">
                                           <UIcon name="i-lucide-clock-3" class="size-3.5" />
                                           <time
                                             :datetime="
-                                              moment
-                                                .unix(
-                                                  item.finishedAt ||
-                                                    item.startedAt ||
-                                                    item.createdAt ||
-                                                    0,
-                                                )
-                                                .toISOString()
+                                              toIsoString(
+                                                item.finishedAt ||
+                                                  item.startedAt ||
+                                                  item.createdAt ||
+                                                  0,
+                                              )
                                             "
                                           >
                                             {{
@@ -392,7 +389,6 @@
 </style>
 
 <script setup lang="ts">
-import moment from 'moment';
 import { useStorage } from '@vueuse/core';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -404,6 +400,7 @@ import { useDialog } from '~/composables/useDialog';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { disableOpacity, enableOpacity } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+import { formatDateTime, toIsoString } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 const { locale, t } = useI18n();
 
