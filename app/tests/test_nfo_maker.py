@@ -14,7 +14,7 @@ def sample_info_tv(path: Path) -> dict:
         "season_number": 1,
         "episode_number": 2,
         "description": "First line.\n#tag\n00:01:23 Intro",
-        "extractor": "youtube",
+        "extractor": "YouTube",
         "filename": str(path),
     }
 
@@ -28,6 +28,7 @@ def sample_info_movie(path: Path) -> dict:
         "duration": 7200,
         "thumbnail": "http://example.com/thumb.jpg",
         "webpage_url": "http://example.com/trailer",
+        "extractor": "TheMovieDB",
         "filename": str(path),
     }
 
@@ -45,7 +46,9 @@ def test_generate_nfo_tv_mode(tmp_path: Path) -> None:
     assert nfo_path.exists()
 
     content = nfo_path.read_text(encoding="utf-8")
+    assert content.startswith('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
     assert "<episodedetails>" in content
+    assert '<uniqueid type="youtube">abc123</uniqueid>' in content
     assert "<title>Test Show - S01E02</title>" in content
     assert "Intro" not in content
     assert "#tag" not in content
@@ -71,7 +74,9 @@ def test_generate_nfo_movie_mode_and_run_wrapper(tmp_path: Path) -> None:
     assert res["success"] is True
     assert nfo_path.exists()
     content = nfo_path.read_text(encoding="utf-8")
+    assert content.startswith('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
     assert "<movie>" in content
+    assert '<uniqueid type="themoviedb" default="true">mov001</uniqueid>' in content
     assert "<title>Test Movie</title>" in content
     assert "<runtime>7200</runtime>" in content or "<runtime>7200" in content
 
@@ -88,3 +93,19 @@ def test_generate_nfo_movie_mode_and_run_wrapper(tmp_path: Path) -> None:
 
     nfo_mtime = nfo_path.stat().st_mtime
     assert abs(nfo_mtime - media_mtime) < 2.0
+
+
+def test_nfo_no_xml(tmp_path: Path) -> None:
+    media_file = tmp_path / "test_show.mkv"
+    media_file.write_text("dummy", encoding="utf-8")
+
+    result = NFOMakerPP.generate_nfo(
+        info_dict=sample_info_tv(media_file),
+        filepath=media_file,
+        overwrite=True,
+        xml_declaration=False,
+    )
+
+    assert result["success"] is True
+    content = media_file.with_suffix(".nfo").read_text(encoding="utf-8")
+    assert not content.startswith('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
