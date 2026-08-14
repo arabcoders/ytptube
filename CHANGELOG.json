@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "4956a2af903dd19267da474f116efd497c8da1ab",
-    "date": "2026-08-13T06:04:20+00:00",
+    "full_sha": "433efc71df4308f4526efa3c58ac86b13158639d",
+    "date": "2026-08-14T14:40:16+00:00",
     "commits": [
+      {
+        "sha": "433efc71",
+        "full_sha": "433efc71df4308f4526efa3c58ac86b13158639d",
+        "message": "feat(nfo): add XML declaration option for NFO file generation. Closes #657",
+        "author": "arabcoders",
+        "date": "2026-08-14T14:40:16+00:00"
+      },
+      {
+        "sha": "2febfd26",
+        "full_sha": "2febfd26580fc714b975e27f1b18f57223406988",
+        "message": "chore: add watchfiles for better dev expereince",
+        "author": "arabcoders",
+        "date": "2026-08-13T19:56:21+00:00"
+      },
       {
         "sha": "4956a2af",
         "full_sha": "4956a2af903dd19267da474f116efd497c8da1ab",
