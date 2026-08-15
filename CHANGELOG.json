@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "433efc71df4308f4526efa3c58ac86b13158639d",
-    "date": "2026-08-14T14:40:16+00:00",
+    "full_sha": "3b89e1a51fadfa3d580f11d60d043e84200120d3",
+    "date": "2026-08-15T15:57:50+00:00",
     "commits": [
+      {
+        "sha": "3b89e1a5",
+        "full_sha": "3b89e1a51fadfa3d580f11d60d043e84200120d3",
+        "message": "docs(security): clarify yt-dlp template trust boundary",
+        "author": "arabcoders",
+        "date": "2026-08-15T15:57:50+00:00"
+      },
       {
         "sha": "433efc71",
         "full_sha": "433efc71df4308f4526efa3c58ac86b13158639d",
