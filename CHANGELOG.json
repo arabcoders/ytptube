@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "e70d665cc4b969a070b9c6a3cf8e4ce5fa349f5a",
-    "date": "2026-08-16T04:54:18+00:00",
+    "full_sha": "5ec196bedd38b18013b086d115834564a90c1126",
+    "date": "2026-08-16T17:13:44+00:00",
     "commits": [
+      {
+        "sha": "5ec196be",
+        "full_sha": "5ec196bedd38b18013b086d115834564a90c1126",
+        "message": "refactor: minor changes to be more clear about self executable limitions",
+        "author": "arabcoders",
+        "date": "2026-08-16T17:13:44+00:00"
+      },
       {
         "sha": "e70d665c",
         "full_sha": "e70d665cc4b969a070b9c6a3cf8e4ce5fa349f5a",
