@@ -132,7 +132,7 @@ class EngineConfig(BaseModel):
 
 class RequestConfig(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, protected_namespaces=())
-    method: str = "GET"
+    method: Literal["GET", "POST"] = "GET"
     headers: dict[str, str] = Field(default_factory=dict)
     params: dict[str, Any] = Field(default_factory=dict)
     data: dict[str, Any] | None = None

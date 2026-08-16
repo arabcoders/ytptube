@@ -26,6 +26,7 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
 from app.library.log import get_logger
+from app.library.Utils import validate_url
 
 from ._base_handler import BaseHandler
 
@@ -142,13 +143,18 @@ class GenericTaskHandler(BaseHandler):
 
     @staticmethod
     async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
-        _ = config
+        config = config or Config.get_instance()
         definition: TaskDefinition | None = await GenericTaskHandler._find_definition(task.url)
         if not definition:
             return TaskFailure(message="No generic task definition matched the provided URL.")
 
         ytdlp_opts: dict[str, Any] = task.get_ytdlp_opts().get_all()
         target_url: str = definition.definition.request.url or task.url
+
+        try:
+            await asyncio.to_thread(validate_url, target_url, config.allow_internal_urls)
+        except ValueError as exc:
+            return TaskFailure(message="Invalid target URL.", error=str(exc))
 
         LOG.debug(
             "Fetching content for task '%s'.",

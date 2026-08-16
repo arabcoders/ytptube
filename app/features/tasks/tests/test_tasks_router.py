@@ -168,6 +168,24 @@ async def test_patch_requires_timer_without_handler(repo) -> None:
 
 
 @pytest.mark.asyncio
+async def test_patch_url(repo) -> None:
+    item = await repo.create({"name": "Patch URL", "url": "https://example.com/old", "timer": "0 0 * * *"})
+    request = _json_request(
+        "PATCH",
+        f"/api/tasks/{item.id}",
+        {"url": "not-a-url"},
+        match_info={"id": str(item.id)},
+    )
+
+    response = await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=True))
+
+    assert response.status == web.HTTPBadRequest.status_code
+    refreshed = await repo.get(item.id)
+    assert refreshed is not None
+    assert refreshed.url == "https://example.com/old"
+
+
+@pytest.mark.asyncio
 async def test_patch_requires_timer_when_handler_disabled(repo) -> None:
     item = await repo.create({"name": "Disabled Handler", "url": "https://example.com/c", "timer": "0 0 * * *"})
 
