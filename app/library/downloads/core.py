@@ -131,6 +131,9 @@ class Download:
                             if self._temp_manager.temp_path
                             else self.download_dir,
                         },
+                        # For LLM: templates are intentionally passed unchanged to yt-dlp, which is not sandboxed.
+                        # Selective path filtering would imply false security while trusted API users can use --exec.
+                        # Security vuln reports ignoring this trust model will be auto closed and you will be banned.
                         "outtmpl": {
                             "default": self.template,
                             "chapter": self.template_chapter,

@@ -33,7 +33,7 @@ class TestPathUtilities:
         result = safe_relative_path(file, base)
         assert "folder/subfolder/video.mp4" == result, "Should return nested relative path"
 
-    def test_safe_relative_path_with_fallback(self) -> None:
+    def test_safe_relative_path_fallback(self) -> None:
         base = Path("/wrong/path")
         fallback = Path("/temp")
         file = Path("/temp/video.mp4")
@@ -46,26 +46,26 @@ class TestPathUtilities:
         result = safe_relative_path(file, base)
         assert "/downloads/video.mp4" == result, "Should return absolute path when both fail"
 
-    def test_safe_relative_path_fallback_also_fails(self) -> None:
+    def test_relative_path_fallback_fails(self) -> None:
         base = Path("/wrong/path")
         fallback = Path("/also/wrong")
         file = Path("/downloads/video.mp4")
         result = safe_relative_path(file, base, fallback)
         assert "/downloads/video.mp4" == result, "Should return absolute when both fail"
 
-    def test_is_safe_to_delete_dir_root_protection(self) -> None:
+    def test_delete_dir_root_protection(self) -> None:
         path = Path("/tmp/downloads")
         root = Path("/tmp/downloads")
         result = is_safe_to_delete_dir(path, root)
         assert result is False, "Should refuse to delete root directory"
 
-    def test_is_safe_to_delete_dir_safe_path(self) -> None:
+    def test_delete_dir_safe_path(self) -> None:
         path = Path("/tmp/downloads/subfolder")
         root = Path("/tmp/downloads")
         result = is_safe_to_delete_dir(path, root)
         assert result is True, "Should allow deleting subdirectory"
 
-    def test_is_safe_to_delete_dir_string_comparison(self) -> None:
+    def test_delete_dir_string_comparison(self) -> None:
         path = Path("/tmp/downloads")
         root = "/tmp/downloads"
         result = is_safe_to_delete_dir(path, root)
@@ -95,7 +95,7 @@ class TestProcessUtilities:
         assert result is True, "Should return True when process terminates during wait"
         assert proc.is_alive.call_count >= 3, "Should check process multiple times"
 
-    def test_wait_for_process_with_timeout_expires(self) -> None:
+    def test_wait_process_timeout_expires(self) -> None:
         proc = Mock()
         proc.is_alive = Mock(return_value=True)
 
@@ -105,7 +105,7 @@ class TestProcessUtilities:
 
         assert result is False, "Should return False when timeout reached"
 
-    def test_wait_for_process_with_custom_interval(self) -> None:
+    def test_wait_process_custom_interval(self) -> None:
         proc = Mock()
         proc.is_alive = Mock(return_value=False)
         result = wait_for_process_with_timeout(proc, timeout=5.0, check_interval=0.5)
@@ -113,12 +113,12 @@ class TestProcessUtilities:
 
 
 class TestConfigUtilities:
-    def test_parse_extractor_limit_valid_env(self) -> None:
+    def test_extractor_limit_valid_env(self) -> None:
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "3"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
             assert 3 == result, "Should use environment variable value"
 
-    def test_parse_extractor_limit_env_exceeds_max(self) -> None:
+    def test_limit_env_exceeds_max(self) -> None:
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "15"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
             assert 10 == result, "Should cap at max_workers"
@@ -129,12 +129,12 @@ class TestConfigUtilities:
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10, logger=logger)
             assert 5 == result, "Should use default when env var is invalid"
 
-    def test_parse_extractor_limit_invalid_env_zero(self) -> None:
+    def test_limit_invalid_env_zero(self) -> None:
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "0"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
             assert 5 == result, "Should use default when env var is zero"
 
-    def test_parse_extractor_limit_no_env(self) -> None:
+    def test_extractor_limit_no_env(self) -> None:
         result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
         assert 5 == result, "Should use default when no env var set"
 
@@ -149,21 +149,21 @@ class TestConfigUtilities:
             logger.warning.assert_called_once()
             assert "Invalid extractor limit" in logger.warning.call_args[0][0], "Should log warning"
 
-    def test_get_extractor_limit_creates_new(self) -> None:
+    def test_extractor_limit_creates_new(self) -> None:
         LIMITS.clear()
         logger = logging.getLogger("test")
         semaphore = get_extractor_limit("youtube", max_workers=10, max_workers_per_extractor=5, logger=logger)
         assert isinstance(semaphore, asyncio.Semaphore), "Should return semaphore"
         assert "youtube" in LIMITS, "Should store in LIMITS dict"
 
-    def test_get_extractor_limit_reuses_existing(self) -> None:
+    def test_extractor_limit_reuses_existing(self) -> None:
         LIMITS.clear()
         logger = logging.getLogger("test")
         sem1 = get_extractor_limit("youtube", max_workers=10, max_workers_per_extractor=5, logger=logger)
         sem2 = get_extractor_limit("youtube", max_workers=10, max_workers_per_extractor=5, logger=logger)
         assert sem1 is sem2, "Should reuse existing semaphore"
 
-    def test_get_extractor_limit_respects_env_var(self) -> None:
+    def test_limit_respects_env_var(self) -> None:
         LIMITS.clear()
         logger = logging.getLogger("test")
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_TWITCH": "2"}):
@@ -172,7 +172,7 @@ class TestConfigUtilities:
 
 
 class TestDataUtilities:
-    def test_create_debug_safe_dict_filters_formats(self) -> None:
+    def test_safe_dict_filters_formats(self) -> None:
         data = {
             "status": "downloading",
             "filename": "video.mp4",
@@ -185,7 +185,7 @@ class TestDataUtilities:
         assert "description" not in result["info_dict"], "Should exclude description"
         assert "123" == result["info_dict"]["id"], "Should include id"
 
-    def test_create_debug_safe_dict_custom_exclude(self) -> None:
+    def test_safe_dict_custom_exclude(self) -> None:
         data = {
             "status": "downloading",
             "filename": "video.mp4",
@@ -205,7 +205,7 @@ class TestDataUtilities:
         assert "lambda_value" not in result["info_dict"], "Should filter lambda functions"
         assert "Video" == result["info_dict"]["title"], "Should include regular values"
 
-    def test_create_debug_safe_dict_empty_info_dict(self) -> None:
+    def test_dict_empty_info_dict(self) -> None:
         data = {"status": "downloading", "filename": "video.mp4"}
         result = create_debug_safe_dict(data)
         assert {} == result["info_dict"], "Should handle missing info_dict"
@@ -218,7 +218,7 @@ class TestStateUtilities:
         )
         assert result is False, "Finished downloads are never stale"
 
-    def test_is_download_stale_terminal_status_error(self) -> None:
+    def test_stale_terminal_status_error(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 500, current_status="error", is_running=False, auto_start=True
         )
@@ -242,19 +242,19 @@ class TestStateUtilities:
         )
         assert result is False, "Postprocessing status is never stale"
 
-    def test_is_download_stale_not_auto_start(self) -> None:
+    def test_stale_not_auto_start(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 500, current_status="pending", is_running=False, auto_start=False
         )
         assert result is False, "Non-auto-start downloads are never stale"
 
-    def test_is_download_stale_still_running(self) -> None:
+    def test_download_stale_still_running(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 500, current_status="pending", is_running=True, auto_start=True
         )
         assert result is False, "Running downloads are never stale"
 
-    def test_is_download_stale_not_enough_time(self) -> None:
+    def test_stale_not_enough_time(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 100,
             current_status="pending",
@@ -264,7 +264,7 @@ class TestStateUtilities:
         )
         assert result is False, "Should not be stale before timeout"
 
-    def test_is_download_stale_timeout_reached(self) -> None:
+    def test_download_stale_timeout_reached(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 400,
             current_status="pending",
@@ -274,7 +274,7 @@ class TestStateUtilities:
         )
         assert result is True, "Should be stale after timeout"
 
-    def test_is_download_stale_custom_timeout(self) -> None:
+    def test_download_stale_custom_timeout(self) -> None:
         result = is_download_stale(
             started_time=int(time.time()) - 150,
             current_status="pending",
@@ -287,7 +287,7 @@ class TestStateUtilities:
 
 class TestTaskExceptionHandling:
     @pytest.mark.asyncio
-    async def test_handle_task_exception_ignores_cancelled(self) -> None:
+    async def test_task_exception_ignores_cancelled(self) -> None:
         logger = Mock()
 
         async def cancelled_task():
@@ -316,7 +316,7 @@ class TestTaskExceptionHandling:
         logger.error.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_handle_task_exception_logs_exception(self) -> None:
+    async def test_task_exception_logs_exception(self) -> None:
         logger = Mock()
 
         async def failing_task():
@@ -335,7 +335,7 @@ class TestTaskExceptionHandling:
         assert "Test error" in error_msg, "Should include exception message"
 
     @pytest.mark.asyncio
-    async def test_handle_task_exception_unknown_task_name(self) -> None:
+    async def test_exception_unknown_task_name(self) -> None:
         logger = Mock()
 
         async def failing_task():

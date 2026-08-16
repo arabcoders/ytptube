@@ -5,11 +5,9 @@ from typing import Generator
 from unittest.mock import AsyncMock
 
 import pytest
-from aiohttp import web
-from aiohttp.test_utils import make_mocked_request
-
 from app.library.config import Config
 from app.routes.api import images
+from app.tests.helpers import url_for
 
 
 @pytest.fixture(autouse=True)
@@ -27,10 +25,9 @@ class _Resp:
 
 
 @pytest.mark.asyncio
-async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
     config.pictures_backends = ["https://user:pass@example.com/bg.jpg?apitoken=secret#frag"]
-    req = make_mocked_request("GET", "/api/random/background")
 
     class DummyCache:
         def has(self, _key: str) -> bool:
@@ -39,10 +36,10 @@ async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pyte
         async def aset(self, **_kwargs) -> None:
             return None
 
-    client = AsyncMock()
-    client.request.side_effect = RuntimeError("boom")
+    outbound = AsyncMock()
+    outbound.request.side_effect = RuntimeError("boom")
 
-    monkeypatch.setattr(images, "get_async_client", lambda **_kwargs: client)
+    monkeypatch.setattr(images, "get_async_client", lambda **_kwargs: outbound)
     monkeypatch.setattr(images, "resolve_curl_transport", lambda: False)
     monkeypatch.setattr(images, "build_request_headers", lambda **_kwargs: {})
     monkeypatch.setattr(images.Globals, "get_random_agent", staticmethod(lambda: "agent"))
@@ -61,10 +58,14 @@ async def test_bg_log_redact(caplog: pytest.LogCaptureFixture, monkeypatch: pyte
         ),
     )
 
-    with caplog.at_level(logging.ERROR):
-        response = await images.get_background(req, config, DummyCache())
+    async def handler(request):
+        return await images.get_background(request, config, DummyCache())
 
-    assert response.status == web.HTTPInternalServerError.status_code
+    test_client_app = await test_client({"get_background": handler})
+    with caplog.at_level(logging.ERROR):
+        response = await test_client_app.get(url_for("get_background"))
+
+    assert response.status == 500
     record = next(
         record
         for record in caplog.records

@@ -212,7 +212,7 @@ class TestTaskDefinitionRoutes:
         assert response.status == web.HTTPCreated.status_code, "Should create task definition with regex pattern"
         assert body["match_url"][0] == "/https://example\\.com/post/[0-9]+/", "Should preserve regex pattern format"
 
-    async def test_create_with_invalid_regex_pattern(self, repo: TaskDefinitionsRepository) -> None:
+    async def test_create_invalid_regex_pattern(self, repo: TaskDefinitionsRepository) -> None:
         payload = _sample_definition("BadRegex", priority=0)
         payload["match_url"] = ["/[invalid(/"]
 

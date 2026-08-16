@@ -126,6 +126,13 @@ class TaskPatch(BaseModel):
     handler_enabled: bool | None = None
     enabled: bool | None = None
 
+    @field_validator("url", mode="before")
+    @classmethod
+    def _normalize_url(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        return Task._normalize_url(value)
+
 
 class TaskList(BaseModel):
     model_config = ConfigDict(from_attributes=True)

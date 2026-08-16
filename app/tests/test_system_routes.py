@@ -1,4 +1,5 @@
 import json
+import importlib
 from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -10,6 +11,9 @@ from app.library.cache import Cache
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
 from app.routes.api.system import check_updates, system_config, system_diagnostics, system_folders, system_limits
+from app.routes.api import system
+from app.library.router import ROUTES
+from app.tests.helpers import url_for
 
 
 @dataclass
@@ -64,25 +68,31 @@ class TestCheckUpdatesEndpoint:
 
     def setup_method(self):
         """Reset singletons before each test."""
+        if "system.check_updates" not in ROUTES.get("http", {}):
+            importlib.reload(system)
         Config._reset_singleton()
         UpdateChecker._reset_singleton()
 
     @pytest.mark.asyncio
-    async def test_check_updates_disabled(self):
+    async def test_check_updates_disabled(self, test_client):
         """Test check updates returns error when disabled in config."""
         config = Config.get_instance()
         config.check_for_updates = False
         encoder = Encoder()
         update_checker = UpdateChecker.get_instance()
 
-        response = await check_updates(config, encoder, update_checker)
+        async def handler(request):
+            return await check_updates(config, encoder, update_checker)
+
+        client = await test_client({"system.check_updates": handler})
+        response = await client.post(url_for("system.check_updates"))
 
         assert 200 == response.status, "Should work even if disabled as it's manual check."
-        body = response.body
+        body = await response.read()
         assert b"disabled" in body.lower(), "Response should mention update checking is disabled"
 
     @pytest.mark.asyncio
-    async def test_check_updates_up_to_date(self):
+    async def test_updates_current(self, test_client):
         """Test check updates returns up_to_date status."""
         config = Config.get_instance()
         config.check_for_updates = True
@@ -92,15 +102,20 @@ class TestCheckUpdatesEndpoint:
 
         with patch.object(update_checker, "check_for_updates", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = (("up_to_date", None), ("up_to_date", None))
-            response = await check_updates(config, encoder, update_checker)
+
+            async def handler(request):
+                return await check_updates(config, encoder, update_checker)
+
+            client = await test_client({"system.check_updates": handler})
+            response = await client.post(url_for("system.check_updates"))
 
             assert 200 == response.status, "Should return 200"
-            body = response.body.decode("utf-8")
+            body = await response.text()
             assert "up_to_date" in body, "Response should include up_to_date status"
             assert mock_check.called, "Should have called check_for_updates"
 
     @pytest.mark.asyncio
-    async def test_check_updates_update_available(self):
+    async def test_check_updates_update_available(self, test_client):
         """Test check updates returns update_available status with new version."""
         config = Config.get_instance()
         config.check_for_updates = True
@@ -110,20 +125,27 @@ class TestCheckUpdatesEndpoint:
 
         with patch.object(update_checker, "check_for_updates", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = (("update_available", "v1.0.5"), ("up_to_date", None))
-            response = await check_updates(config, encoder, update_checker)
+
+            async def handler(request):
+                return await check_updates(config, encoder, update_checker)
+
+            client = await test_client({"system.check_updates": handler})
+            response = await client.post(url_for("system.check_updates"))
 
             assert 200 == response.status, "Should return 200"
-            body = response.body.decode("utf-8")
+            body = await response.text()
             assert "v1.0.5" in body, "Response should include new version"
             assert "update_available" in body, "Response should include update_available status"
 
 
 class TestSystemConfigEndpoint:
     def setup_method(self):
+        if "system.configuration" not in ROUTES.get("http", {}):
+            importlib.reload(system)
         Config._reset_singleton()
 
     @pytest.mark.asyncio
-    async def test_excludes_queue(self) -> None:
+    async def test_excludes_queue(self, test_client) -> None:
         config = Config.get_instance()
         encoder = Encoder()
         queue = MagicMock()
@@ -142,20 +164,26 @@ class TestSystemConfigEndpoint:
             presets.get_all.return_value = []
             mock_presets.return_value = presets
 
-            response = await system_config(queue, config, encoder)
+            async def handler(request):
+                return await system_config(queue, config, encoder)
+
+            client = await test_client({"system.configuration": handler})
+            response = await client.get(url_for("system.configuration"))
 
         assert response.status == 200
-        body = json.loads(response.body.decode("utf-8"))
+        body = await response.json()
         assert "queue" not in body
         queue.get.assert_not_called()
 
 
 class TestSystemLimitsEndpoint:
     def setup_method(self):
+        if "system.limits" not in ROUTES.get("http", {}):
+            importlib.reload(system)
         Config._reset_singleton()
 
     @pytest.mark.asyncio
-    async def test_system_limits_public(self):
+    async def test_system_limits_public(self, test_client):
         config = Config.get_instance()
         config.max_workers = 10
         config.max_workers_per_extractor = 3
@@ -179,11 +207,16 @@ class TestSystemLimitsEndpoint:
         encoder = Encoder()
 
         with patch.dict("os.environ", {"YTP_MAX_WORKERS_FOR_YOUTUBE": "2"}, clear=False):
-            response = await system_limits(queue, config, encoder)
+
+            async def handler(request):
+                return await system_limits(queue, config, encoder)
+
+            client = await test_client({"system.limits": handler})
+            response = await client.get(url_for("system.limits"))
 
         assert 200 == response.status
 
-        body = json.loads(response.body.decode("utf-8"))
+        body = await response.json()
         assert body["downloads"]["paused"] is False
         assert body["downloads"]["global"] == {
             "limit": 10,
@@ -231,11 +264,13 @@ class TestSystemLimitsEndpoint:
 
 class TestSystemDiagnosticsEndpoint:
     def setup_method(self):
+        if "system.diagnostics" not in ROUTES.get("http", {}):
+            importlib.reload(system)
         Config._reset_singleton()
         Cache.get_instance().clear()
 
     @pytest.mark.asyncio
-    async def test_diagnostics_always_200(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    async def test_diagnostics_always_200(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client):
         config = Config.get_instance()
         monkeypatch.delenv("YTP_BROWSER_URL", raising=False)
         config.config_path = str(tmp_path / "config")
@@ -263,10 +298,14 @@ class TestSystemDiagnosticsEndpoint:
                 (0, "deno 2.3.0", ""),
             ]
 
-            response = await system_diagnostics(config, encoder)
+            async def handler(request):
+                return await system_diagnostics(config, encoder)
+
+            client = await test_client({"system.diagnostics": handler})
+            response = await client.get(url_for("system.diagnostics"))
 
         assert 200 == response.status
-        body = json.loads(response.body.decode("utf-8"))
+        body = await response.json()
         assert body["status"] == "ok"
         assert body["summary"]["required_failed"] == 0
 
@@ -278,17 +317,21 @@ class TestSystemDiagnosticsEndpoint:
         assert body["runtime"]["open_files"]["hard_limit"] is not None
 
     @pytest.mark.asyncio
-    async def test_diagnostics_error_payload(self):
+    async def test_diagnostics_error_payload(self, test_client):
         config = Config.get_instance()
         encoder = Encoder()
 
         with patch("app.routes.api.system.collect_diagnostics", new_callable=AsyncMock) as mock_collect:
             mock_collect.side_effect = RuntimeError("boom")
 
-            response = await system_diagnostics(config, encoder)
+            async def handler(request):
+                return await system_diagnostics(config, encoder)
+
+            client = await test_client({"system.diagnostics": handler})
+            response = await client.get(url_for("system.diagnostics"))
 
         assert 200 == response.status
-        body = json.loads(response.body.decode("utf-8"))
+        body = await response.json()
         assert body["status"] == "error"
         assert body["summary"]["required_failed"] >= 1
         assert len(body["checks"]) == 1
@@ -356,7 +399,7 @@ class TestSystemDiagnosticsEndpoint:
         assert check.details["command"] == "deno"
 
     @pytest.mark.asyncio
-    async def test_diagnostics_marks_required_missing(self, tmp_path: Path):
+    async def test_diagnostics_marks_required_missing(self, tmp_path: Path, test_client):
         config = Config.get_instance()
         config.config_path = str(tmp_path / "config")
         config.download_path = str(tmp_path / "downloads")
@@ -384,10 +427,14 @@ class TestSystemDiagnosticsEndpoint:
                 (0, "yt-dlp 2026.01.01", ""),
             ]
 
-            response = await system_diagnostics(config, encoder)
+            async def handler(request):
+                return await system_diagnostics(config, encoder)
+
+            client = await test_client({"system.diagnostics": handler})
+            response = await client.get(url_for("system.diagnostics"))
 
         assert 200 == response.status
-        body = json.loads(response.body.decode("utf-8"))
+        body = await response.json()
         assert body["status"] == "error"
         assert body["summary"]["required_failed"] >= 1
 
@@ -463,11 +510,13 @@ class TestSystemDiagnosticsEndpoint:
 
 class TestSystemFoldersEndpoint:
     def setup_method(self):
+        if "system.folders" not in ROUTES.get("http", {}):
+            importlib.reload(system)
         Config._reset_singleton()
         Cache.get_instance().clear()
 
     @pytest.mark.asyncio
-    async def test_returns_root_children(self, tmp_path: Path) -> None:
+    async def test_returns_root_children(self, tmp_path: Path, test_client) -> None:
         (tmp_path / "videos").mkdir()
         (tmp_path / "music").mkdir()
         (tmp_path / "file.txt").touch()
@@ -477,18 +526,19 @@ class TestSystemFoldersEndpoint:
         encoder = Encoder()
         cache = Cache.get_instance()
 
-        req = MagicMock()
-        req.query = {}
+        async def handler(request):
+            return await system_folders(request, config, encoder, cache)
 
-        response = await system_folders(req, config, encoder, cache)
+        client = await test_client({"system.folders": handler})
+        response = await client.get(url_for("system.folders"))
 
         assert response.status == 200
-        data = json.loads(response.body.decode("utf-8"))
+        data = await response.json()
         assert data["path"] == ""
         assert sorted(data["folders"]) == ["music", "videos"]
 
     @pytest.mark.asyncio
-    async def test_returns_subdir_children(self, tmp_path: Path) -> None:
+    async def test_returns_subdir_children(self, tmp_path: Path, test_client) -> None:
         (tmp_path / "videos" / "archive").mkdir(parents=True)
         (tmp_path / "videos" / "shorts").mkdir()
 
@@ -497,50 +547,53 @@ class TestSystemFoldersEndpoint:
         encoder = Encoder()
         cache = Cache.get_instance()
 
-        req = MagicMock()
-        req.query = {"path": "videos"}
+        async def handler(request):
+            return await system_folders(request, config, encoder, cache)
 
-        response = await system_folders(req, config, encoder, cache)
+        client = await test_client({"system.folders": handler})
+        response = await client.get(url_for("system.folders", query={"path": "videos"}))
 
         assert response.status == 200
-        data = json.loads(response.body.decode("utf-8"))
+        data = await response.json()
         assert data["path"] == "videos"
         assert sorted(data["folders"]) == ["archive", "shorts"]
 
     @pytest.mark.asyncio
-    async def test_rejects_path_traversal(self, tmp_path: Path) -> None:
+    async def test_rejects_path_traversal(self, tmp_path: Path, test_client) -> None:
         config = Config.get_instance()
         config.download_path = str(tmp_path)
         encoder = Encoder()
         cache = Cache.get_instance()
 
-        req = MagicMock()
-        req.query = {"path": "../../etc"}
+        async def handler(request):
+            return await system_folders(request, config, encoder, cache)
 
-        response = await system_folders(req, config, encoder, cache)
+        client = await test_client({"system.folders": handler})
+        response = await client.get(url_for("system.folders", query={"path": "../../etc"}))
 
         assert response.status == 200
-        data = json.loads(response.body.decode("utf-8"))
+        data = await response.json()
         assert data["folders"] == []
 
     @pytest.mark.asyncio
-    async def test_nonexistent_path_returns_empty(self, tmp_path: Path) -> None:
+    async def test_nonexistent_path_returns_empty(self, tmp_path: Path, test_client) -> None:
         config = Config.get_instance()
         config.download_path = str(tmp_path)
         encoder = Encoder()
         cache = Cache.get_instance()
 
-        req = MagicMock()
-        req.query = {"path": "no_such_dir"}
+        async def handler(request):
+            return await system_folders(request, config, encoder, cache)
 
-        response = await system_folders(req, config, encoder, cache)
+        client = await test_client({"system.folders": handler})
+        response = await client.get(url_for("system.folders", query={"path": "no_such_dir"}))
 
         assert response.status == 200
-        data = json.loads(response.body.decode("utf-8"))
+        data = await response.json()
         assert data["folders"] == []
 
     @pytest.mark.asyncio
-    async def test_caches_result(self, tmp_path: Path) -> None:
+    async def test_caches_result(self, tmp_path: Path, test_client) -> None:
         (tmp_path / "a").mkdir()
 
         config = Config.get_instance()
@@ -548,12 +601,13 @@ class TestSystemFoldersEndpoint:
         encoder = Encoder()
         cache = Cache.get_instance()
 
-        req = MagicMock()
-        req.query = {}
+        async def handler(request):
+            return await system_folders(request, config, encoder, cache)
 
-        await system_folders(req, config, encoder, cache)
+        client = await test_client({"system.folders": handler})
+        await client.get(url_for("system.folders"))
         (tmp_path / "b").mkdir()
-        response = await system_folders(req, config, encoder, cache)
+        response = await client.get(url_for("system.folders"))
 
-        data = json.loads(response.body.decode("utf-8"))
+        data = await response.json()
         assert "b" not in data["folders"], "Should serve cached result"

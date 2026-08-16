@@ -65,7 +65,7 @@ async def test_sessionmaker_raises_before_init() -> None:
 
 
 @pytest.mark.asyncio
-async def test_sqlalchemy_engine_disposed_on_close() -> None:
+async def test_sqlalchemy_engine_disposed_close() -> None:
     """Test that SQLAlchemy engine is properly disposed on close."""
     SqliteStore._reset_singleton()
     store = SqliteStore.get_instance(db_path=make_in_memory_db_path("engine-close"))
@@ -80,7 +80,7 @@ async def test_sqlalchemy_engine_disposed_on_close() -> None:
 
 
 @pytest.mark.asyncio
-async def test_named_in_memory_databases_are_isolated() -> None:
+async def test_memory_databases_are_isolated() -> None:
     SqliteStore._reset_singleton()
     first = SqliteStore.get_instance(db_path=":memory:named-a")
     await first.get_connection()
@@ -105,7 +105,7 @@ async def test_named_in_memory_databases_are_isolated() -> None:
 
 
 @pytest.mark.asyncio
-async def test_enqueue_upsert_and_fetch_saved():
+async def test_enqueue_upsert_fetch_saved():
     store = await make_store()
     item = make_item(1)
 
@@ -370,7 +370,7 @@ async def test_on_shutdown_closes_connection():
 
 
 @pytest.mark.asyncio
-async def test_exists_and_get_by_key_and_url():
+async def test_exists_get_key_url():
     store = await make_store()
     item = make_item(42)
     await store.enqueue_upsert("queue", item)
@@ -393,7 +393,7 @@ async def test_exists_and_get_by_key_and_url():
 
 
 @pytest.mark.asyncio
-async def test_exists_and_get_require_lookup():
+async def test_exists_get_require_lookup():
     store = await make_store()
     with pytest.raises(KeyError):
         await store.exists("queue")

@@ -85,7 +85,7 @@ class TestServices:
 
         assert services.get("injected") is None, "Modifying returned dict should not affect internal state"
 
-    def test_handle_sync_with_matching_args(self):
+    def test_handle_sync_matching_args(self):
         """Test synchronous handler with matching arguments."""
         services = Services()
         services.add("db", "database_connection")
@@ -98,7 +98,7 @@ class TestServices:
         expected = "Handler called with database_connection and logger_instance"
         assert result == expected
 
-    def test_handle_sync_with_extra_kwargs(self):
+    def test_handle_sync_extra_kwargs(self):
         """Test synchronous handler with additional kwargs."""
         services = Services()
         services.add("db", "database_connection")
@@ -110,7 +110,7 @@ class TestServices:
         expected = "Handler called with database_connection and 123"
         assert result == expected
 
-    def test_handle_sync_with_missing_args(self):
+    def test_handle_sync_missing_args(self):
         """Test synchronous handler with missing arguments."""
         services = Services()
         services.add("db", "database_connection")
@@ -131,7 +131,7 @@ class TestServices:
                 f"Expected 'Missing arguments for handler' in log, got: {error_call}"
             )
 
-    def test_handle_sync_no_args_handler(self):
+    def test_sync_no_args_handler(self):
         """Test synchronous handler that takes no arguments."""
         services = Services()
         services.add("unused", "value")
@@ -143,7 +143,7 @@ class TestServices:
         assert result == "No args handler"
 
     @pytest.mark.asyncio
-    async def test_handle_async_with_matching_args(self):
+    async def test_handle_async_matching_args(self):
         """Test asynchronous handler with matching arguments."""
         services = Services()
         services.add("db", "database_connection")
@@ -157,7 +157,7 @@ class TestServices:
         assert result == expected
 
     @pytest.mark.asyncio
-    async def test_handle_async_with_extra_kwargs(self):
+    async def test_handle_async_extra_kwargs(self):
         """Test asynchronous handler with additional kwargs."""
         services = Services()
         services.add("db", "database_connection")
@@ -170,7 +170,7 @@ class TestServices:
         assert result == expected
 
     @pytest.mark.asyncio
-    async def test_handle_async_with_missing_args(self):
+    async def test_handle_async_missing_args(self):
         """Test asynchronous handler with missing arguments."""
         services = Services()
         services.add("db", "database_connection")
@@ -192,7 +192,7 @@ class TestServices:
             )
 
     @pytest.mark.asyncio
-    async def test_handle_async_no_args_handler(self):
+    async def test_async_no_args_handler(self):
         """Test asynchronous handler that takes no arguments."""
         services = Services()
         services.add("unused", "value")
@@ -203,7 +203,7 @@ class TestServices:
         result = await services.handle_async(test_handler)
         assert result == "No args async handler"
 
-    def test_handle_sync_kwargs_override_services(self):
+    def test_sync_kwargs_override_services(self):
         """Test that kwargs override services with same name."""
         services = Services()
         services.add("param", "service_value")
@@ -215,7 +215,7 @@ class TestServices:
         assert result == "Received: override_value"
 
     @pytest.mark.asyncio
-    async def test_handle_async_kwargs_override_services(self):
+    async def test_async_kwargs_override_services(self):
         """Test that kwargs override services with same name in async handler."""
         services = Services()
         services.add("param", "service_value")
@@ -226,7 +226,7 @@ class TestServices:
         result = await services.handle_async(test_handler, param="override_value")
         assert result == "Received: override_value"
 
-    def test_handle_sync_with_complex_signature(self):
+    def test_handle_sync_complex_signature(self):
         """Test synchronous handler with complex function signature."""
         services = Services()
         services.add("db", "database")
@@ -240,7 +240,7 @@ class TestServices:
         assert result == expected
 
     @pytest.mark.asyncio
-    async def test_handle_async_with_complex_signature(self):
+    async def test_handle_async_complex_signature(self):
         """Test asynchronous handler with complex function signature."""
         services = Services()
         services.add("db", "database")
@@ -292,7 +292,7 @@ class TestServices:
         with pytest.raises(RuntimeError, match="Async handler failed"):
             await services.handle_async(failing_async_handler)
 
-    def test_handle_sync_with_callable_object(self):
+    def test_handle_sync_callable_object(self):
         """Test handle_sync with callable object instead of function."""
         services = Services()
         services.add("data", "test_data")
@@ -306,7 +306,7 @@ class TestServices:
         assert result == "Callable received: test_data"
 
     @pytest.mark.asyncio
-    async def test_handle_async_with_callable_object(self):
+    async def test_handle_async_callable_object(self):
         """Test handle_async with callable object instead of function."""
         services = Services()
         services.add("data", "test_data")

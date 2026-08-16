@@ -27,7 +27,7 @@ def _ffmpeg_input_path(args: list[str]) -> Path:
 
 
 @pytest.mark.asyncio
-async def test_build_ffmpeg_args_video_and_audio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ffmpeg_args_video_audio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Create a dummy media file
     media = tmp_path / "file.mp4"
     media.write_bytes(b"data")
@@ -82,7 +82,7 @@ async def test_build_ffmpeg_args_video_and_audio(tmp_path: Path, monkeypatch: py
 
 
 @pytest.mark.asyncio
-async def test_build_ffmpeg_args_audio_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ffmpeg_args_audio_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     media = tmp_path / "file.mp3"
     media.write_bytes(b"data")
 
@@ -173,7 +173,7 @@ class _FakeProcFail(_FakeProc):
 
 
 @pytest.mark.asyncio
-async def test_build_ffmpeg_args_no_dri(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ffmpeg_args_no_dri(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     media = tmp_path / "file.mp4"
     media.write_bytes(b"data")
 
@@ -274,7 +274,7 @@ async def test_stream_gpu_fallback(
 
 
 @pytest.mark.asyncio
-async def test_stream_gpu_fallback_switches_codec(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+async def test_gpu_fallback_switches_codec(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 

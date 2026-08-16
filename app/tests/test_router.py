@@ -1,14 +1,17 @@
 import pytest
+from aiohttp import web
 
 from app.library.router import ROUTES, Route, RouteType, add_route, get_route, get_routes, make_route_name, route
+from app.tests.helpers import url_for
 
 
 @pytest.fixture(autouse=True)
 def reset_routes():
-    # Ensure ROUTES is clean before each test
+    snapshot = {route_type: routes.copy() for route_type, routes in ROUTES.items()}
     ROUTES.clear()
     yield
     ROUTES.clear()
+    ROUTES.update(snapshot)
 
 
 class TestMakeRouteName:
@@ -24,7 +27,7 @@ class TestMakeRouteName:
 
 class TestRouteDecorator:
     @pytest.mark.asyncio
-    async def test_registers_http_and_no_slash_alias(self) -> None:
+    async def test_registers_http_alias(self) -> None:
         # Define an async handler and decorate it
         result_bucket: dict[str, int] = {"called": 0}
 
@@ -75,7 +78,7 @@ class TestRouteDecorator:
 
 
 class TestAddRoute:
-    def test_add_route_http_with_alias(self) -> None:
+    def test_add_http_alias(self) -> None:
         async def handler():
             return "ok"
 
@@ -90,7 +93,7 @@ class TestAddRoute:
         assert r.method == "POST"
         assert r.path == "/api/create/"
 
-    def test_add_route_socket_no_alias(self) -> None:
+    def test_add_socket_no_alias(self) -> None:
         async def s():
             return "s"
 
@@ -120,3 +123,27 @@ class TestGetters:
 
     def test_get_route_not_found(self) -> None:
         assert get_route(RouteType.HTTP, "nonexistent") is None
+
+
+class TestTestApp:
+    @pytest.mark.asyncio
+    async def test_handler_and_url(self, test_client) -> None:
+        @route("GET", "api/items/{id}", "items_get")
+        async def production_handler(request: web.Request) -> web.Response:
+            return web.Response(text="production")
+
+        async def test_handler(request: web.Request) -> web.Response:
+            return web.Response(text=f"{request.match_info['id']}:{request.query['q']}")
+
+        client = await test_client({"items_get": test_handler})
+        response = await client.get(url_for("items_get", id="7", query={"q": "found"}))
+
+        assert response.status == 200
+        assert await response.text() == "7:found"
+
+    @pytest.mark.asyncio
+    async def test_unknown_route(self, test_client) -> None:
+        await test_client()
+
+        with pytest.raises(KeyError, match="Unknown test route"):
+            url_for("missing")

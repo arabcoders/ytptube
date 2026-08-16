@@ -25,6 +25,7 @@ class NFOMakerPP(PostProcessor):
     """
 
     _DATE_FIELDS: tuple[str, ...] = ("upload_date", "release_date", "aired", "premiered")
+    _XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 
     _URL_PAT = re.compile(
         r"(?i)\b(?:https?://|ftp://|www\.)\S+|\b(?!@)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?){1,}\b(?:/[^\s<>()]*)?"
@@ -110,10 +111,14 @@ class NFOMakerPP(PostProcessor):
     prefix: bool = True
     "Prefix episodes with 1 for better sorting."
 
-    def __init__(self, downloader, mode: str = "tv", prefix: bool = True) -> None:
+    xml_declaration: bool = True
+    "Include the XML declaration required by Kodi."
+
+    def __init__(self, downloader, mode: str = "tv", prefix: bool = True, xml_declaration: bool = True) -> None:
         PostProcessor.__init__(self, downloader)
         self.mode = str(mode).lower()
         self.prefix = prefix in (True, "true", "1", 1)
+        self.xml_declaration = xml_declaration in (True, "true", "1", 1)
 
     @classmethod
     def pp_key(cls) -> str:
@@ -140,6 +145,7 @@ class NFOMakerPP(PostProcessor):
             mode=self.mode,
             overwrite=False,
             prefix=self.prefix,
+            xml_declaration=self.xml_declaration,
             logger=getattr(self, "_downloader", None) or None,
         )
 
@@ -168,6 +174,7 @@ class NFOMakerPP(PostProcessor):
         mode: str = "tv",
         overwrite: bool = False,
         prefix: bool = True,
+        xml_declaration: bool = True,
         logger: Any | None = None,
     ) -> dict[str, Any]:
         """
@@ -203,7 +210,7 @@ class NFOMakerPP(PostProcessor):
                 except Exception:
                     pass
 
-            ok = NFOMakerPP._write_file(logger, nfo_file, base_path, nfo_data, prefix, mode)
+            ok = NFOMakerPP._write_file(logger, nfo_file, base_path, nfo_data, prefix, mode, xml_declaration)
             if ok and nfo_file.exists():
                 return {"success": True, "message": "NFO file created", "nfo_file": str(nfo_file)}
 
@@ -266,6 +273,9 @@ class NFOMakerPP(PostProcessor):
                 if "description" == resolved_key and isinstance(resolved_val, str):
                     resolved_val = NFOMakerPP._clean_description(resolved_val)
 
+                if "extractor" == nfo_name and isinstance(resolved_val, str):
+                    resolved_val = resolved_val.lower()
+
                 if resolved_val not in (None, ""):
                     data[nfo_name] = resolved_val
 
@@ -279,7 +289,15 @@ class NFOMakerPP(PostProcessor):
         return data
 
     @staticmethod
-    def _write_file(reporter: Any | None, nfo_file: Path, real_file: Path, data: dict, prefix: bool, mode: str) -> bool:
+    def _write_file(
+        reporter: Any | None,
+        nfo_file: Path,
+        real_file: Path,
+        data: dict,
+        prefix: bool,
+        mode: str,
+        xml_declaration: bool,
+    ) -> bool:
         """
         Write episode/movie NFO using independent parameters.
 
@@ -327,6 +345,7 @@ class NFOMakerPP(PostProcessor):
             repl=data,
             prefix=prefix,
             mode=mode,
+            xml_declaration=xml_declaration,
         )
         return True
 
@@ -394,7 +413,15 @@ class NFOMakerPP(PostProcessor):
         return raw
 
     @staticmethod
-    def _write(reporter: Any | None, nfo_file: Path, text: str, repl: dict[str, Any], prefix: bool, mode: str) -> None:
+    def _write(
+        reporter: Any | None,
+        nfo_file: Path,
+        text: str,
+        repl: dict[str, Any],
+        prefix: bool,
+        mode: str,
+        xml_declaration: bool,
+    ) -> None:
         """
         Write rendered template to disk; independent of PostProcessor instance.
 
@@ -424,6 +451,8 @@ class NFOMakerPP(PostProcessor):
         unresolved_keys: Iterable[str] = set({*mapping, *safe_repl.keys()})
         pattern: re.Pattern[str] = re.compile(rf".*{{(?:{'|'.join(map(re.escape, unresolved_keys))})}}.*")
         rendered: str = "\n".join(line for line in rendered.splitlines() if not pattern.fullmatch(line))
+        if xml_declaration:
+            rendered = f"{NFOMakerPP._XML_DECLARATION}\n{rendered}"
 
         try:
             nfo_file.write_text(rendered, encoding="utf-8")

@@ -76,7 +76,7 @@ class TestEncoder:
         assert parsed["number"] == 42
         assert parsed["string"] == "test"
 
-    def test_json_dumps_with_custom_object(self):
+    def test_json_dumps_custom_object(self):
         """Test JSON serialization with custom objects."""
 
         class TestObject:

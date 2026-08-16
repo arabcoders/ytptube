@@ -38,7 +38,7 @@ class TestRssHandlerParsing:
         assert is_matched == expected, f"URL '{url}' expected {expected}, got {is_matched}"
 
     @pytest.mark.parametrize(("url", "expected"), RssGenericHandler.tests())
-    def test_returns_url_dict_on_match(self, url: str, expected: bool):
+    def test_returns_url_dict_match(self, url: str, expected: bool):
         """Test that parse returns dict with 'url' key for valid feeds."""
         result = RssGenericHandler.parse(url)
         if expected:
@@ -100,9 +100,7 @@ class TestRssHandlerExtraction:
         assert result.metadata["entry_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_inspector_accepts_unqualified_atom_feed(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
+    async def test_accepts_unqualified_atom_feed(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         atom_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <entry>

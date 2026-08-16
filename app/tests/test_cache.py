@@ -177,7 +177,7 @@ class TestCache:
 
         asyncio.run(async_test())
 
-    def test_expired_key_cleanup_on_get(self):
+    def test_expired_key_cleanup_get(self):
         """Test that expired keys are cleaned up when accessed."""
         # Set a key with very short TTL
         self.cache.set("cleanup_test", "value", ttl=0.05)
@@ -194,7 +194,7 @@ class TestCache:
         # Key should be removed from internal cache
         assert "cleanup_test" not in self.cache._cache
 
-    def test_expired_key_cleanup_on_has(self):
+    def test_expired_key_cleanup_has(self):
         """Test that expired keys are cleaned up when checking existence."""
         # Set a key with very short TTL
         self.cache.set("has_cleanup", "value", ttl=0.05)
@@ -259,7 +259,7 @@ class TestCache:
         assert self.cache.get("short") is None, "Should remove expired key"
 
     @pytest.mark.asyncio
-    async def test_cleanup_with_no_expired_entries(self):
+    async def test_cleanup_no_expired_entries(self):
         """Test that _cleanup handles cache with no expired entries."""
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2", ttl=1.0)

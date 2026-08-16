@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock
@@ -8,11 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.features.ytdlp import router
-
-
-class _Request:
-    def __init__(self, query: dict[str, str]) -> None:
-        self.query = query
+from app.tests.helpers import url_for
 
 
 class _Cache:
@@ -57,7 +52,7 @@ class _Options:
 
 
 @pytest.mark.asyncio
-async def test_info_preserves_playlist_entries(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_info_preserves_entries(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     info = {
         "_type": "playlist",
         "title": "Playlist",
@@ -72,14 +67,14 @@ async def test_info_preserves_playlist_entries(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(router.YTDLPOpts, "get_instance", lambda: _Options(archive="archive.txt"))
     monkeypatch.setattr(router, "fetch_info", fetch)
 
-    response = await router.get_info(
-        _Request({"url": "https://example.com/playlist", "entries": "true"}),
-        cache,
-        config,
-    )
+    async def handler(request):
+        return await router.get_info(request, cache, config)
+
+    client = await test_client({"get_info": handler})
+    response = await client.get(url_for("get_info", query={"url": "https://example.com/playlist", "entries": "true"}))
 
     assert response.status == 200
-    entries = json.loads(response.body.decode("utf-8"))["entries"]
+    entries = (await response.json())["entries"]
     assert entries[0]["url"] == info["entries"][0]["url"]
     assert entries[0]["is_archived"] is False
     call = fetch.await_args
@@ -93,7 +88,7 @@ async def test_info_preserves_playlist_entries(monkeypatch: pytest.MonkeyPatch) 
 
 
 @pytest.mark.asyncio
-async def test_info_refreshes_cached_archive_state(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_info_refreshes_archive(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     cached = {
         "entries": [{"id": "abc", "ie_key": "YouTube", "url": "https://example.com/video"}],
         "_cached": {"ttl": 300, "expires": 9999999999},
@@ -106,13 +101,13 @@ async def test_info_refreshes_cached_archive_state(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(router.YTDLPOpts, "get_instance", lambda: _Options(archive="archive.txt"))
     monkeypatch.setattr(router, "archive_read", lambda _file, ids: ids)
 
-    response = await router.get_info(
-        _Request({"url": "https://example.com/playlist", "entries": "true"}),
-        cache,
-        config,
-    )
+    async def handler(request):
+        return await router.get_info(request, cache, config)
 
-    entry = json.loads(response.body.decode("utf-8"))["entries"][0]
+    client = await test_client({"get_info": handler})
+    response = await client.get(url_for("get_info", query={"url": "https://example.com/playlist", "entries": "true"}))
+
+    entry = (await response.json())["entries"][0]
     assert entry["archive_id"] == "youtube abc"
     assert entry["is_archived"] is True
     assert cached["entries"][0].get("is_archived") is None
@@ -124,6 +119,7 @@ async def test_info_caps_browser_wait(
     monkeypatch: pytest.MonkeyPatch,
     wait: str,
     expected: str,
+    test_client,
 ) -> None:
     fetch = AsyncMock(return_value=({"title": "Playlist", "entries": []}, []))
     config = SimpleNamespace(default_preset="default", allow_internal_urls=False)
@@ -133,11 +129,11 @@ async def test_info_caps_browser_wait(
     monkeypatch.setattr(router.YTDLPOpts, "get_instance", lambda: _Options(wait))
     monkeypatch.setattr(router, "fetch_info", fetch)
 
-    response = await router.get_info(
-        _Request({"url": "https://example.com/playlist", "entries": "true"}),
-        _Cache(),
-        config,
-    )
+    async def handler(request):
+        return await router.get_info(request, _Cache(), config)
+
+    client = await test_client({"get_info": handler})
+    response = await client.get(url_for("get_info", query={"url": "https://example.com/playlist", "entries": "true"}))
 
     assert response.status == 200
     call = fetch.await_args

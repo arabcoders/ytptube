@@ -126,7 +126,7 @@ class TestExtractYtdlpLogs:
         assert isinstance(result, list)
         assert len(result) >= 1  # Should match "This live event will begin"
 
-    def test_extract_ytdlp_logs_with_filters(self):
+    def test_extract_ytdlp_logs_filters(self):
         """Test log extraction with filters."""
         logs = ["INFO: Downloading", "ERROR: Failed", "WARNING: Deprecated"]
         filters: list[str | re.Pattern[str]] = [re.compile(r"ERROR")]
@@ -215,7 +215,7 @@ class TestParseOuttmpl:
 
         assert result == "Rick Astley - Never Gonna Give You Up.mp4"
 
-    def test_parse_outtmpl_with_nested_path(self):
+    def test_parse_outtmpl_nested_path(self):
         """Test template parsing with nested directory structure."""
 
         template = "%(uploader)s/%(title)s.%(ext)s"
@@ -229,7 +229,7 @@ class TestParseOuttmpl:
 
         assert result == "Test Channel/Test Video.mkv"
 
-    def test_parse_outtmpl_with_missing_field(self):
+    def test_parse_outtmpl_missing_field(self):
         """Test template parsing with missing field defaults to NA."""
 
         template = "%(title)s - %(upload_date)s.%(ext)s"
@@ -273,7 +273,7 @@ class TestParseOuttmpl:
         assert ".mp4" in result, "yt-dlp should sanitize special characters but preserve extension"
         assert "Test" in result, "yt-dlp should preserve safe parts of title"
 
-    def test_parse_outtmpl_with_playlist_info(self):
+    def test_parse_outtmpl_playlist_info(self):
         """Test template parsing with playlist information."""
 
         template = "%(playlist)s/%(title)s.%(ext)s"
@@ -507,7 +507,7 @@ class TestGetStaticYtdlp:
 
         assert instance1 is instance2
 
-    def test_get_static_ytdlp_with_params(self):
+    def test_static_ytdlp_params(self):
         """Test that get_static_ytdlp returns a new instance when params are provided."""
 
         instance1 = get_ytdlp()
@@ -546,7 +546,7 @@ class TestGetArchiveId:
         assert "ie_key" in result
         assert "archive_id" in result
 
-    def test_get_archive_id_invalid_url(self):
+    def test_archive_id_invalid_url(self):
         """Test with invalid URL."""
         result = get_archive_id("invalid-url")
         assert isinstance(result, dict)

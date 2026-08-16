@@ -196,7 +196,7 @@ class TestTasksRepository:
         assert retrieved.name == "Named Task", "Should match task name"
 
     @pytest.mark.asyncio
-    async def test_get_by_name_excludes_id(self, repo):
+    async def test_get_name_excludes_id(self, repo):
         """Get by name can exclude specific ID."""
         first = await repo.create(
             {

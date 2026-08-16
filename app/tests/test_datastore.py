@@ -88,7 +88,7 @@ def make_item(id: str, url: str = "http://u", title: str = "t", folder: str = "f
 
 
 class TestStoreType:
-    def test_all_and_from_value_and_str(self) -> None:
+    def test_value_str(self) -> None:
         assert set(StoreType.all()) == {"done", "queue"}
         assert StoreType.from_value("queue") is StoreType.QUEUE
         assert StoreType.from_value("done") is StoreType.HISTORY
@@ -220,7 +220,7 @@ class TestDataStore:
         await store._connection.close()
 
     @pytest.mark.asyncio
-    async def test_has_downloads_and_get_next_download(self) -> None:
+    async def test_downloads_get_next_download(self) -> None:
         store = await make_store_async(StoreType.QUEUE)
 
         # One non-auto-start, one started, one cancelled, and one eligible
@@ -285,7 +285,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_item_finds_by_single_attribute(self) -> None:
+    async def test_item_finds_single_attribute(self) -> None:
         """Test that get_item correctly finds item by a single attribute."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -322,7 +322,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_item_finds_by_multiple_attributes(self) -> None:
+    async def test_item_finds_multiple_attributes(self) -> None:
         """Test that get_item finds item when ANY of the provided attributes match."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -372,7 +372,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_item_skips_items_with_no_info(self) -> None:
+    async def test_skips_items_no_info(self) -> None:
         """Test that get_item skips items that have no info attribute."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -478,7 +478,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_load_with_different_store_types(self) -> None:
+    async def test_load_different_store_types(self) -> None:
         """Test that load only loads items matching the store type."""
         db = await make_db()
         # conn = db._conn  # No longer needed
@@ -595,7 +595,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_total_count_with_empty_store(self) -> None:
+    async def test_total_count_empty_store(self) -> None:
         """Test get_total_count with empty datastore."""
         store = await make_store_async(StoreType.QUEUE)
 
@@ -604,7 +604,7 @@ class TestDataStore:
         await store._connection.close()
 
     @pytest.mark.asyncio
-    async def test_get_total_count_with_items(self) -> None:
+    async def test_get_total_count_items(self) -> None:
         """Test get_total_count with items in database."""
         store = await make_store_async(StoreType.QUEUE)
         db = store._connection
@@ -626,7 +626,7 @@ class TestDataStore:
         await store._connection.close()
 
     @pytest.mark.asyncio
-    async def test_get_total_count_respects_store_type(self) -> None:
+    async def test_count_respects_store_type(self) -> None:
         """Test that get_total_count only counts items of the correct type."""
         db = await make_db()
         # conn = db._conn  # No longer needed
@@ -660,7 +660,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_put_with_error_status_emits_event(self) -> None:
+    async def test_error_status_emits_event(self) -> None:
         """Test that put() emits an event when item has error status."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -679,7 +679,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_put_with_no_notify_skips_event(self) -> None:
+    async def test_no_notify_skips_event(self) -> None:
         """Test that put() with no_notify=True doesn't emit events."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -713,7 +713,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_has_downloads_with_empty_dict(self) -> None:
+    async def test_has_downloads_empty_dict(self) -> None:
         """Test has_downloads returns False when dict is empty."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -751,7 +751,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_get_next_download_skips_cancelled(self) -> None:
+    async def test_next_download_skips_cancelled(self) -> None:
         """Test get_next_download skips cancelled downloads."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
@@ -793,7 +793,7 @@ class TestDataStore:
         await db.close()
 
     @pytest.mark.asyncio
-    async def test_update_item_drops_live_in(self) -> None:
+    async def test_update_item_drops_live(self) -> None:
         """Test that _update_store_item removes live_in field when status is finished."""
         store = await make_store_async(StoreType.QUEUE)
         conn = store._connection
@@ -814,7 +814,7 @@ class TestDataStore:
         await store._connection.close()
 
     @pytest.mark.asyncio
-    async def test_update_item_keeps_live_in(self) -> None:
+    async def test_update_item_keeps_live(self) -> None:
         """Test that _update_store_item keeps live_in field when status is not finished."""
         store = await make_store_async(StoreType.QUEUE)
         conn = store._connection

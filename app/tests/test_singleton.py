@@ -215,7 +215,7 @@ class TestSingleton:
         assert child1.base_value == "base"
         assert child1.child_value == "child"
 
-    def test_singleton_with_args_and_kwargs(self):
+    def test_singleton_args_kwargs(self):
         """Test singleton behavior with various constructor arguments."""
 
         class ConfigClass(metaclass=Singleton):
@@ -236,7 +236,7 @@ class TestSingleton:
         assert instance1.value == 42
         assert instance1.extra == {"extra_param": "extra"}
 
-    def test_threadsafe_with_args_and_kwargs(self):
+    def test_threadsafe_args_kwargs(self):
         """Test threadsafe singleton behavior with various constructor arguments."""
 
         class ConfigClass(metaclass=ThreadSafe):

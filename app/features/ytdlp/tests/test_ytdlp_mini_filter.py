@@ -525,7 +525,7 @@ class TestMiniFilter(unittest.TestCase):
             test_name = f"comprehensive_{expr.replace(' ', '_').replace('>', 'gt').replace('<', 'lt').replace('=', 'eq').replace('&', 'and').replace('||', 'or').replace('(', '').replace(')', '').replace('*', 'contains').replace('^', 'starts').replace('!', 'not')}"
             self._test(expr, test_data, expected_result=expected, test_name=test_name)
 
-    def test_export_and_yt_dlp_compat(self):
+    def test_export_yt_dlp_compat(self):
         from yt_dlp.utils import match_str
 
         d: dict[str, Any] = {"filesize": 2000000, "duration": 200, "uploader": "BBC"}

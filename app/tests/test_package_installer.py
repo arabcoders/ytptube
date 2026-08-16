@@ -20,7 +20,7 @@ class TestParseVersion:
 
 
 class TestPackages:
-    def test_packages_from_env_and_file(self, tmp_path: Path) -> None:
+    def test_packages_env_file(self, tmp_path: Path) -> None:
         req = tmp_path / "req.txt"
         req.write_text("\nfoo\nbar==1.0.0\nfoo\n\n")
 
@@ -70,7 +70,7 @@ class TestVersionCompare:
         inst = PackageInstaller(pkg_path=tmp_path)
         assert inst.compare_versions("1.2.3", "1.2.3") is True
 
-    def test_compare_versions_yt_dlp_like_padding(self, tmp_path: Path) -> None:
+    def test_yt_dlp_like_padding(self, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         assert inst.compare_versions("2025.7.21", "2025.07.21") is True
         assert inst.compare_versions("2025.07.1", "2025.7.01") is True
@@ -88,7 +88,7 @@ class TestInstalledAndLatest:
         assert inst._get_installed_version("foo") == "1.0.0"
 
     @patch("app.library.PackageInstaller.importlib.metadata.version")
-    def test_get_installed_version_not_found(self, mock_version, tmp_path: Path) -> None:
+    def test_installed_version_not_found(self, mock_version, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         from importlib.metadata import PackageNotFoundError
 
@@ -109,7 +109,7 @@ class TestInstalledAndLatest:
         assert inst._get_latest_version("foo") == "9.9.9"
 
     @patch("app.library.PackageInstaller.sync_client")
-    def test_get_latest_version_non_200(self, mock_client, tmp_path: Path) -> None:
+    def test_latest_version_non_200(self, mock_client, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         client = MagicMock()
         resp = MagicMock()
@@ -241,7 +241,7 @@ class TestActionAndCheck:
         inst.action("pkg")
         mock_install.assert_called_once_with("pkg", version=None)
 
-    def test_check_no_packages_or_path(self, tmp_path: Path) -> None:
+    def test_no_packages_or_path(self, tmp_path: Path) -> None:
         # No packages
         inst = PackageInstaller(pkg_path=tmp_path)
         pkgs = Packages(env=None, file=None, upgrade=False)

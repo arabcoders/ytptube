@@ -22,7 +22,7 @@ class _Stream:
 
 
 @pytest.mark.asyncio
-async def test_make_stream_basic_ok_codecs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_stream_basic_ok_codecs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     base = tmp_path / "dl"
     base.mkdir()
     media = base / "dir with space" / "file.mp4"
