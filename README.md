@@ -18,11 +18,12 @@ Example of the Simple mode interface.
 
 The YTPTube frontend is available in English, العربية, Français, 中文, and 日本語. See the [language FAQ](FAQ.md#how-do-i-change-the-ui-language).
 
-# YTPTube Features.
+# Features.
 
+* A bundled executable version for **Windows**, **macOS** and **Linux**. See [Native executables](README.md#native-executables).
 * Multi-download support.
-* Random beautiful background.
-* Handles live and upcoming streams.
+* Random beautiful **customizable** background. 
+* Handles **live** and **upcoming streams** with automatic retry when failure occurs.
 * A dual view mode for both technical and non-technical users.
 * Schedule channels or playlists to be downloaded automatically with support for creating custom download feeds from non-supported sites. See [Feeds documentation](FAQ.md#how-can-i-monitor-sites-without-rss-feeds).
 * Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
@@ -33,38 +34,35 @@ The YTPTube frontend is available in English, العربية, Français, 中文,
 * A simple file browser.
 * A built in video player **with support for sidecar external subtitles**. `Require ffmpeg to be in PATH in non-docker setups`.
 * Basic authentication support.
-* Supports `curl-cffi`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation). `In docker only`.
-* Bundled `pot provider plugin`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide). `In docker only`.
-* Support using [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or [Trawl](https://github.com/germondai/trawl) to bypass Cloudflare protections for yt-dlp and internal http client. See [related FAQ](FAQ.md#how-to-bypass-cf-challenges).
-* Automatic updates for `yt-dlp` and custom `pip` packages. `In docker only`.
+* Bundles `curl-cffi` for impersonation. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation).
+* Includes the `pot provider` plugin. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide).
+* Support using [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or [Trawl](https://github.com/germondai/trawl) to bypass WAF protections for yt-dlp and internal http client. See [related FAQ](FAQ.md#how-to-bypass-cf-challenges).
+* Automatic updates for `yt-dlp` and custom packages. `Docker only`.
 * Conditions feature to apply custom options based on `yt-dlp` returned info.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
-* A bundled executable version for Windows, macOS and Linux. `MacOS version is untested`.
-* Use playwright or selenium for extractors that require a browser. see [related FAQ](FAQ.md#how-to-use-the-browser-extractor).
+* Use playwright or selenium for extractors that require a browser. see [How to use the browser extractor](FAQ.md#how-to-use-the-browser-extractor).
 
 Please read the [FAQ](FAQ.md) for more information.
 
 # Installation
 
 > [!IMPORTANT]
-> By default YTPTube runs without authentication. If you expose it to the internet, **enable auth**. See [security recommendations](FAQ.md#security-recommendations).
+> **By default YTPTube runs without authentication**. If you expose it to the internet, **enable auth**. See [security recommendations](FAQ.md#security-recommendations).
 
-## Run using docker command
+## Run using docker or podman command
 
 ```bash
+# Run using docker
 mkdir -p ./{config,downloads/{files,tmp}} && docker run -itd --rm --user "${UID}:${UID}" --name ytptube \
 -e YTP_TEMP_PATH=/downloads/tmp -e YTP_DOWNLOAD_PATH=/downloads/files \
 -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
 ghcr.io/arabcoders/ytptube:latest
-```
 
-## Run using podman
-
-```bash
+# Run using podman
 mkdir -p ./{config,downloads/{files,tmp}} && podman run -itd --rm --userns=keep-id --name ytptube \
 -e YTP_TEMP_PATH=/downloads/tmp -e YTP_DOWNLOAD_PATH=/downloads/files \
 -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
-arabcoders/ytptube:latest
+ghcr.io/arabcoders/ytptube:latest
 ```
 
 Then you can access the WebUI at `http://localhost:8081`.
@@ -96,7 +94,11 @@ services:
 > Make sure to change the `user` line to match your user id and group id in docker setups, or use `userns_mode: keep-id` in podman setups.
 
 ```bash
+# Run using docker compose
 mkdir -p ./{config,downloads/{files,tmp}} && docker compose -f compose.yaml up -d
+
+# Run using podman compose
+mkdir -p ./{config,downloads/{files,tmp}} && podman-compose -f compose.yaml up -d
 ```
 
 Then you can access the WebUI at `http://localhost:8081`.
@@ -105,6 +107,27 @@ Then you can access the WebUI at `http://localhost:8081`.
 
 For `Unraid` users You can install the `Community Applications` plugin, and search for **ytptube** it comes 
 pre-configured.
+
+## Native executables
+
+Standalone executables for Windows, Linux, and macOS are published on the
+[GitHub Releases](https://github.com/arabcoders/ytptube/releases) page as ZIP archives.
+They follow the pattern:
+
+```bash
+ytptube-{OS}-{arch}-{tag}.zip
+```
+
+For example: `ytptube-Linux-amd64-v0.0.0.zip`
+
+Extract the archive and run the `YTPTube` binary (or `YTPTube.exe` on Windows).
+
+If you plan to use the built-in video player, make sure `ffmpeg` is installed and available on `PATH`.
+
+> [!NOTE]
+> 1- Automatic `yt-dlp` and package updates are not avaliable in the native execuables.
+> 
+> 2- You need to manually install [ffmpeg](https://github.com/jellyfin/jellyfin-ffmpeg/releases) and [deno](https://deno.land/#installation) and have them in your `PATH`.
 
 # API Documentation
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.metadata
+import importlib.util
 import os
 import platform
 import re
@@ -140,6 +141,10 @@ def _package_version(name: str) -> str | None:
         return None
 
 
+def _module_available(name: str) -> bool:
+    return importlib.util.find_spec(name) is not None
+
+
 def _package_check(
     name: str,
     *,
@@ -152,9 +157,10 @@ def _package_check(
     missing_status: CheckStatus = "skip",
     check_id: str | None = None,
     details: dict[str, Any] | None = None,
+    module_name: str | None = None,
 ) -> DiagnosticCheck:
     version = _package_version(name)
-    installed = version is not None
+    installed = version is not None or (module_name is not None and _module_available(module_name))
     base_details: dict[str, Any] = {"package": name, "version": version}
     if details:
         base_details.update(details)
@@ -200,12 +206,14 @@ def _check_apprise_package(config: Config) -> DiagnosticCheck:
         missing_status="warn" if configured else "skip",
         check_id="apprise",
         details={"config": str(config.apprise_config) if configured else None},
+        module_name="apprise",
     )
 
 
 def _check_curl_transport() -> DiagnosticCheck:
-    available = resolve_curl_transport(use_curl=True)
-    version = _package_version("httpx-curl-cffi")
+    available = resolve_curl_transport(use_curl=True) and _module_available("curl_cffi")
+    version = _package_version("curl-cffi")
+    transport_version = _package_version("httpx-curl-cffi")
 
     return DiagnosticCheck(
         id="curl_transport",
@@ -215,7 +223,12 @@ def _check_curl_transport() -> DiagnosticCheck:
         status="pass" if available else "skip",
         description="Transport for impersonation support.",
         message="Installed." if available else "Not installed.",
-        details={"package": "httpx-curl-cffi", "version": version},
+        details={
+            "package": "curl-cffi",
+            "version": version,
+            "transport_package": "httpx-curl-cffi",
+            "transport_version": transport_version,
+        },
     )
 
 
@@ -229,6 +242,7 @@ def _check_pot_provider_package() -> DiagnosticCheck:
         description="Optional plugin for external POT token providers for youtube.",
         present_message="Installed.",
         missing_message="Not installed.",
+        module_name="yt_dlp_plugins.extractor.getpot_bgutil",
     )
 
 

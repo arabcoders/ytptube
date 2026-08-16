@@ -347,6 +347,41 @@ class TestSystemDiagnosticsEndpoint:
         assert check.details["version"] == "1.3.1"
         assert "description" not in check.details
 
+    def test_bundled_package_detection(self, tmp_path: Path):
+        from app.library.diagnostics import _check_apprise_package, _check_pot_provider_package
+
+        config = Config.get_instance()
+        config.apprise_config = str(tmp_path / "apprise.yml")
+
+        with (
+            patch("app.library.diagnostics._package_version", return_value=None),
+            patch("app.library.diagnostics._module_available", return_value=True),
+        ):
+            apprise_check = _check_apprise_package(config)
+            pot_check = _check_pot_provider_package()
+
+        assert apprise_check.status == "pass"
+        assert pot_check.status == "pass"
+
+    def test_curl_check_reports_base_package(self):
+        from app.library.diagnostics import _check_curl_transport
+
+        def package_version(name: str) -> str:
+            return {"curl-cffi": "0.14.0", "httpx-curl-cffi": "0.1.5"}[name]
+
+        with (
+            patch("app.library.diagnostics.resolve_curl_transport", return_value=True),
+            patch("app.library.diagnostics._module_available", return_value=True),
+            patch("app.library.diagnostics._package_version", side_effect=package_version),
+        ):
+            check = _check_curl_transport()
+
+        assert check.status == "pass"
+        assert check.details["package"] == "curl-cffi"
+        assert check.details["version"] == "0.14.0"
+        assert check.details["transport_package"] == "httpx-curl-cffi"
+        assert check.details["transport_version"] == "0.1.5"
+
     def test_safe_details(self):
         from app.library.diagnostics import _safe_url
 
