@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "3b89e1a51fadfa3d580f11d60d043e84200120d3",
-    "date": "2026-08-15T15:57:50+00:00",
+    "full_sha": "e70d665cc4b969a070b9c6a3cf8e4ce5fa349f5a",
+    "date": "2026-08-16T04:54:18+00:00",
     "commits": [
+      {
+        "sha": "e70d665c",
+        "full_sha": "e70d665cc4b969a070b9c6a3cf8e4ce5fa349f5a",
+        "message": "refactor(tests): use aiohttp testclient",
+        "author": "arabcoders",
+        "date": "2026-08-16T04:54:18+00:00"
+      },
+      {
+        "sha": "4f5bf9dc",
+        "full_sha": "4f5bf9dcbbd39b945e2fe6feb5bdba10ad191ec1",
+        "message": "fix(tasks): enforce generic URL policy",
+        "author": "arabcoders",
+        "date": "2026-08-16T02:03:56+00:00"
+      },
       {
         "sha": "3b89e1a5",
         "full_sha": "3b89e1a51fadfa3d580f11d60d043e84200120d3",
