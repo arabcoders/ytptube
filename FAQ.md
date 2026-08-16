@@ -198,11 +198,11 @@ Reference: [Issue #363](https://github.com/arabcoders/ytptube/issues/363)
 
 # I want to use link with playlist but only download the video not all the videos in the playlist?
 
-Simply create a preset, and in the `Command options for yt-dlp` field set `--no-playlist`. Then select the preset 
+Simply create a preset, and in the `CLI options` field set `--no-playlist`. Then select the preset
 whenever the link includes a playlist id.
 
 > [!NOTE]
-> You can also do the same via advanced options `Command options for yt-dlp` field, but presets are more convenient.
+> You can also do the same via advanced options `CLI options` field, but presets are more convenient.
 
 # Install specific yt-dlp version?
 
@@ -355,8 +355,8 @@ For JSON endpoints, switch the response format and use `jsonpath` selectors:
 
 # How to generate POT tokens?
 
-You need a pot provider server we already have the extractor `bgutil-ytdlp-pot-provider` pre-installed in the container.
-You can simply do the following to enable the support for it.
+You need a POT provider server. The `bgutil-ytdlp-pot-provider` extractor is already included. You can use this 
+compose example:
 
 ```yaml
 services:
@@ -381,7 +381,7 @@ services:
     restart: unless-stopped    
 ```
 
-Then simply create a new preset, and in the `Command options for yt-dlp` field set the following:
+Then create a new preset, and in the `CLI options` field set the following:
 
 ```bash
 --extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416" 
@@ -631,9 +631,9 @@ YTP_LIVE_PREMIERE_BUFFER=10
 Where `YTP_LIVE_PREMIERE_BUFFER` is the buffer time in minutes to add to the video duration before the download starts. 
 This will help in case the premiere has a longer loading screen than usual.
 
-# How to bypass CF challenges?
+# How to bypass some WAF challenges?
 
-You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or a compatible alternative such as [Trawl](https://github.com/germondai/trawl) (which handles newer Cloudflare challenge formats) and then set the `YTP_FLARESOLVERR_URL` 
+You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or a compatible alternative such as [Trawl](https://github.com/germondai/trawl) (which handles newer challenge formats) and then set the `YTP_FLARESOLVERR_URL` 
 environment variable to point to your instance. For example:
 
 ```yaml
