@@ -1,5 +1,4 @@
 import asyncio
-import json
 from pathlib import Path
 import time
 from typing import Any, cast
@@ -20,54 +19,7 @@ from app.routes.api.system import (
     get_terminal_session,
     stream_terminal_session,
 )
-
-
-class _FakeTransport:
-    def __init__(self) -> None:
-        self._closing = False
-
-    def is_closing(self) -> bool:
-        return self._closing
-
-
-class _FakeRequest:
-    def __init__(
-        self,
-        *,
-        payload: dict | None = None,
-        match_info: dict[str, str] | None = None,
-        query: dict[str, str] | None = None,
-        headers: dict[str, str] | None = None,
-        can_read_body: bool = False,
-    ) -> None:
-        self._payload = payload
-        self.match_info = match_info or {}
-        self.query = query or {}
-        self.headers = headers or {}
-        self.can_read_body = can_read_body
-        self.transport = _FakeTransport()
-
-    async def json(self) -> dict | None:
-        return self._payload
-
-
-class _FakeStreamResponse:
-    def __init__(self, *, status: int, headers: dict[str, str]) -> None:
-        self.status = status
-        self.headers = headers
-        self.payload = bytearray()
-        self.prepared = False
-        self.closed = False
-
-    async def prepare(self, _request: _FakeRequest) -> "_FakeStreamResponse":
-        self.prepared = True
-        return self
-
-    async def write(self, data: bytes) -> None:
-        self.payload.extend(data)
-
-    async def write_eof(self) -> None:
-        self.closed = True
+from app.tests.helpers import url_for
 
 
 class _FakeStdout:
@@ -154,6 +106,53 @@ def terminal_setup(tmp_path: Path) -> tuple[Config, TerminalSessionManager, Enco
     return config, manager, encoder
 
 
+def _terminal_handlers(config: Config, encoder: Encoder, manager: TerminalSessionManager) -> dict[str, Any]:
+    async def create(request):
+        return await create_terminal_session(request, config, encoder, manager)
+
+    async def list_sessions(_request):
+        return await list_terminal_sessions(config, encoder, manager)
+
+    async def active(_request):
+        return await get_active_terminal_session(config, encoder, manager)
+
+    async def get_session(request):
+        return await get_terminal_session(request, config, encoder, manager)
+
+    async def cancel(request):
+        return await cancel_terminal_session(request, config, encoder, manager)
+
+    async def stream(request):
+        return await stream_terminal_session(request, config, manager)
+
+    return {
+        "system.terminal": create,
+        "system.terminal.list": list_sessions,
+        "system.terminal.active": active,
+        "system.terminal.session": get_session,
+        "system.terminal.cancel": cancel,
+        "system.terminal.stream": stream,
+    }
+
+
+async def _wait_for_active(manager: TerminalSessionManager) -> None:
+    for _ in range(10):
+        if manager._active is not None:
+            return
+        await asyncio.sleep(0)
+    assert manager._active is not None
+
+
+async def _wait_for_status(manager: TerminalSessionManager, session_id: str, status: str) -> None:
+    for _ in range(10):
+        metadata = await manager.get_session(session_id)
+        if metadata is not None and metadata["status"] == status:
+            return
+        await asyncio.sleep(0)
+    assert metadata is not None
+    assert metadata["status"] == status
+
+
 class TestTerminalSessionRoutes:
     def test_attach_registers_cleanup_job(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
         _config, manager, _encoder = terminal_setup
@@ -167,7 +166,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_start_conflict_meta(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
@@ -181,10 +183,10 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        request = _FakeRequest(payload={"command": "--help"}, can_read_body=True)
-        response = await create_terminal_session(request, config, encoder, manager)
-        payload = json.loads(response.body.decode("utf-8"))
+        response = await client.post(url_for("system.terminal"), json={"command": "--help"})
+        payload = await response.json()
 
         assert 200 == response.status
         assert payload["session_id"]
@@ -192,12 +194,12 @@ class TestTerminalSessionRoutes:
 
         await asyncio.sleep(0)
 
-        conflict = await create_terminal_session(request, config, encoder, manager)
+        conflict = await client.post(url_for("system.terminal"), json={"command": "--help"})
         assert 409 == conflict.status
-        assert b"already active" in conflict.body.lower()
+        assert "already active" in (await conflict.text()).lower()
 
-        active = await get_active_terminal_session(config, encoder, manager)
-        active_payload = json.loads(active.body.decode("utf-8"))
+        active = await client.get(url_for("system.terminal.active"))
+        active_payload = await active.json()
         assert payload["session_id"] == active_payload["session_id"]
 
         assert manager._active is not None
@@ -207,7 +209,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_stream_replays_resume(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
@@ -219,27 +224,21 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
-        monkeypatch.setattr("app.library.TerminalSessionManager.web.StreamResponse", _FakeStreamResponse)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        start_request = _FakeRequest(payload={"command": "--version"}, can_read_body=True)
-        start_response = await create_terminal_session(start_request, config, encoder, manager)
-        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+        start_response = await client.post(url_for("system.terminal"), json={"command": "--version"})
+        session_id = (await start_response.json())["session_id"]
 
-        assert manager._active is not None
-        task = manager._active.task
-        await task
+        await _wait_for_status(manager, session_id, "completed")
 
-        status_response = await get_terminal_session(
-            _FakeRequest(match_info={"session_id": session_id}), config, encoder, manager
-        )
-        status_payload = json.loads(status_response.body.decode("utf-8"))
+        status_response = await client.get(url_for("system.terminal.session", session_id=session_id))
+        status_payload = await status_response.json()
         assert "completed" == status_payload["status"]
         assert 3 == status_payload["last_sequence"]
         assert 0 == status_payload["exit_code"]
 
-        stream_request = _FakeRequest(match_info={"session_id": session_id})
-        stream_response = await stream_terminal_session(stream_request, config, manager)
-        stream_payload = stream_response.payload.decode("utf-8")
+        stream_response = await client.get(url_for("system.terminal.stream", session_id=session_id))
+        stream_payload = await stream_response.text()
 
         assert "id: 1" in stream_payload
         assert "id: 2" in stream_payload
@@ -247,9 +246,10 @@ class TestTerminalSessionRoutes:
         assert 'data: {"type": "stdout", "line": "first"}' in stream_payload
         assert 'data: {"exitcode": 0}' in stream_payload
 
-        resumed_request = _FakeRequest(match_info={"session_id": session_id}, query={"since": "1"})
-        resumed_response = await stream_terminal_session(resumed_request, config, manager)
-        resumed_payload = resumed_response.payload.decode("utf-8")
+        resumed_response = await client.get(
+            url_for("system.terminal.stream", session_id=session_id, query={"since": "1"})
+        )
+        resumed_payload = await resumed_response.text()
 
         assert "id: 1" not in resumed_payload
         assert "id: 2" in resumed_payload
@@ -257,7 +257,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_completed_expires(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         manager._completed_retention = 60.0
@@ -270,14 +273,12 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        start_request = _FakeRequest(payload={"command": "--help"}, can_read_body=True)
-        start_response = await create_terminal_session(start_request, config, encoder, manager)
-        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+        start_response = await client.post(url_for("system.terminal"), json={"command": "--help"})
+        session_id = (await start_response.json())["session_id"]
 
-        assert manager._active is not None
-        task = manager._active.task
-        await task
+        await _wait_for_status(manager, session_id, "completed")
 
         before_expiry = await manager.get_session(session_id)
         assert before_expiry is not None
@@ -295,7 +296,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_list_keeps_recent_done(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         manager._completed_retention = 0.2
@@ -309,18 +313,17 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        start_request = _FakeRequest(payload={"command": "--help"}, can_read_body=True)
-        start_response = await create_terminal_session(start_request, config, encoder, manager)
-        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+        start_response = await client.post(url_for("system.terminal"), json={"command": "--help"})
+        session_id = (await start_response.json())["session_id"]
 
-        assert manager._active is not None
-        await manager._active.task
+        await _wait_for_status(manager, session_id, "completed")
 
         await asyncio.sleep(0.03)
 
-        listed_response = await list_terminal_sessions(config, encoder, manager)
-        listed_payload = json.loads(listed_response.body.decode("utf-8"))
+        listed_response = await client.get(url_for("system.terminal.list"))
+        listed_payload = await listed_response.json()
 
         assert 200 == listed_response.status
         assert 1 == len(listed_payload["items"])
@@ -342,7 +345,9 @@ class TestTerminalSessionRoutes:
         assert not (manager.root_path / session_id).exists()
 
     @pytest.mark.asyncio
-    async def test_list_orders_newest(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
+    async def test_list_orders_newest(
+        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], test_client
+    ) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
 
@@ -398,8 +403,9 @@ class TestTerminalSessionRoutes:
             },
         )
 
-        listed_response = await list_terminal_sessions(config, encoder, manager)
-        listed_payload = json.loads(listed_response.body.decode("utf-8"))
+        client = await test_client(_terminal_handlers(config, encoder, manager))
+        listed_response = await client.get(url_for("system.terminal.list"))
+        listed_payload = await listed_response.json()
 
         assert 200 == listed_response.status
         assert [second_id, first_id] == [item["session_id"] for item in listed_payload["items"]]
@@ -411,7 +417,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_shutdown_clears_active(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         manager._shutdown_timeout = 0.05
@@ -426,10 +435,10 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        start_request = _FakeRequest(payload={"command": "--help"}, can_read_body=True)
-        start_response = await create_terminal_session(start_request, config, encoder, manager)
-        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+        start_response = await client.post(url_for("system.terminal"), json={"command": "--help"})
+        session_id = (await start_response.json())["session_id"]
 
         await proc.wait_started.wait()
         await manager.on_shutdown(cast(Any, None))
@@ -451,7 +460,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_stream_keepalive(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         manager._keepalive_interval = 0.01
@@ -466,22 +478,20 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
-        monkeypatch.setattr("app.library.TerminalSessionManager.web.StreamResponse", _FakeStreamResponse)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        start_request = _FakeRequest(payload={"command": "--version"}, can_read_body=True)
-        start_response = await create_terminal_session(start_request, config, encoder, manager)
-        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+        start_response = await client.post(url_for("system.terminal"), json={"command": "--version"})
+        session_id = (await start_response.json())["session_id"]
         assert manager._active is not None
         session_task = manager._active.task
 
-        stream_request = _FakeRequest(match_info={"session_id": session_id})
-        stream_task = asyncio.create_task(_stream_session(stream_request, config, manager))
+        stream_task = asyncio.create_task(client.get(url_for("system.terminal.stream", session_id=session_id)))
 
         await asyncio.sleep(0.03)
         done_event.set()
         await session_task
         stream_response = await stream_task
-        stream_payload = stream_response.payload.decode("utf-8")
+        stream_payload = await stream_response.text()
 
         assert ": keepalive" in stream_payload
         assert "id: 1" in stream_payload
@@ -489,7 +499,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_cancel_active(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
@@ -503,23 +516,22 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        start_request = _FakeRequest(payload={"command": "--help"}, can_read_body=True)
-        start_response = await create_terminal_session(start_request, config, encoder, manager)
-        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+        start_response = await client.post(url_for("system.terminal"), json={"command": "--help"})
+        session_id = (await start_response.json())["session_id"]
 
+        await _wait_for_active(manager)
+        assert manager._active is not None
+        active_task = manager._active.task
         await proc.wait_started.wait()
 
-        cancel_response = await cancel_terminal_session(
-            _FakeRequest(match_info={"session_id": session_id}), config, encoder, manager
-        )
-        cancel_payload = json.loads(cancel_response.body.decode("utf-8"))
+        cancel_response = await client.delete(url_for("system.terminal.cancel", session_id=session_id))
+        cancel_payload = await cancel_response.json()
 
         assert 200 == cancel_response.status
         assert session_id == cancel_payload["session_id"]
 
-        assert manager._active is not None
-        active_task = manager._active.task
         await active_task
 
         metadata = await manager.get_session(session_id)
@@ -535,7 +547,10 @@ class TestTerminalSessionRoutes:
 
     @pytest.mark.asyncio
     async def test_cancel_inactive_conflict(
-        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], monkeypatch: pytest.MonkeyPatch
+        self,
+        terminal_setup: tuple[Config, TerminalSessionManager, Encoder],
+        monkeypatch: pytest.MonkeyPatch,
+        test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
@@ -547,37 +562,27 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
+        client = await test_client(_terminal_handlers(config, encoder, manager))
 
-        start_request = _FakeRequest(payload={"command": "--version"}, can_read_body=True)
-        start_response = await create_terminal_session(start_request, config, encoder, manager)
-        session_id = json.loads(start_response.body.decode("utf-8"))["session_id"]
+        start_response = await client.post(url_for("system.terminal"), json={"command": "--version"})
+        session_id = (await start_response.json())["session_id"]
 
-        assert manager._active is not None
-        await manager._active.task
+        await _wait_for_status(manager, session_id, "completed")
 
-        cancel_response = await cancel_terminal_session(
-            _FakeRequest(match_info={"session_id": session_id}), config, encoder, manager
-        )
+        cancel_response = await client.delete(url_for("system.terminal.cancel", session_id=session_id))
 
         assert 409 == cancel_response.status
-        assert b"not active" in cancel_response.body.lower()
+        assert "not active" in (await cancel_response.text()).lower()
 
     @pytest.mark.asyncio
-    async def test_cancel_unknown(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
+    async def test_cancel_unknown(
+        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder], test_client
+    ) -> None:
         config, manager, encoder = terminal_setup
         await manager.initialize()
 
-        cancel_response = await cancel_terminal_session(
-            _FakeRequest(match_info={"session_id": "missing"}), config, encoder, manager
-        )
+        client = await test_client(_terminal_handlers(config, encoder, manager))
+        cancel_response = await client.delete(url_for("system.terminal.cancel", session_id="missing"))
 
         assert 404 == cancel_response.status
-        assert b"not found" in cancel_response.body.lower()
-
-
-async def _stream_session(
-    request: _FakeRequest, config: Config, manager: TerminalSessionManager
-) -> _FakeStreamResponse:
-    response = await stream_terminal_session(request, config, manager)
-    assert isinstance(response, _FakeStreamResponse)
-    return response
+        assert "not found" in (await cancel_response.text()).lower()

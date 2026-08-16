@@ -19,7 +19,7 @@ class TestProcessPoolConfiguration:
     def setup_method(self):
         ExtractorPool._reset_singleton()
 
-    def test_uses_fork_context_for_frozen_linux(self, monkeypatch):
+    def test_fork_context_frozen_linux(self, monkeypatch):
         monkeypatch.setattr("app.features.ytdlp.extractor.sys.platform", "linux")
         monkeypatch.setattr("app.features.ytdlp.extractor.sys.frozen", True, raising=False)
 
@@ -42,7 +42,7 @@ class TestProcessPoolConfiguration:
         assert _get_process_pool_kwargs() == {}
         get_context.assert_not_called()
 
-    def test_semaphore_does_not_spawn_pool(self, monkeypatch):
+    def test_does_not_spawn_pool(self, monkeypatch):
         executor_cls = MagicMock()
         monkeypatch.setattr("app.features.ytdlp.extractor.ProcessPoolExecutor", executor_cls)
 
@@ -116,7 +116,7 @@ class TestExtractInfo:
         assert isinstance(logs, list), "Logs should be a list"
 
     @patch("app.features.ytdlp.extractor.YTDLP")
-    def test_extract_info_mirrors_debug_to_console(self, mock_ytdlp_class):
+    def test_info_mirrors_debug_console(self, mock_ytdlp_class):
         seen: list[tuple[int, str]] = []
 
         def fake_extract_info(url, download=False):  # noqa: ARG001
@@ -156,7 +156,7 @@ class TestExtractInfo:
         assert (logging.WARNING, "[generic_browser] Browser fallback warning") in seen
 
     @patch("app.features.ytdlp.extractor.YTDLP")
-    def test_extract_info_mirrors_screen_logs_without_debug(self, mock_ytdlp_class):
+    def test_screen_logs_without_debug(self, mock_ytdlp_class):
         seen: list[tuple[int, str]] = []
 
         def fake_extract_info(url, download=False):  # noqa: ARG001
@@ -256,7 +256,7 @@ class TestYtdlpLogger:
 
         logger.debug.assert_called_once_with("hello", stacklevel=4)
 
-    def test_screen_style_debug_uses_info(self) -> None:
+    def test_style_debug_uses_info(self) -> None:
         logger = MagicMock()
 
         _ytdlp_logger(logger)(logging.DEBUG, "screen line")

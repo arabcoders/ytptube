@@ -37,7 +37,7 @@ class TestYTDLPOpts:
             assert opts._item_cli == []
             assert opts._preset_cli == ""
 
-    def test_add_cli_with_valid_args(self):
+    def test_add_cli_valid_args(self):
         """Test adding valid CLI arguments."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config"),
@@ -174,7 +174,7 @@ class TestYTDLPOpts:
             assert opts._preset_cli == ""
             assert opts._preset_opts == {}
 
-    def test_preset_with_cookies_creates_file(self):
+    def test_preset_cookies_creates_file(self):
         """Test that preset with cookies creates cookie file."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
@@ -238,7 +238,7 @@ class TestYTDLPOpts:
             with pytest.raises(ValueError, match="Invalid preset 'Bad Preset' command options for yt-dlp"):
                 opts.preset("bad_preset")
 
-    def test_get_all_with_default_options(self):
+    def test_get_default_options(self):
         """Test get_all returns correct default options."""
         with patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config:
             mock_config_instance = Mock()
@@ -261,7 +261,7 @@ class TestYTDLPOpts:
                 assert result["paths"]["home"] == "/downloads"
                 assert result["outtmpl"]["default"] == "default_template"
 
-    def test_get_all_processes_cli_arguments(self):
+    def test_get_processes_cli_arguments(self):
         """Test get_all processes CLI arguments correctly."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
@@ -349,7 +349,7 @@ class TestYTDLPOpts:
             with pytest.raises(ValueError, match="Invalid command options for yt-dlp were given"):
                 opts.get_all()
 
-    def test_get_all_resets_unless_keep_true(self):
+    def test_resets_unless_keep_true(self):
         """Test get_all resets instance unless keep=True."""
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
@@ -557,7 +557,7 @@ class TestARGSMerger:
         assert "test.mp4" in merger.args
         assert "--no-playlist" in merger.args
 
-    def test_add_filters_indented_comment_lines(self):
+    def test_filters_indented_comment_lines(self):
         """Test that indented comment lines are filtered out."""
         from app.features.ytdlp.ytdlp_opts import ARGSMerger
 
@@ -605,7 +605,7 @@ class TestARGSMerger:
         assert "--socket-timeout" in merger.args
         assert "60" in merger.args
 
-    def test_add_multiple_args_with_chaining(self):
+    def test_add_multiple_args_chaining(self):
         """Test adding multiple arguments using method chaining."""
         from app.features.ytdlp.ytdlp_opts import ARGSMerger
 
@@ -780,7 +780,7 @@ class TestYTDLPCli:
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_with_user_fields_only(self, mock_config, mock_presets):
+    def test_build_user_fields_only(self, mock_config, mock_presets):
         """Test build with only user-provided fields."""
         from app.library.ItemDTO import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
@@ -815,7 +815,7 @@ class TestYTDLPCli:
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_with_preset_fields_fallback(self, mock_config, mock_presets):
+    def test_build_preset_fields_fallback(self, mock_config, mock_presets):
         """Test build falls back to preset fields when user doesn't provide them."""
         from app.library.ItemDTO import Item
         from app.features.presets.schemas import Preset
@@ -849,7 +849,7 @@ class TestYTDLPCli:
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_user_fields_override_preset(self, mock_config, mock_presets):
+    def test_user_fields_override_preset(self, mock_config, mock_presets):
         """Test that user fields override preset fields."""
         from app.library.ItemDTO import Item
         from app.features.presets.schemas import Preset
@@ -914,7 +914,7 @@ class TestYTDLPCli:
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.create_cookies_file")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_with_cookies_from_user(self, mock_config, mock_create_cookies, mock_presets, tmp_path: Path):
+    def test_build_cookies_user(self, mock_config, mock_create_cookies, mock_presets, tmp_path: Path):
         """Test build with cookies from user."""
         from app.library.ItemDTO import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
@@ -945,7 +945,7 @@ class TestYTDLPCli:
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_with_cookies_from_preset(self, mock_config, mock_presets):
+    def test_build_cookies_preset(self, mock_config, mock_presets):
         """Test build with cookies from preset when user doesn't provide."""
         from app.library.ItemDTO import Item
         from app.features.presets.schemas import Preset
@@ -982,7 +982,7 @@ class TestYTDLPCli:
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_with_absolute_folder_path(self, mock_config, mock_presets):
+    def test_build_absolute_folder_path(self, mock_config, mock_presets):
         """Test build with absolute folder path from user."""
         from app.library.ItemDTO import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
@@ -1009,7 +1009,7 @@ class TestYTDLPCli:
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_includes_url_in_command(self, mock_config, mock_presets):
+    def test_build_includes_url_command(self, mock_config, mock_presets):
         """Test that build includes the URL in the final command."""
         from app.library.ItemDTO import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
@@ -1031,7 +1031,7 @@ class TestYTDLPCli:
 
     @patch("app.features.presets.service.Presets")
     @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_cli_args_priority_order(self, mock_config, mock_presets):
+    def test_cli_args_priority_order(self, mock_config, mock_presets):
         """Test that CLI args are added in correct priority order (preset first, user last)."""
         from app.library.ItemDTO import Item
         from app.features.presets.schemas import Preset

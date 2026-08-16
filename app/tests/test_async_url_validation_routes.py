@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import json
-from typing import TYPE_CHECKING, Any, Generator, cast
+from typing import Any, Generator
 
 import pytest
 
@@ -9,9 +8,7 @@ from app.features.conditions import router as conditions_router
 from app.features.tasks import router as tasks_router
 from app.features.ytdlp import router as ytdlp_router
 from app.library.config import Config
-
-if TYPE_CHECKING:
-    from aiohttp.web import Request
+from app.tests.helpers import url_for
 
 
 @pytest.fixture(autouse=True)
@@ -19,25 +16,6 @@ def reset_config() -> Generator[None, None, None]:
     Config._reset_singleton()
     yield
     Config._reset_singleton()
-
-
-class _Req:
-    def __init__(self, payload: Any) -> None:
-        self._payload = payload
-        self.body_exists = payload is not None
-
-    async def json(self) -> Any:
-        return self._payload
-
-
-class _InspectReq(_Req):
-    query: dict[str, str] = {}
-    match_info: dict[str, str] = {}
-
-
-class _QueryReq:
-    def __init__(self, query: dict[str, str]) -> None:
-        self.query = query
 
 
 def _patch_thread(monkeypatch: pytest.MonkeyPatch, module: Any, config: Config, url: str) -> dict[str, bool]:
@@ -59,58 +37,68 @@ def _patch_thread(monkeypatch: pytest.MonkeyPatch, module: Any, config: Config, 
 
 
 @pytest.mark.asyncio
-async def test_inspect_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_inspect_thread(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
-    request = _InspectReq({"url": "https://bad.example/task"})
     seen = _patch_thread(monkeypatch, tasks_router, config, "https://bad.example/task")
 
-    response = await tasks_router.task_handler_inspect(
-        cast("Request", request), handler=None, encoder=None, config=config
-    )
+    async def handler(request):
+        return await tasks_router.task_handler_inspect(request, handler=None, encoder=None, config=config)
+
+    client = await test_client({"task_handler_inspect": handler})
+    response = await client.post(url_for("task_handler_inspect"), json={"url": "https://bad.example/task"})
 
     assert response.status == 400
-    assert json.loads(response.body.decode("utf-8"))["error"] == "Invalid hostname."
+    assert (await response.json())["error"] == "Invalid hostname."
     assert seen == {"to_thread": True, "validate": True}
 
 
 @pytest.mark.asyncio
-async def test_conditions_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_conditions_thread(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
-    request = _Req({"url": "https://bad.example/cond", "condition": "title ~= 'x'"})
     seen = _patch_thread(monkeypatch, conditions_router, config, "https://bad.example/cond")
 
-    response = await conditions_router.conditions_test(
-        cast("Request", request), encoder=None, cache=None, config=config
+    async def handler(request):
+        return await conditions_router.conditions_test(request, encoder=None, cache=None, config=config)
+
+    client = await test_client({"condition_test": handler})
+    response = await client.post(
+        url_for("condition_test"), json={"url": "https://bad.example/cond", "condition": "title ~= 'x'"}
     )
 
     assert response.status == 400
-    assert json.loads(response.body.decode("utf-8"))["error"] == "Invalid hostname."
+    assert (await response.json())["error"] == "Invalid hostname."
     assert seen == {"to_thread": True, "validate": True}
 
 
 @pytest.mark.asyncio
-async def test_info_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_info_thread(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
-    request = _QueryReq({"url": "https://bad.example/info"})
     seen = _patch_thread(monkeypatch, ytdlp_router, config, "https://bad.example/info")
 
-    response = await ytdlp_router.get_info(cast("Request", request), cache=cast("Any", None), config=config)
+    async def handler(request):
+        return await ytdlp_router.get_info(request, cache=None, config=config)
+
+    client = await test_client({"get_info": handler})
+    response = await client.get(url_for("get_info", query={"url": "https://bad.example/info"}))
 
     assert response.status == 400
-    assert json.loads(cast("bytes", response.body).decode("utf-8"))["error"] == "Invalid hostname."
+    assert (await response.json())["error"] == "Invalid hostname."
     assert seen == {"to_thread": True, "validate": True}
 
 
 @pytest.mark.asyncio
-async def test_archive_ids_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_archive_ids_thread(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
-    request = _Req(["https://bad.example/archive"])
     seen = _patch_thread(monkeypatch, ytdlp_router, config, "https://bad.example/archive")
 
-    response = await ytdlp_router.get_archive_ids(request, config)
+    async def handler(request):
+        return await ytdlp_router.get_archive_ids(request, config)
+
+    client = await test_client({"get_archive_ids": handler})
+    response = await client.post(url_for("get_archive_ids"), json=["https://bad.example/archive"])
 
     assert response.status == 200
-    assert json.loads(response.body.decode("utf-8")) == [
+    assert await response.json() == [
         {
             "index": 0,
             "url": "https://bad.example/archive",

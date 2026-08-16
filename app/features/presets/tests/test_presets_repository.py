@@ -52,7 +52,7 @@ class TestPresetsRepository:
         assert preset.name == "my_preset", "Should normalize spaces to underscores"
 
     @pytest.mark.asyncio
-    async def test_list_orders_by_priority_then_name(self, repo):
+    async def test_orders_priority_then_name(self, repo):
         await repo.create({"name": "B", "priority": 1})
         await repo.create({"name": "A", "priority": 1})
         await repo.create({"name": "C", "priority": 2})
@@ -77,7 +77,7 @@ class TestPresetsRepository:
         assert [item.priority for item in items] == [4, 3], "Should keep default priority-desc order"
 
     @pytest.mark.asyncio
-    async def test_list_paginated_sorts_by_name_desc(self, repo):
+    async def test_paginated_sorts_name_desc(self, repo):
         await repo.create({"name": "Alpha", "priority": 1})
         await repo.create({"name": "Gamma", "priority": 3})
         await repo.create({"name": "Beta", "priority": 2})

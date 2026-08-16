@@ -122,7 +122,7 @@ async def test_make_single_vtt(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_make_two_events_same_end(tmp_path: Path) -> None:
+async def test_two_events_same_end(tmp_path: Path) -> None:
     srt = tmp_path / "sub.srt"
     srt.write_text("dummy")
 
@@ -138,7 +138,7 @@ async def test_make_two_events_same_end(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_make_two_events_keep_both(tmp_path: Path) -> None:
+async def test_two_events_keep_both(tmp_path: Path) -> None:
     srt = tmp_path / "sub.srt"
     srt.write_text("dummy")
 

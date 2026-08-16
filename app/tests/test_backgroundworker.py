@@ -22,7 +22,7 @@ class TestBackgroundWorker:
             pass
         BackgroundWorker._reset_singleton()
 
-    def test_attach_starts_and_shutdown_stops(self) -> None:
+    def test_attach_starts_shutdown_stops(self) -> None:
         app = web.Application()
         worker = BackgroundWorker()
 

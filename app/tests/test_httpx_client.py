@@ -18,34 +18,34 @@ from app.library.httpx_client import (
 class TestGetTransport:
     """Test transport factory function."""
 
-    def test_get_transport_cf_enabled_async(self):
+    def test_transport_cf_enabled_async(self):
         """Test getting async transport with CF enabled."""
         transport = _get_transport(enable_cf=True, is_async=True, transport=None)
         assert isinstance(transport, CFAsyncTransport)
 
-    def test_get_transport_cf_enabled_sync(self):
+    def test_transport_cf_enabled_sync(self):
         """Test getting sync transport with CF enabled."""
         transport = _get_transport(enable_cf=False, is_async=False, transport=None)
         assert isinstance(transport, httpx.HTTPTransport)
 
-    def test_get_transport_cf_disabled_async(self):
+    def test_transport_cf_disabled_async(self):
         """Test getting async transport with CF disabled."""
         transport = _get_transport(enable_cf=False, is_async=True, transport=None)
         assert isinstance(transport, httpx.AsyncHTTPTransport)
 
-    def test_get_transport_cf_disabled_sync(self):
+    def test_transport_cf_disabled_sync(self):
         """Test getting sync transport with CF disabled."""
         transport = _get_transport(enable_cf=False, is_async=False, transport=None)
         assert isinstance(transport, httpx.HTTPTransport)
 
-    def test_get_transport_custom_base_async(self):
+    def test_transport_custom_base_async(self):
         """Test getting transport with custom base transport."""
         custom_transport = httpx.AsyncHTTPTransport()
         transport = _get_transport(enable_cf=True, is_async=True, transport=custom_transport)
         assert isinstance(transport, CFAsyncTransport)
         assert transport.base is custom_transport
 
-    def test_get_transport_custom_base_sync(self):
+    def test_transport_custom_base_sync(self):
         """Test getting transport with custom base transport."""
         custom_transport = httpx.HTTPTransport()
         transport = _get_transport(enable_cf=True, is_async=False, transport=custom_transport)
@@ -150,7 +150,7 @@ class TestCFAsyncTransport:
     @pytest.mark.asyncio
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
-    async def test_handle_request_merge_existing_cookies(self, mock_is_cf, mock_solver):
+    async def test_merge_existing_cookies(self, mock_is_cf, mock_solver):
         """Test that existing cookies are preserved when adding CF cookies."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
@@ -293,7 +293,7 @@ class TestCFTransport:
 
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
-    def test_handle_request_merge_existing_cookies(self, mock_is_cf, mock_solver):
+    def test_request_merge_existing_cookies(self, mock_is_cf, mock_solver):
         """Test that existing cookies are preserved when adding CF cookies."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
@@ -356,7 +356,7 @@ class TestAsyncClient:
             assert isinstance(client._transport, CFAsyncTransport)
 
     @pytest.mark.asyncio
-    async def test_async_client_custom_cf_off(self):
+    async def test_client_custom_cf_off(self):
         """Test creating async client with CF disabled."""
         async with async_client(enable_cf=False) as client:
             assert isinstance(client, httpx.AsyncClient)
@@ -400,7 +400,7 @@ class TestSyncClient:
         assert isinstance(client._transport, CFTransport)
         client.close()
 
-    def test_sync_client_custom_cf_off(self):
+    def test_custom_cf_off(self):
         """Test creating sync client with CF disabled."""
         client = sync_client(enable_cf=False)
         assert isinstance(client, httpx.Client)

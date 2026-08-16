@@ -87,7 +87,7 @@ class TestScheduler:
         assert s1 is s2 is s3
 
     @patch("app.library.Scheduler.Cron", new=DummyCron)
-    def test_add_creates_and_stores_job(self) -> None:
+    def test_add_creates_stores_job(self) -> None:
         loop = asyncio.new_event_loop()
         try:
             sched = Scheduler(loop=loop)
@@ -146,7 +146,7 @@ class TestScheduler:
         assert sched.has("jobA") is False
 
     @patch("app.library.Scheduler.Cron", new=FailingCron)
-    def test_remove_single_job_failure_on_stop(self) -> None:
+    def test_single_job_failure_stop(self) -> None:
         sched = Scheduler()
         cron = FailingCron(spec="* * * * *", func=lambda: None, uuid="jobB", start=True, loop=sched._loop)
         sched._jobs["jobB"] = cron
@@ -169,7 +169,7 @@ class TestScheduler:
 
     @pytest.mark.asyncio
     @patch("app.library.Scheduler.Cron", new=DummyCron)
-    async def test_on_shutdown_stops_and_clears_jobs(self) -> None:
+    async def test_shutdown_stops_clears_jobs(self) -> None:
         from aiohttp import web
 
         sched = Scheduler()

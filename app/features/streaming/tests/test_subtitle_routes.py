@@ -3,41 +3,24 @@ from types import SimpleNamespace
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import make_mocked_request
 
 from app.features.streaming import router
 from app.library.config import Config
+from app.tests.helpers import url_for
 
 
-class _DummyRoute:
-    def __init__(self, pattern: str) -> None:
-        self.pattern = pattern
+def _subtitle_handlers(config: Config) -> dict[str, object]:
+    async def manifest(request):
+        return await router.subtitles_manifest_get(request, config, request.app)
 
-    def url_for(self, **params: str) -> str:
-        path = self.pattern
-        for key, value in params.items():
-            path = path.replace(f"{{{key}:.*}}", value)
-            path = path.replace(f"{{{key}}}", value)
-        return path
+    async def track(request):
+        return await router.subtitles_track_get(request, config, request.app)
 
-
-class _DummyRouter(dict[str, _DummyRoute]):
-    def __init__(self) -> None:
-        super().__init__(
-            {
-                "subtitles_manifest_get": _DummyRoute("/api/player/subtitles/manifest/{file:.*}"),
-                "subtitles_track_get": _DummyRoute("/api/player/subtitles/{source_format}/{file:.*}"),
-                "subtitles_get": _DummyRoute("/api/player/subtitle/{file:.*}.vtt"),
-            }
-        )
-
-
-def _make_request(path: str, *, match_info: dict[str, str]) -> web.Request:
-    return make_mocked_request("GET", path, app=SimpleNamespace(router=_DummyRouter()), match_info=match_info)
+    return {"subtitles_manifest_get": manifest, "subtitles_track_get": track}
 
 
 @pytest.mark.asyncio
-async def test_subtitles_manifest_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_subtitles_manifest_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
     config.download_path = str(tmp_path)
 
@@ -70,14 +53,11 @@ async def test_subtitles_manifest_order(tmp_path: Path, monkeypatch: pytest.Monk
         ],
     )
 
-    req = _make_request(
-        "/api/player/subtitles/manifest/video.mp4",
-        match_info={"file": "video.mp4"},
-    )
-    response = await router.subtitles_manifest_get(req, config, req.app)
+    client = await test_client(_subtitle_handlers(config))
+    response = await client.get(url_for("subtitles_manifest_get", file="video.mp4"))
 
     assert response.status == web.HTTPOk.status_code
-    body = response.text
+    body = await response.text()
     assert '"source_format": "vtt"' in body
     assert '"renderer": "native"' in body
     assert '"source_format": "ass"' in body
@@ -86,7 +66,7 @@ async def test_subtitles_manifest_order(tmp_path: Path, monkeypatch: pytest.Monk
 
 
 @pytest.mark.asyncio
-async def test_subtitles_track_get_ass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_subtitles_track_get_ass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
     config.download_path = str(tmp_path)
 
@@ -98,19 +78,16 @@ async def test_subtitles_track_get_ass(tmp_path: Path, monkeypatch: pytest.Monke
         lambda **_kwargs: (subtitle, web.HTTPOk.status_code),
     )
 
-    req = _make_request(
-        "/api/player/subtitles/ass/video.ass",
-        match_info={"source_format": "ass", "file": "video.ass"},
-    )
-    response = await router.subtitles_track_get(req, config, req.app)
+    client = await test_client(_subtitle_handlers(config))
+    response = await client.get(url_for("subtitles_track_get", source_format="ass", file="video.ass"))
 
     assert response.status == web.HTTPOk.status_code
-    assert response.text == "[Script Info]\nTitle: Demo\n"
+    assert await response.text() == "[Script Info]\nTitle: Demo\n"
     assert response.headers["Content-Type"] == "text/x-ssa; charset=UTF-8"
 
 
 @pytest.mark.asyncio
-async def test_subtitles_track_bad_format(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_subtitles_track_bad_format(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     config = Config.get_instance()
     config.download_path = str(tmp_path)
 
@@ -122,11 +99,8 @@ async def test_subtitles_track_bad_format(tmp_path: Path, monkeypatch: pytest.Mo
         lambda **_kwargs: (subtitle, web.HTTPOk.status_code),
     )
 
-    req = _make_request(
-        "/api/player/subtitles/vtt/video.ass",
-        match_info={"source_format": "vtt", "file": "video.ass"},
-    )
-    response = await router.subtitles_track_get(req, config, req.app)
+    client = await test_client(_subtitle_handlers(config))
+    response = await client.get(url_for("subtitles_track_get", source_format="vtt", file="video.ass"))
 
     assert response.status == web.HTTPBadRequest.status_code
-    assert b"does not match requested source format" in response.body
+    assert "does not match requested source format" in (await response.text())

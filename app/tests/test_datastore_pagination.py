@@ -389,7 +389,7 @@ class TestDataStorePagination:
         finally:
             await db.close()
 
-    async def test_pagination_status_filter_none_matching(self):
+    async def test_status_filter_none_matching(self):
         """Test pagination with status filter that matches no items."""
         db = await make_db(data=0)
         try:

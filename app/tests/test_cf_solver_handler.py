@@ -73,7 +73,7 @@ class TestCfSolverFunction:
         mock_solver.assert_called_once()
 
     @patch("app.library.cf_solver_handler.solver")
-    def test_cf_solver_with_existing_cookies(self, mock_solver, cf_handler_module):
+    def test_cf_solver_existing_cookies(self, mock_solver, cf_handler_module):
         """Test solving with existing cookies in jar."""
         mock_solver.return_value = {"cookies": [], "userAgent": "Mozilla/5.0"}
 
@@ -118,7 +118,7 @@ class TestCfSolverFunction:
         assert "existing" == cookies_arg[0]["name"]
 
     @patch("app.library.cf_solver_handler.solver")
-    def test_cf_solver_passes_all_cookies_from_jar(self, mock_solver, cf_handler_module):
+    def test_solver_passes_cookies_jar(self, mock_solver, cf_handler_module):
         mock_solver.return_value = {"cookies": [], "userAgent": "Mozilla/5.0"}
 
         handler = cf_handler_module.CFSolverRH(logger=Mock())
@@ -168,7 +168,7 @@ class TestSetCfHandler:
         assert result is cf_handler_module.CFSolverRH
         assert cf_handler_module.CFSolverRH.solver is None or callable(cf_handler_module.CFSolverRH.solver)
 
-    def test_set_cf_handler_custom_solver(self, cf_handler_module):
+    def test_cf_handler_custom_solver(self, cf_handler_module):
         """Test setting CF handler with custom solver."""
 
         def custom_solver(req, resp, handler):

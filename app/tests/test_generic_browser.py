@@ -276,7 +276,7 @@ def test_no_media() -> None:
     ie.report_warning.assert_not_called()
 
 
-def test_no_media_fallback_outside_session(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_media_fallback_outside_session(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     ie.__wrapped__ = Mock()
     ie.__wrapped__._real_extract.side_effect = RuntimeError("fallback failed")
@@ -409,7 +409,7 @@ def test_wait_passed(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_extract_network_formats_playlist_entries_keep_own_urls() -> None:
+def test_entries_keep_own_urls() -> None:
     ie = _make_ie()
     ie._extract_network_formats = generic_browser.GenericBrowserIE._extract_network_formats.__get__(
         ie, generic_browser.GenericBrowserIE

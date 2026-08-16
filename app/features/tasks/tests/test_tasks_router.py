@@ -1,19 +1,14 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-from typing import Any
-
 import pytest
 import pytest_asyncio
-from aiohttp import web
-from aiohttp.test_utils import make_mocked_request
 
 from app.features.tasks import router
 from app.features.tasks.definitions.results import TaskFailure, TaskResult
 from app.features.tasks.repository import TasksRepository
 from app.library.encoder import Encoder
 from app.library.sqlite_store import SqliteStore
-from app.tests.helpers import make_in_memory_db_path
+from app.tests.helpers import make_in_memory_db_path, url_for
 
 
 @pytest_asyncio.fixture
@@ -41,16 +36,6 @@ def patch_get_info(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(router, "_get_info", _fake_get_info)
 
 
-def _json_request(method: str, path: str, payload: object, *, match_info: dict[str, str] | None = None) -> web.Request:
-    mock_request: Any = make_mocked_request(method, path, match_info=match_info or {}, app=SimpleNamespace())
-
-    async def _json() -> object:
-        return payload
-
-    mock_request.json = _json
-    return mock_request
-
-
 class _Notify:
     def emit(self, *_args, **_kwargs) -> None:
         return None
@@ -75,128 +60,117 @@ class _Handler:
 
 
 @pytest.mark.asyncio
-async def test_add_requires_timer_without_handler(repo) -> None:
-    request = _json_request(
-        "POST",
-        "/api/tasks/",
-        {"name": "No Timer", "url": "https://example.com/channel"},
-    )
+async def test_add_requires_timer(repo, test_client) -> None:
+    async def handler(request):
+        return await router.tasks_add(request, repo, Encoder(), _Notify(), _Handler(matched=False))
 
-    response = await router.tasks_add(request, repo, Encoder(), _Notify(), _Handler(matched=False))
+    client = await test_client({"tasks_add": handler})
+    response = await client.post(url_for("tasks_add"), json={"name": "No Timer", "url": "https://example.com/channel"})
 
-    assert response.status == web.HTTPBadRequest.status_code
-    assert b"requires a timer" in response.body
+    assert response.status == 400
+    assert "requires a timer" in await response.text()
     assert await repo.all() == []
 
 
 @pytest.mark.asyncio
-async def test_add_all_or_nothing(repo) -> None:
-    request = _json_request(
-        "POST",
-        "/api/tasks/",
-        [
+async def test_add_all_or_nothing(repo, test_client) -> None:
+    async def handler(request):
+        return await router.tasks_add(
+            request,
+            repo,
+            Encoder(),
+            _Notify(),
+            _Handler({"https://example.com/first": True, "https://example.com/second": False}),
+        )
+
+    client = await test_client({"tasks_add": handler})
+    response = await client.post(
+        url_for("tasks_add"),
+        json=[
             {"name": "First", "url": "https://example.com/first"},
             {"url": "https://example.com/second"},
         ],
     )
 
-    response = await router.tasks_add(
-        request,
-        repo,
-        Encoder(),
-        _Notify(),
-        _Handler({"https://example.com/first": True, "https://example.com/second": False}),
-    )
-
-    assert response.status == web.HTTPBadRequest.status_code
-    assert b"requires a timer" in response.body
+    assert response.status == 400
+    assert "requires a timer" in await response.text()
     assert await repo.all() == []
 
 
 @pytest.mark.asyncio
-async def test_add_allows_handler_only(repo) -> None:
-    request = _json_request(
-        "POST",
-        "/api/tasks/",
-        {"name": "Handler Only", "url": "https://example.com/feed"},
-    )
+async def test_add_allows_handler_only(repo, test_client) -> None:
+    async def handler(request):
+        return await router.tasks_add(request, repo, Encoder(), _Notify(), _Handler(matched=True))
 
-    response = await router.tasks_add(request, repo, Encoder(), _Notify(), _Handler(matched=True))
+    client = await test_client({"tasks_add": handler})
+    response = await client.post(url_for("tasks_add"), json={"name": "Handler Only", "url": "https://example.com/feed"})
 
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == 200
     items = await repo.all()
     assert len(items) == 1
     assert items[0].name == "Handler Only"
 
 
 @pytest.mark.asyncio
-async def test_update_requires_timer_without_handler(repo) -> None:
+async def test_update_requires_timer(repo, test_client) -> None:
     item = await repo.create({"name": "Needs Timer", "url": "https://example.com/a", "timer": "0 0 * * *"})
 
-    request = _json_request(
-        "PUT",
-        f"/api/tasks/{item.id}",
-        {"name": item.name, "url": item.url, "timer": "", "preset": "", "folder": "", "template": "", "cli": ""},
-        match_info={"id": str(item.id)},
+    async def handler(request):
+        return await router.tasks_update(request, repo, Encoder(), _Notify(), _Handler(matched=False))
+
+    client = await test_client({"tasks_update": handler})
+    response = await client.put(
+        url_for("tasks_update", id=str(item.id)),
+        json={"name": item.name, "url": item.url, "timer": "", "preset": "", "folder": "", "template": "", "cli": ""},
     )
 
-    response = await router.tasks_update(request, repo, Encoder(), _Notify(), _Handler(matched=False))
-
-    assert response.status == web.HTTPBadRequest.status_code
+    assert response.status == 400
     refreshed = await repo.get(item.id)
     assert refreshed is not None
     assert refreshed.timer == "0 0 * * *"
 
 
 @pytest.mark.asyncio
-async def test_patch_requires_timer_without_handler(repo) -> None:
+async def test_patch_requires_timer(repo, test_client) -> None:
     item = await repo.create({"name": "Patch Timer", "url": "https://example.com/b", "timer": "0 0 * * *"})
 
-    request = _json_request(
-        "PATCH",
-        f"/api/tasks/{item.id}",
-        {"timer": ""},
-        match_info={"id": str(item.id)},
-    )
+    async def handler(request):
+        return await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=False))
 
-    response = await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=False))
+    client = await test_client({"tasks_patch": handler})
+    response = await client.patch(url_for("tasks_patch", id=str(item.id)), json={"timer": ""})
 
-    assert response.status == web.HTTPBadRequest.status_code
+    assert response.status == 400
     refreshed = await repo.get(item.id)
     assert refreshed is not None
     assert refreshed.timer == "0 0 * * *"
 
 
 @pytest.mark.asyncio
-async def test_patch_url(repo) -> None:
+async def test_patch_url(repo, test_client) -> None:
     item = await repo.create({"name": "Patch URL", "url": "https://example.com/old", "timer": "0 0 * * *"})
-    request = _json_request(
-        "PATCH",
-        f"/api/tasks/{item.id}",
-        {"url": "not-a-url"},
-        match_info={"id": str(item.id)},
-    )
 
-    response = await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=True))
+    async def handler(request):
+        return await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=True))
 
-    assert response.status == web.HTTPBadRequest.status_code
+    client = await test_client({"tasks_patch": handler})
+    response = await client.patch(url_for("tasks_patch", id=str(item.id)), json={"url": "not-a-url"})
+
+    assert response.status == 400
     refreshed = await repo.get(item.id)
     assert refreshed is not None
     assert refreshed.url == "https://example.com/old"
 
 
 @pytest.mark.asyncio
-async def test_patch_requires_timer_when_handler_disabled(repo) -> None:
+async def test_patch_requires_timer_disabled(repo, test_client) -> None:
     item = await repo.create({"name": "Disabled Handler", "url": "https://example.com/c", "timer": "0 0 * * *"})
 
-    request = _json_request(
-        "PATCH",
-        f"/api/tasks/{item.id}",
-        {"timer": "", "handler_enabled": False},
-        match_info={"id": str(item.id)},
-    )
+    async def handler(request):
+        return await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=True))
 
-    response = await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=True))
+    client = await test_client({"tasks_patch": handler})
+    response = await client.patch(url_for("tasks_patch", id=str(item.id)), json={"timer": "", "handler_enabled": False})
 
-    assert response.status == web.HTTPBadRequest.status_code
-    assert b"handler is disabled" in response.body
+    assert response.status == 400
+    assert "handler is disabled" in await response.text()

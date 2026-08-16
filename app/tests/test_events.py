@@ -104,7 +104,7 @@ class TestEvent:
         assert event.title is None
         assert event.message is None
 
-    def test_event_creation_with_all_fields(self):
+    def test_event_creation_fields(self):
         """Test creating an Event with all fields specified."""
         test_data = {"test": "data"}
         event = Event(event="custom_event", title="Test Title", message="Test Message", data=test_data)
@@ -208,7 +208,7 @@ class TestEvent:
         assert event.extras["key4"] is None
         assert len(event.extras) == 4
 
-    def test_event_put_with_complex_data(self):
+    def test_event_put_complex_data(self):
         """Test Event.put() with complex data types."""
         event = Event(event="complex_put_test", data={})
 
@@ -297,7 +297,7 @@ class TestEvent:
         assert mutations == ["listener1_executed", "listener2_executed", "listener3_executed"]
 
     @pytest.mark.asyncio
-    async def test_event_mutation_with_async_listeners(self):
+    async def test_event_mutation_async_listeners(self):
         """Test event mutation with async listeners."""
 
         bus = EventBus()
@@ -424,7 +424,7 @@ class TestEvent:
         assert "async_fast_async" in execution_order
 
     @pytest.mark.asyncio
-    async def test_sync_handler_no_race_condition(self):
+    async def test_handler_no_race_condition(self):
         """Test that multiple sync handlers don't have race conditions with loop variables."""
         bus = EventBus()
         results = []
@@ -559,7 +559,7 @@ class TestEventListener:
         assert result == (await async_callback(event, "test_async"))
 
     @pytest.mark.asyncio
-    async def test_event_listener_handle_sync_callback_bug(self):
+    async def test_handle_sync_callback_bug(self):
         """Test EventListener handling with sync callback shows the current bug."""
 
         def sync_callback(event, name, **kwargs):  # noqa: ARG001
@@ -575,7 +575,7 @@ class TestEventListener:
             await listener.handle(event)
 
     @pytest.mark.asyncio
-    async def test_event_listener_handle_with_kwargs(self):
+    async def test_event_listener_handle_kwargs(self):
         """Test EventListener handling with additional kwargs."""
 
         async def callback_with_kwargs(event, name, extra_param=None, **kwargs):  # noqa: ARG001
@@ -648,7 +648,7 @@ class TestEventBus:
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
-    def test_event_bus_subscribe_single_event(self, mock_bg_worker, mock_config):
+    def test_bus_subscribe_single_event(self, mock_bg_worker, mock_config):
         """Test subscribing to a single event."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
@@ -669,7 +669,7 @@ class TestEventBus:
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
-    def test_event_bus_subscribe_multiple_events(self, mock_bg_worker, mock_config):
+    def test_bus_subscribe_multiple_events(self, mock_bg_worker, mock_config):
         """Test subscribing to multiple events."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
@@ -726,7 +726,7 @@ class TestEventBus:
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
-    def test_event_bus_subscribe_invalid_event(self, mock_bg_worker, mock_config):
+    def test_bus_subscribe_invalid_event(self, mock_bg_worker, mock_config):
         """Test subscribing to invalid event."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
@@ -744,7 +744,7 @@ class TestEventBus:
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
-    def test_event_bus_subscribe_auto_generated_name(self, mock_bg_worker, mock_config):
+    def test_subscribe_auto_generated_name(self, mock_bg_worker, mock_config):
         """Test subscribing without providing name (auto-generated)."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
@@ -761,7 +761,7 @@ class TestEventBus:
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
-    def test_event_bus_unsubscribe_single_event(self, mock_bg_worker, mock_config):
+    def test_bus_unsubscribe_single_event(self, mock_bg_worker, mock_config):
         """Test unsubscribing from a single event."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
@@ -783,7 +783,7 @@ class TestEventBus:
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
-    def test_event_bus_unsubscribe_multiple_events(self, mock_bg_worker, mock_config):
+    def test_bus_unsubscribe_multiple_events(self, mock_bg_worker, mock_config):
         """Test unsubscribing from multiple events."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
@@ -819,7 +819,7 @@ class TestEventBus:
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
-    def test_event_bus_emit_no_listeners(self, mock_config, mock_bg_worker):
+    def test_bus_emit_no_listeners(self, mock_config, mock_bg_worker):
         """Test emit with no listeners."""
         # Setup mocks
         mock_config_instance = MagicMock()
@@ -838,7 +838,7 @@ class TestEventBus:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_event_bus_emit_with_listeners(self):
+    async def test_event_bus_emit_listeners(self):
         """Test emitting event with listeners (fire-and-forget)."""
         bus = EventBus()
 
@@ -870,7 +870,7 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     @pytest.mark.asyncio
-    async def test_event_bus_emit_with_error_in_handler(self, mock_bg_worker, mock_config):
+    async def test_bus_emit_error_handler(self, mock_bg_worker, mock_config):
         """Test emitting event when a handler raises an exception."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
@@ -890,7 +890,7 @@ class TestEventBus:
         # Should not raise exception, but log error
         bus.emit(Events.TEST, data={"test": "data"})
 
-    def test_event_bus_emit_fire_and_forget(self):
+    def test_bus_emit_fire_forget(self):
         """Test emit() returns None immediately (fire-and-forget)."""
         bus = EventBus()
 
@@ -906,7 +906,7 @@ class TestEventBus:
         result = bus.emit(Events.TEST, data={"test": "data"})
         assert result is None
 
-    def test_event_bus_emit_lazy_background_worker(self):
+    def test_emit_lazy_background_worker(self):
         """Test that BackgroundWorker is only initialized when needed."""
         bus = EventBus()
 
@@ -927,7 +927,7 @@ class TestEventBus:
         # The lazy initialization happens only when no event loop is detected
 
     @pytest.mark.asyncio
-    async def test_event_bus_emit_with_kwargs(self):
+    async def test_event_bus_emit_kwargs(self):
         """Test emitting event with additional kwargs (fire-and-forget)."""
         bus: EventBus = EventBus()
 
@@ -953,7 +953,7 @@ class TestEventBus:
         assert received_kwargs["kwargs"]["custom_arg"] == "custom"
 
     @pytest.mark.asyncio
-    async def test_event_bus_emit_event_data_defaults(self):
+    async def test_emit_event_data_defaults(self):
         """Test emitting event with default data handling (fire-and-forget)."""
         bus = EventBus()
 

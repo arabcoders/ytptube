@@ -80,7 +80,7 @@ class TestItemFormatAndBasics:
         assert json.loads(item.json())["url"] == "https://example.com"
 
     @patch("app.library.ItemDTO.get_archive_id")
-    def test_item_archive_id_and_is_archived(self, mock_get_id, tmp_path: Path):
+    def test_item_archive_id_archived(self, mock_get_id, tmp_path: Path):
         mock_get_id.return_value = {"archive_id": "x", "id": "x", "ie_key": "k"}
         file = _archive_path(tmp_path)
 
@@ -105,7 +105,7 @@ class TestItemDTO:
     @patch("app.library.ItemDTO.get_archive_id")
     @patch("app.library.ItemDTO.YTDLPOpts")
     @patch("app.library.ItemDTO.archive_read")
-    def test_post_init_sets_archive_flags(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
+    def test_init_sets_archive_flags(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
         # Setup archive id and archive file
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
@@ -170,7 +170,7 @@ class TestItemDTO:
         mock_opts.get_instance.assert_not_called()
 
     @patch("app.library.ItemDTO.YTDLPOpts")
-    def test_get_ytdlp_opts_uses_preset_and_cli(self, mock_opts):
+    def test_opts_uses_preset_cli(self, mock_opts):
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
 
@@ -192,7 +192,7 @@ class TestItemDTO:
         assert dto.name() == 'id="abc", title="Title"'
         assert isinstance(dto.get_id(), str)
 
-    def test_archive_add_and_delete_paths(self):
+    def test_archive_add_delete_paths(self):
         dto = ItemDTO(id="id", title="t", url="u", folder="f")
         assert dto.archive_add() is False, "Precondition not met yet"
 
@@ -284,7 +284,7 @@ class TestItemDTO:
             result = dto.get_file(download_path=Path("/custom"))
             assert result == Path("/custom/test_video.mp4")
 
-    def test_get_file_sidecar_populates_from_utils(self):
+    def test_file_sidecar_populates_utils(self):
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="sidecar", title="Title", url="u", folder="f")
 
@@ -379,7 +379,7 @@ class TestItemDTO:
 
 
 class TestItemAddExtras:
-    def test_add_extras_to_empty_dict(self):
+    def test_add_extras_empty_dict(self):
         """Test adding extras when extras dict is empty."""
         item = Item(url="https://example.com")
         item.extras = {}
@@ -397,7 +397,7 @@ class TestItemAddExtras:
 
         assert item.extras == {"key1": "value1"}
 
-    def test_add_extras_to_existing_dict(self):
+    def test_add_extras_existing_dict(self):
         """Test adding extras to an existing extras dict."""
         item = Item(url="https://example.com", extras={"existing": "data"})
 
@@ -406,7 +406,7 @@ class TestItemAddExtras:
         assert item.extras["existing"] == "data"
         assert item.extras["new_key"] == "new_value"
 
-    def test_add_extras_overwrites_existing_key(self):
+    def test_extras_overwrites_existing_key(self):
         """Test that adding extras overwrites existing keys."""
         item = Item(url="https://example.com", extras={"key1": "old_value"})
 
@@ -414,7 +414,7 @@ class TestItemAddExtras:
 
         assert item.extras["key1"] == "new_value"
 
-    def test_add_extras_with_various_types(self):
+    def test_add_extras_various_types(self):
         """Test adding extras with various data types."""
         item = Item(url="https://example.com")
         item.extras = {}

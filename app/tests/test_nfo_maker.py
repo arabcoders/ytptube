@@ -62,7 +62,7 @@ def test_generate_nfo_tv_mode(tmp_path: Path) -> None:
     assert abs(nfo_mtime - media_mtime) < 2.0
 
 
-def test_generate_nfo_movie_mode_and_run_wrapper(tmp_path: Path) -> None:
+def test_movie_mode_run_wrapper(tmp_path: Path) -> None:
     media_file = tmp_path / "test_movie.mp4"
     info = sample_info_movie(media_file)
     media_file.write_text("dummy-movie", encoding="utf-8")

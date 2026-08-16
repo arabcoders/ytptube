@@ -5,17 +5,13 @@ from __future__ import annotations
 import pytest
 import pytest_asyncio
 from types import SimpleNamespace
-import pytest
-from typing import Any
-from aiohttp import web
-from aiohttp.test_utils import make_mocked_request
 
 from app.features.conditions.router import conditions_test
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.features.conditions.repository import ConditionsRepository
 from app.library.sqlite_store import SqliteStore
-from app.tests.helpers import make_in_memory_db_path
+from app.tests.helpers import make_in_memory_db_path, url_for
 
 
 @pytest_asyncio.fixture
@@ -39,38 +35,28 @@ async def repo():
     SqliteStore._reset_singleton()
 
 
-def _json_request(path: str, payload: object) -> web.Request:
-    mock_request: Any = make_mocked_request("POST", path)
-
-    async def _json() -> object:
-        return payload
-
-    mock_request.json = _json
-    return mock_request
-
-
 class TestAllowInternalUrlsScope:
     def setup_method(self) -> None:
         Config._reset_singleton()
 
     @pytest.mark.asyncio
-    async def test_rejects_internal_url(self) -> None:
+    async def test_rejects_internal_url(self, test_client) -> None:
         config = Config.get_instance()
         config.allow_internal_urls = False
         encoder = Encoder()
         cache = SimpleNamespace(hash=lambda value: value, has=lambda _key: False, set=lambda **_kwargs: None)
 
-        request = _json_request(
-            "/api/conditions/test/",
-            {"url": "http://127.0.0.1/test", "condition": "title", "preset": config.default_preset},
+        async def handler(request):
+            return await conditions_test(request, encoder, cache, config)
+
+        client = await test_client({"condition_test": handler})
+        response = await client.post(
+            url_for("condition_test"),
+            json={"url": "http://127.0.0.1/test", "condition": "title", "preset": config.default_preset},
         )
 
-        response = await conditions_test(request, encoder, cache, config)
-
-        assert response.status == web.HTTPBadRequest.status_code
-        body = response.body
-        assert isinstance(body, bytes)
-        assert b"internal urls" in body.lower()
+        assert response.status == 400
+        assert "internal urls" in (await response.text()).lower()
 
 
 class TestConditionsRepository:
@@ -216,7 +202,7 @@ class TestConditionsRepository:
         assert items[2].name == "B", "Same priority sorted alphabetically"
 
     @pytest.mark.asyncio
-    async def test_get_by_name_excludes_id(self, repo):
+    async def test_get_name_without_id(self, repo):
         """Get by name can exclude specific ID."""
         first = await repo.create({"name": "Duplicate", "filter": "test"})
 

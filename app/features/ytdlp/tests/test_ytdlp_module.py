@@ -72,7 +72,7 @@ class TestYtDlpOptions:
             if isinstance(o.get("description"), str):
                 assert "SUPPRESSHELP" not in o["description"]
 
-    def test_ignored_flags_match_remove_keys(self) -> None:
+    def test_flags_match_remove_keys(self) -> None:
         # Collect the flags that should be ignored from REMOVE_KEYS
         ignored_flags: set[str] = {
             f.strip() for group in _DATA.REMOVE_KEYS for v in group.values() for f in v.split(",") if f.strip()
@@ -306,7 +306,7 @@ class TestYTDLP:
         # Should not add duplicate (youtube new123 appears only once)
         assert calls.count("youtube new123") == 1
 
-    def test_record_archive_empty_old_ids(self, tmp_path: Path) -> None:
+    def test_archive_empty_old_ids(self, tmp_path: Path) -> None:
         """Test record_download_archive handles empty or invalid _old_archive_ids."""
         ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.write_debug = Mock()

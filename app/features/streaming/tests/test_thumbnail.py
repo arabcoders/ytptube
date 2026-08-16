@@ -228,7 +228,7 @@ def test_seek_bounds() -> None:
 
 
 @pytest.mark.asyncio
-async def test_cache_name_uses_item_id(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_name_uses_item_id(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.features.streaming.library import thumbnail
 
     thumbnail._IN_PROCESS.clear()

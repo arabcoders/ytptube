@@ -82,7 +82,7 @@ class TestAgSet:
         ag_set(data, "a/b/c", "value", separator="/")
         assert data == {"a": {"b": {"c": "value"}}}
 
-    def test_ag_set_overwrite_non_dict_intermediate(self):
+    def test_overwrite_non_dict_intermediate(self):
         """Test overwriting non-dict intermediate value with dict."""
         data = {"a": "not_a_dict"}
         ag_set(data, "a.b", "value")
@@ -90,7 +90,7 @@ class TestAgSet:
         expected = {"a": {"b": "value"}}
         assert data == expected
 
-    def test_ag_set_error_on_non_dict_final(self):
+    def test_error_non_dict_final(self):
         """Test error when final target is not a dict."""
         data: Any = "not_a_dict"
         with pytest.raises(RuntimeError, match="Cannot set value at path 'key'"):
@@ -112,7 +112,7 @@ class TestAg:
         assert ag(data, "x") == 10
         assert ag(data, "y") == 20
 
-    def test_ag_missing_key_with_default(self):
+    def test_ag_missing_key_default(self):
         """Test accessing missing key returns default."""
         data = {"x": 10}
         assert ag(data, "missing", default=0) == 0
@@ -129,14 +129,14 @@ class TestAg:
         assert ag(data, "a.missing.c", default="default") == "default"
         assert ag(data, "missing.b.c", default="default") == "default"
 
-    def test_ag_list_access_by_index(self):
+    def test_ag_list_access_index(self):
         """Test accessing list elements by index."""
         data = [10, 20, 30]
         assert ag(data, 0) == 10
         assert ag(data, 1) == 20
         assert ag(data, 2) == 30
 
-    def test_ag_list_access_out_of_bounds(self):
+    def test_list_access_out_bounds(self):
         """Test list access with out of bounds index."""
         data = [10, 20]
         assert ag(data, 5, default="default") == "default"
@@ -149,7 +149,7 @@ class TestAg:
         assert ag(data, -2) == 20  # Second to last
         assert ag(data, -3) == 10  # First element
 
-    def test_ag_mixed_dict_list_access(self):
+    def test_mixed_dict_list_access(self):
         """Test accessing nested structure with dicts and lists."""
         data = {"items": [{"name": "item1"}, {"name": "item2"}]}
         assert ag(data, "items.0.name") == "item1"
@@ -193,7 +193,7 @@ class TestAg:
         assert ag(obj, "attr1") == "value1"
         assert ag(obj, "attr2.nested") == "value2"
 
-    def test_ag_with_non_dict_non_list_fallback(self):
+    def test_dict_non_list_fallback(self):
         """Test ag fallback for non-dict, non-list objects without vars."""
 
         class NoVarsObj:
@@ -248,7 +248,7 @@ class TestAgSets:
 class TestAgExists:
     """Test the ag_exists function."""
 
-    def test_ag_exists_simple_dict_key(self):
+    def test_exists_simple_dict_key(self):
         """Test checking existence of simple dict keys."""
         data = {"a": "value", "b": None, "c": 0}
         assert ag_exists(data, "a") is True
@@ -299,7 +299,7 @@ class TestAgExists:
         assert ag_exists(obj, "nested.key") is True
         assert ag_exists(obj, "missing") is False
 
-    def test_ag_exists_with_non_vars_object(self):
+    def test_exists_non_vars_object(self):
         """Test ag_exists with object that doesn't support vars()."""
 
         class NoVarsObj:
@@ -312,7 +312,7 @@ class TestAgExists:
 class TestAgDelete:
     """Test the ag_delete function."""
 
-    def test_ag_delete_simple_dict_key(self):
+    def test_delete_simple_dict_key(self):
         """Test deleting simple dictionary keys."""
         data = {"a": 1, "b": 2, "c": 3}
         result = ag_delete(data, "b")
@@ -364,7 +364,7 @@ class TestAgDelete:
 
         assert data == original
 
-    def test_ag_delete_out_of_bounds_list(self):
+    def test_delete_out_bounds_list(self):
         """Test deleting out of bounds list index (should not raise error)."""
         data = [1, 2, 3]
         original = [1, 2, 3]
@@ -389,7 +389,7 @@ class TestAgDelete:
         assert not hasattr(obj, "attr1")
         assert hasattr(obj, "attr2")
 
-    def test_ag_delete_invalid_list_string_index(self):
+    def test_invalid_list_string_index(self):
         """Test ag_delete with invalid string index for list."""
         data = {"items": [1, 2, 3]}
         original_items = [1, 2, 3]
@@ -399,7 +399,7 @@ class TestAgDelete:
         # Should not modify the list
         assert data["items"] == original_items
 
-    def test_ag_delete_path_through_none(self):
+    def test_delete_path_through_none(self):
         """Test ag_delete when path goes through None value."""
         data = {"a": {"b": None}}
         original = {"a": {"b": None}}
