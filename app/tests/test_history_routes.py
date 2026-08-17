@@ -461,3 +461,36 @@ async def test_item_thumbnail_missing_cache(test_client) -> None:
     assert first.status == 404
     assert second.status == 404
     assert seen["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_item_info_without_ffprobe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client) -> None:
+    """Item info must still return 200 with empty probe data when ffprobe is missing."""
+    from app.library.config import Config
+    from app.routes.api.history import item_view
+
+    Config.get_instance().download_path = str(tmp_path)
+    media = tmp_path / "video.mp4"
+    media.write_text("video")
+
+    item = _make_download(filename="video.mp4", download_dir=str(tmp_path), status="finished")
+    queue = Mock()
+    queue.done.get_by_id = AsyncMock(return_value=item)
+    queue.queue.get_by_id = AsyncMock(return_value=None)
+    encoder = Encoder()
+
+    async def handler(request):
+        return await item_view(request, queue, encoder)
+
+    def fail_if_probed(_file):
+        raise AssertionError("ffprobe must not run when the binary is unavailable")
+
+    monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe", fail_if_probed)
+    monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe_bin", lambda: None)
+
+    client = await test_client({"item_view": handler})
+    response = await client.get(url_for("item_view", id="test-id"))
+
+    assert response.status == 200
+    body = await response.json()
+    assert body["ffprobe"] == {}

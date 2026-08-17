@@ -612,7 +612,9 @@
     "INTERNAL_ERROR": "Internal server error.",
     "VIDEO_UNAVAILABLE": "The video is unavailable.",
     "LOGIN_REQUIRED": "Sign in is required to access this content.",
-    "RATE_LIMITED": "Too many requests were made. Try again later."
+    "RATE_LIMITED": "Too many requests were made. Try again later.",
+    "FFMPEG_UNAVAILABLE": "ffmpeg is not available on this system. Transcoding and streaming are unavailable.",
+    "FFPROBE_UNAVAILABLE": "ffprobe is not available on this system. Media metadata cannot be read."
   },
   "api": {
     "resources": {

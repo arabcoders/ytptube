@@ -5,7 +5,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from app.features.streaming.library.ffprobe import ffprobe
+from app.features.streaming.library.ffprobe import ffmpeg_bin, ffprobe, ffprobe_bin
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.log import get_logger
@@ -129,6 +129,11 @@ def _build_ffmpeg_args(media_file: Path, output_file: Path, *, seek_seconds: flo
 
 
 async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
+    binary = ffmpeg_bin()
+    if binary is None or ffprobe_bin() is None:
+        msg = "ffmpeg or ffprobe not found."
+        raise OSError(msg)
+
     ff_info = await ffprobe(media_file)
     if not ff_info.has_video():
         LOG.debug(
@@ -164,6 +169,7 @@ async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
         for idx, attempt_seek in enumerate(attempts, start=1):
             temp_file.unlink(missing_ok=True)
             args: list[str] = _build_ffmpeg_args(media_file, temp_file, seek_seconds=attempt_seek)
+            args[0] = binary
             LOG.debug(
                 "Generating thumbnail for '%s'. attempt=%s/%s seek=%s",
                 media_file,

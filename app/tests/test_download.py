@@ -772,6 +772,7 @@ class TestDownloadFlow:
             )
 
         monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe", fake_ffprobe)
+        monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe_bin", lambda: "/usr/bin/ffprobe")
 
         def fake_download():
             queue = download.status_queue
@@ -1553,6 +1554,7 @@ class TestStatusTracker:
             )
 
         monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe", fake_ffprobe)
+        monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe_bin", lambda: "/usr/bin/ffprobe")
 
         st = StatusTracker(**mock_config)
         st.download_dir = str(tmp_path)
@@ -1566,6 +1568,30 @@ class TestStatusTracker:
         }
         assert st.info.extras["duration"] == 42
         assert seen["final_update"] is False
+
+    @pytest.mark.asyncio
+    async def test_finalize_skips_missing_ffprobe(
+        self, tmp_path: Path, mock_config: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        test_file = tmp_path / "test.mp4"
+        test_file.write_text("test content")
+
+        def fail_if_probed(_file: Path):
+            raise AssertionError("ffprobe must not run when the binary is unavailable")
+
+        monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe", fail_if_probed)
+        monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe_bin", lambda: None)
+
+        st = StatusTracker(**mock_config)
+        st.download_dir = str(tmp_path)
+        status = {"id": "test-id", "status": "finished", "final_name": str(test_file)}
+
+        await st.process_status_update(status)
+
+        assert st.info.filename == "test.mp4", "filename must still be finalized"
+        assert st.info.extras["is_video"] is True, "media flags must fall back to True when ffprobe is missing"
+        assert st.info.extras["is_audio"] is True, "media flags must fall back to True when ffprobe is missing"
+        assert "media_profile" not in st.info.extras, "media_profile requires probe data"
 
     @pytest.mark.asyncio
     async def test_queue_processes_remaining_updates(self, mock_config: dict[str, Any]) -> None:
