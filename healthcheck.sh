@@ -6,11 +6,6 @@ BASE_PATH="${YTP_BASE_PATH:-/}"
 
 curl_args=(-f)
 
-if [[ -n "${YTP_AUTH_USERNAME:-}" && -n "${YTP_AUTH_PASSWORD:-}" ]]; then
-  cred=$(printf '%s:%s' "${YTP_AUTH_USERNAME}" "${YTP_AUTH_PASSWORD}" | base64 | tr -d '\n')
-  curl_args+=(-H "Authorization: Basic ${cred}")
-fi
-
 # strip trailing slashes from BASE_PATH
 BASE_PATH=$(echo "${BASE_PATH}" | sed 's:/*$::')
 

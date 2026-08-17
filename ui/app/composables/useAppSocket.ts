@@ -2,6 +2,7 @@ import { proxyRefs, readonly, ref } from 'vue';
 import { useYtpConfig } from '~/composables/useYtpConfig';
 import { useHistoryState } from '~/composables/useHistoryState';
 import { useQueueState } from '~/composables/useQueueState';
+import { ensure_api_success, request } from '~/utils';
 import type { StoreItem } from '~/types/store';
 import type {
   ConfigUpdatePayload,
@@ -48,6 +49,7 @@ const wasHidden = ref<boolean>(false);
 const reconnectTimeout = ref<NodeJS.Timeout | null>(null);
 const manualDisconnect = ref<boolean>(false);
 const reconnectAttempts = ref<number>(0);
+let connectionPromise: Promise<void> | null = null;
 
 const handlers = new Map<string, HandlerRegistry>();
 
@@ -189,31 +191,39 @@ const reconnect = () => {
 
 const disconnect = () => {
   manualDisconnect.value = true;
-  if (null === socket.value) {
-    return;
+  if (null !== socket.value) {
+    socket.value.close();
+    socket.value = null;
   }
-  socket.value.close();
-  socket.value = null;
   isConnected.value = false;
   connectionStatus.value = 'disconnected';
   cleanupVisibilityListener();
 };
 
-const buildWsUrl = (): string => {
+export const withWsTicket = (url: string, ticket?: string): string => {
+  if (!ticket) {
+    return url;
+  }
+  const target = new URL(url);
+  target.searchParams.set('ticket', ticket);
+  return target.toString();
+};
+
+const buildWsUrl = (ticket?: string): string => {
   const runtimeConfig = getRuntimeConfig();
   const basePath = runtimeConfig.app.baseURL.replace(/\/$/, '');
   const wsPath = `${basePath}/ws?_=${Date.now()}`;
   const configuredBase = runtimeConfig.public.wss?.trim();
 
   if (configuredBase) {
-    return new URL(wsPath, configuredBase).toString();
+    return withWsTicket(new URL(wsPath, configuredBase).toString(), ticket);
   }
 
   const scheme = 'https:' === window.location.protocol ? 'wss' : 'ws';
-  return new URL(wsPath, `${scheme}://${window.location.host}`).toString();
+  return withWsTicket(new URL(wsPath, `${scheme}://${window.location.host}`).toString(), ticket);
 };
 
-const connect = () => {
+const connect = (): void => {
   const runtimeConfig = getRuntimeConfig();
 
   if (socket.value && WebSocket.OPEN === socket.value.readyState) {
@@ -224,66 +234,100 @@ const connect = () => {
     return;
   }
 
+  if (connectionPromise) {
+    return;
+  }
+
   manualDisconnect.value = false;
   connectionStatus.value = 'connecting';
 
-  socket.value = new WebSocket(buildWsUrl());
-
-  if ('development' === runtimeConfig.public?.APP_ENV) {
-    window.ws = socket.value;
-  }
-
-  socket.value.addEventListener('open', () => {
-    isConnected.value = true;
-    connectionStatus.value = 'connected';
-    error.value = null;
-    error_count.value = 0;
-    reconnectAttempts.value = 0;
-    dispatch('connect', null);
-  });
-
-  socket.value.addEventListener('close', () => {
-    isConnected.value = false;
-    connectionStatus.value = 'disconnected';
-    error.value = t('socket.disconnected');
-    dispatch('disconnect', null);
-    scheduleReconnect();
-  });
-
-  socket.value.addEventListener('error', () => {
-    isConnected.value = false;
-    connectionStatus.value = 'disconnected';
-    error.value = t('socket.connectionError', { error: t('common.unknownError') });
-    error_count.value += 1;
-    dispatch('connect_error', { message: t('common.unknownError') });
-    scheduleReconnect();
-  });
-
-  socket.value.addEventListener('message', (event: MessageEvent<string>) => {
-    let payload: WebSocketEnvelope | null;
-    try {
-      payload = JSON.parse(event.data);
-    } catch {
-      return;
-    }
-
-    if (!payload?.event || 'string' != typeof payload.event) {
-      return;
-    }
-
-    let data = payload.data;
-    if ('string' === typeof data) {
-      try {
-        data = JSON.parse(data);
-      } catch {
-        data = payload.data;
+  connectionPromise = (async () => {
+    let ticket: string | undefined;
+    if (useAuth().status.value?.disabled !== true) {
+      const response = await request('/api/auth/ws-ticket', { method: 'POST' });
+      await ensure_api_success(response);
+      const payload = (await response.json()) as { ticket?: string };
+      if (!payload.ticket) {
+        throw new Error('WebSocket ticket was not returned.');
       }
+      ticket = payload.ticket;
     }
 
-    dispatch(payload.event, data);
-  });
+    if (manualDisconnect.value) {
+      return;
+    }
 
-  setupVisibilityListener();
+    const ws = new WebSocket(buildWsUrl(ticket));
+    socket.value = ws;
+
+    if ('development' === runtimeConfig.public?.APP_ENV) {
+      window.ws = ws;
+    }
+
+    ws.addEventListener('open', () => {
+      isConnected.value = true;
+      connectionStatus.value = 'connected';
+      error.value = null;
+      error_count.value = 0;
+      reconnectAttempts.value = 0;
+      dispatch('connect', null);
+    });
+
+    ws.addEventListener('close', () => {
+      isConnected.value = false;
+      connectionStatus.value = 'disconnected';
+      error.value = t('socket.disconnected');
+      dispatch('disconnect', null);
+      scheduleReconnect();
+    });
+
+    ws.addEventListener('error', () => {
+      isConnected.value = false;
+      connectionStatus.value = 'disconnected';
+      error.value = t('socket.connectionError', { error: t('common.unknownError') });
+      error_count.value += 1;
+      dispatch('connect_error', { message: t('common.unknownError') });
+      scheduleReconnect();
+    });
+
+    ws.addEventListener('message', (event: MessageEvent<string>) => {
+      let payload: WebSocketEnvelope | null;
+      try {
+        payload = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      if (!payload?.event || 'string' != typeof payload.event) {
+        return;
+      }
+
+      let data = payload.data;
+      if ('string' === typeof data) {
+        try {
+          data = JSON.parse(data);
+        } catch {
+          data = payload.data;
+        }
+      }
+
+      dispatch(payload.event, data);
+    });
+
+    setupVisibilityListener();
+  })()
+    .catch((cause: unknown) => {
+      socket.value = null;
+      isConnected.value = false;
+      connectionStatus.value = 'disconnected';
+      error.value = cause instanceof Error ? cause.message : t('common.unknownError');
+      error_count.value += 1;
+      dispatch('connect_error', { message: error.value });
+      scheduleReconnect();
+    })
+    .finally(() => {
+      connectionPromise = null;
+    });
 };
 
 on('connect', () => getConfig().loadConfig(false));

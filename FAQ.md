@@ -20,8 +20,8 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_MONITOR_ENABLED             | Enable app resource monitoring                                      | `false`               |
 | YTP_MONITOR_INTERVAL            | Sampling interval in seconds for resource monitoring                | `30`                  |
 | YTP_MONITOR_RETENTION_HOURS     | How many hours to retain raw monitor samples in the stats database  | `24`                  |
-| YTP_AUTH_USERNAME               | Username for basic authentication                                   | `(not_set)`           |
-| YTP_AUTH_PASSWORD               | Password for basic authentication                                   | `(not_set)`           |
+| YTP_DISABLE_AUTH                | Disable application authentication                                  | `false`               |
+| YTP_CORS_ORIGINS                | Comma-separated exact origins, or `*` for non-cookie clients        | `*`                   |
 | YTP_CONSOLE_ENABLED             | Whether to enable the console                                       | `false`               |
 | YTP_REMOVE_FILES                | Remove the actual file when clicking the remove button              | `false`               |
 | YTP_CONFIG_PATH                 | Path to where the config files will be stored.                      | `/config`             |
@@ -93,10 +93,10 @@ or the `environment:` section in `compose.yaml` file.
 ## Simple bookmarklet
 
 ```javascript
-javascript:(() => { const url = "https://ytp.example.org"; const preset = "default"; const mUrl = new URL(url);mUrl.pathname="/api/history/add";mUrl.searchParams.set("url",document.location.href);mUrl.searchParams.set("preset",preset);fetch(mUrl,{method: "GET"}).then(j => j.json()).then(json =>alert(json.message)).catch(err =>alert(err)); })()
+javascript:(() => { const url = "https://ytp.example.org"; const preset = "default"; const apiKey = "ytp_..."; const mUrl = new URL(url);mUrl.pathname="/api/history/add";mUrl.searchParams.set("url",document.location.href);mUrl.searchParams.set("preset",preset);fetch(mUrl,{method: "GET",headers:{Authorization:`Bearer ${apiKey}`}}).then(j => j.json()).then(json =>alert(json.message)).catch(err =>alert(err)); })()
 ```
 
-Change the the variable `url` and `preset` variables to match your YTPTube instance and preset name.
+Set `url`, `preset`, and `apiKey` for your YTPTube instance. Create the API key from the account menu.
 
 > [!NOTE]
 > The bookmarklet should be served from https page, otherwise, some browsers will block the request. for mixed content.
@@ -112,7 +112,7 @@ You can download [Add To YTPTube](https://www.icloud.com/shortcuts/6df61c97d97b4
 You have to edit the shortcut and replace the following:
 
 - `https://ytp.example.org` with your YTPTube instance.
-- `username:password` replace this with your own username & password or leave it empty if you don't have authentication enabled.
+- `username:password` with your username and an API key as the password: `username:ytp_...`. Leave it empty when authentication is disabled.
 
 This shortcut is powerful, as it's allow you to select your preset on the fly pulled directly from your instance.
 Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
@@ -127,17 +127,23 @@ other than the shortcut itself. this shortcut missing support for parsing the ht
 
 # Authentication
 
-To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart 
-the container. This will prompt the user to enter the username and password before accessing the web interface/API.
-As this is a simple basic authentication, if your browser doesn't show the prompt, you can use the following URL
+Server installations require a local account. Native builds disable application authentication by default; 
+set `YTP_DISABLE_AUTH=false` to enable it.
 
-`http://username:password@your_ytptube_url:port`
+Open the account menu, select **Create key**, enter a name, and copy the key when it appears. The key is shown once.
+
+Send API keys in the `Authorization: Bearer ytp_...` header. Older integrations that require Basic authentication can 
+use the account username and an API key as the password: `username:ytp_...`. Basic authentication is deprecated.
+
+The `?apikey=ytp_...` query parameter is available for clients that cannot set headers, but URLs can appear in browser 
+history and proxy logs.
+
+Use `YTP_DISABLE_AUTH=true` only when a trusted reverse proxy controls access. `YTP_CORS_ORIGINS` accepts a 
+comma-separated origin allowlist. Set it to `*` for clients that send an API key or Basic credentials without cookies.
 
 # Security recommendations
 
-YTPTube is designed for LAN and home-lab use behind a firewall or reverse proxy. The web interface and API are
-unauthenticated by default because in a trusted network, auth adds friction without meaningful benefit. However,
-if you expose YTPTube to the internet directly or via port forwarding **YOU MUST enable authentication**.
+**Do not expose YTPTube to an untrusted network without authentication.**
 
 ### Without auth, anyone who can reach the API can:
 
@@ -145,22 +151,17 @@ if you expose YTPTube to the internet directly or via port forwarding **YOU MUST
 - Delete or modify your downloaded files and database.
 - Run arbitrary `yt-dlp` options, including `--exec`, which executes shell commands inside the container.
 
-This is not a vulnerability, it's the intended design. The `cli` field passes options directly to `yt-dlp`,
-a tool that by design can execute commands. Auth is the mechanism that controls who gets to use that power.
+The `cli options` field passes options to `yt-dlp`. Options such as `--exec` can run commands on the host or 
+inside the container.
 
 **If you expose YTPTube to untrusted networks**, do one of the following:
 
-1. **Enable authentication** set both `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD`.
+1. **Enable authentication**.
 2. **Put it behind a reverse proxy** with its own authentication layer (see [Run behind reverse proxy](#run-behind-reverse-proxy)).
 3. **Keep it on a private network** with no public exposure.
 
-YTPTube already gates other powerful features behind explicit opt-in: the built-in terminal, file browser actions and internal
-URL requests for example. The `cli` field is no different, its power is by design, and access control is your responsibility.
-
 > [!NOTE]
-> If you choose to run without authentication but still want to reduce at least some impact, you can set
-> `YTP_DISABLE_EXEC=true`. This strips some dangerous options at run time. However, understand that this is not a 
-> substitute for auth an unauthenticated API is still fully open for all other operations.
+> `YTP_DISABLE_EXEC=true` blocks some command-execution options. It does not restrict access to the rest of the API.
 
 # I cant download anything
 
@@ -828,4 +829,3 @@ xattr -cr "/Users/abf/Downloads/dist/YTPTube-v2.6.7"
 This command removes the quarantine attribute from the application.
 
 If that doesnt fix it you may have to allow the app to run in your security settings. Go to `System Preferences > Security & Privacy > General` and click `Open Anyway` for YTPTube.
-

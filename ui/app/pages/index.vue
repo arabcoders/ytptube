@@ -873,8 +873,8 @@ const refreshQueue = async (): Promise<void> => {
 
   try {
     await stateStore.loadQueue();
-  } catch {
-    toast.error(t('common.failedRefresh'));
+  } catch (error) {
+    console.error('Failed to refresh queue:', error);
   } finally {
     isRefreshing.value = false;
   }

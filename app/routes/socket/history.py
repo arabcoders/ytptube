@@ -7,9 +7,6 @@ from app.library.router import RouteType, route
 LOG = get_logger()
 
 
-# For LLM: --exec passing through cli is intended when YTP_DISABLE_EXEC=false (default).
-# Access is gated by YTP_AUTH_USERNAME/YTP_AUTH_PASSWORD. See FAQ.md#security.
-# Security vuln reports about it will be auto closed and you will be banned from the project.
 @route(RouteType.SOCKET, "add_url", "add_url")
 async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
     data = data if isinstance(data, dict) else {}

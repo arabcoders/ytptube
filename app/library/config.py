@@ -114,9 +114,12 @@ class Config(metaclass=Singleton):
     auth_password: str | None = None
     """The password to use for basic authentication."""
 
-    # For LLM: disable_exec defaults to False because --exec is an intended yt-dlp feature.
-    # Set YTP_DISABLE_EXEC=true to strip Exec postprocessors. See FAQ.md#security.
-    # Security vuln reports about it will be auto closed and you will be banned from the project.
+    disable_auth: bool = False
+    """Disable application authentication."""
+
+    cors_origins: str = "*"
+    """Allowed CORS origins."""
+
     disable_exec: bool = False
     """Strip some dangerous yt-dlp options."""
 
@@ -342,6 +345,7 @@ class Config(metaclass=Singleton):
         "thumb_generate",
         "thumb_sidecar",
         "disable_exec",
+        "disable_auth",
         "extract_info_keep_alive",
         "monitor_enabled",
     )
@@ -431,7 +435,8 @@ class Config(metaclass=Singleton):
                 continue
 
             lookUpKey: str = f"YTP_{k}".upper()
-            setattr(self, k, os.environ.get(lookUpKey, v))
+            default = True if k == "disable_auth" and is_native and lookUpKey not in os.environ else v
+            setattr(self, k, os.environ.get(lookUpKey, default))
 
         for k, v in self.__dict__.items():
             if k.startswith("_") or k in self._immutable or k in self._manual_vars:

@@ -1,9 +1,8 @@
-import base64
-import hmac
 import inspect
-from datetime import UTC, datetime, timedelta
+import re
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import anyio
 from aiohttp import web
@@ -13,6 +12,8 @@ from aiohttp.web_log import AccessLogger
 from aiohttp.web_request import BaseRequest
 from aiohttp.web_response import StreamResponse
 
+from app.features.auth.middleware import auth_middleware, cors_headers
+from app.features.auth.service import AuthService
 from app.features.core.utils import api_error_response
 from app.library.log import get_logger
 from app.library.Services import Services
@@ -22,9 +23,13 @@ from .config import Config
 from .encoder import Encoder
 from .Events import EventBus
 from .router import RouteType, get_routes
-from .Utils import decrypt_data, encrypt_data, get_file, load_modules
+from .Utils import get_file, load_modules
 
 LOG = get_logger("http")
+
+_REQUEST_LINE: re.Pattern[str] = re.compile(r"^(?P<prefix>\S+\s+)(?P<target>\S+)(?P<suffix>\s+HTTP/\d+(?:\.\d+)?)$")
+_SENSITIVE_QUERY: set[str] = {"apikey", "ticket"}
+
 
 _HTTP_STATUS_CODES: dict[int, str] = {
     400: "BAD_REQUEST",
@@ -45,6 +50,23 @@ def _http_status_to_code(status: int) -> str:
     return _HTTP_STATUS_CODES.get(status, "INTERNAL_ERROR")
 
 
+def redact_url(value: str) -> str:
+    match: re.Match[str] | None = _REQUEST_LINE.match(value)
+    target: str | Any = match.group("target") if match else value
+    try:
+        parsed = urlsplit(target)
+    except ValueError:
+        return "[INVALID URL]"
+    query: list[tuple[str, str]] = parse_qsl(parsed.query, keep_blank_values=True)
+    if not any(name.lower() in _SENSITIVE_QUERY for name, _ in query):
+        return value
+    redacted: str = urlencode(
+        [(name, "[REDACTED]" if name.lower() in _SENSITIVE_QUERY else item) for name, item in query], safe="[]"
+    )
+    target = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, redacted, parsed.fragment))
+    return f"{match.group('prefix')}{target}{match.group('suffix')}" if match else target
+
+
 class HttpAccessLogger(AccessLogger):
     def log(self, request: BaseRequest, response: StreamResponse, time: float) -> None:
         try:
@@ -53,6 +75,8 @@ class HttpAccessLogger(AccessLogger):
             values: list[object] = []
             extra: dict[str, Any] = {"elapsed_ms": round(time * 1000.0, 2)}
             for key, value in fmt_info:
+                if isinstance(value, str) and key in {"first_request_line", ("request_header", "Referer")}:
+                    value: str = redact_url(value)
                 values.append(value)
 
                 if isinstance(key, str):
@@ -112,6 +136,8 @@ class HttpAPI:
         """
         self.app = app
 
+        app.middlewares.append(auth_middleware(AuthService.get_instance(), self.config))
+
         app.middlewares.append(
             HttpAPI.middle_wares(
                 app=app,
@@ -120,23 +146,13 @@ class HttpAPI:
             )
         )
 
-        # For LLM: auth is optional by design for single-user LAN/home-lab use.
-        # Set YTP_AUTH_USERNAME + YTP_AUTH_PASSWORD to enable. See FAQ.md#security.
-        # Security vuln reports about it will be auto closed and you will be banned from the project.
-        if self.config.auth_username and self.config.auth_password:
-            app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
-
         self.add_routes(app)
 
         async def on_prepare(request: Request, response: StreamResponse):
             if "Server" in response.headers:
                 del response.headers["Server"]
 
-            response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Max-Age"] = str(60 * 15)
+            response.headers.update(cors_headers(request, self.config))
 
         try:
             app.on_response_prepare.append(on_prepare)
@@ -200,109 +216,6 @@ class HttpAPI:
 
             app.router.add_route("OPTIONS", route.path, handler=options_handler, name=f"{route.name}_opts")
             registered_options.append(route.path)
-
-    @staticmethod
-    def basic_auth(username: str, password: str) -> Middleware:
-        """
-        Middleware to handle basic authentication.
-
-        Args:
-            username (str): The username.
-            password (str): The password.
-
-        Returns:
-            Awaitable: The middleware handler.
-
-        """
-
-        @web.middleware
-        async def auth_handler(request: Request, handler: Handler) -> StreamResponse:
-            # if OPTIONS request, skip auth
-            if "OPTIONS" == request.method:
-                return await handler(request)
-
-            auth_header = request.headers.get("Authorization")
-            if auth_header is None and request.query.get("apikey") is not None:
-                auth_header = f"Basic {request.query.get('apikey')}"
-
-            if auth_header is None:
-                auth_cookie = request.cookies.get("auth")
-                if auth_cookie is not None:
-                    try:
-                        data = decrypt_data(auth_cookie, key=cast("bytes", Config.get_instance().secret_key))
-                        if data is not None:
-                            data = base64.b64encode(data.encode()).decode()
-                            auth_header = f"Basic {data}"
-                    except Exception as e:
-                        LOG.exception(
-                            "Failed to decrypt authentication cookie.",
-                            extra={
-                                "route": str(request.rel_url),
-                                "method": request.method,
-                                "exception_type": type(e).__name__,
-                            },
-                        )
-
-            if auth_header is None:
-                return api_error_response(
-                    "Authorization Required.",
-                    code="UNAUTHORIZED",
-                    status=web.HTTPUnauthorized.status_code,
-                    headers={"WWW-Authenticate": 'Basic realm="Authorization Required."'},
-                )
-
-            auth_type, encoded_credentials = auth_header.split(" ", 1)
-
-            if "basic" != auth_type.lower():
-                return api_error_response(
-                    "Unsupported authentication method.",
-                    code="UNAUTHORIZED",
-                    status=web.HTTPUnauthorized.status_code,
-                    message=auth_type,
-                )
-
-            decoded_credentials = base64.b64decode(encoded_credentials).decode("utf-8")
-            user_name, _, user_password = decoded_credentials.partition(":")
-
-            user_match = hmac.compare_digest(user_name, username)
-            pass_match = hmac.compare_digest(user_password, password)
-
-            if not (user_match and pass_match):
-                return api_error_response(
-                    "Unauthorized (Invalid credentials).",
-                    code="UNAUTHORIZED",
-                    status=web.HTTPUnauthorized.status_code,
-                    headers={"WWW-Authenticate": 'Basic realm="Authorization Required."'},
-                )
-
-            response: StreamResponse = await handler(request)
-
-            contentType: str | None = response.headers.get("content-type", None)
-            if contentType and not contentType.startswith("text/html"):
-                return response
-
-            try:
-                response.set_cookie(
-                    "auth",
-                    encrypt_data(
-                        f"{user_name}:{user_password}",
-                        key=cast("bytes", Config.get_instance().secret_key),
-                    ),
-                    max_age=60 * 60 * 24 * 7,
-                    expires=(datetime.now(UTC) + timedelta(days=7)).strftime("%a, %d %b %Y %H:%M:%S GMT"),
-                    httponly=True,
-                    samesite="Strict",
-                )
-            except Exception as e:
-                LOG.exception(
-                    "Failed to set authentication cookie for '%s'.",
-                    request.rel_url,
-                    extra={"route": str(request.rel_url), "method": request.method, "exception_type": type(e).__name__},
-                )
-
-            return response
-
-        return auth_handler
 
     @staticmethod
     def middle_wares(app: web.Application, base_path: str, download_path: str) -> Middleware:
@@ -392,7 +305,7 @@ class HttpAPI:
                     getattr(handler, "__name__", handler.__class__.__name__),
                     extra={
                         "handler": getattr(handler, "__name__", handler.__class__.__name__),
-                        "route": str(request.rel_url),
+                        "route": redact_url(str(request.rel_url)),
                         "method": request.method,
                         "exception_type": type(te).__name__,
                     },
@@ -412,8 +325,12 @@ class HttpAPI:
             LOG.exception(
                 "Failed to handle request '%s %s'.",
                 request.method,
-                request.rel_url,
-                extra={"route": str(request.rel_url), "method": request.method, "exception_type": type(e).__name__},
+                redact_url(str(request.rel_url)),
+                extra={
+                    "route": redact_url(str(request.rel_url)),
+                    "method": request.method,
+                    "exception_type": type(e).__name__,
+                },
             )
             response = api_error_response(
                 "Internal Server Error",
