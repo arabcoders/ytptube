@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a15149d4615842b5b2745614f17afd0bb05ec713",
-    "date": "2026-08-17T07:57:41+00:00",
+    "full_sha": "0d92f5a65150c75f22e7e4461d6d837f419f36cc",
+    "date": "2026-08-17T20:31:14+00:00",
     "commits": [
+      {
+        "sha": "0d92f5a6",
+        "full_sha": "0d92f5a65150c75f22e7e4461d6d837f419f36cc",
+        "message": "refactor: automate icons reload.",
+        "author": "arabcoders",
+        "date": "2026-08-17T20:31:14+00:00"
+      },
+      {
+        "sha": "61069639",
+        "full_sha": "61069639cbeacc2bea573425963c84341c23c360",
+        "message": "feat(auth): add full account auth flow.",
+        "author": "arabcoders",
+        "date": "2026-08-17T19:54:29+00:00"
+      },
       {
         "sha": "a15149d4",
         "full_sha": "a15149d4615842b5b2745614f17afd0bb05ec713",
