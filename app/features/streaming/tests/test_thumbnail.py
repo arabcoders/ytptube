@@ -266,6 +266,8 @@ async def test_retry_no_seek(monkeypatch: pytest.MonkeyPatch) -> None:
         ff_info.video = [type("Video", (), {"codec_type": "video", "codec_name": "h264"})()]
 
         monkeypatch.setattr(thumbnail, "ffprobe", AsyncMock(return_value=ff_info))
+        monkeypatch.setattr(thumbnail, "ffmpeg_bin", lambda: "/usr/bin/ffmpeg")
+        monkeypatch.setattr(thumbnail, "ffprobe_bin", lambda: "/usr/bin/ffprobe")
 
         calls: list[list[str]] = []
 
@@ -326,6 +328,8 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
         ff_info.metadata = {"duration": "60.0"}
         ff_info.video = [type("Video", (), {"codec_type": "video", "codec_name": "h264"})()]
         monkeypatch.setattr(thumbnail, "ffprobe", AsyncMock(return_value=ff_info))
+        monkeypatch.setattr(thumbnail, "ffmpeg_bin", lambda: "/usr/bin/ffmpeg")
+        monkeypatch.setattr(thumbnail, "ffprobe_bin", lambda: "/usr/bin/ffprobe")
 
         active = {"count": 0, "max": 0}
 
@@ -356,3 +360,36 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
         assert first == out1
         assert second == out2
         assert active["max"] == 1
+
+
+@pytest.mark.asyncio
+async def test_missing_binaries_degrades(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Thumbnail generation raises OSError and caches a miss when binaries are missing."""
+    from app.features.streaming.library import thumbnail
+
+    thumbnail._IN_PROCESS.clear()
+    thumbnail.Cache.get_instance().clear()
+
+    with temporary_test_dir("thumb-missing-bin") as temp_dir:
+        media = temp_dir / "video.mp4"
+        media.write_text("video")
+
+        monkeypatch.setattr(
+            thumbnail.Config,
+            "get_instance",
+            staticmethod(
+                lambda: type(
+                    "Cfg",
+                    (),
+                    {"thumb_generate": True, "thumb_sidecar": False, "thumb_concurrency": 1},
+                )()
+            ),
+        )
+        monkeypatch.setattr(thumbnail, "ffmpeg_bin", lambda: None)
+        monkeypatch.setattr(thumbnail, "ffprobe_bin", lambda: None)
+
+        with pytest.raises(OSError, match="ffmpeg or ffprobe not found"):
+            await thumbnail.ensure_thumb(media, temp_dir / "cache", item_id="item-1")
+
+        second = await thumbnail.ensure_thumb(media, temp_dir / "cache", item_id="item-1")
+        assert second is None, "the miss cache should short-circuit repeat attempts"

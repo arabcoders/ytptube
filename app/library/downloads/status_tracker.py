@@ -168,19 +168,21 @@ class StatusTracker:
                     self.info.file_size = 0
 
                 try:
-                    from app.features.streaming.library.ffprobe import ffprobe
+                    from app.features.streaming.library.ffprobe import ffprobe, ffprobe_bin
 
-                    ff = await ffprobe(filepath)
-                    self.info.extras["is_video"] = ff.has_video()
-                    self.info.extras["is_audio"] = ff.has_audio()
-                    if ff.has_video() or ff.has_audio():
-                        self.info.extras["media_profile"] = _compact_media_profile(ff)
-                        self.info.extras["duration"] = int(
-                            float(ff.metadata.get("duration", self.info.extras.get("duration", 0.0)))
-                        )
-                except Exception as e:
                     self.info.extras["is_video"] = True
                     self.info.extras["is_audio"] = True
+
+                    if ffprobe_bin() is not None:
+                        ff = await ffprobe(filepath)
+                        self.info.extras["is_video"] = ff.has_video()
+                        self.info.extras["is_audio"] = ff.has_audio()
+                        if ff.has_video() or ff.has_audio():
+                            self.info.extras["media_profile"] = _compact_media_profile(ff)
+                            self.info.extras["duration"] = int(
+                                float(ff.metadata.get("duration", self.info.extras.get("duration", 0.0)))
+                            )
+                except Exception as e:
                     self.logger.exception(
                         "Failed to inspect completed file '%s' with ffprobe.",
                         filepath,

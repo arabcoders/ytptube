@@ -7,7 +7,9 @@ import functools
 import json
 import operator
 import os
+import shutil
 import subprocess  # qa: ignore
+from functools import lru_cache
 from pathlib import Path
 
 from app.features.streaming.types import FFProbeError
@@ -15,6 +17,22 @@ from app.library.log import get_logger
 from app.library.Utils import timed_lru_cache
 
 LOG = get_logger()
+
+
+@lru_cache(maxsize=1)
+def ffprobe_bin() -> str | None:
+    """
+    Return the resolved path of the ffprobe binary, or None if unavailable.
+    """
+    return shutil.which("ffprobe")
+
+
+@lru_cache(maxsize=1)
+def ffmpeg_bin() -> str | None:
+    """
+    Return the resolved path of the ffmpeg binary, or None if unavailable.
+    """
+    return shutil.which("ffmpeg")
 
 
 class FFStream:
@@ -254,23 +272,15 @@ async def ffprobe(file: Path | str) -> FFProbeResult:
         msg = f"No such media file '{file}'."
         raise OSError(msg)
 
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            "ffprobe",
-            "-h",
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-        )
-        await proc.wait()
-    except FileNotFoundError as e:
+    binary = ffprobe_bin()
+    if binary is None:
         msg = "ffprobe not found."
-        raise OSError(msg) from e
+        raise FFProbeError(msg)
 
     args: list[str] = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", str(f)]
 
     p = await asyncio.create_subprocess_exec(
-        "ffprobe",
+        binary,
         *args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,

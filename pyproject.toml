@@ -10,8 +10,8 @@ dependencies = [
   # Windows‐only
   "tzdata; sys_platform == 'win32'",
   "python-magic-bin; sys_platform == 'win32'",
-  # Non‐Windows
-  "python-magic>=0.4.27; sys_platform != 'win32'",
+  "python-magic-bin; sys_platform == 'darwin'",
+  "python-magic>=0.4.27; sys_platform != 'win32' and sys_platform != 'darwin'",
   # Cross‐platform
   "aiohttp>=3.9.3",
   "coloredlogs>=15.0.1",

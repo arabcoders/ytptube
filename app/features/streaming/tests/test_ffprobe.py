@@ -9,6 +9,11 @@ from app.tests.helpers import make_test_temp_dir
 class TestFFProbe:
     """Test the ffprobe module functionality."""
 
+    @pytest.fixture(autouse=True)
+    def _patch_ffprobe_bin(self):
+        with patch("app.features.streaming.library.ffprobe.ffprobe_bin", return_value="/usr/bin/ffprobe"):
+            yield
+
     def setup_method(self):
         """Set up test files."""
         self.temp_dir = str(make_test_temp_dir("ffprobe"))
@@ -50,6 +55,16 @@ class TestFFProbe:
 
         with pytest.raises(OSError, match="No such media file"):
             await ffprobe(str(nonexistent_file))
+
+    @pytest.mark.asyncio
+    async def test_ffprobe_missing_binary(self):
+        """Test ffprobe raises a typed error when the binary is unavailable."""
+        from app.features.streaming.library.ffprobe import ffprobe
+        from app.features.streaming.types import FFProbeError
+
+        with patch("app.features.streaming.library.ffprobe.ffprobe_bin", return_value=None):
+            with pytest.raises(FFProbeError, match="ffprobe not found"):
+                await ffprobe(self.test_file)
 
     @pytest.mark.asyncio
     async def test_ffprobe_caching_behavior(self):

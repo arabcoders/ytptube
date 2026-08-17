@@ -7,11 +7,12 @@ from aiohttp.web import Request, Response
 from aiohttp.web_response import StreamResponse
 
 from app.features.core.utils import api_error_response
+from app.features.streaming.library.ffprobe import ffmpeg_bin, ffprobe_bin
 from app.features.streaming.library.m3u8 import M3u8
 from app.features.streaming.library.playlist import Playlist
 from app.features.streaming.library.segments import Segments
 from app.features.streaming.library.subtitle import Subtitle, get_subtitle_tracks
-from app.features.streaming.types import StreamingError
+from app.features.streaming.types import FFProbeError, StreamingError
 from app.library.config import Config
 from app.library.log import get_logger
 from app.library.router import route
@@ -45,6 +46,13 @@ async def playlist_create(request: Request, config: Config, app: web.Application
         )
 
     base_path: str = config.base_path.rstrip("/")
+
+    if ffprobe_bin() is None:
+        return api_error_response(
+            "ffprobe is not available on this system.",
+            code="FFPROBE_UNAVAILABLE",
+            status=web.HTTPServiceUnavailable.status_code,
+        )
 
     try:
         realFile, status = get_file(download_path=config.download_path, file=file)
@@ -84,6 +92,12 @@ async def playlist_create(request: Request, config: Config, app: web.Application
             status=web.HTTPNotFound.status_code,
             params={"resource": "api.resources.file"},
             detail=str(e),
+        )
+    except FFProbeError:
+        return api_error_response(
+            "Unable to read media metadata.",
+            code="INTERNAL_ERROR",
+            status=web.HTTPInternalServerError.status_code,
         )
 
 
@@ -136,6 +150,13 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
 
     base_path: str = config.base_path.rstrip("/")
 
+    if "video" in mode and ffprobe_bin() is None:
+        return api_error_response(
+            "ffprobe is not available on this system.",
+            code="FFPROBE_UNAVAILABLE",
+            status=web.HTTPServiceUnavailable.status_code,
+        )
+
     try:
         cls = M3u8(download_path=Path(config.download_path), url=f"{base_path}/")
 
@@ -185,6 +206,12 @@ async def m3u8_create(request: Request, config: Config, app: web.Application) ->
             status=web.HTTPNotFound.status_code,
             params={"resource": "api.resources.file"},
             detail=str(e),
+        )
+    except FFProbeError:
+        return api_error_response(
+            "Unable to read media metadata.",
+            code="INTERNAL_ERROR",
+            status=web.HTTPInternalServerError.status_code,
         )
 
     return web.Response(
@@ -262,6 +289,13 @@ async def segments_stream(request: Request, config: Config, app: web.Application
         lastMod = time.strftime("%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple())
         return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
 
+    if ffmpeg_bin() is None:
+        return api_error_response(
+            "ffmpeg is not available on this system.",
+            code="FFMPEG_UNAVAILABLE",
+            status=web.HTTPServiceUnavailable.status_code,
+        )
+
     resp = web.StreamResponse(
         status=web.HTTPOk.status_code,
         headers={
@@ -281,13 +315,27 @@ async def segments_stream(request: Request, config: Config, app: web.Application
 
     await resp.prepare(request)
 
-    await Segments(
-        download_path=config.download_path,
-        index=int(segment),
-        duration=float(f"{float(sd or M3u8.duration):.6f}"),
-        vconvert=vc == 1,
-        aconvert=ac == 1,
-    ).stream(realFile, resp)
+    try:
+        await Segments(
+            download_path=config.download_path,
+            index=int(segment),
+            duration=float(f"{float(sd or M3u8.duration):.6f}"),
+            vconvert=vc == 1,
+            aconvert=ac == 1,
+        ).stream(realFile, resp)
+    except StreamingError as e:
+        LOG.warning(
+            "Failed to stream segment %s for '%s': %s.",
+            segment,
+            file,
+            e,
+            extra={"route": "streaming.segments", "file_path": file, "segment": segment, "error": str(e)},
+        )
+        try:
+            await resp.write_eof()
+        except (ConnectionResetError, BrokenPipeError, RuntimeError):
+            pass
+        return resp
 
     return resp
 

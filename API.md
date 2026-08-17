@@ -1705,6 +1705,9 @@ or
 **Response**:  
 An `.m3u8` playlist.
 
+**Errors**:
+- `503 FFPROBE_UNAVAILABLE` if `ffprobe` is not available on the system.
+
 ---
 
 ### GET /api/player/m3u8/{mode}/{file:.*}.m3u8
@@ -1719,6 +1722,9 @@ An `.m3u8` playlist.
 
 **Response**:
 - `Content-Type: application/x-mpegURL` containing the `.m3u8` text.
+
+**Errors**:
+- `503 FFPROBE_UNAVAILABLE` (when `mode=video`) if `ffprobe` is not available on the system.
 
 ---
 
@@ -1736,6 +1742,9 @@ An `.m3u8` playlist.
 
 **Response**:  
 Binary TS data (`Content-Type: video/mpegts`).
+
+**Errors**:
+- `503 FFMPEG_UNAVAILABLE` if `ffmpeg` is not available on the system.
 
 ---
 
@@ -1810,6 +1819,9 @@ Binary TS data (`Content-Type: video/mpegts`).
 }
 ```
 
+**Errors**:
+- `503 FFPROBE_UNAVAILABLE` if `ffprobe` is not available on the system.
+
 ### GET /api/file/info/{file:.*}
 **Purpose**: Get comprehensive file information including ffprobe data, MIME type, and sidecar files.  
 
@@ -1840,6 +1852,9 @@ Binary TS data (`Content-Type: video/mpegts`).
   }
 }
 ```
+
+**Notes**:
+- When `ffprobe` is not available on the system, the `ffprobe` field returns an empty object.
 
 ---
 

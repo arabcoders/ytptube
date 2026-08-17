@@ -26,6 +26,26 @@ def _ffmpeg_input_path(args: list[str]) -> Path:
     return Path(args[args.index("-i") + 1].removeprefix("file:"))
 
 
+@pytest.fixture(autouse=True)
+def _patch_ffmpeg_bin(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.features.streaming.library.segments.ffmpeg_bin", lambda: "/usr/bin/ffmpeg")
+
+
+@pytest.mark.asyncio
+async def test_stream_without_ffmpeg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Segments streaming raises StreamingError when ffmpeg is unavailable."""
+    from app.features.streaming.library.segments import Segments
+    from app.features.streaming.types import StreamingError
+
+    media = tmp_path / "file.mp4"
+    media.write_bytes(b"data")
+    monkeypatch.setattr("app.features.streaming.library.segments.ffmpeg_bin", lambda: None)
+
+    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
+    with pytest.raises(StreamingError, match="ffmpeg not found"):
+        await seg.stream(media, _FakeResp())
+
+
 @pytest.mark.asyncio
 async def test_ffmpeg_args_video_audio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Create a dummy media file

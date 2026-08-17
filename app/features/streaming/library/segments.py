@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from aiohttp import web
 
-from app.features.streaming.library.ffprobe import ffprobe
+from app.features.streaming.library.ffprobe import ffmpeg_bin, ffprobe
 from app.features.streaming.library.segment_encoders import (
     detect_qsv_capabilities,
     encoder_fallback_chain,
@@ -17,6 +17,7 @@ from app.features.streaming.library.segment_encoders import (
     has_dri_devices,
     select_encoder,
 )
+from app.features.streaming.types import FFProbeError, StreamingError
 from app.library.config import SUPPORTED_CODECS, Config
 from app.library.log import get_logger
 
@@ -78,9 +79,10 @@ class Segments:
                 continue
 
     async def build_ffmpeg_args(self, file: Path, s_codec: str, *, stream_input: Path | None = None) -> list[str]:
+        ff: FFProbeResult | None = None
         try:
-            ff: FFProbeResult = await ffprobe(file)
-        except UnicodeDecodeError:
+            ff = await ffprobe(file)
+        except (UnicodeDecodeError, FFProbeError):
             pass
         input_path = stream_input or file
 
@@ -143,8 +145,13 @@ class Segments:
         return fargs
 
     async def _run(self, resp: web.StreamResponse, file: Path, args: list[str]) -> tuple[bool, int, bool, str]:
+        binary = ffmpeg_bin()
+        if binary is None:
+            msg = "ffmpeg not found."
+            raise StreamingError(msg)
+
         proc: Process = await asyncio.create_subprocess_exec(
-            "ffmpeg",
+            binary,
             *args,
             stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
@@ -241,6 +248,10 @@ class Segments:
         return (wrote_any, rc, client_disconnected_local, stderr_buf.decode("utf-8", errors="ignore").strip())
 
     async def stream(self, file: Path, resp: web.StreamResponse) -> None:
+        if ffmpeg_bin() is None:
+            msg = "ffmpeg not found."
+            raise StreamingError(msg)
+
         codec: str = self.vcodec
         if Segments._cache_initialized and Segments._cached_vcodec:
             codec = Segments._cached_vcodec

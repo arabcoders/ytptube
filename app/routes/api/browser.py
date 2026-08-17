@@ -7,7 +7,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.features.core.utils import api_error_response, build_pagination, normalize_pagination
-from app.features.streaming.library.ffprobe import ffprobe
+from app.features.streaming.library.ffprobe import ffprobe, ffprobe_bin
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.downloads import DownloadQueue
@@ -66,6 +66,13 @@ async def get_ffprobe(request: Request, config: Config, encoder: Encoder, app: w
                 params={"resource": "api.resources.file"},
             )
 
+        if ffprobe_bin() is None:
+            return api_error_response(
+                "ffprobe is not available on this system.",
+                code="FFPROBE_UNAVAILABLE",
+                status=web.HTTPServiceUnavailable.status_code,
+            )
+
         return web.json_response(data=await ffprobe(realFile), status=web.HTTPOk.status_code, dumps=encoder.encode)
     except Exception as e:
         return api_error_response(str(e), code="INTERNAL_ERROR", status=web.HTTPInternalServerError.status_code)
@@ -117,7 +124,9 @@ async def get_file_info(request: Request, config: Config, encoder: Encoder, app:
                 params={"file": file},
             )
 
-        ff_info = await ffprobe(realFile)
+        ff_info: Any = {}
+        if ffprobe_bin() is not None:
+            ff_info = await ffprobe(realFile)
 
         response = {
             "title": realFile.stem,

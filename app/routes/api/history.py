@@ -331,9 +331,10 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
 
     if "finished" == item.info.status and (filename := item.info.get_file()):
         try:
-            from app.features.streaming.library.ffprobe import ffprobe
+            from app.features.streaming.library.ffprobe import ffprobe, ffprobe_bin
 
-            info["ffprobe"] = await ffprobe(filename)
+            if ffprobe_bin() is not None:
+                info["ffprobe"] = await ffprobe(filename)
         except Exception:
             pass
 
