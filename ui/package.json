@@ -25,6 +25,7 @@
     "@microsoft/fetch-event-source": "^2.0.1",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/eslint-config": "^1.17.0",
+    "@nuxt/icon": "^2.4.1",
     "@nuxt/ui": "^4.10.0",
     "@nuxtjs/i18n": "^10.6.0",
     "@vueuse/core": "^14.4.0",
