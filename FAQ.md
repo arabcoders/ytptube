@@ -809,3 +809,23 @@ YTPTube supports multiple languages with RTL support. Currently the following la
 
 On first visit, YTPTube attempts to detect your browser's preferred language and switches automatically if a matching 
 translation is available.
+
+---
+
+# MacOS execuable
+
+Recent MacOS versions have introduced stricter security measures that can prevent the YTPTube from running. You may 
+receive errors like:
+
+- Failed to load Python shared library '...'
+
+To fix this, you need to run
+
+```bash
+# Replace the version number with the actual version you downloaded.
+xattr -cr "/Users/abf/Downloads/dist/YTPTube-v2.6.7"
+```
+This command removes the quarantine attribute from the application.
+
+If that doesnt fix it you may have to allow the app to run in your security settings. Go to `System Preferences > Security & Privacy > General` and click `Open Anyway` for YTPTube.
+
