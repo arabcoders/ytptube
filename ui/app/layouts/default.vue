@@ -138,17 +138,16 @@
                 <template #right>
                   <div class="flex items-center gap-1 sm:gap-2">
                     <UButton
+                      v-if="authVisible"
                       color="neutral"
                       variant="ghost"
                       size="sm"
-                      icon="i-lucide-gauge"
-                      @click="
-                        () => {
-                          showLimits = true;
-                        }
-                      "
+                      icon="i-lucide-user-round"
+                      :aria-label="accountLabel"
+                      :title="accountLabel"
+                      @click="accountOpen = true"
                     >
-                      <span class="hidden xl:inline">{{ t('app.limits') }}</span>
+                      <span class="hidden xl:inline">{{ accountLabel }}</span>
                     </UButton>
 
                     <NotifyDropdown />
@@ -436,6 +435,8 @@
               <LazyLimitsPage />
             </template>
           </UModal>
+
+          <AccountModal v-model:open="accountOpen" />
         </UDashboardGroup>
       </div>
     </div>
@@ -456,6 +457,7 @@ import { getSidebarSwipeMode } from '~/utils/sidebarSwipe';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
 import Shutdown from '~/components/shutdown.vue';
+import AccountModal from '~/components/AccountModal.vue';
 import type { version_check } from '~/types';
 import {
   getActiveNavItem,
@@ -479,6 +481,9 @@ type SwipeMode = 'open' | 'close';
 const MOBILE_SIDEBAR_MIN_SWIPE_DISTANCE = 64;
 
 const socket = useAppSocket();
+const auth = useAuth();
+const authVisible = computed(() => auth.status.value?.disabled !== true);
+const accountLabel = computed(() => auth.status.value?.user?.username || t('auth.account'));
 const config = useYtpConfig();
 const route = useRoute();
 const router = useRouter();
@@ -490,6 +495,7 @@ const updateCheckMessage = computed(() => t(updateCheckMessageKey.value));
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
 const showLimits = ref(false);
+const accountOpen = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
 const sidebarMenuSide = computed<'left' | 'right'>(() => (isRtl.value ? 'right' : 'left'));
@@ -737,10 +743,21 @@ const connectionStatusLabel = computed(() => {
 });
 
 const sidebarSections = computed<Array<SidebarSection>>(() =>
-  sidebarItems.value.map((section) => ({
-    ...section,
-    items: section.items.map((group) => group.map((entry) => makeNavigationItem(entry))),
-  })),
+  sidebarItems.value.map((section) => {
+    const items = section.items.map((group) => group.map((entry) => makeNavigationItem(entry)));
+    if ('tools' === section.id) {
+      items[0]?.push({
+        label: t('app.limits'),
+        icon: 'i-lucide-gauge',
+        onSelect: () => {
+          showLimits.value = true;
+          showSidebar.value = false;
+        },
+      });
+    }
+
+    return { ...section, items };
+  }),
 );
 
 const routeSearchGroups = computed(() => [

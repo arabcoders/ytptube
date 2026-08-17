@@ -232,11 +232,23 @@ const request = (
     timer = setTimeout(() => controller!.abort(`Request timed out.`), timeout * 1000);
   }
 
-  return fetch(url.startsWith('/') ? uri(url) : url, fetchOptions).finally(() => {
-    if (timer) {
-      clearTimeout(timer);
-    }
-  });
+  return fetch(url.startsWith('/') ? uri(url) : url, fetchOptions)
+    .then((response) => {
+      const path = url.split('?')[0] ?? '';
+      if (
+        import.meta.client &&
+        response.status === 401 &&
+        !['/api/auth/status', '/api/auth/login', '/api/auth/setup'].includes(path)
+      ) {
+        void navigateTo('/login');
+      }
+      return response;
+    })
+    .finally(() => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    });
 };
 
 /**

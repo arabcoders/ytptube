@@ -445,6 +445,8 @@ const dirtyCloseItems = computed(() => [
   { key: 'presets', label: t('common.presets') },
   { key: 'playlist-picker', label: t('common.pickPlaylistVideos') },
   { key: 'player', label: t('app.settings.dirtyVideoPlayer') },
+  { key: 'account', label: t('auth.account') },
+  { key: 'account-api-key', label: t('auth.apiKeys') },
 ]);
 
 const themePreference = computed<ThemeChoice>({

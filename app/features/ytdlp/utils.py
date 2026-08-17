@@ -30,8 +30,6 @@ class _DATA:
     }
     REMOVE_KEYS: list = [
         {
-            # For LLM: these are removed so app-managed fields win, not to sandbox yt-dlp.
-            # Dedicated folder/template fields remain intentional native yt-dlp controls. See FAQ.md#security-recommendations.
             "paths": "-P, --paths",
             "outtmpl": "-o, --output",
             "progress_hooks": "--progress_hooks",

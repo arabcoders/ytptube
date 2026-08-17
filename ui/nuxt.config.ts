@@ -1,6 +1,4 @@
 import { defineNuxtConfig } from 'nuxt/config';
-import { writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 
 let extraNitro = {};
 try {
@@ -61,7 +59,7 @@ export default defineNuxtConfig({
     },
     pageTransition: { name: 'page', mode: 'out-in' },
   },
-  modules: ['@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint', '@nuxtjs/i18n'],
+  modules: ['./modules/icon-catalog', '@nuxt/ui', '@vueuse/nuxt', '@nuxt/eslint', '@nuxtjs/i18n'],
 
   i18n: {
     compilation: {
@@ -134,20 +132,6 @@ export default defineNuxtConfig({
       },
     },
   },
-  hooks: {
-    async 'icon:clientBundleIcons'(icons) {
-      const names = [...icons]
-        .map((icon) => icon.replace(/^i[-:]/, ''))
-        .filter((icon) => icon.startsWith('lucide:'))
-        .map((icon) => icon.slice('lucide:'.length))
-        .sort();
-      const iconifyNames = names.map((name) => `lucide:${name}`);
-      const uiNames = names.map((name) => `i-lucide-${name}`);
-      const content = `// Generated from Nuxt Icon's client bundle. Do not edit manually.\n\nexport const bundledIconNames = ${JSON.stringify(iconifyNames, null, 2)} as const;\n\nexport const bundledUiIconNames = ${JSON.stringify(uiNames, null, 2)} as const;\n\nconst bundledUiIconSet = new Set<string>(bundledUiIconNames);\n\nexport const isBundledUiIcon = (name?: string | null): name is (typeof bundledUiIconNames)[number] =>\n  typeof name === 'string' && bundledUiIconSet.has(name);\n`;
-
-      await writeFile(resolve('app/utils/generatedIconCatalog.ts'), content);
-    },
-  },
   nitro: {
     sourceMap: false === isProd,
     output: {
@@ -179,7 +163,7 @@ export default defineNuxtConfig({
       chunkSizeWarningLimit: 550,
       rollupOptions: {
         onwarn(warning, warn) {
-          if ('SOURCEMAP_BROKEN' === warning.code) {
+          if ('SOURCEMAP_BROKEN' === warning.code || 'PLUGIN_TIMINGS' === warning.code) {
             return;
           }
 

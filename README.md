@@ -9,6 +9,9 @@
 video platforms easier and user-friendly. It supports downloading playlists, channels, live streams and 
 includes features like scheduling downloads, sending notifications, and built-in video player.
 
+**YTPTube v2.7.x** will have full proper authentication system, and will be enabled by default, to disable it, you can 
+set the environment variable `YTP_DISABLE_AUTH` to `true`. Local executables will disable authentication by default. See [FAQ](FAQ.md#authentication) for more information.
+
 # Screenshots
 Example of the regular view interface.
 ![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_short.jpg)
@@ -33,7 +36,7 @@ The YTPTube frontend is available in English, العربية, Français, 中文,
 * Powerful presets system for applying `yt-dlp` options. with a pre-made preset for media servers users.
 * A simple file browser.
 * A built in video player **with support for sidecar external subtitles**. `Require ffmpeg to be in PATH in non-docker setups`.
-* Basic authentication support.
+* Authentication support.
 * Bundles `curl-cffi` for impersonation. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation).
 * Includes the `pot provider` plugin. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide).
 * Support using [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or [Trawl](https://github.com/germondai/trawl) to bypass WAF protections for yt-dlp and internal http client. See [related FAQ](FAQ.md#how-to-bypass-cf-challenges).
@@ -47,7 +50,11 @@ Please read the [FAQ](FAQ.md) for more information.
 # Installation
 
 > [!IMPORTANT]
-> **By default YTPTube runs without authentication**. If you expose it to the internet, **enable auth**. See [security recommendations](FAQ.md#security-recommendations).
+> **Server installations require local account setup**. Native builds disable application authentication by default. 
+> See [security recommendations](FAQ.md#security-recommendations).
+> 
+> If you upgrading from older version with YTP_AUTH_USERNAME/YTP_AUTH_PASSWORD set, it will automaticly use them to 
+> bootstrap the first user.
 
 ## Run using docker or podman command
 

@@ -13,6 +13,7 @@ type DirtyCloseGuardOptions = {
   cancelText?: string;
   confirmColor?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral';
   onDiscard?: () => void | Promise<void>;
+  routeGuards?: boolean;
 };
 
 let dirtyCloseSkips: ReturnType<typeof useStorage<Record<string, boolean>>> | null = null;
@@ -98,21 +99,23 @@ export const useDirtyCloseGuard = (open: Ref<boolean>, options: DirtyCloseGuardO
     await requestClose();
   };
 
-  onBeforeRouteLeave(async () => {
-    if (false === shouldGuard.value) {
-      return true;
-    }
+  if (false !== options.routeGuards) {
+    onBeforeRouteLeave(async () => {
+      if (false === shouldGuard.value) {
+        return true;
+      }
 
-    return await requestClose();
-  });
+      return await requestClose();
+    });
 
-  onBeforeRouteUpdate(async () => {
-    if (false === shouldGuard.value) {
-      return true;
-    }
+    onBeforeRouteUpdate(async () => {
+      if (false === shouldGuard.value) {
+        return true;
+      }
 
-    return await requestClose();
-  });
+      return await requestClose();
+    });
+  }
 
   if ('undefined' !== typeof window) {
     const handleBeforeUnload = (event: BeforeUnloadEvent): void => {

@@ -2,7 +2,7 @@
 
 This document describes the available endpoints and their usage. All endpoints return JSON responses (unless otherwise specified) and may require certain parameters (query, body, or path). Some endpoints serve static or streaming content (e.g., `.ts`, `.m3u8`, `.vtt` files).
 
-> **Note**: If Basic Authentication is configured, you must include an `Authorization: Basic <urlsafe-base64-encoded-credentials>` header or use `?apikey=<urlsafe-base64-encoded-credentials>` query parameter (fallback) in every request.
+> **Note**: Authenticated requests accept a session cookie, a Bearer API key, Basic credentials, or the `apikey` query parameter. See [Authentication](#authentication).
 
 - All responses use standard HTTP status codes to indicate success or error conditions.
 
@@ -15,6 +15,16 @@ This document describes the available endpoints and their usage. All endpoints r
   - [Authentication](#authentication)
   - [Global Notes](#global-notes)
   - [Endpoints](#endpoints)
+    - [GET /api/auth/status](#get-apiauthstatus)
+    - [POST /api/auth/setup](#post-apiauthsetup)
+    - [POST /api/auth/login](#post-apiauthlogin)
+    - [POST /api/auth/logout](#post-apiauthlogout)
+    - [POST /api/auth/ws-ticket](#post-apiauthws-ticket)
+    - [GET /api/auth/me](#get-apiauthme)
+    - [PATCH /api/auth/account](#patch-apiauthaccount)
+    - [GET /api/auth/api-keys](#get-apiauthapi-keys)
+    - [POST /api/auth/api-keys](#post-apiauthapi-keys)
+    - [DELETE /api/auth/api-keys/{id}](#delete-apiauthapi-keysid)
     - [GET /api/ping](#get-apiping)
     - [POST /api/yt-dlp/convert](#post-apiyt-dlpconvert)
     - [POST /api/yt-dlp/command/](#post-apiyt-dlpcommand)
@@ -159,21 +169,38 @@ This document describes the available endpoints and their usage. All endpoints r
 
 ## Authentication
 
-If `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` are set, all API requests must include a valid credential using one of the following:
+Server installations create the first account at `/setup`. Complete setup before exposing a new installation to an
+untrusted network. The first person who completes setup becomes the administrator.
 
-1. HTTP Basic Auth header:
+API requests accept these credentials:
 
+> [!WARNING]
+> Basic authentication is deprecated and will be removed. Use session cookies or Bearer API keys.
+
+1. Bearer API key:
+
+   ```text
+   Authorization: Bearer ytp_<key>
    ```
+
+2. HTTP Basic header:
+
+   ```text
    Authorization: Basic base64("<username>:<password>")
+   Authorization: Basic base64("<username>:ytp_<key>")
    ```
 
-2. Query Parameter fallback:
+3. Query parameter with an API key or URL-safe base64 Basic credentials:
 
-   ```
-   ?apikey=<base64_urlsafe("<username>:<password>")>
+   ```text
+   ?apikey=ytp_<key>
    ```
 
-If you fail to provide valid credentials, a `401 Unauthorized` response is returned.
+Use an authorization header when possible. URLs can appear in browser history and proxy logs.
+
+`YTP_DISABLE_AUTH=true` disables the auth endpoints except `GET /api/auth/status`. Disabled auth endpoints 
+return `FEATURE_DISABLED`. `YTP_CORS_ORIGINS` accepts a comma-separated origin allowlist; `*` allows requests 
+without cookie credentials from any origin.
 
 ---
 
@@ -226,6 +253,7 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
   | `FORBIDDEN`         | 403         | `You do not have permission to perform this action.` | none                  |
   | `FEATURE_DISABLED`  | 403         | `{feature} is disabled.`                             | `feature`             |
   | `NOT_FOUND`         | 404         | `{resource} was not found.`                          | `resource`            |
+  | `TOO_MANY_REQUESTS` | 429         | `Too many requests.`                                 | none                  |
   | `OPERATION_FAILED`  | 400/500     | `Operation failed.`                                  | none                  |
   | `TIMEOUT`           | 504         | `The operation timed out.`                           | none                  |
   | `INTERNAL_ERROR`    | 500         | `Internal server error.`                             | none                  |
@@ -242,6 +270,168 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
 ---
 
 ## Endpoints
+
+### GET /api/auth/status
+**Purpose**: Return authentication state. This endpoint is public.
+**Response**:
+```json
+{
+  "disabled": false,
+  "setup_required": true,
+  "authenticated": false,
+  "user": null
+}
+```
+When authenticated, `user` is `{ "id": 1, "username": "name" }`.
+
+---
+
+### POST /api/auth/setup
+**Purpose**: Create the first user and start a session.
+**Body**:
+```json
+{
+  "username": "name",
+  "password": "password"
+}
+```
+**Response** (`201`):
+```json
+{
+  "user": {
+    "id": 1,
+    "username": "name"
+  }
+}
+```
+Returns `ALREADY_EXISTS` once any user exists.
+
+---
+
+### POST /api/auth/login
+**Purpose**: Authenticate a user and start a session.
+**Body**:
+```json
+{
+  "username": "name",
+  "password": "password"
+}
+```
+**Response** (`200`):
+```json
+{
+  "user": {
+    "id": 1,
+    "username": "name"
+  }
+}
+```
+Returns `TOO_MANY_REQUESTS` with `Retry-After: XX` after repeated attempts from the same client.
+
+---
+
+### POST /api/auth/logout
+**Purpose**: Revoke the current cookie session and clear its cookie.
+**Response** (`204`): Empty response body.
+
+---
+
+### POST /api/auth/ws-ticket
+**Purpose**: Create a short-lived, one-time WebSocket handshake ticket for split-origin frontends.
+**Response** (`201`):
+```json
+{
+  "ticket": "ytp_ws_random-value",
+  "expires_in": 30
+}
+```
+The ticket is consumed from `GET /ws?ticket=...` and must not be reused. It is not accepted by normal HTTP API routes.
+
+---
+
+### GET /api/auth/me
+**Purpose**: Return the authenticated user.
+**Response**:
+```json
+{
+  "user": {
+    "id": 1,
+    "username": "name"
+  }
+}
+```
+
+---
+
+### PATCH /api/auth/account
+**Purpose**: Change the authenticated account username and/or password.
+**Body**:
+```json
+{
+  "current_password": "password",
+  "username": "new-name",
+  "password": "new-password"
+}
+```
+At least one of `username` or `password` is required. Password changes revoke old sessions and issue a fresh cookie session.
+**Response**:
+```json
+{
+  "user": {
+    "id": 1,
+    "username": "new-name"
+  }
+}
+```
+
+---
+
+### GET /api/auth/api-keys
+**Purpose**: List the authenticated user’s API keys.
+**Response**:
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "browser",
+      "hint": "AbCd1234",
+      "created_at": "2026-01-01 00:00:00",
+      "last_used_at": null
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/auth/api-keys
+**Purpose**: Create a named API key. The plaintext key is returned only once.
+**Body**:
+```json
+{
+  "name": "browser"
+}
+```
+**Response** (`201`):
+```json
+{
+  "id": 1,
+  "name": "browser",
+  "hint": "AbCd1234",
+  "created_at": "2026-01-01 00:00:00",
+  "last_used_at": null,
+  "key": "ytp_random-value"
+}
+```
+
+---
+
+### DELETE /api/auth/api-keys/{id}
+**Purpose**: Revoke an API key owned by the authenticated user.
+**Response** (`204`): Empty response body. Missing or cross-user IDs return `NOT_FOUND`.
+
+---
 
 ### GET /api/ping
 **Purpose**: Health-check endpoint.  
@@ -3455,15 +3645,22 @@ ws.onmessage = (event) => {
 
 ### Authentication
 
-WebSocket connections use the same authentication as HTTP endpoints. If `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` are set, authentication can be provided via:
+Same-origin WebSocket connections can use the session cookie. For a frontend on another origin, request a ticket from `POST /api/auth/ws-ticket`, then pass it to the backend:
 
-1. **Query Parameter** (recommended for WebSocket):
-   ```
-   ws://localhost:8080/ws?apikey=<base64_urlsafe_credentials>
+```text
+POST https://frontend.example/api/auth/ws-ticket
+GET  wss://backend.example/ws?ticket=ytp_ws_...
+```
+
+Tickets expire shortly and can be used once. WebSocket connections also accept API keys and Basic credentials.
+
+1. **Query parameter**
+   ```text
+   ws://localhost:8080/ws?apikey=ytp_<key>
    ```
 
-2. **HTTP Basic Auth header** (during WebSocket handshake):
-   ```
+2. **HTTP Basic header**
+   ```text
    Authorization: Basic base64("<username>:<password>")
    ```
 

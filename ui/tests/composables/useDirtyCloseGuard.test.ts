@@ -99,6 +99,22 @@ describe('useDirtyCloseGuard', () => {
     expect(open.value).toBe(true);
   });
 
+  it('skip_route_guards', async () => {
+    const open = ref(true);
+    const dirty = ref(true);
+
+    const guard = useDirtyCloseGuard(open, {
+      dirty,
+      preferenceKey: 'layout-form',
+      routeGuards: false,
+    });
+
+    expect(beforeRouteLeaveHandler).toBeNull();
+    expect(beforeRouteUpdateHandler).toBeNull();
+    expect(await guard.requestClose()).toBe(true);
+    expect(confirmDialogMock).toHaveBeenCalledTimes(1);
+  });
+
   it('guard_beforeunload', () => {
     const open = ref(true);
     const dirty = ref(true);

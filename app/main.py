@@ -19,6 +19,7 @@ from pathlib import Path
 import magic
 from aiohttp import web
 
+from app.features.auth.service import AuthService
 from app.features.conditions.service import Conditions
 from app.features.dl_fields.service import DLFields
 from app.features.notifications.service import Notifications
@@ -127,6 +128,7 @@ class Main:
             EventBus.get_instance().debug_enable()
 
         SqliteStore.get_instance(db_path=self._config.db_file).attach(self._app)
+        AuthService.get_instance().attach(self._app)
         BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
         Cache.get_instance().attach(self._app)
