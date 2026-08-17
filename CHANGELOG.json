@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "5ec196bedd38b18013b086d115834564a90c1126",
-    "date": "2026-08-16T17:13:44+00:00",
+    "full_sha": "a15149d4615842b5b2745614f17afd0bb05ec713",
+    "date": "2026-08-17T07:57:41+00:00",
     "commits": [
+      {
+        "sha": "a15149d4",
+        "full_sha": "a15149d4615842b5b2745614f17afd0bb05ec713",
+        "message": "refactor: make ffmpeg not avaliable less fetal",
+        "author": "arabcoders",
+        "date": "2026-08-17T07:57:41+00:00"
+      },
+      {
+        "sha": "d5368d06",
+        "full_sha": "d5368d06d9b5741f769786ee4eda1b56c14ab95d",
+        "message": "chore: update dependancies and update macOS issues",
+        "author": "arabcoders",
+        "date": "2026-08-17T05:43:33+00:00"
+      },
       {
         "sha": "5ec196be",
         "full_sha": "5ec196bedd38b18013b086d115834564a90c1126",
