@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "0d92f5a65150c75f22e7e4461d6d837f419f36cc",
-    "date": "2026-08-17T20:31:14+00:00",
+    "full_sha": "8f7c16fd4a66282324408c4a76830559310fdef6",
+    "date": "2026-08-18T06:04:10+00:00",
     "commits": [
+      {
+        "sha": "8f7c16fd",
+        "full_sha": "8f7c16fd4a66282324408c4a76830559310fdef6",
+        "message": "feat: add resetpassword flow",
+        "author": "arabcoders",
+        "date": "2026-08-18T06:04:10+00:00"
+      },
       {
         "sha": "0d92f5a6",
         "full_sha": "0d92f5a65150c75f22e7e4461d6d837f419f36cc",
