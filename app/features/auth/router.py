@@ -87,7 +87,7 @@ async def auth_setup(request: web.Request, config: Config, auth: AuthService) ->
         return payload
     if not auth.attempt_allowed(request.remote):
         return _rate_limited()
-    user = await auth.create_user(payload.username, payload.password)
+    user = await auth.create_user(payload.username, payload.password, require_empty=True)
     if user is None:
         return api_error_response(
             "Setup is no longer available.", code="ALREADY_EXISTS", status=web.HTTPConflict.status_code

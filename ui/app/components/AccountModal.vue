@@ -105,7 +105,7 @@
       </div>
     </template>
     <template #footer>
-      <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+      <div class="flex w-full flex-wrap items-center justify-between gap-2">
         <UButton
           color="error"
           variant="soft"
@@ -170,7 +170,7 @@
       </form>
     </template>
     <template #footer
-      ><div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      ><div class="flex w-full flex-wrap items-center justify-end gap-2">
         <UButton
           color="neutral"
           variant="outline"
@@ -210,7 +210,7 @@
         /></UFormField></form
     ></template>
     <template #footer
-      ><div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      ><div class="flex w-full flex-wrap items-center justify-end gap-2">
         <UButton
           color="neutral"
           variant="outline"
@@ -244,7 +244,7 @@
       </div></template
     >
     <template #footer
-      ><div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      ><div class="flex w-full flex-wrap items-center justify-end gap-2">
         <UButton color="neutral" variant="outline" icon="i-lucide-check" @click="closeNewKey">{{
           t('common.ok')
         }}</UButton
