@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "b7ecfed4b8c2bf984d34afc57a30963cef2c1eb3",
-    "date": "2026-08-18T16:24:08+00:00",
+    "full_sha": "a30c725496d65c71282b43f4f5386cd81720c986",
+    "date": "2026-08-18T17:37:02+00:00",
     "commits": [
+      {
+        "sha": "a30c7254",
+        "full_sha": "a30c725496d65c71282b43f4f5386cd81720c986",
+        "message": "feat: add --dev flag for file watching during devlopement",
+        "author": "arabcoders",
+        "date": "2026-08-18T17:37:02+00:00"
+      },
       {
         "sha": "b7ecfed4",
         "full_sha": "b7ecfed4b8c2bf984d34afc57a30963cef2c1eb3",
