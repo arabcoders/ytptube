@@ -4,19 +4,45 @@
     :title="t('auth.account')"
     :description="t('auth.accountDescription')"
     :dismissible="!busy"
-    :ui="{ content: 'w-full sm:max-w-4xl', body: 'max-h-[80vh] overflow-y-auto p-4 sm:p-6' }"
+    :ui="{
+      content: 'w-full sm:max-w-2xl',
+      body: 'max-h-[75vh] overflow-y-auto p-4 sm:p-5',
+      footer: 'px-4 pb-4 sm:px-5 sm:pb-5',
+    }"
   >
     <template #body>
-      <div class="space-y-5">
-        <section class="ytp-card space-y-5 p-4 sm:p-6">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="flex items-start gap-3">
-              <span class="ytp-section-icon"
-                ><UIcon name="i-lucide-user-round-cog" class="size-5"
-              /></span>
+      <div v-if="loading && !username" class="flex min-h-48 items-center justify-center">
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-toned" />
+        <span class="sr-only">{{ t('common.loading') }}</span>
+      </div>
+      <div v-else-if="loadFailed" class="space-y-3">
+        <UAlert
+          color="error"
+          variant="soft"
+          icon="i-lucide-circle-alert"
+          :title="t('auth.errorTitle')"
+          :description="t('common.failedFetch')"
+        />
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-refresh-cw"
+          :loading="loading"
+          @click="load"
+        >
+          {{ t('common.retry') }}
+        </UButton>
+      </div>
+      <div v-else class="space-y-6">
+        <section class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="ytp-detail-icon">
+                <UIcon name="i-lucide-user-round-cog" class="size-4" />
+              </span>
               <div>
                 <h2 class="font-semibold text-highlighted">{{ t('auth.accountDetails') }}</h2>
-                <p class="mt-1 text-sm text-toned">{{ t('auth.accountDetailsDescription') }}</p>
+                <p class="text-sm text-toned">{{ t('auth.accountDetailsDescription') }}</p>
               </div>
             </div>
             <UButton
@@ -24,30 +50,32 @@
               variant="outline"
               size="sm"
               icon="i-lucide-pencil"
+              :disabled="busy"
               @click="openEdit"
             >
               {{ t('common.edit') }}
             </UButton>
           </div>
-          <div class="rounded-lg border border-default bg-elevated/40 p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-toned">
-              {{ t('auth.username') }}
-            </p>
-            <p class="mt-1 break-all text-lg font-semibold text-highlighted">
-              {{ username || t('auth.account') }}
-            </p>
+          <div
+            class="flex min-w-0 items-center gap-3 rounded-sm border border-default bg-elevated/40 p-3"
+          >
+            <UIcon name="i-lucide-user" class="size-4 shrink-0 text-toned" />
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-toned">{{ t('auth.username') }}</p>
+              <p class="truncate font-semibold text-highlighted">{{ username }}</p>
+            </div>
           </div>
         </section>
 
-        <section class="ytp-card space-y-5 p-4 sm:p-6">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="flex items-start gap-3">
-              <span class="ytp-section-icon"
-                ><UIcon name="i-lucide-key-round" class="size-5"
-              /></span>
+        <section class="space-y-3 border-t border-default pt-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="ytp-detail-icon">
+                <UIcon name="i-lucide-key-round" class="size-4" />
+              </span>
               <div>
                 <h2 class="font-semibold text-highlighted">{{ t('auth.apiKeys') }}</h2>
-                <p class="mt-1 text-sm text-toned">{{ t('auth.apiKeysDescription') }}</p>
+                <p class="text-sm text-toned">{{ t('auth.apiKeysDescription') }}</p>
               </div>
             </div>
             <UButton
@@ -55,38 +83,48 @@
               variant="outline"
               size="sm"
               icon="i-lucide-plus"
+              :disabled="busy"
               @click="openCreateKey"
             >
               {{ t('auth.createKey') }}
             </UButton>
           </div>
-          <UAlert
+          <UEmpty
             v-if="!keys.length"
-            color="neutral"
-            variant="soft"
             icon="i-lucide-key-round"
             :title="t('auth.noApiKeys')"
             :description="t('auth.noApiKeysDescription')"
+            class="py-8"
           />
-          <div v-else class="space-y-3">
+          <div v-else class="divide-y divide-default rounded-sm border border-default">
             <div
               v-for="key in keys"
               :key="key.id"
-              class="flex flex-col gap-4 rounded-lg border border-default p-4 sm:flex-row sm:items-center sm:justify-between"
+              class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div class="flex min-w-0 items-start gap-3">
-                <UIcon name="i-lucide-key-round" class="mt-0.5 size-5 shrink-0 text-toned" />
-                <div class="min-w-0">
-                  <p class="truncate font-semibold text-highlighted">{{ key.name }}</p>
-                  <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-toned">
-                    <UBadge color="neutral" variant="soft">...{{ key.hint }}</UBadge>
+              <div class="min-w-0">
+                <p class="truncate font-medium text-highlighted">{{ key.name }}</p>
+                <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-toned">
+                  <code class="rounded-sm bg-elevated px-1.5 py-0.5 font-mono"
+                    >...{{ key.hint }}</code
+                  >
+                  <UTooltip :text="formatDateTime(key.created_at, locale)">
                     <span>{{
-                      t('auth.createdAt', { date: formatDateTime(key.created_at, locale) })
+                      t('auth.createdAt', {
+                        date: formatRelativeTime(key.created_at, locale),
+                      })
                     }}</span>
-                    <span v-if="key.last_used_at">{{
-                      t('auth.lastUsedAt', { date: formatDateTime(key.last_used_at, locale) })
+                  </UTooltip>
+                  <UTooltip
+                    v-if="key.last_used_at"
+                    :text="formatDateTime(key.last_used_at, locale)"
+                  >
+                    <span>{{
+                      t('auth.lastUsedAt', {
+                        date: formatRelativeTime(key.last_used_at, locale),
+                      })
                     }}</span>
-                  </div>
+                  </UTooltip>
                 </div>
               </div>
               <UButton
@@ -95,6 +133,8 @@
                 size="sm"
                 icon="i-lucide-trash-2"
                 class="shrink-0 self-start sm:self-auto"
+                :loading="revoking === key.id"
+                :disabled="revoking !== null"
                 @click="revoke(key.id)"
               >
                 {{ t('auth.revoke') }}
@@ -145,6 +185,7 @@
             class="w-full"
             icon="i-lucide-user"
             autocomplete="username"
+            :disabled="saving"
         /></UFormField>
         <UFormField :label="t('auth.currentPassword')" name="currentPassword" required
           ><UInput
@@ -154,6 +195,7 @@
             :type="showCurrentPassword ? 'text' : 'password'"
             autocomplete="current-password"
             required
+            :disabled="saving"
             :trailing-icon="showCurrentPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             @click:trailing="showCurrentPassword = !showCurrentPassword"
         /></UFormField>
@@ -164,6 +206,7 @@
             icon="i-lucide-lock-keyhole"
             :type="showNewPassword ? 'text' : 'password'"
             autocomplete="new-password"
+            :disabled="saving"
             :trailing-icon="showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             @click:trailing="showNewPassword = !showNewPassword"
         /></UFormField>
@@ -181,6 +224,7 @@
         ><UButton
           type="submit"
           form="accountForm"
+          color="primary"
           icon="i-lucide-save"
           :loading="saving"
           :disabled="saving"
@@ -199,7 +243,7 @@
     @update:open="handleCreateOpenChange"
   >
     <template #body
-      ><form id="keyForm" @submit.prevent="createKey">
+      ><form id="keyForm" class="space-y-4" @submit.prevent="createKey">
         <UFormField :label="t('auth.keyName')" name="keyName" required
           ><UInput
             v-model="keyName"
@@ -207,6 +251,7 @@
             icon="i-lucide-key-round"
             autocomplete="off"
             required
+            :disabled="creating"
         /></UFormField></form
     ></template>
     <template #footer
@@ -221,6 +266,7 @@
         ><UButton
           type="submit"
           form="keyForm"
+          color="primary"
           icon="i-lucide-plus"
           :loading="creating"
           :disabled="creating || !keyName.trim()"
@@ -238,8 +284,8 @@
     :dismissible="false"
   >
     <template #body
-      ><div class="flex items-start gap-3 rounded-lg border border-default bg-elevated/50 p-4">
-        <UIcon name="i-lucide-key-round" class="mt-0.5 size-5 shrink-0 text-toned" />
+      ><div class="flex items-start gap-3 rounded-sm border border-default bg-elevated/50 p-3">
+        <UIcon name="i-lucide-key-round" class="mt-0.5 size-4 shrink-0 text-toned" />
         <code class="min-w-0 break-all font-mono text-sm text-highlighted">{{ newKey }}</code>
       </div></template
     >
@@ -248,7 +294,9 @@
         <UButton color="neutral" variant="outline" icon="i-lucide-check" @click="closeNewKey">{{
           t('common.ok')
         }}</UButton
-        ><UButton icon="i-lucide-copy" @click="copyKey">{{ t('common.copy') }}</UButton>
+        ><UButton color="primary" icon="i-lucide-copy" @click="copyKey">{{
+          t('common.copy')
+        }}</UButton>
       </div></template
     >
   </UModal>
@@ -260,6 +308,7 @@ import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { useDirtyState } from '~/composables/useDirtyState';
 import { ApiError, copyText, ensure_api_success, parse_api_error, request } from '~/utils';
 import { formatDateTime } from '~/utils/date';
+import { formatRelativeTime } from '~/utils/relativeTime';
 
 type ApiKey = {
   id: number;
@@ -281,15 +330,20 @@ const keyName = ref('');
 const newKey = ref('');
 const keys = ref<ApiKey[]>([]);
 const loading = ref(false);
+const loadFailed = ref(false);
 const saving = ref(false);
 const creating = ref(false);
 const loggingOut = ref(false);
+const revoking = ref<number | null>(null);
 const editOpen = ref(false);
 const createOpen = ref(false);
 const keyOpen = ref(true);
 const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
-const busy = computed(() => loading.value || saving.value || creating.value || loggingOut.value);
+const busy = computed(
+  () =>
+    loading.value || saving.value || creating.value || loggingOut.value || revoking.value !== null,
+);
 const editSource = computed(() => ({
   username: editUsername.value,
   currentPassword: currentPassword.value,
@@ -335,6 +389,7 @@ const report = async (error: unknown): Promise<void> => {
 const load = async (): Promise<void> => {
   if (loading.value) return;
   loading.value = true;
+  loadFailed.value = false;
   try {
     const me = await request('/api/auth/me');
     await ensure_api_success(me);
@@ -345,6 +400,7 @@ const load = async (): Promise<void> => {
     await ensure_api_success(response);
     keys.value = ((await response.json()) as { items: ApiKey[] }).items;
   } catch (error) {
+    loadFailed.value = true;
     await report(error);
   } finally {
     loading.value = false;
@@ -412,6 +468,7 @@ const copyKey = (): void => {
   }
 };
 const revoke = async (id: number): Promise<void> => {
+  if (revoking.value !== null) return;
   if (
     !(await confirm(t('auth.revokeConfirm'), {
       confirmText: t('auth.revoke'),
@@ -419,12 +476,15 @@ const revoke = async (id: number): Promise<void> => {
     }))
   )
     return;
+  revoking.value = id;
   try {
     const response = await request(`/api/auth/api-keys/${id}`, { method: 'DELETE' });
     await ensure_api_success(response);
     await load();
   } catch (error) {
     await report(error);
+  } finally {
+    revoking.value = null;
   }
 };
 const logout = async (): Promise<void> => {
