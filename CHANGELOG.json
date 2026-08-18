@@ -1,9 +1,30 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "ffa581098d1e4d830d3693cf5e44c5778f8df356",
-    "date": "2026-08-18T06:22:02+00:00",
+    "full_sha": "f1f79d905cffbde1c2b6bcc45123b643f0db3591",
+    "date": "2026-08-18T15:53:15+00:00",
     "commits": [
+      {
+        "sha": "f1f79d90",
+        "full_sha": "f1f79d905cffbde1c2b6bcc45123b643f0db3591",
+        "message": "refactor: update the account modal form",
+        "author": "arabcoders",
+        "date": "2026-08-18T15:53:15+00:00"
+      },
+      {
+        "sha": "ebdaad52",
+        "full_sha": "ebdaad52e88e0d86a264e4d049acad9ed7623fd2",
+        "message": "chore: remove useless tests",
+        "author": "arabcoders",
+        "date": "2026-08-18T15:44:02+00:00"
+      },
+      {
+        "sha": "f3fa3aa8",
+        "full_sha": "f3fa3aa85f37b6a57adc37518b20e15f83831783",
+        "message": "refactor: remove obsolete safety settings.",
+        "author": "arabcoders",
+        "date": "2026-08-18T15:36:22+00:00"
+      },
       {
         "sha": "ffa58109",
         "full_sha": "ffa581098d1e4d830d3693cf5e44c5778f8df356",
