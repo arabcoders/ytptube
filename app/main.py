@@ -237,7 +237,7 @@ def run_dev() -> None:
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Start YTPTube server", allow_abbrev=False)
     parser.add_argument("--dev", action="store_true", help="Reload the server when Python files change")
-    args = parser.parse_args(argv)
+    args, _ = parser.parse_known_args(argv)
 
     if args.dev:
         run_dev()
