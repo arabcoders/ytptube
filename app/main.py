@@ -12,8 +12,10 @@ if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
 
 
+import argparse
 import asyncio
 import logging
+from collections.abc import Sequence
 from pathlib import Path
 
 import magic
@@ -217,6 +219,31 @@ class Main:
         )
 
 
-if __name__ == "__main__":
+def start() -> None:
     logging.basicConfig(level=logging.DEBUG)
     Main().start()
+
+
+def run_dev() -> None:
+    from watchfiles import PythonFilter, run_process
+
+    run_process(
+        ROOT_PATH,
+        target=start,
+        watch_filter=PythonFilter(ignore_paths=(ROOT_PATH / "migrations",)),
+    )
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Start YTPTube server", allow_abbrev=False)
+    parser.add_argument("--dev", action="store_true", help="Reload the server when Python files change")
+    args, _ = parser.parse_known_args(argv)
+
+    if args.dev:
+        run_dev()
+    else:
+        start()
+
+
+if __name__ == "__main__":
+    main()

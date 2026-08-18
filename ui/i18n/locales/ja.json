@@ -1286,6 +1286,11 @@
         "title": "API",
         "navLabel": "API",
         "description": "HTTP API リファレンスとエンドポイントの動作。"
+      },
+      "security": {
+        "title": "セキュリティ",
+        "navLabel": "セキュリティ",
+        "description": "セキュリティポリシーと脆弱性の報告手順。"
       }
     }
   },

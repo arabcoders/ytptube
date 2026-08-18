@@ -45,7 +45,12 @@ Before writing any code, **propose your idea** through one of these channels:
 ```bash
 git checkout dev
 git pull origin dev
-git checkout -b feature/descriptive-name
+git switch -C feature/descriptive-name
+```
+
+**Run the backend:**
+```bash
+uv run python -m app.main --dev
 ```
 
 **Follow project standards:**

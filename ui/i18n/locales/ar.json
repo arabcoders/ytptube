@@ -1288,6 +1288,11 @@
         "title": "API",
         "navLabel": "API",
         "description": "مرجع HTTP API وسلوك نقاط النهاية."
+      },
+      "security": {
+        "title": "الأمان",
+        "navLabel": "الأمان",
+        "description": "سياسة الأمان وإرشادات الإبلاغ عن الثغرات الأمنية."
       }
     }
   },

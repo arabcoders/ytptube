@@ -1286,6 +1286,11 @@
         "title": "API",
         "navLabel": "API",
         "description": "HTTP API 参考和端点行为。"
+      },
+      "security": {
+        "title": "安全",
+        "navLabel": "安全",
+        "description": "安全政策和漏洞报告指南。"
       }
     }
   },
