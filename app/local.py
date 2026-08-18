@@ -120,6 +120,8 @@ def update_env_file(env_file: pathlib.Path, port: int) -> None:
 def main():
     parser = argparse.ArgumentParser(description="Start YTPTube server", allow_abbrev=False)
     parser.add_argument("--no-browser", action="store_true", help="Do not open browser on start")
+    parser.add_argument("--reset-password", action="store_true", help="Reset the administrator password")
+    parser.add_argument("--username", help="Account username for password reset")
     args, _ = parser.parse_known_args()
 
     set_env()
@@ -130,6 +132,13 @@ def main():
     if env_file.exists():
         dotenv.load_dotenv(env_file)
         port = os.getenv("YTP_PORT")
+
+    if args.reset_password:
+        if not args.username:
+            parser.error("--username is required with --reset-password")
+        from app.scripts.reset_password import main as reset_password
+
+        raise SystemExit(reset_password(["--username", args.username]))
 
     host = os.getenv("YTP_HOST", "127.0.0.1")
 

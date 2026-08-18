@@ -138,8 +138,30 @@ use the account username and an API key as the password: `username:ytp_...`. Bas
 The `?apikey=ytp_...` query parameter is available for clients that cannot set headers, but URLs can appear in browser 
 history and proxy logs.
 
-Use `YTP_DISABLE_AUTH=true` only when a trusted reverse proxy controls access. `YTP_CORS_ORIGINS` accepts a 
+Use `YTP_DISABLE_AUTH=true` only when a trusted reverse proxy controls access. `YTP_CORS_ORIGINS` accepts a
 comma-separated origin allowlist. Set it to `*` for clients that send an API key or Basic credentials without cookies.
+
+## How do I reset a forgotten password?
+
+You need shell access to the machine running YTPTube. Replace `USERNAME` with the account username.
+
+Assuming your YTPTube container is called `ytptube`, run:
+
+```bash
+docker exec -ti -w /app ytptube python -m app.scripts.reset_password --username USERNAME
+```
+
+For Podman, replace `docker` with `podman` in the command above.
+
+For a native build:
+
+```bash
+YTPTube --reset-password --username USERNAME
+```
+
+For windows replace `YTPTube` with the path to the `YTPTube.exe` binary.
+
+After secussfull password reset. the related user cookie sessions will be invalidated.
 
 # Security recommendations
 

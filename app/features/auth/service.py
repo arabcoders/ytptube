@@ -28,7 +28,7 @@ def _digest(value: str) -> str:
 
 
 def _password_hash(password: str) -> str:
-    if "\x00" in password or len(password.encode()) > 72:
+    if not password or "\x00" in password or len(password.encode()) > 72:
         msg = "Password must be between 1 and 72 UTF-8 bytes and cannot contain NUL bytes."
         raise ValueError(msg)
     return bcrypt(password.encode(), BCRYPT_COST).decode("ascii")
@@ -107,6 +107,19 @@ class AuthService(metaclass=Singleton):
         async with get_session() as session:
             row = (
                 (await session.execute(text("SELECT id, username FROM users WHERE id = :id"), {"id": user_id}))
+                .mappings()
+                .first()
+            )
+            return dict(row) if row else None
+
+    async def find_user(self, username: str) -> dict | None:
+        async with get_session() as session:
+            row = (
+                (
+                    await session.execute(
+                        text("SELECT id, username FROM users WHERE username = :username"), {"username": username}
+                    )
+                )
                 .mappings()
                 .first()
             )
@@ -202,15 +215,18 @@ class AuthService(metaclass=Singleton):
             await session.commit()
             return {"id": row["id"], "username": row["username"]}
 
-    async def create_user(self, username: str, password: str) -> dict | None:
+    async def create_user(self, username: str, password: str, *, require_empty: bool = False) -> dict | None:
         hashed: str = await password_hash(password)
+        query = (
+            "INSERT INTO users (username, password_hash) "
+            "SELECT :username, :password_hash WHERE NOT EXISTS (SELECT 1 FROM users) RETURNING id, username"
+            if require_empty
+            else "INSERT INTO users (username, password_hash) VALUES (:username, :password_hash) RETURNING id, username"
+        )
         async with get_session() as session:
             try:
                 result = await session.execute(
-                    text(
-                        "INSERT INTO users (username, password_hash) "
-                        "SELECT :username, :password_hash WHERE NOT EXISTS (SELECT 1 FROM users) RETURNING id, username"
-                    ),
+                    text(query),
                     {"username": username, "password_hash": hashed},
                 )
                 row = result.mappings().first()
@@ -247,6 +263,25 @@ class AuthService(metaclass=Singleton):
             msg = "User was not found after update."
             raise RuntimeError(msg)
         return updated
+
+    async def reset_password(self, username: str, password: str) -> None:
+        hashed = await password_hash(password)
+        async with get_session() as session:
+            user_id = (
+                await session.execute(
+                    text(
+                        "UPDATE users SET password_hash = :password_hash, updated_at = CURRENT_TIMESTAMP "
+                        "WHERE username = :username RETURNING id"
+                    ),
+                    {"username": username, "password_hash": hashed},
+                )
+            ).scalar_one_or_none()
+            if user_id is None:
+                await session.rollback()
+                msg = "Account not found."
+                raise ValueError(msg)
+            await session.execute(text("DELETE FROM sessions WHERE user_id = :id"), {"id": user_id})
+            await session.commit()
 
     async def keys(self, user_id: int) -> list[dict]:
         async with get_session() as session:

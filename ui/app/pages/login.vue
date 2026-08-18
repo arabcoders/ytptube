@@ -49,6 +49,25 @@
         {{ t('auth.loginAction') }}
       </UButton>
     </form>
+    <UButton variant="link" color="neutral" class="w-full" @click="recoveryOpen = true">
+      {{ t('auth.forgotPassword') }}
+    </UButton>
+
+    <UModal v-model:open="recoveryOpen" :title="t('auth.forgotPassword')">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-sm text-toned">{{ t('auth.recoveryGuidance') }}</p>
+          <a
+            class="text-sm font-medium text-primary hover:underline"
+            href="https://github.com/arabcoders/ytptube/blob/master/FAQ.md#how-do-i-reset-a-forgotten-password"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ t('auth.recoveryInstructions') }}
+          </a>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -62,6 +81,7 @@ const password = ref('');
 const error = ref('');
 const busy = ref(false);
 const showPassword = ref(false);
+const recoveryOpen = ref(false);
 
 const submit = async (): Promise<void> => {
   if (busy.value) return;

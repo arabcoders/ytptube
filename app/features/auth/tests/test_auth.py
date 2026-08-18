@@ -5,6 +5,7 @@ import logging
 import sqlite3
 from contextlib import asynccontextmanager, closing
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -16,6 +17,7 @@ from pydantic import ValidationError
 from app.features.auth.schemas import Credentials
 from app.features.auth.service import password_hash, password_matches
 from app.features.auth.service import AuthService
+from app.scripts import reset_password
 from app.library import migrate
 from app.features.auth.middleware import (
     AUTH_USER_KEY,
@@ -72,6 +74,83 @@ async def test_password_limits() -> None:
         Credentials(username="user", password="é" * 37)
     with pytest.raises(ValidationError):
         Credentials(username="user", password="bad\x00password")
+    with pytest.raises(ValueError):
+        await password_hash("")
+
+
+def test_reset_command_input(monkeypatch, capsys) -> None:
+    values = iter(("secret", "different"))
+    monkeypatch.setattr(reset_password, "getpass", lambda _: next(values))
+
+    async def reset(username: str) -> None:
+        assert username == "owner"
+        reset_password._confirmed_password()
+
+    monkeypatch.setattr(reset_password, "reset", reset)
+
+    assert reset_password.main(["--username", "owner"]) == 1
+    output = capsys.readouterr()
+    assert "do not match" in output.err
+    assert "secret" not in output.err
+    assert "different" not in output.err
+
+
+def test_native_reset_forwarding(monkeypatch) -> None:
+    import app.local as local_module
+
+    reset = Mock(return_value=0)
+    monkeypatch.setattr(local_module, "set_env", lambda: None)
+    monkeypatch.setattr(reset_password, "main", reset)
+    monkeypatch.setattr("sys.argv", ["local.py", "--reset-password", "--username", "owner"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        local_module.main()
+    assert exc_info.value.code == 0
+    reset.assert_called_once_with(["--username", "owner"])
+
+
+def test_native_reset_username(monkeypatch, capsys) -> None:
+    import app.local as local_module
+
+    monkeypatch.setattr(local_module, "set_env", lambda: None)
+    monkeypatch.setattr("sys.argv", ["local.py", "--reset-password"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        local_module.main()
+    assert exc_info.value.code == 2
+    assert "--username is required" in capsys.readouterr().err
+
+
+@pytest.mark.asyncio
+async def test_reset_missing_database(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("YTP_CONFIG_PATH", str(tmp_path))
+    db_file = Path(tmp_path) / "ytptube.db"
+    monkeypatch.setattr(reset_password, "getpass", lambda _: pytest.fail("password was requested"))
+
+    with pytest.raises(ValueError, match="does not exist"):
+        await reset_password.reset("owner")
+    assert not db_file.exists()
+
+
+@pytest.mark.asyncio
+async def test_reset_checks_username(monkeypatch, tmp_path, capsys) -> None:
+    db_file = Path(tmp_path) / "ytptube.db"
+    await migrate.upgrade(str(db_file), "app/migrations")
+    config = Config.get_instance()
+    previous_db = config.db_file
+    config.db_file = str(db_file)
+    monkeypatch.setattr(reset_password, "getpass", lambda _: pytest.fail("password was requested"))
+    capsys.readouterr()
+
+    try:
+        with pytest.raises(ValueError, match="not found"):
+            await reset_password.reset("missing")
+        output = capsys.readouterr()
+        assert output.out == f"Database: {db_file.resolve()}\n"
+        assert not output.err
+    finally:
+        config.db_file = previous_db
+        SqliteStore._reset_singleton()
 
 
 def test_basic_query_padding() -> None:
@@ -120,24 +199,33 @@ async def test_sessions_and_keys(monkeypatch) -> None:
     config.auth_username = None
     config.auth_password = None
     auth = AuthService.get_instance()
-    user = await auth.create_user("owner", "secret")
+    user = await auth.create_user("owner", "secret", require_empty=True)
     assert user is not None
-    assert await auth.create_user("second", "secret") is None
+    assert await auth.create_user("blocked", "blocked-secret", require_empty=True) is None
+    other = await auth.create_user("second", "second-secret")
+    assert other is not None
+    assert await auth.create_user("second", "different-secret") is None
     token = await auth.create_session(user["id"])
+    other_token = await auth.create_session(other["id"])
     session_user = await auth.session_user(token)
     assert session_user is not None
     assert session_user["id"] == user["id"]
     metadata, key = await auth.create_key(user["id"], "browser")
     assert metadata["name"] == "browser"
+    await auth.reset_password("owner", "new secret")
+    assert await auth.authenticate_password("owner", "secret") is None
+    assert await auth.authenticate_password("owner", "new secret") is not None
+    assert await auth.session_user(token) is None
+    assert await auth.authenticate_password("second", "second-secret") is not None
+    assert await auth.session_user(other_token) is not None
     key_user = await auth.user_from_key(key)
     assert key_user is not None
     assert key_user["id"] == user["id"]
-    await store.execute_raw(
-        "INSERT INTO users (username, password_hash) VALUES (:username, :password_hash)",
-        {"username": "other", "password_hash": await password_hash("other-secret")},
-    )
-    other = await auth.authenticate_password("other", "other-secret")
-    assert other is not None
+    with pytest.raises(ValueError, match="not found"):
+        await auth.reset_password("unknown", "another secret")
+    assert await auth.authenticate_password("owner", "new secret") is not None
+    assert await auth.authenticate_password("second", "second-secret") is not None
+    assert await auth.session_user(other_token) is not None
     assert not await auth.delete_key(other["id"], metadata["id"])
     assert await auth.delete_key(user["id"], metadata["id"])
     assert await auth.user_from_key(key) is None
@@ -146,6 +234,27 @@ async def test_sessions_and_keys(monkeypatch) -> None:
         {"expires": (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")},
     )
     assert await auth.session_user(token) is None
+    assert await auth.session_user(other_token) is None
+    await store.close()
+    SqliteStore._reset_singleton()
+
+
+@pytest.mark.asyncio
+async def test_reset_no_account(monkeypatch) -> None:
+    store = SqliteStore.get_instance(db_path=make_in_memory_db_path("auth-reset-guards"))
+    await store.get_connection()
+
+    @asynccontextmanager
+    async def session():
+        async with store.sessionmaker()() as value:
+            yield value
+
+    import app.features.auth.service as service_module
+
+    monkeypatch.setattr(service_module, "get_session", session)
+    auth = AuthService.get_instance()
+    with pytest.raises(ValueError, match="not found"):
+        await auth.reset_password("missing", "secret")
     await store.close()
     SqliteStore._reset_singleton()
 
