@@ -1288,6 +1288,11 @@
         "title": "API",
         "navLabel": "API",
         "description": "HTTP API reference and endpoint behavior."
+      },
+      "security": {
+        "title": "Security",
+        "navLabel": "Security",
+        "description": "Security policy and vulnerability reporting guidance."
       }
     }
   },

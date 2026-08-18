@@ -3597,10 +3597,10 @@ If both `since` and `Last-Event-ID` are present, the larger value is used.
 ---
 
 ### GET /api/docs/{file}
-**Purpose**: Serve documentation files from the GitHub repository.
+**Purpose**: Serve files from the GitHub repository.
 
 **Path Parameter**:
-- `file`: Documentation filename (e.g., `README.md`, `FAQ.md`, `API.md`, `sc_short.jpg`, `sc_simple.jpg`)
+- `file`: Documentation filename (e.g., `README.md`, `FAQ.md`, `API.md`, `SECURITY.md`, `sc_short.jpg`, `sc_simple.jpg`)
 
 **Response**:
 - File content with appropriate `Content-Type` header (text/markdown for .md, image/jpeg for .jpg, etc.)

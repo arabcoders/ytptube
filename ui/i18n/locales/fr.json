@@ -1286,6 +1286,11 @@
         "title": "API",
         "navLabel": "API",
         "description": "Référence de l'API HTTP et comportement des points de terminaison."
+      },
+      "security": {
+        "title": "Sécurité",
+        "navLabel": "Sécurité",
+        "description": "Politique de sécurité et consignes de signalement des vulnérabilités."
       }
     }
   },

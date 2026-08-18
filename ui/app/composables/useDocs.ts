@@ -1,4 +1,4 @@
-export type DocsFile = 'README.md' | 'FAQ.md' | 'API.md';
+export type DocsFile = 'README.md' | 'FAQ.md' | 'API.md' | 'SECURITY.md';
 
 export type DocsEntry = {
   id: string;
@@ -43,6 +43,16 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['api'],
     icon: 'i-lucide-code-xml',
     navLabel: 'docs.entries.api.navLabel',
+  },
+  {
+    id: 'docs-security',
+    title: 'docs.entries.security.title',
+    description: 'docs.entries.security.description',
+    file: 'SECURITY.md',
+    route: '/docs/security',
+    slug: ['security'],
+    icon: 'i-lucide-shield-check',
+    navLabel: 'docs.entries.security.navLabel',
   },
 ];
 
