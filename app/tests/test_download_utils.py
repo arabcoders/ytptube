@@ -212,35 +212,12 @@ class TestDataUtilities:
 
 
 class TestStateUtilities:
-    def test_stale_finished(self) -> None:
+    @pytest.mark.parametrize("status", ["finished", "error", "cancelled", "downloading", "postprocessing"])
+    def test_stale_status(self, status: str) -> None:
         result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status="finished", is_running=False, auto_start=True
+            started_time=int(time.time()) - 500, current_status=status, is_running=False, auto_start=True
         )
-        assert result is False, "Finished downloads are never stale"
-
-    def test_stale_terminal_status_error(self) -> None:
-        result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status="error", is_running=False, auto_start=True
-        )
-        assert result is False, "Error downloads are never stale"
-
-    def test_stale_cancelled(self) -> None:
-        result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status="cancelled", is_running=False, auto_start=True
-        )
-        assert result is False, "Cancelled downloads are never stale"
-
-    def test_stale_downloading(self) -> None:
-        result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status="downloading", is_running=False, auto_start=True
-        )
-        assert result is False, "Downloading status is never stale"
-
-    def test_stale_postprocessing(self) -> None:
-        result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status="postprocessing", is_running=False, auto_start=True
-        )
-        assert result is False, "Postprocessing status is never stale"
+        assert result is False, f"{status} downloads are never stale"
 
     def test_stale_not_auto_start(self) -> None:
         result = is_download_stale(

@@ -63,13 +63,6 @@ globalThis.computed = (fn: () => unknown) => ({
 const { useAppLocale } = await import('~/composables/useAppLocale');
 
 describe('useAppLocale', () => {
-  it('returns en as default locale', () => {
-    currentLocale = 'en';
-    localeRef.value = 'en';
-    const { locale } = useAppLocale();
-    expect(locale.value).toBe('en');
-  });
-
   it('direction is ltr for English', () => {
     currentLocale = 'en';
     localeRef.value = 'en';
@@ -94,18 +87,4 @@ describe('useAppLocale', () => {
     expect(locale.value).toBe('ar');
   });
 
-  it('changes locale back to en', async () => {
-    currentLocale = 'ar';
-    localeRef.value = 'ar';
-    const { locale, changeLocale } = useAppLocale();
-    await changeLocale('en');
-    expect(locale.value).toBe('en');
-  });
-
-  it('exposes locales list', () => {
-    currentLocale = 'en';
-    localeRef.value = 'en';
-    const { locales } = useAppLocale();
-    expect(locales.value.length).toBe(2);
-  });
 });

@@ -1,4 +1,3 @@
-import asyncio
 import copy
 import json
 import logging
@@ -439,7 +438,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         )
 
     try:
-        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
+        validate_url(url)
     except ValueError as e:
         return api_error_response(
             str(e),
@@ -613,7 +612,7 @@ async def get_options() -> Response:
 
 
 @route("POST", "api/yt-dlp/archive_id/", "get_archive_ids")
-async def get_archive_ids(request: Request, config: Config) -> Response:
+async def get_archive_ids(request: Request) -> Response:
     """
     Get the archive IDs for the given URLs.
 
@@ -638,7 +637,7 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
             response.append(dct)
             continue
         try:
-            await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
+            validate_url(url)
             dct.update(get_archive_id(url))
         except ValueError as e:
             dct.update({"id": None, "ie_key": None, "archive_id": None, "error": str(e)})

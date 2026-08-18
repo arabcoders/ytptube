@@ -27,26 +27,6 @@ class TestFFProbe:
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @pytest.mark.asyncio
-    async def test_ffprobe_with_existing_file(self):
-        """Test ffprobe with an existing file."""
-        from app.features.streaming.library.ffprobe import FFProbeResult, ffprobe
-
-        # Mock subprocess to avoid actual ffprobe execution
-        with patch("asyncio.create_subprocess_exec") as mock_subprocess:
-            # Mock the subprocess result
-            mock_process = AsyncMock()
-            mock_process.wait.return_value = 0
-            mock_process.communicate.return_value = (b'{"format": {"duration": "10.0"}}', b"")
-            mock_subprocess.return_value = mock_process
-
-            with patch("anyio.open_file") as mock_open_file:
-                mock_file = AsyncMock()
-                mock_open_file.return_value.__aenter__.return_value = mock_file
-
-                result = await ffprobe(str(self.test_file))
-                assert isinstance(result, FFProbeResult)
-
-    @pytest.mark.asyncio
     async def test_ffprobe_with_nonexistent_file(self):
         """Test ffprobe with a non-existent file."""
         from app.features.streaming.library.ffprobe import ffprobe

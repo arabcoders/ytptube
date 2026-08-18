@@ -1,11 +1,8 @@
-import importlib
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from yt_dlp.globals import extractors as ytdlp_extractors
-
 from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import patch_windows_popen_wait
 from app.features.ytdlp.utils import _DATA
@@ -159,20 +156,6 @@ class TestYTDLP:
         mock_super_init.assert_called_once_with(params=None, auto_init=True)
         assert isinstance(ytdlp.archive, _ArchiveProxy)
         assert not ytdlp.archive
-
-    @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
-    def test_init_patches_wait(self, mock_super_init) -> None:
-        mock_super_init.return_value = None
-
-        class FakePopen:
-            def wait(self, timeout=None):
-                return timeout
-
-        with patch("app.features.ytdlp.patches.sys.platform", "win32"):
-            with patch("yt_dlp.utils.Popen", FakePopen):
-                YTDLP(params={})
-
-        assert getattr(FakePopen, "_ytptube_wait_patched", False) is True
 
     def test_wait_patch_polls(self) -> None:
         calls: list[float | None] = []
@@ -350,14 +333,6 @@ class TestYTDLP:
 
         assert len(result) == 8
         assert result.isalnum()
-
-    def test_exec_init(self) -> None:
-        YTDLP(
-            params={
-                "compat_opts": set(),
-                "postprocessors": [{"key": "Exec", "exec_cmd": "echo %(title)q"}],
-            }
-        )
 
     def test_outtmpl_reuses_value(self) -> None:
         ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})

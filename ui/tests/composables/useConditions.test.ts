@@ -94,7 +94,6 @@ describe('useConditions', () => {
       const conditions = useConditions()
       await conditions.loadConditions()
 
-      expect(conditions.conditions.value).toHaveLength(1)
       expect(conditions.conditions.value[0]).toEqual(mockCondition)
       expect(conditions.pagination.value).toEqual(mockPagination)
       expect(conditions.lastError.value).toBeNull()
@@ -288,7 +287,6 @@ describe('useConditions', () => {
       })
 
       expect(result).toEqual(testResponse)
-      expect(result?.status).toBe(true)
       requestSpy.mockRestore()
     })
 

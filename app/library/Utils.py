@@ -1,12 +1,10 @@
 import base64
 import copy
 import glob
-import ipaddress
 import json
 import logging
 import os
 import re
-import socket
 import time
 import traceback
 import uuid
@@ -529,26 +527,18 @@ def check_id(file: Path) -> bool | Path:
     return False
 
 
-@timed_lru_cache(ttl_seconds=300, max_size=256)
-def is_private_address(hostname: str) -> bool:
-    ip: str = socket.gethostbyname(hostname)
-    ip_obj: ipaddress.IPv4Address | ipaddress.IPv6Address = ipaddress.ip_address(ip)
-    return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local
-
-
-def validate_url(url: str, allow_internal: bool = False) -> bool:
+def validate_url(url: str) -> bool:
     """
-    Validate if the url is valid and allowed.
+    Validate the URL format.
 
     Args:
         url (str): URL to validate.
-        allow_internal (bool): If True, allow internal URLs or private networks.
 
     Returns:
-        bool: True if the URL is valid and allowed.
+        bool: True if the URL is valid.
 
     Raises:
-        ValueError: If the URL is invalid or not allowed.
+        ValueError: If the URL is invalid.
 
     """
     if not url:
@@ -572,20 +562,6 @@ def validate_url(url: str, allow_internal: bool = False) -> bool:
     if not hostname:
         msg = "Invalid hostname."
         raise ValueError(msg)
-
-    if allow_internal is False:
-        try:
-            if is_private_address(hostname):
-                msg = "Access to internal urls or private networks is not allowed."
-                raise ValueError(msg)
-        except socket.gaierror as e:
-            LOG.exception(
-                "Failed to resolve hostname '%s'.",
-                hostname,
-                extra={"hostname": hostname, "exception_type": type(e).__name__},
-            )
-            msg = "Invalid hostname."
-            raise ValueError(msg) from e
 
     return True
 

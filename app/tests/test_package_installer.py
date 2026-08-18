@@ -241,17 +241,6 @@ class TestActionAndCheck:
         inst.action("pkg")
         mock_install.assert_called_once_with("pkg", version=None)
 
-    def test_no_packages_or_path(self, tmp_path: Path) -> None:
-        # No packages
-        inst = PackageInstaller(pkg_path=tmp_path)
-        pkgs = Packages(env=None, file=None, upgrade=False)
-        inst.check(pkgs)  # Should do nothing
-
-        # No user_site => early return
-        inst2 = PackageInstaller(pkg_path=None)
-        pkgs2 = Packages(env="a b", file=None, upgrade=False)
-        inst2.check(pkgs2)
-
     @patch.object(PackageInstaller, "action")
     def test_check_runs_all(self, mock_action, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)

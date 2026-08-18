@@ -51,7 +51,7 @@ class Task(BaseModel):
         from app.library.Utils import validate_url
 
         try:
-            validate_url(value, allow_internal=True)
+            validate_url(value)
         except ValueError as e:
             msg = f"Invalid URL format: {e!s}"
             raise ValueError(msg) from e

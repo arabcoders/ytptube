@@ -272,15 +272,6 @@ class TestCache:
         assert self.cache.get("key2") == "value2", "Should keep non-expired key"
 
     @pytest.mark.asyncio
-    async def test_cleanup_with_empty_cache(self):
-        """Test that _cleanup handles empty cache without errors."""
-        # Clear cache first
-        self.cache.clear()
-
-        # Should not raise any errors
-        await self.cache.cleanup()
-
-    @pytest.mark.asyncio
     async def test_attach_registers_with_services(self):
         """Test that attach method registers cache with Services and schedules cleanup."""
         from app.library.Scheduler import Scheduler

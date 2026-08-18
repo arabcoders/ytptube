@@ -33,7 +33,6 @@ from app.library.Utils import (
     get_mime_type,
     get_possible_images,
     init_class,
-    is_private_address,
     load_cookies,
     merge_dict,
     move_file,
@@ -1037,27 +1036,6 @@ class TestMergeDict:
         return current
 
 
-class TestIsPrivateAddress:
-    """Test the is_private_address function."""
-
-    def test_is_private_address_localhost(self):
-        """Test localhost addresses."""
-        assert is_private_address("localhost") is True
-        assert is_private_address("127.0.0.1") is True
-
-    def test_private_address_private_ranges(self):
-        """Test private IP ranges."""
-        assert is_private_address("192.168.1.1") is True
-        assert is_private_address("10.0.0.1") is True
-        assert is_private_address("172.16.0.1") is True
-
-    def test_is_private_address_public(self):
-        """Test public addresses."""
-        assert is_private_address("8.8.8.8") is False
-        assert is_private_address("google.com") is False
-        assert is_private_address("1.1.1.1") is False
-
-
 class TestDeleteDir:
     """Test the delete_dir function."""
 
@@ -1276,8 +1254,13 @@ class TestValidateUrl:
                 validate_url("https://example.com")
             return
 
-        result = validate_url("https://example.com", allow_internal=True)
+        result = validate_url("https://example.com")
         assert result is True
+
+    @pytest.mark.parametrize("url", ["", "ftp://example.com", "https:///missing-host"])
+    def test_rejects_format(self, url: str) -> None:
+        with pytest.raises(ValueError):
+            validate_url(url)
 
 
 class TestGetFileSidecar:
@@ -1295,7 +1278,8 @@ class TestGetFileSidecar:
             nfo_file.write_text("nfo content")
 
             result = get_file_sidecar(video_file)
-            assert isinstance(result, dict)  # Returns dict, not list
+            assert result["subtitle"] == [{"file": srt_file, "lang": "und", "name": "SRT (1) - und"}]
+            assert result["text"] == [{"file": nfo_file}]
 
     def test_file_sidecar_no_files(self):
         """Test getting sidecar files when none exist."""
@@ -1304,7 +1288,7 @@ class TestGetFileSidecar:
             video_file.write_text("video content")
 
             result = get_file_sidecar(video_file)
-            assert isinstance(result, dict)  # Returns dict, not list
+            assert result == {}
 
 
 class TestCheckId:

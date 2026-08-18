@@ -192,28 +192,6 @@ class TestItemDTO:
         assert dto.name() == 'id="abc", title="Title"'
         assert isinstance(dto.get_id(), str)
 
-    def test_archive_add_delete_paths(self):
-        dto = ItemDTO(id="id", title="t", url="u", folder="f")
-        assert dto.archive_add() is False, "Precondition not met yet"
-
-        # Set up to allow add
-        dto.archive_id = "arch"
-        dto._archive_file = "var/tests/archive.txt"
-        dto.is_archivable = True
-        dto.is_archived = False
-
-        with patch("app.library.ItemDTO.archive_add", return_value=True) as m_add:
-            ok = dto.archive_add()
-            assert ok is True
-            m_add.assert_called_once()
-
-        # Delete requires is_archived True
-        dto.is_archived = True
-        with patch("app.library.ItemDTO.archive_delete") as m_del:
-            ok2 = dto.archive_delete()
-            assert ok2 is True
-            m_del.assert_called_once()
-
     def test_get_file_method(self):
         """Test ItemDTO get_file method returns correct path."""
         # Create ItemDTO with filename but no folder

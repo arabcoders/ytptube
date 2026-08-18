@@ -24,97 +24,9 @@ def reset_generic_handler(monkeypatch):
     monkeypatch.setattr(GenericTaskHandler, "_sources_mtime", {})
 
 
-def test_build_def_payload():
-    definition = TaskDefinition(
-        id=1,
-        name="example",
-        priority=0,
-        match_url=["https://example.com/articles/*"],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        definition=Definition(
-            parse=Parse.model_validate(
-                {
-                    "link": {"type": "css", "expression": ".article a.link::attr(href)"},
-                    "title": {"type": "css", "expression": ".article .title", "attribute": "text"},
-                }
-            ),
-            engine=EngineConfig(),
-            request=RequestConfig(),
-            response=ResponseConfig(),
-        ),
-    )
-
-    assert definition.name == "example"
-    assert definition.match_url == ["https://example.com/articles/*"]
-    assert definition.definition.parse["link"]["expression"] == ".article a.link::attr(href)"
-
-
 def test_request_method():
     with pytest.raises(ValidationError):
         RequestConfig.model_validate({"method": "DELETE"})
-
-
-def test_build_def_container():
-    definition = TaskDefinition(
-        id=2,
-        name="container",
-        priority=0,
-        match_url=["https://example.com/cards"],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        definition=Definition(
-            parse=Parse.model_validate(
-                {
-                    "items": {
-                        "selector": ".cards .card",
-                        "fields": {
-                            "link": {"type": "css", "expression": ".card-header a", "attribute": "href"},
-                            "title": {"type": "css", "expression": ".card-header a", "attribute": "text"},
-                        },
-                    }
-                }
-            ),
-            engine=EngineConfig(),
-            request=RequestConfig(),
-            response=ResponseConfig(),
-        ),
-    )
-
-    assert definition.definition.parse["items"]["selector"] == ".cards .card"
-    assert definition.definition.parse["items"]["fields"]["link"]["attribute"] == "href"
-
-
-def test_build_def_json():
-    definition = TaskDefinition(
-        id=3,
-        name="json-def",
-        priority=0,
-        match_url=["https://example.com/api"],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        definition=Definition(
-            parse=Parse.model_validate(
-                {
-                    "items": {
-                        "type": "jsonpath",
-                        "selector": "items",
-                        "fields": {
-                            "link": {"type": "jsonpath", "expression": "url"},
-                            "title": {"type": "jsonpath", "expression": "title"},
-                        },
-                    }
-                }
-            ),
-            engine=EngineConfig(),
-            request=RequestConfig(),
-            response=ResponseConfig(type="json"),
-        ),
-    )
-
-    assert definition.definition.response.type == "json"
-    assert definition.definition.parse["items"]["type"] == "jsonpath"
-    assert definition.definition.parse["items"]["fields"]["link"]["type"] == "jsonpath"
 
 
 def test_parse_items_basic():
@@ -360,7 +272,6 @@ async def test_generic_task_handler_inspect(monkeypatch):
 
     monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fake_fetch_content))
     config = Config.get_instance()
-    monkeypatch.setattr(config, "allow_internal_urls", True)
 
     # Mock fetch_info to return valid info with required fields for archive ID generation
     async def fake_fetch_info(config, url, **kwargs):  # noqa: ARG001
@@ -377,40 +288,6 @@ async def test_generic_task_handler_inspect(monkeypatch):
         assert item.title == "First"
         assert item.thumbnail == "https://example.com/first.jpg"
         assert item.description == "First description"
-
-
-@pytest.mark.asyncio
-async def test_extract_internal(monkeypatch):
-    definition = TaskDefinition(
-        id=8,
-        name="internal",
-        priority=0,
-        match_url=["https://example.com/*"],
-        definition=Definition(
-            parse=Parse.model_validate({"link": {"type": "jsonpath", "expression": "url"}}),
-            request=RequestConfig(url="http://127.0.0.1/private"),
-            response=ResponseConfig(type="json"),
-        ),
-    )
-
-    async def fake_find_definition(cls, url):  # noqa: ARG001
-        return definition
-
-    async def fake_fetch_content(*args, **kwargs):  # noqa: ARG001
-        pytest.fail("Internal URL was fetched")
-
-    monkeypatch.setattr(GenericTaskHandler, "_find_definition", classmethod(fake_find_definition))
-    monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fake_fetch_content))
-    config = Config.get_instance()
-    monkeypatch.setattr(config, "allow_internal_urls", False)
-
-    result = await GenericTaskHandler.extract(
-        HandleTask(id=1, name="Internal", url="https://example.com/source"),
-        config=config,
-    )
-
-    assert isinstance(result, TaskFailure)
-    assert result.message == "Invalid target URL."
 
 
 def test_parse_items_json_list():

@@ -1,4 +1,3 @@
-import asyncio
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
@@ -532,7 +531,7 @@ async def tasks_update(
 
 
 @route("POST", "api/tasks/inspect", "task_handler_inspect")
-async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: Encoder, config: Config) -> Response:
+async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: Encoder) -> Response:
     """
     Check if handler can process the given URL.
 
@@ -540,7 +539,6 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
         request: The request object.
         handler: The handler service instance.
         encoder: The encoder instance.
-        config: The config instance.
 
     Returns:
         The response object.
@@ -560,7 +558,7 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
     static_only: bool = data.get("static_only", False) if isinstance(data, dict) else False
     if not static_only:
         try:
-            await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
+            validate_url(url)
         except ValueError as e:
             return api_error_response(
                 str(e),
@@ -896,7 +894,7 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                         continue
 
                     try:
-                        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
+                        validate_url(url)
                     except ValueError as exc:
                         LOG.warning(
                             "Task '%s' has an invalid '%s' thumbnail URL because %s.",

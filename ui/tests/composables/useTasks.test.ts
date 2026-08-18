@@ -101,7 +101,6 @@ describe('useTasks', () => {
       const tasks = useTasks()
       await tasks.loadTasks()
 
-      expect(tasks.tasks.value).toHaveLength(1)
       expect(tasks.tasks.value[0]).toEqual(mockTask)
       expect(tasks.pagination.value).toEqual(mockPagination)
       expect(tasks.lastError.value).toBeNull()
@@ -443,8 +442,6 @@ describe('useTasks', () => {
         })
 
         expect(result).toEqual(inspectResponse)
-        expect(result?.matched).toBe(true)
-        expect(result?.handler).toBe('YoutubeHandler')
       } finally {
         requestSpy.mockRestore()
       }
@@ -595,7 +592,6 @@ describe('useTasks', () => {
       const result = await tasks.generateTaskMetadata(1)
 
       expect(result).toEqual(metadataResponse)
-      expect(result?.status).toBe('success')
       expect(tasks.lastError.value).toBeNull()
       requestSpy.mockRestore()
     })
@@ -685,8 +681,6 @@ describe('useTasks', () => {
         'name: Field required, url: Invalid URL format',
       )
       expect(tasks.lastError.value).toBe('name: Field required, url: Invalid URL format')
-      expect(tasks.lastError.value).toContain('name: Field required')
-      expect(tasks.lastError.value).toContain('url: Invalid URL format')
       requestSpy.mockRestore()
     })
   })

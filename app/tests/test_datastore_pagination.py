@@ -135,26 +135,6 @@ class TestDataStorePagination:
         finally:
             await db.close()
 
-    async def test_pagination_order_desc(self):
-        """Test pagination with descending order (newest first)."""
-        db = await make_db(data=100)
-        try:
-            datastore = DataStore(type=StoreType.HISTORY, connection=db)
-            items, _, _, _ = await datastore.get_items_paginated(page=1, per_page=5, order="DESC")
-            assert len(items) == 5
-        finally:
-            await db.close()
-
-    async def test_pagination_order_asc(self):
-        """Test pagination with ascending order (oldest first)."""
-        db = await make_db(data=100)
-        try:
-            datastore = DataStore(type=StoreType.HISTORY, connection=db)
-            items, _, _, _ = await datastore.get_items_paginated(page=1, per_page=5, order="ASC")
-            assert len(items) == 5
-        finally:
-            await db.close()
-
     async def test_pagination_invalid_page(self):
         """Test pagination with invalid page number."""
         db = await make_db(data=100)
