@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "8f7c16fd4a66282324408c4a76830559310fdef6",
-    "date": "2026-08-18T06:04:10+00:00",
+    "full_sha": "ffa581098d1e4d830d3693cf5e44c5778f8df356",
+    "date": "2026-08-18T06:22:02+00:00",
     "commits": [
+      {
+        "sha": "ffa58109",
+        "full_sha": "ffa581098d1e4d830d3693cf5e44c5778f8df356",
+        "message": "fix: resize profile buttons",
+        "author": "arabcoders",
+        "date": "2026-08-18T06:22:02+00:00"
+      },
       {
         "sha": "8f7c16fd",
         "full_sha": "8f7c16fd4a66282324408c4a76830559310fdef6",
