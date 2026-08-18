@@ -58,7 +58,6 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_TEMP_DISABLED               | Disable temp files handling.                                        | `false`               |
 | YTP_RETRY                       | Number of additional attempts for retryable download failures.      | `0`                   |
 | YTP_RETRY_FRESH                 | Use a fresh download on the final retry attempt.                    | `false`               |
-| YTP_ALLOW_INTERNAL_URLS         | Allow requests to internal URLs                                     | `false`               |
 | YTP_SIMPLE_MODE                 | Switch default interface to Simple mode.                            | `false`               |
 | YTP_STATIC_UI_PATH              | Path to custom static UI files.                                     | `(not_set)`           |
 | YTP_AUTO_CLEAR_HISTORY_DAYS     | Number of days after which completed download history is cleared.   | `0`                   |
@@ -70,7 +69,6 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_THUMB_CONCURRENCY           | The number of concurrent ffmpeg thumbnail generations allowed.      | `2`                   |
 | YTP_THUMB_GENERATE              | Enable ffmpeg thumbnail generation when no local thumbnail exists.  | `true`                |
 | YTP_THUMB_SIDECAR               | Save generated thumbnails next to media instead of temp cache.      | `false`               |
-| YTP_DISABLE_EXEC                | Strip some dangerous yt-dlp options.                                | `false`               |
 
 > [!NOTE]
 > To raise the worker limit for a specific extractor, set an env variable using this format: `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`
@@ -181,9 +179,6 @@ inside the container.
 1. **Enable authentication**.
 2. **Put it behind a reverse proxy** with its own authentication layer (see [Run behind reverse proxy](#run-behind-reverse-proxy)).
 3. **Keep it on a private network** with no public exposure.
-
-> [!NOTE]
-> `YTP_DISABLE_EXEC=true` blocks some command-execution options. It does not restrict access to the rest of the API.
 
 # I cant download anything
 
@@ -583,13 +578,6 @@ For more information about the supported codecs, please refer to the [SegmentEnc
 
 If GPU encoding fails and software encoding is used, you will have to restart the container to try GPU encoding again. 
 as we only test for GPU encoding once on first video stream.
-
-# Allowing internal URLs requests
-
-By default, YTPTube prevents requests to internal resources. However, if you want to allow requests to internal URLs, you can set the `YTP_ALLOW_INTERNAL_URLS` environment variable to `true`. This will allow requests to internal URLs. 
-
-We do not recommend enabling this option unless you know what you are doing, as it can expose your internal network to 
-potential security risks. This should only be used if it's truly needed.
 
 # How to setup CI on Gitea?
 

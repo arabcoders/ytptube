@@ -360,7 +360,6 @@ async def test_generic_task_handler_inspect(monkeypatch):
 
     monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fake_fetch_content))
     config = Config.get_instance()
-    monkeypatch.setattr(config, "allow_internal_urls", True)
 
     # Mock fetch_info to return valid info with required fields for archive ID generation
     async def fake_fetch_info(config, url, **kwargs):  # noqa: ARG001
@@ -377,40 +376,6 @@ async def test_generic_task_handler_inspect(monkeypatch):
         assert item.title == "First"
         assert item.thumbnail == "https://example.com/first.jpg"
         assert item.description == "First description"
-
-
-@pytest.mark.asyncio
-async def test_extract_internal(monkeypatch):
-    definition = TaskDefinition(
-        id=8,
-        name="internal",
-        priority=0,
-        match_url=["https://example.com/*"],
-        definition=Definition(
-            parse=Parse.model_validate({"link": {"type": "jsonpath", "expression": "url"}}),
-            request=RequestConfig(url="http://127.0.0.1/private"),
-            response=ResponseConfig(type="json"),
-        ),
-    )
-
-    async def fake_find_definition(cls, url):  # noqa: ARG001
-        return definition
-
-    async def fake_fetch_content(*args, **kwargs):  # noqa: ARG001
-        pytest.fail("Internal URL was fetched")
-
-    monkeypatch.setattr(GenericTaskHandler, "_find_definition", classmethod(fake_find_definition))
-    monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fake_fetch_content))
-    config = Config.get_instance()
-    monkeypatch.setattr(config, "allow_internal_urls", False)
-
-    result = await GenericTaskHandler.extract(
-        HandleTask(id=1, name="Internal", url="https://example.com/source"),
-        config=config,
-    )
-
-    assert isinstance(result, TaskFailure)
-    assert result.message == "Invalid target URL."
 
 
 def test_parse_items_json_list():

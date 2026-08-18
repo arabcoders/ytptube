@@ -69,9 +69,6 @@ class Config(metaclass=Singleton):
     temp_disabled: bool = False
     """Disable the temporary files feature."""
 
-    allow_internal_urls: bool = False
-    """Allow requests to internal URLs."""
-
     output_template: str = "%(title)s.%(ext)s"
     """The output template to use for the downloaded files."""
 
@@ -119,9 +116,6 @@ class Config(metaclass=Singleton):
 
     cors_origins: str = "*"
     """Allowed CORS origins."""
-
-    disable_exec: bool = False
-    """Strip some dangerous yt-dlp options."""
 
     remove_files: bool = False
     """Remove downloaded files when removing the record."""
@@ -338,13 +332,11 @@ class Config(metaclass=Singleton):
         "prevent_live_premiere",
         "temp_disabled",
         "retry_fresh",
-        "allow_internal_urls",
         "simple_mode",
         "ignore_archived_items",
         "check_for_updates",
         "thumb_generate",
         "thumb_sidecar",
-        "disable_exec",
         "disable_auth",
         "extract_info_keep_alive",
         "monitor_enabled",

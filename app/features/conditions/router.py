@@ -1,4 +1,3 @@
-import asyncio
 from collections import OrderedDict
 from typing import Any
 
@@ -97,7 +96,7 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         )
 
     try:
-        await asyncio.to_thread(validate_url, url, config.allow_internal_urls)
+        validate_url(url)
     except ValueError as e:
         return api_error_response(
             str(e),

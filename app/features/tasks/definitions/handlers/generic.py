@@ -143,7 +143,7 @@ class GenericTaskHandler(BaseHandler):
 
     @staticmethod
     async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
-        config = config or Config.get_instance()
+        _ = config
         definition: TaskDefinition | None = await GenericTaskHandler._find_definition(task.url)
         if not definition:
             return TaskFailure(message="No generic task definition matched the provided URL.")
@@ -152,7 +152,7 @@ class GenericTaskHandler(BaseHandler):
         target_url: str = definition.definition.request.url or task.url
 
         try:
-            await asyncio.to_thread(validate_url, target_url, config.allow_internal_urls)
+            validate_url(target_url)
         except ValueError as exc:
             return TaskFailure(message="Invalid target URL.", error=str(exc))
 

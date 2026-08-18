@@ -2,39 +2,43 @@
 
 ## Reporting a vulnerability
 
-Report security issues through [GitHub private vulnerability reporting](https://github.com/arabcoders/ytptube/security/advisories/new) (`Security` > `Report a vulnerability`). Do not open a public issue.
+Report security issues via [GitHub](https://github.com/arabcoders/ytptube/security/advisories/new). Do not open a public issue.
 
-Expect an initial response within a few days. Include:
+Expect reply within a few days at most usually in hours. Include:
 
-- A working reproduction
-- The YTPTube release version shown in the UI footer
 - The security impact
+- A working re-production. `PoC` code is preferred, but a detailed description of the steps to reproduce is acceptable.
+- The YTPTube release version shown in the UI footer
 - Relevant configuration with secrets removed
+
+Security issues in yt-dlp itself, including vulnerabilities in its extractors, option parsing, or command execution,
+should be reported to the [yt-dlp project](https://github.com/yt-dlp/yt-dlp/security/advisories/new), not to YTPTube.
+
+Report issues to YTPTube when the vulnerability is caused by its integration or exposes functionality without the
+required authentication boundary.
 
 ## Supported versions
 
-Only the latest release is supported. Update to the current Docker image or latest native release before reporting. 
+Only the latest release is supported. Update to the current Docker image or latest native release before reporting.
 Reports that cannot be reproduced on the latest release will be closed.
 
 ## Reports we close
 
-YTPTube is an administrative application, not a sandbox for untrusted users. Anyone with valid application credentials 
-is trusted to manage downloads, tasks, files, and yt-dlp options.
+YTPTube is an administrative application, not a sandbox for untrusted users. Anyone with valid application credentials
+is trusted to manage the entire YTPTube instance and what it has access to.
 
 Reports that only describe the following behavior will be closed:
 
-- Unauthenticated access when `YTP_DISABLE_AUTH=true`, including the default configuration in native builds. This setting 
-disables application authentication and is intended for deployments protected by a trusted reverse proxy or private network.
-- First-user registration through `/setup` while no account exists. This is the intended bootstrap flow; reports must 
-demonstrate access after setup is complete or another authentication boundary bypass.
-- Command execution through yt-dlp options such as `--exec` by an authenticated user when `YTP_DISABLE_EXEC=false`.
-- Path traversal or output path control through yt-dlp output templates by an authenticated user. Output templates are 
-passed to yt-dlp and are not a path sandbox.
-- Internal network requests made by an authenticated administrator.
+- Unauthenticated access when `YTP_DISABLE_AUTH=true`, including the default configuration in native builds. This setting
+  disables application authentication and is intended for deployments protected by a trusted reverse proxy or private network.
+- First-user registration through `/setup` while no account exists. This is the intended bootstrap flow; reports must
+  demonstrate access after setup is complete or another authentication boundary bypass.
+- Behavior caused by yt-dlp itself, including command execution or path control through options such as `--exec`, `--output`,
+  or `--netrc`. yt-dlp is not sandboxed and can execute arbitrary commands.
+- YTPTube does not sandbox outbound network access. Authenticated administrators can cause requests to internal services,
+including through redirects or yt-dlp behavior or even via dns rebinding.
 
-`YTP_DISABLE_EXEC=true` blocks some command-execution options. It does not turn yt-dlp into a sandbox.
-
-A report about these areas must demonstrate a boundary bypass, such as access without valid authentication while auth is 
+A report about these areas must demonstrate a boundary bypass, such as access without valid authentication while auth is
 enabled.
 
 ## Generated reports

@@ -60,7 +60,7 @@ async def test_info_preserves_entries(monkeypatch: pytest.MonkeyPatch, test_clie
     }
     fetch = AsyncMock(return_value=(info, []))
     cache = _Cache()
-    config = SimpleNamespace(default_preset="default", allow_internal_urls=False)
+    config = SimpleNamespace(default_preset="default")
 
     monkeypatch.setattr(router, "validate_url", lambda *_args: True)
     monkeypatch.setattr(router.Presets, "get_instance", lambda: _Presets())
@@ -94,7 +94,7 @@ async def test_info_refreshes_archive(monkeypatch: pytest.MonkeyPatch, test_clie
         "_cached": {"ttl": 300, "expires": 9999999999},
     }
     cache = _Cache(cached)
-    config = SimpleNamespace(default_preset="default", allow_internal_urls=False)
+    config = SimpleNamespace(default_preset="default")
 
     monkeypatch.setattr(router, "validate_url", lambda *_args: True)
     monkeypatch.setattr(router.Presets, "get_instance", lambda: _Presets())
@@ -122,7 +122,7 @@ async def test_info_caps_browser_wait(
     test_client,
 ) -> None:
     fetch = AsyncMock(return_value=({"title": "Playlist", "entries": []}, []))
-    config = SimpleNamespace(default_preset="default", allow_internal_urls=False)
+    config = SimpleNamespace(default_preset="default")
 
     monkeypatch.setattr(router, "validate_url", lambda *_args: True)
     monkeypatch.setattr(router.Presets, "get_instance", lambda: _Presets())

@@ -506,7 +506,6 @@ class TestDownloadFlow:
             temp_path = "/tmp"
             output_template = "%(title)s.%(ext)s"
             output_template_chapter = "%(title)s.%(ext)s"
-            disable_exec = False
 
             @staticmethod
             def get_instance():
