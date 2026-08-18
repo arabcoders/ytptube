@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a30c725496d65c71282b43f4f5386cd81720c986",
-    "date": "2026-08-18T17:37:02+00:00",
+    "full_sha": "db3a19f1d8d7b0ee574a71c91c78726d10d8bedb",
+    "date": "2026-08-18T19:22:10+00:00",
     "commits": [
+      {
+        "sha": "db3a19f1",
+        "full_sha": "db3a19f1d8d7b0ee574a71c91c78726d10d8bedb",
+        "message": "fix: relax argparser",
+        "author": "arabcoders",
+        "date": "2026-08-18T19:22:10+00:00"
+      },
       {
         "sha": "a30c7254",
         "full_sha": "a30c725496d65c71282b43f4f5386cd81720c986",
