@@ -445,18 +445,12 @@ def test_select_driver_selenium(monkeypatch: pytest.MonkeyPatch) -> None:
     assert ie._select_driver("selenium+http://browser:9222") is generic_browser.SeleniumDriver
 
 
-def test_select_driver_playwright_ws(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("url", ["playwright+http://playwright:9222/", "playwright+http://chrome:9222/"])
+def test_select_driver_playwright(monkeypatch: pytest.MonkeyPatch, url: str) -> None:
     ie = _make_ie()
     monkeypatch.setattr(generic_browser.PlaywrightDriver, "is_available", staticmethod(lambda: True))
 
-    assert ie._select_driver("playwright+http://playwright:9222/") is generic_browser.PlaywrightDriver
-
-
-def test_select_driver_playwright_cdp(monkeypatch: pytest.MonkeyPatch) -> None:
-    ie = _make_ie()
-    monkeypatch.setattr(generic_browser.PlaywrightDriver, "is_available", staticmethod(lambda: True))
-
-    assert ie._select_driver("playwright+http://chrome:9222/") is generic_browser.PlaywrightDriver
+    assert ie._select_driver(url) is generic_browser.PlaywrightDriver
 
 
 def _playwright_mocks(monkeypatch: pytest.MonkeyPatch, contexts: list[Mock]) -> tuple[Mock, Mock]:

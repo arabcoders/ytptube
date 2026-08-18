@@ -1278,7 +1278,8 @@ class TestGetFileSidecar:
             nfo_file.write_text("nfo content")
 
             result = get_file_sidecar(video_file)
-            assert isinstance(result, dict)  # Returns dict, not list
+            assert result["subtitle"] == [{"file": srt_file, "lang": "und", "name": "SRT (1) - und"}]
+            assert result["text"] == [{"file": nfo_file}]
 
     def test_file_sidecar_no_files(self):
         """Test getting sidecar files when none exist."""
@@ -1287,7 +1288,7 @@ class TestGetFileSidecar:
             video_file.write_text("video content")
 
             result = get_file_sidecar(video_file)
-            assert isinstance(result, dict)  # Returns dict, not list
+            assert result == {}
 
 
 class TestCheckId:

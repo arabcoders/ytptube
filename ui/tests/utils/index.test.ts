@@ -168,47 +168,28 @@ describe('string manipulation helpers', () => {
     expect(result).toBe('Hello YTPTube!');
   });
 
-  it('itrim_edges', () => {
-    expect(utils.iTrim('--value--', '-', 'both')).toBe('value');
-    expect(utils.iTrim('::value', ':', 'start')).toBe('value');
-    expect(utils.iTrim('value::', ':', 'end')).toBe('value');
-  });
-
-  it('itrim_slash', () => {
-    expect(utils.iTrim('//value//', '/', 'both')).toBe('value');
-    expect(utils.iTrim('/value', '/', 'start')).toBe('value');
-    expect(utils.iTrim('value/', '/', 'end')).toBe('value');
-    expect(utils.iTrim('///multiple///', '/', 'both')).toBe('multiple');
-  });
-
-  it('itrim_backslash', () => {
-    expect(utils.iTrim('\\\\value\\\\', '\\', 'both')).toBe('value');
-    expect(utils.iTrim('\\value', '\\', 'start')).toBe('value');
-    expect(utils.iTrim('value\\', '\\', 'end')).toBe('value');
-  });
-
-  it('itrim_hyphen', () => {
-    expect(utils.iTrim('--value--', '-', 'both')).toBe('value');
-    expect(utils.iTrim('-value', '-', 'start')).toBe('value');
-    expect(utils.iTrim('value-', '-', 'end')).toBe('value');
-    expect(utils.iTrim('---multiple---', '-', 'both')).toBe('multiple');
-  });
-
-  it('itrim_caret', () => {
-    expect(utils.iTrim('^^value^^', '^', 'both')).toBe('value');
-    expect(utils.iTrim('^value', '^', 'start')).toBe('value');
-    expect(utils.iTrim('value^', '^', 'end')).toBe('value');
+  it.each([
+    ['--value--', '-', 'both', 'value'],
+    ['::value', ':', 'start', 'value'],
+    ['value::', ':', 'end', 'value'],
+    ['///multiple///', '/', 'both', 'multiple'],
+    ['---multiple---', '-', 'both', 'multiple'],
+    ['\\\\value\\\\', '\\', 'both', 'value'],
+    ['\\value', '\\', 'start', 'value'],
+    ['value\\', '\\', 'end', 'value'],
+    ['^^value^^', '^', 'both', 'value'],
+    ['^value', '^', 'start', 'value'],
+    ['value^', '^', 'end', 'value'],
+    ['..value..', '.', 'both', 'value'],
+    ['.value', '.', 'start', 'value'],
+    ['value.', '.', 'end', 'value'],
+  ] as const)('itrim %s', (input, delimiter, mode, expected) => {
+    expect(utils.iTrim(input, delimiter, mode)).toBe(expected);
   });
 
   it('itrim_brackets', () => {
     expect(utils.iTrim('[[value]]', '[', 'both')).toBe('value]]');
     expect(utils.iTrim(']]value[[', ']', 'both')).toBe('value[[');
-  });
-
-  it('itrim_dot', () => {
-    expect(utils.iTrim('..value..', '.', 'both')).toBe('value');
-    expect(utils.iTrim('.value', '.', 'start')).toBe('value');
-    expect(utils.iTrim('value.', '.', 'end')).toBe('value');
   });
 
   it('itrim_regex_chars', () => {

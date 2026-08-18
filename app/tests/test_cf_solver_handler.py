@@ -213,30 +213,6 @@ class TestCFSolverRH:
         mock_director.close.assert_called_once()
         assert self.handler._fallback_director is None
 
-    def test_close_no_director(self):
-        """Test closing handler when no director exists."""
-        self.handler._fallback_director = None
-        self.handler.close()
-
-    def test_check_extensions(self):
-        """Test extension checking."""
-        extensions = {
-            "timeout": 30,
-            "legacy_ssl": True,
-            "other": "value",
-        }
-
-        self.handler._check_extensions(extensions)
-
-    def test_validate(self):
-        """Test request validation."""
-        request = Mock()
-        request.url = "https://example.com"
-        request.proxies = None
-        request.extensions = {}
-
-        self.handler._validate(request)
-
     def test_solve(self):
         """Test solving challenge."""
         request = Mock()

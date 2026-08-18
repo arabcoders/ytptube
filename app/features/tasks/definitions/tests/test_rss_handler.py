@@ -32,21 +32,11 @@ class TestRssHandlerParsing:
 
     @pytest.mark.parametrize(("url", "expected"), RssGenericHandler.tests())
     def test_url_parsing(self, url: str, expected: bool):
-        """Test URL parsing against all defined test cases."""
         result = RssGenericHandler.parse(url)
-        is_matched = result is not None
-        assert is_matched == expected, f"URL '{url}' expected {expected}, got {is_matched}"
-
-    @pytest.mark.parametrize(("url", "expected"), RssGenericHandler.tests())
-    def test_returns_url_dict_match(self, url: str, expected: bool):
-        """Test that parse returns dict with 'url' key for valid feeds."""
-        result = RssGenericHandler.parse(url)
+        assert (result is not None) == expected
         if expected:
             assert result is not None
-            assert "url" in result
             assert result["url"] == url
-        else:
-            assert result is None
 
 
 class TestRssHandlerExtraction:

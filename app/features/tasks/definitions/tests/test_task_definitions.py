@@ -81,9 +81,6 @@ class TestTaskDefinitionsRepository:
         with pytest.raises(ValueError, match="already exists"):
             await repo.create(payload)
 
-        with pytest.raises(ValueError, match="already exists"):
-            await repo.create(payload)
-
     @pytest.mark.asyncio
     async def test_update_missing_raises(self, repo: TaskDefinitionsRepository) -> None:
         with pytest.raises(KeyError, match="not found"):

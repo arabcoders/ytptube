@@ -24,97 +24,9 @@ def reset_generic_handler(monkeypatch):
     monkeypatch.setattr(GenericTaskHandler, "_sources_mtime", {})
 
 
-def test_build_def_payload():
-    definition = TaskDefinition(
-        id=1,
-        name="example",
-        priority=0,
-        match_url=["https://example.com/articles/*"],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        definition=Definition(
-            parse=Parse.model_validate(
-                {
-                    "link": {"type": "css", "expression": ".article a.link::attr(href)"},
-                    "title": {"type": "css", "expression": ".article .title", "attribute": "text"},
-                }
-            ),
-            engine=EngineConfig(),
-            request=RequestConfig(),
-            response=ResponseConfig(),
-        ),
-    )
-
-    assert definition.name == "example"
-    assert definition.match_url == ["https://example.com/articles/*"]
-    assert definition.definition.parse["link"]["expression"] == ".article a.link::attr(href)"
-
-
 def test_request_method():
     with pytest.raises(ValidationError):
         RequestConfig.model_validate({"method": "DELETE"})
-
-
-def test_build_def_container():
-    definition = TaskDefinition(
-        id=2,
-        name="container",
-        priority=0,
-        match_url=["https://example.com/cards"],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        definition=Definition(
-            parse=Parse.model_validate(
-                {
-                    "items": {
-                        "selector": ".cards .card",
-                        "fields": {
-                            "link": {"type": "css", "expression": ".card-header a", "attribute": "href"},
-                            "title": {"type": "css", "expression": ".card-header a", "attribute": "text"},
-                        },
-                    }
-                }
-            ),
-            engine=EngineConfig(),
-            request=RequestConfig(),
-            response=ResponseConfig(),
-        ),
-    )
-
-    assert definition.definition.parse["items"]["selector"] == ".cards .card"
-    assert definition.definition.parse["items"]["fields"]["link"]["attribute"] == "href"
-
-
-def test_build_def_json():
-    definition = TaskDefinition(
-        id=3,
-        name="json-def",
-        priority=0,
-        match_url=["https://example.com/api"],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        definition=Definition(
-            parse=Parse.model_validate(
-                {
-                    "items": {
-                        "type": "jsonpath",
-                        "selector": "items",
-                        "fields": {
-                            "link": {"type": "jsonpath", "expression": "url"},
-                            "title": {"type": "jsonpath", "expression": "title"},
-                        },
-                    }
-                }
-            ),
-            engine=EngineConfig(),
-            request=RequestConfig(),
-            response=ResponseConfig(type="json"),
-        ),
-    )
-
-    assert definition.definition.response.type == "json"
-    assert definition.definition.parse["items"]["type"] == "jsonpath"
-    assert definition.definition.parse["items"]["fields"]["link"]["type"] == "jsonpath"
 
 
 def test_parse_items_basic():

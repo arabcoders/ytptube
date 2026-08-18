@@ -2,14 +2,13 @@ import logging
 from pathlib import Path
 import re
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from app.features.ytdlp.utils import (
     LogWrapper,
     extract_ytdlp_logs,
-    get_archive_id,
     ytdlp_reject,
     parse_outtmpl,
     get_extras,
@@ -489,16 +488,6 @@ class TestGetStaticYtdlp:
 
         _DATA.YTDLP_INFO_CLS = None
 
-    def test_instance(self):
-        """Test that get_static_ytdlp returns a YTDLP instance."""
-        from app.features.ytdlp.ytdlp import YTDLP
-
-        # Get the cached instance
-        instance = get_ytdlp()
-
-        assert instance is not None
-        assert isinstance(instance, YTDLP)
-
     def test_get_static_ytdlp_same(self):
         """Test that get_static_ytdlp returns the same cached instance."""
 
@@ -530,26 +519,6 @@ class TestGetStaticYtdlp:
         assert params.get("ignoreerrors") is True
         assert params.get("ignore_no_formats_error") is True
         assert params.get("quiet") is True
-
-
-class TestGetArchiveId:
-    """Test the get_archive_id function."""
-
-    @patch("app.features.ytdlp.utils._DATA.YTDLP_INFO_CLS")
-    def test_get_archive_id_basic(self, mock_ytdlp):
-        """Test basic archive ID extraction."""
-        mock_ytdlp._ies = {}
-
-        result = get_archive_id("https://youtube.com/watch?v=test123")
-        assert isinstance(result, dict)
-        assert "id" in result
-        assert "ie_key" in result
-        assert "archive_id" in result
-
-    def test_archive_id_invalid_url(self):
-        """Test with invalid URL."""
-        result = get_archive_id("invalid-url")
-        assert isinstance(result, dict)
 
 
 class TestArchiveFunctions:

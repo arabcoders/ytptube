@@ -16,18 +16,11 @@ class TestEncoder:
         """Set up test fixtures."""
         self.encoder = Encoder()
 
-    def test_path_serialization(self):
-        """Test that Path objects are serialized as strings."""
-        path = Path("/tmp/test/file.txt")
+    @pytest.mark.parametrize("path", [Path("/tmp/test/file.txt"), Path("relative/path/file.txt")])
+    def test_path_serialization(self, path: Path) -> None:
         result = self.encoder.default(path)
-        assert result == "/tmp/test/file.txt"
+        assert result == str(path)
         assert isinstance(result, str)
-
-    def test_path_serialization_relative(self):
-        """Test that relative Path objects are serialized correctly."""
-        path = Path("relative/path/file.txt")
-        result = self.encoder.default(path)
-        assert result == "relative/path/file.txt"
 
     def test_date_serialization(self):
         """Test that date objects are serialized as strings."""

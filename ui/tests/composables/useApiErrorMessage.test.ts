@@ -77,13 +77,8 @@ describe('useApiErrorMessage', () => {
     expect(result).toBe('Validation failed on field x.');
   });
 
-  it('returns localized generic error for null payload', () => {
-    const result = messageFor(null);
-    expect(result).toBe('errors.UNKNOWN');
-  });
-
-  it('returns localized generic error for undefined payload', () => {
-    const result = messageFor(undefined);
+  it.each([null, undefined])('returns localized generic error for %s payload', (payload) => {
+    const result = messageFor(payload);
     expect(result).toBe('errors.UNKNOWN');
   });
 

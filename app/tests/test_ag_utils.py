@@ -31,19 +31,6 @@ class TestGetValue:
         assert result == "called"
         mock_func.assert_called_once()
 
-    def test_get_value_with_lambda(self):
-        """Test get_value with lambda functions."""
-        assert get_value(lambda: 100) == 100
-        assert get_value(lambda: "lambda_result") == "lambda_result"
-
-    def test_get_value_with_function(self):
-        """Test get_value with regular functions."""
-
-        def test_func():
-            return "function_result"
-
-        assert get_value(test_func) == "function_result"
-
 
 class TestAgSet:
     """Test the ag_set function."""

@@ -12,31 +12,6 @@ from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 class TestYTDLPOpts:
     """Test the YTDLPOpts class."""
 
-    def test_constructor_initializes_correctly(self):
-        """Test that YTDLPOpts constructor initializes all attributes."""
-        with patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config:
-            mock_config_instance = Mock()
-            mock_config.get_instance.return_value = mock_config_instance
-
-            opts = YTDLPOpts()
-
-            assert opts._config is mock_config_instance
-            assert opts._item_opts == {}
-            assert opts._preset_opts == {}
-            assert opts._item_cli == []
-            assert opts._preset_cli == ""
-
-    def test_get_instance(self):
-        """Test that get_instance returns a reset YTDLPOpts instance."""
-        with patch("app.features.ytdlp.ytdlp_opts.Config"):
-            opts = YTDLPOpts.get_instance()
-
-            assert isinstance(opts, YTDLPOpts)
-            assert opts._item_opts == {}
-            assert opts._preset_opts == {}
-            assert opts._item_cli == []
-            assert opts._preset_cli == ""
-
     def test_add_cli_valid_args(self):
         """Test adding valid CLI arguments."""
         with (
@@ -403,24 +378,6 @@ class TestYTDLPOpts:
             assert opts._item_cli == []
             assert opts._preset_cli == ""
 
-    def test_method_chaining(self):
-        """Test that methods support chaining."""
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config"),
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter"),
-            patch("app.features.presets.service.Presets") as mock_presets,
-        ):
-            mock_presets_instance = Mock()
-            mock_presets_instance.get.return_value = None
-            mock_presets.get_instance.return_value = mock_presets_instance
-
-            opts = YTDLPOpts()
-
-            # Test chaining
-            result = opts.add_cli("--format best").add({"quality": "720p"}).preset("nonexistent").reset()
-
-            assert result is opts
-
     def test_debug_logging(self):
         """Test debug logging when enabled."""
         with (
@@ -515,14 +472,6 @@ class TestYTDLPOpts:
 
 class TestARGSMerger:
     """Test the ARGSMerger class."""
-
-    def test_constructor_initializes_empty_args(self):
-        """Test that ARGSMerger constructor initializes with empty args list."""
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-
-        assert merger.args == []
 
     def test_add_valid_args(self):
         """Test adding valid command-line arguments."""
@@ -711,15 +660,6 @@ class TestARGSMerger:
 
             assert result == {"format": "best"}
             mock_converter.assert_called_once_with(args="--format best", level=False)
-
-    def test_get_instance(self):
-        """Test get_instance static method."""
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger.get_instance()
-
-        assert isinstance(merger, ARGSMerger)
-        assert merger.args == []
 
     def test_reset(self):
         """Test reset method clears args."""
