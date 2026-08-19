@@ -53,6 +53,16 @@ export const writeCatalogIfChanged = async (path: string, content: string): Prom
   return true;
 };
 
+export const extractIcons = (
+  scanner: IconUsageScanner,
+  code: string,
+  icons: Set<string>,
+): boolean => {
+  const count = icons.size;
+  scanner.extractFromCode(code, icons);
+  return icons.size !== count;
+};
+
 export default defineNuxtModule({
   meta: { name: 'ytptube-icon-catalog' },
   setup(_options, nuxt) {
@@ -64,6 +74,9 @@ export default defineNuxtModule({
     let catalogChanged = false;
 
     nuxt.hook('icon:clientBundleIcons', async (icons) => {
+      for (const icon of icons) {
+        incrementalIcons.add(icon);
+      }
       for (const icon of incrementalIcons) {
         icons.add(icon);
       }
@@ -98,6 +111,7 @@ export default defineNuxtModule({
               catalogChanged = false;
               const destinations = new Set<string>();
               try {
+                let iconsChanged = false;
                 if (scanner) {
                   const sourcePaths = [...pendingSourcePaths];
                   pendingSourcePaths.clear();
@@ -111,9 +125,13 @@ export default defineNuxtModule({
                           throw error;
                         },
                       );
-                      scanner.extractFromCode(code, incrementalIcons);
+                      iconsChanged = extractIcons(scanner, code, incrementalIcons) || iconsChanged;
                     }),
                   );
+                }
+
+                if (!iconsChanged) {
+                  continue;
                 }
 
                 await updateTemplates({
