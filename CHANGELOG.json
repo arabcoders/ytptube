@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "db3a19f1d8d7b0ee574a71c91c78726d10d8bedb",
-    "date": "2026-08-18T19:22:10+00:00",
+    "full_sha": "e36003f15edab226c32f1004742fb47f5705c8ea",
+    "date": "2026-08-19T06:41:35+00:00",
     "commits": [
+      {
+        "sha": "e36003f1",
+        "full_sha": "e36003f15edab226c32f1004742fb47f5705c8ea",
+        "message": "refactor: support external yt-dlp in execuable builds. and update package installer.",
+        "author": "arabcoders",
+        "date": "2026-08-19T06:41:35+00:00"
+      },
       {
         "sha": "db3a19f1",
         "full_sha": "db3a19f1d8d7b0ee574a71c91c78726d10d8bedb",
