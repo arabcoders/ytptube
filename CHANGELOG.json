@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "e36003f15edab226c32f1004742fb47f5705c8ea",
-    "date": "2026-08-19T06:41:35+00:00",
+    "full_sha": "c7bc9c154fe5bad1a7b95b313340e9b7c9be9ca4",
+    "date": "2026-08-19T09:49:51+00:00",
     "commits": [
+      {
+        "sha": "c7bc9c15",
+        "full_sha": "c7bc9c154fe5bad1a7b95b313340e9b7c9be9ca4",
+        "message": "fix: icon catalog triggering full reloads",
+        "author": "arabcoders",
+        "date": "2026-08-19T09:49:51+00:00"
+      },
       {
         "sha": "e36003f1",
         "full_sha": "e36003f15edab226c32f1004742fb47f5705c8ea",
