@@ -132,7 +132,7 @@ Extract the archive and run the `YTPTube` binary (or `YTPTube.exe` on Windows).
 If you plan to use the built-in video player, make sure `ffmpeg` is installed and available on `PATH`.
 
 > [!NOTE]
-> 1- Automatic `yt-dlp` and package updates are not avaliable in the native execuables.
+> 1- Automatic `yt-dlp` and package updates are not available in the native executables. See [Manually update yt-dlp in native executable](FAQ.md#manually-update-yt-dlp-in-native-executable).
 > 
 > 2- You need to manually install [ffmpeg](https://github.com/jellyfin/jellyfin-ffmpeg/releases) and [deno](https://deno.land/#installation) and have them in your `PATH`.
 

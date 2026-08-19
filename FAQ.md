@@ -40,6 +40,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_EXTRACT_INFO_KEEP_ALIVE     | Keep extract info worker processes alive between requests           | `false`               |
 | YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |
 | YTP_PIP_IGNORE_UPDATES          | Do not update the custom pip packages                               | `false`               |
+| YTP_PYTHON_PATH                 | Application package directories to load before config-local and bundled packages | `(not_set)` |
 | YTP_PICTURES_BACKENDS           | A comma separated list of pictures urls to use                      | `(not_set)`           |
 | YTP_BROWSER_CONTROL_ENABLED     | Whether to enable the file browser actions                          | `false`               |
 | YTP_YTDLP_AUTO_UPDATE           | Whether to enable the auto update for yt-dlp                        | `true`                |
@@ -231,6 +232,75 @@ YTP_YTDLP_VERSION=2025.07.21 or master or nightly
 ```
 
 Then restart the container to apply the changes.
+
+# Manually update yt-dlp in native executable?
+
+Stop YTPTube before changing its Python packages. Use a Python interpreter with the same major and minor version and
+architecture as the native build.
+
+Install yt-dlp into the versioned package directory under YTPTube's config location. On Linux:
+
+```bash
+export YTP_CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/ytptube"
+TARGET="$YTP_CONFIG_PATH/python3.13-packages"
+mkdir -p "$TARGET"
+python3.13 -m pip install --upgrade --target "$TARGET" "yt-dlp[default]"
+./YTPTube
+```
+
+On macOS, use `export YTP_CONFIG_PATH="$HOME/Library/Application Support/ytptube"` before the remaining commands.
+These are the native executable's default config locations, so later launches find the override without requiring a
+custom environment variable.
+
+On Windows, use PowerShell and a matching 64-bit or ARM64 Python installation:
+
+```powershell
+$env:YTP_CONFIG_PATH = Join-Path $env:LOCALAPPDATA "arabcoders\ytptube"
+$target = Join-Path $env:YTP_CONFIG_PATH "python3.13-packages"
+New-Item -ItemType Directory -Force $target | Out-Null
+py -3.13 -m pip install --upgrade --target $target "yt-dlp[default]"
+.\YTPTube.exe
+```
+
+The same target supports pinned, nightly, and master versions:
+
+```bash
+# Pinned release
+python3.13 -m pip install --upgrade --target "$TARGET" "yt-dlp[default]==2026.01.26"
+
+# Nightly channel
+python3.13 -m pip install --upgrade --pre --target "$TARGET" "yt-dlp[default]"
+
+# Master channel; requires Git
+python3.13 -m pip install --upgrade --target "$TARGET" \
+  "yt-dlp[default] @ git+https://github.com/yt-dlp/yt-dlp.git@master"
+```
+
+The equivalent PowerShell commands use the `$target` variable defined above:
+
+```powershell
+# Pinned release
+py -3.13 -m pip install --upgrade --target $target "yt-dlp[default]==2026.01.26"
+
+# Nightly channel
+py -3.13 -m pip install --upgrade --pre --target $target "yt-dlp[default]"
+
+# Master channel; requires Git
+py -3.13 -m pip install --upgrade --target $target "yt-dlp[default] @ git+https://github.com/yt-dlp/yt-dlp.git@master"
+```
+
+To keep packages elsewhere, set `YTP_PYTHON_PATH` when starting YTPTube. For application packages loaded after startup,
+such as yt-dlp, these directories take precedence over the config-local directory and bundled copy:
+
+```bash
+YTP_PYTHON_PATH="/path/to/packages" ./YTPTube
+```
+
+Separate multiple directories with `:` on Linux and macOS or `;` on Windows. Keep `YTP_PYTHON_PATH` set on every
+launch. On Windows, for example, use `$env:YTP_PYTHON_PATH = "C:\path\to\packages"` before running `YTPTube.exe`.
+Only add trusted directories that cannot be modified by untrusted users, because Python modules loaded from these
+locations execute with the same permissions as YTPTube. Reinstall the override when a future native build changes its
+bundled Python major or minor version.
 
 # Custom output template placeholders
 
