@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'bun:test';
 import { IconUsageScanner } from '@nuxt/icon/utils';
-import { isRelevantSource, renderCatalog, writeCatalogIfChanged } from '../../modules/icon-catalog';
+import {
+  extractIcons,
+  isRelevantSource,
+  renderCatalog,
+  writeCatalogIfChanged,
+} from '../../modules/icon-catalog';
 
 test('test source filtering', () => {
   const root = '/workspace/ui';
@@ -22,11 +27,12 @@ test('test catalog rendering', () => {
 
 test('test incremental extraction', () => {
   const scanner = new IconUsageScanner({ globInclude: ['app/**/*.{vue,ts,js}'] });
-  const icons = new Set<string>();
+  const icons = new Set(['lucide:activity']);
 
-  scanner.extractFromCode('<Icon name="i-lucide-alarm-clock-minus" />', icons);
+  expect(extractIcons(scanner, '<Icon name="i-lucide-activity" />', icons)).toBe(false);
+  expect(extractIcons(scanner, '<Icon name="i-lucide-alarm-clock-minus" />', icons)).toBe(true);
 
-  expect(icons).toEqual(new Set(['lucide:alarm-clock-minus']));
+  expect(icons).toEqual(new Set(['lucide:activity', 'lucide:alarm-clock-minus']));
 });
 
 test('test unchanged catalog', async () => {
