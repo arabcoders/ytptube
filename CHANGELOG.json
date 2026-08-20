@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "e6577f3838cb9c9f1052c5d7406c9001252631b0",
+    "date": "2026-08-20T16:07:29+00:00",
+    "commits": [
+      {
+        "sha": "e6577f38",
+        "full_sha": "e6577f3838cb9c9f1052c5d7406c9001252631b0",
+        "message": "fix: mac native build",
+        "author": "arabcoders",
+        "date": "2026-08-20T16:07:29+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.7.0",
     "full_sha": "de520249faf7525602c8ba3772c93b8b9d738b26",
     "date": "2026-08-20T15:51:09+00:00",
