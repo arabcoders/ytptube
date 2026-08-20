@@ -1,9 +1,44 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "c7bc9c154fe5bad1a7b95b313340e9b7c9be9ca4",
-    "date": "2026-08-19T09:49:51+00:00",
+    "full_sha": "aed6f291b73810baf4d4652e33728999b740b794",
+    "date": "2026-08-20T15:38:14+00:00",
     "commits": [
+      {
+        "sha": "aed6f291",
+        "full_sha": "aed6f291b73810baf4d4652e33728999b740b794",
+        "message": "refactor: fold some item in a drop down in both simple/default layout",
+        "author": "arabcoders",
+        "date": "2026-08-20T15:38:14+00:00"
+      },
+      {
+        "sha": "7fce4ace",
+        "full_sha": "7fce4ace917eae4354797d1b5455c7f3b053c44a",
+        "message": "feat: add session management feature.",
+        "author": "arabcoders",
+        "date": "2026-08-20T15:26:12+00:00"
+      },
+      {
+        "sha": "d91dcc90",
+        "full_sha": "d91dcc90c74ed563e43c5139d1f41c5eb0161977",
+        "message": "refactor: remove yt-dlp ci",
+        "author": "arabcoders",
+        "date": "2026-08-20T14:23:28+00:00"
+      },
+      {
+        "sha": "b231e848",
+        "full_sha": "b231e848981354c66cf7111707804a8196e7f3ea",
+        "message": "refactor: fail closed on api auth middleware",
+        "author": "arabcoders",
+        "date": "2026-08-20T14:19:30+00:00"
+      },
+      {
+        "sha": "de6e48fd",
+        "full_sha": "de6e48fdac221429303d59a1f037f1ec24585f1b",
+        "message": "chore: update external dependancies",
+        "author": "arabcoders",
+        "date": "2026-08-20T14:18:09+00:00"
+      },
       {
         "sha": "c7bc9c15",
         "full_sha": "c7bc9c154fe5bad1a7b95b313340e9b7c9be9ca4",
