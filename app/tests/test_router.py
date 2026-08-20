@@ -47,9 +47,11 @@ class TestRouteDecorator:
         assert r1.method == "GET"
         assert r1.path == "/api/test/"
         assert r1.public is False
+        assert (r1.same_origin, r1.cookie_only, r1.optional_auth, r1.auth_only) == (False, False, False, False)
         assert r2.method == "GET"
         assert r2.path == "/api/test"
         assert r2.public is False
+        assert (r2.same_origin, r2.cookie_only, r2.optional_auth, r2.auth_only) == (False, False, False, False)
 
         # The wrapper should call the original function
         res = await r1.handler()
@@ -76,6 +78,27 @@ class TestRouteDecorator:
         http_routes = get_routes(RouteType.HTTP)
         assert http_routes["get:api.public"].public is True
         assert http_routes["get:api.public_no_slash"].public is True
+
+    def test_auth_alias_metadata(self) -> None:
+        @route(
+            "POST",
+            "/api/metadata/",
+            public=True,
+            same_origin=True,
+            cookie_only=True,
+            optional_auth=True,
+            auth_only=True,
+        )
+        async def handler():
+            return "metadata"
+
+        for name in ("post:api.metadata", "post:api.metadata_no_slash"):
+            registered = get_route(RouteType.HTTP, name)
+            assert registered is not None
+            assert registered.same_origin
+            assert registered.cookie_only
+            assert registered.optional_auth
+            assert registered.auth_only
 
     def test_socket_route_registration(self) -> None:
         @route(RouteType.SOCKET, "/ws/conn")
@@ -133,6 +156,20 @@ class TestAddRoute:
         assert isinstance(no_slash_route, Route)
         assert route_with_slash.public is True
         assert no_slash_route.public is True
+
+    def test_add_metadata(self) -> None:
+        async def handler():
+            return "metadata"
+
+        add_route("GET", "/metadata/", handler, same_origin=True, cookie_only=True, optional_auth=True, auth_only=True)
+        registered = get_route(RouteType.HTTP, "get:metadata_no_slash")
+        assert registered is not None
+        assert (registered.same_origin, registered.cookie_only, registered.optional_auth, registered.auth_only) == (
+            True,
+            True,
+            True,
+            True,
+        )
 
 
 class TestGetters:

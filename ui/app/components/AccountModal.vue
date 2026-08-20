@@ -2,7 +2,6 @@
   <UModal
     v-model:open="open"
     :title="t('auth.account')"
-    :description="t('auth.accountDescription')"
     :dismissible="!busy"
     :ui="{
       content: 'w-full sm:max-w-2xl',
@@ -138,6 +137,83 @@
                 @click="revoke(key.id)"
               >
                 {{ t('auth.revoke') }}
+              </UButton>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 border-t border-default pt-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="ytp-detail-icon">
+                <UIcon name="i-lucide-monitor" class="size-4" />
+              </span>
+              <div>
+                <h2 class="font-semibold text-highlighted">{{ t('auth.sessions') }}</h2>
+                <p class="text-sm text-toned">{{ t('auth.sessionsDescription') }}</p>
+              </div>
+            </div>
+            <UButton
+              color="error"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-log-out"
+              :loading="revokingAll"
+              :disabled="busy || !otherSessions"
+              @click="revokeAll"
+            >
+              {{ t('auth.signOutAllOtherSessions') }}
+            </UButton>
+          </div>
+          <UEmpty
+            v-if="!sessions.length"
+            icon="i-lucide-monitor"
+            :title="t('auth.noSessions')"
+            class="py-8"
+          />
+          <div v-else class="divide-y divide-default rounded-sm border border-default">
+            <div
+              v-for="session in sessions"
+              :key="session.id"
+              class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="font-medium text-highlighted">{{ t('auth.session') }}</p>
+                  <UBadge v-if="session.current" color="primary" variant="soft" size="sm">
+                    {{ t('auth.currentSession') }}
+                  </UBadge>
+                </div>
+                <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-toned">
+                  <span class="min-w-0 wrap-break-word">{{ t('auth.userAgent') }}: </span>
+                  <UTooltip v-if="session.user_agent?.trim()" :text="session.user_agent">
+                    <span class="wrap-break-word">{{ browserSummary(session.user_agent) }}</span>
+                  </UTooltip>
+                  <span v-else>{{ t('common.unknown') }}</span>
+                  <span>{{ t('auth.ipAddress') }}: {{ session.ip || t('common.unknown') }}</span>
+                  <UTooltip :text="formatDateTime(session.created_at, locale)">
+                    <span>{{
+                      t('auth.createdAt', { date: formatRelativeTime(session.created_at, locale) })
+                    }}</span>
+                  </UTooltip>
+                  <UTooltip :text="formatDateTime(session.expires_at, locale)">
+                    <span>{{
+                      t('auth.expiresAt', { date: formatRelativeTime(session.expires_at, locale) })
+                    }}</span>
+                  </UTooltip>
+                </div>
+              </div>
+              <UButton
+                color="error"
+                variant="soft"
+                size="sm"
+                icon="i-lucide-log-out"
+                class="shrink-0 self-start sm:self-auto"
+                :loading="revoking === session.id"
+                :disabled="session.current || revoking !== null || revokingAll"
+                @click="revokeSession(session.id)"
+              >
+                {{ t('auth.signOut') }}
               </UButton>
             </div>
           </div>
@@ -306,7 +382,14 @@
 import { computed, ref, watch } from 'vue';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { useDirtyState } from '~/composables/useDirtyState';
-import { ApiError, copyText, ensure_api_success, parse_api_error, request } from '~/utils';
+import {
+  ApiError,
+  browserSummary,
+  copyText,
+  ensure_api_success,
+  parse_api_error,
+  request,
+} from '~/utils';
 import { formatDateTime } from '~/utils/date';
 import { formatRelativeTime } from '~/utils/relativeTime';
 
@@ -316,6 +399,14 @@ type ApiKey = {
   hint: string;
   created_at: string;
   last_used_at: string | null;
+};
+type AuthSession = {
+  id: number;
+  created_at: string;
+  expires_at: string;
+  current: boolean;
+  user_agent: string | null;
+  ip: string | null;
 };
 const open = defineModel<boolean>('open', { default: false });
 const { t, locale } = useI18n();
@@ -329,12 +420,14 @@ const newPassword = ref('');
 const keyName = ref('');
 const newKey = ref('');
 const keys = ref<ApiKey[]>([]);
+const sessions = ref<AuthSession[]>([]);
 const loading = ref(false);
 const loadFailed = ref(false);
 const saving = ref(false);
 const creating = ref(false);
 const loggingOut = ref(false);
 const revoking = ref<number | null>(null);
+const revokingAll = ref(false);
 const editOpen = ref(false);
 const createOpen = ref(false);
 const keyOpen = ref(true);
@@ -342,8 +435,14 @@ const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
 const busy = computed(
   () =>
-    loading.value || saving.value || creating.value || loggingOut.value || revoking.value !== null,
+    loading.value ||
+    saving.value ||
+    creating.value ||
+    loggingOut.value ||
+    revoking.value !== null ||
+    revokingAll.value,
 );
+const otherSessions = computed(() => sessions.value.some((session) => !session.current));
 const editSource = computed(() => ({
   username: editUsername.value,
   currentPassword: currentPassword.value,
@@ -399,6 +498,9 @@ const load = async (): Promise<void> => {
     const response = await request('/api/auth/api-keys');
     await ensure_api_success(response);
     keys.value = ((await response.json()) as { items: ApiKey[] }).items;
+    const sessionResponse = await request('/api/auth/sessions');
+    await ensure_api_success(sessionResponse);
+    sessions.value = ((await sessionResponse.json()) as { items: AuthSession[] }).items;
   } catch (error) {
     loadFailed.value = true;
     await report(error);
@@ -485,6 +587,46 @@ const revoke = async (id: number): Promise<void> => {
     await report(error);
   } finally {
     revoking.value = null;
+  }
+};
+const revokeSession = async (id: number): Promise<void> => {
+  if (revoking.value !== null) return;
+  if (
+    !(await confirm(t('auth.signOutConfirm'), {
+      confirmText: t('auth.signOut'),
+      confirmColor: 'error',
+    }))
+  )
+    return;
+  revoking.value = id;
+  try {
+    const response = await request(`/api/auth/sessions/${id}`, { method: 'DELETE' });
+    await ensure_api_success(response);
+    await load();
+  } catch (error) {
+    await report(error);
+  } finally {
+    revoking.value = null;
+  }
+};
+const revokeAll = async (): Promise<void> => {
+  if (revokingAll.value || !otherSessions.value) return;
+  if (
+    !(await confirm(t('auth.signOutAllConfirm'), {
+      confirmText: t('auth.signOutAllOtherSessions'),
+      confirmColor: 'error',
+    }))
+  )
+    return;
+  revokingAll.value = true;
+  try {
+    const response = await request('/api/auth/sessions', { method: 'DELETE' });
+    await ensure_api_success(response);
+    await load();
+  } catch (error) {
+    await report(error);
+  } finally {
+    revokingAll.value = false;
   }
 };
 const logout = async (): Promise<void> => {

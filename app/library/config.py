@@ -111,11 +111,17 @@ class Config(metaclass=Singleton):
     auth_password: str | None = None
     """The password to use for basic authentication."""
 
+    auth_session_days: int = 30
+    """The number of days to keep authentication sessions active."""
+
     disable_auth: bool = False
     """Disable application authentication."""
 
     cors_origins: str = "*"
     """Allowed CORS origins."""
+
+    trusted_proxies: str = ""
+    """Comma-separated trusted proxy IP addresses or CIDRs."""
 
     remove_files: bool = False
     """Remove downloaded files when removing the record."""
@@ -313,6 +319,7 @@ class Config(metaclass=Singleton):
         "flaresolverr_cache_ttl",
         "monitor_interval",
         "monitor_retention_hours",
+        "auth_session_days",
     )
     "The variables that are integers."
 
@@ -454,6 +461,9 @@ class Config(metaclass=Singleton):
 
             if k in self._int_vars:
                 setattr(self, k, int(v))
+                if k == "auth_session_days" and self.auth_session_days < 1:
+                    msg = "Config variable 'auth_session_days' must be at least 1."
+                    raise ValueError(msg)
 
             if k in self._float_vars:
                 setattr(self, k, float(v))

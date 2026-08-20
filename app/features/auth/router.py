@@ -3,7 +3,7 @@ from __future__ import annotations
 from aiohttp import web
 from pydantic import ValidationError
 
-from app.features.auth.middleware import AUTH_USER_KEY
+from app.features.auth.middleware import AUTH_USER_KEY, resolve_client_ip
 from app.features.auth.schemas import AccountPatch, ApiKeyCreate, Credentials
 from app.features.auth.service import AuthService
 from app.features.core.utils import api_error_response, format_validation_errors
@@ -52,7 +52,7 @@ def _session_response(request: web.Request, user: dict, token: str, status: int 
     response.set_cookie(
         "ytp_session",
         token,
-        max_age=7 * 24 * 60 * 60,
+        max_age=Config.get_instance().auth_session_days * 24 * 60 * 60,
         httponly=True,
         samesite="Strict",
         secure=request.secure,
@@ -61,7 +61,7 @@ def _session_response(request: web.Request, user: dict, token: str, status: int 
     return response
 
 
-@route("GET", "api/auth/status", "auth_status", public=True)
+@route("GET", "api/auth/status", "auth_status", public=True, optional_auth=True)
 async def auth_status(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     user = _user(request)
     return web.json_response(
@@ -74,7 +74,7 @@ async def auth_status(request: web.Request, config: Config, auth: AuthService) -
     )
 
 
-@route("POST", "api/auth/setup", "auth_setup", public=True)
+@route("POST", "api/auth/setup", "auth_setup", public=True, same_origin=True, auth_only=True)
 async def auth_setup(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     if config.disable_auth:
         return _disabled()
@@ -92,10 +92,15 @@ async def auth_setup(request: web.Request, config: Config, auth: AuthService) ->
         return api_error_response(
             "Setup is no longer available.", code="ALREADY_EXISTS", status=web.HTTPConflict.status_code
         )
-    return _session_response(request, user, await auth.create_session(user["id"]), web.HTTPCreated.status_code)
+    return _session_response(
+        request,
+        user,
+        await auth.create_session(user["id"], request.headers.get("User-Agent"), resolve_client_ip(request, config)),
+        web.HTTPCreated.status_code,
+    )
 
 
-@route("POST", "api/auth/login", "auth_login", public=True)
+@route("POST", "api/auth/login", "auth_login", public=True, same_origin=True, auth_only=True)
 async def auth_login(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     if config.disable_auth:
         return _disabled()
@@ -108,10 +113,14 @@ async def auth_login(request: web.Request, config: Config, auth: AuthService) ->
     if user is None:
         return api_error_response("Unauthorized.", code="UNAUTHORIZED", status=web.HTTPUnauthorized.status_code)
     auth.clear_attempts(request.remote)
-    return _session_response(request, user, await auth.create_session(user["id"]))
+    return _session_response(
+        request,
+        user,
+        await auth.create_session(user["id"], request.headers.get("User-Agent"), resolve_client_ip(request, config)),
+    )
 
 
-@route("POST", "api/auth/logout", "auth_logout")
+@route("POST", "api/auth/logout", "auth_logout", auth_only=True)
 async def auth_logout(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     if config.disable_auth:
         return _disabled()
@@ -122,7 +131,49 @@ async def auth_logout(request: web.Request, config: Config, auth: AuthService) -
     return response
 
 
-@route("POST", "api/auth/ws-ticket", "auth_ws_ticket")
+@route("GET", "api/auth/sessions", "auth_sessions", auth_only=True)
+async def auth_sessions(request: web.Request, auth: AuthService) -> web.Response:
+    user = _user(request)
+    if user is None:
+        return api_error_response("Unauthorized.", code="UNAUTHORIZED", status=web.HTTPUnauthorized.status_code)
+    return web.json_response(data={"items": await auth.sessions(user["id"], request.cookies.get("ytp_session"))})
+
+
+@route("DELETE", "api/auth/sessions/{session_id}", "auth_session_delete", auth_only=True)
+async def auth_session_delete(request: web.Request, auth: AuthService) -> web.Response:
+    user = _user(request)
+    if user is None:
+        return api_error_response("Unauthorized.", code="UNAUTHORIZED", status=web.HTTPUnauthorized.status_code)
+    try:
+        session_id = int(request.match_info["session_id"])
+    except ValueError:
+        session_id = 0
+    current = request.cookies.get("ytp_session")
+    current_user = await auth.session_user(current) if current else None
+    current_session = (
+        current_user is not None
+        and current_user["id"] == user["id"]
+        and any(item["id"] == session_id and item["current"] for item in await auth.sessions(user["id"], current))
+    )
+    if not await auth.delete_session(user["id"], session_id):
+        return api_error_response("Session not found.", code="NOT_FOUND", status=web.HTTPNotFound.status_code)
+    response = web.Response(status=web.HTTPNoContent.status_code)
+    if current_session:
+        response.del_cookie("ytp_session", path=Config.get_instance().base_path)
+    return response
+
+
+@route("DELETE", "api/auth/sessions", "auth_sessions_delete", auth_only=True, cookie_only=True)
+async def auth_sessions_delete(request: web.Request, auth: AuthService) -> web.Response:
+    user = _user(request)
+    if user is None:
+        return api_error_response("Unauthorized.", code="UNAUTHORIZED", status=web.HTTPUnauthorized.status_code)
+    token = request.cookies["ytp_session"]
+    await auth.revoke_other_sessions(user["id"], token)
+    return web.Response(status=web.HTTPNoContent.status_code)
+
+
+@route("POST", "api/auth/ws-ticket", "auth_ws_ticket", auth_only=True)
 async def auth_ws_ticket(request: web.Request, auth: AuthService) -> web.Response:
     user = _user(request)
     if user is None:
@@ -134,12 +185,12 @@ async def auth_ws_ticket(request: web.Request, auth: AuthService) -> web.Respons
     return response
 
 
-@route("GET", "api/auth/me", "auth_me")
+@route("GET", "api/auth/me", "auth_me", auth_only=True)
 async def auth_me(request: web.Request) -> web.Response:
     return web.json_response(data={"user": _user(request)})
 
 
-@route("PATCH", "api/auth/account", "auth_account")
+@route("PATCH", "api/auth/account", "auth_account", auth_only=True)
 async def auth_account(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     if config.disable_auth:
         return _disabled()
@@ -164,11 +215,17 @@ async def auth_account(request: web.Request, config: Config, auth: AuthService) 
     except ValueError as exc:
         return api_error_response(str(exc), code="ALREADY_EXISTS", status=web.HTTPConflict.status_code)
     if payload.password is not None:
-        return _session_response(request, updated, await auth.create_session(updated["id"]))
+        return _session_response(
+            request,
+            updated,
+            await auth.create_session(
+                updated["id"], request.headers.get("User-Agent"), resolve_client_ip(request, config)
+            ),
+        )
     return web.json_response(data={"user": updated})
 
 
-@route("GET", "api/auth/api-keys", "auth_api_keys")
+@route("GET", "api/auth/api-keys", "auth_api_keys", auth_only=True)
 async def auth_keys(request: web.Request, auth: AuthService) -> web.Response:
     user = _user(request)
     if user is None:
@@ -176,7 +233,7 @@ async def auth_keys(request: web.Request, auth: AuthService) -> web.Response:
     return web.json_response(data={"items": await auth.keys(user["id"])})
 
 
-@route("POST", "api/auth/api-keys", "auth_api_keys_create")
+@route("POST", "api/auth/api-keys", "auth_api_keys_create", auth_only=True)
 async def auth_key_create(request: web.Request, auth: AuthService) -> web.Response:
     user = _user(request)
     if user is None:
@@ -191,7 +248,7 @@ async def auth_key_create(request: web.Request, auth: AuthService) -> web.Respon
     return web.json_response(data={**metadata, "key": key}, status=web.HTTPCreated.status_code)
 
 
-@route("DELETE", "api/auth/api-keys/{key_id}", "auth_api_keys_delete")
+@route("DELETE", "api/auth/api-keys/{key_id}", "auth_api_keys_delete", auth_only=True)
 async def auth_key_delete(request: web.Request, auth: AuthService) -> web.Response:
     user = _user(request)
     if user is None:

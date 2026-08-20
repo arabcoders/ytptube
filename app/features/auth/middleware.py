@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any
+import ipaddress
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 from aiohttp import web
@@ -77,20 +78,60 @@ def is_cross_origin(request: Request) -> bool:
         return True
 
 
+def resolve_client_ip(request: Request, config: Config) -> str | None:
+    remote = request.remote
+    if not remote:
+        return remote
+    try:
+        remote_ip = ipaddress.ip_address(remote)
+    except ValueError:
+        return remote
+    trusted = []
+    for value in config.trusted_proxies.split(","):
+        value = value.strip()
+        if not value:
+            continue
+        try:
+            trusted.append(ipaddress.ip_network(value, strict=False))
+        except ValueError:
+            continue
+
+    def is_trusted(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+        return any(address in network for network in trusted)
+
+    if not is_trusted(remote_ip):
+        return remote
+    forwarded = [value.strip() for value in request.headers.get("X-Forwarded-For", "").split(",") if value.strip()]
+    try:
+        forwarded_ips = [ipaddress.ip_address(value) for value in forwarded]
+    except ValueError:
+        return remote
+    if not forwarded_ips:
+        return remote
+    for address in reversed([*forwarded_ips, remote_ip]):
+        if not is_trusted(address):
+            return str(address)
+    return str(forwarded_ips[0])
+
+
 def auth_middleware(auth: AuthService, config: Config) -> Middleware:
     @web.middleware
     async def auth_handler(request: Request, handler: Handler) -> StreamResponse:
         origin: str | None = request.headers.get("Origin")
         cross_origin: bool = is_cross_origin(request)
+        route_name = getattr(request.match_info.route, "name", "")
+        registered_route = get_route(RouteType.HTTP, route_name) if isinstance(route_name, str) else None
+        same_origin = registered_route.same_origin if registered_route is not None else False
+        cookie_only = registered_route.cookie_only if registered_route is not None else False
+        optional_auth = registered_route.optional_auth if registered_route is not None else False
+        auth_only = registered_route.auth_only if registered_route is not None else False
+        public = registered_route.public if registered_route is not None else False
         allowed_origins: set[str] = {item.strip() for item in config.cors_origins.split(",") if item.strip()}
         if cross_origin and origin not in allowed_origins and config.cors_origins.strip() != "*":
             return api_error_response("Origin is not allowed.", code="FORBIDDEN", status=web.HTTPForbidden.status_code)
 
         if request.method == "OPTIONS":
             return await handler(request)
-
-        path: str = request.path.removeprefix(config.base_path.rstrip("/")).rstrip("/") or "/"
-        route_name: Any | str = getattr(request.match_info.route, "name", "")
 
         async def explicit_user() -> dict | None:
             credentials: str | None = request.headers.get("Authorization")
@@ -128,22 +169,17 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
         ticket: str | None = request.query.get("ticket") if route_name == "ws" else None
 
         if config.disable_auth:
-            if path == "/api/auth/status":
-                return await handler(request)
-            if path.startswith("/api/auth/"):
+            if auth_only:
                 return api_error_response(
                     "Authentication is disabled.", code="FEATURE_DISABLED", status=web.HTTPForbidden.status_code
                 )
             return await handler(request)
 
-        registered_route = get_route(RouteType.HTTP, route_name) if isinstance(route_name, str) else None
-        public: bool = registered_route.public if registered_route is not None else False
-        if public:
-            if cross_origin and path in {"/api/auth/setup", "/api/auth/login"}:
-                return api_error_response(
-                    "Origin is not allowed.", code="FORBIDDEN", status=web.HTTPForbidden.status_code
-                )
-            if path == "/api/auth/status":
+        if same_origin and cross_origin:
+            return api_error_response("Origin is not allowed.", code="FORBIDDEN", status=web.HTTPForbidden.status_code)
+
+        if public and not cookie_only:
+            if optional_auth:
                 user = await explicit_user()
                 if user is None and not cross_origin and request.cookies.get("ytp_session"):
                     user = await auth.session_user(request.cookies["ytp_session"])
@@ -151,11 +187,18 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
                     request[AUTH_USER_KEY] = user
             return await handler(request)
 
-        user = auth.consume_ws_ticket(ticket) if ticket is not None else await explicit_user()
-        if user is None and ticket is None and not cross_origin and request.cookies.get("ytp_session"):
-            user = await auth.session_user(request.cookies["ytp_session"])
+        user = (
+            None if cookie_only else (auth.consume_ws_ticket(ticket) if ticket is not None else await explicit_user())
+        )
+        cookie = request.cookies.get("ytp_session")
+        if user is None and ticket is None and not cross_origin and cookie:
+            user = await auth.session_user(cookie)
 
         if user is None:
+            if cookie_only:
+                return api_error_response(
+                    "A valid session cookie is required.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code
+                )
             return api_error_response(
                 "Unauthorized.",
                 code="UNAUTHORIZED",

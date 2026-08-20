@@ -168,6 +168,23 @@ describe('string manipulation helpers', () => {
     expect(result).toBe('Hello YTPTube!');
   });
 
+  it('summarizes_common_browsers', () => {
+    expect(
+      utils.browserSummary(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+      ),
+    ).toBe('Chrome 120.0.0.0 on Windows');
+    expect(
+      utils.browserSummary('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit Safari/605.1.15'),
+    ).toBe('Safari 605.1.15 on macOS');
+  });
+
+  it('falls_back_for_unknown_agents', () => {
+    expect(utils.browserSummary(null)).toBe('Unknown browser');
+    expect(utils.browserSummary('')).toBe('Unknown browser');
+    expect(utils.browserSummary('CustomClient/1.0')).toBe('CustomClient');
+  });
+
   it.each([
     ['--value--', '-', 'both', 'value'],
     ['::value', ':', 'start', 'value'],

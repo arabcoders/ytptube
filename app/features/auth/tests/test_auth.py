@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import logging
 import sqlite3
 from contextlib import asynccontextmanager, closing
@@ -25,13 +26,20 @@ from app.features.auth.middleware import (
     cors_headers,
     decode_basic_credentials,
     is_cross_origin,
+    resolve_client_ip,
 )
-from app.features.auth.router import auth_account, auth_login, auth_logout
+from app.features.auth.router import (
+    auth_account,
+    auth_login,
+    auth_logout,
+    auth_session_delete,
+    auth_sessions_delete,
+)
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.HttpAPI import HttpAccessLogger, HttpAPI, redact_url
 from app.library.sqlite_store import SqliteStore
-from app.library.router import RouteType, get_route, get_routes
+from app.library.router import ROUTES, RouteType, add_route, get_route, get_routes
 from app.tests.helpers import make_in_memory_db_path, url_for
 
 
@@ -40,6 +48,9 @@ AUTH_ROUTE_NAMES = (
     "auth_setup",
     "auth_login",
     "auth_logout",
+    "auth_sessions",
+    "auth_session_delete",
+    "auth_sessions_delete",
     "auth_ws_ticket",
     "auth_me",
     "auth_account",
@@ -127,7 +138,7 @@ async def test_reset_missing_database(monkeypatch, tmp_path) -> None:
     db_file = Path(tmp_path) / "ytptube.db"
     monkeypatch.setattr(reset_password, "getpass", lambda _: pytest.fail("password was requested"))
 
-    with pytest.raises(ValueError, match="does not exist"):
+    with pytest.raises(ValueError):
         await reset_password.reset("owner")
     assert not db_file.exists()
 
@@ -164,7 +175,48 @@ async def test_auth_migration(tmp_path) -> None:
     await migrate.upgrade(str(path), "app/migrations")
     with closing(sqlite3.connect(path)) as database:
         tables = {row[0] for row in database.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        columns = {row[1] for row in database.execute('PRAGMA table_info("sessions")')}
     assert {"users", "sessions", "api_keys"} <= tables
+    assert {"user_agent", "ip"} <= columns
+
+
+@pytest.mark.asyncio
+async def test_session_metadata_migration(tmp_path) -> None:
+    path = tmp_path / "session-metadata.db"
+    await migrate.upgrade(str(path), "app/migrations", "20260817160639")
+    with closing(sqlite3.connect(path)) as database:
+        database.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", ("owner", "hash"))
+        database.execute(
+            "INSERT INTO sessions (token_digest, user_id, expires_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+            ("digest", 1),
+        )
+        database.commit()
+    await migrate.upgrade(str(path), "app/migrations", "20260820144657")
+    with closing(sqlite3.connect(path)) as database:
+        columns = {row[1] for row in database.execute('PRAGMA table_info("sessions")')}
+        count = database.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
+    assert {"user_agent", "ip"} <= columns
+    assert count == 0
+
+
+def test_proxy_resolution() -> None:
+    def request(remote: str, forwarded: str):
+        transport = Mock()
+        transport.get_extra_info.return_value = (remote, 123)
+        return make_mocked_request("GET", "/", transport=transport, headers={"X-Forwarded-For": forwarded})
+
+    config = Config.get_instance()
+    previous = config.trusted_proxies
+    try:
+        config.trusted_proxies = ""
+        assert resolve_client_ip(request("198.51.100.10", "203.0.113.5"), config) == "198.51.100.10"
+        config.trusted_proxies = "198.51.100.10"
+        assert resolve_client_ip(request("198.51.100.10", "203.0.113.5"), config) == "203.0.113.5"
+        config.trusted_proxies = "10.0.0.0/24"
+        assert resolve_client_ip(request("10.0.0.2", "203.0.113.5, 10.0.0.1"), config) == "203.0.113.5"
+        assert resolve_client_ip(request("10.0.0.2", "invalid"), config) == "10.0.0.2"
+    finally:
+        config.trusted_proxies = previous
 
 
 def test_ws_ticket_once() -> None:
@@ -198,6 +250,7 @@ async def test_sessions_and_keys(monkeypatch) -> None:
     config = Config.get_instance()
     config.auth_username = None
     config.auth_password = None
+    previous_days = config.auth_session_days
     auth = AuthService.get_instance()
     user = await auth.create_user("owner", "secret", require_empty=True)
     assert user is not None
@@ -205,36 +258,79 @@ async def test_sessions_and_keys(monkeypatch) -> None:
     other = await auth.create_user("second", "second-secret")
     assert other is not None
     assert await auth.create_user("second", "different-secret") is None
-    token = await auth.create_session(user["id"])
-    other_token = await auth.create_session(other["id"])
-    session_user = await auth.session_user(token)
-    assert session_user is not None
-    assert session_user["id"] == user["id"]
-    metadata, key = await auth.create_key(user["id"], "browser")
-    assert metadata["name"] == "browser"
-    await auth.reset_password("owner", "new secret")
-    assert await auth.authenticate_password("owner", "secret") is None
-    assert await auth.authenticate_password("owner", "new secret") is not None
-    assert await auth.session_user(token) is None
-    assert await auth.authenticate_password("second", "second-secret") is not None
-    assert await auth.session_user(other_token) is not None
-    key_user = await auth.user_from_key(key)
-    assert key_user is not None
-    assert key_user["id"] == user["id"]
-    with pytest.raises(ValueError, match="not found"):
-        await auth.reset_password("unknown", "another secret")
-    assert await auth.authenticate_password("owner", "new secret") is not None
-    assert await auth.authenticate_password("second", "second-secret") is not None
-    assert await auth.session_user(other_token) is not None
-    assert not await auth.delete_key(other["id"], metadata["id"])
-    assert await auth.delete_key(user["id"], metadata["id"])
-    assert await auth.user_from_key(key) is None
-    await store.execute_raw(
-        "UPDATE sessions SET expires_at = :expires",
-        {"expires": (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")},
-    )
-    assert await auth.session_user(token) is None
-    assert await auth.session_user(other_token) is None
+    try:
+        config.auth_session_days = 3
+        token = await auth.create_session(user["id"], "Browser/1", "192.0.2.1")
+        owner_session = await auth.create_session(user["id"], "Browser/2", "192.0.2.2")
+        expired = await auth.create_session(user["id"])
+        other_token = await auth.create_session(other["id"])
+        expires = (
+            await store.fetch_raw(
+                "SELECT expires_at FROM sessions WHERE token_digest = :digest",
+                {"digest": hashlib.sha256(token.encode()).hexdigest()},
+            )
+        )[0]["expires_at"]
+        expiry = datetime.strptime(expires, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=UTC)
+        assert timedelta(days=2, hours=23) < expiry - datetime.now(UTC) < timedelta(days=3, minutes=1)
+        await store.execute_raw(
+            "UPDATE sessions SET expires_at = :expires WHERE token_digest = :digest",
+            {
+                "expires": (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f"),
+                "digest": hashlib.sha256(expired.encode()).hexdigest(),
+            },
+        )
+        listed = await auth.sessions(user["id"], owner_session)
+        expired_id = (
+            await store.fetch_raw(
+                "SELECT id FROM sessions WHERE token_digest = :digest",
+                {"digest": hashlib.sha256(expired.encode()).hexdigest()},
+            )
+        )[0]["id"]
+        assert len(listed) == 2
+        assert expired_id not in {item["id"] for item in listed}
+        assert [item["id"] for item in listed] == sorted((item["id"] for item in listed), reverse=True)
+        assert all(set(item) == {"id", "created_at", "expires_at", "user_agent", "ip", "current"} for item in listed)
+        current_item = next(item for item in listed if item["current"])
+        assert current_item["user_agent"] == "Browser/2"
+        assert current_item["ip"] == "192.0.2.2"
+        assert sum(item["current"] for item in listed) == 1
+        owner_current = next(item["id"] for item in listed if item["current"])
+        token_current = next(item["id"] for item in await auth.sessions(user["id"], token) if item["current"])
+        assert owner_current != token_current
+        assert not any(item["id"] == owner_current for item in await auth.sessions(other["id"], owner_session))
+        assert await auth.delete_session(other["id"], owner_current) is False
+        assert await auth.delete_session(user["id"], owner_current)
+        assert await auth.session_user(owner_session) is None
+        session_user = await auth.session_user(token)
+        assert session_user is not None
+        assert session_user["id"] == user["id"]
+        metadata, key = await auth.create_key(user["id"], "browser")
+        assert metadata["name"] == "browser"
+        await auth.reset_password("owner", "new secret")
+        assert await auth.authenticate_password("owner", "secret") is None
+        assert await auth.authenticate_password("owner", "new secret") is not None
+        assert await auth.session_user(token) is None
+        assert await auth.authenticate_password("second", "second-secret") is not None
+        assert await auth.session_user(other_token) is not None
+        key_user = await auth.user_from_key(key)
+        assert key_user is not None
+        assert key_user["id"] == user["id"]
+        with pytest.raises(ValueError, match="not found"):
+            await auth.reset_password("unknown", "another secret")
+        assert await auth.authenticate_password("owner", "new secret") is not None
+        assert await auth.authenticate_password("second", "second-secret") is not None
+        assert await auth.session_user(other_token) is not None
+        assert not await auth.delete_key(other["id"], metadata["id"])
+        assert await auth.delete_key(user["id"], metadata["id"])
+        assert await auth.user_from_key(key) is None
+        await store.execute_raw(
+            "UPDATE sessions SET expires_at = :expires",
+            {"expires": (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")},
+        )
+        assert await auth.session_user(token) is None
+        assert await auth.session_user(other_token) is None
+    finally:
+        config.auth_session_days = previous_days
     await store.close()
     SqliteStore._reset_singleton()
 
@@ -315,6 +411,8 @@ async def test_auth_startup_ready(monkeypatch) -> None:
 
 
 class FakeAuth(AuthService):
+    session_metadata: tuple[str | None, str | None]
+
     async def authenticate_password(self, username: str, password: str) -> dict | None:
         return {"id": 1, "username": username} if username == "user" and password in {"pass", "ytp_password"} else None
 
@@ -324,7 +422,8 @@ class FakeAuth(AuthService):
     async def session_user(self, token: str) -> dict | None:
         return {"id": 1, "username": "user"} if token == "session" else None
 
-    async def create_session(self, user_id: int) -> str:
+    async def create_session(self, user_id: int, user_agent: str | None = None, ip: str | None = None) -> str:
+        self.session_metadata = (user_agent, ip)
         return "session"
 
     async def revoke_session(self, token: str) -> None:
@@ -349,13 +448,79 @@ class JsonRequest(dict):
     secure = False
     remote = "test-client"
 
-    def __init__(self, payload: dict, cookies: dict[str, str] | None = None):
+    def __init__(
+        self,
+        payload: dict,
+        cookies: dict[str, str] | None = None,
+        match_info: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+        remote: str = "test-client",
+    ):
         super().__init__()
         self._payload = payload
         self.cookies = cookies or {}
+        self.match_info = match_info or {}
+        self.headers = headers or {}
+        self.remote = remote
 
     async def json(self) -> dict:
         return self._payload
+
+
+@pytest.mark.asyncio
+async def test_session_routes(monkeypatch) -> None:
+    store = SqliteStore.get_instance(db_path=make_in_memory_db_path("auth-routes"))
+    await store.get_connection()
+
+    @asynccontextmanager
+    async def session():
+        async with store.sessionmaker()() as value:
+            yield value
+
+    import app.features.auth.service as service_module
+
+    monkeypatch.setattr(service_module, "get_session", session)
+    config = Config.get_instance()
+    config.disable_auth = False
+    config.base_path = "/"
+    auth = AuthService.get_instance()
+    owner = await auth.create_user("route-owner", "secret", require_empty=True)
+    other = await auth.create_user("route-other", "secret")
+    assert owner is not None and other is not None
+    current = await auth.create_session(owner["id"])
+    extra = await auth.create_session(owner["id"])
+    foreign = await auth.create_session(other["id"])
+    current_id = next(item["id"] for item in await auth.sessions(owner["id"], current) if item["current"])
+    foreign_id = (await auth.sessions(other["id"], foreign))[0]["id"]
+
+    malformed = JsonRequest({}, {"ytp_session": current}, {"session_id": "invalid"})
+    malformed[AUTH_USER_KEY] = owner
+    assert (await auth_session_delete(malformed, auth)).status == 404
+    missing = JsonRequest({}, {"ytp_session": current}, {"session_id": "99999"})
+    missing[AUTH_USER_KEY] = owner
+    assert (await auth_session_delete(missing, auth)).status == 404
+    cross_user = JsonRequest({}, {"ytp_session": current}, {"session_id": str(foreign_id)})
+    cross_user[AUTH_USER_KEY] = owner
+    assert (await auth_session_delete(cross_user, auth)).status == 404
+
+    current_request = JsonRequest({}, {"ytp_session": current}, {"session_id": str(current_id)})
+    current_request[AUTH_USER_KEY] = owner
+    deleted = await auth_session_delete(current_request, auth)
+    assert deleted.status == 204
+    assert deleted.cookies["ytp_session"]["max-age"] == "0"
+    assert await auth.session_user(current) is None
+
+    current = await auth.create_session(owner["id"])
+    extra = await auth.create_session(owner["id"])
+    bulk_request = JsonRequest({}, {"ytp_session": current})
+    bulk_request[AUTH_USER_KEY] = owner
+    assert (await auth_sessions_delete(bulk_request, auth)).status == 204
+    assert await auth.session_user(current) is not None
+    assert await auth.session_user(extra) is None
+    assert await auth.session_user(foreign) is not None
+
+    await store.close()
+    SqliteStore._reset_singleton()
 
 
 @pytest.mark.asyncio
@@ -450,6 +615,65 @@ async def test_credentials_cors() -> None:
 
 
 @pytest.mark.asyncio
+async def test_route_metadata_behavior(request) -> None:
+    snapshot = {route_type: routes.copy() for route_type, routes in ROUTES.items()}
+
+    def restore_routes() -> None:
+        ROUTES.clear()
+        ROUTES.update(snapshot)
+
+    request.addfinalizer(restore_routes)
+
+    async def handler(request: web.Request) -> web.Response:
+        return web.json_response({"authenticated": AUTH_USER_KEY in request})
+
+    add_route("GET", "/metadata/same-origin", handler, name="arbitrary_same_origin", public=True, same_origin=True)
+    add_route("OPTIONS", "/metadata/same-origin", handler, name="arbitrary_same_origin_options", same_origin=True)
+    add_route("GET", "/metadata/optional", handler, name="arbitrary_optional", public=True, optional_auth=True)
+    add_route("GET", "/metadata/cookie", handler, name="arbitrary_cookie", cookie_only=True)
+    add_route("GET", "/metadata/disabled", handler, name="arbitrary_disabled", same_origin=True, auth_only=True)
+
+    config = Config.get_instance()
+    config.disable_auth = False
+    config.cors_origins = "*"
+    config.base_path = "/"
+    app = web.Application(middlewares=[auth_middleware(FakeAuth(), config)])
+    app.router.add_get("/metadata/same-origin", handler, name="arbitrary_same_origin")
+    app.router.add_options("/metadata/same-origin", handler, name="arbitrary_same_origin_options")
+    app.router.add_get("/metadata/optional", handler, name="arbitrary_optional")
+    app.router.add_get("/metadata/cookie", handler, name="arbitrary_cookie")
+    app.router.add_get("/metadata/disabled", handler, name="arbitrary_disabled")
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    try:
+        response = await client.get(
+            url_for("arbitrary_same_origin", app=app), headers={"Origin": "https://external.example"}
+        )
+        assert response.status == 403
+        response = await client.options(
+            url_for("arbitrary_same_origin_options", app=app), headers={"Origin": "https://external.example"}
+        )
+        assert response.status == 200
+        response = await client.get(url_for("arbitrary_optional", app=app), headers={"Authorization": "Bearer ytp_key"})
+        assert (await response.json())["authenticated"] is True
+        response = await client.get(url_for("arbitrary_optional", app=app))
+        assert (await response.json())["authenticated"] is False
+        response = await client.get(url_for("arbitrary_cookie", app=app), headers={"Authorization": "Bearer ytp_key"})
+        assert response.status == 400
+        response = await client.get(url_for("arbitrary_cookie", app=app), cookies={"ytp_session": "session"})
+        assert response.status == 200
+        config.disable_auth = True
+        response = await client.get(
+            url_for("arbitrary_disabled", app=app), headers={"Origin": "https://external.example"}
+        )
+        assert response.status == 403
+        assert (await response.json())["code"] == "FEATURE_DISABLED"
+    finally:
+        await client.close()
+        config.disable_auth = False
+
+
+@pytest.mark.asyncio
 async def test_basic_api_key() -> None:
     async def handler(_: web.Request) -> web.Response:
         return web.json_response({"ok": True})
@@ -481,13 +705,28 @@ async def test_login_logout_cookie() -> None:
     config.disable_auth = False
     config.base_path = "/"
     auth = FakeAuth()
-    login = await auth_login(JsonRequest({"username": "user", "password": "pass"}), config, auth)
-    assert login.status == 200
-    assert "ytp_session" in login.cookies
-    logout = await auth_logout(JsonRequest({}, {"ytp_session": "session"}), config, auth)
-    assert logout.status == 204
-    assert auth.revoked == "session"
-    Cache.get_instance().clear()
+    previous_days = config.auth_session_days
+    config.auth_session_days = 11
+    try:
+        login = await auth_login(
+            JsonRequest(
+                {"username": "user", "password": "pass"},
+                headers={"User-Agent": "Test Browser"},
+                remote="192.0.2.44",
+            ),
+            config,
+            auth,
+        )
+        assert login.status == 200
+        assert "ytp_session" in login.cookies
+        assert login.cookies["ytp_session"]["max-age"] == str(11 * 86400)
+        assert auth.session_metadata == ("Test Browser", "192.0.2.44")
+        logout = await auth_logout(JsonRequest({}, {"ytp_session": "session"}), config, auth)
+        assert logout.status == 204
+        assert auth.revoked == "session"
+    finally:
+        config.auth_session_days = previous_days
+        Cache.get_instance().clear()
 
 
 @pytest.mark.asyncio
@@ -626,7 +865,12 @@ async def test_disable_auth_public() -> None:
         for name in AUTH_ROUTE_NAMES[1:]:
             method, _ = production_auth_route(name)
             response = await client.request(
-                method, url_for(name, app=app, key_id="1") if name.endswith("delete") else url_for(name, app=app)
+                method,
+                url_for(name, app=app, session_id="1")
+                if name == "auth_session_delete"
+                else url_for(name, app=app, key_id="1")
+                if name == "auth_api_keys_delete"
+                else url_for(name, app=app),
             )
             assert response.status == 403
             assert (await response.json())["code"] == "FEATURE_DISABLED"

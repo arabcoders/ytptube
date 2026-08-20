@@ -422,6 +422,29 @@ const ucFirst = (str: string): string => (!str ? str : str.charAt(0).toUpperCase
 const normalizePresetName = (name: string): string =>
   name.trim().toLowerCase().replace(/\s+/g, '_');
 
+const token = (value: string): string => value.trim().split(/[\s/;()]+/u)[0] ?? '';
+
+const browserSummary = (userAgent: string | null): string => {
+  const ua = userAgent?.trim() ?? '';
+  const browser = ua.match(/(Edg|OPR|Chrome|Firefox|Safari|MSIE|Trident)\/([\d.]+)/u);
+  const browserName =
+    browser?.[1] === 'Edg' ? 'Edge' : browser?.[1] === 'OPR' ? 'Opera' : browser?.[1];
+  const browserLabel = browserName && browser?.[2] ? `${browserName} ${browser[2]}` : browserName;
+  const os = ua.match(/(Windows NT|Mac OS X|Android|iPhone OS|Linux)[\s/]?([\d._-]*)/u);
+  const osName =
+    os?.[1] === 'Windows NT'
+      ? 'Windows'
+      : os?.[1] === 'Mac OS X'
+        ? 'macOS'
+        : os?.[1] === 'iPhone OS'
+          ? 'iOS'
+          : os?.[1];
+  if (browserLabel && osName) return `${browserLabel} on ${osName}`;
+  if (browserLabel) return browserLabel;
+  if (osName) return osName;
+  return token(ua) || 'Unknown browser';
+};
+
 const prettyName = (name: string): string =>
   name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -1125,6 +1148,7 @@ export {
   sTrim,
   ucFirst,
   normalizePresetName,
+  browserSummary,
   prettyName,
   getValue,
   ag,

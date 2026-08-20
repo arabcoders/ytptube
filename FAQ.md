@@ -21,7 +21,9 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_MONITOR_INTERVAL            | Sampling interval in seconds for resource monitoring                | `30`                  |
 | YTP_MONITOR_RETENTION_HOURS     | How many hours to retain raw monitor samples in the stats database  | `24`                  |
 | YTP_DISABLE_AUTH                | Disable application authentication                                  | `false`               |
+| YTP_AUTH_SESSION_DAYS           | Number of days before browser sessions expire (minimum `1`)         | `30`                  |
 | YTP_CORS_ORIGINS                | Comma-separated exact origins, or `*` for non-cookie clients        | `*`                   |
+| YTP_TRUSTED_PROXIES             | Comma-separated proxy IP addresses and/or CIDRs trusted for XFF     | `(empty)`             |
 | YTP_CONSOLE_ENABLED             | Whether to enable the console                                       | `false`               |
 | YTP_REMOVE_FILES                | Remove the actual file when clicking the remove button              | `false`               |
 | YTP_CONFIG_PATH                 | Path to where the config files will be stored.                      | `/config`             |
@@ -40,7 +42,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_EXTRACT_INFO_KEEP_ALIVE     | Keep extract info worker processes alive between requests           | `false`               |
 | YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |
 | YTP_PIP_IGNORE_UPDATES          | Do not update the custom pip packages                               | `false`               |
-| YTP_PYTHON_PATH                 | Application package directories to load before config-local and bundled packages | `(not_set)` |
+| YTP_PYTHON_PATH                 | Extra python library directory                                      | `(not_set)`           |
 | YTP_PICTURES_BACKENDS           | A comma separated list of pictures urls to use                      | `(not_set)`           |
 | YTP_BROWSER_CONTROL_ENABLED     | Whether to enable the file browser actions                          | `false`               |
 | YTP_YTDLP_AUTO_UPDATE           | Whether to enable the auto update for yt-dlp                        | `true`                |
@@ -139,6 +141,10 @@ history and proxy logs.
 
 Use `YTP_DISABLE_AUTH=true` only when a trusted reverse proxy controls access. `YTP_CORS_ORIGINS` accepts a
 comma-separated origin allowlist. Set it to `*` for clients that send an API key or Basic credentials without cookies.
+
+When YTPTube is behind a reverse proxy, session details use the transport peer address by default. To record the
+actual client address from `X-Forwarded-For`, set `YTP_TRUSTED_PROXIES` to the proxy's exact IP address or CIDR (for
+example, `10.0.0.10,10.0.0.0/24`).
 
 ## How do I reset a forgotten password?
 

@@ -316,6 +316,7 @@ Migration Version: %(version)s
 
 from sqlalchemy import text
 
+
 async def upgrade(c):
     # add your upgrade step here
     await c.execute(text("SELECT 1"))
