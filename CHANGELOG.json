@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "edb699787e9aab16ddf8344d2c5b004c01dab3bf",
-    "date": "2026-08-20T19:54:45+00:00",
+    "full_sha": "ca536616ff9e5dc00362d469d1710a73f3ef96d8",
+    "date": "2026-08-20T20:21:16+00:00",
     "commits": [
+      {
+        "sha": "ca536616",
+        "full_sha": "ca536616ff9e5dc00362d469d1710a73f3ef96d8",
+        "message": "fix: update CORS handling in is_cross_origin function and adjust tests",
+        "author": "arabcoders",
+        "date": "2026-08-20T20:21:16+00:00"
+      },
       {
         "sha": "edb69978",
         "full_sha": "edb699787e9aab16ddf8344d2c5b004c01dab3bf",
