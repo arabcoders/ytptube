@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "aed6f291b73810baf4d4652e33728999b740b794",
-    "date": "2026-08-20T15:38:14+00:00",
+    "full_sha": "33bcf46be6853ccde06985818acf6baf72e34e9f",
+    "date": "2026-08-20T15:43:58+00:00",
     "commits": [
+      {
+        "sha": "33bcf46b",
+        "full_sha": "33bcf46be6853ccde06985818acf6baf72e34e9f",
+        "message": "fix: update Arabic locale format in date formatting test",
+        "author": "arabcoders",
+        "date": "2026-08-20T15:43:58+00:00"
+      },
       {
         "sha": "aed6f291",
         "full_sha": "aed6f291b73810baf4d4652e33728999b740b794",
