@@ -12,17 +12,18 @@ from datetime import UTC, datetime
 from email.utils import formatdate
 from itertools import cycle, islice
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import text
+from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 APP_ROOT = str((Path(__file__).parent / ".." / "..").resolve())
 if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
 
+from app.features.downloads.models import DownloadModel
 from app.library.DataStore import StoreType
-from app.library.encoder import Encoder
 from app.library.log import get_logger
 
 if TYPE_CHECKING:
@@ -114,7 +115,7 @@ def _build_row(
     status: str,
     preset: str,
     store: StoreType,
-) -> tuple[str, str, str, str, str]:
+) -> dict[str, Any]:
     folder, filename = _relative_folder(path, root)
     stat = path.stat()
 
@@ -174,10 +175,13 @@ def _build_row(
         "eta": None,
     }
 
-    created_at = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-    encoded = Encoder(sort_keys=True, indent=4).encode(data)
-
-    return (record_id, str(store), data["url"], encoded, created_at)
+    return {
+        "id": record_id,
+        "type": str(store),
+        "url": data["url"],
+        "data": data,
+        "created_at": timestamp,
+    }
 
 
 def generate_rows(
@@ -187,7 +191,7 @@ def generate_rows(
     status: str,
     preset: str,
     store: StoreType,
-) -> Iterable[tuple[str, str, str, str, str]]:
+) -> Iterable[dict]:
     _iter = _cycle(files)
     for idx, path in enumerate(islice(_iter, total)):
         yield _build_row(path, root, idx, status, preset, store)
@@ -195,36 +199,39 @@ def generate_rows(
 
 async def insert_batches(
     conn: AsyncConnection,
-    rows: Iterable[tuple[str, str, str, str, str]],
+    rows: Iterable[dict],
     batch_size: int,
 ) -> int:
     """Insert rows in batches using SQLAlchemy."""
-    sql = """
-    INSERT INTO "history" ("id", "type", "url", "data", "created_at")
-    VALUES (:p0, :p1, :p2, :p3, :p4)
-    ON CONFLICT("id") DO UPDATE SET
-        "type" = excluded.type,
-        "url" = excluded.url,
-        "data" = excluded.data,
-        "created_at" = excluded.created_at
-    """
+    table: Any = DownloadModel.__table__
     total_written = 0
-    batch: list[tuple[str, str, str, str, str]] = []
+    batch: list[dict[str, Any]] = []
 
     for row in rows:
         batch.append(row)
         if len(batch) >= batch_size:
-            # Convert tuples to dicts for SQLAlchemy
-            params = [{"p0": r[0], "p1": r[1], "p2": r[2], "p3": r[3], "p4": r[4]} for r in batch]
-            await conn.execute(text(sql), params)
+            statement = (
+                insert(table)
+                .values(batch)
+                .on_conflict_do_update(
+                    set_={key: getattr(insert(table).excluded, key) for key in ("type", "url", "data", "created_at")}
+                )
+            )
+            await conn.execute(statement)
             await conn.commit()
             total_written += len(batch)
             LOG.info("Inserted %d rows...", total_written)
             batch.clear()
 
     if batch:
-        params = [{"p0": r[0], "p1": r[1], "p2": r[2], "p3": r[3], "p4": r[4]} for r in batch]
-        await conn.execute(text(sql), params)
+        statement = (
+            insert(table)
+            .values(batch)
+            .on_conflict_do_update(
+                set_={key: getattr(insert(table).excluded, key) for key in ("type", "url", "data", "created_at")}
+            )
+        )
+        await conn.execute(statement)
         await conn.commit()
         total_written += len(batch)
 

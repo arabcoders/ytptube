@@ -1,14 +1,13 @@
-import copy
 from collections import OrderedDict
 from collections.abc import Iterable
 from enum import Enum
 
+from app.features.downloads.repository import DownloadsRepository
 from app.library.log import get_logger
 
 from .downloads import Download
 from .ItemDTO import ItemDTO
 from .operations import matches_condition
-from .sqlite_store import SqliteStore
 
 LOG = get_logger()
 
@@ -33,25 +32,10 @@ class StoreType(str, Enum):
         return self.value
 
 
-def _strip_transient_fields(item: ItemDTO) -> ItemDTO:
-    stored = copy.deepcopy(item)
-    if hasattr(stored, "datetime"):
-        try:
-            delattr(stored, "datetime")
-        except AttributeError:
-            pass
-    if stored.status == "finished" and hasattr(stored, "live_in"):
-        try:
-            delattr(stored, "live_in")
-        except AttributeError:
-            pass
-    return stored
-
-
 class DataStore:
-    def __init__(self, type: StoreType, connection: SqliteStore):
+    def __init__(self, type: StoreType, connection: DownloadsRepository):
         self._type = type
-        self._connection: SqliteStore = connection
+        self._connection: DownloadsRepository = connection
         self._dict: OrderedDict[str, Download] = OrderedDict()
 
     async def load(self) -> None:
@@ -175,7 +159,7 @@ class DataStore:
     async def put(self, value: Download, no_notify: bool = False) -> Download:
         _ = no_notify
         self._dict[value.info._id] = value
-        await self._connection.enqueue_upsert(str(self._type), _strip_transient_fields(value.info))
+        await self._connection.enqueue_upsert(str(self._type), value.info.to_download_model(str(self._type)))
         return self._dict[value.info._id]
 
     async def delete(self, key: str) -> None:
@@ -204,7 +188,7 @@ class DataStore:
         for queue_position, (key, item) in enumerate(ordered):
             self._dict[key] = item
             item.info.queue_position = queue_position
-            await self._connection.enqueue_upsert(str(self._type), _strip_transient_fields(item.info))
+            await self._connection.enqueue_upsert(str(self._type), item.info.to_download_model(str(self._type)))
 
         return promoted_ids
 
@@ -289,3 +273,6 @@ class DataStore:
     async def test(self) -> bool:
         await self._connection.count(str(self._type))
         return True
+
+    async def flush(self) -> None:
+        await self._connection.flush()

@@ -1,7 +1,10 @@
+import copy
+import json
 import re
 import time
 import uuid
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from email.utils import formatdate
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -13,6 +16,7 @@ from app.library.log import get_logger
 from app.library.Utils import clean_item, get_file, get_file_sidecar
 
 if TYPE_CHECKING:
+    from app.features.downloads.models import DownloadModel
     from app.features.presets.schemas import Preset
 
 LOG = get_logger()
@@ -438,6 +442,24 @@ class ItemDTO:
 
         """
         return Encoder(sort_keys=True, indent=4).encode(self.serialize())
+
+    def to_download_model(self, type_value: str) -> "DownloadModel":
+        """Convert this in-memory item to its persisted representation."""
+        from app.features.downloads.models import DownloadModel
+
+        stored = copy.deepcopy(self)
+        stored_data = stored.serialize()
+        stored_data.pop("datetime", None)
+        if stored.status == "finished":
+            stored_data.pop("live_in", None)
+
+        return DownloadModel(
+            id=stored._id,
+            type=type_value,
+            url=stored.url,
+            data=json.loads(Encoder(sort_keys=True).encode(stored_data)),
+            created_at=datetime.now(UTC).replace(microsecond=0),
+        )
 
     def get(self, key: str, default: Any = None) -> Any:
         """

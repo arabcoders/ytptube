@@ -24,6 +24,7 @@ from aiohttp import web
 from app.features.auth.service import AuthService
 from app.features.conditions.service import Conditions
 from app.features.dl_fields.service import DLFields
+from app.features.downloads.repository import DownloadsRepository
 from app.features.notifications.service import Notifications
 from app.features.presets.deps import get_presets_repo
 from app.features.tasks.definitions.deps import get_task_definitions_repo
@@ -129,6 +130,8 @@ class Main:
         if self._config.debug:
             EventBus.get_instance().debug_enable()
 
+        SqliteStore.get_instance(db_path=self._config.db_file)
+        DownloadsRepository.get_instance().attach(self._app)
         SqliteStore.get_instance(db_path=self._config.db_file).attach(self._app)
         AuthService.get_instance().attach(self._app)
         BackgroundWorker.get_instance().attach(self._app)

@@ -184,7 +184,8 @@ class HttpSocket:
             await Services.get_instance().handle_async(route.handler, sid=sid, data=reason, event="disconnect")
 
         async def ws_handler(request: web.Request) -> web.WebSocketResponse:
-            ws = web.WebSocketResponse(heartbeat=10)
+            # aiohttp 3.14.2/3.14.3 can reject valid compressed data after a heartbeat PONG.
+            ws = web.WebSocketResponse(heartbeat=10, compress=False)
             await ws.prepare(request)
 
             sid: str = gen_random(14)

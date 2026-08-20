@@ -1006,7 +1006,13 @@ class TestDownloadFlow:
         monkeypatch.setattr(download._process_manager, "create_queue", lambda: DummyQueue())
 
         mock_proc = Mock()
-        mock_proc.join = Mock(return_value=0)
+
+        def join_process():
+            # Cancellation cleanup may clear the instance reference before start() resumes.
+            download._status_tracker = None
+            return 0
+
+        mock_proc.join = Mock(side_effect=join_process)
 
         def start_process():
             download._process_manager.cancelled = True
@@ -2242,14 +2248,13 @@ class TestQueueManager:
         done_store = Mock()
         done_store.get = AsyncMock(return_value=item)
         done_store.delete = AsyncMock()
-        done_store._connection = Mock()
-        done_store._connection.flush = AsyncMock()
+        done_store.flush = AsyncMock()
         queue_manager.done = done_store
 
         status = await DownloadQueue.clear(queue_manager, [item.info._id], remove_file=False)
 
         done_store.delete.assert_awaited_once_with(item.info._id)
-        done_store._connection.flush.assert_awaited_once()
+        done_store.flush.assert_awaited_once()
         assert status[item.info._id] == "ok", "Clear should still report success after flushing deletes"
 
     @pytest.mark.asyncio

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from aiohttp import web
 
+from app.features.downloads.repository import DownloadsRepository
 from app.library.config import Config
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
@@ -14,7 +15,6 @@ from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton
-from app.library.sqlite_store import SqliteStore
 from app.library.Utils import calc_download_path
 
 from .core import Download
@@ -38,9 +38,10 @@ class DownloadQueue(metaclass=Singleton):
         "Configuration instance."
         self._notify: EventBus = EventBus.get_instance()
         "Event bus instance."
-        self.done = DataStore(type=StoreType.HISTORY, connection=SqliteStore.get_instance())
+        repository = DownloadsRepository.get_instance()
+        self.done = DataStore(type=StoreType.HISTORY, connection=repository)
         "DataStore for the completed downloads."
-        self.queue = DataStore(type=StoreType.QUEUE, connection=SqliteStore.get_instance())
+        self.queue = DataStore(type=StoreType.QUEUE, connection=repository)
         "DataStore for the download queue."
         self.pool = PoolManager(queue=self, config=self.config)
         "Pool manager for coordinating download execution."
@@ -643,7 +644,7 @@ class DownloadQueue(metaclass=Singleton):
             status[id] = "ok"
 
         if deleted_ids:
-            await self.done._connection.flush()
+            await self.done.flush()
 
         return status
 

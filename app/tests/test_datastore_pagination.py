@@ -1,10 +1,13 @@
 import json
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 import pytest_asyncio
 
 from app.library.DataStore import DataStore, StoreType
+from app.features.downloads.repository import DownloadsRepository
+from app.features.downloads.tests.helpers import RepositoryDatabase
 from app.library.downloads import Download
 from app.library.ItemDTO import ItemDTO
 from app.library.sqlite_store import SqliteStore
@@ -13,6 +16,8 @@ from app.tests.helpers import make_in_memory_db_path
 
 async def reset_sqlite_store() -> None:
     """Close and reset SqliteStore singleton for testing."""
+    if DownloadsRepository in DownloadsRepository._instances:
+        await DownloadsRepository._instances[DownloadsRepository].shutdown()
     if SqliteStore in SqliteStore._instances:
         instance = SqliteStore._instances[SqliteStore]
         # Only close if there's an active connection to avoid event loop issues
@@ -23,9 +28,10 @@ async def reset_sqlite_store() -> None:
                 # Event loop issues - just reset without closing
                 pass
     SqliteStore._reset_singleton()
+    DownloadsRepository._reset_singleton()
 
 
-async def make_db(data: int = 100) -> SqliteStore:
+async def make_db(data: int = 100) -> Any:
     """Create a named in-memory database with test data."""
     await reset_sqlite_store()
     db_path = make_in_memory_db_path("test-datastore-pagination")
@@ -57,7 +63,7 @@ async def make_db(data: int = 100) -> SqliteStore:
             ),
         )
 
-    return ins
+    return RepositoryDatabase(ins, DownloadsRepository(session=lambda: ins.sessionmaker()()))
 
 
 @pytest.mark.asyncio
