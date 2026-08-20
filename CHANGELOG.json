@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "e6577f3838cb9c9f1052c5d7406c9001252631b0",
-    "date": "2026-08-20T16:07:29+00:00",
+    "full_sha": "18de4fd46de63a77ad24d9c4b1dd949b8147e374",
+    "date": "2026-08-20T18:49:50+00:00",
     "commits": [
+      {
+        "sha": "18de4fd4",
+        "full_sha": "18de4fd46de63a77ad24d9c4b1dd949b8147e374",
+        "message": "refactor: move auth to sqlalchemy/orm",
+        "author": "arabcoders",
+        "date": "2026-08-20T18:49:50+00:00"
+      },
       {
         "sha": "e6577f38",
         "full_sha": "e6577f3838cb9c9f1052c5d7406c9001252631b0",
