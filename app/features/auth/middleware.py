@@ -9,6 +9,7 @@ from aiohttp import web
 from app.features.auth.service import AuthService
 from app.features.core.utils import api_error_response
 from app.library.config import Config
+from app.library.router import RouteType, get_route
 
 if TYPE_CHECKING:
     from aiohttp.typedefs import Handler, Middleware
@@ -135,16 +136,8 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
                 )
             return await handler(request)
 
-        public: bool = path in {
-            "/api/auth/status",
-            "/api/auth/setup",
-            "/api/auth/login",
-            "/api/ping",
-        } or route_name in {
-            "index",
-            "index_redirect",
-            "static_fallback",
-        }
+        registered_route = get_route(RouteType.HTTP, route_name) if isinstance(route_name, str) else None
+        public: bool = registered_route.public if registered_route is not None else False
         if public:
             if cross_origin and path in {"/api/auth/setup", "/api/auth/login"}:
                 return api_error_response(

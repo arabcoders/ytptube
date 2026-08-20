@@ -5,7 +5,7 @@ from app.library.downloads import DownloadQueue
 from app.library.router import route
 
 
-@route("GET", "api/ping/", "ping")
+@route("GET", "api/ping/", "ping", public=True)
 async def ping(queue: DownloadQueue) -> Response:
     """
     Ping the server.

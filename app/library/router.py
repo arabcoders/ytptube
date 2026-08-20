@@ -31,11 +31,12 @@ class Route:
 
     """
 
-    def __init__(self, method: str, path: str, name: str, handler: Callable[..., Awaitable[Any]]):
+    def __init__(self, method: str, path: str, name: str, handler: Callable[..., Awaitable[Any]], public: bool = False):
         self.method: str = method.upper()
         self.path: str = path
         self.name: str = name
         self.handler: Callable[..., Awaitable[Any]] = handler
+        self.public: bool = public
 
 
 ROUTES: dict[str, dict[str, Route]] = {}
@@ -61,6 +62,7 @@ def route(
     method: RouteType | str | list[str],
     path: str,
     name: str | None = None,
+    public: bool = False,
     **kwargs,
 ) -> Callable[[Callable[..., Awaitable[Any]]], Callable[..., Awaitable[Any]]]:
     """
@@ -70,6 +72,7 @@ def route(
         method (RouteType|str|list[str]): The HTTP method(s).
         path (str): The path to the route.
         name (str): The name of the route.
+        public (bool): Whether the route is accessible without authentication.
         kwargs: Additional keyword arguments.
 
     Returns:
@@ -93,10 +96,16 @@ def route(
             if route_name in ROUTES.get(route_type, {}):
                 route_name = f"{route_name}_{len(ROUTES[route_type]) + 1}"
 
-            ROUTES[route_type][route_name] = Route(method=m.upper(), path=path, name=route_name, handler=wrapper)
+            ROUTES[route_type][route_name] = Route(
+                method=m.upper(), path=path, name=route_name, handler=wrapper, public=public
+            )
             if "http" == route_type and path.endswith("/") and "/" != path and not kwargs.get("no_slash", False):
                 ROUTES[route_type][f"{route_name}_no_slash"] = Route(
-                    method=m.upper(), path=path[:-1], name=f"{route_name}_no_slash", handler=wrapper
+                    method=m.upper(),
+                    path=path[:-1],
+                    name=f"{route_name}_no_slash",
+                    handler=wrapper,
+                    public=public,
                 )
 
         return wrapper
@@ -109,6 +118,7 @@ def add_route(
     path: str,
     handler: Callable[..., Awaitable[Any]],
     name: str | None = None,
+    public: bool = False,
     **kwargs,
 ):
     """
@@ -118,6 +128,7 @@ def add_route(
         method (RouteType|str|list[str]): The HTTP method(s).
         path (str): The path to the route.
         name (str): The name of the route.
+        public (bool): Whether the route is accessible without authentication.
         handler (Awaitable): The function that handles the route.
         kwargs: Additional keyword arguments.
 
@@ -125,7 +136,7 @@ def add_route(
     methods = [method] if isinstance(method, (str, RouteType)) else method
 
     for m in methods:
-        route_name = name or make_route_name(m, path)
+        route_name: str = name or make_route_name(m, path)
         route_type: str = RouteType.SOCKET if RouteType.SOCKET == m else RouteType.HTTP
 
         if route_type not in ROUTES:
@@ -134,11 +145,17 @@ def add_route(
         if route_name in ROUTES.get(route_type, {}):
             route_name = f"{route_name}_{len(ROUTES[route_type]) + 1}"
 
-        ROUTES[route_type][route_name] = Route(method=m.upper(), path=path, name=route_name, handler=handler)
+        ROUTES[route_type][route_name] = Route(
+            method=m.upper(), path=path, name=route_name, handler=handler, public=public
+        )
 
         if "http" == route_type and path.endswith("/") and "/" != path and not kwargs.get("no_slash", False):
             ROUTES[route_type][f"{route_name}_no_slash"] = Route(
-                method=m.upper(), path=path[:-1], name=f"{route_name}_no_slash", handler=handler
+                method=m.upper(),
+                path=path[:-1],
+                name=f"{route_name}_no_slash",
+                handler=handler,
+                public=public,
             )
 
 

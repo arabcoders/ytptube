@@ -61,7 +61,7 @@ def _session_response(request: web.Request, user: dict, token: str, status: int 
     return response
 
 
-@route("GET", "api/auth/status", "auth_status")
+@route("GET", "api/auth/status", "auth_status", public=True)
 async def auth_status(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     user = _user(request)
     return web.json_response(
@@ -74,7 +74,7 @@ async def auth_status(request: web.Request, config: Config, auth: AuthService) -
     )
 
 
-@route("POST", "api/auth/setup", "auth_setup")
+@route("POST", "api/auth/setup", "auth_setup", public=True)
 async def auth_setup(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     if config.disable_auth:
         return _disabled()
@@ -95,7 +95,7 @@ async def auth_setup(request: web.Request, config: Config, auth: AuthService) ->
     return _session_response(request, user, await auth.create_session(user["id"]), web.HTTPCreated.status_code)
 
 
-@route("POST", "api/auth/login", "auth_login")
+@route("POST", "api/auth/login", "auth_login", public=True)
 async def auth_login(request: web.Request, config: Config, auth: AuthService) -> web.Response:
     if config.disable_auth:
         return _disabled()
