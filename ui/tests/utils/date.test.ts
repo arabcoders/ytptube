@@ -21,7 +21,7 @@ describe('date', () => {
 
     expect(formatDateTime(date, 'en', { seconds: true, timeZone: false })).toContain('08/11/2026');
     expect(formatLongDateTime(date, 'en')).toContain('August');
-    expect(formatDateTime(date, 'ar', { seconds: true })).toMatch(/[٠-٩]/);
+    expect(formatDateTime(date, 'ar-u-nu-arab', { seconds: true })).toMatch(/[٠-٩]/);
   });
 
   it('formats_utc', () => {
