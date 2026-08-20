@@ -10,6 +10,8 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from app.library.DataStore import DataStore, StoreType
+from app.features.downloads.repository import DownloadsRepository
+from app.features.downloads.tests.helpers import RepositoryDatabase
 from app.library.downloads import Download
 from app.library.ItemDTO import ItemDTO
 from app.library.operations import Operation
@@ -19,6 +21,8 @@ from app.tests.helpers import make_in_memory_db_path
 
 async def reset_sqlite_store() -> None:
     """Close and reset SqliteStore singleton for testing."""
+    if DownloadsRepository in DownloadsRepository._instances:
+        await DownloadsRepository._instances[DownloadsRepository].shutdown()
     if SqliteStore in SqliteStore._instances:
         instance = SqliteStore._instances[SqliteStore]
         # Only close if there's an active connection to avoid event loop issues
@@ -29,9 +33,10 @@ async def reset_sqlite_store() -> None:
                 # Event loop issues - just reset without closing
                 pass
     SqliteStore._reset_singleton()
+    DownloadsRepository._reset_singleton()
 
 
-async def make_db(data: int = 0) -> SqliteStore:
+async def make_db(data: int = 0) -> Any:
     """Create a named in-memory database with test data."""
     await reset_sqlite_store()
     ins = SqliteStore.get_instance(db_path=make_in_memory_db_path("test-datastore"))
@@ -62,7 +67,12 @@ async def make_db(data: int = 0) -> SqliteStore:
             ),
         )
 
-    return ins
+    return RepositoryDatabase(ins, DownloadsRepository(session=lambda: ins.sessionmaker()()))
+
+
+async def close_store(store: DataStore) -> None:
+    connection: Any = store._connection
+    await connection.close()
 
 
 class StubDownload(Download):
@@ -102,7 +112,7 @@ class TestDataStore:
     async def test_saved_items_parses_rows(self) -> None:
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
-        db = store._connection
+        db: Any = store._connection
 
         dto = make_item(id="ignore", url="http://x", title="Title", folder="F")
         data = asdict(dto)
@@ -125,7 +135,7 @@ class TestDataStore:
     @pytest.mark.asyncio
     async def test_put_and_delete_persist(self) -> None:
         store = await make_store_async(StoreType.QUEUE)
-        db = store._connection
+        db: Any = store._connection
 
         item = make_item(id="vid1")
         d = StubDownload(info=item)
@@ -173,7 +183,7 @@ class TestDataStore:
             await store.get()
         with pytest.raises(KeyError):
             await store.get(key="missing")
-        await store._connection.close()
+        await close_store(store)
 
     @pytest.mark.asyncio
     async def test_next_and_empty(self) -> None:
@@ -189,7 +199,7 @@ class TestDataStore:
         first_key, first_val = store.next()
         assert first_key == d1.info._id
         assert first_val.info._id == d1.info._id
-        await store._connection.close()
+        await close_store(store)
 
     @pytest.mark.asyncio
     async def test_position_preserves_active_order(self) -> None:
@@ -217,7 +227,7 @@ class TestDataStore:
         reloaded = DataStore(StoreType.QUEUE, store._connection)
         await reloaded.load()
         assert list(reloaded._dict) == [active.info._id, middle.info._id, last.info._id]
-        await store._connection.close()
+        await close_store(store)
 
     @pytest.mark.asyncio
     async def test_downloads_get_next_download(self) -> None:
@@ -240,7 +250,7 @@ class TestDataStore:
         nxt = store.get_next_download()
         assert isinstance(nxt, StubDownload)
         assert nxt.info._id == i4._id
-        await store._connection.close()
+        await close_store(store)
 
     @pytest.mark.asyncio
     async def test_test_method_executes_query(self) -> None:
@@ -601,13 +611,13 @@ class TestDataStore:
 
         count = await store.get_total_count()
         assert count == 0
-        await store._connection.close()
+        await close_store(store)
 
     @pytest.mark.asyncio
     async def test_get_total_count_items(self) -> None:
         """Test get_total_count with items in database."""
         store = await make_store_async(StoreType.QUEUE)
-        db = store._connection
+        db: Any = store._connection
         # conn = db._conn  # No longer needed
 
         # Add items directly to database
@@ -623,7 +633,7 @@ class TestDataStore:
 
         count = await store.get_total_count()
         assert count == 5
-        await store._connection.close()
+        await close_store(store)
 
     @pytest.mark.asyncio
     async def test_count_respects_store_type(self) -> None:
@@ -796,7 +806,7 @@ class TestDataStore:
     async def test_update_item_drops_live(self) -> None:
         """Test that _update_store_item removes live_in field when status is finished."""
         store = await make_store_async(StoreType.QUEUE)
-        conn = store._connection
+        conn: Any = store._connection
 
         item = make_item(id="vid1")
         item.status = "finished"
@@ -811,13 +821,13 @@ class TestDataStore:
         assert len(rows) == 1, "Should find one row"
         data = json.loads(rows[0]["data"])
         assert "live_in" not in data
-        await store._connection.close()
+        await close_store(store)
 
     @pytest.mark.asyncio
     async def test_update_item_keeps_live(self) -> None:
         """Test that _update_store_item keeps live_in field when status is not finished."""
         store = await make_store_async(StoreType.QUEUE)
-        conn = store._connection
+        conn: Any = store._connection
 
         item = make_item(id="vid1")
         item.status = "downloading"
@@ -833,7 +843,7 @@ class TestDataStore:
         data = json.loads(rows[0]["data"])
         assert "live_in" in data
         assert data["live_in"] == "PT5M"
-        await store._connection.close()
+        await close_store(store)
 
 
 @pytest.mark.asyncio

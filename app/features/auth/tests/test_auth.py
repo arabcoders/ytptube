@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import logging
 import sqlite3
 from contextlib import asynccontextmanager, closing
@@ -15,11 +16,7 @@ from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
 from aiohttp.web_log import AccessLogger
 from pydantic import ValidationError
 
-from app.features.auth.schemas import Credentials
-from app.features.auth.service import password_hash, password_matches
-from app.features.auth.service import AuthService
-from app.scripts import reset_password
-from app.library import migrate
+from app.features.auth import repository as auth_repository
 from app.features.auth.middleware import (
     AUTH_USER_KEY,
     auth_middleware,
@@ -35,11 +32,15 @@ from app.features.auth.router import (
     auth_session_delete,
     auth_sessions_delete,
 )
+from app.features.auth.schemas import Credentials
+from app.features.auth.service import AuthService, password_hash, password_matches
+from app.library import migrate
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.HttpAPI import HttpAccessLogger, HttpAPI, redact_url
 from app.library.sqlite_store import SqliteStore
 from app.library.router import ROUTES, RouteType, add_route, get_route, get_routes
+from app.scripts import reset_password
 from app.tests.helpers import make_in_memory_db_path, url_for
 
 
@@ -244,9 +245,7 @@ async def test_sessions_and_keys(monkeypatch) -> None:
         async with store.sessionmaker()() as value:
             yield value
 
-    import app.features.auth.service as service_module
-
-    monkeypatch.setattr(service_module, "get_session", session)
+    monkeypatch.setattr(auth_repository.AuthRepository.get_instance(), "session", session)
     config = Config.get_instance()
     config.auth_username = None
     config.auth_password = None
@@ -336,6 +335,35 @@ async def test_sessions_and_keys(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_json_date_payload(monkeypatch) -> None:
+    store = SqliteStore.get_instance(db_path=make_in_memory_db_path("auth-json-dates"))
+    await store.get_connection()
+
+    @asynccontextmanager
+    async def session():
+        async with store.sessionmaker()() as value:
+            yield value
+
+    monkeypatch.setattr(auth_repository.AuthRepository.get_instance(), "session", session)
+    auth = AuthService.get_instance()
+    user = await auth.create_user("json-owner", "secret")
+    assert user is not None
+    token = await auth.create_session(user["id"])
+    metadata, _ = await auth.create_key(user["id"], "browser")
+
+    sessions = await auth.sessions(user["id"], token)
+    keys = await auth.keys(user["id"])
+    json.dumps(sessions + keys)
+    assert isinstance(sessions[0]["created_at"], str)
+    assert isinstance(sessions[0]["expires_at"], str)
+    assert isinstance(keys[0]["created_at"], str)
+    assert keys[0]["last_used_at"] is None
+    assert metadata["last_used_at"] is None
+    await store.close()
+    SqliteStore._reset_singleton()
+
+
+@pytest.mark.asyncio
 async def test_reset_no_account(monkeypatch) -> None:
     store = SqliteStore.get_instance(db_path=make_in_memory_db_path("auth-reset-guards"))
     await store.get_connection()
@@ -345,9 +373,7 @@ async def test_reset_no_account(monkeypatch) -> None:
         async with store.sessionmaker()() as value:
             yield value
 
-    import app.features.auth.service as service_module
-
-    monkeypatch.setattr(service_module, "get_session", session)
+    monkeypatch.setattr(auth_repository.AuthRepository.get_instance(), "session", session)
     auth = AuthService.get_instance()
     with pytest.raises(ValueError, match="not found"):
         await auth.reset_password("missing", "secret")
@@ -365,9 +391,7 @@ async def test_bootstrap_when_empty(monkeypatch) -> None:
         async with store.sessionmaker()() as value:
             yield value
 
-    import app.features.auth.service as service_module
-
-    monkeypatch.setattr(service_module, "get_session", session)
+    monkeypatch.setattr(auth_repository.AuthRepository.get_instance(), "session", session)
     config = Config.get_instance()
     config.auth_username = "env-user"
     config.auth_password = "env-password"
@@ -391,9 +415,7 @@ async def test_auth_startup_ready(monkeypatch) -> None:
         async with store.sessionmaker()() as value:
             yield value
 
-    import app.features.auth.service as service_module
-
-    monkeypatch.setattr(service_module, "get_session", session)
+    monkeypatch.setattr(auth_repository.AuthRepository.get_instance(), "session", session)
     config = Config.get_instance()
     config.auth_username = "startup-user"
     config.auth_password = "startup-password"
@@ -477,9 +499,7 @@ async def test_session_routes(monkeypatch) -> None:
         async with store.sessionmaker()() as value:
             yield value
 
-    import app.features.auth.service as service_module
-
-    monkeypatch.setattr(service_module, "get_session", session)
+    monkeypatch.setattr(auth_repository.AuthRepository.get_instance(), "session", session)
     config = Config.get_instance()
     config.disable_auth = False
     config.base_path = "/"
@@ -578,6 +598,19 @@ async def test_credentials_cors() -> None:
             is False
         )
         config.cors_origins = "*"
+        response = await client.get(
+            url_for("api_value", app=app),
+            cookies={"ytp_session": "session"},
+            headers={"Sec-Fetch-Site": "none"},
+        )
+        assert response.status == 200
+        response = await client.get(
+            url_for("api_value", app=app),
+            cookies={"ytp_session": "session"},
+            headers={"Sec-Fetch-Site": "cross-site"},
+        )
+        assert response.status == 401
+        assert "WWW-Authenticate" not in response.headers
         response = await client.post(url_for("auth_setup", app=app), headers={"Origin": "https://site"})
         assert response.status == 403
         response = await client.post(url_for("auth_login", app=app), headers={"Origin": "https://site"})

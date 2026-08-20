@@ -9,7 +9,7 @@ on:
       useWorkflowSpec:
         type: boolean
         default: false
-        description: "Use app.spec from workflow branch instead of tag"
+        description: "Use build files from workflow branch instead of tag"
   push:
     tags:
       - "v*"
@@ -48,20 +48,25 @@ jobs:
         with:
           ref: ${{ env.TAG_NAME }}
 
-      - name: Overwrite app.spec from workflow branch
+      - name: Checkout build files from workflow branch
         if: ${{ github.event.inputs.useWorkflowSpec == 'true' }}
         uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
           sparse-checkout: |
             app.spec
+            pyproject.toml
+            uv.lock
           sparse-checkout-cone-mode: false
-          path: temp-spec
+          path: temp-build
 
-      - name: Replace app.spec with version from workflow branch
+      - name: Replace build files from workflow branch
         if: ${{ github.event.inputs.useWorkflowSpec == 'true' }}
         shell: bash
-        run: cp temp-spec/app.spec ./app.spec
+        run: |
+          cp temp-build/app.spec ./app.spec
+          cp temp-build/pyproject.toml ./pyproject.toml
+          cp temp-build/uv.lock ./uv.lock
 
       - name: Update app/library/version.py
         shell: bash

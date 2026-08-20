@@ -6,10 +6,8 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from Crypto.Protocol.KDF import bcrypt, bcrypt_check
-from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
 
-from app.features.core.deps import get_session
+from app.features.auth.repository import AuthRepository
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.Services import Services
@@ -20,6 +18,10 @@ BCRYPT_COST = 12
 WS_TICKET_TTL = 30
 LOGIN_ATTEMPTS = 5
 LOGIN_WINDOW = 60
+
+
+def _datetime_value(value: datetime | None) -> str | None:
+    return str(value.replace(tzinfo=None)) if value is not None else None
 
 
 def _digest(value: str) -> str:
@@ -52,6 +54,9 @@ async def password_matches(password: str, stored: str) -> bool:
 
 
 class AuthService(metaclass=Singleton):
+    def __init__(self) -> None:
+        self._repo = AuthRepository.get_instance()
+
     @staticmethod
     def get_instance() -> AuthService:
         return AuthService()
@@ -67,19 +72,10 @@ class AuthService(metaclass=Singleton):
     async def bootstrap(self) -> None:
         config = Config.get_instance()
         if config.auth_username and config.auth_password:
-            async with get_session() as session:
-                count = int((await session.execute(text("SELECT COUNT(*) FROM users"))).scalar_one())
-                if count:
-                    return
-                hashed: str = await password_hash(config.auth_password)
-                await session.execute(
-                    text(
-                        "INSERT INTO users (username, password_hash) "
-                        "SELECT :username, :password_hash WHERE NOT EXISTS (SELECT 1 FROM users)"
-                    ),
-                    {"username": config.auth_username, "password_hash": hashed},
-                )
-                await session.commit()
+            if await self._repo.count_users():
+                return
+            hashed: str = await password_hash(config.auth_password)
+            await self._repo.create_user(config.auth_username, hashed, require_empty=True)
 
     def create_ws_ticket(self, user: dict) -> str:
         ticket = f"ytp_ws_{secrets.token_urlsafe(32)}"
@@ -99,48 +95,23 @@ class AuthService(metaclass=Singleton):
         return user if isinstance(user, dict) else None
 
     async def user_count(self) -> int:
-        async with get_session() as session:
-            return int((await session.execute(text("SELECT COUNT(*) FROM users"))).scalar_one())
+        return await self._repo.count_users()
 
     async def get_user(self, user_id: int) -> dict | None:
-        async with get_session() as session:
-            row = (
-                (await session.execute(text("SELECT id, username FROM users WHERE id = :id"), {"id": user_id}))
-                .mappings()
-                .first()
-            )
-            return dict(row) if row else None
+        user = await self._repo.get_user(user_id)
+        return {"id": user.id, "username": user.username} if user else None
 
     async def find_user(self, username: str) -> dict | None:
-        async with get_session() as session:
-            row = (
-                (
-                    await session.execute(
-                        text("SELECT id, username FROM users WHERE username = :username"), {"username": username}
-                    )
-                )
-                .mappings()
-                .first()
-            )
-            return dict(row) if row else None
+        user = await self._repo.find_user(username)
+        return {"id": user.id, "username": user.username} if user else None
 
     async def authenticate_password(self, username: str, password: str) -> dict | None:
-        async with get_session() as session:
-            row = (
-                (
-                    await session.execute(
-                        text("SELECT id, username, password_hash FROM users WHERE username = :username"),
-                        {"username": username},
-                    )
-                )
-                .mappings()
-                .first()
-            )
-        if not row:
+        user = await self._repo.find_user(username)
+        if not user:
             return None
-        if not await password_matches(password, row["password_hash"]):
+        if not await password_matches(password, user.password_hash):
             return None
-        return {"id": row["id"], "username": row["username"]}
+        return {"id": user.id, "username": user.username}
 
     def attempt_allowed(self, remote: str | None) -> bool:
         cache: Cache = Cache.get_instance()
@@ -158,147 +129,54 @@ class AuthService(metaclass=Singleton):
 
     async def create_session(self, user_id: int, user_agent: str | None = None, ip: str | None = None) -> str:
         token: str = secrets.token_urlsafe(32)
-        expires: str = (datetime.now(UTC) + timedelta(days=Config.get_instance().auth_session_days)).strftime(
-            "%Y-%m-%d %H:%M:%S.%f"
-        )
-        async with get_session() as session:
-            await session.execute(
-                text(
-                    "INSERT INTO sessions "
-                    "(token_digest, user_id, expires_at, user_agent, ip) "
-                    "VALUES (:digest, :user_id, :expires, :user_agent, :ip)"
-                ),
-                {"digest": _digest(token), "user_id": user_id, "expires": expires, "user_agent": user_agent, "ip": ip},
-            )
-            await session.commit()
+        expires = datetime.now(UTC) + timedelta(days=Config.get_instance().auth_session_days)
+        await self._repo.create_session(_digest(token), expires, user_id, user_agent, ip)
         return token
 
     async def session_user(self, token: str) -> dict | None:
-        async with get_session() as session:
-            row = (
-                (
-                    await session.execute(
-                        text(
-                            "SELECT users.id, users.username FROM sessions JOIN users ON users.id = sessions.user_id "
-                            "WHERE sessions.token_digest = :digest AND sessions.expires_at > CURRENT_TIMESTAMP"
-                        ),
-                        {"digest": _digest(token)},
-                    )
-                )
-                .mappings()
-                .first()
-            )
-            return dict(row) if row else None
+        user = await self._repo.session_user(_digest(token))
+        return {"id": user.id, "username": user.username} if user else None
 
     async def revoke_session(self, token: str) -> None:
-        async with get_session() as session:
-            await session.execute(text("DELETE FROM sessions WHERE token_digest = :digest"), {"digest": _digest(token)})
-            await session.commit()
+        await self._repo.revoke_session(_digest(token))
 
     async def sessions(self, user_id: int, current_token: str | None = None) -> list[dict]:
-        async with get_session() as session:
-            rows = (
-                (
-                    await session.execute(
-                        text(
-                            "SELECT id, created_at, expires_at, user_agent, ip, "
-                            "token_digest = :digest AS current FROM sessions "
-                            "WHERE user_id = :user_id AND expires_at > CURRENT_TIMESTAMP "
-                            "ORDER BY created_at DESC, id DESC"
-                        ),
-                        {"digest": _digest(current_token) if current_token else "", "user_id": user_id},
-                    )
-                )
-                .mappings()
-                .all()
-            )
-            return [{**dict(row), "current": bool(row["current"])} for row in rows]
+        rows = await self._repo.sessions(user_id, _digest(current_token) if current_token else None)
+        return [
+            {
+                "id": model.id,
+                "created_at": _datetime_value(model.created_at),
+                "expires_at": _datetime_value(model.expires_at),
+                "user_agent": model.user_agent,
+                "ip": model.ip,
+                "current": current,
+            }
+            for model, current in rows
+        ]
 
     async def delete_session(self, user_id: int, session_id: int) -> bool:
-        async with get_session() as session:
-            result = await session.execute(
-                text("DELETE FROM sessions WHERE id = :id AND user_id = :user_id"),
-                {"id": session_id, "user_id": user_id},
-            )
-            await session.commit()
-            return bool(getattr(result, "rowcount", 0))
+        return await self._repo.delete_session(user_id, session_id)
 
     async def revoke_other_sessions(self, user_id: int, token: str) -> None:
-        async with get_session() as session:
-            await session.execute(
-                text("DELETE FROM sessions WHERE user_id = :user_id AND token_digest != :digest"),
-                {"user_id": user_id, "digest": _digest(token)},
-            )
-            await session.commit()
+        await self._repo.revoke_other_sessions(user_id, _digest(token))
 
     async def user_from_key(self, key: str) -> dict | None:
         if not key.startswith("ytp_"):
             return None
-        async with get_session() as session:
-            row = (
-                (
-                    await session.execute(
-                        text(
-                            "SELECT users.id, users.username, api_keys.id AS key_id FROM api_keys "
-                            "JOIN users ON users.id = api_keys.user_id WHERE api_keys.key_digest = :digest"
-                        ),
-                        {"digest": _digest(key)},
-                    )
-                )
-                .mappings()
-                .first()
-            )
-            if not row:
-                return None
-            await session.execute(
-                text("UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = :id"), {"id": row["key_id"]}
-            )
-            await session.commit()
-            return {"id": row["id"], "username": row["username"]}
+        row = await self._repo.user_from_key(_digest(key))
+        if row is None:
+            return None
+        user, _ = row
+        return {"id": user.id, "username": user.username}
 
     async def create_user(self, username: str, password: str, *, require_empty: bool = False) -> dict | None:
         hashed: str = await password_hash(password)
-        query = (
-            "INSERT INTO users (username, password_hash) "
-            "SELECT :username, :password_hash WHERE NOT EXISTS (SELECT 1 FROM users) RETURNING id, username"
-            if require_empty
-            else "INSERT INTO users (username, password_hash) VALUES (:username, :password_hash) RETURNING id, username"
-        )
-        async with get_session() as session:
-            try:
-                result = await session.execute(
-                    text(query),
-                    {"username": username, "password_hash": hashed},
-                )
-                row = result.mappings().first()
-                await session.commit()
-                return dict(row) if row else None
-            except IntegrityError:
-                await session.rollback()
-                return None
+        user = await self._repo.create_user(username, hashed, require_empty)
+        return {"id": user.id, "username": user.username} if user else None
 
     async def update_user(self, user_id: int, username: str | None, password: str | None) -> dict:
-        values = {"id": user_id, "username": username}
-        async with get_session() as session:
-            try:
-                if username is not None:
-                    await session.execute(
-                        text("UPDATE users SET username = :username, updated_at = CURRENT_TIMESTAMP WHERE id = :id"),
-                        values,
-                    )
-                if password is not None:
-                    await session.execute(
-                        text(
-                            "UPDATE users SET password_hash = :password_hash, updated_at = CURRENT_TIMESTAMP WHERE id = :id"
-                        ),
-                        {"id": user_id, "password_hash": await password_hash(password)},
-                    )
-                    await session.execute(text("DELETE FROM sessions WHERE user_id = :id"), {"id": user_id})
-                await session.commit()
-            except IntegrityError as exc:
-                await session.rollback()
-                msg = "Username already exists."
-                raise ValueError(msg) from exc
+        hashed = await password_hash(password) if password is not None else None
+        await self._repo.update_user(user_id, username, hashed)
         updated = await self.get_user(user_id)
         if updated is None:
             msg = "User was not found after update."
@@ -307,63 +185,32 @@ class AuthService(metaclass=Singleton):
 
     async def reset_password(self, username: str, password: str) -> None:
         hashed = await password_hash(password)
-        async with get_session() as session:
-            user_id = (
-                await session.execute(
-                    text(
-                        "UPDATE users SET password_hash = :password_hash, updated_at = CURRENT_TIMESTAMP "
-                        "WHERE username = :username RETURNING id"
-                    ),
-                    {"username": username, "password_hash": hashed},
-                )
-            ).scalar_one_or_none()
-            if user_id is None:
-                await session.rollback()
-                msg = "Account not found."
-                raise ValueError(msg)
-            await session.execute(text("DELETE FROM sessions WHERE user_id = :id"), {"id": user_id})
-            await session.commit()
+        if not await self._repo.reset_password(username, hashed):
+            msg = "Account not found."
+            raise ValueError(msg)
 
     async def keys(self, user_id: int) -> list[dict]:
-        async with get_session() as session:
-            rows = (
-                (
-                    await session.execute(
-                        text(
-                            "SELECT id, name, hint, created_at, last_used_at FROM api_keys "
-                            "WHERE user_id = :user_id ORDER BY created_at DESC"
-                        ),
-                        {"user_id": user_id},
-                    )
-                )
-                .mappings()
-                .all()
-            )
-            return [dict(row) for row in rows]
+        return [
+            {
+                "id": model.id,
+                "name": model.name,
+                "hint": model.hint,
+                "created_at": _datetime_value(model.created_at),
+                "last_used_at": _datetime_value(model.last_used_at),
+            }
+            for model in await self._repo.keys(user_id)
+        ]
 
     async def create_key(self, user_id: int, name: str) -> tuple[dict, str]:
         key = f"ytp_{secrets.token_urlsafe(32)}"
-        async with get_session() as session:
-            row = (
-                (
-                    await session.execute(
-                        text(
-                            "INSERT INTO api_keys (user_id, name, key_digest, hint) "
-                            "VALUES (:user_id, :name, :digest, :hint) RETURNING id, name, hint, created_at, last_used_at"
-                        ),
-                        {"user_id": user_id, "name": name, "digest": _digest(key), "hint": key[-8:]},
-                    )
-                )
-                .mappings()
-                .one()
-            )
-            await session.commit()
-        return dict(row), key
+        model = await self._repo.create_key(user_id, name, _digest(key), key[-8:])
+        return {
+            "id": model.id,
+            "name": model.name,
+            "hint": model.hint,
+            "created_at": _datetime_value(model.created_at),
+            "last_used_at": _datetime_value(model.last_used_at),
+        }, key
 
     async def delete_key(self, user_id: int, key_id: int) -> bool:
-        async with get_session() as session:
-            result = await session.execute(
-                text("DELETE FROM api_keys WHERE id = :id AND user_id = :user_id"), {"id": key_id, "user_id": user_id}
-            )
-            await session.commit()
-            return bool(getattr(result, "rowcount", 0))
+        return await self._repo.delete_key(user_id, key_id)
