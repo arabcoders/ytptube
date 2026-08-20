@@ -1,8 +1,8 @@
 [
   {
-    "tag": "Untagged",
-    "full_sha": "33bcf46be6853ccde06985818acf6baf72e34e9f",
-    "date": "2026-08-20T15:43:58+00:00",
+    "tag": "v2.7.0",
+    "full_sha": "de520249faf7525602c8ba3772c93b8b9d738b26",
+    "date": "2026-08-20T15:51:09+00:00",
     "commits": [
       {
         "sha": "33bcf46b",
