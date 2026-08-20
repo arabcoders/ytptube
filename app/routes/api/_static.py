@@ -198,15 +198,15 @@ def setup_static_routes(root_path: Path, config: Config) -> None:
 
     STATIC_STATE.index_file = index_file
 
-    add_route(method="GET", path=config.base_path, handler=serve_static_file, name="index")
-    add_route(method="GET", path="/{path:.*}", handler=serve_static_file, name="static_fallback")
+    add_route(method="GET", path=config.base_path, handler=serve_static_file, name="index", public=True)
+    add_route(method="GET", path="/{path:.*}", handler=serve_static_file, name="static_fallback", public=True)
 
     if "/" != config.base_path:
 
         async def redirect_index(config: Config) -> web.Response:
             return web.Response(status=web.HTTPFound.status_code, headers={"Location": config.base_path})
 
-        add_route(method="GET", path="/", handler=redirect_index, name="index_redirect")
+        add_route(method="GET", path="/", handler=redirect_index, name="index_redirect", public=True)
 
     LOG.info(
         "Serving frontend static assets from '%s'.", STATIC_STATE.root, extra={"static_root": str(STATIC_STATE.root)}

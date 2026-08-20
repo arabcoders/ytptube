@@ -31,11 +31,27 @@ class Route:
 
     """
 
-    def __init__(self, method: str, path: str, name: str, handler: Callable[..., Awaitable[Any]]):
+    def __init__(
+        self,
+        method: str,
+        path: str,
+        name: str,
+        handler: Callable[..., Awaitable[Any]],
+        public: bool = False,
+        same_origin: bool = False,
+        cookie_only: bool = False,
+        optional_auth: bool = False,
+        auth_only: bool = False,
+    ):
         self.method: str = method.upper()
         self.path: str = path
         self.name: str = name
         self.handler: Callable[..., Awaitable[Any]] = handler
+        self.public: bool = public
+        self.same_origin: bool = same_origin
+        self.cookie_only: bool = cookie_only
+        self.optional_auth: bool = optional_auth
+        self.auth_only: bool = auth_only
 
 
 ROUTES: dict[str, dict[str, Route]] = {}
@@ -61,7 +77,12 @@ def route(
     method: RouteType | str | list[str],
     path: str,
     name: str | None = None,
-    **kwargs,
+    public: bool = False,
+    same_origin: bool = False,
+    cookie_only: bool = False,
+    optional_auth: bool = False,
+    auth_only: bool = False,
+    no_slash: bool = False,
 ) -> Callable[[Callable[..., Awaitable[Any]]], Callable[..., Awaitable[Any]]]:
     """
     Decorator to mark a method as an HTTP route handler.
@@ -70,7 +91,12 @@ def route(
         method (RouteType|str|list[str]): The HTTP method(s).
         path (str): The path to the route.
         name (str): The name of the route.
-        kwargs: Additional keyword arguments.
+        public (bool): Whether the route is accessible without authentication.
+        same_origin (bool): Whether cross-origin requests are forbidden.
+        cookie_only (bool): Whether authentication must use a same-origin cookie.
+        optional_auth (bool): Whether public routes should populate an authenticated user when available.
+        auth_only (bool): Whether the route is disabled when authentication is disabled.
+        no_slash (bool): Whether to omit the no-slash alias.
 
     Returns:
         Awaitable: The decorated function.
@@ -93,10 +119,28 @@ def route(
             if route_name in ROUTES.get(route_type, {}):
                 route_name = f"{route_name}_{len(ROUTES[route_type]) + 1}"
 
-            ROUTES[route_type][route_name] = Route(method=m.upper(), path=path, name=route_name, handler=wrapper)
-            if "http" == route_type and path.endswith("/") and "/" != path and not kwargs.get("no_slash", False):
+            ROUTES[route_type][route_name] = Route(
+                method=m.upper(),
+                path=path,
+                name=route_name,
+                handler=wrapper,
+                public=public,
+                same_origin=same_origin,
+                cookie_only=cookie_only,
+                optional_auth=optional_auth,
+                auth_only=auth_only,
+            )
+            if "http" == route_type and path.endswith("/") and "/" != path and not no_slash:
                 ROUTES[route_type][f"{route_name}_no_slash"] = Route(
-                    method=m.upper(), path=path[:-1], name=f"{route_name}_no_slash", handler=wrapper
+                    method=m.upper(),
+                    path=path[:-1],
+                    name=f"{route_name}_no_slash",
+                    handler=wrapper,
+                    public=public,
+                    same_origin=same_origin,
+                    cookie_only=cookie_only,
+                    optional_auth=optional_auth,
+                    auth_only=auth_only,
                 )
 
         return wrapper
@@ -109,7 +153,12 @@ def add_route(
     path: str,
     handler: Callable[..., Awaitable[Any]],
     name: str | None = None,
-    **kwargs,
+    public: bool = False,
+    same_origin: bool = False,
+    cookie_only: bool = False,
+    optional_auth: bool = False,
+    auth_only: bool = False,
+    no_slash: bool = False,
 ):
     """
     Decorator to mark a method as an HTTP route handler.
@@ -118,14 +167,19 @@ def add_route(
         method (RouteType|str|list[str]): The HTTP method(s).
         path (str): The path to the route.
         name (str): The name of the route.
+        public (bool): Whether the route is accessible without authentication.
         handler (Awaitable): The function that handles the route.
-        kwargs: Additional keyword arguments.
+        same_origin (bool): Whether cross-origin requests are forbidden.
+        cookie_only (bool): Whether authentication must use a same-origin cookie.
+        optional_auth (bool): Whether public routes should populate an authenticated user when available.
+        auth_only (bool): Whether the route is disabled when authentication is disabled.
+        no_slash (bool): Whether to omit the no-slash alias.
 
     """
     methods = [method] if isinstance(method, (str, RouteType)) else method
 
     for m in methods:
-        route_name = name or make_route_name(m, path)
+        route_name: str = name or make_route_name(m, path)
         route_type: str = RouteType.SOCKET if RouteType.SOCKET == m else RouteType.HTTP
 
         if route_type not in ROUTES:
@@ -134,11 +188,29 @@ def add_route(
         if route_name in ROUTES.get(route_type, {}):
             route_name = f"{route_name}_{len(ROUTES[route_type]) + 1}"
 
-        ROUTES[route_type][route_name] = Route(method=m.upper(), path=path, name=route_name, handler=handler)
+        ROUTES[route_type][route_name] = Route(
+            method=m.upper(),
+            path=path,
+            name=route_name,
+            handler=handler,
+            public=public,
+            same_origin=same_origin,
+            cookie_only=cookie_only,
+            optional_auth=optional_auth,
+            auth_only=auth_only,
+        )
 
-        if "http" == route_type and path.endswith("/") and "/" != path and not kwargs.get("no_slash", False):
+        if "http" == route_type and path.endswith("/") and "/" != path and not no_slash:
             ROUTES[route_type][f"{route_name}_no_slash"] = Route(
-                method=m.upper(), path=path[:-1], name=f"{route_name}_no_slash", handler=handler
+                method=m.upper(),
+                path=path[:-1],
+                name=f"{route_name}_no_slash",
+                handler=handler,
+                public=public,
+                same_origin=same_origin,
+                cookie_only=cookie_only,
+                optional_auth=optional_auth,
+                auth_only=auth_only,
             )
 
 

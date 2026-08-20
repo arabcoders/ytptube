@@ -137,19 +137,6 @@
 
                 <template #right>
                   <div class="flex items-center gap-1 sm:gap-2">
-                    <UButton
-                      v-if="authVisible"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-user-round"
-                      :aria-label="accountLabel"
-                      :title="accountLabel"
-                      @click="accountOpen = true"
-                    >
-                      <span class="hidden xl:inline">{{ accountLabel }}</span>
-                    </UButton>
-
                     <NotifyDropdown />
 
                     <UButton
@@ -169,10 +156,6 @@
 
                     <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
 
-                    <div class="hidden lg:block">
-                      <ThemeButton label-class="hidden xl:inline" />
-                    </div>
-
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -183,26 +166,18 @@
                       <span class="hidden xl:inline">{{ t('common.refresh') }}</span>
                     </UButton>
 
-                    <UButton
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-settings-2"
-                      @click="root?.open()"
-                    >
-                      <span class="hidden xl:inline">{{ t('common.webuiSettings') }}</span>
-                    </UButton>
-
-                    <UButton
-                      v-if="true === config.app.is_native"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-power"
-                      @click="shutdownApp"
-                    >
-                      <span class="hidden xl:inline">{{ t('common.shutdown') }}</span>
-                    </UButton>
+                    <UDropdownMenu :items="accountMenu" :content="{ align: 'end' }">
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-user-round"
+                        :aria-label="accountLabel"
+                        :title="accountLabel"
+                      >
+                        <span class="hidden xl:inline">{{ accountLabel }}</span>
+                      </UButton>
+                    </UDropdownMenu>
                   </div>
                 </template>
               </UDashboardNavbar>
@@ -444,12 +419,11 @@
 </template>
 
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui';
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
 import { ref, computed, onBeforeUnmount, onMounted, readonly } from 'vue';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import AppRoot from '~/components/AppRoot.vue';
 import ConnectionBanner from '~/components/ConnectionBanner.vue';
-import ThemeButton from '~/components/ThemeButton.vue';
 import { formatPageTitle, parse_api_response, request, uri } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
 import { formatDateTime } from '~/utils/date';
@@ -484,6 +458,61 @@ const socket = useAppSocket();
 const auth = useAuth();
 const authVisible = computed(() => auth.status.value?.disabled !== true);
 const accountLabel = computed(() => auth.status.value?.user?.username || t('auth.account'));
+const logout = async (): Promise<void> => {
+  await auth.logout();
+  await navigateTo('/login');
+};
+const accountMenu = computed<DropdownMenuItem[][]>(() => {
+  const items: DropdownMenuItem[] = [
+    ...(authVisible.value
+      ? [
+          {
+            label: t('auth.account'),
+            icon: 'i-lucide-user-round',
+            onSelect: (): void => {
+              accountOpen.value = true;
+            },
+          },
+        ]
+      : []),
+    {
+      label: t('common.webuiSettings'),
+      icon: 'i-lucide-settings-2',
+      onSelect: (): void => {
+        void openSettings();
+      },
+    },
+  ];
+
+  const actions: DropdownMenuItem[] = [
+    ...(authVisible.value
+      ? [
+          {
+            label: t('auth.logout'),
+            icon: 'i-lucide-log-out',
+            color: 'error' as const,
+            onSelect: (): void => {
+              void logout();
+            },
+          },
+        ]
+      : []),
+    ...(true === config.app.is_native
+      ? [
+          {
+            label: t('common.shutdown'),
+            icon: 'i-lucide-power',
+            color: 'error' as const,
+            onSelect: (): void => {
+              void shutdownApp();
+            },
+          },
+        ]
+      : []),
+  ];
+
+  return actions.length > 0 ? [items, actions] : [items];
+});
 const config = useYtpConfig();
 const route = useRoute();
 const router = useRouter();

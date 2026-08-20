@@ -16,7 +16,6 @@ from app.library.Services import Services
 from app.library.Singleton import Singleton
 from app.library.sqlite_store import SqliteStore
 
-SESSION_DAYS = 7
 BCRYPT_COST = 12
 WS_TICKET_TTL = 30
 LOGIN_ATTEMPTS = 5
@@ -157,13 +156,19 @@ class AuthService(metaclass=Singleton):
         cache = Cache.get_instance()
         cache.delete(cache.hash(f"auth:attempt:{remote or 'unknown'}"))
 
-    async def create_session(self, user_id: int) -> str:
+    async def create_session(self, user_id: int, user_agent: str | None = None, ip: str | None = None) -> str:
         token: str = secrets.token_urlsafe(32)
-        expires: str = (datetime.now(UTC) + timedelta(days=SESSION_DAYS)).strftime("%Y-%m-%d %H:%M:%S.%f")
+        expires: str = (datetime.now(UTC) + timedelta(days=Config.get_instance().auth_session_days)).strftime(
+            "%Y-%m-%d %H:%M:%S.%f"
+        )
         async with get_session() as session:
             await session.execute(
-                text("INSERT INTO sessions (token_digest, user_id, expires_at) VALUES (:digest, :user_id, :expires)"),
-                {"digest": _digest(token), "user_id": user_id, "expires": expires},
+                text(
+                    "INSERT INTO sessions "
+                    "(token_digest, user_id, expires_at, user_agent, ip) "
+                    "VALUES (:digest, :user_id, :expires, :user_agent, :ip)"
+                ),
+                {"digest": _digest(token), "user_id": user_id, "expires": expires, "user_agent": user_agent, "ip": ip},
             )
             await session.commit()
         return token
@@ -188,6 +193,42 @@ class AuthService(metaclass=Singleton):
     async def revoke_session(self, token: str) -> None:
         async with get_session() as session:
             await session.execute(text("DELETE FROM sessions WHERE token_digest = :digest"), {"digest": _digest(token)})
+            await session.commit()
+
+    async def sessions(self, user_id: int, current_token: str | None = None) -> list[dict]:
+        async with get_session() as session:
+            rows = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT id, created_at, expires_at, user_agent, ip, "
+                            "token_digest = :digest AS current FROM sessions "
+                            "WHERE user_id = :user_id AND expires_at > CURRENT_TIMESTAMP "
+                            "ORDER BY created_at DESC, id DESC"
+                        ),
+                        {"digest": _digest(current_token) if current_token else "", "user_id": user_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            return [{**dict(row), "current": bool(row["current"])} for row in rows]
+
+    async def delete_session(self, user_id: int, session_id: int) -> bool:
+        async with get_session() as session:
+            result = await session.execute(
+                text("DELETE FROM sessions WHERE id = :id AND user_id = :user_id"),
+                {"id": session_id, "user_id": user_id},
+            )
+            await session.commit()
+            return bool(getattr(result, "rowcount", 0))
+
+    async def revoke_other_sessions(self, user_id: int, token: str) -> None:
+        async with get_session() as session:
+            await session.execute(
+                text("DELETE FROM sessions WHERE user_id = :user_id AND token_digest != :digest"),
+                {"user_id": user_id, "digest": _digest(token)},
+            )
             await session.commit()
 
     async def user_from_key(self, key: str) -> dict | None:

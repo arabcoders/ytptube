@@ -19,6 +19,9 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/auth/setup](#post-apiauthsetup)
     - [POST /api/auth/login](#post-apiauthlogin)
     - [POST /api/auth/logout](#post-apiauthlogout)
+    - [GET /api/auth/sessions](#get-apiauthsessions)
+    - [DELETE /api/auth/sessions/{session\_id}](#delete-apiauthsessionssession_id)
+    - [DELETE /api/auth/sessions](#delete-apiauthsessions)
     - [POST /api/auth/ws-ticket](#post-apiauthws-ticket)
     - [GET /api/auth/me](#get-apiauthme)
     - [PATCH /api/auth/account](#patch-apiauthaccount)
@@ -272,7 +275,8 @@ without cookie credentials from any origin.
 ## Endpoints
 
 ### GET /api/auth/status
-**Purpose**: Return authentication state. This endpoint is public.
+**Purpose**: Return authentication state.
+
 **Response**:
 ```json
 {
@@ -282,12 +286,16 @@ without cookie credentials from any origin.
   "user": null
 }
 ```
-When authenticated, `user` is `{ "id": 1, "username": "name" }`.
+
+**Notes**:
+- This endpoint is public.
+- When authenticated, `user` is `{ "id": 1, "username": "name" }`.
 
 ---
 
 ### POST /api/auth/setup
 **Purpose**: Create the first user and start a session.
+
 **Body**:
 ```json
 {
@@ -295,6 +303,7 @@ When authenticated, `user` is `{ "id": 1, "username": "name" }`.
   "password": "password"
 }
 ```
+
 **Response** (`201`):
 ```json
 {
@@ -304,12 +313,15 @@ When authenticated, `user` is `{ "id": 1, "username": "name" }`.
   }
 }
 ```
-Returns `ALREADY_EXISTS` once any user exists.
+
+**Error Responses**:
+- `ALREADY_EXISTS` (`409`): Returned once any user exists.
 
 ---
 
 ### POST /api/auth/login
 **Purpose**: Authenticate a user and start a session.
+
 **Body**:
 ```json
 {
@@ -317,6 +329,7 @@ Returns `ALREADY_EXISTS` once any user exists.
   "password": "password"
 }
 ```
+
 **Response** (`200`):
 ```json
 {
@@ -326,18 +339,78 @@ Returns `ALREADY_EXISTS` once any user exists.
   }
 }
 ```
-Returns `TOO_MANY_REQUESTS` with `Retry-After: XX` after repeated attempts from the same client.
+
+**Error Responses**:
+- `TOO_MANY_REQUESTS` (`429`): Returned with `Retry-After: XX` after repeated attempts from the same client.
 
 ---
 
 ### POST /api/auth/logout
-**Purpose**: Revoke the current cookie session and clear its cookie.
+**Purpose**: Revoke the current cookie session.
+
 **Response** (`204`): Empty response body.
+
+**Notes**:
+- Revoking the current cookie session clears its cookie.
+
+---
+
+### GET /api/auth/sessions
+**Purpose**: List the authenticated user’s active browser sessions, newest first.
+
+**Response**:
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "created_at": "2026-01-01 00:00:00",
+      "expires_at": "2026-01-31 00:00:00",
+      "user_agent": "Mozilla/5.0 ...",
+      "ip": "192.0.2.10",
+      "current": true
+    }
+  ]
+}
+```
+
+**Notes**:
+- Existing sessions are invalidated when the session metadata migration is applied.
+
+---
+
+### DELETE /api/auth/sessions/{session_id}
+**Purpose**: Revoke one of the authenticated user’s sessions.
+
+**Path Parameter**:
+- `session_id`: Session ID to revoke.
+
+**Response** (`204`): Empty response body.
+
+**Error Responses**:
+- `NOT_FOUND` (`404`): Returned for malformed, missing, or non-owned IDs.
+
+**Notes**:
+- Deleting the current cookie session also clears the cookie.
+
+---
+
+### DELETE /api/auth/sessions
+**Purpose**: Revoke all other authenticated user sessions while preserving the current cookie session.
+
+**Response** (`204`): Empty response body.
+
+**Error Responses**:
+- `BAD_REQUEST` (`400`): Returned when no valid session cookie is provided.
+
+**Notes**:
+- Works with cookies only.
 
 ---
 
 ### POST /api/auth/ws-ticket
-**Purpose**: Create a short-lived, one-time WebSocket handshake ticket for split-origin frontends.
+**Purpose**: Create a WebSocket handshake ticket for split-origin frontends.
+
 **Response** (`201`):
 ```json
 {
@@ -345,12 +418,16 @@ Returns `TOO_MANY_REQUESTS` with `Retry-After: XX` after repeated attempts from 
   "expires_in": 30
 }
 ```
-The ticket is consumed from `GET /ws?ticket=...` and must not be reused. It is not accepted by normal HTTP API routes.
+
+**Notes**:
+- The ticket is consumed from `GET /ws?ticket=...` and must not be reused.
+- It is not accepted by normal HTTP API routes.
 
 ---
 
 ### GET /api/auth/me
 **Purpose**: Return the authenticated user.
+
 **Response**:
 ```json
 {
@@ -365,6 +442,7 @@ The ticket is consumed from `GET /ws?ticket=...` and must not be reused. It is n
 
 ### PATCH /api/auth/account
 **Purpose**: Change the authenticated account username and/or password.
+
 **Body**:
 ```json
 {
@@ -373,7 +451,7 @@ The ticket is consumed from `GET /ws?ticket=...` and must not be reused. It is n
   "password": "new-password"
 }
 ```
-At least one of `username` or `password` is required. Password changes revoke old sessions and issue a fresh cookie session.
+
 **Response**:
 ```json
 {
@@ -384,10 +462,18 @@ At least one of `username` or `password` is required. Password changes revoke ol
 }
 ```
 
+**Error Responses**:
+- `REQUIRED` (`400`): Returned when neither `username` nor `password` is provided.
+
+**Notes**:
+- At least one of `username` or `password` is required.
+- Password changes revoke old sessions and issue a fresh cookie session.
+
 ---
 
 ### GET /api/auth/api-keys
 **Purpose**: List the authenticated user’s API keys.
+
 **Response**:
 ```json
 {
@@ -406,13 +492,15 @@ At least one of `username` or `password` is required. Password changes revoke ol
 ---
 
 ### POST /api/auth/api-keys
-**Purpose**: Create a named API key. The plaintext key is returned only once.
+**Purpose**: Create a named API key.
+
 **Body**:
 ```json
 {
   "name": "browser"
 }
 ```
+
 **Response** (`201`):
 ```json
 {
@@ -425,11 +513,21 @@ At least one of `username` or `password` is required. Password changes revoke ol
 }
 ```
 
+**Notes**:
+- The plaintext key is returned only once.
+
 ---
 
 ### DELETE /api/auth/api-keys/{id}
 **Purpose**: Revoke an API key owned by the authenticated user.
-**Response** (`204`): Empty response body. Missing or cross-user IDs return `NOT_FOUND`.
+
+**Path Parameter**:
+- `id`: API key ID to revoke.
+
+**Response** (`204`): Empty response body.
+
+**Error Responses**:
+- `NOT_FOUND` (`404`): Returned for missing or cross-user IDs.
 
 ---
 
