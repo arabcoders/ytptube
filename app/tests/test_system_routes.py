@@ -10,7 +10,14 @@ from app.library.config import Config
 from app.library.cache import Cache
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
-from app.routes.api.system import check_updates, system_config, system_diagnostics, system_folders, system_limits
+from app.routes.api.system import (
+    check_updates,
+    shutdown_system,
+    system_config,
+    system_diagnostics,
+    system_folders,
+    system_limits,
+)
 from app.routes.api import system
 from app.library.router import ROUTES
 from app.tests.helpers import url_for
@@ -61,6 +68,23 @@ class DummyQueue:
 
     def is_paused(self) -> bool:
         return self.pool.is_paused()
+
+
+class TestShutdownEndpoint:
+    @pytest.mark.asyncio
+    async def test_shutdown_schedules_exit(self) -> None:
+        config = MagicMock(is_native=True)
+        loop = MagicMock()
+
+        with patch("app.routes.api.system.asyncio.get_running_loop", return_value=loop):
+            response = await shutdown_system(config, Encoder())
+
+        assert response.status == 200
+        loop.call_later.assert_called_once()
+        delay, callback = loop.call_later.call_args.args
+        assert delay == 0.5
+        with pytest.raises(system.GracefulExit):
+            callback()
 
 
 class TestCheckUpdatesEndpoint:

@@ -14,6 +14,7 @@
     <div class="ytp-panel p-0 relative w-full max-w-xl overflow-hidden bg-default/95">
       <div class="space-y-6 px-5 py-6 sm:px-7 sm:py-8" role="status" aria-live="polite">
         <div
+          v-if="!shutdownComplete"
           class="inline-flex items-center gap-2 rounded-full border border-default bg-elevated/60 px-3 py-1.5 text-xs font-semibold tracking-[0.22em] text-toned uppercase"
         >
           <UIcon
@@ -29,10 +30,8 @@
             {{ t('common.goodbye') }}
           </h1>
 
-          <p class="text-base leading-7 text-default sm:text-lg">{{ t('common.shuttingDown') }}</p>
-
-          <p v-if="shutdownComplete" class="max-w-lg text-sm leading-6 text-toned sm:text-base">
-            {{ t('common.closeWindow') }}
+          <p class="text-base leading-7 text-default sm:text-lg">
+            {{ t(shutdownComplete ? 'common.closeWindow' : 'common.shuttingDown') }}
           </p>
         </div>
 
@@ -43,15 +42,6 @@
           icon="i-lucide-power"
           :title="t('common.wrappingUp')"
           :description="t('common.closingServices')"
-        />
-
-        <UAlert
-          v-else
-          color="success"
-          variant="soft"
-          icon="i-lucide-circle-check"
-          :title="t('common.goodbye')"
-          :description="t('common.closeWindow')"
         />
       </div>
     </div>

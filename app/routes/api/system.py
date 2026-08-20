@@ -172,15 +172,13 @@ async def downloads_resume(queue: DownloadQueue, encoder: Encoder, notify: Event
 
 
 @route("POST", "api/system/shutdown", "system.shutdown")
-async def shutdown_system(request: Request, config: Config, encoder: Encoder, notify: EventBus) -> Response:
+async def shutdown_system(config: Config, encoder: Encoder) -> Response:
     """
     Initiate application shutdown.
 
     Args:
-        request (Request): The request object.
         config (Config): The config instance.
         encoder (Encoder): The encoder instance.
-        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -194,22 +192,11 @@ async def shutdown_system(request: Request, config: Config, encoder: Encoder, no
             params={"feature": "api.features.shutdown"},
         )
 
-    app = request.app
-
-    async def do_shutdown():
-        notify.emit(
-            Events.SHUTDOWN,
-            data={"app": app},
-            title="Application Shutdown",
-            message="Shutdown initiated by user request.",
-        )
-        await asyncio.sleep(0.5)
-        await app.shutdown()
-        await app.cleanup()
+    def do_shutdown() -> None:
         raise GracefulExit
 
     # Schedule shutdown after response
-    asyncio.create_task(do_shutdown())
+    asyncio.get_running_loop().call_later(0.5, do_shutdown)
     LOG.info("Shutdown initiated by user request. Stopping the server...")
     return web.json_response(
         data={
