@@ -56,7 +56,7 @@ def cors_headers(request: Request, config: Config) -> dict[str, str]:
 def is_cross_origin(request: Request) -> bool:
     fetch_site: str | None = request.headers.get("Sec-Fetch-Site")
     if fetch_site:
-        return fetch_site.lower() != "same-origin"
+        return fetch_site.lower() not in {"none", "same-origin"}
 
     origin: str | None = request.headers.get("Origin")
     if not origin or origin == "null":
@@ -203,7 +203,6 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
                 "Unauthorized.",
                 code="UNAUTHORIZED",
                 status=web.HTTPUnauthorized.status_code,
-                headers={"WWW-Authenticate": 'Basic realm="Authorization Required."'},
             )
         request[AUTH_USER_KEY] = user
         return await handler(request)

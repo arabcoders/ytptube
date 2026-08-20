@@ -598,6 +598,19 @@ async def test_credentials_cors() -> None:
             is False
         )
         config.cors_origins = "*"
+        response = await client.get(
+            url_for("api_value", app=app),
+            cookies={"ytp_session": "session"},
+            headers={"Sec-Fetch-Site": "none"},
+        )
+        assert response.status == 200
+        response = await client.get(
+            url_for("api_value", app=app),
+            cookies={"ytp_session": "session"},
+            headers={"Sec-Fetch-Site": "cross-site"},
+        )
+        assert response.status == 401
+        assert "WWW-Authenticate" not in response.headers
         response = await client.post(url_for("auth_setup", app=app), headers={"Origin": "https://site"})
         assert response.status == 403
         response = await client.post(url_for("auth_login", app=app), headers={"Origin": "https://site"})
