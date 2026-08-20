@@ -1,7 +1,9 @@
 <template>
   <div>
     <AppRoot mode="simple" @ready="init" v-slot="{ openSettings }">
-      <div class="shell-stage shell-surface flex min-h-screen flex-col">
+      <Shutdown v-if="app_shutdown" />
+
+      <div v-else class="shell-stage shell-surface flex min-h-screen flex-col">
         <ConnectionBanner />
 
         <div
@@ -42,18 +44,19 @@
                         </UButton>
                       </UTooltip>
 
-                      <UTooltip :text="t('common.webuiSettings')">
+                      <UDropdownMenu :items="accountMenu(openSettings)" :content="{ align: 'end' }">
                         <UButton
                           color="neutral"
                           variant="ghost"
                           size="sm"
-                          icon="i-lucide-settings-2"
+                          icon="i-lucide-user-round"
+                          :aria-label="accountLabel"
+                          :title="accountLabel"
                           :square="isMobile"
-                          @click="openSettings"
                         >
-                          <span v-if="!isMobile">{{ t('common.webuiSettings') }}</span>
+                          <span v-if="!isMobile">{{ accountLabel }}</span>
                         </UButton>
-                      </UTooltip>
+                      </UDropdownMenu>
                     </div>
                   </div>
 
@@ -751,6 +754,7 @@
             </template>
           </UModal>
 
+          <AccountModal v-model:open="accountOpen" />
           <Dialog />
         </div>
       </div>
@@ -759,13 +763,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, toRef, watch } from 'vue';
+import type { DropdownMenuItem } from '@nuxt/ui';
+import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
 import type { item_request } from '~/types/item';
 import type { ItemStatus, StoreItem } from '~/types/store';
 import AppRoot from '~/components/AppRoot.vue';
+import AccountModal from '~/components/AccountModal.vue';
 import ConnectionBanner from '~/components/ConnectionBanner.vue';
+import Shutdown from '~/components/shutdown.vue';
 import { useConfirm } from '~/composables/useConfirm';
+import { useDialog } from '~/composables/useDialog';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
@@ -800,6 +808,107 @@ const queueCollapsed = useStorage<boolean>('simple_queue_collapsed', false);
 const historyCollapsed = useStorage<boolean>('simple_history_collapsed', false);
 const isMobile = useMediaQuery({ maxWidth: 1024 });
 const box = useConfirm();
+const app_shutdown = ref<boolean>(false);
+const { alertDialog, confirmDialog } = useDialog();
+const auth = useAuth();
+const authVisible = computed(() => auth.status.value?.disabled !== true);
+const accountLabel = computed(() => auth.status.value?.user?.username || t('auth.account'));
+const accountOpen = ref(false);
+const logout = async (): Promise<void> => {
+  await auth.logout();
+  await navigateTo('/login');
+};
+const accountMenu = (openSettings: () => void): DropdownMenuItem[][] => {
+  const items: DropdownMenuItem[] = [
+    ...(authVisible.value
+      ? [
+          {
+            label: t('auth.account'),
+            icon: 'i-lucide-user-round',
+            onSelect: (): void => {
+              accountOpen.value = true;
+            },
+          },
+        ]
+      : []),
+    {
+      label: t('common.webuiSettings'),
+      icon: 'i-lucide-settings-2',
+      onSelect: (): void => {
+        void openSettings();
+      },
+    },
+  ];
+
+  const actions: DropdownMenuItem[] = [
+    ...(authVisible.value
+      ? [
+          {
+            label: t('auth.logout'),
+            icon: 'i-lucide-log-out',
+            color: 'error' as const,
+            onSelect: (): void => {
+              void logout();
+            },
+          },
+        ]
+      : []),
+    ...(true === configStore.app.is_native
+      ? [
+          {
+            label: t('common.shutdown'),
+            icon: 'i-lucide-power',
+            color: 'error' as const,
+            onSelect: (): void => {
+              void shutdownApp();
+            },
+          },
+        ]
+      : []),
+  ];
+
+  return actions.length > 0 ? [items, actions] : [items];
+};
+
+const shutdownApp = async (): Promise<void> => {
+  if (false === configStore.app.is_native) {
+    await alertDialog({
+      title: t('app.shutdown.unavailable'),
+      message: t('app.shutdown.unavailableDesc'),
+    });
+    return;
+  }
+
+  const { status } = await confirmDialog({
+    title: t('app.shutdown.confirmTitle'),
+    message: t('app.shutdown.confirmMessage'),
+  });
+
+  if (false === status) {
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/system/shutdown', { method: 'POST' });
+    if (!resp.ok) {
+      const body = await resp.json();
+      await alertDialog({
+        title: t('app.shutdown.failedTitle'),
+        message: t('app.shutdown.failedMessage', {
+          reason: body.error || String(resp.statusText || resp.status),
+        }),
+      });
+      return;
+    }
+    app_shutdown.value = true;
+    await nextTick();
+  } catch (e: any) {
+    await alertDialog({
+      title: t('app.shutdown.failedTitle'),
+      message: t('app.shutdown.failedMessage', { reason: String(e.message || e) }),
+    });
+  }
+};
 
 const app = toRef(configStore, 'app');
 const paused = toRef(configStore, 'paused');
