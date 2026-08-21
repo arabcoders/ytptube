@@ -1288,6 +1288,11 @@
         "navLabel": "README",
         "description": "Aperçu du projet"
       },
+      "features": {
+        "title": "Fonctionnalités",
+        "navLabel": "Fonctionnalités",
+        "description": "Téléchargements, automatisation et fonctions pour les médiathèques."
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

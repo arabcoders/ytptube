@@ -13,7 +13,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_OUTPUT_TEMPLATE             | The template for the filenames of the downloaded videos             | `%(title)s.%(ext)s`   |
 | YTP_DEFAULT_PRESET              | The default preset to use for the download                          | `default`             |
 | YTP_INSTANCE_TITLE              | The title of the instance                                           | `(not_set)`           |
-| YTP_FILE_LOGGING                | Whether to log to file                                              | `false`               |
+| YTP_FILE_LOGGING                | Whether to log to file                                              | `true`                |
 | YTP_DOWNLOAD_PATH               | Path to where the downloads will be saved                           | `/downloads`          |
 | YTP_MAX_WORKERS                 | The maximum number of workers to use for downloading                | `20`                  |
 | YTP_MAX_WORKERS_PER_EXTRACTOR   | The maximum number of concurrent downloads per extractor            | `2`                   |
@@ -43,7 +43,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |
 | YTP_PIP_IGNORE_UPDATES          | Do not update the custom pip packages                               | `false`               |
 | YTP_PYTHON_PATH                 | Extra python library directory                                      | `(not_set)`           |
-| YTP_PICTURES_BACKENDS           | A comma separated list of pictures urls to use                      | `(not_set)`           |
+| YTP_PICTURES_BACKENDS           | A comma separated list of picture URLs to use                       | `(default)`           |
 | YTP_BROWSER_CONTROL_ENABLED     | Whether to enable the file browser actions                          | `false`               |
 | YTP_YTDLP_AUTO_UPDATE           | Whether to enable the auto update for yt-dlp                        | `true`                |
 | YTP_YTDLP_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package     | `false`               |
@@ -54,7 +54,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_FLARESOLVERR_CLIENT_TIMEOUT | HTTP client timeout (seconds) when calling FlareSolverr/Trawl       | `120`                 |
 | YTP_FLARESOLVERR_CACHE_TTL      | The cache TTL (in seconds) for FlareSolverr/Trawl solutions         | `600`                 |
 | YTP_BASE_PATH                   | Set this if you are serving YTPTube from sub-folder                 | `/`                   |
-| YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial youtube premiere stream from being downloaded  | `false`               |
+| YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial YouTube premiere stream from being downloaded  | `true`                |
 | YTP_QUEUE_DISPLAY_LIMIT         | Max queued downloads returned to the UI. `0` = unlimited            | `100`                 |
 | YTP_LIVE_PREMIERE_BUFFER        | buffer time in minutes to add to video duration                     | `5`                   |
 | YTP_TASKS_HANDLER_TIMER         | The cron expression for the tasks handler timer                     | `15 */1 * * *`        |
@@ -328,7 +328,7 @@ YTPTube supports custom `ytp_*` placeholders in `yt-dlp` output template via the
   - Example result: `Favorites/QwErTyUiOp/My Video.mp4`
 
 > [!NOTE]
-> `%(ytp_` placeholders are a YTPTube extension and not avaliable via console or directly via yt-dlp.
+> `%(ytp_` placeholders are a YTPTube extension and not available via console or directly via yt-dlp.
 
 # How can I monitor sites without RSS feeds?
 
@@ -350,7 +350,7 @@ Each definition must contain a single JSON object with the following keys:
   "name": "example",                  // Friendly identifier shown in logs
   "match_url": [
     "https://example.com/articles/*", // Glob strings
-    "https://example.com/post/[0-9]+" // Regex strings
+    "/https://example\\.com/post/[0-9]+/" // Slash-delimited regex strings
   ],
   "engine": {                         // Optional, defaults to HTTPX
     "type": "httpx",                  // "httpx" (default) or "selenium"
@@ -650,7 +650,7 @@ file to match your setup.
 If for some reason the initial test for GPU encoding fails, YTPTube will fallback to software encoding. You can force
 software encoding by setting the `YTP_STREAMER_VCODEC` environment variable to `libx264`. If you want to force GPU encoding, set the
 `YTP_STREAMER_VCODEC` environment variable to one of the supported GPU codecs, for example `h264_vaapi` or `h264_nvenc` depending on your GPU.
-For more information about the supported codecs, please refer to the [SegmentEncoders.py](app/library/SegmentEncoders.py) file.
+For the supported codec implementations, see [segment_encoders.py](app/features/streaming/library/segment_encoders.py).
 
 If GPU encoding fails and software encoding is used, you will have to restart the container to try GPU encoding again. 
 as we only test for GPU encoding once on first video stream.

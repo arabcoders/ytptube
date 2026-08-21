@@ -1288,6 +1288,11 @@
         "navLabel": "README",
         "description": "项目概述"
       },
+      "features": {
+        "title": "功能",
+        "navLabel": "功能",
+        "description": "下载、自动化和媒体库功能。"
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

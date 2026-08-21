@@ -14,7 +14,7 @@ from app.library.router import add_route, route
 
 LOG = get_logger()
 
-STATIC_FILES = ["README.md", "FAQ.md", "API.md", "SECURITY.md", "sc_short.jpg", "sc_simple.jpg"]
+STATIC_FILES = ["README.md", "FEATURES.md", "FAQ.md", "API.md", "SECURITY.md", "sc_short.jpg", "sc_simple.jpg"]
 EXT_TO_MIME: dict = {
     ".md": "text/markdown",
     ".png": "image/png",

@@ -1288,6 +1288,11 @@
         "navLabel": "README",
         "description": "プロジェクトの概要"
       },
+      "features": {
+        "title": "機能",
+        "navLabel": "機能",
+        "description": "ダウンロード、自動化、メディアライブラリ機能。"
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",
