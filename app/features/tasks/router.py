@@ -16,7 +16,7 @@ from app.library.ag_utils import ag
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 from app.library.Utils import get_channel_images, get_file, validate_url
 

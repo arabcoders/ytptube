@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from app.features.presets.repository import PresetsRepository
 from app.features.presets.service import Presets
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.sqlite_store import SqliteStore
 
 LOG = get_logger()

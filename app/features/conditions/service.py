@@ -7,7 +7,7 @@ from app.features.conditions.repository import ConditionsRepository
 from app.features.conditions.schemas import Condition
 from app.features.ytdlp.mini_filter import match_str
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Singleton import Singleton
 
 LOG = get_logger()

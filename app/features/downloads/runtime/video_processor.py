@@ -9,7 +9,7 @@ from app.features.downloads.items import ItemDTO
 from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, needs_reextract
 from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
 from app.library.Events import Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import calc_download_path, merge_dict, str_to_dt
 
 from .core import Download

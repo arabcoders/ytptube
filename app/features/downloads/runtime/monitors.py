@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from app.features.downloads.items import Item, ItemDTO
 from app.library.ag_utils import ag
 from app.library.Events import Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import dt_delta, str_to_dt
 
 if TYPE_CHECKING:

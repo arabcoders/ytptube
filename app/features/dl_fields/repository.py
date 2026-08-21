@@ -7,7 +7,7 @@ from sqlalchemy import delete, func, or_, select
 from app.features.core.deps import get_session
 from app.features.dl_fields.migration import Migration
 from app.features.dl_fields.models import DLFieldModel
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:

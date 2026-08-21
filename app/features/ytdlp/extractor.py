@@ -12,7 +12,7 @@ from aiohttp import web
 
 from app.features.ytdlp.utils import _DATA, LogWrapper, get_archive_id
 from app.features.ytdlp.ytdlp import YTDLP
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 

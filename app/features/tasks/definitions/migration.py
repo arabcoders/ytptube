@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from app.features.core.migration import Migration as FeatureMigration
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 if TYPE_CHECKING:
     from app.features.tasks.definitions.repository import TaskDefinitionsRepository

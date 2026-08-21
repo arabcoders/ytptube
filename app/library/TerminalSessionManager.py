@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import web
 
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton

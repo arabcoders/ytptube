@@ -7,7 +7,7 @@ import httpx
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.ytdlp.utils import get_archive_id
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from ._base_handler import BaseHandler
 

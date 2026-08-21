@@ -9,7 +9,7 @@ from app.features.core.schemas import CEFeature, ConfigEvent
 from app.features.tasks.definitions.migration import Migration
 from app.features.tasks.definitions.models import TaskDefinitionModel
 from app.library.Events import Event, EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 

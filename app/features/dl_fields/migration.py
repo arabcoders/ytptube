@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 from app.features.core.migration import Migration as FeatureMigration
 from app.features.dl_fields.schemas import DLField
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 if TYPE_CHECKING:
     from app.features.dl_fields.repository import DLFieldsRepository

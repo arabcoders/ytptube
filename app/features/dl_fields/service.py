@@ -6,7 +6,7 @@ from app.features.dl_fields.models import DLFieldModel
 from app.features.dl_fields.repository import DLFieldsRepository
 from app.features.dl_fields.schemas import DLField
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:

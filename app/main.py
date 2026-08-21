@@ -14,7 +14,6 @@ if APP_ROOT not in sys.path:
 
 import argparse
 import asyncio
-import logging
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -38,7 +37,7 @@ from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAccessLogger, HttpAPI
 from app.library.HttpSocket import HttpSocket
 from app.library.httpx_client import close_shared_clients
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.monitor import ResourceTracker
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
@@ -223,7 +222,6 @@ class Main:
 
 
 def start() -> None:
-    logging.basicConfig(level=logging.DEBUG)
     Main().start()
 
 

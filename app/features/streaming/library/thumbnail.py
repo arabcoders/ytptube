@@ -8,7 +8,7 @@ from pathlib import Path
 from app.features.streaming.library.ffprobe import ffmpeg_bin, ffprobe, ffprobe_bin
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import FILES_TYPE, get_file_sidecar
 
 LOG = get_logger()

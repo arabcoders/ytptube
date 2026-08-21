@@ -11,7 +11,7 @@ from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from ._base_handler import BaseHandler
 

@@ -5,7 +5,7 @@ from queue import Empty, Queue
 
 from aiohttp import web
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from .Services import Services
 from .Singleton import Singleton

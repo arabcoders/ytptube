@@ -15,7 +15,7 @@ from app.features.tasks.definitions.results import HandleTask, TaskFailure, Task
 from app.features.tasks.models import TaskModel
 from app.features.ytdlp.utils import archive_read
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Services import Services
 
 if TYPE_CHECKING:

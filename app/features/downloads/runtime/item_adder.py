@@ -15,7 +15,7 @@ from app.features.presets.service import Presets
 from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import archive_add, archive_read, arg_converter, get_extras, ytdlp_reject
 from app.library.Events import Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import create_cookies_file, merge_dict
 
 from .core import Download

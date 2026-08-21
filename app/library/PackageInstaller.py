@@ -10,7 +10,7 @@ from pathlib import Path
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.version import InvalidVersion, Version
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from .httpx_client import sync_client
 

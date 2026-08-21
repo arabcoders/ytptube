@@ -20,7 +20,7 @@ from sqlalchemy import delete, func, or_, select
 
 from app.features.conditions.models import ConditionModel
 from app.features.core.deps import get_session
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 LOG = get_logger()
 

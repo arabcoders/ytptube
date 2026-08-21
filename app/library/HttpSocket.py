@@ -8,7 +8,7 @@ from aiohttp import web
 
 from app.features.core.utils import gen_random
 from app.features.downloads.items import Item
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import Route, RouteType, get_routes
 from app.library.Services import Services
 from app.library.Utils import load_modules

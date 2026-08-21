@@ -19,7 +19,7 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 from app.library.Utils import calc_download_path, get_file_sidecar, rename_file
 

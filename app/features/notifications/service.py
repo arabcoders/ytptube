@@ -21,7 +21,7 @@ from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import Event, EventBus, Events
 from app.library.httpx_client import async_client
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:

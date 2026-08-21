@@ -9,7 +9,7 @@ from sqlalchemy.dialects.sqlite import insert
 
 from app.features.core.models import utcnow
 from app.features.downloads.models import DownloadModel
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.operations import Operation, matches_condition
 from app.library.Singleton import Singleton
 

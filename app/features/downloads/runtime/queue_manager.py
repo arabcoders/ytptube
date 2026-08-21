@@ -11,7 +11,7 @@ from app.features.downloads.items import Item, ItemDTO
 from app.features.downloads.repository import DownloadsRepository
 from app.library.config import Config
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton

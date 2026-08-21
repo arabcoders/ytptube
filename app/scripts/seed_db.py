@@ -24,7 +24,7 @@ if APP_ROOT not in sys.path:
 
 from app.features.downloads.models import DownloadModel
 from app.features.downloads.store import StoreType
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence

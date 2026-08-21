@@ -4,7 +4,7 @@ from enum import Enum
 from functools import wraps
 from typing import Any
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 LOG = get_logger()
 

@@ -9,7 +9,7 @@ from typing import Any, Literal, cast, overload
 
 import httpx
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from .cf_solver_shared import is_cf_challenge, solver
 

@@ -5,7 +5,7 @@ from enum import Enum
 from app.features.downloads.items import ItemDTO
 from app.features.downloads.repository import DownloadsRepository
 from app.features.downloads.runtime.core import Download
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.operations import matches_condition
 
 LOG = get_logger()

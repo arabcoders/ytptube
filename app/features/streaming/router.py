@@ -14,7 +14,7 @@ from app.features.streaming.library.segments import Segments
 from app.features.streaming.library.subtitle import Subtitle, get_subtitle_tracks
 from app.features.streaming.types import FFProbeError, StreamingError
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 from app.library.Utils import get_file
 

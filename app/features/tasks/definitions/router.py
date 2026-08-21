@@ -15,7 +15,7 @@ from app.features.tasks.definitions.schemas import (
 from app.features.tasks.definitions.utils import model_to_schema, schema_to_payload
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 
 LOG = get_logger()

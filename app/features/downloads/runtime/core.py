@@ -20,7 +20,7 @@ from app.features.ytdlp.utils import extract_ytdlp_logs
 from app.features.ytdlp.ytdlp import YTDLP
 from app.library.config import Config
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import create_cookies_file
 
 from .bootstrap import ensure_download_runtime
