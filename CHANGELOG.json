@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "982e71c0531629652c7584eb6626db5c072a7c8e",
-    "date": "2026-08-20T21:52:23+00:00",
+    "full_sha": "a6c5d93794e88d3592e2f21a722d9f8fd149a607",
+    "date": "2026-08-21T15:34:26+00:00",
     "commits": [
+      {
+        "sha": "a6c5d937",
+        "full_sha": "a6c5d93794e88d3592e2f21a722d9f8fd149a607",
+        "message": "feat: add static file aliasing and caching behavior for fingerprinted icons",
+        "author": "arabcoders",
+        "date": "2026-08-21T15:34:26+00:00"
+      },
       {
         "sha": "982e71c0",
         "full_sha": "982e71c0531629652c7584eb6626db5c072a7c8e",
