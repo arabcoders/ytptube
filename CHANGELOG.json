@@ -1,9 +1,30 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a6c5d93794e88d3592e2f21a722d9f8fd149a607",
-    "date": "2026-08-21T15:34:26+00:00",
+    "full_sha": "999b40e3efb5cc4875a49a3dadf5c0a3a183cd57",
+    "date": "2026-08-21T17:47:12+00:00",
     "commits": [
+      {
+        "sha": "999b40e3",
+        "full_sha": "999b40e3efb5cc4875a49a3dadf5c0a3a183cd57",
+        "message": "docs: update relevant docs",
+        "author": "arabcoders",
+        "date": "2026-08-21T17:47:12+00:00"
+      },
+      {
+        "sha": "80099e21",
+        "full_sha": "80099e2148d27d63cc2655cbf9e757a1908077d4",
+        "message": "refactor: isolate logging to namespace",
+        "author": "arabcoders",
+        "date": "2026-08-21T16:47:02+00:00"
+      },
+      {
+        "sha": "c2924e04",
+        "full_sha": "c2924e045dc16c7eb793fc947047b043c24774fa",
+        "message": "refactor: move download runtime into feature.downloads namespace",
+        "author": "arabcoders",
+        "date": "2026-08-21T16:08:30+00:00"
+      },
       {
         "sha": "a6c5d937",
         "full_sha": "a6c5d93794e88d3592e2f21a722d9f8fd149a607",
