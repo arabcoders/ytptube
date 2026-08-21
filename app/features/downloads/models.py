@@ -13,7 +13,7 @@ from app.features.core.models import Base, UTCDateTime, utcnow
 from app.library.Utils import init_class
 
 if TYPE_CHECKING:
-    from app.library.ItemDTO import ItemDTO
+    from app.features.downloads.items import ItemDTO
 
 
 JSONValue = str | int | float | bool | None | list["JSONValue"] | dict[str, "JSONValue"]
@@ -34,7 +34,7 @@ class DownloadModel(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, nullable=False)
 
     def to_item(self) -> ItemDTO:
-        from app.library.ItemDTO import ItemDTO
+        from app.features.downloads.items import ItemDTO
 
         item_data = deepcopy(self.data)
         item_data.pop("_id", None)

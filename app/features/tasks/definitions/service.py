@@ -8,13 +8,13 @@ import random
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
+from app.features.downloads.items import Item, ItemDTO
+from app.features.downloads.runtime.queue_manager import DownloadQueue
 from app.features.tasks.definitions.handlers._base_handler import BaseHandler
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.models import TaskModel
 from app.features.ytdlp.utils import archive_read
-from app.library.downloads.queue_manager import DownloadQueue
 from app.library.Events import EventBus, Events
-from app.library.ItemDTO import Item, ItemDTO
 from app.library.log import get_logger
 from app.library.Services import Services
 

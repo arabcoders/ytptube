@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from app.features.conditions.service import Conditions
-from app.library.ItemDTO import Item
-from app.library.downloads.item_adder import add
-from app.library.downloads.playlist_processor import process_playlist
+from app.features.downloads.items import Item
+from app.features.downloads.runtime.item_adder import add
+from app.features.downloads.runtime.playlist_processor import process_playlist
 
 
 @pytest.fixture(autouse=True)
@@ -96,10 +96,11 @@ class TestConditionIgnorePropagation:
         original_add = add
         with (
             patch(
-                "app.library.downloads.item_adder.Presets.get_instance", return_value=Mock(get=Mock(return_value=None))
+                "app.features.downloads.runtime.item_adder.Presets.get_instance",
+                return_value=Mock(get=Mock(return_value=None)),
             ),
-            patch("app.library.downloads.item_adder.Conditions.get_instance", return_value=matcher),
-            patch("app.library.downloads.item_adder.add", new=capture_requeue),
+            patch("app.features.downloads.runtime.item_adder.Conditions.get_instance", return_value=matcher),
+            patch("app.features.downloads.runtime.item_adder.add", new=capture_requeue),
         ):
             result = await original_add(
                 queue=queue,
@@ -133,12 +134,13 @@ class TestConditionIgnorePropagation:
 
         with (
             patch(
-                "app.library.downloads.item_adder.Presets.get_instance", return_value=Mock(get=Mock(return_value=None))
+                "app.features.downloads.runtime.item_adder.Presets.get_instance",
+                return_value=Mock(get=Mock(return_value=None)),
             ),
-            patch("app.library.downloads.item_adder.Conditions.get_instance", return_value=matcher),
-            patch("app.library.downloads.item_adder.ytdlp_reject", return_value=(True, "")),
+            patch("app.features.downloads.runtime.item_adder.Conditions.get_instance", return_value=matcher),
+            patch("app.features.downloads.runtime.item_adder.ytdlp_reject", return_value=(True, "")),
             patch(
-                "app.library.downloads.item_adder.add_item", new=AsyncMock(return_value={"status": "ok"})
+                "app.features.downloads.runtime.item_adder.add_item", new=AsyncMock(return_value={"status": "ok"})
             ) as add_item_mock,
         ):
             result = await add(queue=queue, item=item, entry=entry)
@@ -169,11 +171,12 @@ class TestConditionIgnorePropagation:
 
         with (
             patch(
-                "app.library.downloads.item_adder.Presets.get_instance", return_value=Mock(get=Mock(return_value=None))
+                "app.features.downloads.runtime.item_adder.Presets.get_instance",
+                return_value=Mock(get=Mock(return_value=None)),
             ),
-            patch("app.library.downloads.item_adder.Conditions.get_instance", return_value=matcher),
-            patch("app.library.downloads.item_adder.ytdlp_reject", return_value=(True, "")),
-            patch("app.library.downloads.item_adder.add_item", new=AsyncMock(return_value={"status": "ok"})),
+            patch("app.features.downloads.runtime.item_adder.Conditions.get_instance", return_value=matcher),
+            patch("app.features.downloads.runtime.item_adder.ytdlp_reject", return_value=(True, "")),
+            patch("app.features.downloads.runtime.item_adder.add_item", new=AsyncMock(return_value={"status": "ok"})),
         ):
             await add(queue=queue, item=item, entry=entry)
 
@@ -203,7 +206,7 @@ class TestConditionIgnorePropagation:
             "entries": [{"_type": "video", "id": "video-1", "title": "Video 1", "url": "https://example.com/v/1"}],
         }
 
-        with patch("app.library.downloads.playlist_processor.ytdlp_reject", return_value=(True, "")):
+        with patch("app.features.downloads.runtime.playlist_processor.ytdlp_reject", return_value=(True, "")):
             fake: Any = FakeItem()
             result = await process_playlist(queue=queue, entry=entry, item=fake)
 
@@ -255,7 +258,7 @@ class TestConditionIgnorePropagation:
             ],
         }
 
-        with patch("app.library.downloads.playlist_processor.ytdlp_reject", return_value=(True, "")):
+        with patch("app.features.downloads.runtime.playlist_processor.ytdlp_reject", return_value=(True, "")):
             fake: Any = FakeItem()
             result = await process_playlist(queue=queue, entry=entry, item=fake)
 
@@ -306,7 +309,7 @@ class TestConditionIgnorePropagation:
             "entries": [transparent],
         }
 
-        with patch("app.library.downloads.playlist_processor.ytdlp_reject", return_value=(True, "")):
+        with patch("app.features.downloads.runtime.playlist_processor.ytdlp_reject", return_value=(True, "")):
             fake: Any = FakeItem()
             result = await process_playlist(queue=queue, entry=entry, item=fake)
 

@@ -2768,11 +2768,11 @@ Binary image data with appropriate headers
       "exception": {
         "type": "ValueError",
         "message": "bad",
-        "file": "/app/library/downloads/queue_manager.py",
+        "file": "/app/features/downloads/runtime/queue_manager.py",
         "line": 123,
         "stack": [
           {
-            "path": "/app/library/downloads/queue_manager.py",
+            "path": "/app/features/downloads/runtime/queue_manager.py",
             "file": "queue_manager.py",
             "module": "queue_manager",
             "function": "start",
@@ -2781,7 +2781,7 @@ Binary image data with appropriate headers
         ]
       },
       "source": {
-        "path": "/app/library/downloads/queue_manager.py",
+        "path": "/app/features/downloads/runtime/queue_manager.py",
         "file": "queue_manager.py",
         "module": "queue_manager",
         "function": "start",
@@ -2829,11 +2829,11 @@ Binary image data with appropriate headers
   "exception": {
     "type": "ValueError",
     "message": "bad",
-    "file": "/app/library/downloads/queue_manager.py",
+    "file": "/app/features/downloads/runtime/queue_manager.py",
     "line": 123,
     "stack": [
       {
-        "path": "/app/library/downloads/queue_manager.py",
+        "path": "/app/features/downloads/runtime/queue_manager.py",
         "file": "queue_manager.py",
         "module": "queue_manager",
         "function": "start",
@@ -2842,7 +2842,7 @@ Binary image data with appropriate headers
     ]
   },
   "source": {
-    "path": "/app/library/downloads/queue_manager.py",
+    "path": "/app/features/downloads/runtime/queue_manager.py",
     "file": "queue_manager.py",
     "module": "queue_manager",
     "function": "start",

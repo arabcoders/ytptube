@@ -11,17 +11,18 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
+import app.features.downloads.runtime.bootstrap as download_runtime
+from app.features.downloads.items import Item, ItemDTO
+from app.features.downloads.runtime.core import Download
+from app.features.downloads.runtime.hooks import HookHandlers, NestedLogger
+from app.features.downloads.runtime.pool_manager import PoolManager
+from app.features.downloads.runtime.process_manager import ProcessManager
+from app.features.downloads.runtime.queue_manager import DownloadQueue
+from app.features.downloads.runtime.status_tracker import StatusTracker
+from app.features.downloads.runtime.temp_manager import TempManager
+from app.features.downloads.runtime.types import Terminator
+from app.features.downloads.runtime.video_processor import add_video
 from app.library.Events import EventBus, Events
-import app.library.downloads.runtime as download_runtime
-from app.library.downloads import Download, NestedLogger, Terminator
-from app.library.downloads.hooks import HookHandlers
-from app.library.downloads.pool_manager import PoolManager
-from app.library.downloads.process_manager import ProcessManager
-from app.library.downloads.queue_manager import DownloadQueue
-from app.library.downloads.status_tracker import StatusTracker
-from app.library.downloads.temp_manager import TempManager
-from app.library.downloads.video_processor import add_video
-from app.library.ItemDTO import Item, ItemDTO
 
 
 class CaptureHandler(logging.Handler):
@@ -76,7 +77,7 @@ class TestNestedLogger:
 class TestScheduledRetry:
     @staticmethod
     def queue(*, retry: int = 2, retry_fresh: bool = True, attempt: int = 0, continuedl: bool = True):
-        from app.library.downloads.monitors import RETRYABLE_ERRORS
+        from app.features.downloads.runtime.monitors import RETRYABLE_ERRORS
 
         info = make_item()
         info.status = "error"
@@ -96,7 +97,7 @@ class TestScheduledRetry:
         return queue
 
     def test_retryable_error(self) -> None:
-        from app.library.downloads.monitors import is_retryable_error
+        from app.features.downloads.runtime.monitors import is_retryable_error
 
         assert is_retryable_error("HTTP Error 403: Forbidden")
         assert is_retryable_error("4102066 bytes read, 6199501 more expected")
@@ -104,7 +105,7 @@ class TestScheduledRetry:
 
     @pytest.mark.asyncio
     async def test_retry(self) -> None:
-        from app.library.downloads.monitors import check_retries
+        from app.features.downloads.runtime.monitors import check_retries
 
         queue = self.queue()
         await check_retries(queue)
@@ -116,7 +117,7 @@ class TestScheduledRetry:
 
     @pytest.mark.asyncio
     async def test_retry_fresh(self) -> None:
-        from app.library.downloads.monitors import check_retries
+        from app.features.downloads.runtime.monitors import check_retries
 
         queue = self.queue(attempt=1)
         await check_retries(queue)
@@ -127,7 +128,7 @@ class TestScheduledRetry:
 
     @pytest.mark.asyncio
     async def test_retry_already_fresh(self) -> None:
-        from app.library.downloads.monitors import check_retries
+        from app.features.downloads.runtime.monitors import check_retries
 
         queue = self.queue(retry=1, continuedl=False)
         await check_retries(queue)
@@ -138,7 +139,7 @@ class TestScheduledRetry:
 
     @pytest.mark.asyncio
     async def test_retry_limit(self) -> None:
-        from app.library.downloads.monitors import check_retries
+        from app.features.downloads.runtime.monitors import check_retries
 
         queue = self.queue(attempt=2)
         await check_retries(queue)
@@ -148,7 +149,7 @@ class TestScheduledRetry:
 
     @pytest.mark.asyncio
     async def test_retry_skips_live(self) -> None:
-        from app.library.downloads.monitors import check_retries
+        from app.features.downloads.runtime.monitors import check_retries
 
         queue = self.queue()
         queue.done.get_many_by_status.return_value[0][1].is_live = True
@@ -177,7 +178,7 @@ class TestRetry:
         )
         queue._finish_retry = DownloadQueue._finish_retry.__get__(queue)
 
-        with patch("app.library.downloads.queue_manager.asyncio.create_task") as spawn:
+        with patch("app.features.downloads.runtime.queue_manager.asyncio.create_task") as spawn:
             count = await DownloadQueue.retry(queue, ids=[info._id])
             await spawn.call_args.args[0]
 
@@ -245,7 +246,7 @@ class TestDownloadHooks:
             def get_instance():
                 return Cfg
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         class EB:
             @staticmethod
@@ -256,7 +257,7 @@ class TestDownloadHooks:
             def emit(*_args, **_kwargs):
                 return None
 
-        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+        monkeypatch.setattr("app.features.downloads.runtime.core.EventBus", EB)
 
     def test_progress_hook_filters_fields(self) -> None:
         d = Download(make_item())
@@ -325,7 +326,7 @@ class TestDownloadStale:
                 mock_manager.Queue = MagicMock(return_value=DummyQueue())
                 return mock_manager
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         class EB:
             @staticmethod
@@ -336,7 +337,7 @@ class TestDownloadStale:
             def emit(*_args, **_kwargs):
                 return None
 
-        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+        monkeypatch.setattr("app.features.downloads.runtime.core.EventBus", EB)
 
     def test_is_stale_conditions(self, monkeypatch: pytest.MonkeyPatch) -> None:
         d = Download(make_item())
@@ -522,7 +523,7 @@ class TestDownloadFlow:
                 }
 
         Presets._reset_singleton()
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
         monkeypatch.setattr("app.features.ytdlp.ytdlp_opts.Config", Cfg)
 
         def bootstrap(*, logger=None):
@@ -541,7 +542,7 @@ class TestDownloadFlow:
             asyncio.run(Presets.get_instance().refresh_cache([preset]))
             return True
 
-        monkeypatch.setattr("app.library.downloads.core.ensure_download_runtime", bootstrap)
+        monkeypatch.setattr("app.features.downloads.runtime.core.ensure_download_runtime", bootstrap)
 
         item = make_item()
         item.preset = "native"
@@ -572,7 +573,7 @@ class TestDownloadFlow:
             def process_ie_result(self, ie_result, download):
                 return ie_result, download
 
-        monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
+        monkeypatch.setattr("app.features.downloads.runtime.core.YTDLP", FakeYTDLP)
 
         try:
             download._download()
@@ -594,7 +595,7 @@ class TestDownloadFlow:
             def get_instance():
                 return Cfg
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         download = Download(
             info=make_item(),
@@ -632,7 +633,7 @@ class TestDownloadFlow:
             def process_ie_result(self, ie_result, download):
                 return ie_result, download
 
-        monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
+        monkeypatch.setattr("app.features.downloads.runtime.core.YTDLP", FakeYTDLP)
 
         download._download()
 
@@ -654,7 +655,7 @@ class TestDownloadFlow:
             def get_instance():
                 return Cfg
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         item = make_item()
         item.extras = {
@@ -701,7 +702,7 @@ class TestDownloadFlow:
                 captured["ie_result"] = ie_result
                 return ie_result, download
 
-        monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
+        monkeypatch.setattr("app.features.downloads.runtime.core.YTDLP", FakeYTDLP)
 
         download._download()
 
@@ -734,7 +735,7 @@ class TestDownloadFlow:
 
                 return DummyManager()
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         class EB:
             @staticmethod
@@ -745,7 +746,7 @@ class TestDownloadFlow:
             def emit(*_args, **_kwargs):
                 return None
 
-        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+        monkeypatch.setattr("app.features.downloads.runtime.core.EventBus", EB)
 
         item = ItemDTO(
             id="id1",
@@ -872,7 +873,7 @@ class TestDownloadFlow:
 
                 return DummyManager()
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         class EB:
             @staticmethod
@@ -883,7 +884,7 @@ class TestDownloadFlow:
             def emit(*_args, **_kwargs):
                 return None
 
-        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+        monkeypatch.setattr("app.features.downloads.runtime.core.EventBus", EB)
 
         item = ItemDTO(
             id="id-live",
@@ -977,7 +978,7 @@ class TestDownloadFlow:
 
                 return DummyManager()
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         class EB:
             @staticmethod
@@ -988,7 +989,7 @@ class TestDownloadFlow:
             def emit(*_args, **_kwargs):
                 return None
 
-        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+        monkeypatch.setattr("app.features.downloads.runtime.core.EventBus", EB)
 
         tracker = Mock()
         tracker.final_update = False
@@ -999,8 +1000,8 @@ class TestDownloadFlow:
 
         tracker.progress_update = progress_update
 
-        monkeypatch.setattr("app.library.downloads.core.StatusTracker", Mock(return_value=tracker))
-        monkeypatch.setattr("app.library.downloads.core.HookHandlers", Mock())
+        monkeypatch.setattr("app.features.downloads.runtime.core.StatusTracker", Mock(return_value=tracker))
+        monkeypatch.setattr("app.features.downloads.runtime.core.HookHandlers", Mock())
 
         download = Download(make_item(id="regular-id"))
         monkeypatch.setattr(download._process_manager, "create_queue", lambda: DummyQueue())
@@ -1050,7 +1051,7 @@ class TestDownloadSpawnPickling:
             def get_instance():
                 return Cfg
 
-        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
 
         bus = EventBus.get_instance()
 
@@ -1331,7 +1332,7 @@ class TestProcessManager:
         pm.proc.ident = 67890
         pm.proc.is_alive = Mock(side_effect=[True, False, False])
 
-        with patch("app.library.downloads.process_manager.os.kill") as mock_kill:
+        with patch("app.features.downloads.runtime.process_manager.os.kill") as mock_kill:
             result = pm.kill()
             mock_kill.assert_called_once_with(12345, signal.SIGUSR1)
             assert result is True, "Should return True when process killed successfully"
@@ -1352,9 +1353,9 @@ class TestProcessManager:
         pm_regular.proc.is_alive = Mock(return_value=True)
 
         with (
-            patch("app.library.downloads.process_manager.os.kill") as mock_kill,
+            patch("app.features.downloads.runtime.process_manager.os.kill") as mock_kill,
             patch(
-                "app.library.downloads.process_manager.wait_for_process_with_timeout", return_value=True
+                "app.features.downloads.runtime.process_manager.wait_for_process_with_timeout", return_value=True
             ) as mock_wait,
         ):
             assert pm_live.kill() is True, "Live downloads should stop via the shared cancel event"
@@ -1366,9 +1367,9 @@ class TestProcessManager:
             pytest.skip("Regular SIGUSR1 path only runs on POSIX systems")
 
         with (
-            patch("app.library.downloads.process_manager.os.kill") as mock_kill,
+            patch("app.features.downloads.runtime.process_manager.os.kill") as mock_kill,
             patch(
-                "app.library.downloads.process_manager.wait_for_process_with_timeout", return_value=True
+                "app.features.downloads.runtime.process_manager.wait_for_process_with_timeout", return_value=True
             ) as mock_wait,
         ):
             assert pm_regular.kill() is True, "Regular downloads should keep SIGUSR1 behavior"
@@ -1751,15 +1752,15 @@ class TestStatusTracker:
 
 class TestQueueManager:
     def test_attach_schedules_retries(self) -> None:
-        from app.library.downloads.monitors import check_retries
+        from app.features.downloads.runtime.monitors import check_retries
 
         queue: Any = object.__new__(DownloadQueue)
         queue.config = SimpleNamespace(retry=2, auto_clear_history_days=0)
         queue._notify = Mock()
 
         with (
-            patch("app.library.downloads.queue_manager.Scheduler") as scheduler,
-            patch("app.library.downloads.queue_manager.Services"),
+            patch("app.features.downloads.runtime.queue_manager.Scheduler") as scheduler,
+            patch("app.features.downloads.runtime.queue_manager.Services"),
         ):
             queue.attach(Mock())
 
@@ -1860,7 +1861,7 @@ class TestQueueManager:
             seen.append(info_dict)
             return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
 
-        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+        monkeypatch.setattr("app.features.downloads.runtime.video_processor.Download", fake_download)
 
         result = await add_video(
             queue=self._video_queue(),
@@ -1886,7 +1887,7 @@ class TestQueueManager:
             seen.append(info_dict)
             return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
 
-        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+        monkeypatch.setattr("app.features.downloads.runtime.video_processor.Download", fake_download)
 
         entry = {
             "id": "video-id",
@@ -1911,7 +1912,7 @@ class TestQueueManager:
             seen_url.append(info.url)
             return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
 
-        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+        monkeypatch.setattr("app.features.downloads.runtime.video_processor.Download", fake_download)
 
         entry = {
             "_type": "url_transparent",
@@ -1934,7 +1935,7 @@ class TestQueueManager:
 
     @pytest.mark.asyncio
     async def test_transparent_add_item(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from app.library.downloads import item_adder
+        from app.features.downloads.runtime import item_adder
 
         seen: list[tuple[dict, Any, list[str] | None]] = []
 
@@ -1963,7 +1964,7 @@ class TestQueueManager:
         assert seen == [(entry, item, ["log"])]
 
     def test_extract_no_subs(self) -> None:
-        from app.library.downloads.item_adder import _extract_config
+        from app.features.downloads.runtime.item_adder import _extract_config
 
         config = {
             "format": "bv*+ba/b",
@@ -1991,7 +1992,7 @@ class TestQueueManager:
 
     @pytest.mark.asyncio
     async def test_light_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+        from app.features.downloads.runtime.video_processor import LIGHT_EXTRACT_KEY
 
         seen: list[dict | None] = []
 
@@ -1999,7 +2000,7 @@ class TestQueueManager:
             seen.append(info_dict)
             return SimpleNamespace(info=info, info_dict=info_dict, logs=logs)
 
-        monkeypatch.setattr("app.library.downloads.video_processor.Download", fake_download)
+        monkeypatch.setattr("app.features.downloads.runtime.video_processor.Download", fake_download)
 
         entry = {
             "id": "video-id",
@@ -2017,8 +2018,8 @@ class TestQueueManager:
 
     @pytest.mark.asyncio
     async def test_yt_no_subs(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from app.library.downloads import item_adder
-        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+        from app.features.downloads.runtime import item_adder
+        from app.features.downloads.runtime.video_processor import LIGHT_EXTRACT_KEY
 
         seen_config: list[dict] = []
         seen_entry: list[dict] = []
@@ -2076,8 +2077,8 @@ class TestQueueManager:
 
     @pytest.mark.asyncio
     async def test_yt_url_no_subs(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from app.library.downloads import item_adder
-        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+        from app.features.downloads.runtime import item_adder
+        from app.features.downloads.runtime.video_processor import LIGHT_EXTRACT_KEY
 
         seen_config: list[dict] = []
         seen_entry: list[dict] = []
@@ -2120,8 +2121,8 @@ class TestQueueManager:
 
     @pytest.mark.asyncio
     async def test_non_yt_keeps_subs(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from app.library.downloads import item_adder
-        from app.library.downloads.video_processor import LIGHT_EXTRACT_KEY
+        from app.features.downloads.runtime import item_adder
+        from app.features.downloads.runtime.video_processor import LIGHT_EXTRACT_KEY
 
         seen_config: list[dict] = []
         seen_entry: list[dict] = []
@@ -2168,7 +2169,7 @@ class TestQueueManager:
 
     @pytest.mark.asyncio
     async def test_cleanup_thumbnails(self, tmp_path: Path) -> None:
-        from app.library.downloads.monitors import cleanup_thumbnails
+        from app.features.downloads.runtime.monitors import cleanup_thumbnails
 
         queue_manager: Any = object.__new__(DownloadQueue)
         queue_manager.config = SimpleNamespace(temp_path=str(tmp_path), thumb_sidecar=False)
@@ -2354,7 +2355,7 @@ class TestPoolManager:
             def emit(event, **_kwargs):
                 emitted_events.append(event)
 
-        monkeypatch.setattr("app.library.downloads.pool_manager.EventBus", EB)
+        monkeypatch.setattr("app.features.downloads.runtime.pool_manager.EventBus", EB)
 
         queue_store = Mock()
         queue_store.exists = AsyncMock(return_value=True)
@@ -2399,7 +2400,7 @@ class TestPoolManager:
             def emit(event, **_kwargs):
                 emitted_events.append(event)
 
-        monkeypatch.setattr("app.library.downloads.pool_manager.EventBus", EB)
+        monkeypatch.setattr("app.features.downloads.runtime.pool_manager.EventBus", EB)
 
         queue_store = Mock()
         queue_store.exists = AsyncMock(return_value=True)

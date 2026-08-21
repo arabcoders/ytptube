@@ -126,9 +126,9 @@ class Tasks(metaclass=Singleton):
         import time
         from datetime import UTC, datetime
 
+        from app.features.downloads.items import Item
+        from app.features.downloads.runtime.queue_manager import DownloadQueue
         from app.library.config import Config
-        from app.library.downloads import DownloadQueue
-        from app.library.ItemDTO import Item
 
         timeNow: str = datetime.now(UTC).isoformat()
         task_id = task.id

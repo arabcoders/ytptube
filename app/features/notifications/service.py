@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from app.features.downloads.items import Item, ItemDTO
 from app.features.notifications.models import NotificationModel
 from app.features.notifications.repository import NotificationsRepository
 from app.features.notifications.schemas import (
@@ -20,7 +21,6 @@ from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import Event, EventBus, Events
 from app.library.httpx_client import async_client
-from app.library.ItemDTO import Item, ItemDTO
 from app.library.log import get_logger
 from app.library.Singleton import Singleton
 

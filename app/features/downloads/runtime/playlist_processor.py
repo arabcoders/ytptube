@@ -7,7 +7,7 @@ from app.library.log import get_logger
 from app.library.Utils import merge_dict
 
 if TYPE_CHECKING:
-    from app.library.ItemDTO import Item
+    from app.features.downloads.items import Item
 
     from .queue_manager import DownloadQueue
 

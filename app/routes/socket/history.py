@@ -1,6 +1,6 @@
-from app.library.downloads import DownloadQueue
+from app.features.downloads.items import Item
+from app.features.downloads.runtime.queue_manager import DownloadQueue
 from app.library.Events import EventBus, Events
-from app.library.ItemDTO import Item
 from app.library.log import get_logger
 from app.library.router import RouteType, route
 

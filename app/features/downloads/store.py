@@ -2,12 +2,11 @@ from collections import OrderedDict
 from collections.abc import Iterable
 from enum import Enum
 
+from app.features.downloads.items import ItemDTO
 from app.features.downloads.repository import DownloadsRepository
+from app.features.downloads.runtime.core import Download
 from app.library.log import get_logger
-
-from .downloads import Download
-from .ItemDTO import ItemDTO
-from .operations import matches_condition
+from app.library.operations import matches_condition
 
 LOG = get_logger()
 

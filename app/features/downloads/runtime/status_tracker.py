@@ -16,7 +16,7 @@ from .utils import safe_relative_path
 if TYPE_CHECKING:
     from multiprocessing import Queue
 
-    from app.library.ItemDTO import ItemDTO
+    from app.features.downloads.items import ItemDTO
 
 
 def _compact_media_profile(ff: Any) -> dict[str, Any]:

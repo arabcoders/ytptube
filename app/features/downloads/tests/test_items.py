@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.library.ItemDTO import Item, ItemDTO
+from app.features.downloads.items import Item, ItemDTO
 
 
 def _archive_path(tmp_path: Path) -> str:
@@ -34,7 +34,7 @@ class TestItemFormatAndBasics:
             "cli": "--embed-metadata",
         }
         with (
-            patch("app.library.ItemDTO.Item._default_preset", return_value="default"),
+            patch("app.features.downloads.items.Item._default_preset", return_value="default"),
             patch("app.features.ytdlp.utils.arg_converter") as mock_arg_conv,
         ):
             mock_arg_conv.return_value = None
@@ -60,7 +60,7 @@ class TestItemFormatAndBasics:
         # Invalid preset name (not found)
         mock_presets_get.return_value.has.return_value = False
         with (
-            patch("app.library.ItemDTO.Item._default_preset", return_value="default"),
+            patch("app.features.downloads.items.Item._default_preset", return_value="default"),
             pytest.raises(ValueError, match="Preset 'bad' does not exist"),
         ):
             Item.format({"url": "https://example.com", "preset": "bad"})
@@ -79,7 +79,7 @@ class TestItemFormatAndBasics:
         assert "url" in item.serialize()
         assert json.loads(item.json())["url"] == "https://example.com"
 
-    @patch("app.library.ItemDTO.get_archive_id")
+    @patch("app.features.downloads.items.get_archive_id")
     def test_item_archive_id_archived(self, mock_get_id, tmp_path: Path):
         mock_get_id.return_value = {"archive_id": "x", "id": "x", "ie_key": "k"}
         file = _archive_path(tmp_path)
@@ -90,8 +90,8 @@ class TestItemFormatAndBasics:
 
         # is_archived uses archive_read through get_archive_file + ytdlp opts
         with (
-            patch("app.library.ItemDTO.YTDLPOpts") as mock_opts,
-            patch("app.library.ItemDTO.archive_read") as mock_read,
+            patch("app.features.downloads.items.YTDLPOpts") as mock_opts,
+            patch("app.features.downloads.items.archive_read") as mock_read,
         ):
             mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
             mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
@@ -102,9 +102,9 @@ class TestItemFormatAndBasics:
 
 
 class TestItemDTO:
-    @patch("app.library.ItemDTO.get_archive_id")
-    @patch("app.library.ItemDTO.YTDLPOpts")
-    @patch("app.library.ItemDTO.archive_read")
+    @patch("app.features.downloads.items.get_archive_id")
+    @patch("app.features.downloads.items.YTDLPOpts")
+    @patch("app.features.downloads.items.archive_read")
     def test_init_sets_archive_flags(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
         # Setup archive id and archive file
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
@@ -121,9 +121,9 @@ class TestItemDTO:
         assert dto.is_archivable is True
         assert dto.is_archived is True
 
-    @patch("app.library.ItemDTO.get_archive_id")
-    @patch("app.library.ItemDTO.YTDLPOpts")
-    @patch("app.library.ItemDTO.archive_read")
+    @patch("app.features.downloads.items.get_archive_id")
+    @patch("app.features.downloads.items.YTDLPOpts")
+    @patch("app.features.downloads.items.archive_read")
     def test_post_init_keeps_skipped(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
@@ -139,7 +139,7 @@ class TestItemDTO:
 
         assert dto.download_skipped is False
 
-    @patch("app.library.ItemDTO.archive_read")
+    @patch("app.features.downloads.items.archive_read")
     def test_serialize_archives_finished(self, mock_read, tmp_path: Path):
         # Given a finished item with archive info
         dto = ItemDTO(id="vid", title="t", url="u", folder="f")
@@ -154,7 +154,7 @@ class TestItemDTO:
         for key in ItemDTO.removed_fields():
             assert key not in data
 
-    @patch("app.library.ItemDTO.YTDLPOpts")
+    @patch("app.features.downloads.items.YTDLPOpts")
     def test_serialize_keeps_skipped(self, mock_opts):
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
@@ -169,7 +169,7 @@ class TestItemDTO:
         assert data["download_skipped"] is True
         mock_opts.get_instance.assert_not_called()
 
-    @patch("app.library.ItemDTO.YTDLPOpts")
+    @patch("app.features.downloads.items.YTDLPOpts")
     def test_opts_uses_preset_cli(self, mock_opts):
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
@@ -215,7 +215,10 @@ class TestItemDTO:
         assert dto_no_file.get_file() is None
 
         # Mock get_file function to return success (without custom download_path)
-        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+        with (
+            patch("app.features.downloads.items.get_file") as mock_get_file,
+            patch("app.library.config.Config") as mock_config,
+        ):
             mock_get_file.return_value = ("/downloads/test_video.mp4", 200)
             mock_config.get_instance.return_value.download_path = "/downloads"
 
@@ -232,7 +235,10 @@ class TestItemDTO:
             filename="test_video.mp4",
         )
 
-        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+        with (
+            patch("app.features.downloads.items.get_file") as mock_get_file,
+            patch("app.library.config.Config") as mock_config,
+        ):
             mock_get_file.return_value = ("/downloads/media/test_video.mp4", 200)
             mock_config.get_instance.return_value.download_path = "/downloads"
 
@@ -240,7 +246,10 @@ class TestItemDTO:
             assert result == Path("/downloads/media/test_video.mp4")
 
         # Test with file not found
-        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+        with (
+            patch("app.features.downloads.items.get_file") as mock_get_file,
+            patch("app.library.config.Config") as mock_config,
+        ):
             mock_get_file.return_value = ("/downloads/test_video.mp4", 404)
             mock_config.get_instance.return_value.download_path = "/downloads"
 
@@ -248,7 +257,10 @@ class TestItemDTO:
             assert result is None
 
         # Test with exception during file access
-        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+        with (
+            patch("app.features.downloads.items.get_file") as mock_get_file,
+            patch("app.library.config.Config") as mock_config,
+        ):
             mock_get_file.side_effect = ValueError("File path error")
             mock_config.get_instance.return_value.download_path = "/downloads"
 
@@ -256,7 +268,7 @@ class TestItemDTO:
             assert result is None
 
         # Test with custom download_path parameter (Config not imported in this case)
-        with patch("app.library.ItemDTO.get_file") as mock_get_file:
+        with patch("app.features.downloads.items.get_file") as mock_get_file:
             mock_get_file.return_value = ("/custom/test_video.mp4", 200)
 
             result = dto.get_file(download_path=Path("/custom"))
@@ -278,9 +290,11 @@ class TestItemDTO:
 
         with (
             patch(
-                "app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=Path("/downloads/video.mp4")
+                "app.features.downloads.items.ItemDTO.get_file",
+                autospec=True,
+                return_value=Path("/downloads/video.mp4"),
             ) as mock_get_file,
-            patch("app.library.ItemDTO.get_file_sidecar", return_value=expected_sidecar) as mock_utils_sidecar,
+            patch("app.features.downloads.items.get_file_sidecar", return_value=expected_sidecar) as mock_utils_sidecar,
         ):
             result = dto.get_file_sidecar()
 
@@ -297,8 +311,8 @@ class TestItemDTO:
         dto.sidecar = existing
 
         with (
-            patch("app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=None) as mock_get_file,
-            patch("app.library.ItemDTO.get_file_sidecar") as mock_utils_sidecar,
+            patch("app.features.downloads.items.ItemDTO.get_file", autospec=True, return_value=None) as mock_get_file,
+            patch("app.features.downloads.items.get_file_sidecar") as mock_utils_sidecar,
         ):
             result = dto.get_file_sidecar()
 

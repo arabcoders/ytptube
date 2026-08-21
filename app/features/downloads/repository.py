@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
 
-    from app.library.ItemDTO import ItemDTO
+    from app.features.downloads.items import ItemDTO
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 

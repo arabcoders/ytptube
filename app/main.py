@@ -25,6 +25,7 @@ from app.features.auth.service import AuthService
 from app.features.conditions.service import Conditions
 from app.features.dl_fields.service import DLFields
 from app.features.downloads.repository import DownloadsRepository
+from app.features.downloads.runtime.queue_manager import DownloadQueue
 from app.features.notifications.service import Notifications
 from app.features.presets.deps import get_presets_repo
 from app.features.tasks.definitions.deps import get_task_definitions_repo
@@ -33,7 +34,6 @@ from app.features.ytdlp.extractor import ExtractorPool
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAccessLogger, HttpAPI
 from app.library.HttpSocket import HttpSocket

@@ -10,7 +10,7 @@ from app.library.Utils import delete_dir
 from .utils import is_safe_to_delete_dir
 
 if TYPE_CHECKING:
-    from app.library.ItemDTO import ItemDTO
+    from app.features.downloads.items import ItemDTO
 
 
 class TempManager:

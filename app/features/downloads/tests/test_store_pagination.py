@@ -5,11 +5,11 @@ from typing import Any
 import pytest
 import pytest_asyncio
 
-from app.library.DataStore import DataStore, StoreType
+from app.features.downloads.items import ItemDTO
 from app.features.downloads.repository import DownloadsRepository
+from app.features.downloads.runtime.core import Download
+from app.features.downloads.store import DataStore, StoreType
 from app.features.downloads.tests.helpers import RepositoryDatabase
-from app.library.downloads import Download
-from app.library.ItemDTO import ItemDTO
 from app.library.sqlite_store import SqliteStore
 from app.tests.helpers import make_in_memory_db_path
 

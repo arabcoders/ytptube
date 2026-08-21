@@ -7,17 +7,18 @@ from aiohttp.web import Request, Response
 from aiohttp.web_response import StreamResponse
 
 from app.features.core.utils import api_error_response
+from app.features.downloads.items import Item
+from app.features.downloads.runtime.core import Download
+from app.features.downloads.runtime.queue_manager import DownloadQueue
+from app.features.downloads.runtime.utils import safe_relative_path
+from app.features.downloads.store import StoreType
 from app.features.presets.schemas import Preset
 from app.features.presets.service import Presets
 from app.features.streaming.library.thumbnail import ensure_thumb, pick_local_thumb
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.DataStore import StoreType
-from app.library.downloads import Download, DownloadQueue
-from app.library.downloads.utils import safe_relative_path
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.ItemDTO import Item
 from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import calc_download_path, get_file_sidecar, rename_file
@@ -48,7 +49,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
                       Examples: "?status=finished" or "?status=!finished"
 
     """
-    from app.library.DataStore import StoreType
+    from app.features.downloads.store import StoreType
 
     store_type: str = request.query.get("type", "queue").lower()
     try:
@@ -700,7 +701,7 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
 
         return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
-    from app.library.downloads.utils import handle_task_exception
+    from app.features.downloads.runtime.utils import handle_task_exception
 
     batch_id: str = f"batch_{asyncio.get_running_loop().time():.0f}"
 

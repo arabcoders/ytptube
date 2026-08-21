@@ -7,6 +7,7 @@ from typing import Any
 from aiohttp import web
 
 from app.features.core.utils import gen_random
+from app.features.downloads.items import Item
 from app.library.log import get_logger
 from app.library.router import Route, RouteType, get_routes
 from app.library.Services import Services
@@ -15,7 +16,6 @@ from app.library.Utils import load_modules
 from .config import Config
 from .encoder import Encoder
 from .Events import Event, EventBus, Events
-from .ItemDTO import Item
 
 LOG = get_logger()
 

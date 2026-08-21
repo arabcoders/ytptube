@@ -135,7 +135,7 @@ class Item:
             str: The default preset name.
 
         """
-        from .config import Config
+        from app.library.config import Config
 
         return Config.get_instance().default_preset
 
@@ -311,8 +311,8 @@ class Item:
             str: A short string representation of the item.
 
         """
-        from .config import Config
-        from .Utils import calc_download_path, strip_newline
+        from app.library.config import Config
+        from app.library.Utils import calc_download_path, strip_newline
 
         data: dict = {}
         for k, v in self.serialize().items():
@@ -510,7 +510,7 @@ class ItemDTO:
             return None
 
         if not download_path:
-            from .config import Config
+            from app.library.config import Config
 
             base_path = Path(Config.get_instance().download_path)
         else:

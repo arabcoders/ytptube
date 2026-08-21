@@ -10,6 +10,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.features.core.utils import api_error_response
+from app.features.downloads.items import Item
 from app.features.presets.service import Presets
 from app.features.ytdlp.archiver import Archiver
 from app.features.ytdlp.extractor import fetch_info
@@ -18,7 +19,6 @@ from app.features.ytdlp.ytdlp_opts import YTDLPCli, YTDLPOpts
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
-from app.library.ItemDTO import Item
 from app.library.log import get_logger
 from app.library.router import route
 from app.library.Utils import validate_url

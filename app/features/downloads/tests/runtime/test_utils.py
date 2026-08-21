@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.library.downloads.utils import (
+from app.features.downloads.runtime.utils import (
     LIMITS,
     create_debug_safe_dict,
     get_extractor_limit,

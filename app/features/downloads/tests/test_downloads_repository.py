@@ -8,8 +8,8 @@ import pytest
 import pytest_asyncio
 
 from app.features.downloads.repository import DownloadsRepository
-from app.library.DataStore import StoreType
-from app.library.ItemDTO import ItemDTO
+from app.features.downloads.store import StoreType
+from app.features.downloads.items import ItemDTO
 from app.library.sqlite_store import SqliteStore
 
 

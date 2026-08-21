@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Any
 import yt_dlp.utils
 
 from app.features.conditions.service import Conditions
+from app.features.downloads.items import ItemDTO
 from app.features.presets.service import Presets
 from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import archive_add, archive_read, arg_converter, get_extras, ytdlp_reject
 from app.library.Events import Events
-from app.library.ItemDTO import ItemDTO
 from app.library.log import get_logger
 from app.library.Utils import create_cookies_file, merge_dict
 
@@ -23,8 +23,8 @@ from .playlist_processor import process_playlist
 from .video_processor import LIGHT_EXTRACT_KEY, add_video
 
 if TYPE_CHECKING:
+    from app.features.downloads.items import Item
     from app.features.presets.schemas import Preset
-    from app.library.ItemDTO import Item
 
     from .queue_manager import DownloadQueue
 

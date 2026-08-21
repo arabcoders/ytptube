@@ -23,7 +23,7 @@ if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
 
 from app.features.downloads.models import DownloadModel
-from app.library.DataStore import StoreType
+from app.features.downloads.store import StoreType
 from app.library.log import get_logger
 
 if TYPE_CHECKING:

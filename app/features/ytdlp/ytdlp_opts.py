@@ -123,7 +123,7 @@ class YTDLPCli:
             config (Config|None): The Config instance (optional)
 
         """
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
 
         if not isinstance(item, Item):
             msg = f"Expected Item instance, got {type(item).__name__}"

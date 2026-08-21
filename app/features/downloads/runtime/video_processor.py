@@ -5,16 +5,17 @@ from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
 from typing import TYPE_CHECKING, Any
 
+from app.features.downloads.items import ItemDTO
 from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, needs_reextract
 from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
-from app.library.downloads import Download
 from app.library.Events import Events
-from app.library.ItemDTO import ItemDTO
 from app.library.log import get_logger
 from app.library.Utils import calc_download_path, merge_dict, str_to_dt
 
+from .core import Download
+
 if TYPE_CHECKING:
-    from app.library.ItemDTO import Item
+    from app.features.downloads.items import Item
 
     from .queue_manager import DownloadQueue
 

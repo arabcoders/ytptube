@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING
 
 from aiohttp import web
 
+from app.features.downloads.items import Item, ItemDTO
 from app.features.downloads.repository import DownloadsRepository
 from app.library.config import Config
 from app.library.Events import EventBus, Events
-from app.library.ItemDTO import Item, ItemDTO
 from app.library.log import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
@@ -24,7 +24,7 @@ from .pool_manager import PoolManager
 from .utils import handle_task_exception
 
 if TYPE_CHECKING:
-    from app.library.DataStore import StoreType
+    from app.features.downloads.store import StoreType
 
 LOG = get_logger()
 
@@ -32,7 +32,7 @@ LOG = get_logger()
 class DownloadQueue(metaclass=Singleton):
     def __init__(self, config: Config | None = None):
         # Import here to avoid circular import with DataStore
-        from app.library.DataStore import DataStore, StoreType
+        from app.features.downloads.store import DataStore, StoreType
 
         self.config: Config = config or Config.get_instance()
         "Configuration instance."
@@ -914,7 +914,7 @@ class DownloadQueue(metaclass=Singleton):
             tuple[StoreType, Download] | tuple[None, None]: The requested item if found, otherwise None.
 
         """
-        from app.library.DataStore import StoreType
+        from app.features.downloads.store import StoreType
 
         if item := await self.queue.get_item(**kwargs):
             return (StoreType.QUEUE, item)

@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import yt_dlp.utils
 
+from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
 from app.features.ytdlp.utils import extract_ytdlp_logs
 from app.features.ytdlp.ytdlp import YTDLP
 from app.library.config import Config
@@ -22,10 +23,9 @@ from app.library.Events import EventBus, Events
 from app.library.log import get_logger
 from app.library.Utils import create_cookies_file
 
-from ...features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
+from .bootstrap import ensure_download_runtime
 from .hooks import HookHandlers, NestedLogger
 from .process_manager import ProcessManager
-from .runtime import ensure_download_runtime
 from .status_tracker import StatusTracker
 from .temp_manager import TempManager
 from .types import Terminator
@@ -34,7 +34,7 @@ from .utils import BAD_LIVE_STREAM_OPTIONS, GENERIC_EXTRACTORS, is_download_stal
 if TYPE_CHECKING:
     import multiprocessing
 
-    from app.library.ItemDTO import ItemDTO
+    from app.features.downloads.items import ItemDTO
 
 
 class Download:
