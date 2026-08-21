@@ -1,4 +1,16 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { defineNuxtConfig } from 'nuxt/config';
+
+const faviconHash = createHash('sha256')
+  .update(readFileSync(new URL('./public/favicon.ico', import.meta.url)))
+  .digest('hex')
+  .slice(0, 12);
+
+const appleIconHash = createHash('sha256')
+  .update(readFileSync(new URL('./public/images/favicon.png', import.meta.url)))
+  .digest('hex')
+  .slice(0, 12);
 
 let extraNitro = {};
 try {
@@ -16,6 +28,7 @@ try {
 } catch {}
 
 const isProd = 'production' === process.env.NODE_ENV;
+const baseURL = isProd ? '/_base_path/' : '/';
 export default defineNuxtConfig({
   ssr: false,
   sourcemap: false === isProd,
@@ -37,7 +50,7 @@ export default defineNuxtConfig({
     },
   },
   app: {
-    baseURL: 'production' == process.env.NODE_ENV ? '/_base_path/' : '/',
+    baseURL,
     buildAssetsDir: 'assets',
     head: {
       meta: [
@@ -51,9 +64,9 @@ export default defineNuxtConfig({
       ],
       base: { href: '/' },
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: 'favicon.ico?v=100' },
+        { rel: 'icon', type: 'image/x-icon', href: `favicon.ico?v=${faviconHash}` },
         { rel: 'manifest', href: 'manifest.webmanifest?v=100' },
-        { rel: 'apple-touch-icon', href: 'images/favicon.png' },
+        { rel: 'apple-touch-icon', sizes: '1024x1024', href: `apple-touch-icon.${appleIconHash}.png` },
         { rel: 'apple-touch-startup-image', href: 'images/logo.png' },
       ],
     },
