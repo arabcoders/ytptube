@@ -224,7 +224,7 @@ class NFOMakerPP(PostProcessor):
     @staticmethod
     def _collect_nfo_data(info: dict, mode: str, downloader: Any | None = None) -> dict[str, Any]:
         """
-        Collect replacement data for templates without depending on an instance.
+        Collect replacement data for templates.
 
         Arguments:
             info: extracted info dict
@@ -353,7 +353,7 @@ class NFOMakerPP(PostProcessor):
     def _build_unique_id(dt: datetime, file: Path) -> str:
         # 1MMDD + 4-digit stable hash from lowercase stem
         h: str = hashlib.sha256(file.stem.lower().encode("utf-8")).hexdigest()
-        ascii_stream = "".join(str(ord(c)) for c in h)
+        ascii_stream: str = "".join(str(ord(c)) for c in h)
         suffix: str = ascii_stream[:4] if 4 <= len(ascii_stream) else ascii_stream.ljust(4, "9")
         return f"1{dt.strftime('%m%d')}{suffix}"
 
@@ -423,7 +423,7 @@ class NFOMakerPP(PostProcessor):
         xml_declaration: bool,
     ) -> None:
         """
-        Write rendered template to disk; independent of PostProcessor instance.
+        Write rendered template to disk.
 
         reporter: optional object with `to_screen`/`report_warning` or a logger with `info`/`warning`.
         prefix: whether to prefix episodes

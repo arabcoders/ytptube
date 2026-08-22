@@ -316,7 +316,7 @@
           :disabled="addInProgress"
           @click="addHeader"
         >
-          {{ t('common.addHeader') }}
+          {{ t('common.add') }}
         </UButton>
       </div>
 
@@ -331,7 +331,7 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-key" class="size-4 text-toned" />
-                <span class="font-semibold text-default">{{ t('common.headerKey') }}</span>
+                <span class="font-semibold text-default">{{ t('common.keyLabel') }}</span>
               </div>
             </template>
 
@@ -350,7 +350,7 @@
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-pen-line" class="size-4 text-toned" />
-                <span class="font-semibold text-default">{{ t('common.headerValue') }}</span>
+                <span class="font-semibold text-default">{{ t('common.valueLabel') }}</span>
               </div>
             </template>
 

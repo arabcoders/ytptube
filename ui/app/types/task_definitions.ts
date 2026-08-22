@@ -1,35 +1,46 @@
 // --- Task Definition Schema Types ---
 import type { Paginated } from '~/types/responses';
 
-export type EngineType = 'httpx' | 'selenium';
+export type EngineType = 'http' | 'browser';
 
-export interface EngineOptions {
-  url?: string;
-  browser?: 'chrome';
-  arguments?: Array<string> | string;
-  wait_for?: WaitForSelector;
+export interface HttpEngineOptions {
+  impersonate?: string;
+  curl_default_headers?: boolean;
+  flaresolverr?: boolean;
+}
+
+export type ImpersonateTargetsResponse = { targets: string[] };
+
+export interface CdpBrowserOptions {
+  protocol?: 'cdp';
+  url: string;
+  wait_for?: WaitForSelector | null;
   wait_timeout?: number;
   page_load_timeout?: number;
-  [key: string]: unknown;
 }
 
-export interface EngineConfig {
-  type?: EngineType;
-  options?: EngineOptions;
-}
+export type EngineOptions = HttpEngineOptions | CdpBrowserOptions;
+
+export type EngineConfig =
+  | { type?: 'http'; options?: HttpEngineOptions }
+  | { type: 'browser'; options: CdpBrowserOptions };
 
 export type HttpMethod = 'GET' | 'POST';
 
 export type StringMap = Record<string, string | number | boolean | null>;
 
+export type RequestBody =
+  | { type: 'form'; value: StringMap }
+  | { type: 'json'; value: unknown }
+  | { type: 'raw'; value: string };
+
 export interface RequestConfig {
   method?: HttpMethod;
-  url?: string;
-  headers?: StringMap;
+  url?: string | null;
+  headers?: Record<string, string>;
   params?: StringMap;
-  data?: StringMap | string | null;
-  json_data?: object | Array<unknown> | string | number | boolean | null;
-  timeout?: number;
+  body?: RequestBody | null;
+  timeout?: number | null;
 }
 
 export type ResponseType = 'html' | 'json';
@@ -42,40 +53,46 @@ export type ExtractionType = 'css' | 'xpath' | 'regex' | 'jsonpath';
 
 export interface PostFilter {
   filter: string;
-  value?: string;
+  value?: string | null;
 }
 
 export interface ExtractionRule {
   type: ExtractionType;
   expression: string;
-  attribute?: string;
-  post_filter?: PostFilter;
+  attribute?: string | null;
+  post_filter?: PostFilter | null;
 }
 
 export interface ContainerFields {
-  link: ExtractionRule;
-  [field: string]: ExtractionRule;
+  url: ExtractionRule;
+  title?: ExtractionRule;
+  thumbnail?: ExtractionRule;
+  description?: ExtractionRule;
+  published?: ExtractionRule;
+  [field: string]: ExtractionRule | undefined;
 }
 
 export type ContainerSelectorType = 'css' | 'xpath' | 'jsonpath';
 
 export interface Container {
   type?: ContainerSelectorType;
-  selector?: string;
-  expression?: string;
+  selector: string;
   fields: ContainerFields;
 }
 
 export interface WaitForSelector {
   type?: 'css' | 'xpath';
-  expression?: string;
-  value?: string;
+  expression: string;
 }
 
 export interface ParseConfig {
-  items?: Container;
-  link?: ExtractionRule;
-  [field: string]: ExtractionRule | Container | undefined;
+  items?: Container | null;
+  url?: ExtractionRule;
+  title?: ExtractionRule;
+  thumbnail?: ExtractionRule;
+  description?: ExtractionRule;
+  published?: ExtractionRule;
+  [field: string]: ExtractionRule | Container | null | undefined;
 }
 
 export interface TaskDefinitionConfig {
