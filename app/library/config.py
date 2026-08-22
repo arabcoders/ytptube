@@ -1,11 +1,9 @@
 import logging
-import multiprocessing
 import os
 import re
 import shutil
 import sys
 import time
-from multiprocessing.managers import SyncManager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -103,10 +101,10 @@ class Config(metaclass=Singleton):
     """VAAPI device path used for VAAPI encoder when available."""
 
     auth_username: str | None = None
-    """The username to use for basic authentication."""
+    """The username for bootstrapping the initial account."""
 
     auth_password: str | None = None
-    """The password to use for basic authentication."""
+    """The password for bootstrapping the initial account."""
 
     auth_session_days: int = 30
     """The number of days to keep authentication sessions active."""
@@ -191,9 +189,6 @@ class Config(metaclass=Singleton):
 
     file_logging: bool = True
     "Enable file logging."
-
-    secret_key: str | bytes
-    "The secret key to use for the application."
 
     tasks_handler_timer: str = "15 */1 * * *"
     """The cron expression for the tasks timer."""
@@ -384,9 +379,6 @@ class Config(metaclass=Singleton):
     )
     "The variables that are relevant to the frontend."
 
-    _manager: SyncManager | None = None
-    "The manager instance."
-
     os_sep: str = os.path.sep
     "The system path separator."
 
@@ -395,13 +387,6 @@ class Config(metaclass=Singleton):
         cls = Config(is_native)
         cls.is_native = is_native or cls.is_native
         return cls
-
-    @staticmethod
-    def get_manager() -> SyncManager:
-        if not Config._manager:
-            Config._manager = multiprocessing.Manager()
-
-        return Config._manager
 
     def __init__(self, is_native: bool = False):
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
@@ -504,23 +489,6 @@ class Config(metaclass=Singleton):
 
         if self.temp_keep:
             LOG.warning("Keep temp files option is enabled.")
-
-        if self.auth_password and self.auth_username:
-            LOG.info(
-                "Basic authentication is enabled for user '%s'.",
-                self.auth_username,
-                extra={"auth_username": self.auth_username},
-            )
-
-        key_file: Path = Path(self.config_path) / "secret.key"
-
-        if key_file.exists() and key_file.stat().st_size > 2:
-            with open(key_file, "rb") as f:
-                self.secret_key = f.read().strip()
-        else:
-            self.secret_key = os.urandom(32)
-            with open(key_file, "wb") as f:
-                f.write(self.secret_key)
 
         self.started = int(time.time())
 

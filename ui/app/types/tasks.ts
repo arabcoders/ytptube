@@ -107,21 +107,3 @@ export interface ErrorResponse {
   error: string;
   detail?: unknown;
 }
-
-/**
- * Legacy alias for backward compatibility (deprecated).
- * @deprecated Use Task instead
- */
-export type task_item = Task;
-
-/**
- * Legacy alias for backward compatibility (deprecated).
- * @deprecated Use ExportedTask instead
- */
-export type exported_task = ExportedTask;
-
-/**
- * Legacy alias for backward compatibility (deprecated).
- * @deprecated Use ErrorResponse instead
- */
-export type error_response = ErrorResponse;

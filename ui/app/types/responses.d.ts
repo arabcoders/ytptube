@@ -14,8 +14,6 @@ export type ApiErrorPayload = {
   technical_message?: string;
 };
 
-export type error_response = ApiErrorPayload;
-
 export type convert_args_response = {
   /** The converted CLI args */
   opts?: Record<string, any>;

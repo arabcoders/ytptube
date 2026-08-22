@@ -14,15 +14,16 @@ from aiohttp import web
 from app.library.router import ROUTES, RouteType
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterator, Mapping
+    from collections.abc import Awaitable, Callable, Generator, Mapping
     from typing import Any
 
     from yarl import URL
 
     Handler = Callable[..., Awaitable[Any]]
 
-_TEST_RUN_ROOT = Path(gettempdir()) / "tests-ytptube" / uuid4().hex
-_TEST_SYSTEM_TEMP_ROOT = _TEST_RUN_ROOT / "tmp"
+_TMP_BASE = Path(gettempdir()) / "tests-ytptube"
+_TMP_PER_RUN = _TMP_BASE / uuid4().hex
+_TMP_RUNTIME = _TMP_PER_RUN / "tmp"
 _CURRENT_TEST_APP: ContextVar[web.Application | None] = ContextVar("current_test_app", default=None)
 
 
@@ -31,16 +32,23 @@ def _slugify(name: str) -> str:
 
 
 def get_test_run_root() -> Path:
-    return _TEST_RUN_ROOT
+    _TMP_BASE.mkdir(parents=True, exist_ok=True)
+    return _TMP_BASE
+
+
+def get_test_per_run_root() -> Path:
+    _TMP_PER_RUN.mkdir(parents=True, exist_ok=True)
+    return _TMP_PER_RUN
 
 
 def get_test_system_temp_root() -> Path:
-    _TEST_SYSTEM_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
-    return _TEST_SYSTEM_TEMP_ROOT
+    _TMP_RUNTIME.mkdir(parents=True, exist_ok=True)
+    return _TMP_RUNTIME
 
 
 def cleanup_test_run_root() -> None:
-    shutil.rmtree(_TEST_RUN_ROOT, ignore_errors=True)
+    if _TMP_PER_RUN.exists():
+        shutil.rmtree(_TMP_PER_RUN, ignore_errors=True)
 
 
 def make_in_memory_db_path(name: str) -> str:
@@ -51,8 +59,8 @@ def make_in_memory_db_path(name: str) -> str:
 
 def make_test_disk_path(*parts: str) -> Path:
     """Return a per-run temp path for tests that must write to disk."""
-    _TEST_RUN_ROOT.mkdir(parents=True, exist_ok=True)
-    path = _TEST_RUN_ROOT.joinpath(*parts)
+    _TMP_PER_RUN.mkdir(parents=True, exist_ok=True)
+    path = _TMP_PER_RUN.joinpath(*parts)
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -64,7 +72,7 @@ def make_test_temp_dir(name: str) -> Path:
 
 
 @contextlib.contextmanager
-def temporary_test_dir(name: str) -> Iterator[Path]:
+def temporary_test_dir(name: str) -> Generator[Path]:
     path = make_test_temp_dir(name)
     try:
         yield path

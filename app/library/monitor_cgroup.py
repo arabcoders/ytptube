@@ -95,18 +95,3 @@ def get_cpu_limit() -> float | None:
         return quota / period
 
     return None
-
-
-def get_cpu_usage_seconds() -> float | None:
-    stat: str | None = _read(CGROUP / "cpu.stat")
-    if stat:
-        for line in stat.splitlines():
-            key, _, raw = line.partition(" ")
-            if key == "usage_usec":
-                return int(raw) / 1_000_000
-
-    usage_ns = _read_int(CGROUP / "cpuacct/cpuacct.usage")
-    if usage_ns is not None:
-        return usage_ns / 1_000_000_000
-
-    return None

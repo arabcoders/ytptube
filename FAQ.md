@@ -113,7 +113,8 @@ You can download [Add To YTPTube](https://www.icloud.com/shortcuts/6df61c97d97b4
 You have to edit the shortcut and replace the following:
 
 - `https://ytp.example.org` with your YTPTube instance.
-- `username:password` with your username and an API key as the password: `username:ytp_...`. Leave it empty when authentication is disabled.
+- The shortcut currently uses Basic authentication. Replace its credential value with `username:ytp_...`: your account
+  username and an API key, not your account password. Leave it empty when authentication is disabled.
 
 This shortcut is powerful, as it's allow you to select your preset on the fly pulled directly from your instance.
 Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
@@ -128,19 +129,18 @@ other than the shortcut itself. this shortcut missing support for parsing the ht
 
 # Authentication
 
-Server installations require a local account. Native builds disable application authentication by default; 
-set `YTP_DISABLE_AUTH=false` to enable it.
+Server installations require a local account by default. Native builds disable authentication by default. You can
+set `YTP_DISABLE_AUTH=false` to enable auth for native builds.
 
 Open the account menu, select **Create key**, enter a name, and copy the key when it appears. The key is shown once.
 
-Send API keys in the `Authorization: Bearer ytp_...` header. Older integrations that require Basic authentication can 
-use the account username and an API key as the password: `username:ytp_...`. Basic authentication is deprecated.
+Send API keys in the `Authorization: Bearer ytp_...` header.
 
 The `?apikey=ytp_...` query parameter is available for clients that cannot set headers, but URLs can appear in browser 
 history and proxy logs.
 
 Use `YTP_DISABLE_AUTH=true` only when a trusted reverse proxy controls access. `YTP_CORS_ORIGINS` accepts a
-comma-separated origin allowlist. Set it to `*` for clients that send an API key or Basic credentials without cookies.
+comma-separated origin allowlist. Set it to `*` for clients that send an API key without cookies.
 
 When YTPTube is behind a reverse proxy, session details use the transport peer address by default. To record the
 actual client address from `X-Forwarded-For`, set `YTP_TRUSTED_PROXIES` to the proxy's exact IP address or CIDR (for

@@ -2,7 +2,7 @@
 
 This document describes the available endpoints and their usage. All endpoints return JSON responses (unless otherwise specified) and may require certain parameters (query, body, or path). Some endpoints serve static or streaming content (e.g., `.ts`, `.m3u8`, `.vtt` files).
 
-> **Note**: Authenticated requests accept a session cookie, a Bearer API key, Basic credentials, or the `apikey` query parameter. See [Authentication](#authentication).
+> **Note**: Authenticated requests accept a session cookie, a Bearer API key, or the `apikey` query parameter. See [Authentication](#authentication).
 
 - All responses use standard HTTP status codes to indicate success or error conditions.
 
@@ -177,23 +177,17 @@ untrusted network. The first person who completes setup becomes the administrato
 
 API requests accept these credentials:
 
-> [!WARNING]
-> Basic authentication is deprecated and will be removed. Use session cookies or Bearer API keys.
+1. Session cookie:
 
-1. Bearer API key:
+   A successful login or setup creates a session cookie. Send that cookie with subsequent requests.
+
+2. Bearer API key:
 
    ```text
    Authorization: Bearer ytp_<key>
    ```
 
-2. HTTP Basic header:
-
-   ```text
-   Authorization: Basic base64("<username>:<password>")
-   Authorization: Basic base64("<username>:ytp_<key>")
-   ```
-
-3. Query parameter with an API key or URL-safe base64 Basic credentials:
+3. Query parameter with an API key:
 
    ```text
    ?apikey=ytp_<key>
@@ -3750,17 +3744,13 @@ POST https://frontend.example/api/auth/ws-ticket
 GET  wss://backend.example/ws?ticket=ytp_ws_...
 ```
 
-Tickets expire shortly and can be used once. WebSocket connections also accept API keys and Basic credentials.
+Tickets expire shortly and can be used once. WebSocket connections also accept API keys.
 
-1. **Query parameter**
-   ```text
-   ws://localhost:8080/ws?apikey=ytp_<key>
-   ```
+**Query parameter**
 
-2. **HTTP Basic header**
-   ```text
-   Authorization: Basic base64("<username>:<password>")
-   ```
+```text
+ws://localhost:8080/ws?apikey=ytp_<key>
+```
 
 ---
 

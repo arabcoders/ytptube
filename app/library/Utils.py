@@ -1,7 +1,5 @@
-import base64
 import copy
 import glob
-import os
 import re
 import time
 import uuid
@@ -10,8 +8,6 @@ from functools import lru_cache, wraps
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
 from typing import Any, cast
-
-from Crypto.Cipher import AES
 
 from app.library.logging import get_logger
 
@@ -763,47 +759,6 @@ def get_file(download_path: str | Path, file: str | Path, exists: bool = True) -
     return (possibleFile, 302)
 
 
-def encrypt_data(data: str, key: bytes) -> str:
-    """
-    Encrypts data using AES-GCM
-
-    Args:
-        data (str): The data to encrypt
-        key (bytes): The encryption key
-
-    Returns:
-        str: The encrypted data as a base64 encoded string
-
-    """
-    iv = os.urandom(12)  # AES-GCM requires a 12-byte IV
-    cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
-    ciphertext, tag = cipher.encrypt_and_digest(data.encode())
-
-    return base64.urlsafe_b64encode(iv + ciphertext + tag).decode()
-
-
-def decrypt_data(data: str, key: bytes) -> str | None:
-    """
-    Decrypts AES-GCM encrypted data
-
-    Args:
-        data (str): The encrypted data as a base64 encoded string
-        key (bytes): The encryption key
-
-    Returns:
-        str: The decrypted data
-
-    """
-    try:
-        raw: bytes = base64.urlsafe_b64decode(data)
-        iv, ciphertext, tag = raw[:12], raw[12:-16], raw[-16:]
-        cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
-        plaintext = cipher.decrypt_and_verify(ciphertext, tag)
-        return plaintext.decode()
-    except Exception:
-        return None
-
-
 def get(
     data: dict | list,
     path: str | list | None = None,
@@ -1009,7 +964,7 @@ def get_files(
         if not content_type:
             content_type = "download"
 
-        stat: os.stat_result = file.stat()
+        stat = file.stat()
 
         contents.append(
             {

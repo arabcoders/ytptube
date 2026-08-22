@@ -231,7 +231,12 @@ def run_dev() -> None:
     run_process(
         ROOT_PATH,
         target=start,
-        watch_filter=PythonFilter(ignore_paths=(ROOT_PATH / "migrations",)),
+        watch_filter=PythonFilter(
+            ignore_paths=(
+                ROOT_PATH / "migrations",
+                ROOT_PATH / "tests",
+            )
+        ),
     )
 
 

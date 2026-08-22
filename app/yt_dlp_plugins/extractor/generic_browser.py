@@ -199,10 +199,6 @@ def _build_media_requests(requests_list: list[dict], media_elements: list[dict])
     return result
 
 
-class RemoteBrowserUnavailableError(ExtractorError):
-    pass
-
-
 class PlaywrightDriver:
     @staticmethod
     def is_available() -> bool:

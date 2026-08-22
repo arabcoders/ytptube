@@ -79,28 +79,6 @@ const ag_set = (obj: Record<string, any>, path: string, value: any): Record<stri
 };
 
 /**
- * Wait for an element to appear in the DOM, then invoke a callback.
- *
- * @param sel - CSS selector for the target element.
- * @param callback - Function to execute when the element is found.
- */
-const awaitElement = (sel: string, callback: (el: Element, selector: string) => void): void => {
-  const $elm = document.querySelector(sel);
-  if ($elm) {
-    callback($elm, sel);
-    return;
-  }
-
-  const interval = setInterval(() => {
-    const $elm = document.querySelector(sel);
-    if ($elm) {
-      clearInterval(interval);
-      callback($elm, sel);
-    }
-  }, 200);
-};
-
-/**
  * Replace template tags in a string with values from a context object.
  *
  * @param text - The input string containing tags in `{key}` format.
@@ -130,17 +108,6 @@ const r = (text: string, context: Record<string, any> = {}): string => {
   }
 
   return text;
-};
-
-/**
- * Dispatch a custom event on the global window object.
- *
- * @param eventName - The name of the custom event.
- * @param detail - Optional detail payload to include in the event.
- * @returns Whether the event was successfully dispatched.
- */
-const dEvent = (eventName: string, detail: Record<string, any> = {}): boolean => {
-  return window.dispatchEvent(new CustomEvent(eventName, { detail }));
 };
 
 /**
@@ -266,23 +233,6 @@ const removeANSIColors = (text: string): string => {
     ) ?? text
   );
 };
-
-/**
- * Convert a decimal value to a 2-character hex string.
- *
- * @param dec - Decimal value between 0-255.
- * @returns The hex string.
- */
-const dec2hex = (dec: number): string => dec.toString(16).padStart(2, '0');
-
-/**
- * Generate a random ID using crypto.
- *
- * @param len - The length of the ID in characters (must be even).
- * @returns A random hex ID string.
- */
-const makeId = (len: number = 40): string =>
-  Array.from(window.crypto.getRandomValues(new Uint8Array(len / 2)), dec2hex).join('');
 
 /**
  * Return the basename of a given path.
@@ -1153,15 +1103,11 @@ export {
   getValue,
   ag,
   ag_set,
-  awaitElement,
   r,
   copyText,
-  dEvent,
   encodePath,
   request,
   removeANSIColors,
-  dec2hex,
-  makeId,
   basename,
   dirname,
   getQueryParams,

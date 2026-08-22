@@ -19,10 +19,8 @@ from app.library.Utils import (
     calc_download_path,
     check_id,
     clean_item,
-    decrypt_data,
     delete_dir,
     dt_delta,
-    encrypt_data,
     get,
     get_file,
     get_file_sidecar,
@@ -975,33 +973,6 @@ class TestDeleteDir:
         assert result is False
 
 
-class TestEncryptDecrypt:
-    """Test encryption and decryption functions."""
-
-    def test_encrypt_decrypt_data(self):
-        """Test that data can be encrypted and decrypted."""
-        key = b"test_key_12345678901234567890123"  # Exactly 32 bytes for AES
-        data = "test data"
-
-        encrypted: str = encrypt_data(data, key)
-        assert encrypted != data
-        assert isinstance(encrypted, str)
-
-        decrypted = decrypt_data(encrypted, key)
-        assert decrypted is not None
-        assert decrypted == data
-
-    def test_encrypt_empty_string(self):
-        """Test encrypting empty string."""
-        key = b"test_key_12345678901234567890123"  # Exactly 32 bytes
-        data: str = ""
-
-        encrypted: str = encrypt_data(data, key)
-        decrypted = decrypt_data(encrypted, key)
-        assert decrypted is not None
-        assert decrypted == data
-
-
 class TestValidateUuid:
     """Test UUID validation function."""
 
@@ -1690,38 +1661,6 @@ class TestIsSafeKey:
 
         assert 123 not in result
         assert "normal_key" in result
-
-
-class TestDecryptDataCornerCases:
-    """Additional tests for decrypt_data edge cases."""
-
-    def test_decrypt_data_invalid_base64(self):
-        """Test decrypting invalid base64 data."""
-        from app.library.Utils import decrypt_data
-
-        result = decrypt_data("not_valid_base64!!!", b"k" * 32)
-
-        assert result is None
-
-    def test_decrypt_data_wrong_key(self):
-        """Test decrypting with wrong key returns None."""
-        from app.library.Utils import decrypt_data, encrypt_data
-
-        correct_key = b"a" * 32
-        wrong_key = b"z" * 32
-
-        encrypted = encrypt_data("test data", correct_key)
-        result = decrypt_data(encrypted, wrong_key)
-
-        assert result is None, "Should return None on decryption failure with wrong key"
-
-    def test_decrypt_data_truncated(self):
-        """Test decrypting truncated encrypted data."""
-        from app.library.Utils import decrypt_data
-
-        result = decrypt_data("YQ==", b"k" * 32)
-
-        assert result is None
 
 
 class TestArgConverterAdvanced:

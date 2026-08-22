@@ -71,6 +71,13 @@ Preset, set cookies, skip an item, or bypass an archive check.
 This is useful when one channel or feed contains different types of content. A Condition can be tested against a URL 
 before it is enabled, and it can be ignored for an individual submission.
 
+Real example, suppose a feed usually releases videos open to all, but sometimes region lock is used on a few videos. A 
+Condition can detect the region lock and apply proxy for that item, or skip the item entirely. 
+
+Another Condition could detect a specific keyword in the title and apply a different Preset for that item, or use cookies
+for that specific item. This allows for more granular control over how different types of content are handled within the 
+same feed or channel.
+
 ## Media Servers and NFO Maker
 
 YTPTube supports three media-library workflows: NFO sidecars for individual downloads, collection metadata for recurring 
