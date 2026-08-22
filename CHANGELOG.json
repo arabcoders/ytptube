@@ -1,9 +1,44 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "999b40e3efb5cc4875a49a3dadf5c0a3a183cd57",
-    "date": "2026-08-21T17:47:12+00:00",
+    "full_sha": "a8938380f060383eec788a8761ff70bf69a4f3d4",
+    "date": "2026-08-22T20:48:31+00:00",
     "commits": [
+      {
+        "sha": "a8938380",
+        "full_sha": "a8938380f060383eec788a8761ff70bf69a4f3d4",
+        "message": "feat: improve task definition editor",
+        "author": "arabcoders",
+        "date": "2026-08-22T20:48:31+00:00"
+      },
+      {
+        "sha": "53e36572",
+        "full_sha": "53e36572dc88525d257d3dc55dbe82e72bee2b00",
+        "message": "feat: add task definition inspection",
+        "author": "arabcoders",
+        "date": "2026-08-22T20:47:58+00:00"
+      },
+      {
+        "sha": "77aef4fd",
+        "full_sha": "77aef4fd81b87a509386591054f1b48b7a79d51d",
+        "message": "refactor: task definition fetch engines",
+        "author": "arabcoders",
+        "date": "2026-08-22T20:47:34+00:00"
+      },
+      {
+        "sha": "08af8373",
+        "full_sha": "08af8373cd5d8cae71edaae517543e976eeff33c",
+        "message": "fix: preserve captured extractor errors",
+        "author": "arabcoders",
+        "date": "2026-08-22T20:47:02+00:00"
+      },
+      {
+        "sha": "336edb48",
+        "full_sha": "336edb481a49f703b5b387d0f32308b3acd87857",
+        "message": "refactor: minor code cleanup",
+        "author": "arabcoders",
+        "date": "2026-08-22T14:01:37+00:00"
+      },
       {
         "sha": "999b40e3",
         "full_sha": "999b40e3efb5cc4875a49a3dadf5c0a3a183cd57",
