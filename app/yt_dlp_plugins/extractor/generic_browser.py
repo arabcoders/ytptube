@@ -1,12 +1,10 @@
 import base64
 import importlib.util
-import json
 import math
 import os
 import re
 import time
 import urllib.parse
-import urllib.request
 from typing import Any
 
 from yt_dlp.extractor.generic import GenericIE
@@ -109,11 +107,6 @@ MEDIA_ELEMENT_JS: str = """() => {
     return mediaUrls;
 }"""
 
-PLAYWRIGHT_PREFIXES: tuple[str, ...] = (
-    "playwright+http://",
-    "playwright+https://",
-)
-
 
 def _has_possible_media(requests_list: list[dict]) -> bool:
     for req in requests_list:
@@ -199,33 +192,35 @@ def _build_media_requests(requests_list: list[dict], media_elements: list[dict])
     return result
 
 
-class PlaywrightDriver:
+class CdpDriver:
     @staticmethod
     def is_available() -> bool:
         return importlib.util.find_spec("playwright.sync_api") is not None
 
     @staticmethod
-    def connect(ws_url: str, timeout: int | None = None):
-        if not PlaywrightDriver.is_available():
+    def connect(browser_url: str, timeout: int | None = None):
+        if not CdpDriver.is_available():
             msg = "Playwright is not installed"
             raise ImportError(msg)
 
-        if not ws_url.startswith(PLAYWRIGHT_PREFIXES):
-            msg = "Invalid Playwright browser URL. Use playwright+http(s)://"
+        parsed = urllib.parse.urlsplit(browser_url)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.path.rstrip("/").lower().endswith("/wd/hub")
+        ):
+            msg = "Invalid CDP browser URL. Use an absolute http(s) URL"
             raise ValueError(msg)
 
         from playwright.sync_api import sync_playwright
 
-        p = sync_playwright().start()
+        playwright = sync_playwright().start()
         browser = None
         context = None
         page = None
         owns_context = False
-
         try:
-            browser_url = ws_url.removeprefix("playwright+")
-            browser = p.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
-
+            browser = playwright.chromium.connect_over_cdp(browser_url, timeout=timeout or 30000)
             if browser.contexts:
                 context = browser.contexts[0]
             else:
@@ -249,13 +244,14 @@ class PlaywrightDriver:
                 except Exception:
                     pass
             try:
-                p.stop()
+                playwright.stop()
             except Exception:
                 pass
             raise
 
         requests_list: list[dict] = []
         pending_api: set[str] = set()
+        last_response = None
 
         def on_request(request):
             resource_type = request.resource_type
@@ -303,9 +299,54 @@ class PlaywrightDriver:
         class Session:
             closed = False
 
-            def goto(self, target_url: str) -> int | None:
-                response = page.goto(target_url, wait_until="domcontentloaded")
-                return response.status if response else None
+            def goto(
+                self,
+                target_url: str,
+                *,
+                method: str = "GET",
+                headers: dict[str, str] | None = None,
+                data: str | bytes | None = None,
+                timeout: int | None = None,
+            ) -> int | None:
+                nonlocal last_response
+
+                if headers:
+                    page.set_extra_http_headers(headers)
+
+                route_handler = None
+                method = method.upper()
+                if method != "GET" or data is not None:
+                    main_request_seen = False
+
+                    def route_handler(route, request):
+                        nonlocal main_request_seen
+                        if main_request_seen or not request.is_navigation_request() or request.frame != page.main_frame:
+                            route.continue_()
+                            return
+
+                        main_request_seen = True
+                        options: dict[str, Any] = {}
+                        if method != "GET":
+                            options["method"] = method
+                        if data is not None:
+                            options["post_data"] = data
+                        route.continue_(**options)
+
+                    page.route("**/*", route_handler)
+
+                try:
+                    last_response = page.goto(target_url, wait_until="domcontentloaded", timeout=timeout)
+                finally:
+                    if route_handler is not None:
+                        page.unroute("**/*", route_handler)
+                return last_response.status if last_response else None
+
+            def response_text(self) -> str | None:
+                return last_response.text() if last_response else None
+
+            def wait_for_selector(self, selector_type: str, expression: str, timeout: float) -> None:
+                selector = f"xpath={expression}" if selector_type == "xpath" else expression
+                page.wait_for_selector(selector, timeout=timeout * 1000)
 
             def wait_for_network_idle(
                 self,
@@ -349,6 +390,9 @@ class PlaywrightDriver:
             def content(self) -> str:
                 return page.content()
 
+            def get_page(self):
+                return page
+
             def get_requests(self) -> list[dict]:
                 return list(requests_list)
 
@@ -370,149 +414,9 @@ class PlaywrightDriver:
                         try:
                             browser.close()
                         finally:
-                            p.stop()
+                            playwright.stop()
 
         return Session()
-
-
-class SeleniumDriver:
-    @staticmethod
-    def is_available() -> bool:
-        return importlib.util.find_spec("selenium.webdriver") is not None
-
-    @staticmethod
-    def connect(ws_url: str, timeout: int | None = None):  # noqa: ARG004
-        from selenium import webdriver
-        from selenium.webdriver.chrome.options import Options
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
-
-        browser_url = ws_url.removeprefix("selenium+")
-        with urllib.request.urlopen(  # noqa: S310
-            f"{browser_url.rstrip('/')}/json/version", timeout=5
-        ) as response:
-            browser_info = json.loads(response.read().decode("utf-8"))
-        version_match = re.search(r"Chrome/(\d+)", str(browser_info.get("Browser", "")))
-        if not version_match:
-            msg = f"Could not determine Chrome version at {browser_url}"
-            raise RuntimeError(msg)
-
-        chrome_options = Options()
-        chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
-        chrome_options.browser_version = version_match.group(1)
-        chrome_options.add_experimental_option(
-            "debuggerAddress",
-            urllib.parse.urlsplit(browser_url).netloc or browser_url,
-        )
-        driver = webdriver.Chrome(options=chrome_options)
-
-        original_window = driver.current_window_handle
-        driver.switch_to.new_window("tab")
-        requests_list: list[dict] = []
-
-        def capture_requests():
-            try:
-                urls = driver.execute_script("return performance.getEntriesByType('resource').map(e => e.name);")
-                for u in urls:
-                    if any(r.get("url") == u for r in requests_list):
-                        continue
-                    ext = determine_ext(u, default_ext="")
-                    resource_type = (
-                        "manifest"
-                        if ext in ("m3u8", "mpd", "f4m", "ism")
-                        else "video"
-                        if ext in ("mp4", "webm", "mkv", "avi", "mov")
-                        else "audio"
-                        if ext in ("mp3", "m4a", "ogg", "wav", "flac")
-                        else None
-                    )
-                    if resource_type:
-                        requests_list.append({"url": u, "method": "GET", "resourceType": resource_type})
-            except Exception:
-                pass
-
-        class Session:
-            driver: Any
-
-            def goto(self, target_url: str) -> int | None:
-                driver.get(target_url)
-                try:
-                    status = driver.execute_script(
-                        "return performance.getEntriesByType('navigation')[0]?.responseStatus || null;"
-                    )
-                    return int(status) if status else None
-                except Exception:
-                    return None
-
-            def wait_for_network_idle(
-                self,
-                idle_timeout=30000,
-                api_poll_interval=500,
-                api_poll_attempts=10,
-                max_total_timeout=60,
-            ):
-                def wait_fn(timeout_ms):
-                    time.sleep(min(0.25, timeout_ms / 1000))
-                    capture_requests()
-                    return True
-
-                def wait_for_media_fn(timeout_ms):
-                    try:
-                        WebDriverWait(driver, max(0.001, timeout_ms / 1000)).until(
-                            lambda d: (
-                                d.find_elements(By.TAG_NAME, "video")
-                                or d.find_elements(By.TAG_NAME, "source")
-                                or d.find_elements(By.TAG_NAME, "audio")
-                            )
-                        )
-                        capture_requests()
-                        return True
-                    except Exception:
-                        return False
-
-                # Wrap capture_requests into each poll iteration via a custom pending_api proxy
-                class _PendingProxy(set):
-                    def __len__(self):
-                        capture_requests()
-                        return 0  # always signal "no pending" so we rely on media check
-
-                _wait_for_network_idle(
-                    requests_list,
-                    wait_fn,
-                    wait_for_media_fn,
-                    idle_timeout,
-                    api_poll_interval,
-                    api_poll_attempts,
-                    max_total_timeout,
-                    _PendingProxy(),
-                )
-
-            def content(self) -> str:
-                return driver.page_source
-
-            def get_requests(self) -> list[dict]:
-                return list(requests_list)
-
-            def get_media_requests(self) -> list[dict]:
-                try:
-                    return _build_media_requests(requests_list, driver.execute_script(MEDIA_ELEMENT_JS))
-                except Exception:
-                    return []
-
-            def close(self):
-                try:
-                    driver.close()
-                finally:
-                    try:
-                        driver.switch_to.window(original_window)
-                    finally:
-                        # Stop the local ChromeDriver service without sending
-                        # QUIT to the shared CDP browser.
-                        driver.service.stop()
-
-        session = Session()
-        session.driver = driver
-        return session
 
 
 class GenericBrowserIE(GenericIE, plugin_name="browser"):
@@ -574,17 +478,21 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         if not (browser_url := self._get_config("url", "YTP_BROWSER_URL")) or self._failed:
             return self._fallback_extract(url)
 
+        video_id: str = self._generic_id(url)
+        if urllib.parse.urlsplit(browser_url).scheme.lower() not in {"http", "https"}:
+            self.report_warning("Browser URL must use http or https; falling back to generic extractor.", video_id)
+            return self._fallback_extract(url)
+
         safe_url = self._safe_url(browser_url)
         wait = self._get_wait()
 
-        video_id: str = self._generic_id(url)
         timeout: int | None = self._get_timeout_ms()
         self.to_screen(f"Using remote browser for {url}")
 
         if not (driver := self._select_driver(browser_url)):
             msg: str = (
                 "No matching browser driver available for the configured browser URL. "
-                "Install playwright or selenium as needed."
+                "Install playwright to use the configured browser."
             )
             raise ExtractorError(msg)
 
@@ -700,15 +608,16 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         )
         return self._fallback_extract(url)
 
-    def _select_driver(self, ws_url: str):
-        if ws_url.startswith(("selenium+http://", "selenium+https://")):
-            return SeleniumDriver if SeleniumDriver.is_available() else None
-
-        if ws_url.startswith(PLAYWRIGHT_PREFIXES):
-            return PlaywrightDriver if PlaywrightDriver.is_available() else None
-
-        msg = "Invalid browser URL. Use selenium+http(s):// or playwright+http(s)://"
-        raise ExtractorError(msg)
+    def _select_driver(self, browser_url: str):
+        parsed = urllib.parse.urlsplit(browser_url)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.path.rstrip("/").lower().endswith("/wd/hub")
+        ):
+            msg = "Invalid browser URL. Use an absolute http(s) URL"
+            raise ExtractorError(msg)
+        return CdpDriver if CdpDriver.is_available() else None
 
     def _extract_network_formats(
         self, requests: list[dict], video_id: str, base_info: dict[str, Any]

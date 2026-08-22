@@ -1,5 +1,7 @@
+import logging
 from datetime import datetime
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import ValidationError
@@ -24,9 +26,218 @@ def reset_generic_handler(monkeypatch):
     monkeypatch.setattr(GenericTaskHandler, "_sources_mtime", {})
 
 
-def test_request_method():
+@pytest.mark.parametrize("method", ["GET", "POST"])
+def test_request_method(method: str) -> None:
+    assert RequestConfig.model_validate({"method": method}).method == method
+
+
+def test_request_method_rejected():
     with pytest.raises(ValidationError):
-        RequestConfig.model_validate({"method": "DELETE"})
+        RequestConfig.model_validate({"method": "TRACE"})
+
+
+@pytest.mark.asyncio
+async def test_http_transport_options(monkeypatch):
+    definition = TaskDefinition(
+        name="http",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a"}}),
+            engine=EngineConfig.model_validate(
+                {
+                    "type": "http",
+                    "options": {"impersonate": "safari", "curl_default_headers": False, "flaresolverr": True},
+                }
+            ),
+        ),
+    )
+    response = Mock(text="<html>", json=lambda: {})
+    response.raise_for_status = Mock()
+    client = Mock(request=AsyncMock(return_value=response))
+    get_client = Mock(return_value=client)
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.get_async_client", get_client)
+
+    definition.definition.request = RequestConfig(
+        method="POST",
+        headers={"X-Test": "yes"},
+        params={"page": "2"},
+        body={"type": "json", "value": {"active": True}},
+        timeout=0,
+    )
+
+    await GenericTaskHandler._fetch_with_http("https://example.com", definition, {"proxy": "http://proxy"})
+
+    get_client.assert_called_once_with(
+        proxy="http://proxy",
+        use_curl=True,
+        curl_impersonate="safari",
+        curl_default_headers=False,
+        enable_cf=True,
+    )
+    request = client.request.await_args.kwargs
+    assert request["method"] == "POST"
+    assert request["params"] == {"page": "2"}
+    assert request["content"] == '{"active":true}'
+    assert request["headers"]["Content-Type"] == "application/json"
+    assert request["timeout"] == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("body", "argument", "value"),
+    [
+        ({"type": "raw", "value": "raw body"}, "content", "raw body"),
+        ({"type": "form", "value": {"key": "value"}}, "data", {"key": "value"}),
+        ({"type": "json", "value": None}, "content", "null"),
+    ],
+)
+async def test_http_body(
+    monkeypatch: pytest.MonkeyPatch,
+    body: dict[str, object],
+    argument: str,
+    value: str | dict[str, str],
+) -> None:
+    definition = TaskDefinition(
+        name="http",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a"}}),
+            request=RequestConfig(method="POST", body=body),
+        ),
+    )
+    response = Mock(text="<html>")
+    response.raise_for_status = Mock()
+    client = Mock(request=AsyncMock(return_value=response))
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_async_client",
+        Mock(return_value=client),
+    )
+
+    await GenericTaskHandler._fetch_with_http("https://example.com", definition, {})
+
+    request = client.request.await_args.kwargs
+    assert request[argument] == value
+    assert request["data" if argument == "content" else "content"] is None
+    if body["type"] == "json":
+        assert request["headers"]["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_browser_thread_cleanup(monkeypatch):
+    definition = TaskDefinition(
+        name="browser",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a"}}),
+            engine=EngineConfig.model_validate(
+                {"type": "browser", "options": {"url": "http://chrome:9222", "wait_for": {"expression": ".ready"}}}
+            ),
+        ),
+    )
+    session = Mock()
+    session.content.return_value = "<html>"
+    connect_mock = Mock(return_value=session)
+    monkeypatch.setattr(
+        "app.yt_dlp_plugins.extractor.generic_browser.CdpDriver.connect",
+        connect_mock,
+    )
+    to_thread = AsyncMock(side_effect=lambda function: function())
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.asyncio.to_thread", to_thread)
+
+    result = await GenericTaskHandler._fetch_with_browser("https://example.com", definition)
+
+    assert result == ("<html>", None)
+    connect_mock.assert_called_once_with("http://chrome:9222", 60000)
+    session.goto.assert_called_once_with(
+        "https://example.com",
+        method="GET",
+        headers={},
+        data=None,
+        timeout=60000,
+    )
+    session.wait_for_selector.assert_called_once_with("css", ".ready", 15)
+    session.close.assert_called_once_with()
+    to_thread.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_browser_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="browser",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "jsonpath", "expression": "url"}}),
+            engine=EngineConfig.model_validate(
+                {"type": "browser", "options": {"url": "http://chrome:9222", "page_load_timeout": 45}}
+            ),
+            request=RequestConfig(
+                method="POST",
+                headers={"X-Test": "yes"},
+                params={"page": 2},
+                body={"type": "json", "value": {"active": True}},
+                timeout=3,
+            ),
+            response=ResponseConfig(type="json"),
+        ),
+    )
+    session = Mock()
+    session.response_text.return_value = '{"url":"https://example.com/video"}'
+    connect_mock = Mock(return_value=session)
+    monkeypatch.setattr(
+        "app.yt_dlp_plugins.extractor.generic_browser.CdpDriver.connect",
+        connect_mock,
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.asyncio.to_thread",
+        AsyncMock(side_effect=lambda function: function()),
+    )
+
+    result = await GenericTaskHandler._fetch_with_browser("https://example.com/feed?sort=new", definition)
+
+    assert result == (
+        '{"url":"https://example.com/video"}',
+        {"url": "https://example.com/video"},
+    )
+    session.goto.assert_called_once_with(
+        "https://example.com/feed?sort=new&page=2",
+        method="POST",
+        headers={"X-Test": "yes", "Content-Type": "application/json"},
+        data='{"active":true}',
+        timeout=3000,
+    )
+    session.close.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_browser_form(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="browser",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a"}}),
+            engine=EngineConfig.model_validate({"type": "browser", "options": {"url": "http://chrome:9222"}}),
+            request=RequestConfig(
+                method="POST",
+                body={"type": "form", "value": {"query": "new videos", "page": 2}},
+            ),
+        ),
+    )
+    session = Mock()
+    session.content.return_value = "<html>"
+    monkeypatch.setattr(
+        "app.yt_dlp_plugins.extractor.generic_browser.CdpDriver.connect",
+        Mock(return_value=session),
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.asyncio.to_thread",
+        AsyncMock(side_effect=lambda function: function()),
+    )
+
+    result = await GenericTaskHandler._fetch_with_browser("https://example.com/search", definition)
+
+    assert result == ("<html>", None)
+    assert session.goto.call_args.kwargs["data"] == "query=new+videos&page=2"
+    assert session.goto.call_args.kwargs["headers"] == {"Content-Type": "application/x-www-form-urlencoded"}
 
 
 def test_parse_items_basic():
@@ -40,7 +251,7 @@ def test_parse_items_basic():
         definition=Definition(
             parse=Parse.model_validate(
                 {
-                    "link": {"type": "css", "expression": ".article a.link::attr(href)", "attribute": None},
+                    "url": {"type": "css", "expression": ".article a.link::attr(href)", "attribute": None},
                     "title": {"type": "css", "expression": ".article .title", "attribute": "text"},
                     "id": {"type": "css", "expression": ".article", "attribute": "data-id"},
                 }
@@ -66,11 +277,11 @@ def test_parse_items_basic():
 
     assert len(items) == 2
     assert items[0] == {
-        "link": "https://example.com/article-101",
+        "url": "https://example.com/article-101",
         "title": "First Title",
         "id": "101",
     }
-    assert items[1]["link"] == "https://example.com/article-102"
+    assert items[1]["url"] == "https://example.com/article-102"
 
 
 def test_parse_items_cards():
@@ -88,7 +299,7 @@ def test_parse_items_cards():
                         "type": "css",
                         "selector": ".columns .card",
                         "fields": {
-                            "link": {
+                            "url": {
                                 "type": "css",
                                 "expression": ".card-header a[href]",
                                 "attribute": "href",
@@ -158,13 +369,13 @@ def test_parse_items_cards():
 
     assert len(items) == 2
     assert items[0] == {
-        "link": "https://example.com/poems/view/111",
+        "url": "https://example.com/poems/view/111",
         "title": "First Poem",
         "poet": "Poet Alpha",
         "category": "Category One",
     }
     assert items[1] == {
-        "link": "https://example.com/poems/view/222",
+        "url": "https://example.com/poems/view/222",
         "title": "Second Poem",
         "poet": "Poet Beta",
     }
@@ -185,7 +396,7 @@ def test_parse_items_json():
                         "type": "jsonpath",
                         "selector": "entries",
                         "fields": {
-                            "link": {"type": "jsonpath", "expression": "url"},
+                            "url": {"type": "jsonpath", "expression": "url"},
                             "title": {"type": "jsonpath", "expression": "title"},
                             "id": {"type": "jsonpath", "expression": "id"},
                         },
@@ -214,8 +425,8 @@ def test_parse_items_json():
     )
 
     assert items == [
-        {"link": "https://example.com/video/1", "title": "First", "id": "1"},
-        {"link": "https://example.com/video/2", "title": "Second", "id": "2"},
+        {"url": "https://example.com/video/1", "title": "First", "id": "1"},
+        {"url": "https://example.com/video/2", "title": "Second", "id": "2"},
     ]
 
 
@@ -235,7 +446,7 @@ async def test_generic_task_handler_inspect(monkeypatch):
                         "type": "jsonpath",
                         "selector": "items",
                         "fields": {
-                            "link": {"type": "jsonpath", "expression": "url"},
+                            "url": {"type": "jsonpath", "expression": "url"},
                             "title": {"type": "jsonpath", "expression": "title"},
                             "thumbnail": {"type": "jsonpath", "expression": "thumbnail"},
                             "description": {"type": "jsonpath", "expression": "description"},
@@ -290,6 +501,75 @@ async def test_generic_task_handler_inspect(monkeypatch):
         assert item.description == "First description"
 
 
+@pytest.mark.asyncio
+async def test_direct_extracts_without_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="direct",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+
+    async def fail_lookup(*_args, **_kwargs):
+        raise AssertionError("definition lookup should not run")
+
+    async def fetch_content(*_args, **_kwargs):
+        return '<a href="https://example.com/item">Item</a>', None
+
+    monkeypatch.setattr(GenericTaskHandler, "_find_definition", classmethod(fail_lookup))
+    monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fetch_content))
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id",
+        lambda url: {"archive_id": "example item"},
+    )
+
+    result = await GenericTaskHandler.extract_definition(
+        HandleTask(id=None, name="Inspect", url="https://example.com/feed"), definition
+    )
+
+    assert isinstance(result, TaskResult)
+    assert result.items[0].archive_id == "example item"
+
+
+@pytest.mark.asyncio
+async def test_inspect_reports_failure(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+    definition = TaskDefinition(
+        name="inspect",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+
+    async def find_definition(cls, url):  # noqa: ARG001
+        return definition
+
+    async def fetch_content(*_args, **_kwargs):
+        return '<a href="/item/1">Item</a>', None
+
+    monkeypatch.setattr(GenericTaskHandler, "_find_definition", classmethod(find_definition))
+    monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fetch_content))
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id",
+        lambda url: {"archive_id": None},
+    )
+    fetch = AsyncMock(return_value=(None, ["Invalid browser URL."]))
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
+
+    with caplog.at_level(logging.WARNING, logger="ytptube"):
+        result = await GenericTaskHandler.inspect(HandleTask(id=None, name="Inspect", url="https://example.com/feed"))
+
+    assert isinstance(result, TaskResult)
+    assert result.items[0].url == "https://example.com/item/1"
+    assert result.items[0].archive_id is None
+    assert "required yt-dlp archive ID fallback for 1 item(s)" in caplog.text
+    assert "Keeping unresolved items for inspection. yt-dlp: Invalid browser URL." in caplog.text
+    fetch.assert_awaited_once()
+    assert fetch.await_args is not None
+    assert fetch.await_args.kwargs["capture_logs"] == logging.ERROR
+
+
 def test_parse_items_json_list():
     definition = TaskDefinition(
         id=8,
@@ -305,7 +585,7 @@ def test_parse_items_json_list():
                         "type": "jsonpath",
                         "selector": "[]",
                         "fields": {
-                            "link": {"type": "jsonpath", "expression": "url"},
+                            "url": {"type": "jsonpath", "expression": "url"},
                             "title": {"type": "jsonpath", "expression": "title"},
                         },
                     }
@@ -330,6 +610,6 @@ def test_parse_items_json_list():
     )
 
     assert items == [
-        {"link": "https://example.com/video/1", "title": "First"},
-        {"link": "https://example.com/video/2", "title": "Second"},
+        {"url": "https://example.com/video/1", "title": "First"},
+        {"url": "https://example.com/video/2", "title": "Second"},
     ]

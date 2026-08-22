@@ -33,7 +33,9 @@ def model_to_schema(model: TaskDefinitionModel, summary: bool = False) -> TaskDe
         "created_at": model.created_at,
         "updated_at": model.updated_at,
     }
-    return TaskDefinitionSummary(**dct) if summary else TaskDefinition(**dct, definition=Definition(**model.definition))
+    if summary:
+        return TaskDefinitionSummary(**dct)
+    return TaskDefinition(**dct, definition=Definition.model_validate(model.definition))
 
 
 def schema_to_payload(item: TaskDefinition) -> dict[str, Any]:

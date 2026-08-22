@@ -43,7 +43,7 @@ The interface is available in English, العربية, Français, 中文, and �
 - A file browser and built-in player with external sidecar subtitle support
 - Kodi-style TV and movie NFO sidecars, `.info.json` metadata, artwork, and media-library naming
 - curl-cffi impersonation and a bundled PO-token provider
-- Browser extraction through Playwright or Selenium
+- Browser extraction through Playwright attached to an existing Chrome instance over CDP
 - FlareSolverr or Trawl integration for supported WAF challenge flows
 - Queue and archive controls, live logs, diagnostics, and optional resource monitoring
 - An optional interactive yt-dlp terminal for trusted administrators

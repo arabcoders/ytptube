@@ -46,8 +46,29 @@ Tasks monitor sources on a schedule and add new items to the queue. Built-in han
 A Task can have its own Preset, folder, filename template, yt-dlp options, archive behavior, and automatic start policy. 
 It can also be inspected before running to show the matched handler and discovered items.
 
-Generic Task definitions monitor HTML pages or JSON endpoints when a site has no useful RSS feed or public API. 
-The request, parsing, and pagination options are documented in [Monitor sites without RSS feeds](FAQ.md#how-can-i-monitor-sites-without-rss-feeds).
+## Monitor Sites Without RSS or APIs
+
+Generic Task Definitions turn sites without RSS feeds, suitable APIs, or built-in handlers into recurring YTPTube
+sources. The visual editor lets you create a custom source, preview what YTPTube discovers, and schedule it like any
+built-in Task.
+
+Custom sources can monitor static pages, dynamic browser-rendered sites, and structured endpoints. Discovered items use
+the same Presets, Conditions, download archives, and queue controls as every other YTPTube download, so they fit directly
+into existing automation.
+
+Definitions can be imported and exported for reuse or sharing. See
+[Monitor sites without RSS feeds](FAQ.md#how-can-i-monitor-sites-without-rss-feeds) to get started.
+
+Use **Actions > Test** on a saved definition, or **Test** in the editor before saving, to inspect discovered items. Unsaved tests use a
+detached copy of the current definition and leave the editor open.
+
+### Generate a Definition with an AI
+
+If manual setup feels too involved, give your preferred AI tool the target website and the
+[task-definition schema](https://raw.githubusercontent.com/arabcoders/ytptube/refs/heads/dev/app/schema/task_definition.json),
+then ask it to produce a definition that conforms to the schema. Paste the generated JSON into the editor's Advanced
+view and inspect the discovered items before scheduling the Task. Generated definitions can be incorrect, so review and
+test the result before relying on it.
 
 ## Presets
 
