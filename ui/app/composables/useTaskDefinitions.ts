@@ -3,6 +3,7 @@ import { ref, readonly } from 'vue';
 import { useNotification } from '~/composables/useNotification';
 import { request, parse_list_response, parse_api_response, ensure_api_success } from '~/utils';
 import type {
+  ImpersonateTargetsResponse,
   TaskDefinitionDetailed,
   TaskDefinitionDocument,
   TaskDefinitionSummary,
@@ -32,6 +33,8 @@ const isLoading = ref<boolean>(false);
  * Stores the last error message, if any.
  */
 const lastError = ref<string | null>(null);
+const impersonateTargets = ref<string[]>([]);
+const targetsLoaded = ref(false);
 
 /**
  * If true, methods will throw errors instead of returning null/false (for testing)
@@ -152,6 +155,22 @@ const getDefinition = async (id: number): Promise<TaskDefinitionDetailed | null>
     handleError(error);
     if (throwInstead.value) throw error;
     return null;
+  }
+};
+
+const loadImpersonateTargets = async (): Promise<void> => {
+  if (targetsLoaded.value) return;
+  try {
+    const response = await request('/api/tasks/definitions/impersonate-targets');
+    await ensure_api_success(response);
+    const payload = await parse_api_response<ImpersonateTargetsResponse>(response.json());
+    impersonateTargets.value = Array.isArray(payload.targets)
+      ? payload.targets.filter((target): target is string => typeof target === 'string')
+      : [];
+    targetsLoaded.value = true;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
   }
 };
 
@@ -311,10 +330,12 @@ const clearError = () => (lastError.value = null);
  */
 export const useTaskDefinitions = () => ({
   definitions: readonly(definitions),
+  impersonateTargets: readonly(impersonateTargets),
   pagination: readonly(pagination),
   isLoading: readonly(isLoading),
   lastError: readonly(lastError),
   loadDefinitions,
+  loadImpersonateTargets,
   getDefinition,
   createDefinition,
   updateDefinition,

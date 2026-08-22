@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 import pytest_asyncio
 
 from app.features.tasks import router
+from app.features.tasks.definitions.schemas import Definition, Parse, TaskDefinition
 from app.features.tasks.definitions.results import TaskFailure, TaskResult
+from app.features.tasks.definitions.schemas import TaskDefinitionInspectRequest
 from app.features.tasks.repository import TasksRepository
 from app.library.encoder import Encoder
 from app.library.sqlite_store import SqliteStore
@@ -57,6 +61,153 @@ class _Handler:
             return TaskResult(metadata={"matched": True, "handler": "TestHandler"})
 
         return TaskFailure(message="No handler", metadata={"matched": False, "handler": None})
+
+
+class _DefinitionHandler:
+    def __init__(self) -> None:
+        self.definition = None
+
+    async def inspect_definition(self, url, definition, preset):
+        self.definition = definition
+        return TaskResult(metadata={"matched": True, "handler": "GenericTaskHandler", "preset": preset, "url": url})
+
+
+class _Request:
+    def __init__(self, payload) -> None:
+        self.payload = payload
+
+    async def json(self):
+        return self.payload
+
+
+def _definition(*, enabled: bool = True) -> TaskDefinition:
+    return TaskDefinition(
+        id=7,
+        name="Example",
+        match_url=["https://example.com/*"],
+        enabled=enabled,
+        definition=Definition(parse=Parse.model_validate({"url": {"type": "css", "expression": "a"}})),
+    )
+
+
+def _saved_model(*, enabled: bool = True) -> SimpleNamespace:
+    definition = _definition(enabled=enabled)
+    return SimpleNamespace(
+        id=definition.id,
+        name=definition.name,
+        priority=definition.priority,
+        match_url=definition.match_url,
+        enabled=definition.enabled,
+        created_at=None,
+        updated_at=None,
+        definition=definition.definition.model_dump(),
+    )
+
+
+class _DefinitionRepo:
+    def __init__(self, model=None) -> None:
+        self.model = model
+        self.calls = 0
+
+    async def get(self, _identifier):
+        self.calls += 1
+        return self.model
+
+
+@pytest.mark.parametrize(
+    "payload", [{"url": "https://example.com"}, {"url": "https://example.com", "definition_id": 1, "document": {}}]
+)
+def test_inspection_target(payload) -> None:
+    with pytest.raises(ValueError):
+        TaskDefinitionInspectRequest.model_validate(payload)
+
+
+@pytest.mark.asyncio
+async def test_saved_inspection() -> None:
+    handler = _DefinitionHandler()
+    repo = _DefinitionRepo(_saved_model())
+    response = await router.task_definition_inspect(
+        _Request({"definition_id": 7, "url": "https://example.com/feed", "preset": "news"}),
+        handler,
+        repo,
+        Encoder(),
+    )
+
+    assert response.status == 200
+    assert handler.definition is not None
+    assert handler.definition.id == 7
+    assert repo.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_direct_inspection() -> None:
+    handler = _DefinitionHandler()
+    repo = _DefinitionRepo()
+    document = _definition().model_dump()
+    response = await router.task_definition_inspect(
+        _Request({"document": document, "url": "https://example.com/feed"}), handler, repo, Encoder()
+    )
+
+    assert response.status == 200
+    assert handler.definition is not None
+    assert handler.definition.id == 7
+    assert repo.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_missing_definition() -> None:
+    response = await router.task_definition_inspect(
+        _Request({"definition_id": 8, "url": "https://example.com/feed"}),
+        _DefinitionHandler(),
+        _DefinitionRepo(),
+        Encoder(),
+    )
+
+    assert response.status == 404
+
+
+@pytest.mark.asyncio
+async def test_inspection_load_failure() -> None:
+    class BrokenRepo:
+        async def get(self, _identifier):
+            raise RuntimeError("database unavailable")
+
+    response = await router.task_definition_inspect(
+        _Request({"definition_id": 8, "url": "https://example.com/feed"}),
+        _DefinitionHandler(),
+        BrokenRepo(),
+        Encoder(),
+    )
+
+    assert response.status == 500
+    assert "database unavailable" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_mismatched_url() -> None:
+    response = await router.task_definition_inspect(
+        _Request({"document": _definition().model_dump(), "url": "https://other.example/feed"}),
+        _DefinitionHandler(),
+        _DefinitionRepo(),
+        Encoder(),
+    )
+
+    assert response.status == 400
+
+
+@pytest.mark.asyncio
+async def test_disabled_definition() -> None:
+    handler = _DefinitionHandler()
+    response = await router.task_definition_inspect(
+        _Request({"definition_id": 7, "url": "https://example.com/feed"}),
+        handler,
+        _DefinitionRepo(_saved_model(enabled=False)),
+        Encoder(),
+    )
+
+    assert response.status == 200
+    assert handler.definition is not None
+    assert handler.definition.enabled is False
 
 
 @pytest.mark.asyncio

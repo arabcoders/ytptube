@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-5">
-    <form id="taskInspectForm" class="space-y-5" @submit.prevent="onSubmit">
+    <form :id="formId" class="space-y-5" @submit.prevent="onSubmit">
       <div class="grid gap-4 lg:grid-cols-2">
         <UFormField
           :label="t('common.url')"
@@ -44,27 +44,6 @@
             :disabled="loading"
           />
         </UFormField>
-
-        <UFormField
-          :label="t('common.inspectHandler')"
-          :ui="fieldUi"
-          :description="t('common.inspectHandlerDesc')"
-        >
-          <UInput
-            id="handler"
-            v-model="handler"
-            type="text"
-            :placeholder="t('tasks.handlerPlaceholder')"
-            class="w-full"
-            :ui="inputUi"
-            :disabled="loading"
-            dir="ltr"
-          >
-            <template #leading>
-              <UIcon name="i-lucide-rss" class="size-4 text-toned" />
-            </template>
-          </UInput>
-        </UFormField>
       </div>
     </form>
 
@@ -107,6 +86,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { request } from '~/utils';
+import type { TaskDefinitionDocument } from '~/types/task_definitions';
 import type { TaskInspectRequest, TaskInspectResponse } from '~/types/task_inspect';
 
 const { t } = useI18n();
@@ -114,7 +94,9 @@ const { t } = useI18n();
 const props = defineProps<{
   url?: string;
   preset?: string;
-  handler?: string;
+  definitionId?: number;
+  definitionDocument?: TaskDefinitionDocument;
+  formId?: string;
 }>();
 
 const { selectItems } = usePresetOptions();
@@ -122,7 +104,10 @@ const { selectItems } = usePresetOptions();
 const config = useYtpConfig();
 const url = ref(props.url ?? '');
 const preset = ref(props.preset || config.app.default_preset || '');
-const handler = ref(props.handler ?? '');
+const definitionMode = computed(
+  () => props.definitionId !== undefined || props.definitionDocument !== undefined,
+);
+const formId = computed(() => props.formId ?? 'taskInspectForm');
 const loading = ref(false);
 const response = ref<TaskInspectResponse | null>(null);
 const urlError = ref('');
@@ -183,11 +168,16 @@ watch(
 );
 
 watch(
-  () => props.handler,
-  (val) => {
-    if (val !== undefined) {
-      handler.value = val;
-    }
+  () => props.definitionId,
+  () => {
+    response.value = null;
+  },
+);
+
+watch(
+  () => props.definitionDocument,
+  () => {
+    response.value = null;
   },
 );
 
@@ -214,15 +204,22 @@ async function onSubmit() {
   const payload: TaskInspectRequest = {
     url: url.value.trim(),
     preset: preset.value.trim() || undefined,
-    handler: handler.value.trim() || undefined,
+    ...(definitionMode.value
+      ? props.definitionId !== undefined
+        ? { definition_id: props.definitionId }
+        : { document: props.definitionDocument }
+      : {}),
   };
 
   try {
-    const res = await request('/api/tasks/inspect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const res = await request(
+      definitionMode.value ? '/api/tasks/definitions/inspect' : '/api/tasks/inspect',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+    );
     response.value = await res.json();
   } catch (err: any) {
     response.value = { error: err?.message || t('common.unknownError') };
@@ -234,7 +231,6 @@ async function onSubmit() {
 const onReset = () => {
   url.value = props.url || '';
   preset.value = props.preset || config.app.default_preset || '';
-  handler.value = props.handler || '';
   response.value = null;
   urlError.value = '';
 };

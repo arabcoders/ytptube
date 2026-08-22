@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import re
 from typing import Any
 from urllib.parse import urljoin
@@ -7,7 +8,7 @@ from xml.etree.ElementTree import Element
 import httpx
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
-from app.features.ytdlp.extractor import fetch_info
+from app.features.ytdlp.extractor import ExtractorBatch, fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
 from app.library.config import Config
@@ -239,77 +240,97 @@ class RssGenericHandler(BaseHandler):
             return TaskFailure(message="Failed to fetch RSS/Atom feed.", error=str(exc))
 
         task_items: list[TaskItem] = []
+        archive_fallbacks = 0
+        archive_errors: dict[str, int] = {}
+        incomplete_archives = 0
 
-        for entry in items:
-            if not (url := entry.get("url")):
-                continue
+        async with ExtractorBatch() as batch:
+            for entry in items:
+                if not (url := entry.get("url")):
+                    continue
 
-            # Try to get static archive ID first
-            id_dict: dict[str, str | None] = get_archive_id(url=url)
-            archive_id: str | None = id_dict.get("archive_id")
+                # Try to get static archive ID first
+                id_dict: dict[str, str | None] = get_archive_id(url=url)
+                archive_id: str | None = id_dict.get("archive_id")
 
-            # If static archive_id fails, try to fetch it via yt-dlp (like generic.py)
-            if not archive_id:
-                cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
+                # If static archive_id fails, try to fetch it via yt-dlp (like generic.py)
+                if not archive_id:
+                    cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
 
-                if CACHE.has(cache_key):
-                    archive_id = CACHE.get(cache_key)
-                    if not archive_id:
-                        LOG.debug(
-                            "Task '%s' has a cached archive ID lookup failure. Skipping item.",
-                            task.name,
-                            extra={"task_name": task.name, "url": url},
+                    if CACHE.has(cache_key):
+                        archive_id = CACHE.get(cache_key)
+                        if not archive_id:
+                            LOG.debug(
+                                "Task '%s' has a cached archive ID lookup failure. Skipping item.",
+                                task.name,
+                                extra={"task_name": task.name, "url": url},
+                            )
+                            continue
+                    else:
+                        archive_fallbacks += 1
+
+                        (info, logs) = await fetch_info(
+                            config=params,
+                            url=url,
+                            no_archive=True,
+                            no_log=True,
+                            capture_logs=logging.ERROR,
+                            batch=batch,
+                            budget_sleep=True,
                         )
-                        continue
-                else:
-                    LOG.warning(
-                        "Task '%s' could not generate a static archive ID. Fetching it with yt-dlp.",
-                        task.name,
-                        extra={"task_name": task.name, "url": url},
-                    )
 
-                    (info, _) = await fetch_info(
-                        config=params,
+                        if not info:
+                            error = " | ".join(logs) if logs else "No yt-dlp error was reported."
+                            archive_errors[error] = archive_errors.get(error, 0) + 1
+                            CACHE.set(cache_key, None)
+                            continue
+
+                        if not info.get("id") or not info.get("extractor_key"):
+                            incomplete_archives += 1
+                            CACHE.set(cache_key, None)
+                            continue
+
+                        archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
+                        CACHE.set(cache_key, archive_id)
+
+                metadata: dict[str, Any] = {
+                    k: v for k, v in entry.items() if k not in {"url", "title", "description", "published", "thumbnail"}
+                }
+
+                task_items.append(
+                    TaskItem(
                         url=url,
-                        no_archive=True,
-                        no_log=True,
-                        budget_sleep=True,
+                        title=entry.get("title"),
+                        archive_id=archive_id,
+                        thumbnail=entry.get("thumbnail"),
+                        description=entry.get("description"),
+                        metadata={"published": entry.get("published"), **metadata},
                     )
-
-                    if not info:
-                        LOG.error(
-                            "Task '%s' failed to extract info to generate an archive ID. Skipping item.",
-                            task.name,
-                            extra={"task_name": task.name, "url": url},
-                        )
-                        CACHE.set(cache_key, None)
-                        continue
-
-                    if not info.get("id") or not info.get("extractor_key"):
-                        LOG.error(
-                            "Task '%s' returned incomplete info while generating an archive ID. Skipping item.",
-                            task.name,
-                            extra={"task_name": task.name, "url": url},
-                        )
-                        CACHE.set(cache_key, None)
-                        continue
-
-                    archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
-                    CACHE.set(cache_key, archive_id)
-
-            metadata: dict[str, Any] = {
-                k: v for k, v in entry.items() if k not in {"url", "title", "description", "published", "thumbnail"}
-            }
-
-            task_items.append(
-                TaskItem(
-                    url=url,
-                    title=entry.get("title"),
-                    archive_id=archive_id,
-                    thumbnail=entry.get("thumbnail"),
-                    description=entry.get("description"),
-                    metadata={"published": entry.get("published"), **metadata},
                 )
+
+        if archive_fallbacks:
+            LOG.warning(
+                "Task '%s' required yt-dlp archive ID fallback for %s item(s).",
+                task.name,
+                archive_fallbacks,
+                extra={"task_name": task.name, "item_count": archive_fallbacks},
+            )
+
+        for error, count in archive_errors.items():
+            LOG.error(
+                "Task '%s' failed to generate archive IDs for %s item(s). Skipping unresolved items. yt-dlp: %s",
+                task.name,
+                count,
+                error,
+                extra={"task_name": task.name, "item_count": count, "error": error},
+            )
+
+        if incomplete_archives:
+            LOG.error(
+                "Task '%s' received incomplete archive information for %s item(s). Skipping unresolved items.",
+                task.name,
+                incomplete_archives,
+                extra={"task_name": task.name, "item_count": incomplete_archives},
             )
 
         return TaskResult(

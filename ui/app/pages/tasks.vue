@@ -736,8 +736,7 @@
     <UModal
       v-if="inspectTask"
       :open="Boolean(inspectTask)"
-      :title="t('tasks.inspectHandlerTitle')"
-      :description="t('tasks.inspectHandlerDesc')"
+      :title="t('common.test')"
       :ui="{ content: 'w-full sm:max-w-4xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
       @update:open="(open) => !open && (inspectTask = null)"
     >
@@ -768,7 +767,7 @@
             :disabled="taskInspect?.loading"
             class="justify-center"
           >
-            {{ t('common.inspect') }}
+            {{ t('common.test') }}
           </UButton>
         </div>
       </template>
@@ -1494,7 +1493,7 @@ const itemActionGroups = (item: Task): DropdownMenuItem[][] => [
   ],
   [
     {
-      label: t('common.inspectHandler'),
+      label: t('common.test'),
       icon: 'i-lucide-search',
       onSelect: () => {
         inspectTask.value = item;

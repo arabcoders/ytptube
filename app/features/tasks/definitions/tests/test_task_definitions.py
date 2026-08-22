@@ -11,6 +11,7 @@ from aiohttp.web import Request
 
 from app.features.tasks.definitions.repository import TaskDefinitionsRepository
 from app.features.tasks.definitions.router import (
+    task_definition_impersonate_targets,
     task_definitions_create,
     task_definitions_delete,
     task_definitions_get,
@@ -32,13 +33,13 @@ def _sample_definition(name: str = "example", *, priority: int = 0) -> dict:
         "priority": priority,
         "definition": {
             "parse": {
-                "link": {
+                "url": {
                     "type": "css",
                     "expression": "a",
                     "attribute": "href",
                 }
             },
-            "engine": {"type": "httpx"},
+            "engine": {"type": "http"},
             "request": {},
             "response": {"type": "html"},
         },
@@ -100,6 +101,22 @@ class TestTaskDefinitionsRepository:
 
 @pytest.mark.asyncio
 class TestTaskDefinitionRoutes:
+    async def test_impersonate_targets(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.tasks.definitions.router.resolve_curl_transport", lambda: True)
+
+        response = await task_definition_impersonate_targets()
+        payload = json.loads(response.text)
+
+        assert response.status == web.HTTPOk.status_code
+        assert "chrome" in payload["targets"]
+
+    async def test_impersonate_unavailable(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.tasks.definitions.router.resolve_curl_transport", lambda: False)
+
+        response = await task_definition_impersonate_targets()
+
+        assert json.loads(response.text) == {"targets": []}
+
     async def test_list_definitions(self, repo: TaskDefinitionsRepository) -> None:
         await repo.create(_sample_definition("Sample"))
         request = MagicMock(spec=Request)

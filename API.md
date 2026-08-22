@@ -64,6 +64,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
     - [POST /api/tasks/{id}/metadata](#post-apitasksidmetadata)
     - [GET /api/tasks/definitions/](#get-apitasksdefinitions)
+    - [POST /api/tasks/definitions/inspect](#post-apitasksdefinitionsinspect)
+    - [GET /api/tasks/definitions/impersonate-targets](#get-apitasksdefinitionsimpersonate-targets)
     - [GET /api/tasks/definitions/{id}](#get-apitasksdefinitionsid)
     - [POST /api/tasks/definitions/](#post-apitasksdefinitions)
     - [PUT /api/tasks/definitions/{id}](#put-apitasksdefinitionsid)
@@ -1809,7 +1811,8 @@ or
     {
       "id": 1,
       "name": "Task Definition Name",
-      "description": "...",
+      "priority": 0,
+      "match_url": ["https://example.com/*"],
       "enabled": true,
       "definition": { ... }  // only if include=definition
     },
@@ -1828,6 +1831,116 @@ or
 
 ---
 
+### POST /api/tasks/definitions/inspect
+**Purpose**: Inspect a URL using exactly one saved task definition or a complete definition document.
+
+**Body (saved definition)**:
+```json
+{
+  "definition_id": 12,
+  "url": "https://example.com/feed",
+  "preset": "optional-preset"
+}
+```
+
+**Body (unsaved definition)**:
+```json
+{
+  "document": {
+    "name": "Example feed",
+    "priority": 0,
+    "match_url": ["https://example.com/*"],
+    "enabled": true,
+    "definition": {
+      "engine": {
+        "type": "http",
+        "options": {
+          "impersonate": "chrome",
+          "curl_default_headers": true,
+          "flaresolverr": false
+        }
+      },
+      "request": {
+        "method": "GET",
+        "headers": {},
+        "params": {}
+      },
+      "response": {
+        "type": "html"
+      },
+      "parse": {
+        "items": {
+          "type": "css",
+          "selector": ".feed-item",
+          "fields": {
+            "url": {
+              "type": "css",
+              "expression": "a",
+              "attribute": "href"
+            },
+            "title": {
+              "type": "css",
+              "expression": "a",
+              "attribute": "text"
+            }
+          }
+        }
+      }
+    }
+  },
+  "url": "https://example.com/feed",
+  "preset": "optional-preset"
+}
+```
+
+**Notes**:
+- Provide exactly one of `definition_id` or `document`.
+- `document` uses the same complete Task Definition object accepted by `POST /api/tasks/definitions/`.
+- `url` must match one of the selected definition's `match_url` patterns.
+- `preset` is optional and defaults to the configured default preset.
+
+**Response**: Returns the same inspection result as `POST /api/tasks/inspect`.
+```json
+{
+  "matched": true,
+  "handler": "GenericTaskHandler",
+  "supported": true,
+  "items": [
+    {
+      "url": "https://example.com/video/1",
+      "title": "Example title",
+      "archive_id": "generic 1",
+      "is_archived": false,
+      "thumbnail": null,
+      "description": null,
+      "metadata": {}
+    },
+    ...
+  ]
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` - Invalid body, both or neither definition selector supplied, URL mismatch, or extraction failure
+- `404 Not Found` - Saved task definition does not exist
+- `500 Internal Server Error` - Failed to load or inspect the definition
+
+---
+
+### GET /api/tasks/definitions/impersonate-targets
+**Purpose**: List the HTTP client identities supported by the installed curl-cffi transport.
+
+The `targets` list is empty when curl-cffi transport support is unavailable.
+
+**Response**:
+```json
+{
+  "targets": ["chrome", "safari", "firefox", ...]
+}
+```
+
+---
+
 ### GET /api/tasks/definitions/{id}
 **Purpose**: Retrieve a specific task definition by ID.
 
@@ -1839,14 +1952,17 @@ or
 {
   "id": 1,
   "name": "Task Definition Name",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": true,
   "definition": {
     "parse": {
-      "url": { ... },
       "items": { ... }
     },
-    "engine": { ... },
+    "engine": {
+      "type": "http",
+      "options": { "impersonate": "chrome", "curl_default_headers": true, "flaresolverr": false }
+    },
     "request": { ... },
     "response": { ... }
   }
@@ -1865,11 +1981,11 @@ or
 ```json
 {
   "name": "My Task Definition",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": true,
   "definition": {
     "parse": {
-      "url": { ... },
       "items": { ... }
     },
     "engine": { ... },
@@ -1884,7 +2000,8 @@ or
 {
   "id": 1,
   "name": "My Task Definition",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": true,
   "definition": { ... }
 }
@@ -1905,7 +2022,8 @@ or
 ```json
 {
   "name": "Updated Name",
-  "description": "...",
+  "priority": 10,
+  "match_url": ["https://example.com/feed/*"],
   "enabled": false,
   "definition": {
     "parse": { ... },
@@ -1921,7 +2039,8 @@ or
 {
   "id": 1,
   "name": "Updated Name",
-  "description": "...",
+  "priority": 10,
+  "match_url": ["https://example.com/feed/*"],
   "enabled": false,
   "definition": { ... }
 }
@@ -1943,9 +2062,12 @@ or
 ```json
 {
   "enabled": false,
-  "description": "Updated description"
+  "priority": 10
 }
 ```
+
+Only include fields to update. Supported mutable fields are `name`, `priority`, `match_url`, `enabled`, and `definition`.
+When supplied, `definition` is a complete nested Definition object rather than a deep partial update.
 
 **Response**: Updated task definition object.
 
@@ -1966,7 +2088,8 @@ or
 {
   "id": 1,
   "name": "Deleted Definition",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": false,
   "definition": { ... }
 }

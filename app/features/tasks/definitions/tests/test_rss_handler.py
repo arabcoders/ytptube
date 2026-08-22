@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import pytest
@@ -159,6 +160,44 @@ class TestRssHandlerExtraction:
         assert result.items[1].title == "Video 2"
         assert result.items[1].url == "https://www.youtube.com/watch?v=def456"
         assert result.metadata["entry_count"] == 2
+
+    @pytest.mark.asyncio
+    async def test_archive_error_logged(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        feed = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><item>
+  <title>Unsupported</title>
+  <link>https://example.com/rss-missing-media</link>
+</item></channel></rss>
+        """.strip()
+        call: dict = {}
+
+        async def fake_request(**kwargs):  # noqa: ARG001
+            return DummyResponse(feed)
+
+        async def fake_fetch(**kwargs):
+            call.update(kwargs)
+            return None, ["Invalid browser URL."]
+
+        monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
+        monkeypatch.setattr(
+            "app.features.tasks.definitions.handlers.rss.get_archive_id",
+            lambda url: {"archive_id": None},
+        )
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.fetch_info", fake_fetch)
+
+        with caplog.at_level(logging.WARNING, logger="ytptube"):
+            result = await RssGenericHandler.extract(
+                HandleTask(id=None, name="Archive Error", url="https://example.com/feed.rss")
+            )
+
+        assert isinstance(result, TaskResult)
+        assert result.items == []
+        assert "required yt-dlp archive ID fallback for 1 item(s)" in caplog.text
+        assert "yt-dlp: Invalid browser URL." in caplog.text
+        assert call["capture_logs"] == logging.ERROR
 
     @pytest.mark.asyncio
     async def test_can_handle(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
