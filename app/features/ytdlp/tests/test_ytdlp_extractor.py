@@ -1,8 +1,12 @@
+import asyncio
 import logging
 import pickle
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app.features.ytdlp.extractor import (
+    ExtractorBatch,
     ExtractorConfig,
     ExtractorPool,
     REEXTRACT_INFO_KEY,
@@ -11,6 +15,7 @@ from app.features.ytdlp.extractor import (
     _process_safe_info,
     _ytdlp_logger,
     extract_info_sync,
+    fetch_info,
 )
 from app.features.ytdlp.utils import LogWrapper
 
@@ -100,6 +105,28 @@ class TestExtractInfo:
         assert isinstance(result, dict), "Result should be a dictionary"
         assert isinstance(logs, list), "Logs should be a list"
         mock_ytdlp.extract_info.assert_called_once()
+
+    @patch("app.features.ytdlp.extractor.YTDLP")
+    def test_no_log_capture(self, mock_ytdlp_class):
+        def fake_extract_info(url, download=False):  # noqa: ARG001
+            logger = mock_ytdlp_class.call_args.kwargs["params"]["logger"]
+            logger.warning("hidden warning")
+            logger.error("browser connection failed")
+            return None
+
+        mock_ytdlp = MagicMock()
+        mock_ytdlp.extract_info.side_effect = fake_extract_info
+        mock_ytdlp_class.return_value = mock_ytdlp
+
+        result, logs = extract_info_sync(
+            {},
+            "https://example.com/video",
+            no_log=True,
+            capture_logs=logging.ERROR,
+        )
+
+        assert result is None
+        assert logs == ["browser connection failed"]
 
     @patch("app.features.ytdlp.extractor.YTDLP")
     def test_info_mirrors_debug_console(self, mock_ytdlp_class):
@@ -232,6 +259,28 @@ class TestExtractInfo:
 
         assert result["formats"] == [{"format_id": "0"}, {"format_id": "1"}]
         pickle.dumps(result)
+
+    @pytest.mark.asyncio
+    async def test_batch_lifecycle(self, monkeypatch):
+        pool = ExtractorPool.get_instance()
+        executor = MagicMock()
+        release = MagicMock()
+        get_pool = MagicMock(return_value=executor)
+        monkeypatch.setattr(pool, "get_pool", get_pool)
+        monkeypatch.setattr(pool, "release_pool", release)
+
+        async def run_in_executor(*_args, **_kwargs):
+            return {"id": "video-id"}, []
+
+        loop = asyncio.get_running_loop()
+        monkeypatch.setattr(loop, "run_in_executor", run_in_executor)
+
+        async with ExtractorBatch(ExtractorConfig()) as batch:
+            await fetch_info({}, "https://example.com/one", batch=batch)
+            await fetch_info({}, "https://example.com/two", batch=batch)
+
+        get_pool.assert_called_once()
+        release.assert_called_once_with(executor)
 
 
 class TestYtdlpLogger:

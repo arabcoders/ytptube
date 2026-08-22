@@ -6,7 +6,7 @@ import pickle
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from aiohttp import web
 
@@ -215,6 +215,33 @@ class ExtractorPool(metaclass=Singleton):
         self._config = None
 
 
+class ExtractorBatch:
+    """Lazily share an extractor pool for a group of extractions."""
+
+    def __init__(self, extractor_config: ExtractorConfig | None = None) -> None:
+        self.extractor_config = extractor_config
+        self._pool: ProcessPoolExecutor | None = None
+        self._pool_manager: ExtractorPool | None = None
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        self.release()
+
+    def get_pool(self, pool_manager: ExtractorPool, config: ExtractorConfig) -> ProcessPoolExecutor:
+        if self._pool is None:
+            self._pool_manager = pool_manager
+            self._pool = pool_manager.get_pool(config)
+        return self._pool
+
+    def release(self) -> None:
+        if self._pool is not None and self._pool_manager is not None:
+            self._pool_manager.release_pool(self._pool)
+            self._pool = None
+            self._pool_manager = None
+
+
 def _is_picklable(value: Any) -> bool:
     """
     Check if a value can be pickled.
@@ -334,17 +361,19 @@ def extract_info_sync(
     if isinstance(patterns, list | tuple):
         suppress = tuple(value for value in patterns if isinstance(value, str) and value)
 
+    no_log = bool(kwargs.get("no_log", False))
     log_wrapper = LogWrapper(suppress=suppress)
     id_dict: dict[str, str | None] = get_archive_id(url=url)
     archive_id: str | None = f".{id_dict['id']}" if id_dict.get("id") else None
     logger_name: str = f"yt-dlp{archive_id or '.extract_info'}"
 
     try:
-        log_wrapper.add_target(
-            target=_ytdlp_logger(logging.getLogger(logger_name)),
-            level=logging.DEBUG,
-            name=logger_name,
-        )
+        if not no_log:
+            log_wrapper.add_target(
+                target=_ytdlp_logger(logging.getLogger(logger_name)),
+                level=logging.DEBUG,
+                name=logger_name,
+            )
 
         captured_logs: list[str] = kwargs.pop("captured_logs", [])
         if capture_logs is not None:
@@ -355,13 +384,13 @@ def extract_info_sync(
             )
 
         if log_wrapper.has_targets():
-            if "logger" in params:
+            if not no_log and "logger" in params:
                 log_wrapper.add_target(target=params["logger"], level=logging.DEBUG)
 
             params["logger"] = log_wrapper
 
-        if kwargs.get("no_log", False):
-            params["logger"] = LogWrapper()
+        if no_log:
+            params["logger"] = log_wrapper
             params["quiet"] = True
             params["no_warnings"] = True
 
@@ -415,6 +444,7 @@ async def fetch_info(
     sanitize_info: bool = False,
     capture_logs: int | None = None,
     extractor_config: ExtractorConfig | None = None,
+    batch: ExtractorBatch | None = None,
     budget_sleep: bool = False,
     **kwargs,
 ) -> tuple[dict[str, Any] | None, list[str]]:
@@ -433,6 +463,7 @@ async def fetch_info(
         sanitize_info: Sanitize the extracted information
         capture_logs: If provided (e.g., logging.WARNING), capture logs
         extractor_config: Configuration for the extractor
+        batch: Optional batch that shares a lazily-created process pool
         budget_sleep: Whether to add extra timeout budget for request-sleep-heavy extraction
         **kwargs: Additional arguments
 
@@ -441,15 +472,20 @@ async def fetch_info(
 
     """
     if extractor_config is None:
-        from app.library.config import Config
+        if batch is not None and batch.extractor_config is not None:
+            extractor_config = batch.extractor_config
+        else:
+            from app.library.config import Config
 
-        conf = Config.get_instance()
-        extractor_config = ExtractorConfig(
-            concurrency=conf.extract_info_concurrency,
-            timeout=conf.extract_info_timeout,
-            wait_threshold=0.2,
-            keep_alive=conf.extract_info_keep_alive,
-        )
+            conf = Config.get_instance()
+            extractor_config = ExtractorConfig(
+                concurrency=conf.extract_info_concurrency,
+                timeout=conf.extract_info_timeout,
+                wait_threshold=0.2,
+                keep_alive=conf.extract_info_keep_alive,
+            )
+    if batch is not None and batch.extractor_config is None:
+        batch.extractor_config = extractor_config
 
     pool_manager: ExtractorPool = ExtractorPool.get_instance()
     semaphore: asyncio.Semaphore = pool_manager.get_semaphore(extractor_config)
@@ -457,6 +493,7 @@ async def fetch_info(
     await semaphore.acquire()
     loop = asyncio.get_running_loop()
     executor: ProcessPoolExecutor | None = None
+    owns_executor = batch is None
 
     safe_config = _sanitize_config(config)
     safe_kwargs = _sanitize_picklable(kwargs)
@@ -465,7 +502,9 @@ async def fetch_info(
 
     try:
         try:
-            executor = pool_manager.get_pool(extractor_config)
+            executor = (
+                batch.get_pool(pool_manager, extractor_config) if batch else pool_manager.get_pool(extractor_config)
+            )
 
             return await asyncio.wait_for(
                 fut=loop.run_in_executor(
@@ -490,7 +529,10 @@ async def fetch_info(
             raise
 
         except Exception as exc:
-            if executor is not None:
+            if batch is not None:
+                batch.release()
+                executor = None
+            elif executor is not None:
                 pool_manager.release_pool(executor)
                 executor = None
 
@@ -529,6 +571,6 @@ async def fetch_info(
                 timeout=timeout,
             )
     finally:
-        if executor is not None:
+        if owns_executor and executor is not None:
             pool_manager.release_pool(executor)
         semaphore.release()
