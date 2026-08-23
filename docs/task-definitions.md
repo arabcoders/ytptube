@@ -301,9 +301,8 @@ fields before saving the document.
 
 ## Using AI to Create a Definition
 
-Give the your LLM of choice the target page, the fields you want, and the current
-[Task Definition schema](../app/schema/task_definition.json). Do not ask it to guess from a description when it can
-inspect representative HTML or JSON instead.
+Give your LLM of choice the target page, the fields you want, and the current [Task Definition schema](../app/schema/task_definition.json). 
+Do not ask it to guess from a description when it can inspect representative HTML or JSON instead.
 
 Example prompt:
 
