@@ -737,7 +737,7 @@
       v-if="inspectTask"
       :open="Boolean(inspectTask)"
       :title="t('common.test')"
-      :ui="{ content: 'w-full sm:max-w-4xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
+      :ui="{ content: 'w-full sm:max-w-4xl', body: 'p-4 sm:p-6' }"
       @update:open="(open) => !open && (inspectTask = null)"
     >
       <template #body>
@@ -745,30 +745,82 @@
       </template>
 
       <template #footer>
-        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <UButton
-            type="button"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-rotate-ccw"
-            :disabled="taskInspect?.loading"
-            class="justify-center"
-            @click="taskInspect?.onReset()"
-          >
-            {{ t('common.reset') }}
-          </UButton>
+        <div class="flex w-full flex-wrap items-center justify-end gap-2">
+          <template v-if="taskInspect?.hasResult">
+            <UButton
+              type="button"
+              color="neutral"
+              :variant="taskInspect.wrap ? 'soft' : 'outline'"
+              size="sm"
+              icon="i-lucide-wrap-text"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.toggleWrap()"
+            >
+              <span class="hidden sm:inline">{{ t('common.wrap') }}</span>
+            </UButton>
 
-          <UButton
-            type="submit"
-            form="taskInspectForm"
-            color="primary"
-            icon="i-lucide-search"
-            :loading="taskInspect?.loading"
-            :disabled="taskInspect?.loading"
-            class="justify-center"
-          >
-            {{ t('common.test') }}
-          </UButton>
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-copy"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.copyResponse()"
+            >
+              {{ t('common.copy') }}
+            </UButton>
+
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-arrow-down"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.scrollResponse('end')"
+            >
+              {{ t('common.goDown') }}
+            </UButton>
+
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-arrow-up"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.scrollResponse('start')"
+            >
+              {{ t('common.goUp') }}
+            </UButton>
+          </template>
+
+          <div class="ml-auto flex items-center gap-2">
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-rotate-ccw"
+              :disabled="taskInspect?.loading"
+              class="justify-center"
+              @click="taskInspect?.onReset()"
+            >
+              {{ t('common.reset') }}
+            </UButton>
+
+            <UButton
+              type="submit"
+              form="taskInspectForm"
+              color="primary"
+              icon="i-lucide-search"
+              :loading="taskInspect?.loading"
+              :disabled="taskInspect?.loading"
+              class="justify-center"
+            >
+              {{ t('common.test') }}
+            </UButton>
+          </div>
         </div>
       </template>
     </UModal>

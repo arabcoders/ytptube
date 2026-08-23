@@ -2,12 +2,14 @@
   <div class="space-y-5">
     <form :id="formId" class="space-y-5" @submit.prevent="onSubmit">
       <div class="grid gap-4 lg:grid-cols-2">
-        <UFormField
-          :label="t('common.url')"
-          :ui="fieldUi"
-          :error="urlError || undefined"
-          class="lg:col-span-2"
-        >
+        <UFormField :ui="fieldUi" :error="urlError || undefined">
+          <template #label>
+            <span class="inline-flex items-center gap-2 font-semibold">
+              <UIcon name="i-lucide-link" class="size-4 text-toned" />
+              <span>{{ t('common.url') }}</span>
+            </span>
+          </template>
+
           <UInput
             id="url"
             v-model="url"
@@ -17,18 +19,17 @@
             :ui="inputUi"
             :disabled="loading"
             dir="ltr"
-          >
-            <template #leading>
-              <UIcon name="i-lucide-link" class="size-4 text-toned" />
-            </template>
-          </UInput>
+          />
         </UFormField>
 
-        <UFormField
-          :label="t('common.presetLabel')"
-          :ui="fieldUi"
-          :description="t('common.inspectPresetDesc')"
-        >
+        <UFormField :ui="fieldUi">
+          <template #label>
+            <span class="inline-flex items-center gap-2 font-semibold">
+              <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
+              <span>{{ t('common.presetLabel') }}</span>
+            </span>
+          </template>
+
           <USelectMenu
             id="preset"
             v-model="preset"
@@ -52,8 +53,8 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      :title="t('common.inspecting')"
-      :description="t('common.inspectingDesc')"
+      :title="t('common.loading')"
+      :description="t('common.loadingData')"
     />
 
     <UAlert
@@ -71,21 +72,39 @@
         <span>{{ t('common.result') }}</span>
       </div>
 
-      <div class="overflow-hidden ytp-frame">
-        <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-          <pre
-            class="min-w-0 max-w-full overflow-x-auto p-4 text-xs leading-6 text-default"
-            dir="ltr"
-          ><code>{{ formattedResponse }}</code></pre>
-        </div>
-      </div>
+      <UInput
+        v-model="query"
+        type="search"
+        :placeholder="t('common.filterText')"
+        icon="i-lucide-filter"
+        size="sm"
+        class="w-full"
+      />
+
+      <UAlert
+        v-if="query && 0 === filteredLineCount"
+        color="warning"
+        variant="soft"
+        icon="i-lucide-filter"
+        :title="t('common.noMatchingLines')"
+      />
+
+      <pre
+        v-else
+        ref="contentView"
+        class="ytp-terminal max-h-[50vh] overflow-auto"
+        dir="ltr"
+        :class="wrap ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
+      ><code v-text="displayedResponse" /></pre>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useStorage } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
-import { request } from '~/utils';
+import { copyText, request } from '~/utils';
+import { filterLogTextLines } from '~/utils/logs';
 import type { TaskDefinitionDocument } from '~/types/task_definitions';
 import type { TaskInspectRequest, TaskInspectResponse } from '~/types/task_inspect';
 
@@ -111,6 +130,9 @@ const formId = computed(() => props.formId ?? 'taskInspectForm');
 const loading = ref(false);
 const response = ref<TaskInspectResponse | null>(null);
 const urlError = ref('');
+const query = ref('');
+const wrap = useStorage<boolean>('task_inspect_wrap', false);
+const contentView = ref<HTMLElement | null>(null);
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -131,6 +153,15 @@ const presetItems = computed(
 const formattedResponse = computed(() => {
   return response.value ? JSON.stringify(response.value, null, 2) : '';
 });
+const filteredLines = computed<Array<string>>(() =>
+  filterLogTextLines(formattedResponse.value, query.value),
+);
+const filteredLineCount = computed(() => filteredLines.value.length);
+const displayedResponse = computed(() =>
+  query.value ? filteredLines.value.join('\n') : formattedResponse.value,
+);
+const hasResult = computed(() => Boolean(response.value && !('error' in response.value)));
+const hasVisibleResponse = computed(() => displayedResponse.value.length > 0);
 
 const errorDescription = computed(() => {
   if (!response.value || !('error' in response.value)) {
@@ -171,6 +202,7 @@ watch(
   () => props.definitionId,
   () => {
     response.value = null;
+    query.value = '';
   },
 );
 
@@ -178,8 +210,13 @@ watch(
   () => props.definitionDocument,
   () => {
     response.value = null;
+    query.value = '';
   },
 );
+
+watch(query, () => {
+  contentView.value?.scrollTo({ top: 0 });
+});
 
 const validateUrl = (val: string): boolean => {
   try {
@@ -193,6 +230,7 @@ const validateUrl = (val: string): boolean => {
 async function onSubmit() {
   urlError.value = '';
   response.value = null;
+  query.value = '';
 
   if (!url.value || !validateUrl(url.value)) {
     urlError.value = t('common.enterValidUrl');
@@ -233,7 +271,35 @@ const onReset = () => {
   preset.value = props.preset || config.app.default_preset || '';
   response.value = null;
   urlError.value = '';
+  query.value = '';
 };
 
-defineExpose({ loading, onReset, onSubmit });
+const copyResponse = (): void => {
+  if (displayedResponse.value) {
+    copyText(displayedResponse.value, false);
+  }
+};
+
+const toggleWrap = (): void => {
+  wrap.value = !wrap.value;
+};
+
+const scrollResponse = (dir: 'start' | 'end'): void => {
+  contentView.value?.scrollTo({
+    top: dir === 'start' ? 0 : contentView.value.scrollHeight,
+    behavior: 'smooth',
+  });
+};
+
+defineExpose({
+  loading,
+  wrap,
+  hasResult,
+  hasVisibleResponse,
+  onReset,
+  onSubmit,
+  copyResponse,
+  toggleWrap,
+  scrollResponse,
+});
 </script>
