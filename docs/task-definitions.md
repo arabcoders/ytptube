@@ -301,24 +301,27 @@ fields before saving the document.
 
 ## Using AI to Create a Definition
 
-Give the AI the target page, the fields you want, and the current
+Give the your LLM of choice the target page, the fields you want, and the current
 [Task Definition schema](../app/schema/task_definition.json). Do not ask it to guess from a description when it can
 inspect representative HTML or JSON instead.
 
 Example prompt:
 
-> Create one YTPTube Generic Task Definition for `SITE_URL`. Follow `SCHEMA_URL` exactly. Determine whether the response
-> is HTML or JSON and whether the HTTP engine or remote Chromium over CDP is required. Extract the item URL and, when
-> available, title, thumbnail, description, and published date. Use container parsing for repeated items. Return only the
-> definition document as JSON, without `id`, timestamps, `archive_id`, `_type`, or `_version`. Do not invent credentials,
-> headers, selectors, or endpoints. I will paste the result into Advanced mode and test it before saving.
+> Create one YTPTube Generic Task Definition for `SITE_URL`. Follow this schema https://raw.githubusercontent.com/arabcoders/ytptube/refs/heads/dev/app/schema/task_definition.json 
+> exactly. Determine whether the response is HTML or JSON and whether the HTTP engine or remote Chromium over CDP is 
+> required. Extract the item URL and, when available, title, thumbnail, description, and published date. Use container 
+> parsing for repeated items. Return only the definition document as JSON, without `id`, timestamps, and `archive_id`.
 
-Replace `SITE_URL` and `SCHEMA_URL`, then paste the generated document into **Advanced**. Test it with a concrete URL and
-inspect every discovered URL and metadata field before scheduling a Task. If using the Import action instead, add the
-`_type` and `_version` envelope shown above.
+Replace `SITE_URL` then paste the generated document into **Advanced**. Test it with a concrete URL and inspect every 
+discovered URL and metadata field before scheduling a Task.
 
 Generated definitions are starting points. Selectors, endpoints, and site behavior change, and plausible generated rules
-may still be wrong. Never send passwords, cookies, tokens, private headers, or private page content to an AI service.
+may work today and break tomorrow, or may be flat-out wrong. LLM can help you get started, but it cannot replace careful 
+inspection and testing.
+
+> [!IMPORTANT]
+>
+> NEVER send passwords, cookies, tokens, private headers, or private page content to an AI service.
 
 ## Common Validation Errors
 
