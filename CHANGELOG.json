@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "882c9c30d00772118ceffd5e8133a1c5a01aec76",
-    "date": "2026-08-23T17:17:56+00:00",
+    "full_sha": "96bca7d4733a67ab35d3335e4b3d4ed553395900",
+    "date": "2026-08-23T19:24:56+00:00",
     "commits": [
+      {
+        "sha": "96bca7d4",
+        "full_sha": "96bca7d4733a67ab35d3335e4b3d4ed553395900",
+        "message": "feat: bundle docs",
+        "author": "arabcoders",
+        "date": "2026-08-23T19:24:56+00:00"
+      },
       {
         "sha": "882c9c30",
         "full_sha": "882c9c30d00772118ceffd5e8133a1c5a01aec76",
