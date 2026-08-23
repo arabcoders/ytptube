@@ -2,11 +2,6 @@ import { describe, expect, it } from 'bun:test';
 
 import { getDocsEntryBySlug, resolveDocsImageSrc, resolveDocsLink } from '~/composables/useDocs';
 
-globalThis.window = {
-  origin: 'http://localhost',
-  location: { pathname: '/docs' },
-} as Window & typeof globalThis;
-
 describe('docs resolver', () => {
   it('distinguishes index and root readme', () => {
     expect(getDocsEntryBySlug()?.file).toBe('docs/README.md');
@@ -38,6 +33,6 @@ describe('docs resolver', () => {
     expect(resolveDocsLink('../CONTRIBUTING.md', '/api/docs/docs/README.md').href).toBe(
       'https://github.com/arabcoders/ytptube/blob/dev/CONTRIBUTING.md',
     );
-    expect(resolveDocsLink('#section', '/api/docs/docs/README.md').href).toBe('/docs#section');
+    expect(resolveDocsLink('#section', '/api/docs/docs/README.md').href).toBe('/#section');
   });
 });

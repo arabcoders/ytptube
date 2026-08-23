@@ -20,10 +20,18 @@ const syncOpacityMock = mock(() => {});
 
 let utils: Awaited<typeof import('~/utils/index')>;
 let plugin: Awaited<typeof import('../../app/plugins/modal-opacity.client.ts')>['default'];
-let started = false;
 let disableOpacitySpy: ReturnType<typeof spyOn>;
 let enableOpacitySpy: ReturnType<typeof spyOn>;
 let syncOpacitySpy: ReturnType<typeof spyOn>;
+const NativeMutationObserver = globalThis.MutationObserver;
+let observers: MutationObserver[] = [];
+
+class TestMutationObserver extends NativeMutationObserver {
+  constructor(callback: MutationCallback) {
+    super(callback);
+    observers.push(this);
+  }
+}
 
 const flushMutations = async (): Promise<void> => {
   await Promise.resolve();
@@ -37,13 +45,8 @@ const createOverlay = (): HTMLDivElement => {
 };
 
 const startPlugin = (): void => {
-  if (started) {
-    return;
-  }
-
   plugin();
   document.dispatchEvent(new window.Event('DOMContentLoaded'));
-  started = true;
 };
 
 beforeAll(async () => {
@@ -61,7 +64,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  globalThis.MutationObserver = window.MutationObserver;
+  globalThis.MutationObserver = TestMutationObserver;
   document.body.innerHTML = '';
   disableOpacityMock.mockClear();
   enableOpacityMock.mockClear();
@@ -71,6 +74,9 @@ beforeEach(() => {
 afterEach(async () => {
   document.body.innerHTML = '';
   await flushMutations();
+  observers.forEach((observer) => observer.disconnect());
+  observers = [];
+  globalThis.MutationObserver = NativeMutationObserver;
 });
 
 describe('modal opacity plugin', () => {
