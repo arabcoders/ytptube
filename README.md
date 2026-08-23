@@ -16,7 +16,7 @@ The main workflow combines three parts:
 - **Presets** store reusable yt-dlp options, output templates, paths, cookies, and post-processing settings.
 
 This lets a scheduled source discover an item, select options from its metadata, and add it to the download queue 
-without manual work. See [Features](FEATURES.md) for the full workflow.
+without manual work. See [Features](docs/features.md) for the full workflow.
 
 ## Screenshots
 
@@ -39,7 +39,7 @@ The interface is available in English, العربية, Français, 中文, and �
 - Conditions that apply yt-dlp options from extracted metadata
 - Notifications for selected events through Apprise or direct HTTP webhooks
 - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/) and [Chrome/Chromium](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil) extensions
-- [iOS Shortcuts](FEATURES.md#send-links-to-ytptube), a [bookmarklet](FAQ.md#simple-bookmarklet), and an [HTTP API](API.md)
+- [iOS Shortcuts](docs/features.md#send-links-to-ytptube), a [bookmarklet](FAQ.md#simple-bookmarklet), and an [HTTP API](API.md)
 - A file browser and built-in player with external sidecar subtitle support
 - Kodi-style TV and movie NFO sidecars, `.info.json` metadata, artwork, and media-library naming
 - curl-cffi impersonation and a bundled PO-token provider
@@ -49,7 +49,7 @@ The interface is available in English, العربية, Français, 中文, and �
 - An optional interactive yt-dlp terminal for trusted administrators
 - Docker, Podman, Unraid, and native builds for Windows, macOS, and Linux
 
-Read [Features](FEATURES.md) for details and links to the relevant configuration guides.
+Read [Features](docs/features.md) for details and links to the relevant configuration guides.
 
 ## Media Libraries
 
@@ -61,7 +61,7 @@ Scheduled Tasks can separately create collection metadata and artwork, including
 fanart, banner, icon, thumbnail, and landscape images when the source provides them. A separate info-reader Preset writes
 predictable channel and season layouts with yt-dlp metadata for compatible Jellyfin, Emby, Plex, and WatchState workflows.
 
-See [Media Servers and NFO Maker](FEATURES.md#media-servers-and-nfo-maker) for the three workflows and their limits.
+See [Media Servers and NFO Maker](docs/features.md#media-servers-and-nfo-maker) for the three workflows and their limits.
 
 ## Quick Start
 
@@ -164,7 +164,8 @@ to report vulnerabilities.
 
 ## Documentation
 
-- [Features](FEATURES.md)
+- [Documentation index](docs/README.md)
+- [Features](docs/features.md)
 - [Configuration, usage, and troubleshooting](FAQ.md)
 - [HTTP API](API.md)
 - [Security policy](SECURITY.md)

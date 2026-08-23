@@ -1,117 +1,72 @@
-import time
-from datetime import UTC, datetime
+import mimetypes
+import sys
+from pathlib import Path
 
 from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.features.core.utils import api_error_response
-from app.features.ytdlp.ytdlp_opts import YTDLPOpts
-from app.library.cache import Cache
 from app.library.config import Config
-from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
 from app.library.logging import get_logger
-from app.library.router import add_route, route
+from app.library.router import route
 
 LOG = get_logger()
-
-STATIC_FILES = ["README.md", "FEATURES.md", "FAQ.md", "API.md", "SECURITY.md", "sc_short.jpg", "sc_simple.jpg"]
-EXT_TO_MIME: dict = {
-    ".md": "text/markdown",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
+STATIC_FILES: set[str] = {
+    "README.md",
+    "FAQ.md",
+    "API.md",
+    "SECURITY.md",
+    "sc_short.jpg",
+    "sc_simple.jpg",
+    "docs/README.md",
+    "docs/features.md",
+    "docs/task-definitions.md",
 }
 
 
-@route("GET", "api/docs/{file}", name="get_doc")
-async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
-    """
-    Get the thumbnail.
+def _bundle_root(config: Config) -> Path:
+    candidates: list[Path] = [Path(config.app_path).parent]
+    bundle_path = getattr(sys, "_MEIPASS", None)
+    if bundle_path:
+        candidates.insert(0, Path(bundle_path))
+    candidates.extend((Path.cwd(), Path(__file__).resolve().parents[3]))
+    for root in candidates:
+        if (root / "docs").is_dir() and (root / "README.md").is_file():
+            return root
+    return candidates[0]
 
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration object.
-        cache (Cache): The cache object.
 
-    Returns:
-        Response: The response object.
+def _doc_path(config: Config, name: str) -> Path | None:
+    if name not in STATIC_FILES or name.startswith("/") or "\\" in name:
+        return None
 
-    """
-    if not (file := request.path):
-        return api_error_response(
-            "Doc file is is required.",
-            code="REQUIRED",
-            status=web.HTTPForbidden.status_code,
-            params={"field": "api.fields.file"},
-            extra={"matcher": request.match_info},
-        )
+    root = _bundle_root(config).resolve()
+    path = (root / name).resolve()
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return None
+    return path if path.is_file() else None
 
-    file = file.removeprefix("/api/docs/") if file.startswith("/api/docs/") else file.removeprefix("/")
-    if file not in STATIC_FILES:
+
+@route("GET", "api/docs/{file:.*}", name="get_doc")
+async def get_doc(request: Request, config: Config) -> Response:
+    name: str = request.match_info.get("file", "")
+    if not (path := _doc_path(config, name)):
         return api_error_response(
             "Doc file not found.",
             code="NOT_FOUND",
             status=web.HTTPNotFound.status_code,
             params={"resource": "api.resources.file"},
-            extra={"file": file, "st": STATIC_FILES},
+            extra={"file": name},
         )
 
-    cache_key = f"doc:{file}"
-    if dct := cache.get(cache_key):
-        LOG.debug("Serving doc '%s' from cache.", file, extra={"doc_file": file, "cache_key": cache_key})
-        return web.Response(**dct)
-
-    url = f"https://raw.githubusercontent.com/arabcoders/ytptube/refs/heads/dev/{file}"
-
-    try:
-        ytdlp_args: dict = YTDLPOpts.get_instance().preset(name=config.default_preset).get_all()
-        use_curl = resolve_curl_transport()
-        request_headers = build_request_headers(
-            user_agent=request.headers.get("User-Agent", ytdlp_args.get("user_agent", Globals.get_random_agent())),
-            use_curl=use_curl,
-        )
-        proxy = ytdlp_args.get("proxy")
-
-        client = get_async_client(proxy=proxy, use_curl=use_curl)
-        LOG.debug("Fetching doc '%s' from '%s'.", file, url, extra={"route": "docs.get", "doc_file": file, "url": url})
-        response = await client.request(
-            method="GET",
-            url=url,
-            follow_redirects=True,
-            headers=request_headers,
-        )
-        dct = {
-            "body": response.content,
-            "headers": {
-                "Content-Type": EXT_TO_MIME.get(file[file.rfind(".") :], "text/plain"),
-                "Pragma": "public",
-                "Access-Control-Allow-Origin": "*",
-                "Cache-Control": f"public, max-age={time.time() + 3600}",
-                "Expires": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT",
-                    datetime.fromtimestamp(time.time() + 3600, tz=UTC).timetuple(),
-                ),
-            },
-        }
-
-        cache.set(cache_key, dct, ttl=3600)
-
-        return web.Response(body=dct["body"], headers=dct["headers"])
-    except Exception:
-        LOG.exception(
-            "Failed to request doc '%s' from '%s'.",
-            file,
-            url,
-            extra={"route": "docs.get", "doc_file": file, "url": url},
-        )
-        return api_error_response(
-            "Failed to get doc.", code="INTERNAL_ERROR", status=web.HTTPInternalServerError.status_code
-        )
-
-
-for file in STATIC_FILES:
-    add_route(
-        method="GET",
-        path=f"{file}",
-        handler=get_doc,
-        name=f"get_{file.replace('.', '_')}",
+    LOG.debug("Serving bundled doc '%s'.", name, extra={"route": "docs.get", "doc_file": name})
+    return web.Response(
+        body=path.read_bytes(),
+        headers={
+            "Content-Type": mimetypes.guess_type(path.name)[0] or "application/octet-stream",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-store",
+        },
     )

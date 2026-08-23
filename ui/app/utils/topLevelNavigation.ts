@@ -18,6 +18,7 @@ type NavDefinition = {
   icon: string;
   to: string;
   matchPath?: string;
+  excludeMatchPaths?: string[];
   sidebarVisible?: boolean;
   searchable?: boolean;
   navbarTitle?: string;
@@ -217,6 +218,10 @@ const NavItems: Array<NavDefinition> = [
     icon: entry.icon,
     to: entry.route,
     matchPath: entry.route,
+    excludeMatchPaths:
+      entry.id === 'docs-index' ? ['/docs/readme', '/docs/faq', '/docs/api'] : undefined,
+    sidebarVisible: ['docs-index', 'docs-readme', 'docs-faq', 'docs-api'].includes(entry.id),
+    searchable: ['docs-index', 'docs-readme', 'docs-faq', 'docs-api'].includes(entry.id),
   })),
   {
     id: 'changelog',
@@ -285,15 +290,23 @@ export const getNavItemById = (id: string): NavItem | undefined => {
   return resolvedNavigation.find((entry) => entry.id === id);
 };
 
-export const isNavItemActive = (entry: NavItem, route: LocationPath): boolean => {
+const isPathActive = (path: string, route: LocationPath): boolean => {
   const current = normalizePath(route.path);
-  const target = normalizePath(entry.matchPath);
+  const target = normalizePath(path);
 
   if (target === '/') {
     return current === '/';
   }
 
   return current === target || current.startsWith(`${target}/`);
+};
+
+export const isNavItemActive = (entry: NavItem, route: LocationPath): boolean => {
+  if (entry.excludeMatchPaths?.some((path) => isPathActive(path, route))) {
+    return false;
+  }
+
+  return isPathActive(entry.matchPath, route);
 };
 
 export const getActiveNavItem = (

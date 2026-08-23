@@ -1271,6 +1271,11 @@
   "docs": {
     "notFound": "Documentation introuvable",
     "entries": {
+      "index": {
+        "title": "Documentation",
+        "navLabel": "Aide",
+        "description": "Guides et références du projet."
+      },
       "readme": {
         "title": "README",
         "navLabel": "README",
@@ -1295,6 +1300,11 @@
         "title": "Sécurité",
         "navLabel": "Sécurité",
         "description": "Politique de sécurité et consignes de signalement des vulnérabilités."
+      },
+      "taskDefinitions": {
+        "title": "Définitions de tâches",
+        "navLabel": "Définitions de tâches",
+        "description": "Créer et tester des sources personnalisées."
       }
     }
   },

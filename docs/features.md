@@ -49,26 +49,10 @@ It can also be inspected before running to show the matched handler and discover
 ## Monitor Sites Without RSS or APIs
 
 Generic Task Definitions turn sites without RSS feeds, suitable APIs, or built-in handlers into recurring YTPTube
-sources. The visual editor lets you create a custom source, preview what YTPTube discovers, and schedule it like any
-built-in Task.
+sources. They support HTML pages, JSON endpoints, and pages rendered in a remote browser. Discovered items use the same
+Presets, Conditions, download archives, and queue controls as built-in Tasks.
 
-Custom sources can monitor static pages, dynamic browser-rendered sites, and structured endpoints. Discovered items use
-the same Presets, Conditions, download archives, and queue controls as every other YTPTube download, so they fit directly
-into existing automation.
-
-Definitions can be imported and exported for reuse or sharing. See
-[Monitor sites without RSS feeds](FAQ.md#how-can-i-monitor-sites-without-rss-feeds) to get started.
-
-Use **Actions > Test** on a saved definition, or **Test** in the editor before saving, to inspect discovered items. Unsaved tests use a
-detached copy of the current definition and leave the editor open.
-
-### Generate a Definition with an AI
-
-If manual setup feels too involved, give your preferred AI tool the target website and the
-[task-definition schema](https://raw.githubusercontent.com/arabcoders/ytptube/refs/heads/dev/app/schema/task_definition.json),
-then ask it to produce a definition that conforms to the schema. Paste the generated JSON into the editor's Advanced
-view and inspect the discovered items before scheduling the Task. Generated definitions can be incorrect, so review and
-test the result before relying on it.
+See [Generic Task Definitions](task-definitions.md) for the schema, examples, editor workflow, and testing steps.
 
 ## Presets
 
@@ -135,7 +119,8 @@ For sites that need more than a normal HTTP request, YTPTube supports browser-ba
 yt-dlp token providers, and external challenge-solving services such as FlareSolverr or Trawl.
 
 These tools depend on the site and extractor and do not guarantee access to every protected site.
-See [WAF challenge setup](FAQ.md#how-to-bypass-some-waf-challenges) and [browser extraction](FAQ.md#how-to-use-the-browser-extractor).
+See [WAF challenge setup](../FAQ.md#how-to-bypass-some-waf-challenges) and
+[browser extraction](../FAQ.md#how-to-use-the-browser-extractor).
 
 ## Files and Playback
 
@@ -146,7 +131,7 @@ Optional file controls add directory creation, rename, move, and delete actions.
 they modify files on disk.
 
 Browser playback and transcoding require ffmpeg. Hardware acceleration is available when supported by the host and 
-container setup. See [Hardware acceleration](FAQ.md#how-to-use-hardware-acceleration-for-video-transcoding).
+container setup. See [Hardware acceleration](../FAQ.md#how-to-use-hardware-acceleration-for-video-transcoding).
 
 ## Notifications
 
@@ -159,8 +144,8 @@ and delivered through [Apprise](https://github.com/caronc/apprise) or direct HTT
 - [Chrome and Chromium extension](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
 - [Add To YTPTube iOS Shortcut](https://www.icloud.com/shortcuts/6df61c97d97b4e539c9100999ba39dd4)
 - [YTPTube To Media iOS Shortcut](https://www.icloud.com/shortcuts/4dc579382f254635ad5785424055f173)
-- [Bookmarklet](FAQ.md#simple-bookmarklet)
-- [HTTP API](API.md)
+- [Bookmarklet](../FAQ.md#simple-bookmarklet)
+- [HTTP API](../API.md)
 
 The **Add To YTPTube** Shortcut sends a page to your instance and lets you choose a Preset. **YTPTube To Media** attempts 
 to download media directly to the iOS device. The latter is provided without support and does not fully handle HTTP headers.
@@ -171,11 +156,11 @@ YTPTube is an administrative interface around yt-dlp, not a multi-user sandbox. 
 and supply powerful yt-dlp options, including options that execute commands.
 
 Keep authentication enabled on untrusted networks and limit container mounts and permissions to what YTPTube needs. 
-Read the [security recommendations](FAQ.md#security-recommendations) before exposing an instance.
+Read the [security recommendations](../FAQ.md#security-recommendations) before exposing an instance.
 
 ## More Documentation
 
-- [README](README.md): installation and project overview
-- [FAQ](FAQ.md): configuration, integrations, and troubleshooting
-- [API](API.md): programmatic access
-- [Security policy](SECURITY.md): vulnerability reporting and supported boundaries
+- [README](../README.md): installation and project overview
+- [FAQ](../FAQ.md): configuration, integrations, and troubleshooting
+- [API](../API.md): programmatic access
+- [Security policy](../SECURITY.md): vulnerability reporting and supported boundaries

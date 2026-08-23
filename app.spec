@@ -80,6 +80,13 @@ a = Analysis(  # noqa: F821 # type: ignore
     datas=[
         ("ui/exported", "ui/exported"),
         ("app/", "app/"),
+        ("docs/", "docs/"),
+        ("README.md", "."),
+        ("FAQ.md", "."),
+        ("API.md", "."),
+        ("SECURITY.md", "."),
+        ("sc_short.jpg", "."),
+        ("sc_simple.jpg", "."),
     ],
     hiddenimports=hidden,
     hookspath=[],

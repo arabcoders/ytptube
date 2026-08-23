@@ -1271,6 +1271,11 @@
   "docs": {
     "notFound": "ドキュメントが見つかりません",
     "entries": {
+      "index": {
+        "title": "ドキュメント",
+        "navLabel": "ヘルプ",
+        "description": "ガイドとプロジェクト資料。"
+      },
       "readme": {
         "title": "README",
         "navLabel": "README",
@@ -1295,6 +1300,11 @@
         "title": "セキュリティ",
         "navLabel": "セキュリティ",
         "description": "セキュリティポリシーと脆弱性の報告手順。"
+      },
+      "taskDefinitions": {
+        "title": "タスク定義",
+        "navLabel": "タスク定義",
+        "description": "カスタムソースを作成してテストします。"
       }
     }
   },
