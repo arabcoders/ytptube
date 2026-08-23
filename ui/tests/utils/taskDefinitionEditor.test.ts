@@ -91,7 +91,14 @@ describe('task definition visual analysis', () => {
     expect(analyzeTaskDefinition(document)).toEqual([]);
     const converted = fromGui(toGui(document)!);
     expect(Object.keys(converted.definition.parse.items?.fields ?? {})).toEqual(
-      expect.arrayContaining(['url', 'title', 'thumbnail', 'description', 'published', 'custom_metadata']),
+      expect.arrayContaining([
+        'url',
+        'title',
+        'thumbnail',
+        'description',
+        'published',
+        'custom_metadata',
+      ]),
     );
   });
 

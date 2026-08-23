@@ -1,11 +1,22 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from 'bun:test';
 
 const disableOpacityMock = mock(() => {});
 const enableOpacityMock = mock(() => {});
 const syncOpacityMock = mock(() => {});
 
-(globalThis as typeof globalThis & { defineNuxtPlugin?: (setup: () => void) => () => void }).defineNuxtPlugin =
-  (setup) => setup;
+(
+  globalThis as typeof globalThis & { defineNuxtPlugin?: (setup: () => void) => () => void }
+).defineNuxtPlugin = (setup) => setup;
 
 let utils: Awaited<typeof import('~/utils/index')>;
 let plugin: Awaited<typeof import('../../app/plugins/modal-opacity.client.ts')>['default'];

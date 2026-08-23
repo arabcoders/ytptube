@@ -48,10 +48,12 @@ describe('sidebarSwipe', () => {
 
     expect(canStartSidebarOpenSwipe(IOS_NAVIGATION_EDGE_WIDTH, nav)).toBe(false);
     expect(canStartSidebarOpenSwipe(IOS_NAVIGATION_EDGE_WIDTH + 1, nav)).toBe(true);
-    expect(canStartSidebarOpenSwipe(IOS_NAVIGATION_EDGE_WIDTH + MOBILE_SIDEBAR_EDGE_WIDTH, nav)).toBe(true);
-    expect(canStartSidebarOpenSwipe(IOS_NAVIGATION_EDGE_WIDTH + MOBILE_SIDEBAR_EDGE_WIDTH + 1, nav)).toBe(
-      false,
-    );
+    expect(
+      canStartSidebarOpenSwipe(IOS_NAVIGATION_EDGE_WIDTH + MOBILE_SIDEBAR_EDGE_WIDTH, nav),
+    ).toBe(true);
+    expect(
+      canStartSidebarOpenSwipe(IOS_NAVIGATION_EDGE_WIDTH + MOBILE_SIDEBAR_EDGE_WIDTH + 1, nav),
+    ).toBe(false);
   });
 
   it('keep_default_edge', () => {
@@ -72,7 +74,11 @@ describe('sidebarSwipe', () => {
   });
 
   it('rtl_edge', () => {
-    expect(getSidebarSwipeMode(false, 375 - MOBILE_SIDEBAR_EDGE_WIDTH, undefined, true, 375)).toBe('open');
-    expect(getSidebarSwipeMode(false, 375 - MOBILE_SIDEBAR_EDGE_WIDTH - 1, undefined, true, 375)).toBe(null);
+    expect(getSidebarSwipeMode(false, 375 - MOBILE_SIDEBAR_EDGE_WIDTH, undefined, true, 375)).toBe(
+      'open',
+    );
+    expect(
+      getSidebarSwipeMode(false, 375 - MOBILE_SIDEBAR_EDGE_WIDTH - 1, undefined, true, 375),
+    ).toBe(null);
   });
 });

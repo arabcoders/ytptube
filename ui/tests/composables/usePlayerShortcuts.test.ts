@@ -143,11 +143,15 @@ describe('usePlayerShortcuts', () => {
       closePlayer,
     });
 
-    document.body.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.body.dispatchEvent(
+      new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
     expect(showHelp.value).toBe(false);
     expect(closePlayer).toHaveBeenCalledTimes(0);
 
-    document.body.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.body.dispatchEvent(
+      new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
     expect(closePlayer).toHaveBeenCalledTimes(1);
   });
 });

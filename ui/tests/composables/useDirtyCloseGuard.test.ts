@@ -34,7 +34,8 @@ let useDirtyCloseGuard: typeof import('~/composables/useDirtyCloseGuard').useDir
 let useDirtyCloseGuardPreferences: typeof import('~/composables/useDirtyCloseGuard').useDirtyCloseGuardPreferences;
 
 beforeAll(async () => {
-  ({ useDirtyCloseGuard, useDirtyCloseGuardPreferences } = await import('~/composables/useDirtyCloseGuard'));
+  ({ useDirtyCloseGuard, useDirtyCloseGuardPreferences } =
+    await import('~/composables/useDirtyCloseGuard'));
 });
 
 beforeEach(() => {
