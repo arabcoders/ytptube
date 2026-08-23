@@ -116,7 +116,6 @@
     "streaming": "جاري البث",
     "invalid": "غير صالح",
     "offline": "غير متصل",
-    "refreshQueue": "تحديث قائمة الانتظار",
     "webuiSettings": "إعدادات الواجهة",
     "start": "بدء",
     "stop": "إيقاف",
@@ -783,9 +782,7 @@
     "connection": {
       "connected": "متصل",
       "connecting": "جاري الاتصال...",
-      "disconnected": "غير متصل",
-      "connectingServer": "جاري الاتصال بالخادم...",
-      "lost": "انقطع الاتصال بالخادم."
+      "disconnected": "غير متصل"
     },
     "config": {
       "loading": "جاري تحميل الإعدادات...",
@@ -797,8 +794,7 @@
       "clickHere": "انقر هنا",
       "or": "أو",
       "reloadConfig": "إعادة تحميل الإعدادات",
-      "reloadPage": "إعادة تحميل الصفحة",
-      "socketError": "{error}. تحقق من وحدة تحكم المطور لمزيد من المعلومات."
+      "reloadPage": "إعادة تحميل الصفحة"
     },
     "update": {
       "newVersionInstalled": "تم تثبيت إصدار جديد من واجهة الويب.",
@@ -1262,8 +1258,6 @@
     "requeue": "إعادة إضافة",
     "video": "فيديو",
     "embed": "تضمين",
-    "queuedCount": "{shown} معروض / {total} في الانتظار",
-    "queuedCountShort": "{count} في الانتظار",
     "abilityRequeue": "غير قادر على إعادة الإضافة؛ الرابط مفقود.",
     "removedFromHistory": "تمت الإزالة من سجل قائمة الانتظار.",
     "videoThumbnail": "صورة مصغرة للفيديو",
@@ -1300,10 +1294,6 @@
         "description": "سياسة الأمان وإرشادات الإبلاغ عن الثغرات الأمنية."
       }
     }
-  },
-  "socket": {
-    "disconnected": "تم قطع الاتصال بالخادم.",
-    "connectionError": "خطأ في الاتصال: {error}"
   },
   "player": {
     "subtitleLoadFailed": "فشل تحميل الترجمات لهذا الفيديو.",

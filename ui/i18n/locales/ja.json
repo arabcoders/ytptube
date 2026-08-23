@@ -116,7 +116,6 @@
     "streaming": "ストリーミング中",
     "invalid": "無効",
     "offline": "オフライン",
-    "refreshQueue": "キューを更新",
     "webuiSettings": "WebUI 設定",
     "start": "開始",
     "stop": "停止",
@@ -783,9 +782,7 @@
     "connection": {
       "connected": "接続済み",
       "connecting": "接続中...",
-      "disconnected": "切断済み",
-      "connectingServer": "WebSocket サーバーに接続中...",
-      "lost": "WebSocket 接続が失われました。"
+      "disconnected": "切断済み"
     },
     "config": {
       "loading": "設定を読み込み中...",
@@ -797,8 +794,7 @@
       "clickHere": "ここをクリック",
       "or": "または",
       "reloadConfig": "設定を再読み込み",
-      "reloadPage": "ページを再読み込み",
-      "socketError": "{error}。詳細は開発者コンソールを確認してください。"
+      "reloadPage": "ページを再読み込み"
     },
     "update": {
       "newVersionInstalled": "新しい WebUI バージョンがインストールされました。",
@@ -1262,8 +1258,6 @@
     "requeue": "再キュー",
     "video": "動画",
     "embed": "埋め込み",
-    "queuedCount": "{shown} 件表示 / {total} 件キュー済み",
-    "queuedCountShort": "{count} 件キュー済み",
     "abilityRequeue": "アイテムを再キューできません。URL がありません。",
     "removedFromHistory": "履歴キューから削除しました。",
     "videoThumbnail": "動画のサムネイル",
@@ -1300,10 +1294,6 @@
         "description": "セキュリティポリシーと脆弱性の報告手順。"
       }
     }
-  },
-  "socket": {
-    "disconnected": "サーバーから切断されました。",
-    "connectionError": "接続エラー: {error}"
   },
   "player": {
     "subtitleLoadFailed": "この動画の字幕の読み込みに失敗しました。",

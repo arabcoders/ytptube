@@ -43,13 +43,80 @@ const scheduleQueueBackfill = (): void => {
 const socket = ref<WebSocket | null>(null);
 const isConnected = ref<boolean>(false);
 const connectionStatus = ref<connectionStatus>('disconnected');
-const error = ref<string | null>(null);
-const error_count = ref<number>(0);
 const wasHidden = ref<boolean>(false);
 const reconnectTimeout = ref<NodeJS.Timeout | null>(null);
 const manualDisconnect = ref<boolean>(false);
 const reconnectAttempts = ref<number>(0);
 let connectionPromise: Promise<void> | null = null;
+
+const CONNECTION_DEADLINE = 5000;
+
+export const createConnectionDeadline = (
+  now: () => number = () => performance.now(),
+): {
+  expiresAt: number;
+  remaining: () => number;
+  arm: (callback: () => void, delay?: number) => void;
+  clear: () => void;
+} => {
+  const expiresAt = now() + CONNECTION_DEADLINE;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return {
+    expiresAt,
+    remaining: () => Math.max(0, expiresAt - now()),
+    arm: (callback, delay) => {
+      if (null !== timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(callback, delay ?? Math.max(0, expiresAt - now()));
+    },
+    clear: () => {
+      if (null !== timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    },
+  };
+};
+
+export type ConnectionAttempt = {
+  deadline: ReturnType<typeof createConnectionDeadline>;
+  isActive: () => boolean;
+  cancel: () => void;
+  recover: () => boolean;
+  finish: () => void;
+};
+
+let currentAttempt: ConnectionAttempt | null = null;
+let connectionOwner: ConnectionAttempt | null = null;
+
+export const createConnectionAttempt = (
+  deadline = createConnectionDeadline(),
+): ConnectionAttempt => {
+  let active = true;
+  let recovered = false;
+  return {
+    deadline,
+    isActive: () => active && !recovered,
+    cancel: () => {
+      active = false;
+      deadline.clear();
+    },
+    recover: () => {
+      if (!active || recovered) {
+        return false;
+      }
+      recovered = true;
+      active = false;
+      deadline.clear();
+      return true;
+    },
+    finish: () => {
+      active = false;
+      deadline.clear();
+    },
+  };
+};
 
 const handlers = new Map<string, HandlerRegistry>();
 
@@ -181,7 +248,47 @@ const scheduleReconnect = () => {
   }, 5000);
 };
 
+const clearConnectionTimer = (): void => {
+  if (currentAttempt) {
+    currentAttempt.cancel();
+  }
+};
+
+const recoverConnection = (attempt: ConnectionAttempt, message: string): void => {
+  if (attempt !== currentAttempt || !attempt.recover()) {
+    return;
+  }
+
+  const activeSocket = socket.value;
+  socket.value = null;
+  if (activeSocket) {
+    try {
+      activeSocket.close();
+    } catch {
+      // Some WebSocket implementations throw when closing a connecting socket.
+    }
+  }
+  currentAttempt = null;
+  connectionPromise = null;
+  connectionOwner = null;
+  isConnected.value = false;
+  connectionStatus.value = 'disconnected';
+  dispatch('connect_error', { message });
+  scheduleReconnect();
+};
+
+const armConnectionTimer = (attempt: ConnectionAttempt, delay: number): void => {
+  attempt.deadline.arm(() => {
+    recoverConnection(attempt, 'WebSocket connection timed out.');
+  }, delay);
+};
+
 const reconnect = () => {
+  if (null !== reconnectTimeout.value) {
+    clearTimeout(reconnectTimeout.value);
+    reconnectTimeout.value = null;
+  }
+
   if (true === isConnected.value) {
     return;
   }
@@ -191,6 +298,10 @@ const reconnect = () => {
 
 const disconnect = () => {
   manualDisconnect.value = true;
+  clearConnectionTimer();
+  currentAttempt = null;
+  connectionPromise = null;
+  connectionOwner = null;
   if (null !== socket.value) {
     socket.value.close();
     socket.value = null;
@@ -241,10 +352,22 @@ const connect = (): void => {
   manualDisconnect.value = false;
   connectionStatus.value = 'connecting';
 
+  clearConnectionTimer();
+  const attempt = createConnectionAttempt();
+  currentAttempt = attempt;
+  armConnectionTimer(attempt, CONNECTION_DEADLINE);
+
   connectionPromise = (async () => {
     let ticket: string | undefined;
     if (useAuth().status.value?.disabled !== true) {
-      const response = await request('/api/auth/ws-ticket', { method: 'POST' });
+      const remaining = attempt.deadline.remaining();
+      if (0 === remaining) {
+        throw new Error('WebSocket connection timed out.');
+      }
+      const response = await request('/api/auth/ws-ticket', {
+        method: 'POST',
+        timeout: remaining / 1000,
+      });
       await ensure_api_success(response);
       const payload = (await response.json()) as { ticket?: string };
       if (!payload.ticket) {
@@ -253,9 +376,15 @@ const connect = (): void => {
       ticket = payload.ticket;
     }
 
-    if (manualDisconnect.value) {
+    if (attempt !== currentAttempt || !attempt.isActive() || manualDisconnect.value) {
       return;
     }
+
+    const remaining = attempt.deadline.remaining();
+    if (0 === remaining) {
+      throw new Error('WebSocket connection timed out.');
+    }
+    armConnectionTimer(attempt, remaining);
 
     const ws = new WebSocket(buildWsUrl(ticket));
     socket.value = ws;
@@ -265,27 +394,41 @@ const connect = (): void => {
     }
 
     ws.addEventListener('open', () => {
+      if (socket.value !== ws) {
+        return;
+      }
       isConnected.value = true;
       connectionStatus.value = 'connected';
-      error.value = null;
-      error_count.value = 0;
+      attempt.finish();
+      currentAttempt = null;
       reconnectAttempts.value = 0;
       dispatch('connect', null);
     });
 
     ws.addEventListener('close', () => {
+      if (socket.value !== ws) {
+        return;
+      }
+      attempt.finish();
+      if (currentAttempt === attempt) {
+        currentAttempt = null;
+      }
       isConnected.value = false;
       connectionStatus.value = 'disconnected';
-      error.value = t('socket.disconnected');
       dispatch('disconnect', null);
       scheduleReconnect();
     });
 
     ws.addEventListener('error', () => {
+      if (socket.value !== ws) {
+        return;
+      }
+      attempt.finish();
+      if (currentAttempt === attempt) {
+        currentAttempt = null;
+      }
       isConnected.value = false;
       connectionStatus.value = 'disconnected';
-      error.value = t('socket.connectionError', { error: t('common.unknownError') });
-      error_count.value += 1;
       dispatch('connect_error', { message: t('common.unknownError') });
       scheduleReconnect();
     });
@@ -317,23 +460,21 @@ const connect = (): void => {
     setupVisibilityListener();
   })()
     .catch((cause: unknown) => {
-      socket.value = null;
-      isConnected.value = false;
-      connectionStatus.value = 'disconnected';
-      error.value = cause instanceof Error ? cause.message : t('common.unknownError');
-      error_count.value += 1;
-      dispatch('connect_error', { message: error.value });
-      scheduleReconnect();
+      const message = cause instanceof Error ? cause.message : t('common.unknownError');
+      recoverConnection(attempt, message);
     })
     .finally(() => {
-      connectionPromise = null;
+      if (connectionOwner === attempt) {
+        connectionPromise = null;
+        connectionOwner = null;
+      }
     });
+  connectionOwner = attempt;
 };
 
 on('connect', () => getConfig().loadConfig(false));
 
 on('connected', () => {
-  error.value = null;
   getConfig().loadConfig(false);
 });
 
@@ -511,8 +652,6 @@ const appSocketApi = proxyRefs({
   isConnected,
   getSessionId,
   connectionStatus: readonly(connectionStatus),
-  error: readonly(error),
-  error_count: readonly(error_count),
 });
 
 export const useAppSocket = () => appSocketApi;

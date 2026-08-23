@@ -116,7 +116,6 @@
     "streaming": "串流中",
     "invalid": "无效",
     "offline": "离线",
-    "refreshQueue": "刷新队列",
     "webuiSettings": "WebUI 设置",
     "start": "开始",
     "stop": "停止",
@@ -783,9 +782,7 @@
     "connection": {
       "connected": "已连接",
       "connecting": "连接中...",
-      "disconnected": "已断开",
-      "connectingServer": "正在连接 websocket 服务器...",
-      "lost": "Websocket 连接已断开。"
+      "disconnected": "已断开"
     },
     "config": {
       "loading": "正在加载配置...",
@@ -797,8 +794,7 @@
       "clickHere": "点击此处",
       "or": "或",
       "reloadConfig": "重新加载配置",
-      "reloadPage": "重新加载页面",
-      "socketError": "{error}。请查看开发者控制台以获取更多信息。"
+      "reloadPage": "重新加载页面"
     },
     "update": {
       "newVersionInstalled": "已安装新的 WebUI 版本。",
@@ -1262,8 +1258,6 @@
     "requeue": "重新排队",
     "video": "视频",
     "embed": "嵌入",
-    "queuedCount": "显示 {shown} / 共 {total} 排队",
-    "queuedCountShort": "{count} 个已排队",
     "abilityRequeue": "无法将项目重新排队；缺少 URL。",
     "removedFromHistory": "已从历史队列移除。",
     "videoThumbnail": "视频缩略图",
@@ -1300,10 +1294,6 @@
         "description": "安全政策和漏洞报告指南。"
       }
     }
-  },
-  "socket": {
-    "disconnected": "已与服务器断开连接。",
-    "connectionError": "连接错误：{error}"
   },
   "player": {
     "subtitleLoadFailed": "加载此视频的字幕失败。",

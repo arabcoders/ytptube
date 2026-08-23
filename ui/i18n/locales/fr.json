@@ -116,7 +116,6 @@
     "streaming": "Streaming",
     "invalid": "Invalide",
     "offline": "Hors ligne",
-    "refreshQueue": "Actualiser la file d'attente",
     "webuiSettings": "Paramètres de l'interface Web",
     "start": "Démarrer",
     "stop": "Arrêter",
@@ -783,9 +782,7 @@
     "connection": {
       "connected": "Connecté",
       "connecting": "Connexion...",
-      "disconnected": "Déconnecté",
-      "connectingServer": "Connexion au serveur websocket...",
-      "lost": "Connexion websocket perdue."
+      "disconnected": "Déconnecté"
     },
     "config": {
       "loading": "Chargement de la configuration...",
@@ -797,8 +794,7 @@
       "clickHere": "cliquer ici",
       "or": "ou",
       "reloadConfig": "recharger la configuration",
-      "reloadPage": "recharger la page",
-      "socketError": "{error}. Consultez la console développeur pour plus d'informations."
+      "reloadPage": "recharger la page"
     },
     "update": {
       "newVersionInstalled": "Une nouvelle version de l'interface Web est installée.",
@@ -1262,8 +1258,6 @@
     "requeue": "Remettre en file",
     "video": "Vidéo",
     "embed": "Intégrer",
-    "queuedCount": "{shown} affichés / {total} en file",
-    "queuedCountShort": "{count} en file",
     "abilityRequeue": "Impossible de remettre l'élément en file ; URL manquante.",
     "removedFromHistory": "Retiré de la file de l'historique.",
     "videoThumbnail": "Miniature de la vidéo",
@@ -1300,10 +1294,6 @@
         "description": "Politique de sécurité et consignes de signalement des vulnérabilités."
       }
     }
-  },
-  "socket": {
-    "disconnected": "Déconnecté du serveur.",
-    "connectionError": "Erreur de connexion : {error}"
   },
   "player": {
     "subtitleLoadFailed": "Échec du chargement des sous-titres pour cette vidéo.",

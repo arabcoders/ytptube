@@ -116,7 +116,6 @@
     "streaming": "Streaming",
     "invalid": "Invalid",
     "offline": "Offline",
-    "refreshQueue": "Refresh Queue",
     "webuiSettings": "WebUI Settings",
     "start": "Start",
     "stop": "Stop",
@@ -783,9 +782,7 @@
     "connection": {
       "connected": "Connected",
       "connecting": "Connecting...",
-      "disconnected": "Disconnected",
-      "connectingServer": "Connecting to websocket server...",
-      "lost": "Websocket connection lost."
+      "disconnected": "Disconnected"
     },
     "config": {
       "loading": "Loading configuration...",
@@ -797,8 +794,7 @@
       "clickHere": "click here",
       "or": "or",
       "reloadConfig": "reload configuration",
-      "reloadPage": "reload the page",
-      "socketError": "{error}. Check the developer console for more information."
+      "reloadPage": "reload the page"
     },
     "update": {
       "newVersionInstalled": "A new WebUI version is installed.",
@@ -1262,8 +1258,6 @@
     "requeue": "Requeue",
     "video": "Video",
     "embed": "Embed",
-    "queuedCount": "{shown} displayed / {total} queued",
-    "queuedCountShort": "{count} queued",
     "abilityRequeue": "Unable to requeue item; missing URL.",
     "removedFromHistory": "Removed from history queue.",
     "videoThumbnail": "Video thumbnail",
@@ -1300,10 +1294,6 @@
         "description": "Security policy and vulnerability reporting guidance."
       }
     }
-  },
-  "socket": {
-    "disconnected": "Disconnected from server.",
-    "connectionError": "Connection error: {error}"
   },
   "player": {
     "subtitleLoadFailed": "Failed to load subtitles for this video.",

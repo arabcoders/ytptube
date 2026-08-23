@@ -526,7 +526,7 @@ const save = async (): Promise<void> => {
     });
     await ensure_api_success(response);
     username.value = editUsername.value;
-    await auth.probe();
+    await auth.probe(true);
     notify.success(t('auth.accountSaved'));
     editDirty.markClean();
     editOpen.value = false;

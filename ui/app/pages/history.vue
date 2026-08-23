@@ -874,6 +874,7 @@ import { useDialog } from '~/composables/useDialog';
 import { useAppSocket } from '~/composables/useAppSocket';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useHistoryState } from '~/composables/useHistoryState';
+import { useHistoryNfo } from '~/composables/useHistoryNfo';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { useWebShare } from '~/composables/useWebShare';
 import type { item_request } from '~/types/item';
@@ -921,6 +922,11 @@ const {
   rename,
   moveHandler,
 } = useHistoryState();
+const {
+  isGenerating: isGeneratingNfo,
+  generateNfo: generateNfoRequest,
+  generateSelectedNfo,
+} = useHistoryNfo();
 
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
 const hideThumbnail = useStorage<boolean>('hideThumbnailHistory', false);
@@ -1145,6 +1151,13 @@ const bulkActionGroups = computed(() => {
         icon: 'i-lucide-download',
         disabled: !hasSelected.value || selectedDownloadableCount.value < 1,
         onSelect: () => void downloadSelected(),
+      },
+      {
+        label: isGeneratingNfo.value ? t('common.generating') : t('common.generateNfo'),
+        icon: 'i-lucide-file-code-2',
+        disabled:
+          !hasSelected.value || selectedDownloadableCount.value < 1 || isGeneratingNfo.value,
+        onSelect: () => void generateNfoSelected(),
       },
       {
         label: t('common.retry'),
@@ -1759,22 +1772,51 @@ const isQueuedAnimation = (item: StoreItem): string => {
   return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'animate-spin' : '';
 };
 
+const generateNfoSelected = async (): Promise<void> => {
+  if (isGeneratingNfo.value) {
+    return;
+  }
+
+  const items = selectedElms.value
+    .map((itemId) => findHistoryItem(itemId))
+    .filter((item): item is StoreItem => Boolean(item?.filename));
+
+  if (items.length < 1) {
+    return;
+  }
+
+  const { status } = await confirmDialog({
+    title: t('common.pleaseConfirm'),
+    message: t('common.confirmActionSelected', {
+      action: t('common.generateNfo'),
+      count: items.length,
+    }),
+    confirmText: t('common.generateNfo'),
+    confirmIcon: 'i-lucide-file-code-2',
+  });
+
+  if (!status) {
+    return;
+  }
+
+  toast.info(t('common.generating'), { timeout: 2000 });
+  const { failed } = await generateSelectedNfo(items);
+  toast[failed ? 'error' : 'success'](
+    t(failed ? 'common.failedGenerateNfo' : 'common.nfoGenerated'),
+  );
+};
+
 const generateNfo = async (item: StoreItem): Promise<void> => {
   try {
     toast.info(t('common.generating'), { timeout: 2000 });
-    const response = await request(`/api/history/${item._id}/nfo`, {
-      method: 'POST',
-      body: JSON.stringify({ type: 'tv', overwrite: true }),
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      toast.error((await parse_api_error(data)) || t('common.failedGenerateNfo'));
+    const data = await generateNfoRequest(item);
+    toast.success(data.message || t('common.nfoGenerated'));
+  } catch (error: any) {
+    if ('NfoResponseError' === error.name) {
+      toast.error(error.message || t('common.failedGenerateNfo'));
       return;
     }
 
-    toast.success(data.message || t('common.nfoGenerated'));
-  } catch (error: any) {
     toast.error(t('common.errorPrefix', { msg: error.message }));
   }
 };
