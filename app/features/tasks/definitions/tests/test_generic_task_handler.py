@@ -18,6 +18,7 @@ from app.features.tasks.definitions.schemas import (
 )
 from app.features.tasks.definitions.results import HandleTask
 from app.library.config import Config
+from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, ARCHIVE_LOOKUP_FAILURE_TTL, archive_id_cache_key
 
 
 @pytest.fixture(autouse=True)
@@ -502,6 +503,101 @@ async def test_generic_task_handler_inspect(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_generic_cache_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="cache-success",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+    cache = Mock()
+    cache.has.return_value = False
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
+    monkeypatch.setattr(
+        GenericTaskHandler, "_fetch_content", staticmethod(AsyncMock(return_value=("<a href='/item'>x</a>", None)))
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id", lambda **_kwargs: {"archive_id": None}
+    )
+    fetch = AsyncMock(return_value=({"id": "42", "extractor_key": "Example"}, []))
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
+
+    result = await GenericTaskHandler.extract_definition(
+        HandleTask(id=None, name="Cache", url="https://example.com/feed"), definition
+    )
+
+    assert isinstance(result, TaskResult)
+    cache.set.assert_called_once_with(
+        archive_id_cache_key("https://example.com/item"), "example 42", ttl=ARCHIVE_ID_TTL, persist=True
+    )
+
+
+@pytest.mark.asyncio
+async def test_generic_cache_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="cache-failure",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+    cache = Mock()
+    cache.has.return_value = False
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
+    monkeypatch.setattr(
+        GenericTaskHandler, "_fetch_content", staticmethod(AsyncMock(return_value=("<a href='/item'>x</a>", None)))
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id", lambda **_kwargs: {"archive_id": None}
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.fetch_info", AsyncMock(return_value=(None, []))
+    )
+
+    result = await GenericTaskHandler.extract_definition(
+        HandleTask(id=None, name="Cache", url="https://example.com/feed"), definition
+    )
+
+    assert isinstance(result, TaskResult)
+    cache.set.assert_called_once_with(
+        archive_id_cache_key("https://example.com/item"), None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False
+    )
+
+
+@pytest.mark.asyncio
+async def test_inspection_uses_cached_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="cached-inspection",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+    cache = Mock()
+    cache.has.return_value = True
+    cache.get.return_value = "cached 42"
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
+    monkeypatch.setattr(
+        GenericTaskHandler, "_fetch_content", staticmethod(AsyncMock(return_value=("<a href='/item'>x</a>", None)))
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id", lambda **_kwargs: {"archive_id": None}
+    )
+    fetch = AsyncMock()
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
+
+    result = await GenericTaskHandler.extract_definition(
+        HandleTask(id=None, name="Inspect", url="https://example.com/feed"), definition, inspection=True
+    )
+
+    assert isinstance(result, TaskResult)
+    assert result.items[0].archive_id == "cached 42"
+    fetch.assert_not_awaited()
+    cache.set.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_direct_extracts_without_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
     definition = TaskDefinition(
         name="direct",
@@ -554,6 +650,10 @@ async def test_inspect_reports_failure(monkeypatch: pytest.MonkeyPatch, caplog: 
         "app.features.tasks.definitions.handlers.generic.get_archive_id",
         lambda url: {"archive_id": None},
     )
+    cache = Mock()
+    cache.has.return_value = True
+    cache.get.return_value = None
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
     fetch = AsyncMock(return_value=(None, ["Invalid browser URL."]))
     monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
 
@@ -566,6 +666,7 @@ async def test_inspect_reports_failure(monkeypatch: pytest.MonkeyPatch, caplog: 
     assert "required yt-dlp archive ID fallback for 1 item(s)" in caplog.text
     assert "Keeping unresolved items for inspection. yt-dlp: Invalid browser URL." in caplog.text
     fetch.assert_awaited_once()
+    cache.set.assert_not_called()
     assert fetch.await_args is not None
     assert fetch.await_args.kwargs["capture_logs"] == logging.ERROR
 

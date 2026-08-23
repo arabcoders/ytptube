@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import fnmatch
-import hashlib
 import json
 import logging
 import re
@@ -22,6 +21,7 @@ from app.features.tasks.definitions.schemas import (
     HttpEngineOptions,
     TaskDefinition,
 )
+from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, ARCHIVE_LOOKUP_FAILURE_TTL, archive_id_cache_key
 from app.features.ytdlp.extractor import ExtractorBatch, fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
@@ -246,12 +246,16 @@ class GenericTaskHandler(BaseHandler):
                 id_dict: dict[str, str | None] = get_archive_id(url=url)
                 archive_id: str | None = id_dict.get("archive_id")
                 if not archive_id:
-                    cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
-                    if not inspection and CACHE.has(cache_key):
-                        archive_id = CACHE.get(cache_key)
-                        if not archive_id:
-                            continue
+                    cache_key = archive_id_cache_key(url)
+                    cache_hit = CACHE.has(cache_key)
+                    cached = CACHE.get(cache_key) if cache_hit else None
+                    if isinstance(cached, str) and cached:
+                        archive_id = cached
+                    elif not inspection and cache_hit and cached is None:
+                        continue
                     else:
+                        if cache_hit:
+                            CACHE.delete(cache_key)
                         archive_fallbacks += 1
 
                         (info, logs) = await fetch_info(
@@ -268,19 +272,18 @@ class GenericTaskHandler(BaseHandler):
                             error = " | ".join(logs) if logs else "No yt-dlp error was reported."
                             archive_errors[error] = archive_errors.get(error, 0) + 1
                             if not inspection:
-                                CACHE.set(cache_key, None)
+                                CACHE.set(cache_key, None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
                                 continue
 
                         elif not info.get("id") or not info.get("extractor_key"):
                             incomplete_archives += 1
                             if not inspection:
-                                CACHE.set(cache_key, None)
+                                CACHE.set(cache_key, None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
                                 continue
 
                         else:
                             archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
-                            if not inspection:
-                                CACHE.set(cache_key, archive_id)
+                            CACHE.set(cache_key, archive_id, ttl=ARCHIVE_ID_TTL, persist=True)
 
                 metadata: dict[str, str] = {
                     k: v

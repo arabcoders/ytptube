@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import re
 from typing import Any
@@ -8,6 +7,7 @@ from xml.etree.ElementTree import Element
 import httpx
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
+from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, ARCHIVE_LOOKUP_FAILURE_TTL, archive_id_cache_key
 from app.features.ytdlp.extractor import ExtractorBatch, fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
@@ -255,18 +255,21 @@ class RssGenericHandler(BaseHandler):
 
                 # If static archive_id fails, try to fetch it via yt-dlp (like generic.py)
                 if not archive_id:
-                    cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
-
-                    if CACHE.has(cache_key):
-                        archive_id = CACHE.get(cache_key)
-                        if not archive_id:
-                            LOG.debug(
-                                "Task '%s' has a cached archive ID lookup failure. Skipping item.",
-                                task.name,
-                                extra={"task_name": task.name, "url": url},
-                            )
-                            continue
+                    cache_key = archive_id_cache_key(url)
+                    cache_hit = CACHE.has(cache_key)
+                    cached = CACHE.get(cache_key) if cache_hit else None
+                    if isinstance(cached, str) and cached:
+                        archive_id = cached
+                    elif cache_hit and cached is None:
+                        LOG.debug(
+                            "Task '%s' has a cached archive ID lookup failure. Skipping item.",
+                            task.name,
+                            extra={"task_name": task.name, "url": url},
+                        )
+                        continue
                     else:
+                        if cache_hit:
+                            CACHE.delete(cache_key)
                         archive_fallbacks += 1
 
                         (info, logs) = await fetch_info(
@@ -282,16 +285,16 @@ class RssGenericHandler(BaseHandler):
                         if not info:
                             error = " | ".join(logs) if logs else "No yt-dlp error was reported."
                             archive_errors[error] = archive_errors.get(error, 0) + 1
-                            CACHE.set(cache_key, None)
+                            CACHE.set(cache_key, None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
                             continue
 
                         if not info.get("id") or not info.get("extractor_key"):
                             incomplete_archives += 1
-                            CACHE.set(cache_key, None)
+                            CACHE.set(cache_key, None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
                             continue
 
                         archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
-                        CACHE.set(cache_key, archive_id)
+                        CACHE.set(cache_key, archive_id, ttl=ARCHIVE_ID_TTL, persist=True)
 
                 metadata: dict[str, Any] = {
                     k: v for k, v in entry.items() if k not in {"url", "title", "description", "published", "thumbnail"}

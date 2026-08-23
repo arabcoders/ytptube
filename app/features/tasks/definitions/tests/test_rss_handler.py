@@ -1,11 +1,13 @@
 import logging
 from pathlib import Path
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 from app.features.tasks.definitions.handlers.rss import RssGenericHandler
 from app.features.tasks.definitions.results import TaskResult
 from app.features.tasks.definitions.results import HandleTask
+from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, archive_id_cache_key
 
 
 class DummyResponse:
@@ -198,6 +200,35 @@ class TestRssHandlerExtraction:
         assert "required yt-dlp archive ID fallback for 1 item(s)" in caplog.text
         assert "yt-dlp: Invalid browser URL." in caplog.text
         assert call["capture_logs"] == logging.ERROR
+
+    @pytest.mark.asyncio
+    async def test_rss_cache_success(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        feed = """<?xml version="1.0"?><rss><channel><item>
+          <link>https://example.com/rss-video</link>
+        </item></channel></rss>"""
+
+        async def fake_request(**kwargs):  # noqa: ARG001
+            return DummyResponse(feed)
+
+        monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
+        monkeypatch.setattr(
+            "app.features.tasks.definitions.handlers.rss.get_archive_id", lambda **_kwargs: {"archive_id": None}
+        )
+        monkeypatch.setattr(
+            "app.features.tasks.definitions.handlers.rss.fetch_info",
+            AsyncMock(return_value=({"id": "42", "extractor_key": "Example"}, [])),
+        )
+        cache = Mock()
+        cache.has.return_value = False
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.CACHE", cache)
+
+        result = await RssGenericHandler.extract(HandleTask(id=None, name="RSS", url="https://example.com/feed.rss"))
+
+        assert isinstance(result, TaskResult)
+        cache.set.assert_called_once_with(
+            archive_id_cache_key("https://example.com/rss-video"), "example 42", ttl=ARCHIVE_ID_TTL, persist=True
+        )
 
     @pytest.mark.asyncio
     async def test_can_handle(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
