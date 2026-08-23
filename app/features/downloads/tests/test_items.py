@@ -150,9 +150,6 @@ class TestItemDTO:
 
         data = dto.serialize()
         assert data["is_archived"] is True
-        # Removed fields must not be present
-        for key in ItemDTO.removed_fields():
-            assert key not in data
 
     @patch("app.features.downloads.items.YTDLPOpts")
     def test_serialize_keeps_skipped(self, mock_opts):

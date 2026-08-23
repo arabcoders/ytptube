@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
@@ -7,7 +8,7 @@ import pytest
 from app.features.tasks.definitions.handlers.rss import RssGenericHandler
 from app.features.tasks.definitions.results import TaskResult
 from app.features.tasks.definitions.results import HandleTask
-from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, archive_id_cache_key
+from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, archive_key
 
 
 class DummyResponse:
@@ -44,6 +45,46 @@ class TestRssHandlerParsing:
 
 class TestRssHandlerExtraction:
     """Test RSS feed extraction and parsing."""
+
+    @pytest.mark.asyncio
+    async def test_podcast_enclosure(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        podcast = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>My Podcast</title>
+    <itunes:image href="https://example.com/cover.jpg" />
+    <item>
+      <title>Episode 1</title>
+      <description>Our first episode.</description>
+      <pubDate>Sun, 23 Aug 2026 10:00:00 +0000</pubDate>
+      <guid isPermaLink="false">episode-001</guid>
+      <enclosure url="https://example.com/audio/episode-001.mp3" length="42512345" type="audio/mpeg" />
+      <itunes:duration>42:15</itunes:duration>
+    </item>
+  </channel>
+</rss>"""
+
+        async def fake_request(**kwargs):  # noqa: ARG001
+            return DummyResponse(podcast)
+
+        monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
+
+        _, items, count = await RssGenericHandler._get(
+            HandleTask(id=None, name="Podcast", url="https://example.com/feed.rss"),
+            {},
+            {"url": "https://example.com/feed.rss"},
+        )
+
+        assert count == 1
+        assert items == [
+            {
+                "url": "https://example.com/audio/episode-001.mp3",
+                "title": "Episode 1",
+                "description": "Our first episode.",
+                "published": "Sun, 23 Aug 2026 10:00:00 +0000",
+                "thumbnail": "",
+            }
+        ]
 
     @pytest.mark.asyncio
     async def test_rss_atom_feed_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -227,8 +268,114 @@ class TestRssHandlerExtraction:
 
         assert isinstance(result, TaskResult)
         cache.set.assert_called_once_with(
-            archive_id_cache_key("https://example.com/rss-video"), "example 42", ttl=ARCHIVE_ID_TTL, persist=True
+            archive_key("https://example.com/rss-video"), "example 42", ttl=ARCHIVE_ID_TTL, persist=True
         )
+        cache.delete.assert_called_once_with(f"{archive_key('https://example.com/rss-video')}:f")
+
+    @pytest.mark.asyncio
+    async def test_parallel_archive_lookup(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        items = [
+            {"url": "https://example.com/first", "title": "First"},
+            {"url": "https://example.com/second", "title": "Second"},
+            {"url": "https://example.com/first", "title": "Again"},
+        ]
+        monkeypatch.setattr(
+            RssGenericHandler,
+            "_get",
+            staticmethod(AsyncMock(return_value=("https://example.com/feed.rss", items, 3))),
+        )
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
+        monkeypatch.setattr(
+            "app.features.tasks.definitions.handlers.rss.get_archive_id", lambda **_kwargs: {"archive_id": None}
+        )
+        cache = Mock()
+        cache.has.return_value = False
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.CACHE", cache)
+        active = 0
+        peak = 0
+
+        async def fake_fetch(config, url, **kwargs):  # noqa: ARG001
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0)
+            active -= 1
+            return {"id": url.rsplit("/", 1)[-1], "extractor_key": "Example"}, []
+
+        fetch = AsyncMock(side_effect=fake_fetch)
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.fetch_info", fetch)
+
+        result = await RssGenericHandler.extract(HandleTask(id=None, name="RSS", url="https://example.com/feed.rss"))
+
+        assert isinstance(result, TaskResult)
+        assert [item.url for item in result.items] == [entry["url"] for entry in items]
+        assert [item.archive_id for item in result.items] == ["example first", "example second", "example first"]
+        assert peak == 2
+        assert [call.kwargs["url"] for call in fetch.await_args_list] == [
+            "https://example.com/first",
+            "https://example.com/second",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_inspection_skips_lookup(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        items = [{"url": "https://example.com/item", "title": "Item"}]
+        monkeypatch.setattr(
+            RssGenericHandler,
+            "_get",
+            staticmethod(AsyncMock(return_value=("https://example.com/feed.rss", items, 1))),
+        )
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: _opts(tmp_path))  # noqa: ARG005
+        monkeypatch.setattr(
+            "app.features.tasks.definitions.handlers.rss.get_archive_id", lambda **_kwargs: {"archive_id": None}
+        )
+        cache = Mock()
+        cache.has.return_value = False
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.CACHE", cache)
+        fetch = AsyncMock()
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.fetch_info", fetch)
+
+        result = await RssGenericHandler.inspect(
+            HandleTask(id=None, name="Inspector", url="https://example.com/feed.rss"),
+            resolve_ids=False,
+        )
+
+        assert isinstance(result, TaskResult)
+        assert result.items[0].archive_id is None
+        fetch.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_inspection_zero_wait(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        items = [{"url": "https://example.com/item", "title": "Item"}]
+        monkeypatch.setattr(
+            RssGenericHandler,
+            "_get",
+            staticmethod(AsyncMock(return_value=("https://example.com/feed.rss", items, 1))),
+        )
+        monkeypatch.setattr(
+            HandleTask,
+            "get_ytdlp_opts",
+            lambda self: DummyOpts({"extractor_args": {"youtube": {"player_client": ["web"]}}}),  # noqa: ARG005
+        )
+        monkeypatch.setattr(
+            "app.features.tasks.definitions.handlers.rss.get_archive_id", lambda **_kwargs: {"archive_id": None}
+        )
+        cache = Mock()
+        cache.has.return_value = False
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.CACHE", cache)
+        fetch = AsyncMock(return_value=({"id": "42", "extractor_key": "Example"}, []))
+        monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.fetch_info", fetch)
+
+        result = await RssGenericHandler.inspect(
+            HandleTask(id=None, name="Inspector", url="https://example.com/feed.rss")
+        )
+
+        assert isinstance(result, TaskResult)
+        call = fetch.await_args_list[0].kwargs
+        assert call["config"]["extractor_args"] == {
+            "youtube": {"player_client": ["web"]},
+            "generic": {"wait": ["0"]},
+        }
+        assert "generic_args" not in call
 
     @pytest.mark.asyncio
     async def test_can_handle(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

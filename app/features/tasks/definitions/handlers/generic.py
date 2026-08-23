@@ -7,6 +7,7 @@ import fnmatch
 import json
 import logging
 import re
+import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
@@ -21,7 +22,11 @@ from app.features.tasks.definitions.schemas import (
     HttpEngineOptions,
     TaskDefinition,
 )
-from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, ARCHIVE_LOOKUP_FAILURE_TTL, archive_id_cache_key
+from app.features.tasks.definitions.utils import (
+    ARCHIVE_ID_TTL,
+    ARCHIVE_LOOKUP_FAILURE_TTL,
+    archive_key,
+)
 from app.features.ytdlp.extractor import ExtractorBatch, fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
@@ -158,13 +163,21 @@ class GenericTaskHandler(BaseHandler):
         return await GenericTaskHandler.extract_definition(task, definition, config=config)
 
     @classmethod
-    async def inspect(cls, task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
+    async def inspect(
+        cls, task: HandleTask, config: Config | None = None, *, resolve_ids: bool = True
+    ) -> TaskResult | TaskFailure:
         """Extract parsed items without requiring downstream archive IDs."""
         definition = await cls._find_definition(task.url)
         if not definition:
             return TaskFailure(message="No generic task definition matched the provided URL.")
 
-        return await cls.extract_definition(task, definition, config=config, inspection=True)
+        return await cls.extract_definition(
+            task,
+            definition,
+            config=config,
+            inspection=True,
+            resolve_ids=resolve_ids,
+        )
 
     @staticmethod
     async def extract_definition(
@@ -173,10 +186,11 @@ class GenericTaskHandler(BaseHandler):
         config: Config | None = None,
         *,
         inspection: bool = False,
+        resolve_ids: bool = True,
     ) -> TaskResult | TaskFailure:
         _ = config
 
-        ytdlp_opts: dict[str, Any] = task.get_ytdlp_opts().get_all()
+        ytdlp_opts = GenericTaskHandler._get_params(task, inspection=inspection)
         target_url: str = definition.definition.request.url or task.url
 
         try:
@@ -184,17 +198,7 @@ class GenericTaskHandler(BaseHandler):
         except ValueError as exc:
             return TaskFailure(message="Invalid target URL.", error=str(exc))
 
-        LOG.debug(
-            "Fetching content for task '%s'.",
-            task.name,
-            extra={
-                "task_name": task.name,
-                "definition": definition.name,
-                "url": target_url,
-                "engine": definition.definition.engine.type,
-            },
-        )
-
+        fetch_started = time.perf_counter()
         try:
             body_text, json_data = await GenericTaskHandler._fetch_content(
                 url=target_url, definition=definition, ytdlp_opts=ytdlp_opts
@@ -223,67 +227,119 @@ class GenericTaskHandler(BaseHandler):
         raw_items: list[dict[str, str]] = GenericTaskHandler._parse_items(
             definition=definition, html=body_text or "", base_url=target_url, json_data=json_data
         )
+        LOG.debug(
+            "Task '%s' fetched and parsed %s item(s) from definition '%s' in %.2fs.",
+            task.name,
+            len(raw_items),
+            definition.name,
+            time.perf_counter() - fetch_started,
+            extra={"task_name": task.name, "definition": definition.name, "item_count": len(raw_items)},
+        )
 
         task_items: list[TaskItem] = []
         archive_fallbacks = 0
         archive_errors: dict[str, int] = {}
         incomplete_archives = 0
+        engine = definition.definition.engine
+        generic_args = {"http": str(engine.type == "http").lower()}
+        if isinstance(engine.options, BrowserEngineOptions):
+            generic_args["url"] = engine.options.url
 
-        def _generic_id(url):
-            import os
-            from urllib import parse
-
-            return parse.unquote(os.path.splitext(url.rstrip("/").split("/")[-1])[0])
-
-        async with ExtractorBatch() as batch:
+        async with ExtractorBatch(parallel=True) as batch:
+            resolutions: dict[str, tuple[str | None, str | None, bool]] = {}
+            pending: list[tuple[str, str, str]] = []
+            pending_urls: set[str] = set()
             for entry in raw_items:
-                if not isinstance(entry, dict):
+                if not isinstance(entry, dict) or not (url := entry.get("url")):
                     continue
 
-                if not (url := entry.get("url")):
+                archive_id = get_archive_id(url=url).get("archive_id")
+                if archive_id:
+                    resolutions.setdefault(url, (archive_id, None, False))
                     continue
 
-                id_dict: dict[str, str | None] = get_archive_id(url=url)
-                archive_id: str | None = id_dict.get("archive_id")
-                if not archive_id:
-                    cache_key = archive_id_cache_key(url)
-                    cache_hit = CACHE.has(cache_key)
-                    cached = CACHE.get(cache_key) if cache_hit else None
-                    if isinstance(cached, str) and cached:
-                        archive_id = cached
-                    elif not inspection and cache_hit and cached is None:
-                        continue
-                    else:
-                        if cache_hit:
-                            CACHE.delete(cache_key)
+                cache_key = archive_key(url)
+                failure_key = f"{cache_key}:f"
+                cache_hit = CACHE.has(cache_key)
+                cached = CACHE.get(cache_key) if cache_hit else None
+                if isinstance(cached, str) and cached:
+                    resolutions.setdefault(url, (cached, None, False))
+                elif (inspection and not resolve_ids) or (not inspection and CACHE.has(failure_key)):
+                    resolutions.setdefault(url, (None, None, False))
+                else:
+                    if cache_hit:
+                        CACHE.delete(cache_key)
+                    resolutions.setdefault(url, (None, None, False))
+                    if url not in pending_urls:
+                        pending.append((url, cache_key, failure_key))
+                        pending_urls.add(url)
                         archive_fallbacks += 1
 
-                        (info, logs) = await fetch_info(
-                            config=task.get_ytdlp_opts().get_all(),
-                            url=url,
-                            no_archive=True,
-                            no_log=True,
-                            capture_logs=logging.ERROR,
-                            batch=batch,
-                            budget_sleep=True,
-                        )
+            LOG.debug(
+                "Task '%s' archive ID plan: %s item(s), %s external lookup(s).",
+                task.name,
+                len(raw_items),
+                len(pending),
+                extra={
+                    "task_name": task.name,
+                    "definition": definition.name,
+                    "item_count": len(raw_items),
+                    "lookup_count": len(pending),
+                    "resolve_ids": resolve_ids,
+                },
+            )
 
-                        if not info:
-                            error = " | ".join(logs) if logs else "No yt-dlp error was reported."
-                            archive_errors[error] = archive_errors.get(error, 0) + 1
-                            if not inspection:
-                                CACHE.set(cache_key, None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
-                                continue
+            async def resolve(url: str, cache_key: str, failure_key: str) -> tuple[str | None, str | None, bool]:
+                info, logs = await fetch_info(
+                    config=ytdlp_opts,
+                    url=url,
+                    no_archive=True,
+                    no_log=True,
+                    capture_logs=logging.ERROR,
+                    batch=batch,
+                    budget_sleep=True,
+                    generic_args=generic_args,
+                )
+                if not info:
+                    error = " | ".join(logs) if logs else "No yt-dlp error was reported."
+                    if not inspection:
+                        CACHE.set(failure_key, 1, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
+                    return None, error, False
+                if not info.get("id") or not info.get("extractor_key"):
+                    if not inspection:
+                        CACHE.set(failure_key, 1, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
+                    return None, None, True
 
-                        elif not info.get("id") or not info.get("extractor_key"):
-                            incomplete_archives += 1
-                            if not inspection:
-                                CACHE.set(cache_key, None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
-                                continue
+                archive_id = f"{str(info['extractor_key']).lower()} {info['id']}"
+                CACHE.set(cache_key, archive_id, ttl=ARCHIVE_ID_TTL, persist=True)
+                CACHE.delete(failure_key)
+                return archive_id, None, False
 
-                        else:
-                            archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
-                            CACHE.set(cache_key, archive_id, ttl=ARCHIVE_ID_TTL, persist=True)
+            lookups = [asyncio.create_task(resolve(url, key, failure_key)) for url, key, failure_key in pending]
+            try:
+                results = await asyncio.gather(*lookups)
+            except BaseException:
+                for lookup in lookups:
+                    lookup.cancel()
+                await asyncio.gather(*lookups, return_exceptions=True)
+                raise
+            resolutions.update(dict(zip((url for url, _, _ in pending), results, strict=True)))
+
+            for entry in raw_items:
+                if not isinstance(entry, dict) or not (url := entry.get("url")):
+                    continue
+
+                archive_id, error, incomplete = resolutions[url]
+                if error:
+                    archive_errors[error] = archive_errors.get(error, 0) + 1
+                    if not inspection:
+                        continue
+                if incomplete:
+                    incomplete_archives += 1
+                    if not inspection:
+                        continue
+                if archive_id is None and not inspection:
+                    continue
 
                 metadata: dict[str, str] = {
                     k: v

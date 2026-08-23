@@ -1,8 +1,11 @@
+import atexit
 import base64
 import importlib.util
 import math
+import multiprocessing
 import os
 import re
+import threading
 import time
 import urllib.parse
 from typing import Any
@@ -108,97 +111,264 @@ MEDIA_ELEMENT_JS: str = """() => {
 }"""
 
 
-def _has_possible_media(requests_list: list[dict]) -> bool:
-    for req in requests_list:
-        url_lower = req.get("url", "").lower()
-        for ext in MEDIA_CANDIDATE_EXTS:
-            if f".{ext}" in url_lower or f".{ext}?" in url_lower:
-                return True
-        ct = (req.get("response", {}).get("headers", {}).get("content-type", "")).lower()
-        if any(x in ct for x in ["video", "audio", "mpegurl", "dash+xml"]):
-            return True
-    return False
+class _CdpSession:
+    def __init__(
+        self,
+        connection: dict[str, Any],
+        page: Any,
+        browser_url: str,
+        connections: dict[str, Any],
+        *,
+        reuse: bool,
+    ) -> None:
+        self.connection = connection
+        self.page = page
+        self.browser_url = browser_url
+        self.connections = connections
+        self.reuse = reuse
+        self.requests: list[dict] = []
+        self.pending_api: set[str] = set()
+        self.last_response: Any | None = None
+        self.closed = False
+        page.on("request", self._on_request)
+        page.on("response", self._on_response)
 
-
-def _wait_for_network_idle(
-    requests_list: list[dict],
-    wait_fn,
-    wait_for_media_fn,
-    idle_timeout: int = 30000,
-    api_poll_interval: int = 500,
-    api_poll_attempts: int = 10,
-    max_total_timeout: float = BROWSER_WAIT_SECONDS,
-    pending_api: set[str] | None = None,
-):
-    """Shared network-idle waiting logic for all driver sessions."""
-    deadline = time.monotonic() + max(0, max_total_timeout)
-
-    def bounded_timeout_ms(requested_ms: int, phase_deadline: float | None = None) -> int:
-        end = min(deadline, phase_deadline) if phase_deadline is not None else deadline
-        remaining_ms = int((end - time.monotonic()) * 1000)
-        return max(0, min(requested_ms, remaining_ms))
-
-    def wait_for_late_media() -> None:
-        for _ in range(POST_MEDIA_POLL_ATTEMPTS):
-            if _has_possible_media(requests_list):
-                return
-            if not (timeout_ms := bounded_timeout_ms(POST_MEDIA_POLL_INTERVAL_MS)):
-                return
-            time.sleep(timeout_ms / 1000)
-
-    if _has_possible_media(requests_list):
-        return
-
-    idle_deadline = min(deadline, time.monotonic() + idle_timeout / 1000)
-    while timeout_ms := bounded_timeout_ms(NETWORK_IDLE_SLICE_MS, idle_deadline):
-        if wait_fn(timeout_ms):
-            break
-        if _has_possible_media(requests_list):
+    def _on_request(self, request: Any) -> None:
+        resource_type = request.resource_type
+        if resource_type not in REQUEST_RESOURCE_TYPES:
             return
-
-    for _ in range(api_poll_attempts):
-        if _has_possible_media(requests_list):
-            return
-
-        if pending_api is not None and len(pending_api) == 0:
-            break
-
-        if not (timeout_ms := bounded_timeout_ms(api_poll_interval)):
-            return
-        wait_fn(timeout_ms)
-
-    if _has_possible_media(requests_list):
-        return
-
-    if not (timeout_ms := bounded_timeout_ms(10000)):
-        return
-    if wait_for_media_fn(timeout_ms):
-        return
-    wait_for_late_media()
-
-
-def _build_media_requests(requests_list: list[dict], media_elements: list[dict]) -> list[dict]:
-    result = []
-    for media in media_elements:
-        existing = next((r for r in requests_list if r.get("url") == media["url"]), None)
-        result.append(
-            existing
-            or {
-                "url": media["url"],
-                "method": "GET",
-                "resourceType": media["resourceType"],
+        url = request.url
+        if resource_type in API_RESOURCE_TYPES:
+            self.pending_api.add(url)
+        self.requests.append(
+            {
+                "url": url,
+                "method": request.method,
+                "resourceType": resource_type,
+                "headers": dict(request.headers),
             }
         )
-    return result
+
+    def _on_response(self, response: Any) -> None:
+        request = response.request
+        if request.resource_type not in REQUEST_RESOURCE_TYPES:
+            return
+        url = response.url
+        self.pending_api.discard(url)
+        existing = next((item for item in self.requests if item.get("url") == url and not item.get("response")), None)
+        payload = {"status": response.status, "headers": dict(response.headers)}
+        if existing:
+            existing["response"] = payload
+        else:
+            self.requests.append(
+                {
+                    "url": url,
+                    "method": request.method,
+                    "resourceType": request.resource_type,
+                    "headers": dict(request.headers),
+                    "response": payload,
+                }
+            )
+
+    def goto(
+        self,
+        target_url: str,
+        *,
+        method: str = "GET",
+        headers: dict[str, str] | None = None,
+        data: str | bytes | None = None,
+        timeout: int | None = None,
+    ) -> int | None:
+        if headers:
+            self.page.set_extra_http_headers(headers)
+
+        route_handler = None
+        method = method.upper()
+        if method != "GET" or data is not None:
+            main_request_seen = False
+
+            def route_handler(route, request):
+                nonlocal main_request_seen
+                if main_request_seen or not request.is_navigation_request() or request.frame != self.page.main_frame:
+                    route.continue_()
+                    return
+
+                main_request_seen = True
+                options: dict[str, Any] = {}
+                if method != "GET":
+                    options["method"] = method
+                if data is not None:
+                    options["post_data"] = data
+                route.continue_(**options)
+
+            self.page.route("**/*", route_handler)
+
+        try:
+            self.last_response = self.page.goto(target_url, wait_until="domcontentloaded", timeout=timeout)
+        finally:
+            if route_handler is not None:
+                self.page.unroute("**/*", route_handler)
+        return self.last_response.status if self.last_response else None
+
+    def response_text(self) -> str | None:
+        return self.last_response.text() if self.last_response else None
+
+    def wait_for_selector(self, selector_type: str, expression: str, timeout: float) -> None:
+        selector = f"xpath={expression}" if selector_type == "xpath" else expression
+        self.page.wait_for_selector(selector, timeout=timeout * 1000)
+
+    def _has_possible_media(self) -> bool:
+        for request in self.requests:
+            url = request.get("url", "").lower()
+            if any(f".{ext}" in url or f".{ext}?" in url for ext in MEDIA_CANDIDATE_EXTS):
+                return True
+            content_type = request.get("response", {}).get("headers", {}).get("content-type", "").lower()
+            if any(value in content_type for value in ("video", "audio", "mpegurl", "dash+xml")):
+                return True
+        return False
+
+    def wait_for_network_idle(
+        self,
+        idle_timeout=30000,
+        api_poll_interval=500,
+        api_poll_attempts=10,
+        max_total_timeout=60,
+    ):
+        deadline = time.monotonic() + max(0, max_total_timeout)
+
+        def bounded_timeout_ms(requested_ms: int, phase_deadline: float | None = None) -> int:
+            end = min(deadline, phase_deadline) if phase_deadline is not None else deadline
+            remaining_ms = int((end - time.monotonic()) * 1000)
+            return max(0, min(requested_ms, remaining_ms))
+
+        def wait_fn(timeout_ms):
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=timeout_ms)
+                return True
+            except Exception:
+                return False
+
+        def wait_for_media_fn(timeout_ms):
+            try:
+                self.page.wait_for_function(
+                    """() => {
+                        const videos = document.querySelectorAll('video[src], video > source[src]');
+                        const audios = document.querySelectorAll('audio[src], audio > source[src]');
+                        return videos.length > 0 || audios.length > 0;
+                    }""",
+                    timeout=timeout_ms,
+                )
+                return True
+            except Exception:
+                return False
+
+        def wait_for_late_media() -> None:
+            for _ in range(POST_MEDIA_POLL_ATTEMPTS):
+                if self._has_possible_media():
+                    return
+                if not (timeout_ms := bounded_timeout_ms(POST_MEDIA_POLL_INTERVAL_MS)):
+                    return
+                time.sleep(timeout_ms / 1000)
+
+        if self._has_possible_media():
+            return
+
+        idle_deadline = min(deadline, time.monotonic() + idle_timeout / 1000)
+        while timeout_ms := bounded_timeout_ms(NETWORK_IDLE_SLICE_MS, idle_deadline):
+            if wait_fn(timeout_ms):
+                break
+            if self._has_possible_media():
+                return
+
+        for _ in range(api_poll_attempts):
+            if self._has_possible_media():
+                return
+            if not self.pending_api:
+                break
+            if not (timeout_ms := bounded_timeout_ms(api_poll_interval)):
+                return
+            wait_fn(timeout_ms)
+
+        if self._has_possible_media():
+            return
+        if not (timeout_ms := bounded_timeout_ms(10000)):
+            return
+        if wait_for_media_fn(timeout_ms):
+            return
+        wait_for_late_media()
+
+    def content(self) -> str:
+        return self.page.content()
+
+    def get_page(self):
+        return self.page
+
+    def get_requests(self) -> list[dict]:
+        return list(self.requests)
+
+    def get_media_requests(self) -> list[dict]:
+        result = []
+        for media in self.page.evaluate(MEDIA_ELEMENT_JS):
+            existing = next((request for request in self.requests if request.get("url") == media["url"]), None)
+            result.append(existing or {"url": media["url"], "method": "GET", "resourceType": media["resourceType"]})
+        return result
+
+    def close(self) -> None:
+        if self.closed:
+            return
+        self.closed = True
+
+        try:
+            self.page.close()
+        finally:
+            if not self.reuse:
+                CdpDriver._close_connection(self.connection)
+
+    def invalidate(self) -> None:
+        if not self.closed:
+            self.close()
+        if self.reuse and self.connections.get(self.browser_url) is self.connection:
+            self.connections.pop(self.browser_url, None)
+            CdpDriver._close_connection(self.connection)
 
 
 class CdpDriver:
+    _local = threading.local()
+
+    @classmethod
+    def _connections(cls) -> dict[str, dict[str, Any]]:
+        pid = os.getpid()
+        if getattr(cls._local, "pid", None) != pid:
+            # A fork inherits Python objects but not a usable Playwright connection.
+            # Never close these objects in the child: they belong to the parent.
+            cls._local.pid = pid
+            cls._local.connections = {}
+        return cls._local.connections
+
+    @staticmethod
+    def _close_connection(connection: dict[str, Any]) -> None:
+        for name in ("context", "browser", "playwright"):
+            if name == "context" and not connection["owns_context"]:
+                continue
+            try:
+                getattr(connection[name], {"playwright": "stop"}.get(name, "close"))()
+            except Exception:
+                pass
+
+    @classmethod
+    def close_sessions(cls) -> None:
+        """Close connections owned by this process and thread."""
+        connections = getattr(cls._local, "connections", {})
+        for connection in list(connections.values()):
+            cls._close_connection(connection)
+        connections.clear()
+
     @staticmethod
     def is_available() -> bool:
         return importlib.util.find_spec("playwright.sync_api") is not None
 
     @staticmethod
-    def connect(browser_url: str, timeout: int | None = None):
+    def connect(browser_url: str, timeout: int | None = None, *, reuse: bool = False):
         if not CdpDriver.is_available():
             msg = "Playwright is not installed"
             raise ImportError(msg)
@@ -211,6 +381,17 @@ class CdpDriver:
         ):
             msg = "Invalid CDP browser URL. Use an absolute http(s) URL"
             raise ValueError(msg)
+
+        connections = CdpDriver._connections() if reuse else {}
+        connection = connections.get(browser_url) if reuse else None
+        if connection is not None:
+            try:
+                page = connection["context"].new_page()
+            except Exception:
+                CdpDriver._close_connection(connection)
+                connections.pop(browser_url, None)
+                raise
+            return _CdpSession(connection, page, browser_url, connections, reuse=True)
 
         from playwright.sync_api import sync_playwright
 
@@ -249,174 +430,11 @@ class CdpDriver:
                 pass
             raise
 
-        requests_list: list[dict] = []
-        pending_api: set[str] = set()
-        last_response = None
+        connection = {"playwright": playwright, "browser": browser, "context": context, "owns_context": owns_context}
+        if reuse:
+            connections[browser_url] = connection
 
-        def on_request(request):
-            resource_type = request.resource_type
-            if resource_type not in REQUEST_RESOURCE_TYPES:
-                return
-            url_str = request.url
-            if resource_type in API_RESOURCE_TYPES:
-                pending_api.add(url_str)
-            requests_list.append(
-                {
-                    "url": url_str,
-                    "method": request.method,
-                    "resourceType": resource_type,
-                    "headers": dict(request.headers),
-                }
-            )
-
-        def on_response(response):
-            request = response.request
-            if request.resource_type not in REQUEST_RESOURCE_TYPES:
-                return
-            url_str = response.url
-            pending_api.discard(url_str)
-            existing = next(
-                (r for r in requests_list if r.get("url") == url_str and not r.get("response")),
-                None,
-            )
-            payload = {"status": response.status, "headers": dict(response.headers)}
-            if existing:
-                existing["response"] = payload
-            else:
-                requests_list.append(
-                    {
-                        "url": url_str,
-                        "method": request.method,
-                        "resourceType": request.resource_type,
-                        "headers": dict(request.headers),
-                        "response": payload,
-                    }
-                )
-
-        page.on("request", on_request)
-        page.on("response", on_response)
-
-        class Session:
-            closed = False
-
-            def goto(
-                self,
-                target_url: str,
-                *,
-                method: str = "GET",
-                headers: dict[str, str] | None = None,
-                data: str | bytes | None = None,
-                timeout: int | None = None,
-            ) -> int | None:
-                nonlocal last_response
-
-                if headers:
-                    page.set_extra_http_headers(headers)
-
-                route_handler = None
-                method = method.upper()
-                if method != "GET" or data is not None:
-                    main_request_seen = False
-
-                    def route_handler(route, request):
-                        nonlocal main_request_seen
-                        if main_request_seen or not request.is_navigation_request() or request.frame != page.main_frame:
-                            route.continue_()
-                            return
-
-                        main_request_seen = True
-                        options: dict[str, Any] = {}
-                        if method != "GET":
-                            options["method"] = method
-                        if data is not None:
-                            options["post_data"] = data
-                        route.continue_(**options)
-
-                    page.route("**/*", route_handler)
-
-                try:
-                    last_response = page.goto(target_url, wait_until="domcontentloaded", timeout=timeout)
-                finally:
-                    if route_handler is not None:
-                        page.unroute("**/*", route_handler)
-                return last_response.status if last_response else None
-
-            def response_text(self) -> str | None:
-                return last_response.text() if last_response else None
-
-            def wait_for_selector(self, selector_type: str, expression: str, timeout: float) -> None:
-                selector = f"xpath={expression}" if selector_type == "xpath" else expression
-                page.wait_for_selector(selector, timeout=timeout * 1000)
-
-            def wait_for_network_idle(
-                self,
-                idle_timeout=30000,
-                api_poll_interval=500,
-                api_poll_attempts=10,
-                max_total_timeout=60,
-            ):
-                def wait_fn(timeout_ms):
-                    try:
-                        page.wait_for_load_state("networkidle", timeout=timeout_ms)
-                        return True
-                    except Exception:
-                        return False
-
-                def wait_for_media_fn(timeout_ms):
-                    try:
-                        page.wait_for_function(
-                            """() => {
-                                const videos = document.querySelectorAll('video[src], video > source[src]');
-                                const audios = document.querySelectorAll('audio[src], audio > source[src]');
-                                return videos.length > 0 || audios.length > 0;
-                            }""",
-                            timeout=timeout_ms,
-                        )
-                        return True
-                    except Exception:
-                        return False
-
-                _wait_for_network_idle(
-                    requests_list,
-                    wait_fn,
-                    wait_for_media_fn,
-                    idle_timeout,
-                    api_poll_interval,
-                    api_poll_attempts,
-                    max_total_timeout,
-                    pending_api,
-                )
-
-            def content(self) -> str:
-                return page.content()
-
-            def get_page(self):
-                return page
-
-            def get_requests(self) -> list[dict]:
-                return list(requests_list)
-
-            def get_media_requests(self) -> list[dict]:
-                return _build_media_requests(requests_list, page.evaluate(MEDIA_ELEMENT_JS))
-
-            def close(self):
-                if self.closed:
-                    return
-                self.closed = True
-
-                try:
-                    page.close()
-                finally:
-                    try:
-                        if owns_context:
-                            context.close()
-                    finally:
-                        try:
-                            browser.close()
-                        finally:
-                            playwright.stop()
-
-        return Session()
+        return _CdpSession(connection, page, browser_url, connections, reuse=reuse)
 
 
 class GenericBrowserIE(GenericIE, plugin_name="browser"):
@@ -455,25 +473,12 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             raise ExtractorError(msg, expected=True)
         return wait
 
-    def _safe_url(self, browser_url: str) -> str:
-        try:
-            parsed = urllib.parse.urlsplit(browser_url)
-        except Exception:
-            return browser_url
-
-        netloc = parsed.netloc
-        if parsed.username or parsed.password:
-            host = parsed.hostname or ""
-            if parsed.port:
-                host = f"{host}:{parsed.port}"
-            netloc = f"***:***@{host}" if host else "***:***"
-
-        query = "***" if parsed.query else ""
-        fragment = "***" if parsed.fragment else ""
-        return urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, query, fragment))
-
     def _real_extract(self, url: str) -> dict[str, Any]:
         self._url = url
+
+        http = self._configuration_arg("http", [None])[0]
+        if isinstance(http, str) and http.strip().lower() in {"1", "true", "yes", "on"}:
+            return self._fallback_extract(url)
 
         if not (browser_url := self._get_config("url", "YTP_BROWSER_URL")) or self._failed:
             return self._fallback_extract(url)
@@ -483,11 +488,9 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             self.report_warning("Browser URL must use http or https; falling back to generic extractor.", video_id)
             return self._fallback_extract(url)
 
-        safe_url = self._safe_url(browser_url)
         wait = self._get_wait()
 
         timeout: int | None = self._get_timeout_ms()
-        self.to_screen(f"Using remote browser for {url}")
 
         if not (driver := self._select_driver(browser_url)):
             msg: str = (
@@ -496,10 +499,14 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             )
             raise ExtractorError(msg)
 
-        self.write_debug(f"Selected driver {driver.__name__} for {safe_url}")
-
+        session = None
         try:
-            session = driver.connect(browser_url, timeout)
+            reuse = bool(getattr(multiprocessing.current_process(), "_ytptube_extractor_worker", False))
+            session = (
+                driver.connect(browser_url, timeout, reuse=reuse)
+                if driver is CdpDriver
+                else driver.connect(browser_url, timeout)
+            )
         except Exception as e:
             message = str(e)
             self._failed = True
@@ -508,8 +515,6 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
 
         fallback_status: int | None = None
         try:
-            self.report_extraction(url)
-            self.write_debug(f"Loading page {url}")
             status = session.goto(url)
             fallback_status = status if isinstance(status, int) else None
 
@@ -522,7 +527,6 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
 
             webpage = session.content()
             requests = self._merge_requests(session.get_requests(), session.get_media_requests())
-            self.write_debug(f"Captured {len(requests)} network requests")
 
             downloader = self._downloader
             if downloader and downloader.params.get("dump_intermediate_pages"):
@@ -561,13 +565,8 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 thumbnail = self._og_search_thumbnail(webpage, default=None)
                 if thumbnail:
                     info_dict["thumbnail"] = thumbnail
-            elif webpage:
-                self.write_debug(f"Page content did not look like HTML for {url}")
-                self.write_debug(webpage)
-
             network_info = self._extract_network_formats(requests, video_id, info_dict)
             if network_info:
-                self.write_debug(f"Resolved media from browser requests for {url}")
                 if network_info.get("_type") == "playlist" and network_info.get("entries"):
                     return self.playlist_result(network_info["entries"], **info_dict)
                 info_dict.update(network_info)
@@ -583,9 +582,10 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 None,
             )
         except Exception as e:
+            if session is not None and hasattr(session, "invalidate"):
+                session.invalidate()
             self.report_warning(
-                f"Browser extractor session failed for url={url!r} browser_url={safe_url!r} "
-                f"driver={driver.__name__} error={e!s}",
+                f"Browser extractor session failed for url={url!r} driver={driver.__name__} error={e!s}",
                 video_id,
             )
             raise
@@ -594,8 +594,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 session.close()
             except Exception as e:
                 self.report_warning(
-                    f"Browser session close failed for url={url!r} browser_url={safe_url!r} "
-                    f"driver={driver.__name__} error={e!s}",
+                    f"Browser session close failed for url={url!r} driver={driver.__name__} error={e!s}",
                     video_id,
                 )
 
@@ -694,7 +693,6 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 source_counts["direct"] = source_counts.get("direct", 0) + 1
 
         if not formats:
-            self.write_debug(f"No media formats found in {len(requests)} browser request(s)")
             return None
 
         if not has_manifest_formats and len(direct_formats) > 1:
@@ -809,3 +807,6 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         if isinstance(socket_timeout, (int, float)) and socket_timeout > 0:
             return int(socket_timeout * 1000)
         return None
+
+
+atexit.register(CdpDriver.close_sessions)

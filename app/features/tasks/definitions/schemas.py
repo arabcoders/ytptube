@@ -309,6 +309,7 @@ class TaskDefinitionInspectRequest(BaseModel):
     document: TaskDefinition | None = None
     url: str = Field(min_length=1)
     preset: str | None = None
+    resolve_ids: bool = Field(default=True, strict=True)
 
     @field_validator("url")
     @classmethod

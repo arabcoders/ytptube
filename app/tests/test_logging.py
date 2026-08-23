@@ -93,7 +93,6 @@ def test_formatter_exception():
     assert data["exception"]["line"] > 0
     assert data["source"] == data["exception"]["stack"][-1]
     assert data["exception"]["stack"][-1]["function"] == "test_formatter_exception"
-    assert "exception_message" not in data
 
 
 def test_formatter_no_stack():

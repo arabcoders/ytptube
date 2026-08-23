@@ -1636,7 +1636,8 @@ JSON object with fields to update:
   "url": "https://example.com/feed",            // required, validated URL
   "preset": "news-preset",                     // optional preset override - In real scenarios, the preset come from the task.
   "handler": "GenericTaskHandler",              // optional explicit handler class name, in real scenarios, the handler is resolved automatically.
-  "static_only": false                          // optional, if true performs only can_handle check without extracting items (faster, lightweight)
+  "static_only": false,                         // optional, if true performs only can_handle check without extracting items (faster, lightweight)
+  "resolve_ids": true                           // optional (default true), resolves real archive IDs per item via yt-dlp (slower)
 }
 ```
 
@@ -1645,6 +1646,7 @@ JSON object with fields to update:
 - This is much faster and lighter than the full inspection which calls the handler's `extract` method
 - Use `static_only: true` for quick validation checks (e.g., UI indicators)
 - Use `static_only: false` (default) for full inspection with item extraction
+- `resolve_ids` defaults to `true`. When enabled, the handler asks yt-dlp to identify each discovered item and check its archive status. This may take longer; set it to `false` to skip external yt-dlp resolution. Items that cannot be identified locally are returned with `archive_id: null`.
 
 **Response (success with static_only: true)**:
 ```json
@@ -1839,7 +1841,8 @@ or
 {
   "definition_id": 12,
   "url": "https://example.com/feed",
-  "preset": "optional-preset"
+  "preset": "optional-preset",
+  "resolve_ids": true
 }
 ```
 
@@ -1889,7 +1892,8 @@ or
     }
   },
   "url": "https://example.com/feed",
-  "preset": "optional-preset"
+  "preset": "optional-preset",
+  "resolve_ids": true
 }
 ```
 
@@ -1898,6 +1902,7 @@ or
 - `document` uses the same complete Task Definition object accepted by `POST /api/tasks/definitions/`.
 - `url` must match one of the selected definition's `match_url` patterns.
 - `preset` is optional and defaults to the configured default preset.
+- `resolve_ids` is optional and defaults to `true`. When enabled, the handler asks yt-dlp to identify each discovered item and check its archive status. This may take longer; set it to `false` to skip external yt-dlp resolution. Items that cannot be identified locally are returned with `archive_id: null`.
 
 **Response**: Returns the same inspection result as `POST /api/tasks/inspect`.
 ```json

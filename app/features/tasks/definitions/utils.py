@@ -8,9 +8,8 @@ ARCHIVE_ID_TTL = 7 * 24 * 60 * 60
 ARCHIVE_LOOKUP_FAILURE_TTL = 10 * 60
 
 
-def archive_id_cache_key(url: str) -> str:
-    """Return shared cache key for an exact item URL."""
-    return f"tasks:archive-id:{hashlib.sha256(url.encode('utf-8')).hexdigest()}"
+def archive_key(url: str) -> str:
+    return f"a:{hashlib.sha256(url.encode()).hexdigest()[:16]}"
 
 
 @overload

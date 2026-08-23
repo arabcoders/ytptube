@@ -558,6 +558,15 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
             params={"field": "api.fields.url"},
         )
 
+    resolve_ids = data.get("resolve_ids", True) if isinstance(data, dict) else True
+    if not isinstance(resolve_ids, bool):
+        return api_error_response(
+            "resolve_ids must be a boolean.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "resolve_ids"},
+        )
+
     static_only: bool = data.get("static_only", False) if isinstance(data, dict) else False
     if not static_only:
         try:
@@ -576,7 +585,11 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
 
     try:
         result: TaskResult | TaskFailure = await handler.inspect(
-            url=url, preset=preset, handler_name=handler_name, static_only=static_only
+            url=url,
+            preset=preset,
+            handler_name=handler_name,
+            static_only=static_only,
+            resolve_ids=resolve_ids,
         )
     except Exception as e:
         LOG.exception(
@@ -586,6 +599,7 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
                 "handler_name": handler_name,
                 "url": url,
                 "static_only": static_only,
+                "resolve_ids": resolve_ids,
                 "exception_type": type(e).__name__,
             },
         )
@@ -658,7 +672,12 @@ async def task_definition_inspect(
         )
 
     try:
-        result = await handler.inspect_definition(payload.url, definition, payload.preset)
+        result = await handler.inspect_definition(
+            payload.url,
+            definition,
+            payload.preset,
+            resolve_ids=payload.resolve_ids,
+        )
     except Exception as exc:
         LOG.exception(
             "Failed to inspect task definition for '%s': %s",

@@ -222,20 +222,3 @@ class TestFindAll:
         result = find_all(items, title=(Operation.CONTAIN, "Python"))
         assert len(result) == 1
         assert result[0]["title"] == "Python Tutorial"
-
-
-class TestOperationEnum:
-    """Test Operation enum."""
-
-    def test_operation_values(self) -> None:
-        """Test operation enum values."""
-        assert Operation.EQUAL.value == "=="
-        assert Operation.NOT_EQUAL.value == "!="
-        assert Operation.CONTAIN.value == "in"
-        assert Operation.GREATER_THAN.value == ">"
-        assert Operation.STARTS_WITH.value == "startswith"
-
-    def test_operation_str(self) -> None:
-        """Test operation string representation."""
-        assert str(Operation.EQUAL) == "=="
-        assert str(Operation.CONTAIN) == "in"

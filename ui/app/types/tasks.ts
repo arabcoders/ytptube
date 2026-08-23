@@ -40,6 +40,7 @@ export interface TaskInspectRequest {
   preset?: string;
   handler?: string;
   static_only?: boolean;
+  resolve_ids?: boolean;
 }
 
 /**

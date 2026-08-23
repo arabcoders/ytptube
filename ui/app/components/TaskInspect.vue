@@ -46,6 +46,19 @@
           />
         </UFormField>
       </div>
+
+      <div class="rounded-lg border border-default bg-muted/20 p-3">
+        <div class="flex h-full items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-archive" class="size-4 text-toned" />
+              <p class="text-sm font-semibold text-default">{{ t('common.resolveIds') }}</p>
+            </div>
+            <p class="text-xs text-toned">{{ t('common.resolveIdsDesc') }}</p>
+          </div>
+          <USwitch v-model="resolveIds" :disabled="loading" :aria-label="t('common.resolveIds')" />
+        </div>
+      </div>
     </form>
 
     <UAlert
@@ -53,8 +66,10 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
+      role="status"
       :title="t('common.loading')"
-      :description="t('common.loadingData')"
+      :description="loadingDescription"
+      :ui="{ icon: 'animate-spin' }"
     />
 
     <UAlert
@@ -102,8 +117,8 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
-import { computed, ref, watch } from 'vue';
-import { copyText, request } from '~/utils';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { copyText, formatTime, request } from '~/utils';
 import { filterLogTextLines } from '~/utils/logs';
 import type { TaskDefinitionDocument } from '~/types/task_definitions';
 import type { TaskInspectRequest, TaskInspectResponse } from '~/types/task_inspect';
@@ -123,6 +138,7 @@ const { selectItems } = usePresetOptions();
 const config = useYtpConfig();
 const url = ref(props.url ?? '');
 const preset = ref(props.preset || config.app.default_preset || '');
+const resolveIds = ref(true);
 const definitionMode = computed(
   () => props.definitionId !== undefined || props.definitionDocument !== undefined,
 );
@@ -133,6 +149,9 @@ const urlError = ref('');
 const query = ref('');
 const wrap = useStorage<boolean>('task_inspect_wrap', false);
 const contentView = ref<HTMLElement | null>(null);
+const elapsed = ref(0);
+let loadingStartedAt = 0;
+let loadingTimer: ReturnType<typeof setInterval> | null = null;
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -162,6 +181,11 @@ const displayedResponse = computed(() =>
 );
 const hasResult = computed(() => Boolean(response.value && !('error' in response.value)));
 const hasVisibleResponse = computed(() => displayedResponse.value.length > 0);
+const loadingDescription = computed(() => {
+  const value = formatTime(elapsed.value);
+  const time = value.includes(':') ? value : `00:${value.padStart(2, '0')}`;
+  return t('common.loadingDataElapsed', { time });
+});
 
 const errorDescription = computed(() => {
   if (!response.value || !('error' in response.value)) {
@@ -179,6 +203,24 @@ const errorDescription = computed(() => {
 
   return message ? `${error} ${message}` : error;
 });
+
+const stopLoadingTimer = (): void => {
+  if (loadingTimer !== null) {
+    clearInterval(loadingTimer);
+    loadingTimer = null;
+  }
+};
+
+const startLoadingTimer = (): void => {
+  stopLoadingTimer();
+  elapsed.value = 0;
+  loadingStartedAt = Date.now();
+  loadingTimer = setInterval(() => {
+    elapsed.value = Math.floor((Date.now() - loadingStartedAt) / 1000);
+  }, 1000);
+};
+
+onBeforeUnmount(stopLoadingTimer);
 
 watch(
   () => props.url,
@@ -228,6 +270,10 @@ const validateUrl = (val: string): boolean => {
 };
 
 async function onSubmit() {
+  if (loading.value) {
+    return;
+  }
+
   urlError.value = '';
   response.value = null;
   query.value = '';
@@ -238,10 +284,12 @@ async function onSubmit() {
   }
 
   loading.value = true;
+  startLoadingTimer();
 
   const payload: TaskInspectRequest = {
     url: url.value.trim(),
     preset: preset.value.trim() || undefined,
+    resolve_ids: resolveIds.value,
     ...(definitionMode.value
       ? props.definitionId !== undefined
         ? { definition_id: props.definitionId }
@@ -262,6 +310,7 @@ async function onSubmit() {
   } catch (err: any) {
     response.value = { error: err?.message || t('common.unknownError') };
   } finally {
+    stopLoadingTimer();
     loading.value = false;
   }
 }
@@ -269,9 +318,11 @@ async function onSubmit() {
 const onReset = () => {
   url.value = props.url || '';
   preset.value = props.preset || config.app.default_preset || '';
+  resolveIds.value = true;
   response.value = null;
   urlError.value = '';
   query.value = '';
+  elapsed.value = 0;
 };
 
 const copyResponse = (): void => {

@@ -5,6 +5,7 @@ export interface TaskInspectRequest {
   url: string;
   preset?: string;
   handler?: string;
+  resolve_ids?: boolean;
   definition_id?: number;
   document?: TaskDefinitionDocument;
 }

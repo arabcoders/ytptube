@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 from types import SimpleNamespace
@@ -18,7 +19,11 @@ from app.features.tasks.definitions.schemas import (
 )
 from app.features.tasks.definitions.results import HandleTask
 from app.library.config import Config
-from app.features.tasks.definitions.utils import ARCHIVE_ID_TTL, ARCHIVE_LOOKUP_FAILURE_TTL, archive_id_cache_key
+from app.features.tasks.definitions.utils import (
+    ARCHIVE_ID_TTL,
+    ARCHIVE_LOOKUP_FAILURE_TTL,
+    archive_key,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -529,7 +534,7 @@ async def test_generic_cache_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert isinstance(result, TaskResult)
     cache.set.assert_called_once_with(
-        archive_id_cache_key("https://example.com/item"), "example 42", ttl=ARCHIVE_ID_TTL, persist=True
+        archive_key("https://example.com/item"), "example 42", ttl=ARCHIVE_ID_TTL, persist=True
     )
 
 
@@ -561,8 +566,109 @@ async def test_generic_cache_failure(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert isinstance(result, TaskResult)
     cache.set.assert_called_once_with(
-        archive_id_cache_key("https://example.com/item"), None, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False
+        f"{archive_key('https://example.com/item')}:f",
+        1,
+        ttl=ARCHIVE_LOOKUP_FAILURE_TTL,
+        persist=False,
     )
+
+
+@pytest.mark.asyncio
+async def test_parallel_archive_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="parallel",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+    cache = Mock()
+    cache.has.return_value = False
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
+    monkeypatch.setattr(
+        GenericTaskHandler,
+        "_fetch_content",
+        staticmethod(
+            AsyncMock(return_value=("<a href='/first'>1</a><a href='/second'>2</a><a href='/first'>3</a>", None))
+        ),
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id", lambda **_kwargs: {"archive_id": None}
+    )
+    active = 0
+    peak = 0
+
+    async def fake_fetch(config, url, **kwargs):  # noqa: ARG001
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        await asyncio.sleep(0)
+        active -= 1
+        return {"id": url.rsplit("/", 1)[-1], "extractor_key": "Example"}, []
+
+    fetch = AsyncMock(side_effect=fake_fetch)
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
+
+    result = await GenericTaskHandler.extract_definition(
+        HandleTask(id=None, name="Parallel", url="https://example.com/feed"), definition
+    )
+
+    assert isinstance(result, TaskResult)
+    assert [item.url for item in result.items] == [
+        "https://example.com/first",
+        "https://example.com/second",
+        "https://example.com/first",
+    ]
+    assert [item.archive_id for item in result.items] == ["example first", "example second", "example first"]
+    assert peak == 2
+    assert [call.kwargs["url"] for call in fetch.await_args_list] == [
+        "https://example.com/first",
+        "https://example.com/second",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_lookup_cancels_siblings(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="cancellation",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+    cache = Mock()
+    cache.has.return_value = False
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
+    monkeypatch.setattr(
+        GenericTaskHandler,
+        "_fetch_content",
+        staticmethod(AsyncMock(return_value=("<a href='/first'>1</a><a href='/second'>2</a>", None))),
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id", lambda **_kwargs: {"archive_id": None}
+    )
+    sibling_started = asyncio.Event()
+    sibling_cancelled = asyncio.Event()
+
+    async def fake_fetch(config, url, **kwargs):  # noqa: ARG001
+        if url.endswith("/first"):
+            await sibling_started.wait()
+            raise TimeoutError
+        sibling_started.set()
+        try:
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            sibling_cancelled.set()
+            raise
+
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fake_fetch)
+
+    with pytest.raises(TimeoutError):
+        await GenericTaskHandler.extract_definition(
+            HandleTask(id=None, name="Cancellation", url="https://example.com/feed"), definition
+        )
+
+    assert sibling_cancelled.is_set()
 
 
 @pytest.mark.asyncio
@@ -595,6 +701,105 @@ async def test_inspection_uses_cached_id(monkeypatch: pytest.MonkeyPatch) -> Non
     assert result.items[0].archive_id == "cached 42"
     fetch.assert_not_awaited()
     cache.set.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_inspection_skips_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
+    definition = TaskDefinition(
+        name="fast-inspection",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}})
+        ),
+    )
+    cache = Mock()
+    cache.has.return_value = False
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
+    monkeypatch.setattr(
+        GenericTaskHandler, "_fetch_content", staticmethod(AsyncMock(return_value=(("<a href='/item'>x</a>"), None)))
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id", lambda **_kwargs: {"archive_id": None}
+    )
+    fetch = AsyncMock()
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
+
+    result = await GenericTaskHandler.extract_definition(
+        HandleTask(id=None, name="Inspect", url="https://example.com/feed"),
+        definition,
+        inspection=True,
+        resolve_ids=False,
+    )
+
+    assert isinstance(result, TaskResult)
+    assert result.items[0].archive_id is None
+    fetch.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("engine", "inspection", "expected_type", "expected_url", "expected_wait"),
+    [
+        (EngineConfig(), True, "http", None, "0"),
+        (
+            EngineConfig.model_validate({"type": "browser", "options": {"url": "http://browser:9222"}}),
+            True,
+            "browser",
+            "http://browser:9222",
+            "0",
+        ),
+        (
+            EngineConfig.model_validate({"type": "browser", "options": {"url": "http://browser:9222"}}),
+            False,
+            "browser",
+            "http://browser:9222",
+            None,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_archive_engine_forwarded(
+    monkeypatch: pytest.MonkeyPatch,
+    engine: EngineConfig,
+    inspection: bool,
+    expected_type: str,
+    expected_url: str | None,
+    expected_wait: str | None,
+) -> None:
+    definition = TaskDefinition(
+        name="fast-retry",
+        match_url=["https://example.com/*"],
+        definition=Definition(
+            parse=Parse.model_validate({"url": {"type": "css", "expression": "a", "attribute": "href"}}),
+            engine=engine,
+        ),
+    )
+    cache = Mock()
+    cache.has.return_value = False
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.CACHE", cache)
+    monkeypatch.setattr(
+        GenericTaskHandler, "_fetch_content", staticmethod(AsyncMock(return_value=("<a href='/item'>x</a>", None)))
+    )
+    monkeypatch.setattr(
+        "app.features.tasks.definitions.handlers.generic.get_archive_id", lambda **_kwargs: {"archive_id": None}
+    )
+    fetch = AsyncMock(return_value=({"id": "42", "extractor_key": "Example"}, []))
+    monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
+
+    result = await GenericTaskHandler.extract_definition(
+        HandleTask(id=None, name="Inspect", url="https://example.com/feed"), definition, inspection=inspection
+    )
+
+    assert isinstance(result, TaskResult)
+    assert result.items[0].archive_id == "example 42"
+    fetch.assert_awaited_once()
+    call = fetch.await_args_list[0].kwargs
+    args = call["generic_args"]
+    assert args["http"] == str(expected_type == "http").lower()
+    assert args.get("url") == expected_url
+    assert "wait" not in args
+    assert call["config"].get("extractor_args", {}).get("generic", {}).get("wait") == (
+        [expected_wait] if expected_wait else None
+    )
 
 
 @pytest.mark.asyncio

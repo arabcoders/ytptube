@@ -463,6 +463,7 @@ class TaskHandle:
         preset: str | None = None,
         handler_name: str | None = None,
         static_only: bool = False,
+        resolve_ids: bool = True,
     ) -> TaskResult | TaskFailure:
         """
         Inspect a URL to find a matching handler and optionally extract items.
@@ -472,6 +473,7 @@ class TaskHandle:
             preset: Optional preset name to use.
             handler_name: Optional specific handler name to use.
             static_only: If True, only check if a handler matches without extraction.
+            resolve_ids: Resolve missing archive IDs through yt-dlp.
 
         Returns:
             TaskResult or TaskFailure with inspection results.
@@ -539,7 +541,10 @@ class TaskHandle:
 
         try:
             extraction: TaskResult | TaskFailure = await services.handle_async(
-                handler=handler_cls.inspect, task=task, config=self._config
+                handler=handler_cls.inspect,
+                task=task,
+                config=self._config,
+                resolve_ids=resolve_ids,
             )
         except NotImplementedError:
             return TaskFailure(
@@ -584,7 +589,12 @@ class TaskHandle:
         return self._finish_inspection(task, extraction, base_metadata)
 
     async def inspect_definition(
-        self, url: str, definition: TaskDefinition, preset: str | None = None
+        self,
+        url: str,
+        definition: TaskDefinition,
+        preset: str | None = None,
+        *,
+        resolve_ids: bool = True,
     ) -> TaskResult | TaskFailure:
         """Inspect one validated generic definition without handler discovery."""
         from app.features.tasks.definitions.handlers.generic import GenericTaskHandler
@@ -605,6 +615,7 @@ class TaskHandle:
                 definition=definition,
                 config=self._config,
                 inspection=True,
+                resolve_ids=resolve_ids,
             )
         except NotImplementedError:
             return TaskFailure(

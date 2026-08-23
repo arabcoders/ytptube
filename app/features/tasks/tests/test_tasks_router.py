@@ -48,9 +48,19 @@ class _Notify:
 class _Handler:
     def __init__(self, matched: bool | dict[str, bool]) -> None:
         self._matched = matched
+        self.resolve_ids = None
 
-    async def inspect(self, *, url: str, preset: str | None = None, static_only: bool = False, **_kwargs):
+    async def inspect(
+        self,
+        *,
+        url: str,
+        preset: str | None = None,
+        static_only: bool = False,
+        resolve_ids: bool = True,
+        **_kwargs,
+    ):
         del preset, static_only
+        self.resolve_ids = resolve_ids
 
         if isinstance(self._matched, dict):
             matched = self._matched.get(url, False)
@@ -66,9 +76,11 @@ class _Handler:
 class _DefinitionHandler:
     def __init__(self) -> None:
         self.definition = None
+        self.resolve_ids = None
 
-    async def inspect_definition(self, url, definition, preset):
+    async def inspect_definition(self, url, definition, preset, *, resolve_ids=True):
         self.definition = definition
+        self.resolve_ids = resolve_ids
         return TaskResult(metadata={"matched": True, "handler": "GenericTaskHandler", "preset": preset, "url": url})
 
 
@@ -115,7 +127,12 @@ class _DefinitionRepo:
 
 
 @pytest.mark.parametrize(
-    "payload", [{"url": "https://example.com"}, {"url": "https://example.com", "definition_id": 1, "document": {}}]
+    "payload",
+    [
+        {"url": "https://example.com"},
+        {"url": "https://example.com", "definition_id": 1, "document": {}},
+        {"url": "https://example.com", "definition_id": 1, "resolve_ids": "false"},
+    ],
 )
 def test_inspection_target(payload) -> None:
     with pytest.raises(ValueError):
@@ -136,7 +153,41 @@ async def test_saved_inspection() -> None:
     assert response.status == 200
     assert handler.definition is not None
     assert handler.definition.id == 7
+    assert handler.resolve_ids is True
     assert repo.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_skips_archive_resolution() -> None:
+    handler = _DefinitionHandler()
+    response = await router.task_definition_inspect(
+        _Request(
+            {
+                "definition_id": 7,
+                "url": "https://example.com/feed",
+                "resolve_ids": False,
+            }
+        ),
+        handler,
+        _DefinitionRepo(_saved_model()),
+        Encoder(),
+    )
+
+    assert response.status == 200
+    assert handler.resolve_ids is False
+
+
+@pytest.mark.asyncio
+async def test_handler_skips_resolution() -> None:
+    handler = _Handler(matched=True)
+    response = await router.task_handler_inspect(
+        _Request({"url": "https://example.com/feed", "resolve_ids": False}),
+        handler,
+        Encoder(),
+    )
+
+    assert response.status == 200
+    assert handler.resolve_ids is False
 
 
 @pytest.mark.asyncio

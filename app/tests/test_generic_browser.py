@@ -31,6 +31,12 @@ def _make_ie(config: dict[str, str | None] | None = None) -> Any:
     return ie
 
 
+def _make_cdp_session() -> tuple[Any, Mock]:
+    page = Mock()
+    session = generic_browser._CdpSession({}, page, "http://browser", {}, reuse=True)
+    return session, page
+
+
 def test_cfg_env(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     monkeypatch.setenv("YTP_BROWSER_URL", "  http://browser:9222  ")
@@ -45,6 +51,25 @@ def test_cfg_arg_wins(monkeypatch: pytest.MonkeyPatch) -> None:
     assert ie._get_config("url", "YTP_BROWSER_URL") == "http://arg:9222"
 
 
+def test_http_engine_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    ie = _make_ie({"http": "true"})
+    ie.__wrapped__ = Mock()
+    ie.__wrapped__._real_extract.return_value = {"id": "fallback"}
+    monkeypatch.setenv("YTP_BROWSER_URL", "http://browser:9222")
+
+    result = ie._real_extract("https://example.com/item")
+
+    assert result == {"id": "fallback"}
+    ie.__wrapped__._real_extract.assert_called_once_with(ie, "https://example.com/item")
+
+
+def test_browser_engine_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    ie = _make_ie({"http": "false", "url": "http://explicit:9222"})
+    monkeypatch.setenv("YTP_BROWSER_URL", "http://environment:9222")
+
+    assert ie._get_config("url", "YTP_BROWSER_URL") == "http://explicit:9222"
+
+
 def test_wait_config() -> None:
     assert _make_ie()._get_wait() == generic_browser.BROWSER_WAIT_SECONDS
     assert _make_ie({"wait": "3.5"})._get_wait() == 3.5
@@ -57,46 +82,35 @@ def test_wait_invalid(value: str) -> None:
 
 
 def test_wait_existing_media() -> None:
-    wait = Mock()
-    wait_for_media = Mock()
+    session, page = _make_cdp_session()
+    session.requests.append({"url": "https://cdn.example/video.mp4"})
 
-    generic_browser._wait_for_network_idle(
-        [{"url": "https://cdn.example/video.mp4"}], wait, wait_for_media, max_total_timeout=60
-    )
+    session.wait_for_network_idle(max_total_timeout=60)
 
-    wait.assert_not_called()
-    wait_for_media.assert_not_called()
+    page.wait_for_load_state.assert_not_called()
+    page.wait_for_function.assert_not_called()
 
 
 def test_wait_media_during_idle() -> None:
-    requests: list[dict[str, str]] = []
+    session, page = _make_cdp_session()
 
-    def wait(_timeout: int) -> bool:
-        requests.append({"url": "https://cdn.example/video.mp4"})
-        return False
+    def wait(*_args, **_kwargs) -> None:
+        session.requests.append({"url": "https://cdn.example/video.mp4"})
+        raise TimeoutError
 
-    wait_for_media = Mock()
-    generic_browser._wait_for_network_idle(requests, wait, wait_for_media, max_total_timeout=1)
+    page.wait_for_load_state.side_effect = wait
+    session.wait_for_network_idle(max_total_timeout=1)
 
-    wait_for_media.assert_not_called()
+    page.wait_for_function.assert_not_called()
 
 
 def test_wait_zero() -> None:
-    wait = Mock()
-    wait_for_media = Mock()
+    session, page = _make_cdp_session()
 
-    generic_browser._wait_for_network_idle([], wait, wait_for_media, max_total_timeout=0)
+    session.wait_for_network_idle(max_total_timeout=0)
 
-    wait.assert_not_called()
-    wait_for_media.assert_not_called()
-
-
-def test_safe_url() -> None:
-    ie = _make_ie()
-
-    assert (
-        ie._safe_url("http://user:pass@10.0.0.6:9222/cdp?token=abc#frag") == "http://***:***@10.0.0.6:9222/cdp?***#***"
-    )
+    page.wait_for_load_state.assert_not_called()
+    page.wait_for_function.assert_not_called()
 
 
 def test_real_extract_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -115,6 +129,31 @@ def test_real_extract_invalid_url(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(generic_browser.ExtractorError, match="Invalid browser URL"):
         ie._real_extract("https://example.com/watch")
+
+
+@pytest.mark.parametrize("reuse", [False, True])
+def test_cdp_worker_reuse(monkeypatch: pytest.MonkeyPatch, reuse: bool) -> None:
+    ie = _make_ie()
+    monkeypatch.setenv("YTP_BROWSER_URL", "http://browser:9222")
+
+    session = Mock()
+    session.content.return_value = ""
+    session.get_requests.return_value = []
+    session.get_media_requests.return_value = []
+    connect = Mock(return_value=session)
+    process = type("Process", (), {})()
+    if reuse:
+        vars(process)["_ytptube_extractor_worker"] = True
+
+    monkeypatch.setattr(generic_browser.CdpDriver, "connect", connect)
+    monkeypatch.setattr(
+        generic_browser.GenericBrowserIE, "_select_driver", lambda self, ws_url: generic_browser.CdpDriver
+    )
+    monkeypatch.setattr(generic_browser.multiprocessing, "current_process", lambda: process)
+
+    ie._real_extract("https://example.com/watch")
+
+    connect.assert_called_once_with("http://browser:9222", None, reuse=reuse)
 
 
 def test_log_connect_fail(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -138,12 +177,11 @@ def test_log_connect_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie.report_warning.assert_called_once_with(
         "Remote browser unavailable: remote browser down, marking as failed.", "vid"
     )
-    ie.to_screen.assert_called_once_with("Using remote browser for https://example.com/watch")
 
 
 def test_log_session_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "http://browser/path?token=secret")
+    monkeypatch.setenv("YTP_BROWSER_URL", "http://browser:9222")
 
     session = Mock()
     session.goto.side_effect = RuntimeError("page crashed")
@@ -162,17 +200,14 @@ def test_log_session_fail(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert session.close.call_count == 1
     ie.report_warning.assert_called_once_with(
-        "Browser extractor session failed for url='https://example.com/watch' "
-        "browser_url='http://browser/path?***' driver=FakeDriver error=page crashed",
+        "Browser extractor session failed for url='https://example.com/watch' driver=FakeDriver error=page crashed",
         "vid",
     )
-    ie.write_debug.assert_any_call("Selected driver FakeDriver for http://browser/path?***")
-    ie.write_debug.assert_any_call("Loading page https://example.com/watch")
 
 
 def test_log_close_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
-    monkeypatch.setenv("YTP_BROWSER_URL", "http://browser/path?token=secret")
+    monkeypatch.setenv("YTP_BROWSER_URL", "http://browser:9222")
 
     session = Mock()
     session.content.return_value = ""
@@ -192,8 +227,7 @@ def test_log_close_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     ie._real_extract("https://example.com/watch")
 
     ie.report_warning.assert_called_once_with(
-        "Browser session close failed for url='https://example.com/watch' "
-        "browser_url='http://browser/path?***' driver=FakeDriver error=close failed",
+        "Browser session close failed for url='https://example.com/watch' driver=FakeDriver error=close failed",
         "vid",
     )
 
@@ -221,8 +255,6 @@ def test_log_non_html(monkeypatch: pytest.MonkeyPatch) -> None:
     result = ie._real_extract("https://example.com/watch")
 
     assert result["formats"][0]["url"] == "https://cdn.example/video.mp4"
-    ie.write_debug.assert_any_call("Page content did not look like HTML for https://example.com/watch")
-    ie.write_debug.assert_any_call("plain text body")
 
 
 def test_html_meta(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -270,7 +302,6 @@ def test_no_media() -> None:
 
     assert result is None
     ie.__wrapped__._real_extract.assert_not_called()
-    ie.write_debug.assert_called_with("No media formats found in 0 browser request(s)")
     ie.report_warning.assert_not_called()
 
 
@@ -462,6 +493,7 @@ def _cdp_mocks(monkeypatch: pytest.MonkeyPatch, contexts: list[Mock]) -> tuple[M
 
     monkeypatch.setattr(sync_api, "sync_playwright", lambda: starter)
     monkeypatch.setattr(generic_browser.CdpDriver, "is_available", staticmethod(lambda: True))
+    generic_browser.CdpDriver.close_sessions()
     return playwright, browser
 
 
@@ -482,13 +514,34 @@ def test_cdp_reuses_context(monkeypatch: pytest.MonkeyPatch) -> None:
     playwright.stop.assert_called_once_with()
 
 
+def test_cdp_reuses_connection(monkeypatch: pytest.MonkeyPatch) -> None:
+    context = Mock()
+    first_page, second_page = Mock(), Mock()
+    context.new_page.side_effect = [first_page, second_page]
+    playwright, browser = _cdp_mocks(monkeypatch, [context])
+
+    first = generic_browser.CdpDriver.connect("http://browser", reuse=True)
+    second = generic_browser.CdpDriver.connect("http://browser", reuse=True)
+
+    assert first.get_page() is first_page
+    assert second.get_page() is second_page
+    assert context.new_page.call_count == 2
+    playwright.chromium.connect_over_cdp.assert_called_once_with("http://browser", timeout=30000)
+    first.close()
+    second.close()
+    generic_browser.CdpDriver.close_sessions()
+    browser.close.assert_called_once_with()
+    playwright.stop.assert_called_once_with()
+
+
 def test_cdp_owns_context(monkeypatch: pytest.MonkeyPatch) -> None:
     playwright, browser = _cdp_mocks(monkeypatch, [])
     context = browser.new_context.return_value
     page = context.new_page.return_value
 
-    session = generic_browser.CdpDriver.connect("http://browser")
+    session = generic_browser.CdpDriver.connect("http://browser", reuse=True)
     session.close()
+    generic_browser.CdpDriver.close_sessions()
 
     browser.new_context.assert_called_once_with()
     page.close.assert_called_once_with()
@@ -542,3 +595,34 @@ def test_cdp_connect_cleanup(monkeypatch: pytest.MonkeyPatch) -> None:
         generic_browser.CdpDriver.connect("http://browser")
 
     playwright.stop.assert_called_once_with()
+
+
+def test_cdp_invalidates_connection(monkeypatch: pytest.MonkeyPatch) -> None:
+    context = Mock()
+    page = context.new_page.return_value
+    playwright, browser = _cdp_mocks(monkeypatch, [context])
+    session = generic_browser.CdpDriver.connect("http://browser", reuse=True)
+
+    assert "http://browser" in generic_browser.CdpDriver._connections()
+
+    session.invalidate()
+    session.close()
+
+    page.close.assert_called_once_with()
+    browser.close.assert_called_once_with()
+    playwright.stop.assert_called_once_with()
+    assert generic_browser.CdpDriver._connections() == {}
+
+
+def test_cdp_page_failure_invalidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    context = Mock()
+    context.new_page.side_effect = [Mock(), RuntimeError("page failed")]
+    playwright, browser = _cdp_mocks(monkeypatch, [context])
+    generic_browser.CdpDriver.connect("http://browser", reuse=True).close()
+
+    with pytest.raises(RuntimeError, match="page failed"):
+        generic_browser.CdpDriver.connect("http://browser", reuse=True)
+
+    browser.close.assert_called_once_with()
+    playwright.stop.assert_called_once_with()
+    assert generic_browser.CdpDriver._connections() == {}
