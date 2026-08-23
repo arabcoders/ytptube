@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "设置账户",
     "setupHeading": "创建账户",
     "setupSubtitle": "完成 YTPTube 设置即可开始。",
     "setupAction": "创建账户",
-    "login": "登录",
     "loginHeading": "欢迎回来",
     "loginSubtitle": "登录以继续使用 YTPTube。",
     "loginAction": "登录",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "打开密码重置说明",
     "username": "用户名",
     "password": "密码",
-    "continue": "继续",
     "account": "账户",
     "accountDetails": "账户详情",
     "accountDetailsDescription": "更新用于登录的用户名和密码。",
@@ -50,7 +47,6 @@
     "copyWarning": "请立即复制此密钥，之后将不再显示。",
     "showPassword": "显示密码",
     "hidePassword": "隐藏密码",
-    "language": "语言",
     "brandAlt": "YTPTube 标志",
     "errorTitle": "出现问题"
   },
@@ -58,6 +54,9 @@
     "add": "添加",
     "save": "保存",
     "cancel": "取消",
+    "continue": "继续",
+    "language": "语言",
+    "details": "详情",
     "delete": "删除",
     "edit": "编辑",
     "confirm": "确认",
@@ -117,7 +116,6 @@
     "streaming": "串流中",
     "invalid": "无效",
     "offline": "离线",
-    "refreshQueue": "刷新队列",
     "webuiSettings": "WebUI 设置",
     "start": "开始",
     "stop": "停止",
@@ -155,7 +153,6 @@
     "cancelDownload": "取消下载",
     "runNow": "立即运行",
     "generateMetadata": "生成元数据",
-    "inspectHandler": "处理程序（仅用于测试）",
     "archiveAll": "全部归档",
     "unarchiveAll": "全部取消归档",
     "updateDescription": "更新此项目。",
@@ -190,7 +187,6 @@
     "enterValidUrl": "请输入有效的 URL。",
     "resetConfigDone": "本地配置已重置。",
     "enterUrlFirst": "请先输入 URL。",
-    "failedGenerateCommand": "生成命令失败。",
     "failedCreateCommand": "创建并导航到命令失败",
     "failedTestOptions": "测试下载选项失败",
     "logLevelUpdated": "日志级别已更新，直至下次重启。",
@@ -215,6 +211,9 @@
     "hidden": "隐藏",
     "showMore": "显示更多",
     "loadingData": "正在加载数据，请稍候...",
+    "loadingDataElapsed": "正在加载数据，请稍候... 已用时间：{time}",
+    "resolveIds": "解析真实存档 ID",
+    "resolveIdsDesc": "让 yt-dlp 识别每个项目并检查其存档状态。可能需要更长时间。",
     "filterDisplayedContent": "筛选显示的内容",
     "queueOverview": "队列概览",
     "limitsDataDesc": "数据基于当前队列状态和已配置的限制。",
@@ -427,8 +426,6 @@
     "handlerDisabledCron": "此任务需要 CRON 定时器，因为处理程序已被禁用。",
     "handlerVerifyFailed": "验证处理程序支持失败。请设置 CRON 定时器或重试。",
     "handlerNoMatch": "此任务需要 CRON 定时器，因为没有匹配 URL 的受支持处理程序。",
-    "addField": "添加字段",
-    "addHeader": "添加请求头",
     "advancedTab": "高级",
     "anyFilter": "任意",
     "appriseDetected": "检测到 Apprise 目标",
@@ -446,9 +443,8 @@
     "definitionPriorityDesc": "值越小越先评估。",
     "desc": "降序",
     "display": "显示",
-    "editorInfo": "仅暴露单个容器选择器和各字段提取器。更高级的结构需使用原始视图模式。",
     "engine": "引擎",
-    "engineDesc": "推荐使用 HTTPX。",
+    "engineDesc": "HTTP 请求或浏览器渲染。",
     "exception": "异常",
     "extractedFields": "提取的字段",
     "fieldAttribute": "属性",
@@ -465,13 +461,7 @@
     "groupFilter": "分组筛选",
     "guiTab": "GUI",
     "headerEmptyWarning": "如果请求头的键或值为空，则不会发送该请求头。",
-    "headerKey": "请求头键",
-    "headerValue": "请求头值",
     "importFromExisting": "从现有导入",
-    "inspectHandlerDesc": "仅用于测试。在实际使用中会自动检测。",
-    "inspecting": "检查中",
-    "inspectingDesc": "正在检查.. 请稍候。",
-    "inspectPresetDesc": "仅在测试期间覆盖预设。",
     "invalidImportDefinition": "导入字符串不是任务定义导出。",
     "invalidJson": "无效的 JSON",
     "level": "级别",
@@ -491,8 +481,25 @@
     "rawData": "原始数据",
     "rawJson": "原始 JSON 定义",
     "requestMethod": "请求方法",
-    "requestMethodDesc": "webhook 的 HTTP 方法。",
+    "requestMethodDesc": "请求使用的 HTTP 方法。",
     "requestSetup": "请求设置",
+    "queryParameters": "查询参数",
+    "queryParametersDesc": "附加到请求 URL。",
+    "requestHeaders": "请求头",
+    "requestHeadersDesc": "随请求发送。",
+    "requestBodyType": "请求正文",
+    "requestBodyTypeDesc": "选择正文编码方式。",
+    "requestBodyNone": "无",
+    "requestBodyRaw": "纯文本",
+    "requestBody": "正文内容",
+    "requestBodyDesc": "按输入内容原样发送。",
+    "requestFormFieldsDesc": "表单字段以键值对发送。",
+    "requestJsonFieldsDesc": "值必须是有效 JSON，字符串需要引号。",
+    "jsonValue": "JSON 值",
+    "requestKeyRequired": "{label}需要键。",
+    "validationRequestTimeout": "请求超时必须大于或等于零。",
+    "validationJsonValue": "{key} 的 JSON 值无效。",
+    "stripFieldsConfirm": "以下值不适用于当前选择，将被移除：\n\n{fields}",
     "requestType": "请求类型",
     "requestTypeDesc": "JSON 或表单编码。",
     "requestUrl": "请求 URL（可选）",
@@ -507,8 +514,31 @@
     "selectPresetsDesc": "留空表示所有预设。",
     "selectorExpression": "选择器 / 表达式",
     "selectorType": "选择器类型",
-    "seleniumHubUrl": "Selenium Hub URL（必填）",
-    "seleniumHubUrlDesc": "远程 webdriver 端点。",
+    "browserEndpointUrl": "浏览器端点 URL（必填）",
+    "browserEndpointUrlDesc": "所选浏览器协议的 HTTP(S) 端点。",
+    "parseMode": "解析模式",
+    "parseSetup": "解析设置",
+    "parseModeDesc": "选择容器或直接字段结构。",
+    "parseContainer": "容器",
+    "parseDirect": "直接",
+    "responseType": "响应类型",
+    "responseTypeDesc": "选择预期的响应格式。",
+    "responseHtml": "HTML",
+    "impersonate": "模拟客户端",
+    "impersonateDesc": "HTTP 请求使用的可选客户端标识。",
+    "curlDefaultHeaders": "cURL 默认请求头",
+    "curlDefaultHeadersDesc": "包含 cURL 的默认请求头。",
+    "flaresolverr": "FlareSolverr",
+    "flaresolverrDesc": "通过 FlareSolverr 发送受保护的请求。",
+    "waitFor": "等待元素",
+    "waitForDesc": "等待此元素可用。",
+    "waitExpression": "CSS 或 XPath 表达式",
+    "waitTimeout": "等待超时",
+    "waitTimeoutDesc": "最长等待时间（秒，0–300）。",
+    "pageLoadTimeout": "页面加载超时",
+    "pageLoadTimeoutDesc": "最长页面加载时间（秒，0–300）。",
+    "validationUrlFieldRequired": "必须提供 url 字段。",
+    "validationBrowserEndpointRequired": "必须提供浏览器端点 URL。",
     "shortFilter": "仅短格式 (-x)",
     "sortBy": "排序方式",
     "sortByFlag": "标志",
@@ -516,6 +546,9 @@
     "targetUrl": "目标 URL",
     "type": "类型",
     "unsupportedVersion": "不支持或缺少 _version 字段。",
+    "valueBoolean": "布尔值",
+    "valueNull": "空值",
+    "valueNumber": "数字",
     "yesLabel": "是",
     "browseYtdlpFlags": "浏览可用的 yt-dlp 标志和说明。",
     "conditionDescPlaceholder": "描述此条件的作用",
@@ -568,14 +601,12 @@
     "bothKeyValueRequired": "键和值均为必填项。",
     "keyAlreadyExists": "键 '{key}' 已存在。",
     "optionsOrExtraRequired": "需要 yt-dlp 命令选项或至少一个额外选项。",
-    "failedTestCondition": "测试条件失败。{error}",
     "failedImportNotification": "导入通知失败。{error}",
     "requestTypeJson": "Json",
     "requestTypeForm": "Form",
     "prefillFromDef": "从现有任务定义预填。",
     "advancedModeRequired": "需要高级模式",
     "advancedModeRequiredDesc": "无法在可视化编辑器中表示。",
-    "guiLimitations": "GUI 限制",
     "unableToBuildDef": "无法构建定义",
     "lineDetail": "行",
     "functionDetail": "函数",
@@ -619,6 +650,7 @@
     "allGroups": "所有分组",
     "invalidJsonDocument": "无效的 JSON 文档。",
     "validationMatchRequired": "至少需要一个匹配模式。",
+    "validationPairValue": "{key} 的值必须与所选类型匹配。",
     "validationSelectorRequired": "容器选择器为必填项。",
     "validationExpressionRequired": "字段 \"{key}\" 的表达式为必填项。",
     "validationFieldsRequired": "请至少配置一个提取器字段。",
@@ -662,6 +694,8 @@
     "FEATURE_DISABLED": "{feature} 已禁用。",
     "OPERATION_FAILED": "操作失败。",
     "DEPENDENCY_FAILED": "所需的依赖项失败。",
+    "FFMPEG_UNAVAILABLE": "此系统上没有 ffmpeg，无法进行转码和流式传输。",
+    "FFPROBE_UNAVAILABLE": "此系统上没有 ffprobe，无法读取媒体元数据。",
     "TIMEOUT": "操作超时。",
     "INTERNAL_ERROR": "内部服务器错误。",
     "VIDEO_UNAVAILABLE": "视频不可用。",
@@ -707,30 +741,6 @@
       "shutdown": "关闭",
       "monitoring": "资源监控",
       "fileLogging": "文件日志"
-    },
-    "actions": {
-      "add": "添加",
-      "addDownload": "添加下载",
-      "create": "创建",
-      "update": "更新",
-      "patch": "修补",
-      "delete": "删除",
-      "import": "导入",
-      "export": "导出",
-      "start": "开始",
-      "pause": "暂停",
-      "cancel": "取消",
-      "download": "下载",
-      "processPlaylist": "处理播放列表"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "私密视频",
-      "geoRestricted": "地区限制",
-      "ageRestricted": "年龄限制"
     }
   },
   "app": {
@@ -775,9 +785,7 @@
     "connection": {
       "connected": "已连接",
       "connecting": "连接中...",
-      "disconnected": "已断开",
-      "connectingServer": "正在连接 websocket 服务器...",
-      "lost": "Websocket 连接已断开。"
+      "disconnected": "已断开"
     },
     "config": {
       "loading": "正在加载配置...",
@@ -789,8 +797,7 @@
       "clickHere": "点击此处",
       "or": "或",
       "reloadConfig": "重新加载配置",
-      "reloadPage": "重新加载页面",
-      "socketError": "{error}。请查看开发者控制台以获取更多信息。"
+      "reloadPage": "重新加载页面"
     },
     "update": {
       "newVersionInstalled": "已安装新的 WebUI 版本。",
@@ -808,13 +815,11 @@
       "applicationError": "应用错误",
       "unknownError": "未知错误",
       "description": "意外错误中断了此视图。您可以返回首页或重试当前路由。",
-      "details": "详情",
       "stackTrace": "堆栈跟踪",
       "backToHome": "返回首页"
     },
     "footer": {
       "poweredBy": "由",
-      "started": "已启动：",
       "versionUnknown": "未知"
     },
     "theme": {
@@ -846,7 +851,6 @@
       "saveLayout": "保存布局",
       "appearance": "外观",
       "theme": "主题",
-      "language": "语言",
       "animationsDesc": "启用页面过渡动画。",
       "background": "背景",
       "bgDesc": "显示随机的全景背景图片。",
@@ -917,7 +921,6 @@
     "waiting": " - 等待中..",
     "queuedCount": "已排队：显示 {shown} / 共 {total}",
     "queuedCountShort": "已排队：{count}",
-    "pauseDownloadsTitle": "暂停下载",
     "pauseDownloadsDesc": "确定要暂停所有非活跃下载吗？",
     "filterKeyValue": "您也可以使用 <code><u>键</u>:值</code> 进行定向搜索。",
     "filterExample1": "包含该文本的项目",
@@ -939,7 +942,6 @@
     "streamed": "已串流",
     "partialError": "部分错误",
     "premiere": "首映",
-    "unknown": "未知",
     "player": "播放器",
     "empty": "下载历史为空。",
     "clearCompletedConfirm": "清除所有已完成的下载？不会删除任何文件。",
@@ -1028,8 +1030,7 @@
     "generateMetadataConfirmDesc": "此操作将生成：\n- tvshow.nfo - 用于媒体中心兼容性\n- title [id].info.json - yt-dlp 元数据文件\n- 缩略图：poster.jpg、fanart.jpg、thumb.jpg、banner.jpg、icon.jpg、landscape.jpg（如果可用）。\n\n警告：如果存在现有元数据文件，这将覆盖它们。",
     "allMarkedDownloaded": "所有项目已标记为已下载。",
     "allRemovedArchive": "所有项目已从归档移除。",
-    "metadataCompleted": "元数据生成完成。",
-    "handlerPlaceholder": "处理程序类名"
+    "metadataCompleted": "元数据生成完成。"
   },
   "taskDefinitions": {
     "description": "创建定义，将任何网站转换为可下载的链接列表。",
@@ -1037,9 +1038,7 @@
     "updated": "已更新",
     "patterns": "模式：{count} 个匹配/s",
     "urlPatterns": "URL 模式",
-    "unnamed": "（未命名定义）",
-    "editorLoadingDesc": "编辑前正在加载完整定义。",
-    "editorDesc": "适合时使用 GUI 编辑器，或切换到高级 JSON 以获得完全控制。"
+    "unnamed": "（未命名定义）"
   },
   "presets": {
     "description": "预定义的 yt-dlp 命令选项。",
@@ -1093,7 +1092,6 @@
     "loadingLogs": "正在加载日志...",
     "connectingStream": "正在连接日志流。",
     "loadOlder": "将更早的行加载到筛选器",
-    "details": "详情",
     "copyRendered": "复制渲染后的日志",
     "copyRaw": "复制原始日志",
     "allLevels": "所有级别",
@@ -1189,7 +1187,6 @@
     "connections": "连接数：{count}",
     "diskTemp": "临时",
     "diskConfig": "配置",
-    "system": "系统",
     "systemCpuHint": "系统 {value}"
   },
   "diagnostics": {
@@ -1216,12 +1213,6 @@
     "skippedDesc": "未配置或不需要。",
     "appDesc": "当前构建。",
     "hostDesc": "操作系统和机器。",
-    "resourceStats": "资源统计",
-    "shareTitle": "YTPTube 诊断",
-    "shareGenerated": "生成时间：{date}",
-    "shareStarted": "已启动",
-    "shareWindow": "窗口",
-    "shareSamples": "样本",
     "feature": {
       "core": {
         "label": "核心设置",
@@ -1248,7 +1239,6 @@
   "changelog": {
     "description": "最新的项目变更",
     "filterPlaceholder": "筛选更新日志条目",
-    "releaseDate": "发布日期：",
     "releaseDateValue": "发布日期：{date}",
     "installed": "已安装",
     "commits": "{count} 次提交",
@@ -1271,8 +1261,6 @@
     "requeue": "重新排队",
     "video": "视频",
     "embed": "嵌入",
-    "queuedCount": "显示 {shown} / 共 {total} 排队",
-    "queuedCountShort": "{count} 个已排队",
     "abilityRequeue": "无法将项目重新排队；缺少 URL。",
     "removedFromHistory": "已从历史队列移除。",
     "videoThumbnail": "视频缩略图",
@@ -1287,6 +1275,11 @@
         "title": "README",
         "navLabel": "README",
         "description": "项目概述"
+      },
+      "features": {
+        "title": "功能",
+        "navLabel": "功能",
+        "description": "下载、自动化和媒体库功能。"
       },
       "faq": {
         "title": "FAQ",
@@ -1304,10 +1297,6 @@
         "description": "安全政策和漏洞报告指南。"
       }
     }
-  },
-  "socket": {
-    "disconnected": "已与服务器断开连接。",
-    "connectionError": "连接错误：{error}"
   },
   "player": {
     "subtitleLoadFailed": "加载此视频的字幕失败。",

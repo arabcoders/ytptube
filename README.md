@@ -2,91 +2,78 @@
 
 ![Build Status](https://github.com/arabcoders/ytptube/actions/workflows/main.yml/badge.svg)
 ![MIT License](https://img.shields.io/github/license/arabcoders/ytptube.svg)
-![Docker Pull](https://img.shields.io/docker/pulls/arabcoders/ytptube.svg)
-![gchr Pull](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
+![Docker Pulls](https://img.shields.io/docker/pulls/arabcoders/ytptube.svg)
+![GHCR Pulls](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
 
-**YTPTube** is a web-based GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp), designed to make downloading videos from 
-video platforms easier and user-friendly. It supports downloading playlists, channels, live streams and 
-includes features like scheduling downloads, sending notifications, and built-in video player.
+YTPTube is a self-hosted download manager, automation interface, and media-library preparation layer for
+[yt-dlp](https://github.com/yt-dlp/yt-dlp). It handles one-off downloads, recurring sources, metadata-based rules,
+concurrent queues, and organized output from the same web interface.
 
-**YTPTube v2.7.x** will have full proper authentication system, and will be enabled by default, to disable it, you can 
-set the environment variable `YTP_DISABLE_AUTH` to `true`. Local executables will disable authentication by default. See [FAQ](FAQ.md#authentication) for more information.
+The main workflow combines three parts:
 
-# Screenshots
-Example of the regular view interface.
-![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_short.jpg)
+- **Tasks** check channels, playlists, feeds, and supported custom sources on a schedule.
+- **Conditions** inspect metadata returned by yt-dlp and apply matching options.
+- **Presets** store reusable yt-dlp options, output templates, paths, cookies, and post-processing settings.
 
-Example of the Simple mode interface.
-![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_simple.jpg)
+This lets a scheduled source discover an item, select options from its metadata, and add it to the download queue 
+without manual work. See [Features](FEATURES.md) for the full workflow.
 
-The YTPTube frontend is available in English, العربية, Français, 中文, and 日本語. See the [language FAQ](FAQ.md#how-do-i-change-the-ui-language).
+## Screenshots
 
-# Features.
+Standard interface:
 
-* A bundled executable version for **Windows**, **macOS** and **Linux**. See [Native executables](README.md#native-executables).
-* Multi-download support.
-* Random beautiful **customizable** background. 
-* Handles **live** and **upcoming streams** with automatic retry when failure occurs.
-* A dual view mode for both technical and non-technical users.
-* Schedule channels or playlists to be downloaded automatically with support for creating custom download feeds from non-supported sites. See [Feeds documentation](FAQ.md#how-can-i-monitor-sites-without-rss-feeds).
-* Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
-* Support per link options.
-* Support for limits per extractor and overall global limit.
-* Queue multiple URLs at once.
-* Powerful presets system for applying `yt-dlp` options. with a pre-made preset for media servers users.
-* A simple file browser.
-* A built in video player **with support for sidecar external subtitles**. `Require ffmpeg to be in PATH in non-docker setups`.
-* Authentication support.
-* Bundles `curl-cffi` for impersonation. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation).
-* Includes the `pot provider` plugin. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide).
-* Support using [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or [Trawl](https://github.com/germondai/trawl) to bypass WAF protections for yt-dlp and internal http client. See [related FAQ](FAQ.md#how-to-bypass-cf-challenges).
-* Automatic updates for `yt-dlp` and custom packages. `Docker only`.
-* Conditions feature to apply custom options based on `yt-dlp` returned info.
-* Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
-* Use playwright or selenium for extractors that require a browser. see [How to use the browser extractor](FAQ.md#how-to-use-the-browser-extractor).
+![Standard interface](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_short.jpg)
 
-Please read the [FAQ](FAQ.md) for more information.
+Simple mode:
 
-# Installation
+![Simple mode](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_simple.jpg)
 
-> [!IMPORTANT]
-> **Server installations require local account setup**. Native builds disable application authentication by default. 
-> See [security recommendations](FAQ.md#security-recommendations).
-> 
-> If you upgrading from older version with YTP_AUTH_USERNAME/YTP_AUTH_PASSWORD set, it will automaticly use them to 
-> bootstrap the first user.
+The interface is available in English, العربية, Français, 中文, and 日本語. See the [language FAQ](FAQ.md#how-do-i-change-the-ui-language).
 
-## Run using docker or podman command
+## What It Handles
 
-```bash
-# Run using docker
-mkdir -p ./{config,downloads/{files,tmp}} && docker run -itd --rm --user "${UID}:${UID}" --name ytptube \
--e YTP_TEMP_PATH=/downloads/tmp -e YTP_DOWNLOAD_PATH=/downloads/files \
--p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
-ghcr.io/arabcoders/ytptube:latest
+- Individual URLs, playlists, channels, live streams, and upcoming streams
+- Concurrent downloads with global and per-extractor limits
+- Scheduled Tasks for recurring sources and sites without RSS feeds
+- Reusable Presets, including mobile, audio-only, resolution, NFO Maker, and media-server presets
+- Conditions that apply yt-dlp options from extracted metadata
+- Notifications for selected events through Apprise or direct HTTP webhooks
+- [Firefox](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/) and [Chrome/Chromium](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil) extensions
+- [iOS Shortcuts](FEATURES.md#send-links-to-ytptube), a [bookmarklet](FAQ.md#simple-bookmarklet), and an [HTTP API](API.md)
+- A file browser and built-in player with external sidecar subtitle support
+- Kodi-style TV and movie NFO sidecars, `.info.json` metadata, artwork, and media-library naming
+- curl-cffi impersonation and a bundled PO-token provider
+- Browser extraction through Playwright attached to an existing Chrome instance over CDP
+- FlareSolverr or Trawl integration for supported WAF challenge flows
+- Queue and archive controls, live logs, diagnostics, and optional resource monitoring
+- An optional interactive yt-dlp terminal for trusted administrators
+- Docker, Podman, Unraid, and native builds for Windows, macOS, and Linux
 
-# Run using podman
-mkdir -p ./{config,downloads/{files,tmp}} && podman run -itd --rm --userns=keep-id --name ytptube \
--e YTP_TEMP_PATH=/downloads/tmp -e YTP_DOWNLOAD_PATH=/downloads/files \
--p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
-ghcr.io/arabcoders/ytptube:latest
-```
+Read [Features](FEATURES.md) for details and links to the relevant configuration guides.
 
-Then you can access the WebUI at `http://localhost:8081`.
+## Media Libraries
 
-## Using compose file
+YTPTube does more than place downloaded files in a folder. Its NFO Maker integration turns yt-dlp metadata into
+Kodi-style TV or movie `.nfo` sidecars, cleans descriptions for library use, creates stable IDs, and keeps each NFO
+beside its media file. NFO files can be generated during the download or later from History.
 
-The following is an example of a `compose.yaml` file that can be used to run YTPTube.
+Scheduled Tasks can separately create collection metadata and artwork, including `tvshow.nfo`, `.info.json`, poster,
+fanart, banner, icon, thumbnail, and landscape images when the source provides them. A separate info-reader Preset writes
+predictable channel and season layouts with yt-dlp metadata for compatible Jellyfin, Emby, Plex, and WatchState workflows.
+
+See [Media Servers and NFO Maker](FEATURES.md#media-servers-and-nfo-maker) for the three workflows and their limits.
+
+## Quick Start
+
+Create `compose.yaml`:
 
 ```yaml
 services:
   ytptube:
-    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id.
-    # comment out the above line and uncomment the below line if you are using podman-compose.
-    #userns_mode: keep-id
     image: ghcr.io/arabcoders/ytptube:latest
     container_name: ytptube
     restart: unless-stopped
+    user: "${UID:-1000}:${UID:-1000}"
     environment:
       - YTP_TEMP_PATH=/downloads/tmp
       - YTP_DOWNLOAD_PATH=/downloads/files
@@ -97,67 +84,112 @@ services:
       - ./downloads:/downloads:rw
 ```
 
-> [!IMPORTANT]
-> Make sure to change the `user` line to match your user id and group id in docker setups, or use `userns_mode: keep-id` in podman setups.
+Create the directories and start the container:
 
 ```bash
-# Run using docker compose
-mkdir -p ./{config,downloads/{files,tmp}} && docker compose -f compose.yaml up -d
-
-# Run using podman compose
-mkdir -p ./{config,downloads/{files,tmp}} && podman-compose -f compose.yaml up -d
+mkdir -p ./{config,downloads/{files,tmp}}
+docker compose up -d
 ```
 
-Then you can access the WebUI at `http://localhost:8081`.
+Open `http://localhost:8081` and create the first local account.
 
-## Unraid
+The container runs as your user and group IDs so downloaded files remain accessible to the host account. Podman users 
+can replace the `user` line with `userns_mode: keep-id` and run `podman-compose up -d`.
 
-For `Unraid` users You can install the `Community Applications` plugin, and search for **ytptube** it comes 
-pre-configured.
-
-## Native executables
-
-Standalone executables for Windows, Linux, and macOS are published on the
-[GitHub Releases](https://github.com/arabcoders/ytptube/releases) page as ZIP archives.
-They follow the pattern:
+<details>
+<summary>Docker command without Compose</summary>
 
 ```bash
+mkdir -p ./{config,downloads/{files,tmp}} && docker run -itd --rm \
+  --user "${UID}:${UID}" \
+  --name ytptube \
+  -e YTP_TEMP_PATH=/downloads/tmp \
+  -e YTP_DOWNLOAD_PATH=/downloads/files \
+  -p 8081:8081 \
+  -v ./config:/config:rw \
+  -v ./downloads:/downloads:rw \
+  ghcr.io/arabcoders/ytptube:latest
+```
+
+</details>
+
+<details>
+<summary>Podman command without Compose</summary>
+
+```bash
+mkdir -p ./{config,downloads/{files,tmp}} && podman run -itd --rm \
+  --userns=keep-id \
+  --name ytptube \
+  -e YTP_TEMP_PATH=/downloads/tmp \
+  -e YTP_DOWNLOAD_PATH=/downloads/files \
+  -p 8081:8081 \
+  -v ./config:/config:rw \
+  -v ./downloads:/downloads:rw \
+  ghcr.io/arabcoders/ytptube:latest
+```
+
+</details>
+
+## Other Installations
+
+### Unraid
+
+Install the **Community Applications** plugin, search for **ytptube**, and use the preconfigured template.
+
+### Native Builds
+
+ZIP archives for Windows, Linux, and macOS are published on the [GitHub Releases](https://github.com/arabcoders/ytptube/releases) page. Archive names follow this pattern:
+
+```text
 ytptube-{OS}-{arch}-{tag}.zip
 ```
 
-For example: `ytptube-Linux-amd64-v0.0.0.zip`
+Extract the archive and run `YTPTube`, or `YTPTube.exe` on Windows. Native builds disable application authentication 
+by default. Set `YTP_DISABLE_AUTH=false` to require a local account.
 
-Extract the archive and run the `YTPTube` binary (or `YTPTube.exe` on Windows).
+Native builds do not support automatic yt-dlp or custom-package updates. The built-in player also requires 
+`ffmpeg` on `PATH`. Some extractors require [Deno](https://deno.land/#installation). 
+See [Manually update yt-dlp in a native executable](FAQ.md#manually-update-yt-dlp-in-native-executable).
 
-If you plan to use the built-in video player, make sure `ffmpeg` is installed and available on `PATH`.
+## Security
 
-> [!NOTE]
-> 1- Automatic `yt-dlp` and package updates are not available in the native executables. See [Manually update yt-dlp in native executable](FAQ.md#manually-update-yt-dlp-in-native-executable).
-> 
-> 2- You need to manually install [ffmpeg](https://github.com/jellyfin/jellyfin-ffmpeg/releases) and [deno](https://deno.land/#installation) and have them in your `PATH`.
+> [!IMPORTANT]
+> Do not expose YTPTube to an untrusted network without authentication. Authenticated users are instance administrators 
+> and can pass yt-dlp options, including options that execute commands.
 
-# API Documentation
+Server installations require local account setup. Only disable authentication when a trusted reverse proxy controls 
+access or the instance is restricted to a private network. Read the [security recommendations](FAQ.md#security-recommendations)
+before exposing an instance and use [security advisories](https://github.com/arabcoders/ytptube/security/advisories/new) 
+to report vulnerabilities.
 
-For simple API documentation, you can refer to the [API documentation](API.md).
+## Documentation
 
-# Disclaimer
+- [Features](FEATURES.md)
+- [Configuration, usage, and troubleshooting](FAQ.md)
+- [HTTP API](API.md)
+- [Security policy](SECURITY.md)
+- [Contribution process](CONTRIBUTING.md)
 
-This project is not affiliated with yt-dlp or any other service.
+## Project Policy
 
-This is a personal project designed to make downloading videos from the internet more convenient for me. It is not 
-intended for piracy or any unlawful use. This project was built primarily for my own use and preferences.
+YTPTube is a personal-first project. Contributions are welcome after prior discussion, but the maintainer may decline 
+changes that do not fit the project's direction. Unsolicited pull requests may be closed. Read [CONTRIBUTING.md](CONTRIBUTING.md) 
+before starting work. 
 
-AI-assisted tools are used in this project. If you are uncomfortable with this, you should not use this project.
+AI-assisted tools have been used in this project and will continue to be used where I find them useful. This project is
+built for my own needs and use cases, and I maintain it according to my own preferences.
 
-Contributions are welcome, but I may decline changes that do not interest me or do not align with my vision for this 
-project. Unsolicited pull requests will be closed. For suggestions or feature requests, please open a discussion or 
-join the Discord server.
+You are welcome to use it if it works for you, but I will not change the project's development approach to accommodate 
+objections to the use of AI tools. I believe these tools can be genuinely useful when used appropriately. If the use of 
+AI-assisted tools is a deal-breaker for you, this project may simply not be the right fit. You are, of course, free to 
+use or build an alternative that better matches your preferences.
 
-# Social contact
+YTPTube is not affiliated with yt-dlp or any supported service. It is intended for downloading content you are 
+permitted to access, not for piracy or unlawful use.
 
-If you have short or quick questions, you are free to join my [discord server](https://discord.gg/G3GpVR8xpb) and ask
-the question. keep in mind it's solo project, as such it might take me a bit of time to reply.
+## Community
 
-# Donation 
+For short questions, join the [Discord server](https://discord.gg/G3GpVR8xpb). YTPTube is maintained as a solo project, 
+so replies may take some time.
 
-If you feel like donating and appreciate my work, you can do so by donating to children charity. For example [Make-A-Wish](https://worldwish.org). 
+If you want to support the work financially, please donate to a children's charity such as [Make-A-Wish International](https://worldwish.org) instead.

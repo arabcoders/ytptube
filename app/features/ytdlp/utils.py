@@ -11,7 +11,7 @@ from typing import Any
 
 from app.features.ytdlp.patches import apply_ytdlp_patches
 from app.features.ytdlp.ytdlp import YTDLP
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import merge_dict, timed_lru_cache
 
 LOG = get_logger()

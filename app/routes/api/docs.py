@@ -9,12 +9,12 @@ from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import add_route, route
 
 LOG = get_logger()
 
-STATIC_FILES = ["README.md", "FAQ.md", "API.md", "SECURITY.md", "sc_short.jpg", "sc_simple.jpg"]
+STATIC_FILES = ["README.md", "FEATURES.md", "FAQ.md", "API.md", "SECURITY.md", "sc_short.jpg", "sc_simple.jpg"]
 EXT_TO_MIME: dict = {
     ".md": "text/markdown",
     ".png": "image/png",

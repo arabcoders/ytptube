@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from app.library.DataStore import StoreType
+from app.features.downloads.store import StoreType
 from app.library.cache import Cache
-from app.library.ItemDTO import ItemDTO
+from app.features.downloads.items import ItemDTO
 from app.library.encoder import Encoder
 from app.routes.api import history
 from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_live, items_retry

@@ -36,7 +36,7 @@
           icon="i-lucide-search"
           @click="
             () => {
-              inspect = true;
+              inspectTarget = {};
             }
           "
         >
@@ -230,16 +230,6 @@
                     color="neutral"
                     variant="outline"
                     size="xs"
-                    icon="i-lucide-file-up"
-                    @click="() => void exportDefinition(definition)"
-                  >
-                    {{ t('common.exportItem') }}
-                  </UButton>
-
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
                     icon="i-lucide-pencil"
                     @click="() => void openEdit(definition)"
                   >
@@ -255,6 +245,18 @@
                   >
                     <span class="hidden sm:inline">{{ t('common.delete') }}</span>
                   </UButton>
+
+                  <UDropdownMenu :items="itemActionGroups(definition)" :modal="false">
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-settings-2"
+                      trailing-icon="i-lucide-chevron-down"
+                    >
+                      {{ t('common.actions') }}
+                    </UButton>
+                  </UDropdownMenu>
                 </div>
               </td>
             </tr>
@@ -376,6 +378,18 @@
               >
                 {{ t('common.delete') }}
               </UButton>
+
+              <UDropdownMenu :items="itemActionGroups(definition)" :modal="false">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-settings-2"
+                  trailing-icon="i-lucide-chevron-down"
+                  class="w-full justify-center"
+                >
+                  {{ t('common.actions') }}
+                </UButton>
+              </UDropdownMenu>
             </div>
           </div>
         </div>
@@ -421,7 +435,9 @@
             })
       "
       :description="
-        editorLoading ? t('taskDefinitions.editorLoadingDesc') : t('taskDefinitions.editorDesc')
+        editorLoading
+          ? t('common.loadingData')
+          : t(editorMode === 'create' ? 'common.createDescription' : 'common.updateDescription')
       "
       :dismissible="!editorLoading && !editorSubmitting"
       :ui="{ content: 'w-full sm:max-w-7xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
@@ -434,6 +450,7 @@
           :document="workingDefinition"
           :initial-show-import="showImportByDefault"
           :available-definitions="definitions"
+          :impersonate-targets="impersonateTargets"
           :loading="editorLoading"
           :submitting="editorSubmitting"
           @submit="submitDefinition"
@@ -499,6 +516,18 @@
 
             <UButton
               type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-play"
+              :disabled="definitionEditor?.isBusy || !editorValid"
+              class="justify-center"
+              @click="testCurrentDefinition"
+            >
+              {{ t('common.test') }}
+            </UButton>
+
+            <UButton
+              type="button"
               color="primary"
               icon="i-lucide-save"
               :loading="editorSubmitting"
@@ -514,41 +543,99 @@
     </UModal>
 
     <UModal
-      v-if="inspect"
-      :open="inspect"
-      :title="t('common.inspectHandler')"
-      :ui="{ content: 'w-full sm:max-w-4xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
-      @update:open="(open) => !open && (inspect = false)"
+      v-if="inspectTarget"
+      :open="Boolean(inspectTarget)"
+      :title="definitionInspect ? t('common.test') : t('tasks.inspectHandlerTitle')"
+      :ui="{ content: 'w-full sm:max-w-4xl', body: 'p-4 sm:p-6' }"
+      @update:open="(open) => !open && (inspectTarget = null)"
     >
       <template #body>
-        <LazyTaskInspect ref="taskInspect" />
+        <LazyTaskInspect
+          ref="taskInspect"
+          :url="inspectTarget.url"
+          :definition-id="inspectTarget.definitionId"
+          :definition-document="inspectTarget.document"
+          form-id="taskInspectDefinitionForm"
+        />
       </template>
 
       <template #footer>
-        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <UButton
-            type="button"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-rotate-ccw"
-            :disabled="taskInspect?.loading"
-            class="justify-center"
-            @click="taskInspect?.onReset()"
-          >
-            {{ t('common.reset') }}
-          </UButton>
+        <div class="flex w-full flex-wrap items-center justify-end gap-2">
+          <template v-if="taskInspect?.hasResult">
+            <UButton
+              type="button"
+              color="neutral"
+              :variant="taskInspect.wrap ? 'soft' : 'outline'"
+              size="sm"
+              icon="i-lucide-wrap-text"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.toggleWrap()"
+            >
+              <span class="hidden sm:inline">{{ t('common.wrap') }}</span>
+            </UButton>
 
-          <UButton
-            type="submit"
-            form="taskInspectForm"
-            color="primary"
-            icon="i-lucide-search"
-            :loading="taskInspect?.loading"
-            :disabled="taskInspect?.loading"
-            class="justify-center"
-          >
-            {{ t('common.inspect') }}
-          </UButton>
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-copy"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.copyResponse()"
+            >
+              {{ t('common.copy') }}
+            </UButton>
+
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-arrow-down"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.scrollResponse('end')"
+            >
+              {{ t('common.goDown') }}
+            </UButton>
+
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-arrow-up"
+              :disabled="!taskInspect.hasVisibleResponse"
+              @click="taskInspect.scrollResponse('start')"
+            >
+              {{ t('common.goUp') }}
+            </UButton>
+          </template>
+
+          <div class="ml-auto flex items-center gap-2">
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-rotate-ccw"
+              :disabled="taskInspect?.loading"
+              class="justify-center"
+              @click="taskInspect?.onReset()"
+            >
+              {{ t('common.reset') }}
+            </UButton>
+
+            <UButton
+              type="submit"
+              form="taskInspectDefinitionForm"
+              color="primary"
+              icon="i-lucide-search"
+              :loading="taskInspect?.loading"
+              :disabled="taskInspect?.loading"
+              class="justify-center"
+            >
+              {{ definitionInspect ? t('common.test') : t('common.inspect') }}
+            </UButton>
+          </div>
         </div>
       </template>
     </UModal>
@@ -565,6 +652,7 @@ import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
 import { useDialog } from '~/composables/useDialog';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { copyText, encode } from '~/utils';
+import { getInspectUrl } from '~/utils/taskDefinitionEditor';
 import { formatDateTime, toIsoString } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 import type TaskDefinitionEditor from '~/components/TaskDefinitionEditor.vue';
@@ -588,7 +676,7 @@ const DEFAULT_DEFINITION: TaskDefinitionDocument = {
         type: 'css',
         selector: 'body',
         fields: {
-          link: { type: 'css', expression: 'a', attribute: 'href' },
+          url: { type: 'css', expression: 'a', attribute: 'href' },
           title: { type: 'css', expression: 'a', attribute: 'text' },
         },
       },
@@ -603,9 +691,11 @@ const { toggleExpand, expandClass } = useExpandableMeta();
 const taskDefs = useTaskDefinitionsComposable();
 const submission = useFormSubmit();
 const definitionsRef = taskDefs.definitions;
+const impersonateTargets = taskDefs.impersonateTargets;
 const isLoading = taskDefs.isLoading;
 const lastError = taskDefs.lastError;
 const loadDefinitions = taskDefs.loadDefinitions;
+const loadImpersonateTargets = taskDefs.loadImpersonateTargets;
 const getDefinition = taskDefs.getDefinition;
 const createDefinition = taskDefs.createDefinition;
 const updateDefinition = taskDefs.updateDefinition;
@@ -626,7 +716,14 @@ const workingDefinition = ref<TaskDefinitionDocument | null>(null);
 const workingId = ref<number | null>(null);
 const definitionEditor = ref<InstanceType<typeof TaskDefinitionEditor> | null>(null);
 const taskInspect = ref<InstanceType<typeof TaskInspect> | null>(null);
-const inspect = ref(false);
+const inspectTarget = ref<{
+  url?: string;
+  definitionId?: number;
+  document?: TaskDefinitionDocument;
+} | null>(null);
+const definitionInspect = computed(
+  () => inspectTarget.value?.definitionId !== undefined || Boolean(inspectTarget.value?.document),
+);
 const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid');
 const isMobile = useMediaQuery({ maxWidth: 639 });
 
@@ -946,9 +1043,42 @@ const exportDefinition = async (summary: TaskDefinitionSummary): Promise<void> =
   );
 };
 
+const openSavedInspect = (summary: TaskDefinitionSummary): void => {
+  inspectTarget.value = { definitionId: summary.id, url: getInspectUrl(summary.match_url) };
+};
+
+const itemActionGroups = (summary: TaskDefinitionSummary): DropdownMenuItem[][] => [
+  [
+    {
+      label: t('common.test'),
+      icon: 'i-lucide-play',
+      onSelect: () => openSavedInspect(summary),
+    },
+  ],
+  [
+    {
+      label: t('common.exportItem'),
+      icon: 'i-lucide-file-up',
+      onSelect: () => void exportDefinition(summary),
+    },
+  ],
+];
+
+const testCurrentDefinition = async (): Promise<void> => {
+  if (!definitionEditor.value) return;
+  const document = await definitionEditor.value.buildDocument();
+  if (!document) return;
+
+  inspectTarget.value = {
+    document: cloneDocument(document),
+    url: getInspectUrl(document.match_url),
+  };
+};
+
 onMounted(async () => {
-  if (!definitions.value.length) {
-    await loadDefinitions(1, 1000);
-  }
+  await Promise.all([
+    definitions.value.length ? Promise.resolve() : loadDefinitions(1, 1000),
+    loadImpersonateTargets(),
+  ]);
 });
 </script>

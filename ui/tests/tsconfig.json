@@ -1,10 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "types": [
-      "bun-types",
-      "../app/types/globals"
-    ]
+    "types": ["bun-types", "../app/types/globals"]
   },
   "include": [
     "./**/*.ts",

@@ -14,7 +14,7 @@ class Encoder(json.JSONEncoder):
     """
 
     def default(self, o):
-        from .ItemDTO import ItemDTO
+        from app.features.downloads.items import ItemDTO
 
         if isinstance(o, DateRange):
             return {"start": str(o.start).replace("-", ""), "end": str(o.end).replace("-", "")}

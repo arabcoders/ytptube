@@ -5,7 +5,7 @@ from typing import Any
 from aiocron import Cron
 from aiohttp import web
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from .Events import EventBus, Events
 from .Singleton import Singleton

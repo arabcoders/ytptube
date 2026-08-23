@@ -10,7 +10,7 @@ from app.features.notifications.schemas import Notification, NotificationEvents,
 from app.features.notifications.service import Notifications
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 
 LOG = get_logger()

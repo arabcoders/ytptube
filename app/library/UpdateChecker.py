@@ -4,7 +4,7 @@ from typing import Any
 
 from aiohttp import web
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from .cache import Cache
 from .config import Config

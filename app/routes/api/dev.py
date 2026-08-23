@@ -6,7 +6,7 @@ from aiohttp.web import Response
 from app.features.core.utils import api_error_response
 from app.library.config import Config
 from app.library.encoder import Encoder
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 
 LOG = get_logger()

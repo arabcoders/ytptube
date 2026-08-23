@@ -1,0 +1,723 @@
+"""Core Download class - orchestrates the download process."""
+
+from __future__ import annotations
+
+import _thread
+import asyncio
+import logging
+import os
+import signal
+import threading
+import time
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+import yt_dlp.utils
+
+from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
+from app.features.ytdlp.utils import extract_ytdlp_logs
+from app.features.ytdlp.ytdlp import YTDLP
+from app.library.config import Config
+from app.library.Events import EventBus, Events
+from app.library.logging import get_logger
+from app.library.Utils import create_cookies_file
+
+from .bootstrap import ensure_download_runtime
+from .hooks import HookHandlers, NestedLogger
+from .process_manager import ProcessManager
+from .status_tracker import StatusTracker
+from .temp_manager import TempManager
+from .types import Terminator
+from .utils import BAD_LIVE_STREAM_OPTIONS, GENERIC_EXTRACTORS, is_download_stale
+
+if TYPE_CHECKING:
+    import multiprocessing
+
+    from app.features.downloads.items import ItemDTO
+
+
+class Download:
+    update_task: asyncio.Task | None = None
+
+    @staticmethod
+    def _raise_no_formats(msg: str) -> None:
+        raise ValueError(msg)
+
+    @staticmethod
+    def _raise_interrupted() -> None:
+        raise SystemExit(130)
+
+    def __init__(self, info: ItemDTO, info_dict: dict | None = None, logs: list[str] | None = None):
+        """
+        Initialize download task.
+
+        Args:
+            info: ItemDTO object containing download parameters
+            info_dict: Pre-extracted yt-dlp metadata dict (optional)
+            logs: Pre-existing logs from yt-dlp (optional)
+
+        """
+        config: Config = Config.get_instance()
+
+        self.download_dir: str = info.download_dir or ""
+        self.temp_dir: str | None = info.temp_dir
+        self.template: str | None = info.template
+        self.template_chapter: str | None = info.template_chapter
+        self.download_info_expires = int(config.download_info_expires)
+        self.info: ItemDTO = info
+        self.id: str = info._id
+        self.debug = bool(config.debug)
+        self.debug_ytdl = bool(config.ytdlp_debug)
+        self.tmpfilename: str | None = None
+        self.status_queue: multiprocessing.Queue[Any] | None = None
+        self.max_workers = int(config.max_workers)
+        self.is_live: bool = bool(info.is_live) or info.live_in is not None
+        self.info_dict: dict | None = info_dict
+        self.logger: logging.Logger = get_logger()
+        self.started_time = 0
+        self.queue_time: datetime = datetime.now(tz=UTC)
+        self.logs: list[str] = logs or []
+
+        self._process_manager = ProcessManager(
+            download_id=self.id,
+            is_live=self.is_live,
+            logger=self.logger,
+        )
+
+        self._temp_manager = TempManager(
+            info=self.info,
+            temp_dir=self.temp_dir,
+            temp_disabled=bool(config.temp_disabled),
+            temp_keep=bool(config.temp_keep),
+            logger=self.logger,
+        )
+
+        self._status_tracker: StatusTracker | None = None
+        self._hook_handlers: HookHandlers | None = None
+
+    def _download(self) -> None:
+        """
+        Execute the download in a subprocess.
+
+        This method runs in a separate process and performs the actual
+        download using yt-dlp.
+        """
+        cookie_file: Path | None = None
+        params: dict[str, Any] = {}
+        download_skipped = False
+
+        hook_handlers = self._hook_handlers
+        if hook_handlers is None:
+            msg = "_hook_handlers must be initialized before _download(). Call start() first."
+            raise RuntimeError(msg)
+
+        status_queue = self.status_queue
+        if status_queue is None:
+            msg = "status_queue must be initialized before _download(). Call start() first."
+            raise RuntimeError(msg)
+
+        try:
+            ensure_download_runtime(logger=self.logger)
+
+            params = (
+                self.info.get_ytdlp_opts()
+                .add(
+                    config={
+                        "color": "no_color",
+                        "paths": {
+                            "home": str(self.download_dir),
+                            "temp": str(self._temp_manager.temp_path)
+                            if self._temp_manager.temp_path
+                            else self.download_dir,
+                        },
+                        "outtmpl": {
+                            "default": self.template,
+                            "chapter": self.template_chapter,
+                        },
+                        "noprogress": True,
+                        "ignoreerrors": False,
+                    },
+                    from_user=False,
+                )
+                .get_all()
+            )
+            download_skipped = bool(params.get("skip_download") or params.get("simulate"))
+
+            params.update(
+                {
+                    "progress_hooks": [hook_handlers.progress_hook],
+                    "postprocessor_hooks": [hook_handlers.postprocessor_hook],
+                    "post_hooks": [hook_handlers.post_hook],
+                }
+            )
+
+            if self.debug_ytdl:
+                params["verbose"] = True
+                params["noprogress"] = False
+
+            if self.info.cookies:
+                try:
+                    cookie_file = (
+                        Path(self._temp_manager.temp_path or self.temp_dir or self.download_dir)
+                        / f"cookie_{self.info._id}.txt"
+                    )
+                    self.logger.debug(
+                        f"Creating cookie file for '{self.info.title}' at '{cookie_file}'.",
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "path": str(cookie_file),
+                                "has_cookies": True,
+                            }
+                        },
+                    )
+                    params["cookiefile"] = str(create_cookies_file(self.info.cookies, cookie_file))
+                except Exception as e:
+                    err_msg: str = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
+                    self.logger.error(
+                        err_msg,
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "has_cookies": True,
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
+                    raise ValueError(err_msg) from e
+
+            if self.info_dict and isinstance(self.info_dict, dict):
+                if self.info_dict.get(REEXTRACT_INFO_KEY):
+                    self.logger.info(
+                        f"Info dict for '{self.info.url}' marked for re-extraction, ignoring pre-extracted info."
+                    )
+                    self.info_dict = None
+                elif self.info_dict.get("extractor_key") in GENERIC_EXTRACTORS and (
+                    (preset := self.info.get_preset()) is not None and preset.default
+                ):
+                    self.logger.debug(
+                        "Removing download archive option for generic extractor on '%s'.",
+                        self.info.url,
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "url": self.info.url,
+                                "extractor": self.info_dict.get("extractor_key"),
+                            }
+                        },
+                    )
+                    params.pop("download_archive", None)
+
+                if self.info_dict and self.download_info_expires > 0:
+                    _ts: int | None = self.info_dict.get("epoch", self.info_dict.get("timestamp", None))
+                    _ts_dt = datetime.fromtimestamp(_ts, tz=UTC) if _ts else None
+                    if not _ts_dt or (datetime.now(tz=UTC) - _ts_dt).total_seconds() > self.download_info_expires:
+                        self.info_dict = None
+                        self.logger.warning(
+                            "Pre-extracted info for '%s' expired; extracting again.",
+                            self.info.url,
+                            extra={
+                                "download": {
+                                    "download_id": self.id,
+                                    "item_id": self.info.id,
+                                    "title": self.info.title,
+                                    "url": self.info.url,
+                                    "expires_s": self.download_info_expires,
+                                }
+                            },
+                        )
+
+            if not self.info_dict or not isinstance(self.info_dict, dict):
+                self.logger.info(
+                    f"Extracting info for '{self.info.url}'.",
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "preset": self.info.preset,
+                            "has_cookies": bool(params.get("cookiefile")),
+                            "ytdlp_opts": params.copy(),
+                        }
+                    },
+                )
+                ie_params: dict = params.copy()
+
+                (info, logs) = extract_info_sync(
+                    config=ie_params,
+                    url=self.info.url,
+                    debug=self.debug,
+                    no_archive=not params.get("download_archive", False),
+                    follow_redirect=True,
+                    capture_logs=logging.WARNING,
+                )
+                self.logs = logs
+
+                if info:
+                    self.info_dict = info
+
+            if self.is_live:
+                deletedOpts: list[str] = []
+                for opt in BAD_LIVE_STREAM_OPTIONS:
+                    if opt in params:
+                        params.pop(opt, None)
+                        deletedOpts.append(opt)
+
+                if len(deletedOpts) > 0:
+                    self.logger.warning(
+                        "Removed unsupported live stream options before downloading '%s'.",
+                        self.info.title,
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "url": self.info.url,
+                                "removed_options": deletedOpts,
+                                "is_live": self.is_live,
+                            }
+                        },
+                    )
+
+            if isinstance(self.info_dict, dict) and not (
+                len(self.info_dict.get("formats", [])) > 0 or self.info_dict.get("url")
+            ):
+                msg: str = f"Failed to extract any formats for '{self.info.url}'."
+                if filtered_logs := extract_ytdlp_logs(self.logs):
+                    msg += " " + ", ".join(filtered_logs)
+
+                self._raise_no_formats(msg)
+
+            self.logger.info(
+                f"Downloading '{self.info.title}' from '{self.info.url}' to '{self.download_dir}'.",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "path": self.download_dir,
+                        "preset": self.info.preset,
+                        "has_cookies": bool(params.get("cookiefile")),
+                        "download_skipped": download_skipped,
+                        "ytdlp_opts": params.copy(),
+                    }
+                },
+            )
+
+            if self.debug:
+                self.logger.debug(
+                    "Prepared yt-dlp parameters for '%s'.",
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "option_keys": sorted(str(key) for key in params),
+                            "has_cookies": bool(params.get("cookiefile")),
+                        }
+                    },
+                )
+
+            params["logger"] = NestedLogger(self.logger)
+
+            if "continuedl" in params and params["continuedl"] is False:
+                self._temp_manager.delete_temp(by_pass=True)
+
+            cls = YTDLP(params=params)
+
+            if self.is_live:
+                signal.signal(signal.SIGINT, signal.default_int_handler)
+                cancel_event = self._process_manager.cancel_event
+
+                def trigger_live_cancel() -> None:
+                    cancel_event.wait()
+                    cls._interrupted = True
+                    cls.to_screen("[info] Interrupt received, exiting cleanly...")
+                    if "posix" == os.name:
+                        os.kill(os.getpid(), signal.SIGINT)
+                    else:
+                        _thread.interrupt_main()
+
+                threading.Thread(target=trigger_live_cancel, name=f"cancel-watch-{self.id}", daemon=True).start()
+
+            if "posix" == os.name and not self.is_live:
+
+                def mark_cancelled(*_) -> None:
+                    cls._interrupted = True
+                    cls.to_screen("[info] Interrupt received, exiting cleanly...")
+                    self._raise_interrupted()
+
+                signal.signal(signal.SIGUSR1, mark_cancelled)
+
+            status_queue.put({"id": self.id, "status": "downloading", "download_skipped": download_skipped})
+
+            if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
+                self.logger.debug(
+                    "Downloading '%s' using pre-extracted info.",
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "preset": self.info.preset,
+                        }
+                    },
+                )
+                _dct: dict = self.info_dict.copy()
+                if isinstance(self.info.extras, dict) and len(self.info.extras) > 0:
+                    _dct.update(
+                        {
+                            k: v
+                            for k, v in self.info.extras.items()
+                            if v is not None
+                            and k not in ("is_live",)
+                            and (
+                                k not in _dct
+                                or (
+                                    (
+                                        k.startswith("playlist_")
+                                        or k in {"playlist", "n_entries", "__last_playlist_index"}
+                                    )
+                                    and _dct.get(k) in (None, "", "NA")
+                                )
+                            )
+                        }
+                    )
+
+                cls.process_ie_result(ie_result=_dct, download=True)
+                ret: int = cls._download_retcode
+            else:
+                self.logger.debug(
+                    "Downloading '%s' directly from URL.",
+                    self.info.title,
+                    extra={
+                        "download": {
+                            "download_id": self.id,
+                            "item_id": self.info.id,
+                            "title": self.info.title,
+                            "url": self.info.url,
+                            "preset": self.info.preset,
+                        }
+                    },
+                )
+                ret = cls.download(url_list=[self.info.url])
+
+            status_queue.put(
+                {
+                    "id": self.id,
+                    "status": "finished" if 0 == ret else "error",
+                    "download_skipped": download_skipped,
+                }
+            )
+        except yt_dlp.utils.ExistingVideoReached as exc:
+            self.logger.error(
+                f"Skipping already downloaded '{self.info.title}' from '{self.info.url}'. {exc!s}",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "status": "skip",
+                        "exception_type": type(exc).__name__,
+                    }
+                },
+            )
+            status_queue.put(
+                {
+                    "id": self.id,
+                    "status": "skip",
+                    "msg": "Item has already been downloaded.",
+                    "download_skipped": download_skipped,
+                }
+            )
+        except Exception as exc:
+            self.logger.exception(
+                f"Failed to download '{self.info.title}' from '{self.info.url}'.",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "path": self.download_dir,
+                        "preset": self.info.preset,
+                        "has_cookies": bool(params.get("cookiefile")),
+                        "status": "error",
+                        "exception_type": type(exc).__name__,
+                    }
+                },
+            )
+            status_queue.put(
+                {
+                    "id": self.id,
+                    "status": "error",
+                    "msg": str(exc),
+                    "error": str(exc),
+                    "download_skipped": download_skipped,
+                }
+            )
+        finally:
+            status_queue.put(Terminator())
+            if cookie_file and cookie_file.exists():
+                try:
+                    cookie_file.unlink()
+                    self.logger.debug(
+                        f"Deleted cookie file for '{self.info.title}' at '{cookie_file}'.",
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "path": str(cookie_file),
+                                "has_cookies": True,
+                            }
+                        },
+                    )
+                except Exception as e:
+                    self.logger.error(
+                        f"Failed to delete cookie file for '{self.info.title}' at '{cookie_file}'. {e!s}",
+                        extra={
+                            "download": {
+                                "download_id": self.id,
+                                "item_id": self.info.id,
+                                "title": self.info.title,
+                                "path": str(cookie_file),
+                                "has_cookies": True,
+                                "exception_type": type(e).__name__,
+                            }
+                        },
+                    )
+
+        self.logger.info(
+            f"Download task finished for '{self.info.title}'.",
+            extra={
+                "download": {
+                    "download_id": self.id,
+                    "item_id": self.info.id,
+                    "title": self.info.title,
+                    "url": self.info.url,
+                    "path": self.download_dir,
+                    "preset": self.info.preset,
+                    "has_cookies": bool(params.get("cookiefile")),
+                }
+            },
+        )
+
+    async def start(self) -> int | None:
+        """
+        Start the download process.
+
+        Creates the subprocess, initializes status tracking, and waits
+        for completion.
+
+        Returns:
+            Process exit code or None
+
+        """
+        status_queue: Any = self._process_manager.create_queue()
+        self.status_queue = status_queue
+
+        temp_path = self._temp_manager.create_temp_path()
+
+        status_tracker = StatusTracker(
+            info=self.info,
+            download_id=self.id,
+            download_dir=self.download_dir,
+            temp_path=temp_path,
+            status_queue=status_queue,
+            logger=self.logger,
+            debug=self.debug,
+        )
+        self._status_tracker = status_tracker
+
+        self._hook_handlers = HookHandlers(
+            download_id=self.id,
+            status_queue=status_queue,
+            logger=self.logger,
+            debug=self.debug,
+        )
+
+        self._process_manager.create_process(target=self._download)
+        self._process_manager.start()
+        self.started_time = int(time.time())
+        self.info.status = "preparing"
+
+        EventBus.get_instance().emit(Events.ITEM_UPDATED, data=self.info)
+        progress_task = asyncio.create_task(status_tracker.progress_update(), name=f"update-{self.id}")
+
+        proc = self._process_manager.proc
+        ret = await asyncio.get_running_loop().run_in_executor(None, proc.join) if proc else None
+
+        wait_for_status = not self._process_manager.is_cancelled() or self.is_live
+        if wait_for_status and isinstance(progress_task, asyncio.Future):
+            await progress_task
+
+        if status_tracker.final_update:
+            return ret
+
+        if self._process_manager.is_cancelled():
+            if self.is_live:
+                await status_tracker.drain_queue()
+                if status_tracker.final_update:
+                    return ret
+            self.info.status = "cancelled"
+            return ret
+
+        await status_tracker.drain_queue()
+
+        return ret
+
+    def started(self) -> bool:
+        """Check if download process has been started."""
+        return self._process_manager.started()
+
+    def cancel(self) -> bool:
+        """Cancel the download task."""
+        return self._process_manager.cancel()
+
+    async def close(self) -> bool:
+        """Close download process and clean up resources."""
+        started = self.started()
+        if self._process_manager.cancel_in_progress or (not started and self.status_queue is None):
+            return False
+
+        closed = False
+        try:
+            if self._status_tracker:
+                self._status_tracker.cancel_update_task()
+
+            if started:
+                await self._process_manager.close()
+
+            self._temp_manager.delete_temp()
+            closed = started
+        except Exception as e:
+            self.logger.exception(
+                f"Failed to close download process for '{self.info.title}'.",
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "url": self.info.url,
+                        "status": self.info.status,
+                        "exception_type": type(e).__name__,
+                    }
+                },
+            )
+        finally:
+            status_queue = self.status_queue
+            try:
+                if self._status_tracker:
+                    self._status_tracker.put_terminator()
+                elif status_queue:
+                    status_queue.put(Terminator())
+
+                if status_queue:
+                    status_queue.close()
+                    status_queue.join_thread()
+            except (OSError, ValueError):
+                self.logger.exception(
+                    "Failed to close the status queue for '%s'.",
+                    self.info.title,
+                    extra={"download": {"download_id": self.id, "item_id": self.info.id, "title": self.info.title}},
+                )
+            finally:
+                self.status_queue = None
+                self._status_tracker = None
+                self._hook_handlers = None
+
+        return closed
+
+    def running(self) -> bool:
+        return self._process_manager.running()
+
+    def is_cancelled(self) -> bool:
+        return self._process_manager.is_cancelled()
+
+    def kill(self) -> bool:
+        return self._process_manager.kill()
+
+    def delete_temp(self, by_pass: bool = False) -> None:
+        self._temp_manager.delete_temp(by_pass=by_pass)
+
+    def is_stale(self) -> bool:
+        """
+        Check if the download task is stale.
+
+        A download task is considered stale if it hasn't been updated
+        for a certain period or is stuck in an unexpected state.
+
+        Returns:
+            True if the download task is stale, False otherwise
+
+        """
+        if self.started_time < 1:
+            self.logger.debug(
+                "Download task for '%s' has not started yet.",
+                self.info.title,
+                extra={"download": {"download_id": self.id, "item_id": self.info.id, "title": self.info.title}},
+            )
+            return False
+
+        elapsed = int(time.time()) - self.started_time
+        if elapsed < 300:
+            self.logger.debug(
+                "Download task for '%s' has been running for %s seconds.",
+                self.info.title,
+                elapsed,
+                extra={
+                    "download": {
+                        "download_id": self.id,
+                        "item_id": self.info.id,
+                        "title": self.info.title,
+                        "elapsed_s": elapsed,
+                    }
+                },
+            )
+            return False
+
+        status: str = self.info.status or "unknown"
+        is_stale = is_download_stale(self.started_time, status, self.running(), self.info.auto_start, min_elapsed=300)
+
+        if is_stale:
+            if not self.running():
+                self.logger.warning(
+                    f"Download task '{self.info.title}: {self.info.id}' not started running for '{elapsed}' seconds."
+                )
+            else:
+                self.logger.warning(
+                    f"Download task '{self.info.title}: {self.info.id}' has been stuck in '{status}' state for '{elapsed}' seconds."
+                )
+
+        return is_stale
+
+    def __getstate__(self) -> dict[str, Any]:
+        """
+        Prepare state for pickling.
+
+        Excludes unpickleable objects like EventBus instances,
+        primarily for Windows compatibility.
+        """
+        state: dict[str, Any] = self.__dict__.copy()
+
+        excluded_keys: tuple[str, ...] = ("_notify", "_status_tracker")
+        for key in excluded_keys:
+            if key in state:
+                state[key] = None
+
+        return state

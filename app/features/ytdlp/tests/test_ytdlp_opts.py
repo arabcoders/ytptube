@@ -693,7 +693,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_constructor_with_valid_item(self, mock_config, mock_presets):
         """Test YTDLPCli constructor with valid Item."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -722,7 +722,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_build_user_fields_only(self, mock_config, mock_presets):
         """Test build with only user-provided fields."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -757,7 +757,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_build_preset_fields_fallback(self, mock_config, mock_presets):
         """Test build falls back to preset fields when user doesn't provide them."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.presets.schemas import Preset
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
@@ -791,7 +791,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_user_fields_override_preset(self, mock_config, mock_presets):
         """Test that user fields override preset fields."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.presets.schemas import Preset
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
@@ -830,7 +830,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_build_with_default_fallback(self, mock_config, mock_presets):
         """Test build falls back to defaults when neither user nor preset provide fields."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -856,7 +856,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_build_cookies_user(self, mock_config, mock_create_cookies, mock_presets, tmp_path: Path):
         """Test build with cookies from user."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -887,7 +887,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_build_cookies_preset(self, mock_config, mock_presets):
         """Test build with cookies from preset when user doesn't provide."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.presets.schemas import Preset
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
@@ -924,7 +924,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_build_absolute_folder_path(self, mock_config, mock_presets):
         """Test build with absolute folder path from user."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -951,7 +951,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_build_includes_url_command(self, mock_config, mock_presets):
         """Test that build includes the URL in the final command."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -973,7 +973,7 @@ class TestYTDLPCli:
     @patch("app.features.ytdlp.ytdlp_opts.Config")
     def test_cli_args_priority_order(self, mock_config, mock_presets):
         """Test that CLI args are added in correct priority order (preset first, user last)."""
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
         from app.features.presets.schemas import Preset
         from app.features.ytdlp.ytdlp_opts import YTDLPCli
 

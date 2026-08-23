@@ -7,13 +7,13 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.features.core.utils import api_error_response, build_pagination, normalize_pagination
+from app.features.downloads.runtime.queue_manager import DownloadQueue
 from app.features.streaming.library.ffprobe import ffprobe, ffprobe_bin
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type, move_file, rename_file
 

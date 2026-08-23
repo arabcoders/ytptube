@@ -6,13 +6,13 @@ import pickle
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from aiohttp import web
 
 from app.features.ytdlp.utils import _DATA, LogWrapper, get_archive_id
 from app.features.ytdlp.ytdlp import YTDLP
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 
@@ -57,6 +57,10 @@ def _get_process_pool_kwargs() -> dict[str, Any]:
         return {"mp_context": multiprocessing.get_context("fork")}
 
     return {}
+
+
+def _init_extractor_worker() -> None:
+    vars(multiprocessing.current_process())["_ytptube_extractor_worker"] = True
 
 
 class ExtractorConfig:
@@ -136,22 +140,31 @@ class ExtractorPool(metaclass=Singleton):
 
     def _get_keep_alive_pool(self, config: ExtractorConfig) -> ProcessPoolExecutor:
         if self._pool is None:
-            self._pool = ProcessPoolExecutor(max_workers=config.concurrency, **_get_process_pool_kwargs())
+            self._pool = ProcessPoolExecutor(
+                max_workers=config.concurrency, initializer=_init_extractor_worker, **_get_process_pool_kwargs()
+            )
             LOG.info("Initialized persistent extractor process pool with %s workers", config.concurrency)
         return self._pool
 
-    def _get_transient_pool(self) -> ProcessPoolExecutor:
-        pool = ProcessPoolExecutor(max_workers=1, **_get_process_pool_kwargs())
+    def _get_transient_pool(self, workers: int = 1) -> ProcessPoolExecutor:
+        pool = ProcessPoolExecutor(
+            max_workers=workers, initializer=_init_extractor_worker, **_get_process_pool_kwargs()
+        )
         self._transient_pools.add(pool)
-        LOG.debug("Initialized lazy extractor process pool.")
+        LOG.debug(
+            "Initialized lazy extractor process pool with %s worker(s).",
+            workers,
+            extra={"worker_count": workers},
+        )
         return pool
 
-    def get_pool(self, config: ExtractorConfig) -> ProcessPoolExecutor:
+    def get_pool(self, config: ExtractorConfig, *, parallel: bool = False) -> ProcessPoolExecutor:
         """
         Get the process pool executor.
 
         Args:
             config: Extractor configuration
+            parallel: Use the configured worker count for a transient pool.
 
         Returns:
             ProcessPoolExecutor instance
@@ -160,7 +173,7 @@ class ExtractorPool(metaclass=Singleton):
         self._ensure_semaphore(config)
         if config.keep_alive:
             return self._get_keep_alive_pool(config)
-        return self._get_transient_pool()
+        return self._get_transient_pool(config.concurrency if parallel else 1)
 
     def get_semaphore(self, config: ExtractorConfig) -> asyncio.Semaphore:
         """
@@ -213,6 +226,34 @@ class ExtractorPool(metaclass=Singleton):
 
         self._semaphore = None
         self._config = None
+
+
+class ExtractorBatch:
+    """Lazily share an extractor pool for a group of extractions."""
+
+    def __init__(self, extractor_config: ExtractorConfig | None = None, *, parallel: bool = False) -> None:
+        self.extractor_config = extractor_config
+        self.parallel = parallel
+        self._pool: ProcessPoolExecutor | None = None
+        self._pool_manager: ExtractorPool | None = None
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        self.release()
+
+    def get_pool(self, pool_manager: ExtractorPool, config: ExtractorConfig) -> ProcessPoolExecutor:
+        if self._pool is None:
+            self._pool_manager = pool_manager
+            self._pool = pool_manager.get_pool(config, parallel=self.parallel)
+        return self._pool
+
+    def release(self) -> None:
+        if self._pool is not None and self._pool_manager is not None:
+            self._pool_manager.release_pool(self._pool)
+            self._pool = None
+            self._pool_manager = None
 
 
 def _is_picklable(value: Any) -> bool:
@@ -277,6 +318,14 @@ def _sanitize_config(config: dict[str, Any]) -> dict[str, Any]:
     return sanitized
 
 
+def _set_generic_args(params: dict[str, Any], args: dict[str, str]) -> None:
+    extractor_args = dict(params.get("extractor_args") or {})
+    generic = dict(extractor_args.get("generic") or {})
+    generic.update({key: [value] for key, value in args.items()})
+    extractor_args["generic"] = generic
+    params["extractor_args"] = extractor_args
+
+
 def needs_reextract(info: dict[str, Any]) -> bool:
     return bool(info.get("is_live") or info.get("live_status") in LIVE_REEXTRACT_STATUSES)
 
@@ -303,6 +352,7 @@ def extract_info_sync(
     sanitize_info: bool = False,
     capture_logs: int | None = None,
     process_safe: bool = False,
+    generic_args: dict[str, str] | None = None,
     **kwargs,
 ) -> tuple[dict[str, Any] | None, list[str]]:
     """
@@ -317,6 +367,7 @@ def extract_info_sync(
         sanitize_info: Sanitize the extracted information
         capture_logs: If provided (e.g., logging.WARNING), capture logs at this level.
         process_safe: Strip non-pickleable data for safe inter-process communication.
+        generic_args: Explicit arguments for the Generic extractor.
         **kwargs: Additional arguments
 
     Returns:
@@ -324,6 +375,8 @@ def extract_info_sync(
 
     """
     params: dict[str, Any] = {**config, **_DATA.YTDLP_PARAMS, "simulate": True}
+    if generic_args is not None:
+        _set_generic_args(params, generic_args)
 
     if debug:
         params["verbose"] = True
@@ -334,17 +387,19 @@ def extract_info_sync(
     if isinstance(patterns, list | tuple):
         suppress = tuple(value for value in patterns if isinstance(value, str) and value)
 
+    no_log = bool(kwargs.get("no_log", False))
     log_wrapper = LogWrapper(suppress=suppress)
     id_dict: dict[str, str | None] = get_archive_id(url=url)
     archive_id: str | None = f".{id_dict['id']}" if id_dict.get("id") else None
     logger_name: str = f"yt-dlp{archive_id or '.extract_info'}"
 
     try:
-        log_wrapper.add_target(
-            target=_ytdlp_logger(logging.getLogger(logger_name)),
-            level=logging.DEBUG,
-            name=logger_name,
-        )
+        if not no_log:
+            log_wrapper.add_target(
+                target=_ytdlp_logger(logging.getLogger(logger_name)),
+                level=logging.DEBUG,
+                name=logger_name,
+            )
 
         captured_logs: list[str] = kwargs.pop("captured_logs", [])
         if capture_logs is not None:
@@ -355,20 +410,25 @@ def extract_info_sync(
             )
 
         if log_wrapper.has_targets():
-            if "logger" in params:
+            if not no_log and "logger" in params:
                 log_wrapper.add_target(target=params["logger"], level=logging.DEBUG)
 
             params["logger"] = log_wrapper
 
-        if kwargs.get("no_log", False):
-            params["logger"] = LogWrapper()
+        if no_log:
+            params["logger"] = log_wrapper
             params["quiet"] = True
             params["no_warnings"] = True
 
         if no_archive and "download_archive" in params:
             del params["download_archive"]
 
-        data: dict[str, Any] | None = YTDLP(params=params).extract_info(url, download=False)
+        ytdlp = YTDLP(params=params)
+        data: dict[str, Any] | None = (
+            ytdlp.extract_info(url, download=False, ie_key="Generic")
+            if generic_args is not None
+            else ytdlp.extract_info(url, download=False)
+        )
 
         if data and follow_redirect and "_type" in data and "url" == data["_type"]:
             return extract_info_sync(
@@ -380,6 +440,7 @@ def extract_info_sync(
                 sanitize_info=sanitize_info,
                 capture_logs=capture_logs,
                 process_safe=process_safe,
+                generic_args=generic_args,
                 captured_logs=captured_logs,
                 **kwargs,
             )
@@ -415,7 +476,9 @@ async def fetch_info(
     sanitize_info: bool = False,
     capture_logs: int | None = None,
     extractor_config: ExtractorConfig | None = None,
+    batch: ExtractorBatch | None = None,
     budget_sleep: bool = False,
+    generic_args: dict[str, str] | None = None,
     **kwargs,
 ) -> tuple[dict[str, Any] | None, list[str]]:
     """
@@ -433,7 +496,9 @@ async def fetch_info(
         sanitize_info: Sanitize the extracted information
         capture_logs: If provided (e.g., logging.WARNING), capture logs
         extractor_config: Configuration for the extractor
+        batch: Optional batch that shares a lazily-created process pool
         budget_sleep: Whether to add extra timeout budget for request-sleep-heavy extraction
+        generic_args: Explicit arguments for the Generic extractor.
         **kwargs: Additional arguments
 
     Returns:
@@ -441,15 +506,20 @@ async def fetch_info(
 
     """
     if extractor_config is None:
-        from app.library.config import Config
+        if batch is not None and batch.extractor_config is not None:
+            extractor_config = batch.extractor_config
+        else:
+            from app.library.config import Config
 
-        conf = Config.get_instance()
-        extractor_config = ExtractorConfig(
-            concurrency=conf.extract_info_concurrency,
-            timeout=conf.extract_info_timeout,
-            wait_threshold=0.2,
-            keep_alive=conf.extract_info_keep_alive,
-        )
+            conf = Config.get_instance()
+            extractor_config = ExtractorConfig(
+                concurrency=conf.extract_info_concurrency,
+                timeout=conf.extract_info_timeout,
+                wait_threshold=0.2,
+                keep_alive=conf.extract_info_keep_alive,
+            )
+    if batch is not None and batch.extractor_config is None:
+        batch.extractor_config = extractor_config
 
     pool_manager: ExtractorPool = ExtractorPool.get_instance()
     semaphore: asyncio.Semaphore = pool_manager.get_semaphore(extractor_config)
@@ -457,6 +527,7 @@ async def fetch_info(
     await semaphore.acquire()
     loop = asyncio.get_running_loop()
     executor: ProcessPoolExecutor | None = None
+    owns_executor = batch is None
 
     safe_config = _sanitize_config(config)
     safe_kwargs = _sanitize_picklable(kwargs)
@@ -465,7 +536,9 @@ async def fetch_info(
 
     try:
         try:
-            executor = pool_manager.get_pool(extractor_config)
+            executor = (
+                batch.get_pool(pool_manager, extractor_config) if batch else pool_manager.get_pool(extractor_config)
+            )
 
             return await asyncio.wait_for(
                 fut=loop.run_in_executor(
@@ -480,6 +553,7 @@ async def fetch_info(
                         sanitize_info=sanitize_info,
                         capture_logs=capture_logs,
                         process_safe=True,
+                        generic_args=generic_args,
                         **safe_kwargs,
                     ),
                 ),
@@ -490,7 +564,10 @@ async def fetch_info(
             raise
 
         except Exception as exc:
-            if executor is not None:
+            if batch is not None and not batch.parallel:
+                batch.release()
+                executor = None
+            elif batch is None and executor is not None:
                 pool_manager.release_pool(executor)
                 executor = None
 
@@ -523,12 +600,13 @@ async def fetch_info(
                         follow_redirect=follow_redirect,
                         sanitize_info=sanitize_info,
                         capture_logs=capture_logs,
+                        generic_args=generic_args,
                         **kwargs,
                     ),
                 ),
                 timeout=timeout,
             )
     finally:
-        if executor is not None:
+        if owns_executor and executor is not None:
             pool_manager.release_pool(executor)
         semaphore.release()

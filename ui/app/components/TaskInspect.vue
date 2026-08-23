@@ -1,13 +1,15 @@
 <template>
   <div class="space-y-5">
-    <form id="taskInspectForm" class="space-y-5" @submit.prevent="onSubmit">
+    <form :id="formId" class="space-y-5" @submit.prevent="onSubmit">
       <div class="grid gap-4 lg:grid-cols-2">
-        <UFormField
-          :label="t('common.url')"
-          :ui="fieldUi"
-          :error="urlError || undefined"
-          class="lg:col-span-2"
-        >
+        <UFormField :ui="fieldUi" :error="urlError || undefined">
+          <template #label>
+            <span class="inline-flex items-center gap-2 font-semibold">
+              <UIcon name="i-lucide-link" class="size-4 text-toned" />
+              <span>{{ t('common.url') }}</span>
+            </span>
+          </template>
+
           <UInput
             id="url"
             v-model="url"
@@ -17,18 +19,17 @@
             :ui="inputUi"
             :disabled="loading"
             dir="ltr"
-          >
-            <template #leading>
-              <UIcon name="i-lucide-link" class="size-4 text-toned" />
-            </template>
-          </UInput>
+          />
         </UFormField>
 
-        <UFormField
-          :label="t('common.presetLabel')"
-          :ui="fieldUi"
-          :description="t('common.inspectPresetDesc')"
-        >
+        <UFormField :ui="fieldUi">
+          <template #label>
+            <span class="inline-flex items-center gap-2 font-semibold">
+              <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
+              <span>{{ t('common.presetLabel') }}</span>
+            </span>
+          </template>
+
           <USelectMenu
             id="preset"
             v-model="preset"
@@ -44,27 +45,19 @@
             :disabled="loading"
           />
         </UFormField>
+      </div>
 
-        <UFormField
-          :label="t('common.inspectHandler')"
-          :ui="fieldUi"
-          :description="t('common.inspectHandlerDesc')"
-        >
-          <UInput
-            id="handler"
-            v-model="handler"
-            type="text"
-            :placeholder="t('tasks.handlerPlaceholder')"
-            class="w-full"
-            :ui="inputUi"
-            :disabled="loading"
-            dir="ltr"
-          >
-            <template #leading>
-              <UIcon name="i-lucide-rss" class="size-4 text-toned" />
-            </template>
-          </UInput>
-        </UFormField>
+      <div class="rounded-lg border border-default bg-muted/20 p-3">
+        <div class="flex h-full items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-archive" class="size-4 text-toned" />
+              <p class="text-sm font-semibold text-default">{{ t('common.resolveIds') }}</p>
+            </div>
+            <p class="text-xs text-toned">{{ t('common.resolveIdsDesc') }}</p>
+          </div>
+          <USwitch v-model="resolveIds" :disabled="loading" :aria-label="t('common.resolveIds')" />
+        </div>
       </div>
     </form>
 
@@ -73,8 +66,10 @@
       color="info"
       variant="soft"
       icon="i-lucide-loader-circle"
-      :title="t('common.inspecting')"
-      :description="t('common.inspectingDesc')"
+      role="status"
+      :title="t('common.loading')"
+      :description="loadingDescription"
+      :ui="{ icon: 'animate-spin' }"
     />
 
     <UAlert
@@ -92,21 +87,40 @@
         <span>{{ t('common.result') }}</span>
       </div>
 
-      <div class="overflow-hidden ytp-frame">
-        <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-          <pre
-            class="min-w-0 max-w-full overflow-x-auto p-4 text-xs leading-6 text-default"
-            dir="ltr"
-          ><code>{{ formattedResponse }}</code></pre>
-        </div>
-      </div>
+      <UInput
+        v-model="query"
+        type="search"
+        :placeholder="t('common.filterText')"
+        icon="i-lucide-filter"
+        size="sm"
+        class="w-full"
+      />
+
+      <UAlert
+        v-if="query && 0 === filteredLineCount"
+        color="warning"
+        variant="soft"
+        icon="i-lucide-filter"
+        :title="t('common.noMatchingLines')"
+      />
+
+      <pre
+        v-else
+        ref="contentView"
+        class="ytp-terminal max-h-[50vh] overflow-auto"
+        dir="ltr"
+        :class="wrap ? 'whitespace-pre-wrap wrap-break-word' : 'whitespace-pre'"
+      ><code v-text="displayedResponse" /></pre>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { request } from '~/utils';
+import { useStorage } from '@vueuse/core';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { copyText, formatTime, request } from '~/utils';
+import { filterLogTextLines } from '~/utils/logs';
+import type { TaskDefinitionDocument } from '~/types/task_definitions';
 import type { TaskInspectRequest, TaskInspectResponse } from '~/types/task_inspect';
 
 const { t } = useI18n();
@@ -114,7 +128,9 @@ const { t } = useI18n();
 const props = defineProps<{
   url?: string;
   preset?: string;
-  handler?: string;
+  definitionId?: number;
+  definitionDocument?: TaskDefinitionDocument;
+  formId?: string;
 }>();
 
 const { selectItems } = usePresetOptions();
@@ -122,10 +138,20 @@ const { selectItems } = usePresetOptions();
 const config = useYtpConfig();
 const url = ref(props.url ?? '');
 const preset = ref(props.preset || config.app.default_preset || '');
-const handler = ref(props.handler ?? '');
+const resolveIds = ref(true);
+const definitionMode = computed(
+  () => props.definitionId !== undefined || props.definitionDocument !== undefined,
+);
+const formId = computed(() => props.formId ?? 'taskInspectForm');
 const loading = ref(false);
 const response = ref<TaskInspectResponse | null>(null);
 const urlError = ref('');
+const query = ref('');
+const wrap = useStorage<boolean>('task_inspect_wrap', false);
+const contentView = ref<HTMLElement | null>(null);
+const elapsed = ref(0);
+let loadingStartedAt = 0;
+let loadingTimer: ReturnType<typeof setInterval> | null = null;
 
 const fieldUi = {
   label: 'font-semibold text-default',
@@ -146,6 +172,20 @@ const presetItems = computed(
 const formattedResponse = computed(() => {
   return response.value ? JSON.stringify(response.value, null, 2) : '';
 });
+const filteredLines = computed<Array<string>>(() =>
+  filterLogTextLines(formattedResponse.value, query.value),
+);
+const filteredLineCount = computed(() => filteredLines.value.length);
+const displayedResponse = computed(() =>
+  query.value ? filteredLines.value.join('\n') : formattedResponse.value,
+);
+const hasResult = computed(() => Boolean(response.value && !('error' in response.value)));
+const hasVisibleResponse = computed(() => displayedResponse.value.length > 0);
+const loadingDescription = computed(() => {
+  const value = formatTime(elapsed.value);
+  const time = value.includes(':') ? value : `00:${value.padStart(2, '0')}`;
+  return t('common.loadingDataElapsed', { time });
+});
 
 const errorDescription = computed(() => {
   if (!response.value || !('error' in response.value)) {
@@ -163,6 +203,24 @@ const errorDescription = computed(() => {
 
   return message ? `${error} ${message}` : error;
 });
+
+const stopLoadingTimer = (): void => {
+  if (loadingTimer !== null) {
+    clearInterval(loadingTimer);
+    loadingTimer = null;
+  }
+};
+
+const startLoadingTimer = (): void => {
+  stopLoadingTimer();
+  elapsed.value = 0;
+  loadingStartedAt = Date.now();
+  loadingTimer = setInterval(() => {
+    elapsed.value = Math.floor((Date.now() - loadingStartedAt) / 1000);
+  }, 1000);
+};
+
+onBeforeUnmount(stopLoadingTimer);
 
 watch(
   () => props.url,
@@ -183,13 +241,24 @@ watch(
 );
 
 watch(
-  () => props.handler,
-  (val) => {
-    if (val !== undefined) {
-      handler.value = val;
-    }
+  () => props.definitionId,
+  () => {
+    response.value = null;
+    query.value = '';
   },
 );
+
+watch(
+  () => props.definitionDocument,
+  () => {
+    response.value = null;
+    query.value = '';
+  },
+);
+
+watch(query, () => {
+  contentView.value?.scrollTo({ top: 0 });
+});
 
 const validateUrl = (val: string): boolean => {
   try {
@@ -201,8 +270,13 @@ const validateUrl = (val: string): boolean => {
 };
 
 async function onSubmit() {
+  if (loading.value) {
+    return;
+  }
+
   urlError.value = '';
   response.value = null;
+  query.value = '';
 
   if (!url.value || !validateUrl(url.value)) {
     urlError.value = t('common.enterValidUrl');
@@ -210,23 +284,33 @@ async function onSubmit() {
   }
 
   loading.value = true;
+  startLoadingTimer();
 
   const payload: TaskInspectRequest = {
     url: url.value.trim(),
     preset: preset.value.trim() || undefined,
-    handler: handler.value.trim() || undefined,
+    resolve_ids: resolveIds.value,
+    ...(definitionMode.value
+      ? props.definitionId !== undefined
+        ? { definition_id: props.definitionId }
+        : { document: props.definitionDocument }
+      : {}),
   };
 
   try {
-    const res = await request('/api/tasks/inspect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const res = await request(
+      definitionMode.value ? '/api/tasks/definitions/inspect' : '/api/tasks/inspect',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+    );
     response.value = await res.json();
   } catch (err: any) {
     response.value = { error: err?.message || t('common.unknownError') };
   } finally {
+    stopLoadingTimer();
     loading.value = false;
   }
 }
@@ -234,10 +318,39 @@ async function onSubmit() {
 const onReset = () => {
   url.value = props.url || '';
   preset.value = props.preset || config.app.default_preset || '';
-  handler.value = props.handler || '';
+  resolveIds.value = true;
   response.value = null;
   urlError.value = '';
+  query.value = '';
+  elapsed.value = 0;
 };
 
-defineExpose({ loading, onReset, onSubmit });
+const copyResponse = (): void => {
+  if (displayedResponse.value) {
+    copyText(displayedResponse.value, false);
+  }
+};
+
+const toggleWrap = (): void => {
+  wrap.value = !wrap.value;
+};
+
+const scrollResponse = (dir: 'start' | 'end'): void => {
+  contentView.value?.scrollTo({
+    top: dir === 'start' ? 0 : contentView.value.scrollHeight,
+    behavior: 'smooth',
+  });
+};
+
+defineExpose({
+  loading,
+  wrap,
+  hasResult,
+  hasVisibleResponse,
+  onReset,
+  onSubmit,
+  copyResponse,
+  toggleWrap,
+  scrollResponse,
+});
 </script>

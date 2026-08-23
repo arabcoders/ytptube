@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, get_args
 
 from aiohttp import web
 from aiohttp.web import Request, Response
+from curl_cffi.requests.impersonate import BrowserTypeLiteral
 from pydantic import ValidationError
 
 from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
@@ -15,10 +16,19 @@ from app.features.tasks.definitions.schemas import (
 from app.features.tasks.definitions.utils import model_to_schema, schema_to_payload
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.httpx_client import resolve_curl_transport
+from app.library.logging import get_logger
 from app.library.router import route
 
 LOG = get_logger()
+
+
+@route("GET", "api/tasks/definitions/impersonate-targets", "task_definition_impersonate_targets")
+async def task_definition_impersonate_targets() -> Response:
+    targets: list[str] = []
+    if resolve_curl_transport():
+        targets = list(get_args(BrowserTypeLiteral))
+    return web.json_response({"targets": targets})
 
 
 @route("GET", "api/tasks/definitions/", "task_definitions")
@@ -158,7 +168,7 @@ async def task_definitions_update(request: Request, encoder: Encoder, notify: Ev
         )
 
     try:
-        definition: TaskDefinition = model_to_schema(await repo.update(identifier, schema_to_payload(definition_input)))
+        definition = model_to_schema(await repo.update(identifier, schema_to_payload(definition_input)))
         notify.emit(
             Events.CONFIG_UPDATE,
             data=ConfigEvent(feature=CEFeature.TASKS_DEFINITIONS, action=CEAction.UPDATE, data=definition.model_dump()),
@@ -206,7 +216,8 @@ async def task_definitions_patch(request: Request, encoder: Encoder, notify: Eve
             status=web.HTTPBadRequest.status_code,
         )
 
-    if not await repo.get(identifier):
+    current_model = await repo.get(identifier)
+    if not current_model:
         return api_error_response(
             f"Task definition '{identifier}' not found.",
             code="NOT_FOUND",
@@ -242,9 +253,7 @@ async def task_definitions_patch(request: Request, encoder: Encoder, notify: Eve
         )
 
     try:
-        definition: TaskDefinition = model_to_schema(
-            await repo.update(identifier, patch_input.model_dump(exclude_unset=True))
-        )
+        definition = model_to_schema(await repo.update(identifier, patch_input.model_dump(exclude_unset=True)))
 
         notify.emit(
             Events.CONFIG_UPDATE,
@@ -290,7 +299,7 @@ async def task_definitions_delete(request: Request, encoder: Encoder, notify: Ev
         )
 
     try:
-        definition: TaskDefinition = model_to_schema(await repo.delete(identifier))
+        definition = model_to_schema(await repo.delete(identifier))
 
         notify.emit(
             Events.CONFIG_UPDATE,

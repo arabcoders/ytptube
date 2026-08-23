@@ -4,8 +4,6 @@
       <Shutdown v-if="app_shutdown" />
 
       <div v-else class="shell-stage shell-surface flex min-h-screen flex-col">
-        <ConnectionBanner />
-
         <div
           class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
         >
@@ -29,18 +27,21 @@
                     </div>
 
                     <div class="flex shrink-0 items-center gap-1 sm:gap-2">
-                      <UTooltip v-if="!socketStore.isConnected" :text="t('common.refreshQueue')">
+                      <UTooltip
+                        v-if="socketStore.connectionStatus !== 'connected'"
+                        :text="t('common.reconnect')"
+                      >
                         <UButton
                           color="neutral"
                           variant="ghost"
                           size="sm"
-                          icon="i-lucide-refresh-cw"
-                          :loading="isRefreshing"
-                          :disabled="isRefreshing"
+                          icon="i-lucide-rotate-cw"
+                          :loading="socketStore.connectionStatus === 'connecting'"
+                          :disabled="socketStore.connectionStatus === 'connecting'"
                           :square="isMobile"
-                          @click="() => refreshQueue()"
+                          @click="socketStore.reconnect"
                         >
-                          <span v-if="!isMobile">{{ t('common.refreshQueue') }}</span>
+                          <span v-if="!isMobile">{{ t('common.reconnect') }}</span>
                         </UButton>
                       </UTooltip>
 
@@ -181,11 +182,25 @@
                       class="size-3.5 text-toned"
                     />
                     <UIcon name="i-lucide-list-video" class="size-4 text-toned" />
-                    <span>{{ t('common.queue') }}</span>
+                    <span>{{ queueTitle }}</span>
                   </button>
 
-                  <div class="flex flex-wrap items-center gap-2">
-                    <UBadge color="info" variant="soft" size="sm">{{ queueCountLabel }}</UBadge>
+                  <div
+                    v-if="!socketStore.isConnected || stateStore.hasMore()"
+                    class="flex flex-wrap items-center gap-2"
+                  >
+                    <UButton
+                      v-if="socketStore.connectionStatus !== 'connected'"
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-refresh-cw"
+                      :loading="isRefreshing"
+                      :disabled="isRefreshing"
+                      @click="() => refreshQueue()"
+                    >
+                      {{ t('common.refresh') }}
+                    </UButton>
 
                     <UButton
                       v-if="stateStore.hasMore()"
@@ -459,7 +474,7 @@
                       class="size-3.5 text-toned"
                     />
                     <UIcon name="i-lucide-history" class="size-4 text-toned" />
-                    <span>{{ t('common.history') }}</span>
+                    <span>{{ historyTitle }}</span>
                   </button>
 
                   <div v-if="!historyCollapsed" class="flex flex-wrap items-center gap-2">
@@ -770,7 +785,6 @@ import type { item_request } from '~/types/item';
 import type { ItemStatus, StoreItem } from '~/types/store';
 import AppRoot from '~/components/AppRoot.vue';
 import AccountModal from '~/components/AccountModal.vue';
-import ConnectionBanner from '~/components/ConnectionBanner.vue';
 import Shutdown from '~/components/shutdown.vue';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDialog } from '~/composables/useDialog';
@@ -967,13 +981,14 @@ const urlInputUi = {
 const historyPagination = computed(() => pagination.value);
 const historyIsLoading = computed(() => isLoading.value);
 const queueItems = computed<StoreItem[]>(() => Object.values(stateStore.queue));
-const queueCountLabel = computed(() => {
-  if (stateStore.hasMore()) {
-    return t('simple.queuedCount', { shown: stateStore.shown(), total: stateStore.count() });
-  }
-
-  return t('simple.queuedCountShort', { count: stateStore.count() });
-});
+const queueCount = computed(() => stateStore.count());
+const historyCount = computed(() => historyPagination.value.total);
+const queueTitle = computed(() =>
+  queueCount.value > 0 ? `${t('common.queue')} (${queueCount.value})` : t('common.queue'),
+);
+const historyTitle = computed(() =>
+  historyCount.value > 0 ? `${t('common.history')} (${historyCount.value})` : t('common.history'),
+);
 const historyEntries = computed<StoreItem[]>(() => historyItems.value);
 const hasAnyItems = computed(() => queueItems.value.length > 0 || historyEntries.value.length > 0);
 const showSections = computed(() => hasAnyItems.value || historyIsLoading.value);

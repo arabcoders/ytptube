@@ -1,7 +1,15 @@
+import hashlib
 from typing import Any, Literal, overload
 
 from app.features.tasks.definitions.models import TaskDefinitionModel
 from app.features.tasks.definitions.schemas import Definition, TaskDefinition, TaskDefinitionSummary
+
+ARCHIVE_ID_TTL = 7 * 24 * 60 * 60
+ARCHIVE_LOOKUP_FAILURE_TTL = 10 * 60
+
+
+def archive_key(url: str) -> str:
+    return f"a:{hashlib.sha256(url.encode()).hexdigest()[:16]}"
 
 
 @overload
@@ -33,7 +41,9 @@ def model_to_schema(model: TaskDefinitionModel, summary: bool = False) -> TaskDe
         "created_at": model.created_at,
         "updated_at": model.updated_at,
     }
-    return TaskDefinitionSummary(**dct) if summary else TaskDefinition(**dct, definition=Definition(**model.definition))
+    if summary:
+        return TaskDefinitionSummary(**dct)
+    return TaskDefinition(**dct, definition=Definition.model_validate(model.definition))
 
 
 def schema_to_payload(item: TaskDefinition) -> dict[str, Any]:

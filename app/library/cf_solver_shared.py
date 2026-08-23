@@ -8,7 +8,7 @@ import urllib.request
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from .cache import Cache
 

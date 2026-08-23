@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "Configurer le compte",
     "setupHeading": "Créez votre compte",
     "setupSubtitle": "Configurez YTPTube pour commencer.",
     "setupAction": "Créer le compte",
-    "login": "Connexion",
     "loginHeading": "Bon retour",
     "loginSubtitle": "Connectez-vous pour continuer sur YTPTube.",
     "loginAction": "Se connecter",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "Ouvrir les instructions de réinitialisation",
     "username": "Nom d’utilisateur",
     "password": "Mot de passe",
-    "continue": "Continuer",
     "account": "Compte",
     "accountDetails": "Détails du compte",
     "accountDetailsDescription": "Modifiez le nom et le mot de passe utilisés pour vous connecter.",
@@ -50,7 +47,6 @@
     "copyWarning": "Copiez cette clé maintenant. Elle ne sera plus affichée.",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
-    "language": "Langue",
     "brandAlt": "Logo YTPTube",
     "errorTitle": "Une erreur est survenue"
   },
@@ -58,6 +54,9 @@
     "add": "Ajouter",
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "continue": "Continuer",
+    "language": "Langue",
+    "details": "Détails",
     "delete": "Supprimer",
     "edit": "Modifier",
     "confirm": "Confirmer",
@@ -117,7 +116,6 @@
     "streaming": "Streaming",
     "invalid": "Invalide",
     "offline": "Hors ligne",
-    "refreshQueue": "Actualiser la file d'attente",
     "webuiSettings": "Paramètres de l'interface Web",
     "start": "Démarrer",
     "stop": "Arrêter",
@@ -155,7 +153,6 @@
     "cancelDownload": "Annuler le téléchargement",
     "runNow": "Exécuter maintenant",
     "generateMetadata": "Générer les métadonnées",
-    "inspectHandler": "Gestionnaire (pour les tests)",
     "archiveAll": "Tout archiver",
     "unarchiveAll": "Tout désarchiver",
     "updateDescription": "Mettre à jour cet élément.",
@@ -190,7 +187,6 @@
     "enterValidUrl": "Veuillez saisir une URL valide.",
     "resetConfigDone": "La configuration locale a été réinitialisée.",
     "enterUrlFirst": "Veuillez d'abord saisir une URL.",
-    "failedGenerateCommand": "Échec de la génération de la commande.",
     "failedCreateCommand": "Échec de la création et de la navigation vers la commande",
     "failedTestOptions": "Échec du test des options de téléchargement",
     "logLevelUpdated": "niveau de journalisation mis à jour jusqu'au prochain redémarrage.",
@@ -215,6 +211,9 @@
     "hidden": "Masqué",
     "showMore": "Afficher plus",
     "loadingData": "Chargement des données. Veuillez patienter...",
+    "loadingDataElapsed": "Chargement des données. Veuillez patienter... Temps écoulé : {time}",
+    "resolveIds": "Résoudre les identifiants d'archive réels",
+    "resolveIdsDesc": "Demande à yt-dlp d'identifier chaque élément et de vérifier son statut d'archivage. Peut prendre plus de temps.",
     "filterDisplayedContent": "Filtrer le contenu affiché",
     "queueOverview": "Aperçu de la file d'attente",
     "limitsDataDesc": "Les données sont basées sur l'état actuel de la file d'attente et les limites configurées.",
@@ -427,8 +426,6 @@
     "handlerDisabledCron": "Cette tâche nécessite un minuteur CRON car le gestionnaire est désactivé.",
     "handlerVerifyFailed": "Échec de la vérification de la prise en charge du gestionnaire. Définissez un minuteur CRON ou réessayez.",
     "handlerNoMatch": "Cette tâche nécessite un minuteur CRON car aucun gestionnaire pris en charge ne correspond à l'URL.",
-    "addField": "Ajouter un champ",
-    "addHeader": "Ajouter un en-tête",
     "advancedTab": "Avancé",
     "anyFilter": "Tous",
     "appriseDetected": "Cible Apprise détectée",
@@ -446,9 +443,8 @@
     "definitionPriorityDesc": "Les valeurs les plus basses sont évaluées en premier.",
     "desc": "Desc",
     "display": "Affichage",
-    "editorInfo": "Seuls un sélecteur de conteneur unique et des extracteurs par champ sont exposés. Les constructions plus avancées nécessitent le mode d'affichage brut.",
     "engine": "Moteur",
-    "engineDesc": "HTTPX est recommandé.",
+    "engineDesc": "Requêtes HTTP ou rendu navigateur.",
     "exception": "Exception",
     "extractedFields": "Champs extraits",
     "fieldAttribute": "Attribut",
@@ -465,13 +461,7 @@
     "groupFilter": "Filtre de groupe",
     "guiTab": "GUI",
     "headerEmptyWarning": "Si la clé ou la valeur de l'en-tête est vide, l'en-tête ne sera pas envoyé.",
-    "headerKey": "Clé d'en-tête",
-    "headerValue": "Valeur d'en-tête",
     "importFromExisting": "Importer depuis un existant",
-    "inspectHandlerDesc": "Pour les tests uniquement. Détecté automatiquement en utilisation réelle.",
-    "inspecting": "Inspection",
-    "inspectingDesc": "Inspection en cours.. veuillez patienter.",
-    "inspectPresetDesc": "Remplace le préréglage uniquement pendant les tests.",
     "invalidImportDefinition": "La chaîne d'import n'est pas une exportation de définition de tâche.",
     "invalidJson": "JSON invalide",
     "level": "Niveau",
@@ -491,8 +481,25 @@
     "rawData": "Données brutes",
     "rawJson": "Définition JSON brute",
     "requestMethod": "Méthode de requête",
-    "requestMethodDesc": "Méthode HTTP pour le webhook.",
+    "requestMethodDesc": "Méthode HTTP utilisée pour la requête.",
     "requestSetup": "Configuration de la requête",
+    "queryParameters": "Paramètres de requête",
+    "queryParametersDesc": "Ajoutés à l'URL de la requête.",
+    "requestHeaders": "En-têtes de requête",
+    "requestHeadersDesc": "Envoyés avec la requête.",
+    "requestBodyType": "Corps de la requête",
+    "requestBodyTypeDesc": "Choisissez l'encodage du corps.",
+    "requestBodyNone": "Aucun",
+    "requestBodyRaw": "Texte brut",
+    "requestBody": "Contenu du corps",
+    "requestBodyDesc": "Envoyé exactement comme saisi.",
+    "requestFormFieldsDesc": "Les champs sont envoyés sous forme de paires clé/valeur.",
+    "requestJsonFieldsDesc": "Les valeurs doivent être du JSON valide, avec les chaînes entre guillemets.",
+    "jsonValue": "Valeur JSON",
+    "requestKeyRequired": "{label} nécessite une clé.",
+    "validationRequestTimeout": "Le délai doit être supérieur ou égal à zéro.",
+    "validationJsonValue": "La valeur JSON de {key} est invalide.",
+    "stripFieldsConfirm": "Les valeurs suivantes ne s'appliquent pas aux sélections actuelles et seront supprimées :\n\n{fields}",
     "requestType": "Type de requête",
     "requestTypeDesc": "Encodage JSON ou Formulaire.",
     "requestUrl": "URL de requête (facultatif)",
@@ -507,8 +514,31 @@
     "selectPresetsDesc": "Laissez vide pour tous les préréglages.",
     "selectorExpression": "Sélecteur / Expression",
     "selectorType": "Type de sélecteur",
-    "seleniumHubUrl": "URL du Selenium Hub (requis)",
-    "seleniumHubUrlDesc": "Point de terminaison webdriver distant.",
+    "browserEndpointUrl": "URL du point de terminaison du navigateur (requise)",
+    "browserEndpointUrlDesc": "Point de terminaison HTTP(S) du protocole de navigateur sélectionné.",
+    "parseMode": "Mode d'analyse",
+    "parseSetup": "Configuration de l'analyse",
+    "parseModeDesc": "Choisissez une structure par conteneur ou directe.",
+    "parseContainer": "Conteneur",
+    "parseDirect": "Direct",
+    "responseType": "Type de réponse",
+    "responseTypeDesc": "Choisissez le format de réponse attendu.",
+    "responseHtml": "HTML",
+    "impersonate": "Impersonation",
+    "impersonateDesc": "Identité client facultative pour les requêtes HTTP.",
+    "curlDefaultHeaders": "En-têtes cURL par défaut",
+    "curlDefaultHeadersDesc": "Inclure les en-têtes de requête cURL par défaut.",
+    "flaresolverr": "FlareSolverr",
+    "flaresolverrDesc": "Faire passer les requêtes protégées par FlareSolverr.",
+    "waitFor": "Attendre l'élément",
+    "waitForDesc": "Attendre que cet élément soit disponible.",
+    "waitExpression": "Expression CSS ou XPath",
+    "waitTimeout": "Délai d'attente",
+    "waitTimeoutDesc": "Durée maximale en secondes (0–300).",
+    "pageLoadTimeout": "Délai de chargement",
+    "pageLoadTimeoutDesc": "Durée maximale de chargement en secondes (0–300).",
+    "validationUrlFieldRequired": "Le champ URL est requis.",
+    "validationBrowserEndpointRequired": "L'URL du point de terminaison du navigateur est requise.",
     "shortFilter": "Courtes uniquement (-x)",
     "sortBy": "Trier par",
     "sortByFlag": "Option",
@@ -516,6 +546,9 @@
     "targetUrl": "URL cible",
     "type": "Type",
     "unsupportedVersion": "Champ _version non pris en charge ou manquant.",
+    "valueBoolean": "Booléen",
+    "valueNull": "Nul",
+    "valueNumber": "Nombre",
     "yesLabel": "Oui",
     "browseYtdlpFlags": "Parcourir les options et descriptions yt-dlp disponibles.",
     "conditionDescPlaceholder": "Décrivez ce que fait cette condition",
@@ -568,14 +601,12 @@
     "bothKeyValueRequired": "La clé et la valeur sont toutes deux requises.",
     "keyAlreadyExists": "La clé « {key} » existe déjà.",
     "optionsOrExtraRequired": "Les options de commande pour yt-dlp ou au moins une option supplémentaire sont requises.",
-    "failedTestCondition": "Échec du test de la condition. {error}",
     "failedImportNotification": "Échec de l'import de la notification. {error}",
     "requestTypeJson": "Json",
     "requestTypeForm": "Formulaire",
     "prefillFromDef": "Pré-remplir à partir d'une définition de tâche existante.",
     "advancedModeRequired": "Mode avancé requis",
     "advancedModeRequiredDesc": "Ne peut pas être représenté dans l'éditeur visuel.",
-    "guiLimitations": "Limitations de l'interface graphique",
     "unableToBuildDef": "Impossible de construire la définition",
     "lineDetail": "Ligne",
     "functionDetail": "Fonction",
@@ -619,6 +650,7 @@
     "allGroups": "Tous les groupes",
     "invalidJsonDocument": "Document JSON invalide.",
     "validationMatchRequired": "Au moins un motif de correspondance est requis.",
+    "validationPairValue": "La valeur de {key} doit correspondre au type sélectionné.",
     "validationSelectorRequired": "Le sélecteur de conteneur est requis.",
     "validationExpressionRequired": "L'expression est requise pour le champ « {key} ».",
     "validationFieldsRequired": "Configurez au moins un champ d'extracteur.",
@@ -662,6 +694,8 @@
     "FEATURE_DISABLED": "{feature} est désactivé.",
     "OPERATION_FAILED": "L'opération a échoué.",
     "DEPENDENCY_FAILED": "Une dépendance requise a échoué.",
+    "FFMPEG_UNAVAILABLE": "ffmpeg n'est pas disponible sur ce système. Le transcodage et la diffusion en continu sont indisponibles.",
+    "FFPROBE_UNAVAILABLE": "ffprobe n'est pas disponible sur ce système. Les métadonnées multimédias ne peuvent pas être lues.",
     "TIMEOUT": "L'opération a expiré.",
     "INTERNAL_ERROR": "Erreur interne du serveur.",
     "VIDEO_UNAVAILABLE": "La vidéo est indisponible.",
@@ -707,30 +741,6 @@
       "shutdown": "Arrêt",
       "monitoring": "Surveillance des ressources",
       "fileLogging": "Journalisation dans un fichier"
-    },
-    "actions": {
-      "add": "ajouter",
-      "addDownload": "ajouter un téléchargement",
-      "create": "créer",
-      "update": "mettre à jour",
-      "patch": "corriger",
-      "delete": "supprimer",
-      "import": "importer",
-      "export": "exporter",
-      "start": "démarrer",
-      "pause": "mettre en pause",
-      "cancel": "annuler",
-      "download": "télécharger",
-      "processPlaylist": "traiter la playlist"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "vidéo privée",
-      "geoRestricted": "restriction géographique",
-      "ageRestricted": "restriction d'âge"
     }
   },
   "app": {
@@ -775,9 +785,7 @@
     "connection": {
       "connected": "Connecté",
       "connecting": "Connexion...",
-      "disconnected": "Déconnecté",
-      "connectingServer": "Connexion au serveur websocket...",
-      "lost": "Connexion websocket perdue."
+      "disconnected": "Déconnecté"
     },
     "config": {
       "loading": "Chargement de la configuration...",
@@ -789,8 +797,7 @@
       "clickHere": "cliquer ici",
       "or": "ou",
       "reloadConfig": "recharger la configuration",
-      "reloadPage": "recharger la page",
-      "socketError": "{error}. Consultez la console développeur pour plus d'informations."
+      "reloadPage": "recharger la page"
     },
     "update": {
       "newVersionInstalled": "Une nouvelle version de l'interface Web est installée.",
@@ -808,13 +815,11 @@
       "applicationError": "Erreur de l'application",
       "unknownError": "Erreur inconnue",
       "description": "Une erreur inattendue a interrompu cette vue. Vous pouvez revenir à l'accueil ou réessayer la route actuelle.",
-      "details": "Détails",
       "stackTrace": "Trace de la pile",
       "backToHome": "Retour à l'accueil"
     },
     "footer": {
       "poweredBy": "Propulsé par",
-      "started": "Démarré :",
       "versionUnknown": "inconnue"
     },
     "theme": {
@@ -846,7 +851,6 @@
       "saveLayout": "Enregistrer la disposition",
       "appearance": "Apparence",
       "theme": "Thème",
-      "language": "Langue",
       "animationsDesc": "Activer les animations de transition de page.",
       "background": "Arrière-plan",
       "bgDesc": "Afficher une image de fond panoramique aléatoire.",
@@ -917,7 +921,6 @@
     "waiting": " - En attente..",
     "queuedCount": "En file : {shown} affichés / {total} au total",
     "queuedCountShort": "En file : {count}",
-    "pauseDownloadsTitle": "Mettre en pause les téléchargements",
     "pauseDownloadsDesc": "Êtes-vous sûr de vouloir mettre en pause tous les téléchargements non actifs ?",
     "filterKeyValue": "Vous pouvez également faire une recherche ciblée en utilisant <code><u>clé</u>:valeur</code>.",
     "filterExample1": "éléments contenant ce texte",
@@ -939,7 +942,6 @@
     "streamed": "Diffusé",
     "partialError": "Erreur partielle",
     "premiere": "Avant-première",
-    "unknown": "Inconnu",
     "player": "Lecteur",
     "empty": "L'historique de téléchargement est vide.",
     "clearCompletedConfirm": "Effacer tous les téléchargements terminés ? Aucun fichier ne sera supprimé.",
@@ -1028,8 +1030,7 @@
     "generateMetadataConfirmDesc": "Cette action générera :\n- tvshow.nfo - pour la compatibilité avec les médias center\n- title [id].info.json - fichier de métadonnées yt-dlp\n- Miniatures : poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg si elles sont disponibles.\n\nAvertissement : Cela écrasera les fichiers de métadonnées existants s'ils existent.",
     "allMarkedDownloaded": "Tous les éléments marqués comme téléchargés.",
     "allRemovedArchive": "Tous les éléments retirés de l'archive.",
-    "metadataCompleted": "Génération des métadonnées terminée.",
-    "handlerPlaceholder": "Nom de la classe du gestionnaire"
+    "metadataCompleted": "Génération des métadonnées terminée."
   },
   "taskDefinitions": {
     "description": "Créez des définitions pour transformer n'importe quel site web en un flux téléchargeable de liens.",
@@ -1037,9 +1038,7 @@
     "updated": "Mis à jour",
     "patterns": "Motifs : {count} correspondance/s",
     "urlPatterns": "Motifs d'URL",
-    "unnamed": "(Définition sans nom)",
-    "editorLoadingDesc": "Chargement de la définition complète avant l'édition.",
-    "editorDesc": "Utilisez l'éditeur graphique quand il convient, ou passez au JSON avancé pour un contrôle total."
+    "unnamed": "(Définition sans nom)"
   },
   "presets": {
     "description": "Options de commande yt-dlp prédéfinies.",
@@ -1093,7 +1092,6 @@
     "loadingLogs": "Chargement des journaux...",
     "connectingStream": "Connexion au flux de journaux.",
     "loadOlder": "Charger les lignes plus anciennes dans le filtre",
-    "details": "Détails",
     "copyRendered": "Copier les journaux rendus",
     "copyRaw": "Copier les journaux bruts",
     "allLevels": "Tous les niveaux",
@@ -1189,7 +1187,6 @@
     "connections": "Connexions : {count}",
     "diskTemp": "Temp",
     "diskConfig": "Config",
-    "system": "Système",
     "systemCpuHint": "Système {value}"
   },
   "diagnostics": {
@@ -1216,12 +1213,6 @@
     "skippedDesc": "Non configuré ou non nécessaire.",
     "appDesc": "Build actuel.",
     "hostDesc": "Système d'exploitation et machine.",
-    "resourceStats": "Statistiques des ressources",
-    "shareTitle": "Diagnostics YTPTube",
-    "shareGenerated": "Généré : {date}",
-    "shareStarted": "Démarré",
-    "shareWindow": "Fenêtre",
-    "shareSamples": "Échantillons",
     "feature": {
       "core": {
         "label": "Configuration principale",
@@ -1248,7 +1239,6 @@
   "changelog": {
     "description": "Dernières modifications du projet",
     "filterPlaceholder": "Filtrer les entrées du journal",
-    "releaseDate": "Date de publication :",
     "releaseDateValue": "Date de publication : {date}",
     "installed": "Installé",
     "commits": "{count} commits",
@@ -1271,8 +1261,6 @@
     "requeue": "Remettre en file",
     "video": "Vidéo",
     "embed": "Intégrer",
-    "queuedCount": "{shown} affichés / {total} en file",
-    "queuedCountShort": "{count} en file",
     "abilityRequeue": "Impossible de remettre l'élément en file ; URL manquante.",
     "removedFromHistory": "Retiré de la file de l'historique.",
     "videoThumbnail": "Miniature de la vidéo",
@@ -1287,6 +1275,11 @@
         "title": "README",
         "navLabel": "README",
         "description": "Aperçu du projet"
+      },
+      "features": {
+        "title": "Fonctionnalités",
+        "navLabel": "Fonctionnalités",
+        "description": "Téléchargements, automatisation et fonctions pour les médiathèques."
       },
       "faq": {
         "title": "FAQ",
@@ -1304,10 +1297,6 @@
         "description": "Politique de sécurité et consignes de signalement des vulnérabilités."
       }
     }
-  },
-  "socket": {
-    "disconnected": "Déconnecté du serveur.",
-    "connectionError": "Erreur de connexion : {error}"
   },
   "player": {
     "subtitleLoadFailed": "Échec du chargement des sous-titres pour cette vidéo.",

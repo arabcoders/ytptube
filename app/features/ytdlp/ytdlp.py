@@ -9,7 +9,7 @@ from yt_dlp.utils import make_archive_id
 from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import apply_ytdlp_patches
 from app.library.cf_solver_handler import set_cf_handler
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 
 class _ArchiveProxy:

@@ -11,8 +11,13 @@
   "additionalProperties": false,
   "properties": {
     "id": {
-      "type": "integer",
-      "description": "Auto-generated unique identifier (read-only)."
+      "type": [
+        "integer",
+        "null"
+      ],
+      "readOnly": true,
+      "default": null,
+      "description": "Auto-generated unique identifier. Omit this field when creating a definition."
     },
     "name": {
       "type": "string",
@@ -41,14 +46,24 @@
       "description": "Patterns that determine which tasks use this definition. Regex patterns are detected by /pattern/ format."
     },
     "created_at": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time",
-      "description": "Timestamp when definition was created (read-only)."
+      "readOnly": true,
+      "default": null,
+      "description": "Timestamp when the definition was created. Omit this field when creating or updating a definition."
     },
     "updated_at": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time",
-      "description": "Timestamp when definition was last updated (read-only)."
+      "readOnly": true,
+      "default": null,
+      "description": "Timestamp when the definition was last updated. Omit this field when creating or updating a definition."
     },
     "definition": {
       "type": "object",
@@ -58,130 +73,113 @@
       "additionalProperties": false,
       "properties": {
         "engine": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "httpx",
-            "selenium"
-          ],
-          "default": "httpx",
-          "description": "Fetch engine to use (HTTPX or Selenium)."
-        },
-        "options": {
-          "type": "object",
-          "description": "Engine-specific configuration.",
-          "additionalProperties": true,
-          "properties": {
-            "url": {
-              "type": "string",
-              "format": "uri",
-              "description": "Remote Selenium hub URL."
-            },
-            "browser": {
-              "type": "string",
-              "enum": [
-                "chrome"
-              ],
-              "description": "Selenium browser name (currently only chrome)."
-            },
-            "arguments": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ],
-              "description": "Browser launch arguments for Selenium."
-            },
-            "wait_for": {
-              "$ref": "#/definitions/waitFor"
-            },
-            "wait_timeout": {
-              "type": "number",
-              "minimum": 0,
-              "description": "Seconds to wait for the wait_for selector."
-            },
-            "page_load_timeout": {
-              "type": "number",
-              "minimum": 0,
-              "description": "Seconds to allow page load to complete."
-            }
-          }
-        }
-      },
-          "description": "Optional engine configuration (defaults to HTTPX)."
-        },
-        "request": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "method": {
-          "type": "string",
-          "enum": [
-            "GET",
-            "POST"
-          ],
-          "default": "GET",
-          "description": "HTTP method to use when fetching the page."
-        },
-        "url": {
-          "type": "string",
-          "format": "uri",
-          "description": "Override URL to fetch instead of the task URL."
-        },
-        "headers": {
-          "$ref": "#/definitions/stringMap",
-          "description": "Additional request headers."
-        },
-        "params": {
-          "$ref": "#/definitions/stringMap",
-          "description": "Query string parameters."
-        },
-        "data": {
-          "description": "Form payload for POST requests.",
           "oneOf": [
             {
-              "$ref": "#/definitions/stringMap"
+              "$ref": "#/definitions/httpEngine"
             },
             {
-              "type": "string"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/browserEngine"
             }
-          ]
+          ],
+          "default": {
+            "type": "http",
+            "options": {
+              "impersonate": "chrome",
+              "curl_default_headers": true,
+              "flaresolverr": false
+            }
+          },
+          "description": "Optional fetch engine configuration. Omit it to use the HTTP engine with its default options."
         },
-        "json_data": {
-          "description": "JSON payload for POST requests.",
-          "type": [
-            "object",
-            "array",
-            "string",
-            "number",
-            "boolean",
-            "null"
-          ]
-        },
-        "timeout": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Timeout in seconds for the request."
-        }
-      },
-          "description": "Optional HTTP request overrides."
+        "request": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "GET",
+                "POST"
+              ],
+              "default": "GET",
+              "description": "HTTP method to use when fetching the page."
+            },
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri",
+              "pattern": "^https?://",
+              "default": null,
+              "description": "Optional absolute HTTP(S) URL to fetch instead of the task URL. Null uses the task URL."
+            },
+            "headers": {
+              "$ref": "#/definitions/headerMap",
+              "default": {},
+              "description": "Additional request headers. Header values must be strings."
+            },
+            "params": {
+              "$ref": "#/definitions/scalarMap",
+              "default": {},
+              "description": "Query string parameters. Values may be strings, numbers, booleans, or null."
+            },
+            "body": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/requestBody"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "POST request body and its encoding. Null sends no body."
+            },
+            "timeout": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "default": null,
+              "description": "Optional request timeout in seconds. Zero disables the request-specific timeout."
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "required": [
+                  "body"
+                ],
+                "properties": {
+                  "body": {
+                    "type": "object"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "method"
+                ],
+                "properties": {
+                  "method": {
+                    "const": "POST"
+                  }
+                }
+              }
+            }
+          ],
+          "description": "Optional request overrides for either fetch engine."
         },
         "response": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
+          "type": "object",
+          "default": {
+            "type": "html"
+          },
+          "additionalProperties": false,
+          "properties": {
             "type": {
               "type": "string",
               "enum": [
@@ -191,35 +189,85 @@
               "default": "html",
               "description": "Body format returned by the target URL."
             }
-          }
+          },
+          "description": "Optional response format. Omit it to parse the response as HTML."
         },
         "parse": {
           "type": "object",
           "minProperties": 1,
-          "description": "Field extraction rules and optional container definition.",
           "additionalProperties": false,
           "properties": {
             "items": {
-              "$ref": "#/definitions/container"
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/container"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Optional repeated-item container. Use null or omit this property when parse contains direct field rules."
+            },
+            "url": {
+              "$ref": "#/definitions/extractionRule",
+              "description": "Required item URL. This becomes TaskItem.url."
+            },
+            "title": {
+              "$ref": "#/definitions/extractionRule",
+              "description": "Optional recognized item title."
+            },
+            "thumbnail": {
+              "$ref": "#/definitions/extractionRule",
+              "description": "Optional recognized item thumbnail URL."
+            },
+            "description": {
+              "$ref": "#/definitions/extractionRule",
+              "description": "Optional recognized item description."
+            },
+            "published": {
+              "$ref": "#/definitions/extractionRule",
+              "description": "Optional recognized item publication date or timestamp."
             }
           },
           "patternProperties": {
-            "^(?!items$).+$": {
+            "^(?!items$|url$|title$|thumbnail$|description$|published$|archive_id$).+$": {
               "$ref": "#/definitions/extractionRule"
             }
           },
+          "description": "The required url and recognized optional fields become item result properties. Any other field becomes custom metadata. archive_id is generated internally and cannot be extracted.",
           "allOf": [
+            {
+              "if": {
+                "required": [
+                  "items"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "then": {
+                "maxProperties": 1
+              }
+            },
             {
               "if": {
                 "not": {
                   "required": [
                     "items"
-                  ]
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "object"
+                    }
+                  }
                 }
               },
               "then": {
                 "required": [
-                  "link"
+                  "url"
                 ]
               }
             }
@@ -228,47 +276,157 @@
       }
     }
   },
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "definition": {
-            "properties": {
-              "engine": {
-                "properties": {
-                  "type": { "const": "selenium" }
-                },
-                "required": ["type"]
-              }
-            },
-            "required": ["engine"]
-          }
-        },
-        "required": ["definition"]
-      },
-      "then": {
-        "properties": {
-          "definition": {
-            "properties": {
-              "engine": {
-                "properties": {
-                  "options": {
-                    "required": ["url"]
-                  }
-                },
-                "required": ["options"]
-              }
-            },
-            "required": ["engine"]
-          }
-        },
-        "required": ["definition"]
-      }
-    }
-  ],
   "definitions": {
-    "stringMap": {
+    "httpEngine": {
       "type": "object",
+      "default": {
+        "type": "http",
+        "options": {
+          "impersonate": "chrome",
+          "curl_default_headers": true,
+          "flaresolverr": false
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "http",
+          "default": "http",
+          "description": "Fetch the target with the shared HTTP client."
+        },
+        "options": {
+          "type": "object",
+          "default": {
+            "impersonate": "chrome",
+            "curl_default_headers": true,
+            "flaresolverr": false
+          },
+          "additionalProperties": false,
+          "description": "Optional HTTP client settings.",
+          "properties": {
+            "impersonate": {
+              "type": "string",
+              "minLength": 1,
+              "default": "chrome",
+              "description": "curl-cffi browser identity used for the HTTP request. Available values depend on the installed curl-cffi version."
+            },
+            "curl_default_headers": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include the default headers supplied by the selected curl-cffi identity."
+            },
+            "flaresolverr": {
+              "type": "boolean",
+              "default": false,
+              "description": "Route the request through the configured FlareSolverr-compatible service."
+            }
+          }
+        }
+      }
+    },
+    "browserEngine": {
+      "type": "object",
+      "required": [
+        "type",
+        "options"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "browser",
+          "description": "Fetch the target in a remote Chromium browser."
+        },
+        "options": {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false,
+          "description": "Remote Chromium connection and navigation settings.",
+          "properties": {
+            "protocol": {
+              "type": "string",
+              "enum": [
+                "cdp"
+              ],
+              "default": "cdp",
+              "description": "Remote browser protocol. CDP is the only supported value."
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https?://[^/?#]+",
+              "description": "Absolute HTTP(S) endpoint exposed by the remote Chromium instance."
+            },
+            "wait_for": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/waitForSelector"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Optional element to wait for after navigation. Null skips the selector wait."
+            },
+            "wait_timeout": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 300,
+              "default": 15,
+              "description": "Maximum seconds to wait for wait_for."
+            },
+            "page_load_timeout": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 300,
+              "default": 60,
+              "description": "Maximum seconds allowed for browser navigation."
+            }
+          }
+        }
+      }
+    },
+    "waitForSelector": {
+      "type": "object",
+      "required": [
+        "expression"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "css",
+            "xpath"
+          ],
+          "default": "css",
+          "description": "Selector syntax."
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "description": "CSS or XPath expression to wait for."
+        }
+      }
+    },
+    "headerMap": {
+      "type": "object",
+      "propertyNames": {
+        "minLength": 1,
+        "pattern": "^[^\\r\\n]+$"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "scalarMap": {
+      "type": "object",
+      "propertyNames": {
+        "minLength": 1,
+        "pattern": "^[^\\r\\n]+$"
+      },
       "additionalProperties": {
         "type": [
           "string",
@@ -278,39 +436,53 @@
         ]
       }
     },
-    "waitFor": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "css",
-            "xpath"
-          ],
-          "description": "Selector type to wait for."
-        },
-        "expression": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Selector expression."
-        },
-        "value": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Alias for expression for backwards compatibility."
-        }
-      },
-      "anyOf": [
+    "requestBody": {
+      "oneOf": [
         {
+          "type": "object",
           "required": [
-            "expression"
-          ]
-        },
-        {
-          "required": [
+            "type",
             "value"
-          ]
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "form"
+            },
+            "value": {
+              "$ref": "#/definitions/scalarMap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "json"
+            },
+            "value": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "raw"
+            },
+            "value": {
+              "type": "string"
+            }
+          }
         }
       ]
     },
@@ -324,27 +496,59 @@
         "filter": {
           "type": "string",
           "minLength": 1,
+          "format": "regex",
           "description": "Regular expression applied after extraction."
         },
         "value": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "minLength": 1,
-          "description": "Named or numbered capture group to return."
+          "default": null,
+          "description": "Named or numbered capture group to return. When omitted or null, the first named group, first numbered group, or full match is returned."
         }
       }
     },
     "containerFields": {
       "type": "object",
       "minProperties": 1,
+      "propertyNames": {
+        "minLength": 1,
+        "pattern": "^[^\\r\\n]+$"
+      },
       "additionalProperties": false,
       "patternProperties": {
-        "^.+$": {
+        "^(?!url$|title$|thumbnail$|description$|published$|archive_id$).+$": {
           "$ref": "#/definitions/extractionRule"
         }
       },
       "required": [
-        "link"
-      ]
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "$ref": "#/definitions/extractionRule",
+          "description": "Required item URL. This becomes TaskItem.url."
+        },
+        "title": {
+          "$ref": "#/definitions/extractionRule",
+          "description": "Optional recognized item title."
+        },
+        "thumbnail": {
+          "$ref": "#/definitions/extractionRule",
+          "description": "Optional recognized item thumbnail URL."
+        },
+        "description": {
+          "$ref": "#/definitions/extractionRule",
+          "description": "Optional recognized item description."
+        },
+        "published": {
+          "$ref": "#/definitions/extractionRule",
+          "description": "Optional recognized item publication date or timestamp."
+        }
+      },
+      "description": "The required url and recognized optional fields become item result properties. Any other field becomes custom metadata. archive_id is generated internally and cannot be extracted."
     },
     "container": {
       "type": "object",
@@ -363,31 +567,15 @@
         "selector": {
           "type": "string",
           "minLength": 1,
-          "description": "CSS/XPath selector identifying each item container."
-        },
-        "expression": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Alias for selector."
+          "description": "The single canonical CSS/XPath/JMESPath selector identifying each item container."
         },
         "fields": {
           "$ref": "#/definitions/containerFields"
         }
       },
       "required": [
+        "selector",
         "fields"
-      ],
-      "anyOf": [
-        {
-          "required": [
-            "selector"
-          ]
-        },
-        {
-          "required": [
-            "expression"
-          ]
-        }
       ]
     },
     "extractionRule": {
@@ -406,7 +594,7 @@
             "regex",
             "jsonpath"
           ],
-          "description": "Extraction strategy."
+          "description": "Extraction strategy. Use jsonpath with JSON responses and CSS, XPath, or regex with HTML responses."
         },
         "expression": {
           "type": "string",
@@ -414,79 +602,134 @@
           "description": "Selector or pattern used to extract values."
         },
         "attribute": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "minLength": 1,
-          "description": "Optional attribute or group to return."
+          "default": null,
+          "description": "Optional HTML attribute, text/html mode, or regex group to return. Null uses the extractor's default value."
         },
         "post_filter": {
-          "$ref": "#/definitions/postFilter"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/postFilter"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional regular expression applied to the extracted value."
         }
       }
     }
   },
   "examples": [
     {
-      "name": "example",
+      "name": "direct-html",
       "match_url": [
-        "https://example.com/articles/*",
-        "/https://example\\.com/post/[0-9]+/"
+        "https://example.com/articles/*"
       ],
       "definition": {
-        "engine": {
-          "type": "httpx"
-        },
-        "request": {
-          "method": "GET",
-          "headers": {
-            "User-Agent": "MyCustomAgent/1.0"
-          }
-        },
         "parse": {
-          "link": {
+          "url": {
             "type": "css",
-            "expression": ".article a.link",
+            "expression": "article a",
             "attribute": "href"
           },
           "title": {
             "type": "css",
-            "expression": ".article .title",
+            "expression": "article h1",
             "attribute": "text"
+          }
+        }
+      }
+    },
+    {
+      "name": "http-search",
+      "match_url": [
+        "https://api.example.com/search/*"
+      ],
+      "definition": {
+        "engine": {
+          "type": "http",
+          "options": {
+            "impersonate": "chrome",
+            "curl_default_headers": true,
+            "flaresolverr": false
+          }
+        },
+        "request": {
+          "method": "POST",
+          "url": "https://api.example.com/search",
+          "headers": {
+            "Accept": "application/json"
           },
-          "id": {
-            "type": "regex",
-            "expression": "id=(?P<id>[0-9]+)",
-            "post_filter": {
-              "filter": "(?P<id>[0-9]+)",
-              "value": "id"
+          "params": {
+            "page": 1,
+            "safe": true
+          },
+          "body": {
+            "type": "json",
+            "value": {
+              "query": "new videos"
+            }
+          },
+          "timeout": 30
+        },
+        "response": {
+          "type": "json"
+        },
+        "parse": {
+          "items": {
+            "type": "jsonpath",
+            "selector": "results",
+            "fields": {
+              "url": {
+                "type": "jsonpath",
+                "expression": "url"
+              },
+              "title": {
+                "type": "jsonpath",
+                "expression": "title"
+              }
             }
           }
         }
       }
     },
     {
-      "name": "container-example",
+      "name": "browser-list",
       "match_url": [
-        "https://example.com/list"
+        "https://example.com/dynamic/*"
       ],
       "definition": {
+        "engine": {
+          "type": "browser",
+          "options": {
+            "protocol": "cdp",
+            "url": "http://browser:9222",
+            "wait_for": {
+              "type": "css",
+              "expression": ".cards"
+            },
+            "wait_timeout": 15,
+            "page_load_timeout": 60
+          }
+        },
         "parse": {
           "items": {
-            "type": "css",
             "selector": ".cards .card",
             "fields": {
-              "link": {
+              "url": {
                 "type": "css",
-                "expression": ".card-header a",
+                "expression": "a",
                 "attribute": "href"
               },
               "title": {
                 "type": "css",
-                "expression": ".card-header a",
-                "attribute": "text"
-              },
-              "poet": {
-                "type": "css",
-                "expression": "footer .card-footer-item:first-child a",
+                "expression": "h2",
                 "attribute": "text"
               }
             }

@@ -13,7 +13,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_OUTPUT_TEMPLATE             | The template for the filenames of the downloaded videos             | `%(title)s.%(ext)s`   |
 | YTP_DEFAULT_PRESET              | The default preset to use for the download                          | `default`             |
 | YTP_INSTANCE_TITLE              | The title of the instance                                           | `(not_set)`           |
-| YTP_FILE_LOGGING                | Whether to log to file                                              | `false`               |
+| YTP_FILE_LOGGING                | Whether to log to file                                              | `true`                |
 | YTP_DOWNLOAD_PATH               | Path to where the downloads will be saved                           | `/downloads`          |
 | YTP_MAX_WORKERS                 | The maximum number of workers to use for downloading                | `20`                  |
 | YTP_MAX_WORKERS_PER_EXTRACTOR   | The maximum number of concurrent downloads per extractor            | `2`                   |
@@ -43,18 +43,18 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |
 | YTP_PIP_IGNORE_UPDATES          | Do not update the custom pip packages                               | `false`               |
 | YTP_PYTHON_PATH                 | Extra python library directory                                      | `(not_set)`           |
-| YTP_PICTURES_BACKENDS           | A comma separated list of pictures urls to use                      | `(not_set)`           |
+| YTP_PICTURES_BACKENDS           | A comma separated list of picture URLs to use                       | `(default)`           |
 | YTP_BROWSER_CONTROL_ENABLED     | Whether to enable the file browser actions                          | `false`               |
 | YTP_YTDLP_AUTO_UPDATE           | Whether to enable the auto update for yt-dlp                        | `true`                |
 | YTP_YTDLP_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package     | `false`               |
 | YTP_YTDLP_VERSION               | The version of yt-dlp to use. Defaults to latest version            | `(not_set)`           |
-| YTP_BROWSER_URL                 | Remote browser endpoint for the bundled `browser` extractor         | `(not_set)`           |
+| YTP_BROWSER_URL                 | Remote browser endpoint for the browser extractor                   | `(not_set)`           |
 | YTP_FLARESOLVERR_URL            | FlareSolverr or Trawl endpoint URL.                                 | `(not_set)`           |
 | YTP_FLARESOLVERR_MAX_TIMEOUT    | Max FlareSolverr/Trawl challenge timeout in seconds                 | `120`                 |
 | YTP_FLARESOLVERR_CLIENT_TIMEOUT | HTTP client timeout (seconds) when calling FlareSolverr/Trawl       | `120`                 |
 | YTP_FLARESOLVERR_CACHE_TTL      | The cache TTL (in seconds) for FlareSolverr/Trawl solutions         | `600`                 |
 | YTP_BASE_PATH                   | Set this if you are serving YTPTube from sub-folder                 | `/`                   |
-| YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial youtube premiere stream from being downloaded  | `false`               |
+| YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial YouTube premiere stream from being downloaded  | `true`                |
 | YTP_QUEUE_DISPLAY_LIMIT         | Max queued downloads returned to the UI. `0` = unlimited            | `100`                 |
 | YTP_LIVE_PREMIERE_BUFFER        | buffer time in minutes to add to video duration                     | `5`                   |
 | YTP_TASKS_HANDLER_TIMER         | The cron expression for the tasks handler timer                     | `15 */1 * * *`        |
@@ -113,7 +113,8 @@ You can download [Add To YTPTube](https://www.icloud.com/shortcuts/6df61c97d97b4
 You have to edit the shortcut and replace the following:
 
 - `https://ytp.example.org` with your YTPTube instance.
-- `username:password` with your username and an API key as the password: `username:ytp_...`. Leave it empty when authentication is disabled.
+- The shortcut currently uses Basic authentication. Replace its credential value with `username:ytp_...`: your account
+  username and an API key, not your account password. Leave it empty when authentication is disabled.
 
 This shortcut is powerful, as it's allow you to select your preset on the fly pulled directly from your instance.
 Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
@@ -128,19 +129,18 @@ other than the shortcut itself. this shortcut missing support for parsing the ht
 
 # Authentication
 
-Server installations require a local account. Native builds disable application authentication by default; 
-set `YTP_DISABLE_AUTH=false` to enable it.
+Server installations require a local account by default. Native builds disable authentication by default. You can
+set `YTP_DISABLE_AUTH=false` to enable auth for native builds.
 
 Open the account menu, select **Create key**, enter a name, and copy the key when it appears. The key is shown once.
 
-Send API keys in the `Authorization: Bearer ytp_...` header. Older integrations that require Basic authentication can 
-use the account username and an API key as the password: `username:ytp_...`. Basic authentication is deprecated.
+Send API keys in the `Authorization: Bearer ytp_...` header.
 
 The `?apikey=ytp_...` query parameter is available for clients that cannot set headers, but URLs can appear in browser 
 history and proxy logs.
 
 Use `YTP_DISABLE_AUTH=true` only when a trusted reverse proxy controls access. `YTP_CORS_ORIGINS` accepts a
-comma-separated origin allowlist. Set it to `*` for clients that send an API key or Basic credentials without cookies.
+comma-separated origin allowlist. Set it to `*` for clients that send an API key without cookies.
 
 When YTPTube is behind a reverse proxy, session details use the transport peer address by default. To record the
 actual client address from `X-Forwarded-For`, set `YTP_TRUSTED_PROXIES` to the proxy's exact IP address or CIDR (for
@@ -196,6 +196,9 @@ If you are receiving errors like:
 
 This indicates an error with your mounts and how they interact with the container. So, the basic solution is to do the following:
 
+<details>
+<summary>Download paths Compose example</summary>
+
 ```yaml
 services:
   ytptube:
@@ -212,6 +215,8 @@ services:
       - ./config:/config:rw
       - ./downloads:/downloads:rw
 ```
+
+</details>
 
 Then run the following command to create the necessary directories and start the container:
 
@@ -328,17 +333,17 @@ YTPTube supports custom `ytp_*` placeholders in `yt-dlp` output template via the
   - Example result: `Favorites/QwErTyUiOp/My Video.mp4`
 
 > [!NOTE]
-> `%(ytp_` placeholders are a YTPTube extension and not avaliable via console or directly via yt-dlp.
+> `%(ytp_` placeholders are a YTPTube extension and not available via console or directly via yt-dlp.
 
 # How can I monitor sites without RSS feeds?
 
 YTPTube includes a **generic task handler** that turns JSON definitions into site-specific scrapers. You can use it
 to watch pages that do not expose RSS or public APIs and automatically enqueue new links into the download queue.
 
-1. Create definition via the WebUI > tasks > Definitions.
-2. Create task that reference same url click on inspect to see the results. Make sure it uses a preset that enables 
+1. Create a definition through WebUI > Tasks > Definitions.
+2. Create a task for the same URL, then click Inspect to see the results. Make sure it uses a preset that enables
    a download archive (`--download-archive`).
-3. When the task handler run, the handler scans the definitions, picks the first definition whose `match` rule covers
+3. When the task handler runs, it scans the definitions, picks the first definition whose `match_url` rule covers
    the task URL, fetches the page, extracts items, and queues the unseen ones.
 
 ### Definition schema
@@ -350,55 +355,54 @@ Each definition must contain a single JSON object with the following keys:
   "name": "example",                  // Friendly identifier shown in logs
   "match_url": [
     "https://example.com/articles/*", // Glob strings
-    "https://example.com/post/[0-9]+" // Regex strings
+    "/https://example\\.com/post/[0-9]+/" // Slash-delimited regex strings
   ],
-  "engine": {                         // Optional, defaults to HTTPX
-    "type": "httpx",                  // "httpx" (default) or "selenium"
-    "options": {
-      "url": "http://selenium:4444/wd/hub", // Selenium-only: remote hub URL
-      "arguments": ["--headless", "--disable-gpu"],
-      "wait_for": { "type": "css", "expression": ".article" },
-      "wait_timeout": 15,
-      "page_load_timeout": 60
-    }
-  },
-  "request": {                      // Optional HTTP settings
-    "method": "GET",                // GET or POST
-    "url": "https://example.com/articles/latest", // Override the task URL if needed
-    "headers": { "User-Agent": "MyAgent/1.0" },
-    "params": { "page": 1 },
-    "data": null,
-    "json_data": null,
-    "timeout": 30
-  },
-  "response": {                      // Optional: how to interpret the body
-    "type": "html"                   // "html" (default) or "json"
-  },
-  "parse": {
-    "items": {                        // Optional container for per-item extraction
-      "selector": ".columns .card",   // Defaults to CSS; set "type": "xpath" to use XPath
-      "fields": {
-        "link": {                     // Required inside fields: the per-item URL
-          "type": "css",
-          "expression": ".card-header a",
-          "attribute": "href"
-        },
-        "title": {
-          "type": "css",
-          "expression": ".card-header a",
-          "attribute": "text"
-        },
-        "poet": {
-          "type": "css",
-          "expression": "footer .card-footer-item:first-child a",
-          "attribute": "text"
-        }
+  "definition": {
+    "engine": {                        // Optional, defaults to HTTP
+      "type": "browser",                // "http" (default) or "browser"
+      "options": {
+        "protocol": "cdp",               // Browser protocol; currently "cdp"
+        "url": "http://browser:9222",     // Browser protocol endpoint
+        "wait_for": { "type": "css", "expression": ".article" },
+        "wait_timeout": 15,
+        "page_load_timeout": 60
       }
     },
-    "page_title": {                    // Optional global field outside the container
-      "type": "css",
-      "expression": "title",
-      "attribute": "text"
+    "request": {                      // Optional request settings
+      "method": "POST",               // GET or POST; bodies require POST
+      "url": "https://example.com/articles/latest", // Override the task URL if needed
+      "headers": { "User-Agent": "MyAgent/1.0" },
+      "params": { "page": 1 },
+      "body": {
+        "type": "json",                // "form", "json", or "raw"; POST only
+        "value": { "page": 1 }
+      },
+      "timeout": 30
+    },
+    "response": {                      // Optional: how to interpret the body
+      "type": "html"                   // "html" (default) or "json"
+    },
+    "parse": {
+      "items": {                        // Required container for per-item extraction
+        "selector": ".columns .card",   // One canonical selector; "type" defaults to "css", set to "xpath" for XPath
+        "fields": {
+          "url": {                      // Required inside fields: the per-item URL
+            "type": "css",
+            "expression": ".card-header a",
+            "attribute": "href"
+          },
+          "title": {
+            "type": "css",
+            "expression": ".card-header a",
+            "attribute": "text"
+          },
+          "poet": {
+            "type": "css",
+            "expression": "footer .card-footer-item:first-child a",
+            "attribute": "text"
+          }
+        }
+      }
     }
   }
 }
@@ -409,14 +413,16 @@ For JSON endpoints, switch the response format and use `jsonpath` selectors:
 ```json5
 {
   ...
-  "response": { "type": "json" },
-  "parse": {
-    "items": {
-      "type": "jsonpath",
-      "selector": "items",
-      "fields": {
-        "link": { "type": "jsonpath", "expression": "url" },
-        "title": { "type": "jsonpath", "expression": "title" }
+  "definition": {
+    "response": { "type": "json" },
+    "parse": {
+      "items": {
+        "type": "jsonpath",
+        "selector": "items",
+        "fields": {
+          "url": { "type": "jsonpath", "expression": "url" },
+          "title": { "type": "jsonpath", "expression": "title" }
+        }
       }
     }
   }
@@ -425,11 +431,13 @@ For JSON endpoints, switch the response format and use `jsonpath` selectors:
 
 ### Parsing rules
 
-- Every definition must provide a `link` field either at the top level or inside `parse.items.fields`. Other fields are optional metadata attached to the queued item.
+- Every definition must provide a `url` field either at the top level or inside `parse.items.fields`. `title`, `thumbnail`, `description`, and `published` are recognized optional item fields; other extracted fields become custom metadata. `archive_id` cannot be extracted because the handler generates it internally.
+- `parse` accepts exactly one form: either a single `items` container or direct parser keys. Direct parser keys next to `items` are ignored by the runtime and rejected by validation; the migration removes them automatically.
+- `parse.items` requires one canonical `selector` (CSS, XPath, or JMESPath for JSON responses) plus a `fields` map. The legacy `expression` alias on the container is removed; existing definitions are migrated to `selector` when they only provide `expression`.
 - CSS and XPath rules may specify `attribute`:
   - `text` / `inner_text` applies `normalize-space()`.
   - `html` / `outer_html` returns the raw HTML fragment.
-  - Any other value reads that attribute from the element. When omitted, the handler uses text and, for `link`, falls
+  - Any other value reads that attribute from the element. When omitted, the handler uses text and, for `url`, falls
     back to `href` automatically.
 - Regex rules scan the HTML fragment associated with the current scope (page-level or container). Set `attribute` to a named/numbered capture group or rely on the first group.
 - `post_filter` lets you run a final regex on the extracted value and pick a named (`value`) group.
@@ -438,19 +446,28 @@ For JSON endpoints, switch the response format and use `jsonpath` selectors:
 
 ### Fetch engines
 
-- **httpx (default)**: supports custom headers, query params, JSON/body payloads, proxy inherited from the task preset,
-  and optional timeout.
-- **selenium**: uses a remote Chrome session. Provide the hub URL under `engine.options.url`; only Chrome is supported at
-  the moment. Optional keys: `arguments` (list or string), `wait_for` (type `css`/`xpath` + `expression`), `wait_timeout`,
-  and `page_load_timeout`.
+- **http (default)**: uses the shared HTTP client and supports headers, query parameters, JSON/body payloads, proxy,
+  curl impersonation, optional default headers, FlareSolverr opt-in, and timeout.
+- **browser**: connects through the protocol selected by `engine.options.protocol`; `cdp` is currently supported.
+  Set `engine.options.url` to its plain absolute HTTP(S) endpoint. Browser requests support the same GET/POST
+  headers, query parameters, and payloads by intercepting the main navigation. Optional bounded waits are `wait_for`
+  (CSS or XPath plus `expression`), `wait_timeout`, and `page_load_timeout`.
+
+### How can I test a task definition?
+
+Choose **Actions > Test** for a saved definition to inspect it with a concrete URL, or click **Test** in the editor to
+test the current unsaved definition.
 
 > [!NOTE]
-> A machine-readable schema is available at `app/schema/task_definition.json` if you want to validate your JSON with editors or CI tools.
+> If you find this too hard to follow you can try [generating a definition with an AI](FEATURES.md#generate-a-definition-with-an-ai).
 
 # How to generate POT tokens?
 
 You need a POT provider server. The `bgutil-ytdlp-pot-provider` extractor is already included. You can use this 
 compose example:
+
+<details>
+<summary>POT provider Compose example</summary>
 
 ```yaml
 services:
@@ -474,6 +491,8 @@ services:
     container_name: bgutil_provider
     restart: unless-stopped    
 ```
+
+</details>
 
 Then create a new preset, and in the `CLI options` field set the following:
 
@@ -562,6 +581,9 @@ You can simply mount the share folder as target for `/downloads` path, but in so
 cross-device link errors. To avoid these issues, you can mount the share folder as a named volume, and then mount the 
 named volume to `/downloads/smb` or `/downloads/nfs`.
 
+<details>
+<summary>External storage Compose example</summary>
+
 ```yaml
 services:
   ytptube:
@@ -599,6 +621,8 @@ volumes:
       device: "//10.0.0.3/public" # <--- Remote SMB path
 ```
 
+</details>
+
 If you prefer, you can bypass YTPTube `download_path` and set it to `/` and completely manage your own mounts. However,
 please be aware that the file browser feature will expose whatever `download_path` is set to. **So, if you set it to `/`, 
 the file browser will expose the entire container filesystem.**
@@ -616,6 +640,9 @@ However, We do have the drivers and ffmpeg already installed and the CPU transco
 hardware acceleration You need to alter your `compose.yaml` file to mount the necessary devices to the container. Here
 is an example of how to do it for debian based systems.
 
+<details>
+<summary>Hardware acceleration Compose example</summary>
+
 ```yaml
 services:
  ytptube:
@@ -631,6 +658,8 @@ services:
       - 44   # it might be different on your system.                                 
       - 105  # it might be different on your system.
 ```
+
+</details>
 
 This setup should work for at VAAPI encoding in `x86_64` containers.
 
@@ -650,7 +679,7 @@ file to match your setup.
 If for some reason the initial test for GPU encoding fails, YTPTube will fallback to software encoding. You can force
 software encoding by setting the `YTP_STREAMER_VCODEC` environment variable to `libx264`. If you want to force GPU encoding, set the
 `YTP_STREAMER_VCODEC` environment variable to one of the supported GPU codecs, for example `h264_vaapi` or `h264_nvenc` depending on your GPU.
-For more information about the supported codecs, please refer to the [SegmentEncoders.py](app/library/SegmentEncoders.py) file.
+For the supported codec implementations, see [segment_encoders.py](app/features/streaming/library/segment_encoders.py).
 
 If GPU encoding fails and software encoding is used, you will have to restart the container to try GPU encoding again. 
 as we only test for GPU encoding once on first video stream.
@@ -683,6 +712,9 @@ may be insufficient for large downloads.
 
 To fix the issue, modify your `compose.yaml` to use a disk-based directory for temporary files:
 
+<details>
+<summary>Temporary storage Compose example</summary>
+
 ```yaml
 services:
   ytptube:
@@ -697,6 +729,8 @@ services:
       - ./downloads:/downloads/local:rw
       - ./temp:/tmp:rw
 ```
+
+</details>
 
 > [!NOTE]
 > Replace the `tmpfs` mount with a local directory volume (`./temp:/tmp:rw`). This allows temporary files to use disk space instead of RAM.
@@ -723,6 +757,9 @@ This will help in case the premiere has a longer loading screen than usual.
 You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or a compatible alternative such as [Trawl](https://github.com/germondai/trawl) (which handles newer challenge formats) and then set the `YTP_FLARESOLVERR_URL` 
 environment variable to point to your instance. For example:
 
+<details>
+<summary>FlareSolverr Compose example</summary>
+
 ```yaml
 services:
   ytptube:
@@ -747,131 +784,59 @@ services:
     restart: unless-stopped    
 ```
 
+</details>
+
 For more information please visit [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or [Trawl](https://github.com/germondai/trawl) projects.
 
 # How to use the browser extractor?
 
-YTPTube ships with a bundled `browser` extractor plugin for `yt-dlp`. It opens the target page in a remote browser,
-waits for the page network activity, then tries to extract media urls from the captured requests and media elements.
-
-This is mainly useful for sites where the regular extractor or generic page parsing does not expose the final media url,
-but a real browser session does.
-
-## Environment variables
-
-You can define the remote browser endpoint globally with the following environment variable.
-
-### Selenium example
+Use this extractor when a site's media URL only appears after the page runs in a browser. Set `YTP_BROWSER_URL` to the
+HTTP endpoint exposed by a remote Chromium instance:
 
 ```env
-YTP_BROWSER_URL=selenium+http://selenium:4444/wd/hub
+YTP_BROWSER_URL=http://chrome:9222
 ```
 
-### Playwright example
-
-For a native Playwright server, point to the Playwright websocket endpoint:
-
-```env
-YTP_BROWSER_URL=playwright+ws://playwright:3000/
-```
-
-### Playwright CDP example
-
-To connect Playwright over the Chrome DevTools Protocol, use either the shorthand `playwright+cdp://` form or an explicit transport form:
-
-```env
-YTP_BROWSER_URL=playwright+cdp://chrome:9222/
-# same as playwright+cdp+http://chrome:9222/
-```
-
-- `YTP_BROWSER_URL` is the full backend selector and endpoint in one value.
-- Supported forms are:
-  - `selenium+http://...`
-  - `selenium+https://...`
-  - `playwright+ws://...`
-  - `playwright+wss://...`
-  - `playwright+cdp://...` which is treated as `playwright+cdp+http://...`
-  - `playwright+cdp+http://...`
-  - `playwright+cdp+https://...`
-  - `playwright+cdp+ws://...`
-  - `playwright+cdp+wss://...`
-
-## yt-dlp usage
-
-If you want to set the browser extractor options directly on the yt-dlp side, you can also use `--extractor-args` with `generic:url=...`:
-
-### Selenium example
+Select the `generic_browser` preset for downloads that need it. The preset forces yt-dlp's generic extractor, so do
+not use it for sites supported by a dedicated extractor. The extractor waits up to 60 seconds for media. To use a
+shorter limit, add this to the CLI options:
 
 ```bash
---use-extractors "generic" --extractor-args "generic:url=selenium+http://selenium:4444/wd/hub"
+--extractor-args "generic:wait=30"
 ```
 
-### Playwright example
-
-```bash
---use-extractors "generic" --extractor-args "generic:url=playwright+ws://playwright:3000/"
-```
-
-### Playwright CDP example
-
-```bash
---use-extractors "generic" --extractor-args "generic:url=playwright+cdp://chrome:9222/"
-```
-
-The explicit `--extractor-args` value takes priority over `YTP_BROWSER_URL`.
-
-### Browser wait
-
-Use the `wait` extractor argument to limit how long the browser waits for media after navigation. The value is in
-seconds, defaults to `60`, and accepts values from `0` through `300`. This is a maximum: extraction continues
-immediately when media is found.
-
-```bash
---extractor-args "generic:url=playwright+cdp://chrome:9222/;wait=3"
-```
-
-When `YTP_BROWSER_URL` already defines the browser endpoint, only the wait value is needed:
-
-```bash
---extractor-args "generic:wait=3"
-```
-
-The `/api/yt-dlp/url/info` endpoint accepts this through its `args` query parameter. Browser navigation responses with
-status `404`, `410`, `500`, `502`, `503`, or `504` skip the wait regardless of this setting.
+If for whatever reason the browser extractor fails, YTPTube falls back to the normal generic extractor.
 
 ## Example compose setup
 
+<details>
+<summary>Browser extractor Compose example</summary>
+
 ```yaml
 services:
+  chrome:
+    image: jlesage/chromium:latest
+    container_name: chrome
+    environment:
+      - CHROMIUM_REMOTE_DEBUGGING=1 # enable remote debugging
+      - KEEP_APP_RUNNING=1
+      - DISPLAY_WIDTH=1920
+      - DISPLAY_HEIGHT=1080
   ytptube:
     user: "${UID:-1000}:${UID:-1000}"
     image: ghcr.io/arabcoders/ytptube:latest
     container_name: ytptube
     restart: unless-stopped
     environment:
-      - YTP_BROWSER_URL=selenium+http://selenium:4444/wd/hub # or playwright+ws://playwright:3000/ or playwright+cdp://chrome:9222/
+      - YTP_BROWSER_URL=http://chrome:9222
     ports:
       - "8081:8081"
     volumes:
       - ./config:/config:rw
       - ./downloads:/downloads:rw
-
-  selenium:
-    image: selenium/standalone-chrome:latest
-    container_name: selenium
-    restart: unless-stopped
-    shm_size: 2gb
-    
-  playwright:
-    image: mcr.microsoft.com/playwright:v1.59.0-noble
-    container_name: playwright
-    restart: unless-stopped
-    command: /bin/sh -c "npx -y playwright@1.59.0 run-server --port 3000 --host 0.0.0.0"
 ```
 
-> [!NOTE]
-> The browser extractor is slower than the normal extractor flow and should only be used when a site actually needs a real browser session.
-> playwright require same version for both the server and the client, so make sure to use the same version in the container and in your local environment if you want to test it locally.
+</details>
 
 ---
 

@@ -101,7 +101,7 @@
               />
             </UFormField>
 
-            <UFormField :label="t('app.settings.language')" class="w-full" :ui="settingsFieldUi">
+            <UFormField :label="t('common.language')" class="w-full" :ui="settingsFieldUi">
               <USelect
                 :model-value="locale"
                 :items="localeItems"

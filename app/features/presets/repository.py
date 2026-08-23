@@ -11,7 +11,7 @@ from app.features.presets.models import PresetModel
 from app.features.presets.utils import preset_name, seed_defaults
 from app.library.config import Config
 from app.library.Events import Event, EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Services import Services
 from app.library.Singleton import Singleton
 

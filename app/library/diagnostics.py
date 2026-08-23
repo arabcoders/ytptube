@@ -103,11 +103,13 @@ def _bin_version(value: str) -> str:
 
 
 def _parse_browser_url(value: str) -> tuple[str, str]:
-    if value.startswith(("selenium+http://", "selenium+https://")):
-        return "selenium", value.removeprefix("selenium+")
-
-    if value.startswith(("playwright+http://", "playwright+https://")):
-        return "playwright", value.removeprefix("playwright+")
+    parsed = urllib.parse.urlsplit(value)
+    if (
+        parsed.scheme in {"http", "https"}
+        and parsed.hostname
+        and not parsed.path.rstrip("/").lower().endswith("/wd/hub")
+    ):
+        return "playwright", value
 
     return "unknown", value
 
@@ -349,8 +351,8 @@ def _check_browser_client() -> DiagnosticCheck:
             details={},
         )
 
-    package_name = "selenium" if engine == "selenium" else "playwright"
-    version = _package_version(package_name)
+    package_name = "playwright"
+    version: str | None = _package_version(package_name)
 
     return DiagnosticCheck(
         id="browser_client",

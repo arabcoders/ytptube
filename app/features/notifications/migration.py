@@ -8,7 +8,7 @@ from app.features.core.migration import Migration as FeatureMigration
 from app.features.notifications.schemas import NotificationEvents
 from app.features.presets.service import Presets
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 if TYPE_CHECKING:
     from app.features.notifications.repository import NotificationsRepository

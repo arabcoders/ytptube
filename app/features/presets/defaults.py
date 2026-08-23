@@ -91,4 +91,15 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "priority": 0,
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
+    {
+        "name": "generic_browser",
+        "default": True,
+        "cli": '--socket-timeout 30 --download-archive %(archive_file)s --use-extractors "generic"',
+        "description": "Use the bundled generic browser extractor with the endpoint configured by YTP_BROWSER_URL.",
+        "folder": "",
+        "template": "",
+        "cookies": "",
+        "priority": 0,
+        "updated_at": DEFAULT_PRESET_UPDATED_AT,
+    },
 ]

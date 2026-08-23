@@ -32,7 +32,7 @@
       class="grid gap-4 rounded-lg border border-default bg-muted/10 p-4 lg:grid-cols-2"
     >
       <UFormField
-        v-if="availableDefinitions.length"
+        v-if="editorDefinitions.length"
         :ui="fieldUi"
         :description="t('common.prefillFromDef')"
       >
@@ -107,16 +107,7 @@
       variant="soft"
       icon="i-lucide-triangle-alert"
       :title="t('common.advancedModeRequired')"
-      :description="t('common.advancedModeRequiredDesc')"
-    />
-
-    <UAlert
-      v-else-if="mode === 'gui'"
-      color="info"
-      variant="soft"
-      icon="i-lucide-info"
-      :title="t('common.guiLimitations')"
-      :description="guiLimitations"
+      :description="guiDiagnostics || t('common.advancedModeRequiredDesc')"
     />
 
     <template v-if="mode === 'gui'">
@@ -200,7 +191,7 @@
           <UTextarea
             v-model="guiState.matchText"
             :rows="4"
-            placeholder="https://example.com/*&#10;https://example.org/channel/*"
+            placeholder="https://example.com/*&#10;/https\:\/\/example\.org\/channel\/\d+/"
             class="w-full"
             :ui="textareaUi"
             :disabled="isBusy"
@@ -209,12 +200,33 @@
         </UFormField>
       </div>
 
-      <div class="grid gap-5 border-t border-default pt-5 lg:grid-cols-2">
+      <div class="space-y-5 border-t border-default pt-5">
         <div class="space-y-4">
           <div class="space-y-1">
-            <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-              <UIcon name="i-lucide-settings-2" class="size-4 text-toned" />
-              <span>{{ t('common.requestSetup') }}</span>
+            <div
+              class="flex items-center justify-between gap-2 text-sm font-semibold text-highlighted"
+            >
+              <div class="flex items-center gap-2">
+                <UIcon name="i-lucide-settings-2" class="size-4 text-toned" />
+                <span>{{ t('common.requestSetup') }}</span>
+              </div>
+              <UButton
+                type="button"
+                color="neutral"
+                :variant="showAdvancedRequestOptions ? 'soft' : 'outline'"
+                size="sm"
+                icon="i-lucide-settings-2"
+                :aria-label="
+                  showAdvancedRequestOptions ? t('common.hideOptions') : t('common.showOptions')
+                "
+                :aria-expanded="showAdvancedRequestOptions"
+                aria-controls="request-advanced-options"
+                class="shrink-0"
+                :disabled="isBusy"
+                @click="showAdvancedRequestOptions = !showAdvancedRequestOptions"
+              >
+                {{ showAdvancedRequestOptions ? t('common.hideOptions') : t('common.showOptions') }}
+              </UButton>
             </div>
           </div>
 
@@ -246,7 +258,6 @@
                   <span class="font-semibold text-default">{{ t('common.requestMethod') }}</span>
                 </div>
               </template>
-
               <USelect
                 v-model="guiState.requestMethod"
                 :items="requestMethodItems"
@@ -259,42 +270,13 @@
               />
             </UFormField>
 
-            <UFormField
-              v-if="guiState.engineType === 'selenium'"
-              class="md:col-span-2"
-              :ui="fieldUi"
-              :description="t('common.seleniumHubUrlDesc')"
-            >
-              <template #label>
-                <div class="flex flex-wrap items-center gap-2">
-                  <UIcon name="i-lucide-server" class="size-4 text-toned" />
-                  <span class="font-semibold text-default">{{ t('common.seleniumHubUrl') }}</span>
-                </div>
-              </template>
-
-              <UInput
-                v-model="guiState.engineUrl"
-                type="url"
-                placeholder="http://selenium:4444/wd/hub"
-                class="w-full"
-                :ui="inputUi"
-                :disabled="isBusy"
-                dir="ltr"
-              />
-            </UFormField>
-
-            <UFormField
-              class="md:col-span-2"
-              :ui="fieldUi"
-              :description="t('common.requestUrlDesc')"
-            >
+            <UFormField :ui="fieldUi" :description="t('common.requestUrlDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-link" class="size-4 text-toned" />
                   <span class="font-semibold text-default">{{ t('common.requestUrl') }}</span>
                 </div>
               </template>
-
               <UInput
                 v-model="guiState.requestUrl"
                 type="url"
@@ -305,10 +287,457 @@
                 dir="ltr"
               />
             </UFormField>
+
+            <UFormField
+              v-if="guiState.engineType === 'browser'"
+              :ui="fieldUi"
+              :description="t('common.browserEndpointUrlDesc')"
+            >
+              <template #label>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UIcon name="i-lucide-server" class="size-4 text-toned" />
+                  <span class="font-semibold text-default">{{
+                    t('common.browserEndpointUrl')
+                  }}</span>
+                </div>
+              </template>
+              <UInput
+                v-model="guiState.engineUrl"
+                type="url"
+                placeholder="http://chrome:9222"
+                class="w-full"
+                :ui="inputUi"
+                :disabled="isBusy"
+                dir="ltr"
+              />
+            </UFormField>
+
+            <UFormField
+              v-if="guiState.requestMethod === 'POST'"
+              :class="guiState.engineType === 'browser' ? '' : 'md:col-span-2'"
+              :ui="fieldUi"
+              :description="t('common.requestBodyTypeDesc')"
+            >
+              <template #label>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UIcon name="i-lucide-braces" class="size-4 text-toned" />
+                  <span class="font-semibold text-default">{{ t('common.requestBodyType') }}</span>
+                </div>
+              </template>
+
+              <USelect
+                v-model="guiState.requestBodyType"
+                :items="requestBodyTypeItems"
+                value-key="value"
+                label-key="label"
+                class="w-full"
+                :ui="inputUi"
+                :disabled="isBusy"
+              />
+            </UFormField>
+
+            <UFormField
+              v-if="guiState.requestMethod === 'POST' && guiState.requestBodyType === 'raw'"
+              class="md:col-span-2"
+              :ui="fieldUi"
+              :description="t('common.requestBodyDesc')"
+            >
+              <template #label>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UIcon name="i-lucide-file-json" class="size-4 text-toned" />
+                  <span class="font-semibold text-default">{{ t('common.requestBody') }}</span>
+                </div>
+              </template>
+
+              <UTextarea
+                v-model="guiState.requestBody"
+                :rows="5"
+                :placeholder="requestBodyPlaceholder"
+                class="w-full"
+                :ui="textareaUi"
+                :disabled="isBusy"
+                dir="ltr"
+              />
+            </UFormField>
+
+            <div
+              v-if="
+                guiState.requestMethod === 'POST' &&
+                ['form', 'json'].includes(guiState.requestBodyType)
+              "
+              class="space-y-3 md:col-span-2"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+                  <UIcon name="i-lucide-file-json" class="size-4 text-toned" />
+                  <span>{{ t('common.requestBody') }}</span>
+                </div>
+                <UButton
+                  type="button"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  icon="i-lucide-plus"
+                  :disabled="isBusy"
+                  @click="addRequestPair('body')"
+                >
+                  {{ t('common.add') }}
+                </UButton>
+              </div>
+              <p class="text-sm text-toned">
+                {{
+                  guiState.requestBodyType === 'json'
+                    ? t('common.requestJsonFieldsDesc')
+                    : t('common.requestFormFieldsDesc')
+                }}
+              </p>
+
+              <UTextarea
+                v-if="guiState.requestBodyType === 'json' && guiState.requestJsonFallback"
+                v-model="guiState.requestJsonText"
+                :rows="6"
+                class="w-full"
+                :ui="textareaUi"
+                :disabled="isBusy"
+                dir="ltr"
+              />
+
+              <div
+                v-for="(pair, index) in guiState.requestBodyPairs"
+                :key="`request-body-${index}`"
+                class="grid gap-2 rounded-lg border border-default bg-muted/20 p-3"
+                :class="
+                  guiState.requestBodyType === 'form'
+                    ? 'md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'
+                    : 'md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'
+                "
+                dir="ltr"
+              >
+                <UInput
+                  v-model="pair.key"
+                  :placeholder="t('common.keyLabel')"
+                  :disabled="isBusy"
+                  :ui="inputUi"
+                />
+                <template v-if="guiState.requestBodyType === 'form'">
+                  <USelect
+                    v-model="pair.type"
+                    :items="scalarTypeItems"
+                    value-key="value"
+                    label-key="label"
+                    :ui="inputUi"
+                    :disabled="isBusy"
+                  />
+                  <USelect
+                    v-if="pair.type === 'boolean'"
+                    v-model="pair.value"
+                    :items="booleanValueItems"
+                    value-key="value"
+                    label-key="label"
+                    :ui="inputUi"
+                    :disabled="isBusy"
+                  />
+                  <UInput
+                    v-else-if="pair.type !== 'null'"
+                    v-model="pair.value"
+                    :placeholder="t('common.valueLabel')"
+                    :disabled="isBusy"
+                    :ui="inputUi"
+                  />
+                  <UInput v-else disabled placeholder="null" :ui="inputUi" />
+                </template>
+                <UInput
+                  v-else
+                  v-model="pair.value"
+                  :placeholder="t('common.jsonValue')"
+                  :disabled="isBusy"
+                  :ui="inputUi"
+                />
+                <UButton
+                  type="button"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-trash"
+                  :aria-label="t('common.remove')"
+                  :disabled="isBusy"
+                  @click="guiState.requestBodyPairs.splice(index, 1)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="request-advanced-options"
+          v-if="showAdvancedRequestOptions"
+          class="grid gap-4 md:grid-cols-2"
+        >
+          <template v-if="guiState.engineType === 'http'">
+            <UFormField :ui="fieldUi" :description="t('common.impersonateDesc')">
+              <template #label>{{ t('common.impersonate') }}</template>
+              <USelectMenu
+                v-model="httpImpersonate"
+                :items="impersonateTargetItems"
+                :search-input="true"
+                class="w-full"
+                :ui="inputUi"
+                :disabled="isBusy || !impersonateTargetItems.length"
+                dir="ltr"
+              />
+            </UFormField>
+            <UFormField :ui="fieldUi" :description="t('common.curlDefaultHeadersDesc')">
+              <template #label>{{ t('common.curlDefaultHeaders') }}</template>
+              <div
+                class="flex min-h-11 items-center rounded-md border border-default bg-elevated/40 px-3"
+              >
+                <USwitch v-model="curlDefaultHeaders" :disabled="isBusy" />
+              </div>
+            </UFormField>
+            <UFormField :ui="fieldUi" :description="t('common.flaresolverrDesc')">
+              <template #label>{{ t('common.flaresolverr') }}</template>
+              <div
+                class="flex min-h-11 items-center rounded-md border border-default bg-elevated/40 px-3"
+              >
+                <USwitch v-model="flaresolverr" :disabled="isBusy" />
+              </div>
+            </UFormField>
+          </template>
+
+          <template v-if="guiState.engineType === 'browser'">
+            <UFormField :ui="fieldUi" :description="t('common.waitForDesc')">
+              <template #label>{{ t('common.waitFor') }}</template>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <USelect
+                  v-model="browserWaitType"
+                  :items="waitTypeItems"
+                  value-key="value"
+                  label-key="label"
+                  :ui="inputUi"
+                  :disabled="isBusy"
+                />
+                <UInput
+                  v-model="browserWaitExpression"
+                  :placeholder="t('common.waitExpression')"
+                  :ui="inputUi"
+                  :disabled="isBusy"
+                  dir="ltr"
+                />
+              </div>
+            </UFormField>
+            <UFormField :ui="fieldUi" :description="t('common.waitTimeoutDesc')">
+              <template #label>{{ t('common.waitTimeout') }}</template>
+              <UInput
+                v-model="browserWaitTimeout"
+                type="number"
+                min="0"
+                max="300"
+                step="any"
+                class="w-full"
+                :ui="inputUi"
+                :disabled="isBusy"
+                dir="ltr"
+              />
+            </UFormField>
+            <UFormField :ui="fieldUi" :description="t('common.pageLoadTimeoutDesc')">
+              <template #label>{{ t('common.pageLoadTimeout') }}</template>
+              <UInput
+                v-model="pageLoadTimeout"
+                type="number"
+                min="0"
+                max="300"
+                step="any"
+                class="w-full"
+                :ui="inputUi"
+                :disabled="isBusy"
+                dir="ltr"
+              />
+            </UFormField>
+          </template>
+
+          <UFormField :ui="fieldUi" :description="t('common.requestTimeoutDesc')">
+            <template #label>
+              <div class="flex flex-wrap items-center gap-2">
+                <UIcon name="i-lucide-timer" class="size-4 text-toned" />
+                <span class="font-semibold text-default">{{ t('common.requestTimeout') }}</span>
+              </div>
+            </template>
+            <UInput
+              v-model="guiState.requestTimeout"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="120"
+              class="w-full"
+              :ui="inputUi"
+              :disabled="isBusy"
+              dir="ltr"
+            />
+          </UFormField>
+
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+                <UIcon name="i-lucide-list-plus" class="size-4 text-toned" />
+                <span>{{ t('common.queryParameters') }}</span>
+              </div>
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-plus"
+                :disabled="isBusy"
+                @click="addRequestPair('params')"
+              >
+                {{ t('common.add') }}
+              </UButton>
+            </div>
+            <p class="text-sm text-toned">{{ t('common.queryParametersDesc') }}</p>
+            <div
+              v-for="(param, index) in guiState.requestParams"
+              :key="`request-param-${index}`"
+              class="grid gap-2 rounded-lg border border-default bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+              dir="ltr"
+            >
+              <UInput
+                v-model="param.key"
+                :placeholder="t('common.keyLabel')"
+                :disabled="isBusy"
+                :ui="inputUi"
+              />
+              <USelect
+                v-model="param.type"
+                :items="scalarTypeItems"
+                value-key="value"
+                label-key="label"
+                :ui="inputUi"
+                :disabled="isBusy"
+              />
+              <USelect
+                v-if="param.type === 'boolean'"
+                v-model="param.value"
+                :items="booleanValueItems"
+                value-key="value"
+                label-key="label"
+                :ui="inputUi"
+                :disabled="isBusy"
+              />
+              <UInput
+                v-else-if="param.type !== 'null'"
+                v-model="param.value"
+                :placeholder="t('common.valueLabel')"
+                :disabled="isBusy"
+                :ui="inputUi"
+              />
+              <UInput v-else disabled placeholder="null" :ui="inputUi" />
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                :aria-label="t('common.remove')"
+                :disabled="isBusy"
+                @click="guiState.requestParams.splice(index, 1)"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+                <UIcon name="i-lucide-key-round" class="size-4 text-toned" />
+                <span>{{ t('common.requestHeaders') }}</span>
+              </div>
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-plus"
+                :disabled="isBusy"
+                @click="addRequestPair('headers')"
+              >
+                {{ t('common.add') }}
+              </UButton>
+            </div>
+            <p class="text-sm text-toned">{{ t('common.requestHeadersDesc') }}</p>
+            <div
+              v-for="(header, index) in guiState.requestHeaders"
+              :key="`request-header-${index}`"
+              class="grid gap-2 rounded-lg border border-default bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+              dir="ltr"
+            >
+              <UInput
+                v-model="header.key"
+                :placeholder="t('common.keyLabel')"
+                :disabled="isBusy"
+                :ui="inputUi"
+              />
+              <UInput
+                v-model="header.value"
+                :placeholder="t('common.valueLabel')"
+                :disabled="isBusy"
+                :ui="inputUi"
+              />
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                :aria-label="t('common.remove')"
+                :disabled="isBusy"
+                @click="guiState.requestHeaders.splice(index, 1)"
+              />
+            </div>
           </div>
         </div>
 
         <div class="space-y-4">
+          <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+            <UIcon name="i-lucide-list-tree" class="size-4 text-toned" />
+            <span>{{ t('common.parseSetup') }}</span>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <UFormField :ui="fieldUi" :description="t('common.responseTypeDesc')">
+              <template #label>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UIcon name="i-lucide-file-output" class="size-4 text-toned" />
+                  <span class="font-semibold text-default">{{ t('common.responseType') }}</span>
+                </div>
+              </template>
+              <USelect
+                v-model="guiState.responseType"
+                :items="responseTypeItems"
+                value-key="value"
+                label-key="label"
+                class="w-full"
+                :ui="inputUi"
+                :disabled="isBusy"
+              />
+            </UFormField>
+
+            <UFormField :ui="fieldUi" :description="t('common.parseModeDesc')">
+              <template #label>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UIcon name="i-lucide-list-tree" class="size-4 text-toned" />
+                  <span class="font-semibold text-default">{{ t('common.parseMode') }}</span>
+                </div>
+              </template>
+              <USelect
+                v-model="guiState.parseMode"
+                :items="parseModeItems"
+                value-key="value"
+                label-key="label"
+                class="w-full"
+                :ui="inputUi"
+                :disabled="isBusy"
+              />
+            </UFormField>
+          </div>
+        </div>
+
+        <div v-if="guiState.parseMode === 'container'" class="space-y-4">
           <div class="space-y-1">
             <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
               <UIcon name="i-lucide-list-tree" class="size-4 text-toned" />
@@ -383,7 +812,7 @@
             :disabled="isBusy"
             @click="addField"
           >
-            {{ t('common.addField') }}
+            {{ t('common.add') }}
           </UButton>
         </div>
 
@@ -417,6 +846,7 @@
                     <span>{{ t('common.fieldAttribute') }}</span>
                   </span>
                 </th>
+                <th class="w-40">{{ t('common.filter') }}</th>
                 <th class="w-12">
                   <span class="inline-flex items-center gap-1.5">
                     <UIcon name="i-lucide-trash-2" class="size-3.5 text-toned" />
@@ -426,7 +856,7 @@
             </thead>
             <tbody class="divide-y divide-default">
               <tr v-if="!guiState.fields.length">
-                <td colspan="5" class="px-2 py-6 text-center text-sm text-toned">
+                <td colspan="6" class="px-2 py-6 text-center text-sm text-toned">
                   {{ t('common.noExtractorFields') }}
                 </td>
               </tr>
@@ -477,6 +907,24 @@
                     :disabled="isBusy"
                     dir="ltr"
                   />
+                </td>
+                <td class="px-2 py-2">
+                  <div class="space-y-2">
+                    <UInput
+                      v-model="field.postFilter.filter"
+                      :placeholder="t('common.filter')"
+                      :ui="inputUi"
+                      :disabled="isBusy"
+                      dir="ltr"
+                    />
+                    <UInput
+                      v-model="field.postFilter.value"
+                      :placeholder="t('common.optional')"
+                      :ui="inputUi"
+                      :disabled="isBusy"
+                      dir="ltr"
+                    />
+                  </div>
                 </td>
                 <td class="px-2 py-2 text-end">
                   <UButton
@@ -539,35 +987,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
-
-import { prettyName, decode } from '~/utils';
+import { useTaskDefinitionEditor } from '~/composables/useTaskDefinitionEditor';
 import type { TaskDefinitionDocument, TaskDefinitionSummary } from '~/types/task_definitions';
-
-const { t } = useI18n();
-
-type EditorMode = 'gui' | 'advanced';
-
-type GuiField = {
-  key: string;
-  type: string;
-  expression: string;
-  attribute: string;
-};
-
-type GuiState = {
-  name: string;
-  priority: number;
-  enabled: boolean;
-  matchText: string;
-  engineType: 'httpx' | 'selenium';
-  engineUrl: string;
-  requestMethod: string;
-  requestUrl: string;
-  containerType: 'css' | 'xpath' | 'jsonpath';
-  containerSelector: string;
-  fields: GuiField[];
-};
 
 const props = defineProps<{
   title?: string;
@@ -575,6 +996,7 @@ const props = defineProps<{
   loading?: boolean;
   submitting?: boolean;
   availableDefinitions?: readonly TaskDefinitionSummary[];
+  impersonateTargets?: readonly string[];
   initialShowImport?: boolean;
 }>();
 
@@ -584,630 +1006,62 @@ const emit = defineEmits<{
   (e: 'import-existing', id: number): void;
 }>();
 
-const jsonText = ref('');
-const errorMessage = ref<string | null>(null);
-const guiError = ref<string | null>(null);
-const guiSupported = ref(true);
-const mode = ref<EditorMode>('gui');
-const showImport = ref(false);
-const importString = ref('');
-const selectedExisting = ref<number | null>(null);
-const selectedExistingValue = computed<number | undefined>({
-  get: () => selectedExisting.value ?? undefined,
-  set: (value) => {
-    selectedExisting.value = value ?? null;
-  },
-});
-
-const availableDefinitions = computed(() => props.availableDefinitions ?? []);
-
-const guiState = reactive<GuiState>({
-  name: '',
-  priority: 0,
-  enabled: true,
-  matchText: '',
-  engineType: 'httpx',
-  engineUrl: '',
-  requestMethod: 'GET',
-  requestUrl: '',
-  containerType: 'css',
-  containerSelector: '',
-  fields: [],
-});
-
-const loading = computed(() => props.loading ?? false);
-const submitting = computed(() => props.submitting ?? false);
-const isBusy = computed(() => loading.value || submitting.value);
-const advancedMode = computed(() => mode.value === 'advanced');
-
-const guiLimitations = computed(() => t('common.editorInfo'));
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const textareaUi = {
-  root: 'w-full',
-  base: 'min-h-[8rem] w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const advancedTextareaUi = {
-  root: 'w-full',
-  base: 'min-h-[24rem] w-full bg-elevated/60 font-mono text-sm ring-default focus-visible:ring-primary',
-};
-
-const engineItems = [
-  { label: 'HTTPX', value: 'httpx' },
-  { label: 'Selenium', value: 'selenium' },
-];
-
-const requestMethodItems = [
-  { label: 'GET', value: 'GET' },
-  { label: 'POST', value: 'POST' },
-];
-
-const containerTypeItems = [
-  { label: 'CSS', value: 'css' },
-  { label: 'XPath', value: 'xpath' },
-  { label: 'JSONPath', value: 'jsonpath' },
-];
-
-const fieldTypeItems = [
-  { label: 'CSS', value: 'css' },
-  { label: 'XPath', value: 'xpath' },
-  { label: 'Regex', value: 'regex' },
-  { label: 'JSONPath', value: 'jsonpath' },
-];
-
-const existingDefinitionItems = computed(() => {
-  return availableDefinitions.value.map((item) => ({
-    label: prettyName(item.name || String(item.id)),
-    value: item.id,
-  }));
-});
-
-const dirtySource = computed(() => ({
-  mode: mode.value,
-  showImport: showImport.value,
-  importString: importString.value,
-  selectedExisting: selectedExisting.value,
-  jsonText: jsonText.value,
-  guiState: JSON.parse(JSON.stringify(guiState)),
-}));
-const { isDirty, markClean } = useDirtyState(dirtySource);
-
-const resetGuiState = (state: GuiState): void => {
-  guiState.name = state.name;
-  guiState.priority = state.priority;
-  guiState.enabled = state.enabled;
-  guiState.matchText = state.matchText;
-  guiState.engineType = state.engineType;
-  guiState.engineUrl = state.engineUrl;
-  guiState.requestMethod = state.requestMethod;
-  guiState.requestUrl = state.requestUrl;
-  guiState.containerType = state.containerType;
-  guiState.containerSelector = state.containerSelector;
-  guiState.fields = state.fields.map((field) => ({ ...field }));
-};
-
-const defaultField = (): GuiField => ({ key: '', type: 'css', expression: '', attribute: '' });
-
-const addField = (): void => {
-  guiState.fields.push(defaultField());
-};
-
-const removeField = (index: number): void => {
-  guiState.fields.splice(index, 1);
-};
-
-const splitMatches = (text: string): string[] => {
-  return text
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-};
-
-const toGui = (document: TaskDefinitionDocument): GuiState | null => {
-  if (!document || Array.isArray(document) || typeof document !== 'object') {
-    return null;
-  }
-
-  const entry = document;
-  const match = entry.match_url;
-  if (!Array.isArray(match) || match.some((item) => typeof item !== 'string')) {
-    return null;
-  }
-
-  const definition = entry.definition;
-  if (!definition || Array.isArray(definition) || typeof definition !== 'object') {
-    return null;
-  }
-
-  const parse = definition.parse;
-  if (!parse || Array.isArray(parse) || typeof parse !== 'object') {
-    return null;
-  }
-
-  const parseRecord = parse as Record<string, unknown>;
-  const items = parseRecord.items;
-  if (!items || Array.isArray(items) || typeof items !== 'object') {
-    return null;
-  }
-
-  const itemRecord = items as Record<string, unknown>;
-  const fields = itemRecord.fields;
-  if (!fields || Array.isArray(fields) || typeof fields !== 'object') {
-    return null;
-  }
-
-  const fieldRecord = fields as Record<string, unknown>;
-  const guiFields: GuiField[] = [];
-  for (const [key, value] of Object.entries(fieldRecord)) {
-    if (!value || Array.isArray(value) || typeof value !== 'object') {
-      return null;
-    }
-
-    const rule = value as Record<string, unknown>;
-    if (typeof rule.type !== 'string' || typeof rule.expression !== 'string') {
-      return null;
-    }
-
-    if (
-      Object.keys(rule).some(
-        (prop) => !['type', 'expression', 'attribute', 'post_filter'].includes(prop),
-      )
-    ) {
-      return null;
-    }
-
-    guiFields.push({
-      key,
-      type: String(rule.type),
-      expression: String(rule.expression),
-      attribute: typeof rule.attribute === 'string' ? String(rule.attribute) : '',
-    });
-  }
-
-  const engine = definition.engine as Record<string, unknown> | undefined;
-  const engineType = engine?.type === 'selenium' ? 'selenium' : 'httpx';
-  const engineUrl =
-    typeof engine?.options === 'string' && engineType === 'selenium'
-      ? ''
-      : ((engine?.options as Record<string, unknown> | undefined)?.url as string | undefined);
-
-  if (engineUrl && engineType === 'selenium' && typeof engineUrl !== 'string') {
-    return null;
-  }
-
-  const request = definition.request as Record<string, unknown> | undefined;
-  const selectorType = String(itemRecord.type ?? 'css') as GuiState['containerType'];
-  const selectorSource = (itemRecord.selector ?? itemRecord.expression) as string | undefined;
-  if (!selectorSource || typeof selectorSource !== 'string') {
-    return null;
-  }
-
-  return {
-    name: typeof entry.name === 'string' ? entry.name : '',
-    priority: Number(entry.priority ?? 0) || 0,
-    enabled: typeof entry.enabled === 'boolean' ? entry.enabled : true,
-    matchText: match.join('\n'),
-    engineType,
-    engineUrl: engineType === 'selenium' ? String(engineUrl ?? '') : '',
-    requestMethod: typeof request?.method === 'string' ? String(request.method) : 'GET',
-    requestUrl: typeof request?.url === 'string' ? String(request.url) : '',
-    containerType: selectorType,
-    containerSelector: selectorSource,
-    fields: guiFields.length ? guiFields : [defaultField()],
-  };
-};
-
-const fromGui = (state: GuiState): TaskDefinitionDocument => {
-  if (!state.name.trim()) {
-    throw new Error(t('common.validationNameRequired'));
-  }
-
-  const matches = splitMatches(state.matchText);
-  if (!matches.length) {
-    throw new Error(t('common.validationMatchRequired'));
-  }
-
-  if (!state.containerSelector.trim()) {
-    throw new Error(t('common.validationSelectorRequired'));
-  }
-
-  const formattedFields: Record<string, Record<string, string>> = {};
-  state.fields.forEach((field) => {
-    if (!field.key.trim()) {
-      return;
-    }
-
-    if (!field.expression.trim()) {
-      throw new Error(t('common.validationExpressionRequired', { key: field.key }));
-    }
-
-    formattedFields[field.key.trim()] = {
-      type: field.type || 'css',
-      expression: field.expression,
-      ...(field.attribute ? { attribute: field.attribute } : {}),
-    };
-  });
-
-  if (!Object.keys(formattedFields).length) {
-    throw new Error(t('common.validationFieldsRequired'));
-  }
-
-  const definition: Record<string, unknown> = {
-    parse: {
-      items: {
-        type: state.containerType,
-        selector: state.containerType === 'jsonpath' ? undefined : state.containerSelector,
-        expression: state.containerType === 'jsonpath' ? state.containerSelector : undefined,
-        fields: formattedFields,
-      },
-    },
-  };
-
-  if (state.engineType !== 'httpx' || state.engineUrl) {
-    definition.engine = {
-      type: state.engineType,
-      ...(state.engineType === 'selenium' && state.engineUrl
-        ? { options: { url: state.engineUrl } }
-        : {}),
-    };
-  }
-
-  const request: Record<string, string> = {};
-  if (state.requestMethod && state.requestMethod !== 'GET') {
-    request.method = state.requestMethod;
-  }
-  if (state.requestUrl) {
-    request.url = state.requestUrl;
-  }
-  if (Object.keys(request).length) {
-    definition.request = request;
-  }
-
-  return {
-    name: state.name.trim(),
-    priority: Number(state.priority) || 0,
-    enabled: state.enabled,
-    match_url: matches,
-    definition: definition as unknown as TaskDefinitionDocument['definition'],
-  };
-};
-
-const hasEditorContent = computed(() => {
-  if (mode.value === 'advanced') {
-    return Boolean(jsonText.value.trim());
-  }
-
-  return Boolean(
-    guiState.name.trim() ||
-    guiState.matchText.trim() ||
-    guiState.containerSelector.trim() ||
-    guiState.engineUrl.trim() ||
-    guiState.requestUrl.trim() ||
-    guiState.fields.some((field) => field.key.trim() || field.expression.trim()),
-  );
-});
-
-const validationError = computed(() => {
-  if (mode.value === 'gui') {
-    try {
-      fromGui(guiState);
-      return '';
-    } catch (error) {
-      return error instanceof Error ? error.message : t('common.unableToBuildDef');
-    }
-  }
-
-  if (!jsonText.value.trim()) {
-    return t('common.validationDefinitionEmpty');
-  }
-
-  try {
-    const parsed = JSON.parse(jsonText.value) as unknown;
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-      return t('common.validationDefinitionObject');
-    }
-  } catch (error) {
-    return error instanceof Error ? error.message : t('common.invalidJsonDocument');
-  }
-
-  return '';
-});
-watch(
+const editor = useTaskDefinitionEditor(props, emit);
+const {
+  t,
+  submit,
+  buildDocument,
+  beautify,
+  switchMode,
+  advancedMode,
+  guiSupported,
+  isBusy,
+  mode,
+  submitting: editorSubmitting,
+  availableDefinitions: editorDefinitions,
+  impersonateTargets: impersonateTargetItems,
+} = editor;
+const {
+  jsonText,
+  errorMessage,
+  guiError,
+  showImport,
+  importString,
+  selectedExistingValue,
+  guiState,
+  showAdvancedRequestOptions,
+  guiDiagnostics,
+  fieldUi,
+  inputUi,
+  textareaUi,
+  advancedTextareaUi,
+  engineItems,
+  requestMethodItems,
+  requestBodyTypeItems,
+  parseModeItems,
+  responseTypeItems,
+  waitTypeItems,
+  requestBodyPlaceholder,
+  httpImpersonate,
+  curlDefaultHeaders,
+  flaresolverr,
+  browserWaitType,
+  browserWaitExpression,
+  browserWaitTimeout,
+  pageLoadTimeout,
+  containerTypeItems,
+  fieldTypeItems,
+  scalarTypeItems,
+  booleanValueItems,
+  existingDefinitionItems,
+  hasEditorContent,
   validationError,
-  (value) => {
-    emit('valid-change', !value);
-    if (!value) {
-      if (mode.value === 'gui') {
-        guiError.value = null;
-      } else {
-        errorMessage.value = null;
-      }
-    }
-  },
-  { immediate: true },
-);
-
-const normalizeRequestConfig = (request: any): any => {
-  if (!request || typeof request !== 'object') {
-    return request;
-  }
-
-  if ('json' in request) {
-    const normalized = { ...request };
-    normalized.json_data = normalized.json;
-    delete normalized.json;
-    return normalized;
-  }
-
-  return request;
-};
-
-const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
-  if (!payload || Array.isArray(payload) || typeof payload !== 'object') {
-    throw new Error(t('common.validationImportPayload'));
-  }
-
-  const record = payload as Record<string, unknown>;
-  if ('_type' in record && record._type !== undefined && record._type !== 'task_definition') {
-    throw new Error(t('common.invalidImportDefinition'));
-  }
-
-  const version = record._version as string | undefined;
-  if (!['1.0', '2.0'].includes(version ?? '')) {
-    throw new Error(t('common.unsupportedVersion'));
-  }
-
-  let base: TaskDefinitionDocument;
-
-  if (version === '1.0') {
-    const oldDef = record.definition as Record<string, unknown>;
-    const oldMatch = Array.isArray(oldDef.match) ? oldDef.match : [];
-    const normalizedMatch: string[] = [];
-
-    for (const item of oldMatch) {
-      if (typeof item === 'string') {
-        normalizedMatch.push(item);
-      } else if (typeof item === 'object' && item !== null) {
-        const obj = item as Record<string, unknown>;
-        if (typeof obj.regex === 'string') {
-          normalizedMatch.push(`/${obj.regex}/`);
-        } else if (typeof obj.glob === 'string') {
-          normalizedMatch.push(obj.glob);
-        }
-      }
-    }
-
-    base = {
-      name:
-        typeof oldDef.name === 'string'
-          ? oldDef.name
-          : typeof record.name === 'string'
-            ? record.name
-            : '',
-      priority: Number(oldDef.priority ?? record.priority ?? 0) || 0,
-      enabled: true,
-      match_url: normalizedMatch,
-      definition: {
-        parse: oldDef.parse as any,
-        engine: oldDef.engine as any,
-        request: normalizeRequestConfig(oldDef.request),
-        response: oldDef.response as any,
-      },
-    };
-  } else {
-    base = record as unknown as TaskDefinitionDocument;
-  }
-
-  return JSON.parse(JSON.stringify(base)) as TaskDefinitionDocument;
-};
-
-const parseDocument = (): TaskDefinitionDocument | null => {
-  try {
-    if (!jsonText.value.trim()) {
-      throw new Error(t('common.validationDefinitionEmpty'));
-    }
-
-    const parsed = JSON.parse(jsonText.value) as unknown;
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-      throw new Error(t('common.validationDefinitionObject'));
-    }
-
-    errorMessage.value = null;
-    return parsed as TaskDefinitionDocument;
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('common.invalidJsonDocument');
-    return null;
-  }
-};
-
-const applyDocument = (document: TaskDefinitionDocument | null): void => {
-  const shouldShowImport = props.initialShowImport ?? !document;
-  showImport.value = shouldShowImport;
-  importString.value = '';
-  selectedExisting.value = null;
-  guiError.value = null;
-  errorMessage.value = null;
-
-  if (!document) {
-    jsonText.value = '';
-    guiSupported.value = true;
-    resetGuiState({
-      name: '',
-      priority: 0,
-      enabled: true,
-      matchText: '',
-      engineType: 'httpx',
-      engineUrl: '',
-      requestMethod: 'GET',
-      requestUrl: '',
-      containerType: 'css',
-      containerSelector: '',
-      fields: [defaultField()],
-    });
-    nextTick(() => {
-      markClean();
-      emit('dirty-change', false);
-      emit('valid-change', !validationError.value);
-    });
-    return;
-  }
-
-  try {
-    jsonText.value = JSON.stringify(document, null, 2);
-    const gui = toGui(document);
-    if (gui) {
-      guiSupported.value = true;
-      resetGuiState(gui);
-      if (mode.value !== 'gui') {
-        mode.value = 'gui';
-      }
-    } else {
-      guiSupported.value = false;
-      mode.value = 'advanced';
-    }
-  } catch (error) {
-    console.error('Failed to prepare definition for editing.', error);
-    jsonText.value = '';
-    guiSupported.value = false;
-    mode.value = 'advanced';
-    errorMessage.value = t('common.failedPrepareDefinition');
-  }
-
-  nextTick(() => {
-    markClean();
-    emit('dirty-change', false);
-    emit('valid-change', !validationError.value);
-  });
-};
-
-const importFromString = (): void => {
-  if (isBusy.value) {
-    return;
-  }
-
-  if (!importString.value.trim()) {
-    guiError.value = t('common.importStringEmpty');
-    return;
-  }
-
-  try {
-    const decoded = decode(importString.value.trim());
-    const document = parseImportedDocument(decoded);
-    applyDocument(document);
-    importString.value = '';
-    showImport.value = false;
-  } catch (error) {
-    guiError.value = error instanceof Error ? error.message : t('common.unableToImportDefinition');
-  }
-};
-
-const importExisting = (): void => {
-  if (!selectedExisting.value || isBusy.value) {
-    return;
-  }
-
-  emit('import-existing', Number(selectedExisting.value));
-  selectedExisting.value = null;
-};
-
-watch(
-  () => props.document,
-  (doc) => applyDocument(doc),
-  { immediate: true },
-);
-
-watch(isDirty, (value: boolean) => emit('dirty-change', value));
-
-const switchMode = (next: EditorMode): void => {
-  if (isBusy.value || next === mode.value) {
-    return;
-  }
-
-  if (next === 'gui') {
-    if (!guiSupported.value) {
-      return;
-    }
-
-    const parsed = parseDocument();
-    if (!parsed) {
-      return;
-    }
-
-    const gui = toGui(parsed);
-    if (!gui) {
-      guiSupported.value = false;
-      return;
-    }
-
-    resetGuiState(gui);
-    guiSupported.value = true;
-  }
-
-  if (next === 'advanced') {
-    try {
-      const doc = fromGui(guiState);
-      jsonText.value = JSON.stringify(doc, null, 2);
-      errorMessage.value = null;
-      guiError.value = null;
-    } catch (error) {
-      guiError.value = error instanceof Error ? error.message : t('common.failedSerializeGui');
-      return;
-    }
-  }
-
-  mode.value = next;
-};
-
-const submit = (): void => {
-  if (isBusy.value || validationError.value) {
-    return;
-  }
-
-  if (mode.value === 'gui') {
-    try {
-      const doc = fromGui(guiState);
-      emit('submit', doc);
-      guiError.value = null;
-    } catch (error) {
-      guiError.value = error instanceof Error ? error.message : t('common.unableToBuildDef');
-    }
-    return;
-  }
-
-  const parsed = parseDocument();
-  if (!parsed) {
-    return;
-  }
-
-  emit('submit', parsed);
-};
-
-const beautify = (): void => {
-  if (mode.value !== 'advanced') {
-    return;
-  }
-
-  const parsed = parseDocument();
-  if (!parsed) {
-    return;
-  }
-
-  jsonText.value = JSON.stringify(parsed, null, 2);
-  errorMessage.value = null;
-};
-
+  addField,
+  removeField,
+  addRequestPair,
+  importFromString,
+  importExisting,
+} = editor;
 defineExpose({
   submit,
   beautify,
@@ -1216,6 +1070,7 @@ defineExpose({
   guiSupported,
   isBusy,
   mode,
-  submitting,
+  submitting: editorSubmitting,
+  buildDocument,
 });
 </script>

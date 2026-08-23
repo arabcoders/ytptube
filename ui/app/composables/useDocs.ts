@@ -1,4 +1,4 @@
-export type DocsFile = 'README.md' | 'FAQ.md' | 'API.md' | 'SECURITY.md';
+export type DocsFile = 'README.md' | 'FEATURES.md' | 'FAQ.md' | 'API.md' | 'SECURITY.md';
 
 export type DocsEntry = {
   id: string;
@@ -23,6 +23,16 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['readme'],
     icon: 'i-lucide-book-open',
     navLabel: 'docs.entries.readme.navLabel',
+  },
+  {
+    id: 'features',
+    title: 'docs.entries.features.title',
+    description: 'docs.entries.features.description',
+    file: 'FEATURES.md',
+    route: '/docs/features',
+    slug: ['features'],
+    icon: 'i-lucide-list-checks',
+    navLabel: 'docs.entries.features.navLabel',
   },
   {
     id: 'faq',

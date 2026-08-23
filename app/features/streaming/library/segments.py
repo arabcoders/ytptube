@@ -19,7 +19,7 @@ from app.features.streaming.library.segment_encoders import (
 )
 from app.features.streaming.types import FFProbeError, StreamingError
 from app.library.config import SUPPORTED_CODECS, Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process

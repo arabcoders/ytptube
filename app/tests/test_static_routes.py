@@ -53,6 +53,42 @@ class TestServeStaticFile:
         assert await response.text() == "<html>root shell</html>"
 
     @pytest.mark.asyncio
+    async def test_fingerprinted_icon_rewrites(self, tmp_path: Path, test_client) -> None:
+        config = Config.get_instance()
+        (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
+        icon = tmp_path / "images" / "favicon.png"
+        icon.parent.mkdir()
+        icon.write_bytes(b"canonical icon")
+        _configure_static_root(tmp_path)
+        _register_static_routes(tmp_path, config)
+
+        async def handler(request):
+            return await _static.serve_static_file(request, config)
+
+        client = await test_client({"static_fallback": handler})
+        response = await client.get(url_for("static_fallback", path="apple-touch-icon.0123456789ab.png"))
+
+        assert response.status == 200
+        assert await response.read() == b"canonical icon"
+        assert response.headers["Cache-Control"] == "public, max-age=31536000, immutable"
+
+    @pytest.mark.asyncio
+    async def test_html_revalidates(self, tmp_path: Path, test_client) -> None:
+        config = Config.get_instance()
+        (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
+        _configure_static_root(tmp_path)
+        _register_static_routes(tmp_path, config)
+
+        async def handler(request):
+            return await _static.serve_static_file(request, config)
+
+        client = await test_client({"static_fallback": handler})
+        response = await client.get(url_for("static_fallback", path="index.html"))
+
+        assert response.status == 200
+        assert response.headers["Cache-Control"] == "public, max-age=0, must-revalidate"
+
+    @pytest.mark.asyncio
     async def test_nested_index_uses_root(self, tmp_path: Path, test_client) -> None:
         config = Config.get_instance()
         root_index = tmp_path / "index.html"

@@ -2,7 +2,7 @@
 
 This document describes the available endpoints and their usage. All endpoints return JSON responses (unless otherwise specified) and may require certain parameters (query, body, or path). Some endpoints serve static or streaming content (e.g., `.ts`, `.m3u8`, `.vtt` files).
 
-> **Note**: Authenticated requests accept a session cookie, a Bearer API key, Basic credentials, or the `apikey` query parameter. See [Authentication](#authentication).
+> **Note**: Authenticated requests accept a session cookie, a Bearer API key, or the `apikey` query parameter. See [Authentication](#authentication).
 
 - All responses use standard HTTP status codes to indicate success or error conditions.
 
@@ -64,6 +64,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
     - [POST /api/tasks/{id}/metadata](#post-apitasksidmetadata)
     - [GET /api/tasks/definitions/](#get-apitasksdefinitions)
+    - [POST /api/tasks/definitions/inspect](#post-apitasksdefinitionsinspect)
+    - [GET /api/tasks/definitions/impersonate-targets](#get-apitasksdefinitionsimpersonate-targets)
     - [GET /api/tasks/definitions/{id}](#get-apitasksdefinitionsid)
     - [POST /api/tasks/definitions/](#post-apitasksdefinitions)
     - [PUT /api/tasks/definitions/{id}](#put-apitasksdefinitionsid)
@@ -177,23 +179,17 @@ untrusted network. The first person who completes setup becomes the administrato
 
 API requests accept these credentials:
 
-> [!WARNING]
-> Basic authentication is deprecated and will be removed. Use session cookies or Bearer API keys.
+1. Session cookie:
 
-1. Bearer API key:
+   A successful login or setup creates a session cookie. Send that cookie with subsequent requests.
+
+2. Bearer API key:
 
    ```text
    Authorization: Bearer ytp_<key>
    ```
 
-2. HTTP Basic header:
-
-   ```text
-   Authorization: Basic base64("<username>:<password>")
-   Authorization: Basic base64("<username>:ytp_<key>")
-   ```
-
-3. Query parameter with an API key or URL-safe base64 Basic credentials:
+3. Query parameter with an API key:
 
    ```text
    ?apikey=ytp_<key>
@@ -1640,7 +1636,8 @@ JSON object with fields to update:
   "url": "https://example.com/feed",            // required, validated URL
   "preset": "news-preset",                     // optional preset override - In real scenarios, the preset come from the task.
   "handler": "GenericTaskHandler",              // optional explicit handler class name, in real scenarios, the handler is resolved automatically.
-  "static_only": false                          // optional, if true performs only can_handle check without extracting items (faster, lightweight)
+  "static_only": false,                         // optional, if true performs only can_handle check without extracting items (faster, lightweight)
+  "resolve_ids": true                           // optional (default true), resolves real archive IDs per item via yt-dlp (slower)
 }
 ```
 
@@ -1649,6 +1646,7 @@ JSON object with fields to update:
 - This is much faster and lighter than the full inspection which calls the handler's `extract` method
 - Use `static_only: true` for quick validation checks (e.g., UI indicators)
 - Use `static_only: false` (default) for full inspection with item extraction
+- `resolve_ids` defaults to `true`. When enabled, the handler asks yt-dlp to identify each discovered item and check its archive status. This may take longer; set it to `false` to skip external yt-dlp resolution. Items that cannot be identified locally are returned with `archive_id: null`.
 
 **Response (success with static_only: true)**:
 ```json
@@ -1815,7 +1813,8 @@ or
     {
       "id": 1,
       "name": "Task Definition Name",
-      "description": "...",
+      "priority": 0,
+      "match_url": ["https://example.com/*"],
       "enabled": true,
       "definition": { ... }  // only if include=definition
     },
@@ -1834,6 +1833,119 @@ or
 
 ---
 
+### POST /api/tasks/definitions/inspect
+**Purpose**: Inspect a URL using exactly one saved task definition or a complete definition document.
+
+**Body (saved definition)**:
+```json
+{
+  "definition_id": 12,
+  "url": "https://example.com/feed",
+  "preset": "optional-preset",
+  "resolve_ids": true
+}
+```
+
+**Body (unsaved definition)**:
+```json
+{
+  "document": {
+    "name": "Example feed",
+    "priority": 0,
+    "match_url": ["https://example.com/*"],
+    "enabled": true,
+    "definition": {
+      "engine": {
+        "type": "http",
+        "options": {
+          "impersonate": "chrome",
+          "curl_default_headers": true,
+          "flaresolverr": false
+        }
+      },
+      "request": {
+        "method": "GET",
+        "headers": {},
+        "params": {}
+      },
+      "response": {
+        "type": "html"
+      },
+      "parse": {
+        "items": {
+          "type": "css",
+          "selector": ".feed-item",
+          "fields": {
+            "url": {
+              "type": "css",
+              "expression": "a",
+              "attribute": "href"
+            },
+            "title": {
+              "type": "css",
+              "expression": "a",
+              "attribute": "text"
+            }
+          }
+        }
+      }
+    }
+  },
+  "url": "https://example.com/feed",
+  "preset": "optional-preset",
+  "resolve_ids": true
+}
+```
+
+**Notes**:
+- Provide exactly one of `definition_id` or `document`.
+- `document` uses the same complete Task Definition object accepted by `POST /api/tasks/definitions/`.
+- `url` must match one of the selected definition's `match_url` patterns.
+- `preset` is optional and defaults to the configured default preset.
+- `resolve_ids` is optional and defaults to `true`. When enabled, the handler asks yt-dlp to identify each discovered item and check its archive status. This may take longer; set it to `false` to skip external yt-dlp resolution. Items that cannot be identified locally are returned with `archive_id: null`.
+
+**Response**: Returns the same inspection result as `POST /api/tasks/inspect`.
+```json
+{
+  "matched": true,
+  "handler": "GenericTaskHandler",
+  "supported": true,
+  "items": [
+    {
+      "url": "https://example.com/video/1",
+      "title": "Example title",
+      "archive_id": "generic 1",
+      "is_archived": false,
+      "thumbnail": null,
+      "description": null,
+      "metadata": {}
+    },
+    ...
+  ]
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` - Invalid body, both or neither definition selector supplied, URL mismatch, or extraction failure
+- `404 Not Found` - Saved task definition does not exist
+- `500 Internal Server Error` - Failed to load or inspect the definition
+
+---
+
+### GET /api/tasks/definitions/impersonate-targets
+**Purpose**: List the HTTP client identities supported by the installed curl-cffi transport.
+
+The `targets` list is empty when curl-cffi transport support is unavailable.
+
+**Response**:
+```json
+{
+  "targets": ["chrome", "safari", "firefox", ...]
+}
+```
+
+---
+
 ### GET /api/tasks/definitions/{id}
 **Purpose**: Retrieve a specific task definition by ID.
 
@@ -1845,14 +1957,17 @@ or
 {
   "id": 1,
   "name": "Task Definition Name",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": true,
   "definition": {
     "parse": {
-      "url": { ... },
       "items": { ... }
     },
-    "engine": { ... },
+    "engine": {
+      "type": "http",
+      "options": { "impersonate": "chrome", "curl_default_headers": true, "flaresolverr": false }
+    },
     "request": { ... },
     "response": { ... }
   }
@@ -1871,11 +1986,11 @@ or
 ```json
 {
   "name": "My Task Definition",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": true,
   "definition": {
     "parse": {
-      "url": { ... },
       "items": { ... }
     },
     "engine": { ... },
@@ -1890,7 +2005,8 @@ or
 {
   "id": 1,
   "name": "My Task Definition",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": true,
   "definition": { ... }
 }
@@ -1911,7 +2027,8 @@ or
 ```json
 {
   "name": "Updated Name",
-  "description": "...",
+  "priority": 10,
+  "match_url": ["https://example.com/feed/*"],
   "enabled": false,
   "definition": {
     "parse": { ... },
@@ -1927,7 +2044,8 @@ or
 {
   "id": 1,
   "name": "Updated Name",
-  "description": "...",
+  "priority": 10,
+  "match_url": ["https://example.com/feed/*"],
   "enabled": false,
   "definition": { ... }
 }
@@ -1949,9 +2067,12 @@ or
 ```json
 {
   "enabled": false,
-  "description": "Updated description"
+  "priority": 10
 }
 ```
+
+Only include fields to update. Supported mutable fields are `name`, `priority`, `match_url`, `enabled`, and `definition`.
+When supplied, `definition` is a complete nested Definition object rather than a deep partial update.
 
 **Response**: Updated task definition object.
 
@@ -1972,7 +2093,8 @@ or
 {
   "id": 1,
   "name": "Deleted Definition",
-  "description": "...",
+  "priority": 0,
+  "match_url": ["https://example.com/*"],
   "enabled": false,
   "definition": { ... }
 }
@@ -2768,11 +2890,11 @@ Binary image data with appropriate headers
       "exception": {
         "type": "ValueError",
         "message": "bad",
-        "file": "/app/library/downloads/queue_manager.py",
+        "file": "/app/features/downloads/runtime/queue_manager.py",
         "line": 123,
         "stack": [
           {
-            "path": "/app/library/downloads/queue_manager.py",
+            "path": "/app/features/downloads/runtime/queue_manager.py",
             "file": "queue_manager.py",
             "module": "queue_manager",
             "function": "start",
@@ -2781,7 +2903,7 @@ Binary image data with appropriate headers
         ]
       },
       "source": {
-        "path": "/app/library/downloads/queue_manager.py",
+        "path": "/app/features/downloads/runtime/queue_manager.py",
         "file": "queue_manager.py",
         "module": "queue_manager",
         "function": "start",
@@ -2829,11 +2951,11 @@ Binary image data with appropriate headers
   "exception": {
     "type": "ValueError",
     "message": "bad",
-    "file": "/app/library/downloads/queue_manager.py",
+    "file": "/app/features/downloads/runtime/queue_manager.py",
     "line": 123,
     "stack": [
       {
-        "path": "/app/library/downloads/queue_manager.py",
+        "path": "/app/features/downloads/runtime/queue_manager.py",
         "file": "queue_manager.py",
         "module": "queue_manager",
         "function": "start",
@@ -2842,7 +2964,7 @@ Binary image data with appropriate headers
     ]
   },
   "source": {
-    "path": "/app/library/downloads/queue_manager.py",
+    "path": "/app/features/downloads/runtime/queue_manager.py",
     "file": "queue_manager.py",
     "module": "queue_manager",
     "function": "start",
@@ -3750,17 +3872,13 @@ POST https://frontend.example/api/auth/ws-ticket
 GET  wss://backend.example/ws?ticket=ytp_ws_...
 ```
 
-Tickets expire shortly and can be used once. WebSocket connections also accept API keys and Basic credentials.
+Tickets expire shortly and can be used once. WebSocket connections also accept API keys.
 
-1. **Query parameter**
-   ```text
-   ws://localhost:8080/ws?apikey=ytp_<key>
-   ```
+**Query parameter**
 
-2. **HTTP Basic header**
-   ```text
-   Authorization: Basic base64("<username>:<password>")
-   ```
+```text
+ws://localhost:8080/ws?apikey=ytp_<key>
+```
 
 ---
 

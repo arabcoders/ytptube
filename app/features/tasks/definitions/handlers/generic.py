@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import fnmatch
-import hashlib
 import json
+import logging
 import re
-from collections.abc import Mapping
+import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
@@ -17,15 +17,22 @@ from parsel import Selector
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.definitions.schemas import (
+    BrowserEngineOptions,
     ExtractionRule,
+    HttpEngineOptions,
     TaskDefinition,
 )
-from app.features.ytdlp.extractor import fetch_info
+from app.features.tasks.definitions.utils import (
+    ARCHIVE_ID_TTL,
+    ARCHIVE_LOOKUP_FAILURE_TTL,
+    archive_key,
+)
+from app.features.ytdlp.extractor import ExtractorBatch, fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
-from app.library.log import get_logger
+from app.library.httpx_client import Globals, build_request_headers, get_async_client
+from app.library.logging import get_logger
 from app.library.Utils import validate_url
 
 from ._base_handler import BaseHandler
@@ -95,16 +102,8 @@ class GenericTaskHandler(BaseHandler):
                 continue
 
             try:
-                for matcher in definition.match_url:
-                    pattern_str: str | None = None
-
-                    if matcher.startswith("/") and matcher.endswith("/") and len(matcher) > 2:
-                        pattern_str = matcher[1:-1]
-                    else:
-                        pattern_str = fnmatch.translate(matcher)
-
-                    if pattern_str and re.match(pattern_str, url):
-                        return definition
+                if cls.matches_url(definition, url):
+                    return definition
             except Exception as exc:
                 LOG.exception(
                     "Failed to match a generic task definition.",
@@ -117,6 +116,19 @@ class GenericTaskHandler(BaseHandler):
                 )
 
         return None
+
+    @staticmethod
+    def matches_url(definition: TaskDefinition, url: str) -> bool:
+        """Return whether a URL matches a definition's URL patterns."""
+        for matcher in definition.match_url:
+            pattern = (
+                matcher[1:-1]
+                if matcher.startswith("/") and matcher.endswith("/") and len(matcher) > 2
+                else fnmatch.translate(matcher)
+            )
+            if re.match(pattern, url):
+                return True
+        return False
 
     @staticmethod
     async def can_handle(task: HandleTask) -> bool:
@@ -148,7 +160,37 @@ class GenericTaskHandler(BaseHandler):
         if not definition:
             return TaskFailure(message="No generic task definition matched the provided URL.")
 
-        ytdlp_opts: dict[str, Any] = task.get_ytdlp_opts().get_all()
+        return await GenericTaskHandler.extract_definition(task, definition, config=config)
+
+    @classmethod
+    async def inspect(
+        cls, task: HandleTask, config: Config | None = None, *, resolve_ids: bool = True
+    ) -> TaskResult | TaskFailure:
+        """Extract parsed items without requiring downstream archive IDs."""
+        definition = await cls._find_definition(task.url)
+        if not definition:
+            return TaskFailure(message="No generic task definition matched the provided URL.")
+
+        return await cls.extract_definition(
+            task,
+            definition,
+            config=config,
+            inspection=True,
+            resolve_ids=resolve_ids,
+        )
+
+    @staticmethod
+    async def extract_definition(
+        task: HandleTask,
+        definition: TaskDefinition,
+        config: Config | None = None,
+        *,
+        inspection: bool = False,
+        resolve_ids: bool = True,
+    ) -> TaskResult | TaskFailure:
+        _ = config
+
+        ytdlp_opts = GenericTaskHandler._get_params(task, inspection=inspection)
         target_url: str = definition.definition.request.url or task.url
 
         try:
@@ -156,17 +198,7 @@ class GenericTaskHandler(BaseHandler):
         except ValueError as exc:
             return TaskFailure(message="Invalid target URL.", error=str(exc))
 
-        LOG.debug(
-            "Fetching content for task '%s'.",
-            task.name,
-            extra={
-                "task_name": task.name,
-                "definition": definition.name,
-                "url": target_url,
-                "engine": definition.definition.engine.type,
-            },
-        )
-
+        fetch_started = time.perf_counter()
         try:
             body_text, json_data = await GenericTaskHandler._fetch_content(
                 url=target_url, definition=definition, ytdlp_opts=ytdlp_opts
@@ -195,81 +227,176 @@ class GenericTaskHandler(BaseHandler):
         raw_items: list[dict[str, str]] = GenericTaskHandler._parse_items(
             definition=definition, html=body_text or "", base_url=target_url, json_data=json_data
         )
+        LOG.debug(
+            "Task '%s' fetched and parsed %s item(s) from definition '%s' in %.2fs.",
+            task.name,
+            len(raw_items),
+            definition.name,
+            time.perf_counter() - fetch_started,
+            extra={"task_name": task.name, "definition": definition.name, "item_count": len(raw_items)},
+        )
 
         task_items: list[TaskItem] = []
+        archive_fallbacks = 0
+        archive_errors: dict[str, int] = {}
+        incomplete_archives = 0
+        engine = definition.definition.engine
+        generic_args = {"http": str(engine.type == "http").lower()}
+        if isinstance(engine.options, BrowserEngineOptions):
+            generic_args["url"] = engine.options.url
 
-        def _generic_id(url):
-            import os
-            from urllib import parse
+        async with ExtractorBatch(parallel=True) as batch:
+            resolutions: dict[str, tuple[str | None, str | None, bool]] = {}
+            pending: list[tuple[str, str, str]] = []
+            pending_urls: set[str] = set()
+            for entry in raw_items:
+                if not isinstance(entry, dict) or not (url := entry.get("url")):
+                    continue
 
-            return parse.unquote(os.path.splitext(url.rstrip("/").split("/")[-1])[0])
+                archive_id = get_archive_id(url=url).get("archive_id")
+                if archive_id:
+                    resolutions.setdefault(url, (archive_id, None, False))
+                    continue
 
-        for entry in raw_items:
-            if not isinstance(entry, dict):
-                continue
-
-            if not (url := entry.get("link") or entry.get("url")):
-                continue
-
-            id_dict: dict[str, str | None] = get_archive_id(url=url)
-            archive_id: str | None = id_dict.get("archive_id")
-            if not archive_id:
-                cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
-                if CACHE.has(cache_key):
-                    archive_id = CACHE.get(cache_key)
-                    if not archive_id:
-                        continue
+                cache_key = archive_key(url)
+                failure_key = f"{cache_key}:f"
+                cache_hit = CACHE.has(cache_key)
+                cached = CACHE.get(cache_key) if cache_hit else None
+                if isinstance(cached, str) and cached:
+                    resolutions.setdefault(url, (cached, None, False))
+                elif (inspection and not resolve_ids) or (not inspection and CACHE.has(failure_key)):
+                    resolutions.setdefault(url, (None, None, False))
                 else:
-                    LOG.warning(
-                        "Task '%s' could not generate a static archive ID. Fetching it with yt-dlp.",
-                        task.name,
-                        extra={"definition": definition.name, "task_name": task.name, "url": url},
-                    )
+                    if cache_hit:
+                        CACHE.delete(cache_key)
+                    resolutions.setdefault(url, (None, None, False))
+                    if url not in pending_urls:
+                        pending.append((url, cache_key, failure_key))
+                        pending_urls.add(url)
+                        archive_fallbacks += 1
 
-                    (info, _) = await fetch_info(
-                        config=task.get_ytdlp_opts().get_all(),
-                        url=url,
-                        no_archive=True,
-                        no_log=True,
-                        budget_sleep=True,
-                    )
+            LOG.debug(
+                "Task '%s' archive ID plan: %s item(s), %s external lookup(s).",
+                task.name,
+                len(raw_items),
+                len(pending),
+                extra={
+                    "task_name": task.name,
+                    "definition": definition.name,
+                    "item_count": len(raw_items),
+                    "lookup_count": len(pending),
+                    "resolve_ids": resolve_ids,
+                },
+            )
 
-                    if not info:
-                        LOG.error(
-                            "Task '%s' failed to extract info to generate an archive ID. Skipping item.",
-                            task.name,
-                            extra={"definition": definition.name, "task_name": task.name, "url": url},
-                        )
-                        CACHE.set(cache_key, None)
-                        continue
-
-                    if not info.get("id") or not info.get("extractor_key"):
-                        LOG.error(
-                            "Task '%s' returned incomplete info while generating an archive ID. Skipping item.",
-                            task.name,
-                            extra={"definition": definition.name, "task_name": task.name, "url": url},
-                        )
-                        CACHE.set(cache_key, None)
-                        continue
-
-                    archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
-                    CACHE.set(cache_key, archive_id)
-
-            metadata: dict[str, str] = {
-                k: v
-                for k, v in entry.items()
-                if k not in {"link", "url", "title", "published", "archive_id", "thumbnail", "description"}
-            }
-
-            task_items.append(
-                TaskItem(
+            async def resolve(url: str, cache_key: str, failure_key: str) -> tuple[str | None, str | None, bool]:
+                info, logs = await fetch_info(
+                    config=ytdlp_opts,
                     url=url,
-                    title=entry.get("title"),
-                    archive_id=archive_id,
-                    thumbnail=entry.get("thumbnail"),
-                    description=entry.get("description"),
-                    metadata={"published": entry.get("published"), **metadata},
+                    no_archive=True,
+                    no_log=True,
+                    capture_logs=logging.ERROR,
+                    batch=batch,
+                    budget_sleep=True,
+                    generic_args=generic_args,
                 )
+                if not info:
+                    error = " | ".join(logs) if logs else "No yt-dlp error was reported."
+                    if not inspection:
+                        CACHE.set(failure_key, 1, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
+                    return None, error, False
+                if not info.get("id") or not info.get("extractor_key"):
+                    if not inspection:
+                        CACHE.set(failure_key, 1, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
+                    return None, None, True
+
+                archive_id = f"{str(info['extractor_key']).lower()} {info['id']}"
+                CACHE.set(cache_key, archive_id, ttl=ARCHIVE_ID_TTL, persist=True)
+                CACHE.delete(failure_key)
+                return archive_id, None, False
+
+            lookups = [asyncio.create_task(resolve(url, key, failure_key)) for url, key, failure_key in pending]
+            try:
+                results = await asyncio.gather(*lookups)
+            except BaseException:
+                for lookup in lookups:
+                    lookup.cancel()
+                await asyncio.gather(*lookups, return_exceptions=True)
+                raise
+            resolutions.update(dict(zip((url for url, _, _ in pending), results, strict=True)))
+
+            for entry in raw_items:
+                if not isinstance(entry, dict) or not (url := entry.get("url")):
+                    continue
+
+                archive_id, error, incomplete = resolutions[url]
+                if error:
+                    archive_errors[error] = archive_errors.get(error, 0) + 1
+                    if not inspection:
+                        continue
+                if incomplete:
+                    incomplete_archives += 1
+                    if not inspection:
+                        continue
+                if archive_id is None and not inspection:
+                    continue
+
+                metadata: dict[str, str] = {
+                    k: v
+                    for k, v in entry.items()
+                    if k not in {"url", "title", "published", "archive_id", "thumbnail", "description"}
+                }
+
+                task_items.append(
+                    TaskItem(
+                        url=url,
+                        title=entry.get("title"),
+                        archive_id=archive_id,
+                        thumbnail=entry.get("thumbnail"),
+                        description=entry.get("description"),
+                        metadata={"published": entry.get("published"), **metadata},
+                    )
+                )
+
+        if archive_fallbacks:
+            LOG.warning(
+                "Task '%s' required yt-dlp archive ID fallback for %s item(s).",
+                task.name,
+                archive_fallbacks,
+                extra={
+                    "definition": definition.name,
+                    "task_name": task.name,
+                    "item_count": archive_fallbacks,
+                },
+            )
+
+        action = "Keeping unresolved items for inspection." if inspection else "Skipping unresolved items."
+        for error, count in archive_errors.items():
+            LOG.error(
+                "Task '%s' failed to generate archive IDs for %s item(s). %s yt-dlp: %s",
+                task.name,
+                count,
+                action,
+                error,
+                extra={
+                    "definition": definition.name,
+                    "task_name": task.name,
+                    "item_count": count,
+                    "error": error,
+                },
+            )
+
+        if incomplete_archives:
+            LOG.error(
+                "Task '%s' received incomplete archive information for %s item(s). %s",
+                task.name,
+                incomplete_archives,
+                action,
+                extra={
+                    "definition": definition.name,
+                    "task_name": task.name,
+                    "item_count": incomplete_archives,
+                },
             )
 
         return TaskResult(
@@ -298,19 +425,19 @@ class GenericTaskHandler(BaseHandler):
             (str|None): The fetched HTML content if successful, None otherwise.
 
         """
-        if "selenium" == definition.definition.engine.type:
-            return await GenericTaskHandler._fetch_with_selenium(url=url, definition=definition)
+        if "browser" == definition.definition.engine.type:
+            return await GenericTaskHandler._fetch_with_browser(url=url, definition=definition)
 
-        return await GenericTaskHandler._fetch_with_httpx(url=url, definition=definition, ytdlp_opts=ytdlp_opts)
+        return await GenericTaskHandler._fetch_with_http(url=url, definition=definition, ytdlp_opts=ytdlp_opts)
 
     @staticmethod
-    async def _fetch_with_httpx(
+    async def _fetch_with_http(
         url: str,
         definition: TaskDefinition,
         ytdlp_opts: dict[str, Any],
     ) -> tuple[str | None, Any | None]:
         """
-        Fetch the content using httpx.
+        Fetch the content using the shared HTTP transport.
 
         Args:
             url (str): The URL to fetch.
@@ -322,22 +449,41 @@ class GenericTaskHandler(BaseHandler):
 
         """
         headers: dict[str, str] = {**definition.definition.request.headers}
-        use_curl = resolve_curl_transport()
+        body = definition.definition.request.body
+        form_data = body.value if body and body.type == "form" else None
+        content = body.value if body and body.type == "raw" else None
+        if body and body.type == "json":
+            content = json.dumps(body.value, separators=(",", ":"))
+            if not any(name.lower() == "content-type" for name in headers):
+                headers["Content-Type"] = "application/json"
+        options = definition.definition.engine.options
+        if not isinstance(options, HttpEngineOptions):
+            msg = "HTTP task definitions require HTTP engine options"
+            raise TypeError(msg)
+        use_curl = True
         request_headers = build_request_headers(
             base_headers=headers,
             user_agent=Globals.get_random_agent(),
             use_curl=use_curl,
         )
 
-        timeout_value: float | Any = definition.definition.request.timeout or ytdlp_opts.get("socket_timeout", 120)
+        timeout_value: float | Any = definition.definition.request.timeout
+        if timeout_value is None:
+            timeout_value = ytdlp_opts.get("socket_timeout", 120)
 
-        client = get_async_client(proxy=ytdlp_opts.get("proxy"), use_curl=use_curl)
+        client = get_async_client(
+            proxy=ytdlp_opts.get("proxy"),
+            use_curl=use_curl,
+            curl_impersonate=options.impersonate,
+            curl_default_headers=options.curl_default_headers,
+            enable_cf=options.flaresolverr,
+        )
         response: httpx.Response = await client.request(
             method=definition.definition.request.method.upper(),
             url=url,
             params=definition.definition.request.params or None,
-            data=definition.definition.request.data,
-            json=definition.definition.request.json_data,
+            data=form_data,
+            content=content,
             timeout=timeout_value,
             headers=request_headers,
         )
@@ -365,12 +511,12 @@ class GenericTaskHandler(BaseHandler):
         return response.text, None
 
     @staticmethod
-    async def _fetch_with_selenium(
+    async def _fetch_with_browser(
         url: str,
         definition: TaskDefinition,
     ) -> tuple[str | None, Any | None]:
         """
-        Fetch the content using a Selenium WebDriver.
+        Fetch the content using the configured browser protocol.
 
         Args:
             url (str): The URL to fetch.
@@ -380,72 +526,67 @@ class GenericTaskHandler(BaseHandler):
             (str|None): The fetched HTML content if successful, None otherwise.
 
         """
-        try:
-            from selenium import webdriver
-            from selenium.webdriver.chrome.options import Options as ChromeOptions
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.support import expected_conditions as EC
-            from selenium.webdriver.support.ui import WebDriverWait
-        except ImportError as exc:
-            LOG.exception(
-                "Task definition '%s' requested Selenium, but Selenium is not installed.",
-                definition.name,
-                extra={"definition": definition.name, "error": str(exc), "exception_type": type(exc).__name__},
-            )
-            return (None, None)
+        options = definition.definition.engine.options
+        if not isinstance(options, BrowserEngineOptions):
+            msg = "Browser task definitions require browser engine options"
+            raise TypeError(msg)
 
-        options_map: dict[str, Any] = definition.definition.engine.options
-        command_executor_value = options_map.get("url")
-        command_executor: str = (
-            str(command_executor_value)
-            if isinstance(command_executor_value, str) and command_executor_value
-            else "http://localhost:4444/wd/hub"
-        )
-        browser: str = str(options_map.get("browser", "chrome")).lower()
+        from app.yt_dlp_plugins.extractor.generic_browser import CdpDriver
 
-        if "chrome" != browser:
-            LOG.error(
-                "Task definition '%s' requested unsupported Selenium browser '%s'.",
-                definition.name,
-                browser,
-                extra={"definition": definition.name, "browser": browser},
-            )
-            return (None, None)
+        if options.protocol == "cdp":
+            driver = CdpDriver
+        else:
+            msg = f"Unsupported browser protocol: {options.protocol}"
+            raise ValueError(msg)
 
-        arguments: list[str] | str = options_map.get("arguments", ["--headless", "--disable-gpu"])
-        if isinstance(arguments, str):
-            arguments = [arguments]
+        request = definition.definition.request
+        target_url = str(httpx.URL(url).copy_merge_params(request.params))
+        headers = dict(request.headers)
+        body: str | None = None
+        if request.body and request.body.type == "json":
+            body = json.dumps(request.body.value, separators=(",", ":"))
+            if not any(name.lower() == "content-type" for name in headers):
+                headers["Content-Type"] = "application/json"
+        elif request.body and request.body.type == "form":
+            body = str(httpx.QueryParams(request.body.value))
+            if not any(name.lower() == "content-type" for name in headers):
+                headers["Content-Type"] = "application/x-www-form-urlencoded"
+        elif request.body and request.body.type == "raw":
+            body = request.body.value
 
-        wait_for: Mapping | None = (
-            options_map.get("wait_for") if isinstance(options_map.get("wait_for"), Mapping) else None
-        )
-        wait_timeout = float(options_map.get("wait_timeout") or 15)
-        page_load_timeout = float(options_map.get("page_load_timeout") or 60)
+        timeout = request.timeout if request.timeout is not None else options.page_load_timeout
 
-        def load_page() -> str | None:
-            chrome_options = ChromeOptions()
-            for arg in arguments:
-                chrome_options.add_argument(str(arg))
-
-            driver = webdriver.Remote(command_executor=command_executor, options=chrome_options)
+        def load_page() -> tuple[str | None, Any | None]:
+            session = driver.connect(options.url, int(options.page_load_timeout * 1000))
             try:
-                driver.set_page_load_timeout(page_load_timeout)
-                driver.get(url)
+                session.goto(
+                    target_url,
+                    method=request.method,
+                    headers=headers,
+                    data=body,
+                    timeout=int(timeout * 1000),
+                )
+                if options.wait_for:
+                    session.wait_for_selector(options.wait_for.type, options.wait_for.expression, options.wait_timeout)
 
-                if wait_for:
-                    wait_type: str = str(wait_for.get("type", "css")).lower()
-                    expression: str | None = wait_for.get("expression") or wait_for.get("value")
-                    if isinstance(expression, str) and expression:
-                        locator = None
-                        locator = (By.XPATH, expression) if "xpath" == wait_type else (By.CSS_SELECTOR, expression)
-                        WebDriverWait(driver, wait_timeout).until(EC.presence_of_element_located(locator))
+                if definition.definition.response.type == "json":
+                    text = session.response_text()
+                    try:
+                        return text, json.loads(text or "")
+                    except (TypeError, json.JSONDecodeError) as exc:
+                        LOG.warning(
+                            "Task definition '%s' returned invalid JSON for '%s': %s",
+                            definition.name,
+                            target_url,
+                            exc,
+                        )
+                        return text, None
 
-                return driver.page_source
+                return session.content(), None
             finally:
-                driver.quit()
+                session.close()
 
-        html: str | None = await asyncio.to_thread(load_page)
-        return html, None
+        return await asyncio.to_thread(load_page)
 
     @staticmethod
     def _parse_items(
@@ -489,26 +630,24 @@ class GenericTaskHandler(BaseHandler):
             values: list[str] = GenericTaskHandler._execute_rule(field=_field, selector=selector, html=html, rule=rule)
             extracted[_field] = values
 
-        link_values: list[str] = extracted.get("link", [])
-        if not link_values:
-            LOG.debug(
-                "Definition '%s' produced no link values.", definition.name, extra={"definition": definition.name}
-            )
+        url_values: list[str] = extracted.get("url", [])
+        if not url_values:
+            LOG.debug("Definition '%s' produced no URL values.", definition.name, extra={"definition": definition.name})
             return []
 
-        total_items: int = len(link_values)
+        total_items: int = len(url_values)
         items: list[dict[str, str]] = []
 
         for index in range(total_items):
             entry: dict[str, str] = {}
-            link_value: str = link_values[index]
-            if not link_value:
+            url_value: str = url_values[index]
+            if not url_value:
                 continue
 
-            entry["link"] = urljoin(base_url, link_value)
+            entry["url"] = urljoin(base_url, url_value)
 
             for _field, values in extracted.items():
-                if "link" == _field:
+                if "url" == _field:
                     continue
 
                 value: str | None = values[index] if index < len(values) else None
@@ -547,12 +686,12 @@ class GenericTaskHandler(BaseHandler):
             rule = ExtractionRule.model_validate(rule_data)
             values: list[str] = GenericTaskHandler._execute_json_rule(_field, json_data, rule)
             if values:
-                if "link" == _field:
-                    entry["link"] = urljoin(base_url, values[0])
+                if "url" == _field:
+                    entry["url"] = urljoin(base_url, values[0])
                 else:
                     entry[_field] = values[0]
 
-        if "link" in entry:
+        if "url" in entry:
             items.append(entry)
 
         return items
@@ -569,7 +708,7 @@ class GenericTaskHandler(BaseHandler):
             return []
 
         container_type = container.get("type", "css")
-        container_selector = container.get("selector") or container.get("expression") or ""
+        container_selector = container.get("selector", "")
         if not container_selector:
             LOG.error(
                 "Task definition '%s' is missing an item container selector.",
@@ -602,12 +741,12 @@ class GenericTaskHandler(BaseHandler):
                 if value is None:
                     continue
 
-                if "link" == _field:
-                    entry["link"] = urljoin(base_url, value)
+                if "url" == _field:
+                    entry["url"] = urljoin(base_url, value)
                 else:
                     entry[_field] = value
 
-            if "link" not in entry:
+            if "url" not in entry:
                 continue
 
             items.append(entry)
@@ -625,7 +764,7 @@ class GenericTaskHandler(BaseHandler):
             return []
 
         container_type = container.get("type", "css")
-        container_selector = container.get("selector") or container.get("expression", "")
+        container_selector = container.get("selector", "")
         container_fields = container.get("fields", {})
 
         if "jsonpath" != container_type:
@@ -654,12 +793,12 @@ class GenericTaskHandler(BaseHandler):
                 if not values:
                     continue
 
-                if "link" == _field:
-                    entry["link"] = urljoin(base_url, values[0])
+                if "url" == _field:
+                    entry["url"] = urljoin(base_url, values[0])
                 else:
                     entry[_field] = values[0]
 
-            if "link" not in entry:
+            if "url" not in entry:
                 continue
 
             items.append(entry)
@@ -866,7 +1005,7 @@ class GenericTaskHandler(BaseHandler):
             if attr_value is not None:
                 return attr_value
 
-        if attr is None and "link" == field.lower():
+        if attr is None and "url" == field.lower():
             href = None
             try:
                 attributes: dict[str, str] | None = sel.attrib

@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "アカウント設定",
     "setupHeading": "アカウントを作成",
     "setupSubtitle": "YTPTubeを設定して始めましょう。",
     "setupAction": "アカウントを作成",
-    "login": "ログイン",
     "loginHeading": "おかえりなさい",
     "loginSubtitle": "ログインしてYTPTubeを続けます。",
     "loginAction": "ログイン",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "パスワードリセット手順を開く",
     "username": "ユーザー名",
     "password": "パスワード",
-    "continue": "続行",
     "account": "アカウント",
     "accountDetails": "アカウント詳細",
     "accountDetailsDescription": "ログインに使用するユーザー名とパスワードを更新します。",
@@ -50,7 +47,6 @@
     "copyWarning": "今すぐコピーしてください。再表示されません。",
     "showPassword": "パスワードを表示",
     "hidePassword": "パスワードを非表示",
-    "language": "言語",
     "brandAlt": "YTPTubeロゴ",
     "errorTitle": "問題が発生しました"
   },
@@ -58,6 +54,9 @@
     "add": "追加",
     "save": "保存",
     "cancel": "キャンセル",
+    "continue": "続行",
+    "language": "言語",
+    "details": "詳細",
     "delete": "削除",
     "edit": "編集",
     "confirm": "確認",
@@ -117,7 +116,6 @@
     "streaming": "ストリーミング中",
     "invalid": "無効",
     "offline": "オフライン",
-    "refreshQueue": "キューを更新",
     "webuiSettings": "WebUI 設定",
     "start": "開始",
     "stop": "停止",
@@ -155,7 +153,6 @@
     "cancelDownload": "ダウンロードをキャンセル",
     "runNow": "今すぐ実行",
     "generateMetadata": "メタデータを生成",
-    "inspectHandler": "ハンドラー (テスト用)",
     "archiveAll": "すべてアーカイブ",
     "unarchiveAll": "すべてアーカイブ解除",
     "updateDescription": "このアイテムを更新します。",
@@ -190,7 +187,6 @@
     "enterValidUrl": "有効な URL を入力してください。",
     "resetConfigDone": "ローカル設定をリセットしました。",
     "enterUrlFirst": "最初に URL を入力してください。",
-    "failedGenerateCommand": "コマンドの生成に失敗しました。",
     "failedCreateCommand": "コマンドの作成と移動に失敗しました",
     "failedTestOptions": "ダウンロードオプションのテストに失敗しました",
     "logLevelUpdated": "ログレベルは次回再起動まで更新されます。",
@@ -215,6 +211,9 @@
     "hidden": "非表示",
     "showMore": "さらに表示",
     "loadingData": "データを読み込んでいます。お待ちください...",
+    "loadingDataElapsed": "データを読み込んでいます。お待ちください... 経過時間: {time}",
+    "resolveIds": "実際のアーカイブ ID を解決",
+    "resolveIdsDesc": "yt-dlp に各項目を識別させ、アーカイブ状態を確認させます。時間がかかる場合があります。",
     "filterDisplayedContent": "表示内容をフィルター",
     "queueOverview": "キューの概要",
     "limitsDataDesc": "データは現在のキュー状態と設定された制限に基づいています。",
@@ -427,8 +426,6 @@
     "handlerDisabledCron": "ハンドラーが無効なため、このタスクには CRON タイマーが必要です。",
     "handlerVerifyFailed": "ハンドラーサポートの検証に失敗しました。CRON タイマーを設定するか、再試行してください。",
     "handlerNoMatch": "URL に一致する対応ハンドラーがないため、このタスクには CRON タイマーが必要です。",
-    "addField": "フィールドを追加",
-    "addHeader": "ヘッダーを追加",
     "advancedTab": "詳細",
     "anyFilter": "いずれか",
     "appriseDetected": "Apprise ターゲットを検出",
@@ -446,9 +443,8 @@
     "definitionPriorityDesc": "値が小さいほど先に評価されます。",
     "desc": "降順",
     "display": "表示",
-    "editorInfo": "単一のコンテナセレクタとフィールドごとの抽出器のみ公開されています。より高度な構成にはロー表示モードを使用してください。",
     "engine": "エンジン",
-    "engineDesc": "HTTPX を推奨します。",
+    "engineDesc": "HTTP リクエストまたはブラウザー描画。",
     "exception": "例外",
     "extractedFields": "抽出フィールド",
     "fieldAttribute": "属性",
@@ -465,13 +461,7 @@
     "groupFilter": "グループフィルター",
     "guiTab": "GUI",
     "headerEmptyWarning": "ヘッダーのキーまたは値が空の場合、そのヘッダーは送信されません。",
-    "headerKey": "ヘッダーキー",
-    "headerValue": "ヘッダー値",
     "importFromExisting": "既存からインポート",
-    "inspectHandlerDesc": "テスト用のみ。実際の使用時は自動検出されます。",
-    "inspecting": "調査中",
-    "inspectingDesc": "調査中です。お待ちください。",
-    "inspectPresetDesc": "テスト中のみプリセットを上書きします。",
     "invalidImportDefinition": "インポート文字列はタスク定義のエクスポートではありません。",
     "invalidJson": "無効な JSON",
     "level": "レベル",
@@ -491,8 +481,25 @@
     "rawData": "生データ",
     "rawJson": "JSON 定義(生)",
     "requestMethod": "リクエストメソッド",
-    "requestMethodDesc": "Webhook の HTTP メソッド。",
+    "requestMethodDesc": "リクエストに使用する HTTP メソッド。",
     "requestSetup": "リクエスト設定",
+    "queryParameters": "クエリパラメータ",
+    "queryParametersDesc": "リクエスト URL に追加されます。",
+    "requestHeaders": "リクエストヘッダー",
+    "requestHeadersDesc": "リクエストとともに送信されます。",
+    "requestBodyType": "リクエスト本文",
+    "requestBodyTypeDesc": "本文のエンコード方法を選択します。",
+    "requestBodyNone": "なし",
+    "requestBodyRaw": "プレーンテキスト",
+    "requestBody": "本文の内容",
+    "requestBodyDesc": "入力した内容がそのまま送信されます。",
+    "requestFormFieldsDesc": "フォームフィールドはキーと値のペアで送信されます。",
+    "requestJsonFieldsDesc": "値は有効な JSON にしてください。文字列には引用符が必要です。",
+    "jsonValue": "JSON 値",
+    "requestKeyRequired": "{label}にはキーが必要です。",
+    "validationRequestTimeout": "タイムアウトは 0 以上である必要があります。",
+    "validationJsonValue": "{key} の JSON 値が無効です。",
+    "stripFieldsConfirm": "次の値は現在の選択には適用されないため、削除されます:\n\n{fields}",
     "requestType": "リクエストの種類",
     "requestTypeDesc": "JSON または Form エンコード。",
     "requestUrl": "リクエスト URL (任意)",
@@ -507,8 +514,31 @@
     "selectPresetsDesc": "空欄の場合はすべてのプリセットが対象となります。",
     "selectorExpression": "セレクタ / 式",
     "selectorType": "セレクタの種類",
-    "seleniumHubUrl": "Selenium Hub URL (必須)",
-    "seleniumHubUrlDesc": "リモート WebDriver エンドポイント。",
+    "browserEndpointUrl": "ブラウザーエンドポイント URL（必須）",
+    "browserEndpointUrlDesc": "選択したブラウザープロトコルの HTTP(S) エンドポイント。",
+    "parseMode": "解析モード",
+    "parseSetup": "解析設定",
+    "parseModeDesc": "コンテナまたは直接フィールド形式を選択します。",
+    "parseContainer": "コンテナ",
+    "parseDirect": "直接",
+    "responseType": "レスポンス形式",
+    "responseTypeDesc": "期待するレスポンス形式を選択します。",
+    "responseHtml": "HTML",
+    "impersonate": "偽装クライアント",
+    "impersonateDesc": "HTTP リクエストで使用する任意のクライアント識別子。",
+    "curlDefaultHeaders": "cURL デフォルトヘッダー",
+    "curlDefaultHeadersDesc": "cURL のデフォルトリクエストヘッダーを含めます。",
+    "flaresolverr": "FlareSolverr",
+    "flaresolverrDesc": "保護されたリクエストを FlareSolverr 経由にします。",
+    "waitFor": "要素を待機",
+    "waitForDesc": "この要素が利用可能になるまで待機します。",
+    "waitExpression": "CSS または XPath 式",
+    "waitTimeout": "待機タイムアウト",
+    "waitTimeoutDesc": "最大待機時間（秒、0～300）。",
+    "pageLoadTimeout": "ページ読み込みタイムアウト",
+    "pageLoadTimeoutDesc": "最大読み込み時間（秒、0～300）。",
+    "validationUrlFieldRequired": "url フィールドは必須です。",
+    "validationBrowserEndpointRequired": "ブラウザーエンドポイント URL は必須です。",
     "shortFilter": "ショートのみ (-x)",
     "sortBy": "並び替え基準",
     "sortByFlag": "フラグ",
@@ -516,6 +546,9 @@
     "targetUrl": "ターゲット URL",
     "type": "種類",
     "unsupportedVersion": "サポート対象外または _version フィールドがありません。",
+    "valueBoolean": "真偽値",
+    "valueNull": "Null",
+    "valueNumber": "数値",
     "yesLabel": "はい",
     "browseYtdlpFlags": "利用可能な yt-dlp フラグと説明を参照。",
     "conditionDescPlaceholder": "この条件の動作を説明",
@@ -568,14 +601,12 @@
     "bothKeyValueRequired": "キーと値は両方とも必須です。",
     "keyAlreadyExists": "キー '{key}' は既に存在します。",
     "optionsOrExtraRequired": "yt-dlp のコマンドオプションまたは少なくとも 1 つの追加オプションが必要です。",
-    "failedTestCondition": "条件のテストに失敗しました。{error}",
     "failedImportNotification": "通知のインポートに失敗しました。{error}",
     "requestTypeJson": "JSON",
     "requestTypeForm": "Form",
     "prefillFromDef": "既存のタスク定義から事前入力。",
     "advancedModeRequired": "詳細モードが必要です",
     "advancedModeRequiredDesc": "ビジュアルエディタでは表現できません。",
-    "guiLimitations": "GUI の制限",
     "unableToBuildDef": "定義を構築できません",
     "lineDetail": "行",
     "functionDetail": "関数",
@@ -619,6 +650,7 @@
     "allGroups": "すべてのグループ",
     "invalidJsonDocument": "無効な JSON ドキュメント。",
     "validationMatchRequired": "少なくとも 1 つの一致パターンが必要です。",
+    "validationPairValue": "{key} の値は選択した型に一致する必要があります。",
     "validationSelectorRequired": "コンテナセレクタは必須です。",
     "validationExpressionRequired": "フィールド \"{key}\" の式は必須です。",
     "validationFieldsRequired": "少なくとも 1 つの抽出フィールドを設定してください。",
@@ -662,6 +694,8 @@
     "FEATURE_DISABLED": "{feature} は無効です。",
     "OPERATION_FAILED": "操作に失敗しました。",
     "DEPENDENCY_FAILED": "必須の依存関係が失敗しました。",
+    "FFMPEG_UNAVAILABLE": "このシステムではffmpegを利用できません。トランスコードとストリーミングは利用できません。",
+    "FFPROBE_UNAVAILABLE": "このシステムではffprobeを利用できません。メディアのメタデータを読み取れません。",
     "TIMEOUT": "操作がタイムアウトしました。",
     "INTERNAL_ERROR": "内部サーバーエラー。",
     "VIDEO_UNAVAILABLE": "動画は利用できません。",
@@ -707,30 +741,6 @@
       "shutdown": "シャットダウン",
       "monitoring": "リソース監視",
       "fileLogging": "ファイルログ"
-    },
-    "actions": {
-      "add": "追加",
-      "addDownload": "ダウンロードを追加",
-      "create": "作成",
-      "update": "更新",
-      "patch": "パッチ",
-      "delete": "削除",
-      "import": "インポート",
-      "export": "エクスポート",
-      "start": "開始",
-      "pause": "一時停止",
-      "cancel": "キャンセル",
-      "download": "ダウンロード",
-      "processPlaylist": "プレイリストを処理"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "非公開動画",
-      "geoRestricted": "地域制限",
-      "ageRestricted": "年齢制限"
     }
   },
   "app": {
@@ -775,9 +785,7 @@
     "connection": {
       "connected": "接続済み",
       "connecting": "接続中...",
-      "disconnected": "切断済み",
-      "connectingServer": "WebSocket サーバーに接続中...",
-      "lost": "WebSocket 接続が失われました。"
+      "disconnected": "切断済み"
     },
     "config": {
       "loading": "設定を読み込み中...",
@@ -789,8 +797,7 @@
       "clickHere": "ここをクリック",
       "or": "または",
       "reloadConfig": "設定を再読み込み",
-      "reloadPage": "ページを再読み込み",
-      "socketError": "{error}。詳細は開発者コンソールを確認してください。"
+      "reloadPage": "ページを再読み込み"
     },
     "update": {
       "newVersionInstalled": "新しい WebUI バージョンがインストールされました。",
@@ -808,13 +815,11 @@
       "applicationError": "アプリケーションエラー",
       "unknownError": "不明なエラー",
       "description": "予期しないエラーがこの画面の表示を中断しました。ホームに戻るか、現在のルートを再試行できます。",
-      "details": "詳細",
       "stackTrace": "スタックトレース",
       "backToHome": "ホームに戻る"
     },
     "footer": {
       "poweredBy": "Powered by",
-      "started": "開始:",
       "versionUnknown": "不明"
     },
     "theme": {
@@ -846,7 +851,6 @@
       "saveLayout": "レイアウトを保存",
       "appearance": "外観",
       "theme": "テーマ",
-      "language": "言語",
       "animationsDesc": "ページ遷移アニメーションを有効化します。",
       "background": "背景",
       "bgDesc": "ランダムなパノラマ背景画像を表示します。",
@@ -917,7 +921,6 @@
     "waiting": " - 待機中..",
     "queuedCount": "キュー: {shown} 件表示 / 合計 {total} 件",
     "queuedCountShort": "キュー: {count}",
-    "pauseDownloadsTitle": "ダウンロードを一時停止",
     "pauseDownloadsDesc": "非アクティブなすべてのダウンロードを一時停止してもよろしいですか?",
     "filterKeyValue": "<code><u>キー</u>:値</code> を使った絞り込み検索も可能です。",
     "filterExample1": "そのテキストを含むアイテム",
@@ -939,7 +942,6 @@
     "streamed": "ストリーミング済み",
     "partialError": "部分エラー",
     "premiere": "プレミア公開",
-    "unknown": "不明",
     "player": "プレーヤー",
     "empty": "ダウンロード履歴は空です。",
     "clearCompletedConfirm": "完了したすべてのダウンロードをクリアしますか? ファイルは削除されません。",
@@ -1028,8 +1030,7 @@
     "generateMetadataConfirmDesc": "このアクションは以下を生成します:\n- tvshow.nfo - メディアセンター互換用\n- title [id].info.json - yt-dlp メタデータファイル\n- サムネイル: poster.jpg、fanart.jpg、thumb.jpg、banner.jpg、icon.jpg、landscape.jpg (利用可能な場合)。\n\n警告: 既存のメタデータファイルが存在する場合は上書きされます。",
     "allMarkedDownloaded": "すべてのアイテムをダウンロード済みとしてマークしました。",
     "allRemovedArchive": "すべてのアイテムをアーカイブから削除しました。",
-    "metadataCompleted": "メタデータの生成が完了しました。",
-    "handlerPlaceholder": "ハンドラークラス名"
+    "metadataCompleted": "メタデータの生成が完了しました。"
   },
   "taskDefinitions": {
     "description": "任意の Web サイトをダウンロード可能なリンクのフィードに変換する定義を作成します。",
@@ -1037,9 +1038,7 @@
     "updated": "更新済み",
     "patterns": "パターン: {count} 件の一致/s",
     "urlPatterns": "URL パターン",
-    "unnamed": "(無題の定義)",
-    "editorLoadingDesc": "編集前に完全な定義を読み込んでいます。",
-    "editorDesc": "適合する場合は GUI エディタを使用するか、完全な制御のために詳細 JSON に切り替えてください。"
+    "unnamed": "(無題の定義)"
   },
   "presets": {
     "description": "事前定義された yt-dlp コマンドオプション。",
@@ -1093,7 +1092,6 @@
     "loadingLogs": "ログを読み込み中...",
     "connectingStream": "ログストリームに接続しています。",
     "loadOlder": "古い行をフィルターに読み込み",
-    "details": "詳細",
     "copyRendered": "レンダリング済みログをコピー",
     "copyRaw": "生ログをコピー",
     "allLevels": "すべてのレベル",
@@ -1189,7 +1187,6 @@
     "connections": "接続数: {count}",
     "diskTemp": "温度",
     "diskConfig": "設定",
-    "system": "システム",
     "systemCpuHint": "システム {value}"
   },
   "diagnostics": {
@@ -1216,12 +1213,6 @@
     "skippedDesc": "未設定または不要。",
     "appDesc": "現在のビルド。",
     "hostDesc": "OS とマシン。",
-    "resourceStats": "リソース統計",
-    "shareTitle": "YTPTube 診断",
-    "shareGenerated": "生成日時: {date}",
-    "shareStarted": "開始",
-    "shareWindow": "ウィンドウ",
-    "shareSamples": "サンプル",
     "feature": {
       "core": {
         "label": "コア設定",
@@ -1248,7 +1239,6 @@
   "changelog": {
     "description": "最新のプロジェクト変更",
     "filterPlaceholder": "変更履歴エントリをフィルター",
-    "releaseDate": "リリース日:",
     "releaseDateValue": "リリース日: {date}",
     "installed": "インストール済み",
     "commits": "{count} コミット",
@@ -1271,8 +1261,6 @@
     "requeue": "再キュー",
     "video": "動画",
     "embed": "埋め込み",
-    "queuedCount": "{shown} 件表示 / {total} 件キュー済み",
-    "queuedCountShort": "{count} 件キュー済み",
     "abilityRequeue": "アイテムを再キューできません。URL がありません。",
     "removedFromHistory": "履歴キューから削除しました。",
     "videoThumbnail": "動画のサムネイル",
@@ -1287,6 +1275,11 @@
         "title": "README",
         "navLabel": "README",
         "description": "プロジェクトの概要"
+      },
+      "features": {
+        "title": "機能",
+        "navLabel": "機能",
+        "description": "ダウンロード、自動化、メディアライブラリ機能。"
       },
       "faq": {
         "title": "FAQ",
@@ -1304,10 +1297,6 @@
         "description": "セキュリティポリシーと脆弱性の報告手順。"
       }
     }
-  },
-  "socket": {
-    "disconnected": "サーバーから切断されました。",
-    "connectionError": "接続エラー: {error}"
   },
   "player": {
     "subtitleLoadFailed": "この動画の字幕の読み込みに失敗しました。",

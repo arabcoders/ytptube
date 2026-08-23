@@ -8,17 +8,18 @@ import random
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
+from app.features.downloads.items import Item, ItemDTO
+from app.features.downloads.runtime.queue_manager import DownloadQueue
 from app.features.tasks.definitions.handlers._base_handler import BaseHandler
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.models import TaskModel
 from app.features.ytdlp.utils import archive_read
-from app.library.downloads.queue_manager import DownloadQueue
 from app.library.Events import EventBus, Events
-from app.library.ItemDTO import Item, ItemDTO
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Services import Services
 
 if TYPE_CHECKING:
+    from app.features.tasks.definitions.schemas import TaskDefinition
     from app.features.tasks.repository import TasksRepository
     from app.library.config import Config
     from app.library.Scheduler import Scheduler
@@ -462,6 +463,7 @@ class TaskHandle:
         preset: str | None = None,
         handler_name: str | None = None,
         static_only: bool = False,
+        resolve_ids: bool = True,
     ) -> TaskResult | TaskFailure:
         """
         Inspect a URL to find a matching handler and optionally extract items.
@@ -471,6 +473,7 @@ class TaskHandle:
             preset: Optional preset name to use.
             handler_name: Optional specific handler name to use.
             static_only: If True, only check if a handler matches without extraction.
+            resolve_ids: Resolve missing archive IDs through yt-dlp.
 
         Returns:
             TaskResult or TaskFailure with inspection results.
@@ -538,7 +541,10 @@ class TaskHandle:
 
         try:
             extraction: TaskResult | TaskFailure = await services.handle_async(
-                handler=handler_cls.extract, task=task, config=self._config
+                handler=handler_cls.inspect,
+                task=task,
+                config=self._config,
+                resolve_ids=resolve_ids,
             )
         except NotImplementedError:
             return TaskFailure(
@@ -580,17 +586,69 @@ class TaskHandle:
             )
             extraction = TaskResult()
 
-        combined_metadata: dict[str, Any] = {**base_metadata, "supported": True}
-        if extraction.metadata:
-            combined_metadata.update(extraction.metadata)
+        return self._finish_inspection(task, extraction, base_metadata)
 
+    async def inspect_definition(
+        self,
+        url: str,
+        definition: TaskDefinition,
+        preset: str | None = None,
+        *,
+        resolve_ids: bool = True,
+    ) -> TaskResult | TaskFailure:
+        """Inspect one validated generic definition without handler discovery."""
+        from app.features.tasks.definitions.handlers.generic import GenericTaskHandler
+
+        task = HandleTask(
+            id=None,
+            name="Inspector",
+            url=url,
+            preset=preset or self._config.default_preset,
+            auto_start=False,
+        )
+        base_metadata: dict[str, Any] = {"matched": True, "handler": GenericTaskHandler.__name__}
+
+        try:
+            extraction = await Services.get_instance().handle_async(
+                handler=GenericTaskHandler.extract_definition,
+                task=task,
+                definition=definition,
+                config=self._config,
+                inspection=True,
+                resolve_ids=resolve_ids,
+            )
+        except NotImplementedError:
+            return TaskFailure(
+                message="Handler does not support manual inspection.",
+                metadata={**base_metadata, "supported": False},
+            )
+        except Exception as exc:
+            LOG.exception("Generic definition inspection failed for '%s'.", url, extra={"url": url})
+            message = str(exc)
+            return TaskFailure(message=message, error=message, metadata={**base_metadata, "supported": True})
+
+        if isinstance(extraction, TaskFailure):
+            metadata = {**base_metadata, "supported": True, **(extraction.metadata or {})}
+            return TaskFailure(
+                message=extraction.message,
+                error=extraction.error or extraction.message,
+                metadata=metadata,
+            )
+
+        if not isinstance(extraction, TaskResult):
+            extraction = TaskResult()
+
+        return self._finish_inspection(task, extraction, {**base_metadata, "supported": True})
+
+    @staticmethod
+    def _finish_inspection(task: HandleTask, extraction: TaskResult, base_metadata: dict[str, Any]) -> TaskResult:
+        combined_metadata: dict[str, Any] = {**base_metadata, **(extraction.metadata or {})}
         items = list(extraction.items)
         archive_file = task.get_ytdlp_opts().get_all().get("download_archive")
         archive_ids = [item.archive_id for item in items if item.archive_id]
         archived = set(archive_read(archive_file, archive_ids)) if archive_file and archive_ids else set()
         for item in items:
             item.is_archived = item.archive_id in archived if item.archive_id else False
-
         return TaskResult(items=items, metadata=combined_metadata)
 
     def _discover(self) -> list[type[BaseHandler]]:

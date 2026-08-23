@@ -15,7 +15,7 @@ from aiohttp.web_response import StreamResponse
 from app.features.auth.middleware import auth_middleware, cors_headers
 from app.features.auth.service import AuthService
 from app.features.core.utils import api_error_response
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Services import Services
 
 from .cache import Cache

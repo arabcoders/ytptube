@@ -9,7 +9,7 @@ from sqlalchemy.dialects.sqlite import insert
 
 from app.features.core.models import utcnow
 from app.features.downloads.models import DownloadModel
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.operations import Operation, matches_condition
 from app.library.Singleton import Singleton
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
 
-    from app.library.ItemDTO import ItemDTO
+    from app.features.downloads.items import ItemDTO
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 

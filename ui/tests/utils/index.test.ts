@@ -175,7 +175,9 @@ describe('string manipulation helpers', () => {
       ),
     ).toBe('Chrome 120.0.0.0 on Windows');
     expect(
-      utils.browserSummary('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit Safari/605.1.15'),
+      utils.browserSummary(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit Safari/605.1.15',
+      ),
     ).toBe('Safari 605.1.15 on macOS');
   });
 

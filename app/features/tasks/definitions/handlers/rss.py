@@ -1,5 +1,7 @@
-import hashlib
+import asyncio
+import logging
 import re
+import time
 from typing import Any
 from urllib.parse import urljoin
 from xml.etree.ElementTree import Element
@@ -7,11 +9,16 @@ from xml.etree.ElementTree import Element
 import httpx
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
-from app.features.ytdlp.extractor import fetch_info
+from app.features.tasks.definitions.utils import (
+    ARCHIVE_ID_TTL,
+    ARCHIVE_LOOKUP_FAILURE_TTL,
+    archive_key,
+)
+from app.features.ytdlp.extractor import ExtractorBatch, fetch_info
 from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from ._base_handler import BaseHandler
 
@@ -34,6 +41,17 @@ class RssGenericHandler(BaseHandler):
         )
         return RssGenericHandler.parse(task.url) is not None
 
+    @classmethod
+    async def inspect(
+        cls, task: HandleTask, config: Config | None = None, *, resolve_ids: bool = True
+    ) -> TaskResult | TaskFailure:
+        return await cls.extract(
+            task,
+            config=config,
+            inspection=True,
+            resolve_ids=resolve_ids,
+        )
+
     @staticmethod
     async def _get(
         task: HandleTask,
@@ -55,12 +73,6 @@ class RssGenericHandler(BaseHandler):
         from defusedxml.ElementTree import fromstring
 
         feed_url: str = parsed["url"]
-        LOG.debug(
-            "Fetching RSS/Atom feed for task '%s'.",
-            task.name,
-            extra={"task_name": task.name, "feed_url": feed_url},
-        )
-
         response = await RssGenericHandler.request(url=feed_url, ytdlp_opts=params)
         response.raise_for_status()
 
@@ -81,12 +93,6 @@ class RssGenericHandler(BaseHandler):
         # Try to parse as Atom feed first
         entries = root.findall("atom:entry", ns)
         if entries:
-            LOG.debug(
-                "'%s': Detected Atom feed format with %s entries",
-                task.name,
-                len(entries),
-                extra={"task_name": task.name, "feed_url": feed_url, "entry_count": len(entries)},
-            )
             for entry in entries:
                 link_elem: Element | None = entry.find("atom:link[@rel='alternate']", ns)
                 if link_elem is None:
@@ -135,12 +141,6 @@ class RssGenericHandler(BaseHandler):
         else:
             # Try to parse as RSS feed
             rss_items = root.findall(".//item")
-            LOG.debug(
-                "'%s': Detected RSS feed format with %s items",
-                task.name,
-                len(rss_items),
-                extra={"task_name": task.name, "feed_url": feed_url, "entry_count": len(rss_items)},
-            )
 
             for item in rss_items:
                 # Try different link element names (link, url, media:content)
@@ -200,7 +200,13 @@ class RssGenericHandler(BaseHandler):
         return feed_url, items, real_count
 
     @staticmethod
-    async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
+    async def extract(
+        task: HandleTask,
+        config: Config | None = None,
+        *,
+        inspection: bool = False,
+        resolve_ids: bool = True,
+    ) -> TaskResult | TaskFailure:
         _ = config
         """
         Extract items from an RSS/Atom feed.
@@ -219,8 +225,9 @@ class RssGenericHandler(BaseHandler):
         if not parsed:
             return TaskFailure(message="Unrecognized RSS/Atom feed URL.")
 
-        params: dict = task.get_ytdlp_opts().get_all()
+        params = RssGenericHandler._get_params(task, inspection=inspection)
 
+        fetch_started = time.perf_counter()
         try:
             feed_url, items, real_count = await RssGenericHandler._get(task, params, parsed)
         except httpx.HTTPError as exc:
@@ -239,77 +246,156 @@ class RssGenericHandler(BaseHandler):
             return TaskFailure(message="Failed to fetch RSS/Atom feed.", error=str(exc))
 
         task_items: list[TaskItem] = []
+        archive_fallbacks = 0
+        archive_errors: dict[str, int] = {}
+        incomplete_archives = 0
+        LOG.debug(
+            "Task '%s' fetched and parsed %s RSS/Atom item(s) in %.2fs.",
+            task.name,
+            len(items),
+            time.perf_counter() - fetch_started,
+            extra={"task_name": task.name, "feed_url": feed_url, "item_count": len(items)},
+        )
 
-        for entry in items:
-            if not (url := entry.get("url")):
-                continue
+        async with ExtractorBatch(parallel=True) as batch:
+            resolutions: dict[str, tuple[str | None, str | None, bool]] = {}
+            pending: list[tuple[str, str, str]] = []
+            pending_urls: set[str] = set()
+            for entry in items:
+                if not (url := entry.get("url")):
+                    continue
 
-            # Try to get static archive ID first
-            id_dict: dict[str, str | None] = get_archive_id(url=url)
-            archive_id: str | None = id_dict.get("archive_id")
+                # Try to get static archive ID first
+                id_dict: dict[str, str | None] = get_archive_id(url=url)
+                archive_id: str | None = id_dict.get("archive_id")
 
-            # If static archive_id fails, try to fetch it via yt-dlp (like generic.py)
-            if not archive_id:
-                cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
+                if archive_id:
+                    resolutions.setdefault(url, (archive_id, None, False))
+                    continue
 
-                if CACHE.has(cache_key):
-                    archive_id = CACHE.get(cache_key)
-                    if not archive_id:
-                        LOG.debug(
-                            "Task '%s' has a cached archive ID lookup failure. Skipping item.",
-                            task.name,
-                            extra={"task_name": task.name, "url": url},
-                        )
-                        continue
+                cache_key = archive_key(url)
+                failure_key = f"{cache_key}:f"
+                cache_hit = CACHE.has(cache_key)
+                cached = CACHE.get(cache_key) if cache_hit else None
+                if isinstance(cached, str) and cached:
+                    resolutions.setdefault(url, (cached, None, False))
+                elif (inspection and not resolve_ids) or (not inspection and CACHE.has(failure_key)):
+                    resolutions.setdefault(url, (None, None, False))
                 else:
-                    LOG.warning(
-                        "Task '%s' could not generate a static archive ID. Fetching it with yt-dlp.",
-                        task.name,
-                        extra={"task_name": task.name, "url": url},
-                    )
+                    if cache_hit:
+                        CACHE.delete(cache_key)
+                    resolutions.setdefault(url, (None, None, False))
+                    if url not in pending_urls:
+                        pending.append((url, cache_key, failure_key))
+                        pending_urls.add(url)
+                        archive_fallbacks += 1
 
-                    (info, _) = await fetch_info(
-                        config=params,
-                        url=url,
-                        no_archive=True,
-                        no_log=True,
-                        budget_sleep=True,
-                    )
+            LOG.debug(
+                "Task '%s' archive ID plan: %s item(s), %s external lookup(s).",
+                task.name,
+                len(items),
+                len(pending),
+                extra={
+                    "task_name": task.name,
+                    "feed_url": feed_url,
+                    "item_count": len(items),
+                    "lookup_count": len(pending),
+                    "resolve_ids": resolve_ids,
+                },
+            )
 
-                    if not info:
-                        LOG.error(
-                            "Task '%s' failed to extract info to generate an archive ID. Skipping item.",
-                            task.name,
-                            extra={"task_name": task.name, "url": url},
-                        )
-                        CACHE.set(cache_key, None)
-                        continue
-
-                    if not info.get("id") or not info.get("extractor_key"):
-                        LOG.error(
-                            "Task '%s' returned incomplete info while generating an archive ID. Skipping item.",
-                            task.name,
-                            extra={"task_name": task.name, "url": url},
-                        )
-                        CACHE.set(cache_key, None)
-                        continue
-
-                    archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
-                    CACHE.set(cache_key, archive_id)
-
-            metadata: dict[str, Any] = {
-                k: v for k, v in entry.items() if k not in {"url", "title", "description", "published", "thumbnail"}
-            }
-
-            task_items.append(
-                TaskItem(
+            async def resolve(url: str, cache_key: str, failure_key: str) -> tuple[str | None, str | None, bool]:
+                info, logs = await fetch_info(
+                    config=params,
                     url=url,
-                    title=entry.get("title"),
-                    archive_id=archive_id,
-                    thumbnail=entry.get("thumbnail"),
-                    description=entry.get("description"),
-                    metadata={"published": entry.get("published"), **metadata},
+                    no_archive=True,
+                    no_log=True,
+                    capture_logs=logging.ERROR,
+                    batch=batch,
+                    budget_sleep=True,
                 )
+                if not info:
+                    error = " | ".join(logs) if logs else "No yt-dlp error was reported."
+                    if not inspection:
+                        CACHE.set(failure_key, 1, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
+                    return None, error, False
+                if not info.get("id") or not info.get("extractor_key"):
+                    if not inspection:
+                        CACHE.set(failure_key, 1, ttl=ARCHIVE_LOOKUP_FAILURE_TTL, persist=False)
+                    return None, None, True
+
+                archive_id = f"{str(info['extractor_key']).lower()} {info['id']}"
+                CACHE.set(cache_key, archive_id, ttl=ARCHIVE_ID_TTL, persist=True)
+                CACHE.delete(failure_key)
+                return archive_id, None, False
+
+            lookups = [asyncio.create_task(resolve(url, key, failure_key)) for url, key, failure_key in pending]
+            try:
+                results = await asyncio.gather(*lookups)
+            except BaseException:
+                for lookup in lookups:
+                    lookup.cancel()
+                await asyncio.gather(*lookups, return_exceptions=True)
+                raise
+            resolutions.update(dict(zip((url for url, _, _ in pending), results, strict=True)))
+
+            for entry in items:
+                if not (url := entry.get("url")):
+                    continue
+
+                archive_id, error, incomplete = resolutions[url]
+                if error:
+                    archive_errors[error] = archive_errors.get(error, 0) + 1
+                    if not inspection:
+                        continue
+                if incomplete:
+                    incomplete_archives += 1
+                    if not inspection:
+                        continue
+                if archive_id is None and not inspection:
+                    continue
+
+                metadata: dict[str, Any] = {
+                    k: v for k, v in entry.items() if k not in {"url", "title", "description", "published", "thumbnail"}
+                }
+
+                task_items.append(
+                    TaskItem(
+                        url=url,
+                        title=entry.get("title"),
+                        archive_id=archive_id,
+                        thumbnail=entry.get("thumbnail"),
+                        description=entry.get("description"),
+                        metadata={"published": entry.get("published"), **metadata},
+                    )
+                )
+
+        if archive_fallbacks:
+            LOG.warning(
+                "Task '%s' required yt-dlp archive ID fallback for %s item(s).",
+                task.name,
+                archive_fallbacks,
+                extra={"task_name": task.name, "item_count": archive_fallbacks},
+            )
+
+        action = "Keeping unresolved items for inspection." if inspection else "Skipping unresolved items."
+        for error, count in archive_errors.items():
+            LOG.error(
+                "Task '%s' failed to generate archive IDs for %s item(s). %s yt-dlp: %s",
+                task.name,
+                count,
+                action,
+                error,
+                extra={"task_name": task.name, "item_count": count, "error": error},
+            )
+
+        if incomplete_archives:
+            LOG.error(
+                "Task '%s' received incomplete archive information for %s item(s). %s",
+                task.name,
+                incomplete_archives,
+                action,
+                extra={"task_name": task.name, "item_count": incomplete_archives},
             )
 
         return TaskResult(

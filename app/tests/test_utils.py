@@ -2,7 +2,6 @@ import asyncio
 import copy
 import importlib.util
 import json
-import logging
 import re
 import shutil
 import sys
@@ -17,15 +16,11 @@ import pytest
 
 from app.features.ytdlp.utils import arg_converter
 from app.library.Utils import (
-    FileLogFormatter,
-    JsonLogFormatter,
     calc_download_path,
     check_id,
     clean_item,
-    decrypt_data,
     delete_dir,
     dt_delta,
-    encrypt_data,
     get,
     get_file,
     get_file_sidecar,
@@ -44,7 +39,6 @@ from app.library.Utils import (
     validate_url,
     validate_uuid,
 )
-from app.routes.api.logs import _read_logfile, _tail_log
 from app.tests.helpers import make_test_temp_dir, temporary_test_dir
 
 
@@ -270,93 +264,6 @@ class TestAsyncTimedLruCache:
         # Check cache size is limited
         info = async_limited_func.cache_info()
         assert info.currsize <= 2
-
-
-class TestFileLogFormatter:
-    """Test the FileLogFormatter class."""
-
-    def test_file_log_formatter_creation(self):
-        """Test that FileLogFormatter can be created."""
-        formatter = FileLogFormatter()
-        assert isinstance(formatter, FileLogFormatter)
-
-
-class TestJsonLogFormatter:
-    def test_basic(self):
-        formatter = JsonLogFormatter()
-        record = logging.LogRecord("test.logger", logging.WARNING, __file__, 123, "hello %s", ("world",), None)
-        record.download_id = "abc"
-        record.payload = {
-            "enabled": True,
-            "items": [{"name": "one", "path": Path("downloads/file.mp4")}],
-            "_token": "secret",
-        }
-        record.tags = ["video", {"quality": "720p", "_private": "hidden"}]
-        record.ytdlp_opts = {
-            "paths": {"home": Path("downloads"), "temp": Path("tmp")},
-            "progress_hooks": [lambda _: None],
-            "postprocessors": ({"key": "FFmpegMetadata"},),
-        }
-        record._private = "hidden"
-        record.relativeCreated = 123
-
-        data = json.loads(formatter.format(record))
-
-        assert uuid.UUID(data["id"])
-        assert data["level"] == "warning"
-        assert data["levelno"] == logging.WARNING
-        assert data["logger"] == "test.logger"
-        assert data["message"] == "hello world"
-        assert data["fields"] == {
-            "download_id": "abc",
-            "payload": {"enabled": True, "items": [{"name": "one", "path": "downloads/file.mp4"}]},
-            "tags": ["video", {"quality": "720p"}],
-            "ytdlp_opts": {
-                "paths": {"home": "downloads", "temp": "tmp"},
-                "progress_hooks": [data["fields"]["ytdlp_opts"]["progress_hooks"][0]],
-                "postprocessors": [{"key": "FFmpegMetadata"}],
-            },
-        }
-        assert "<lambda>" in data["fields"]["ytdlp_opts"]["progress_hooks"][0]
-        assert data["source"]["line"] == 123
-
-    def test_exception(self):
-        formatter = JsonLogFormatter()
-
-        try:
-            raise ValueError("bad")
-        except ValueError:
-            record = logging.LogRecord("test", logging.ERROR, __file__, 1, "failed", (), sys.exc_info())
-
-        data = json.loads(formatter.format(record))
-
-        assert data["message"] == "failed"
-        assert data["exception"] == {
-            "type": "ValueError",
-            "message": "bad",
-            "file": __file__,
-            "line": data["exception"]["line"],
-            "stack": data["exception"]["stack"],
-        }
-        assert data["exception"]["line"] > 0
-        assert data["exception"]["stack"][-1] == {
-            "path": __file__,
-            "file": Path(__file__).name,
-            "module": Path(__file__).stem,
-            "function": "test_exception",
-            "line": data["exception"]["line"],
-        }
-        assert data["source"] == data["exception"]["stack"][-1]
-        assert "exception_message" not in data
-
-    def test_no_raw_stack(self):
-        formatter = JsonLogFormatter()
-        record = logging.LogRecord("test", logging.ERROR, __file__, 1, "failed", (), None)
-        record.stack_info = 'Stack (most recent call last):\n  File "x", line 1, in y'
-
-        data = json.loads(formatter.format(record))
-
-        assert "stack" not in data
 
 
 class TestCalcDownloadPath:
@@ -1066,33 +973,6 @@ class TestDeleteDir:
         assert result is False
 
 
-class TestEncryptDecrypt:
-    """Test encryption and decryption functions."""
-
-    def test_encrypt_decrypt_data(self):
-        """Test that data can be encrypted and decrypted."""
-        key = b"test_key_12345678901234567890123"  # Exactly 32 bytes for AES
-        data = "test data"
-
-        encrypted: str = encrypt_data(data, key)
-        assert encrypted != data
-        assert isinstance(encrypted, str)
-
-        decrypted = decrypt_data(encrypted, key)
-        assert decrypted is not None
-        assert decrypted == data
-
-    def test_encrypt_empty_string(self):
-        """Test encrypting empty string."""
-        key = b"test_key_12345678901234567890123"  # Exactly 32 bytes
-        data: str = ""
-
-        encrypted: str = encrypt_data(data, key)
-        decrypted = decrypt_data(encrypted, key)
-        assert decrypted is not None
-        assert decrypted == data
-
-
 class TestValidateUuid:
     """Test UUID validation function."""
 
@@ -1554,179 +1434,6 @@ class TestGetFiles:
         assert isinstance(result, list)
 
 
-class TestReadLogfile:
-    """Test the read_logfile async function."""
-
-    def setup_method(self):
-        """Set up test log file."""
-        self.temp_dir = str(make_test_temp_dir("read-logfile"))
-        self.log_file = Path(self.temp_dir) / "test.log"
-
-    def teardown_method(self):
-        """Clean up after tests."""
-        import shutil
-
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    def test_read_logfile_nonexistent(self):
-        """Test reading non-existent log file."""
-
-        async def test():
-            result = await _read_logfile(self.log_file)
-            assert isinstance(result, dict)
-            assert "logs" in result
-
-        asyncio.run(test())
-
-    def test_read_logfile_with_content(self):
-        """Test reading log file with content."""
-        lines = [
-            {
-                "id": "log-1",
-                "datetime": "2026-01-01T00:00:01.000+00:00",
-                "level": "info",
-                "logger": "test",
-                "message": "line 1",
-            },
-            {
-                "id": "log-2",
-                "datetime": "2026-01-01T00:00:02.000+00:00",
-                "level": "warning",
-                "logger": "test",
-                "message": "line 2",
-            },
-            {
-                "id": "log-3",
-                "datetime": "2026-01-01T00:00:03.000+00:00",
-                "level": "error",
-                "logger": "test",
-                "message": "line 3",
-                "exception": {
-                    "type": "ValueError",
-                    "message": "bad",
-                    "file": "/tmp/test.py",
-                    "line": 3,
-                    "stack": [
-                        {
-                            "path": "/tmp/test.py",
-                            "file": "test.py",
-                            "module": "test",
-                            "function": "run",
-                            "line": 3,
-                        }
-                    ],
-                },
-            },
-        ]
-        self.log_file.write_text("\n".join(json.dumps(line) for line in lines) + "\n")
-
-        async def test():
-            result = await _read_logfile(self.log_file, limit=2)
-            assert isinstance(result, dict)
-            assert "logs" in result
-            assert [line["id"] for line in result["logs"]] == ["log-2", "log-3"]
-            assert all("line" not in line for line in result["logs"])
-            assert [line["message"] for line in result["logs"]] == ["line 2", "line 3"]
-            assert result["logs"][0]["level"] == "warning"
-            assert result["logs"][1]["exception"]["type"] == "ValueError"
-            assert result["next_offset"] == 2
-            assert result["end_is_reached"] is False
-
-        asyncio.run(test())
-
-    def test_read_logfile_malformed(self):
-        self.log_file.write_text("not-json\n")
-
-        async def test():
-            result = await _read_logfile(self.log_file, limit=1)
-            assert result["logs"] == []
-
-        asyncio.run(test())
-
-    def test_read_logfile_missing_id(self):
-        self.log_file.write_text(json.dumps({"message": "ignored"}) + "\n")
-
-        async def test():
-            result = await _read_logfile(self.log_file, limit=1)
-            assert result["logs"] == []
-
-        asyncio.run(test())
-
-    def test_read_logfile_missing_required(self):
-        self.log_file.write_text(json.dumps({"id": "ignored", "message": "ignored"}) + "\n")
-
-        async def test():
-            result = await _read_logfile(self.log_file, limit=1)
-            assert result["logs"] == []
-
-        asyncio.run(test())
-
-
-class TestTailLog:
-    """Test the tail_log async function."""
-
-    def setup_method(self):
-        """Set up test log file."""
-        self.temp_dir = str(make_test_temp_dir("tail-log"))
-        self.log_file = Path(self.temp_dir) / "test.log"
-
-    def teardown_method(self):
-        """Clean up after tests."""
-        import shutil
-
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    def test_tail_log_nonexistent(self):
-        """Test tailing non-existent log file."""
-        emitted_lines = []
-
-        def emitter(line):
-            emitted_lines.append(line)
-            return False  # Stop after first emission
-
-        async def test():
-            try:
-                await _tail_log(self.log_file, emitter, sleep_time=0.1)
-            except Exception:
-                pass  # Expected for non-existent file
-
-        asyncio.run(test())
-
-    def test_tail_log_jsonl(self):
-        self.log_file.write_text("")
-        emitted_lines = []
-
-        async def emitter(line):
-            emitted_lines.append(line)
-            raise asyncio.CancelledError
-
-        async def test():
-            task = asyncio.create_task(_tail_log(self.log_file, emitter, sleep_time=0.01))
-            await asyncio.sleep(0.02)
-            self.log_file.write_text(
-                json.dumps(
-                    {
-                        "id": "tail-1",
-                        "datetime": "2026-01-01T00:00:00.000+00:00",
-                        "level": "info",
-                        "logger": "tail",
-                        "message": "live line",
-                    }
-                )
-                + "\n"
-            )
-
-            with pytest.raises(asyncio.CancelledError):
-                await asyncio.wait_for(task, timeout=1)
-
-        asyncio.run(test())
-
-        assert emitted_lines[0]["message"] == "live line"
-        assert emitted_lines[0]["id"] == "tail-1"
-        assert "line" not in emitted_lines[0]
-        assert emitted_lines[0]["level"] == "info"
-
-
 class TestLoadCookies:
     """Test the load_cookies function."""
 
@@ -1954,38 +1661,6 @@ class TestIsSafeKey:
 
         assert 123 not in result
         assert "normal_key" in result
-
-
-class TestDecryptDataCornerCases:
-    """Additional tests for decrypt_data edge cases."""
-
-    def test_decrypt_data_invalid_base64(self):
-        """Test decrypting invalid base64 data."""
-        from app.library.Utils import decrypt_data
-
-        result = decrypt_data("not_valid_base64!!!", b"k" * 32)
-
-        assert result is None
-
-    def test_decrypt_data_wrong_key(self):
-        """Test decrypting with wrong key returns None."""
-        from app.library.Utils import decrypt_data, encrypt_data
-
-        correct_key = b"a" * 32
-        wrong_key = b"z" * 32
-
-        encrypted = encrypt_data("test data", correct_key)
-        result = decrypt_data(encrypted, wrong_key)
-
-        assert result is None, "Should return None on decryption failure with wrong key"
-
-    def test_decrypt_data_truncated(self):
-        """Test decrypting truncated encrypted data."""
-        from app.library.Utils import decrypt_data
-
-        result = decrypt_data("YQ==", b"k" * 32)
-
-        assert result is None
 
 
 class TestArgConverterAdvanced:

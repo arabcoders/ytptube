@@ -81,6 +81,19 @@
           }}</span>
         </UButton>
 
+        <UButton
+          v-if="socket.connectionStatus !== 'connected'"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="isRefreshing"
+          :disabled="isRefreshing"
+          @click="() => refreshQueue()"
+        >
+          <span>{{ t('common.refresh') }}</span>
+        </UButton>
+
         <UInput
           v-if="toggleFilter"
           id="filter"
@@ -113,19 +126,6 @@
 
     <section v-else id="queue" class="scroll-mt-24 space-y-4">
       <div class="w-full min-w-0 max-w-full space-y-4">
-        <div v-if="!socket.isConnected" class="flex justify-end">
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-refresh-cw"
-            :loading="isRefreshing"
-            @click="() => refreshQueue()"
-          >
-            {{ t('common.refresh') }}
-          </UButton>
-        </div>
-
         <div
           v-if="hasItems"
           class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
@@ -1035,7 +1035,7 @@ const resumeDownload = async (): Promise<void> => {
 
 const pauseDownload = async (): Promise<void> => {
   const { status } = await confirmDialog({
-    title: t('queue.pauseDownloadsTitle'),
+    title: t('app.pauseAll'),
     confirmText: t('common.pause'),
     cancelText: t('common.cancel'),
     confirmColor: 'warning',

@@ -1,9 +1,13 @@
 // Types for api/tasks/inspect
+import type { TaskDefinitionDocument } from '~/types/task_definitions';
 
 export interface TaskInspectRequest {
   url: string;
   preset?: string;
   handler?: string;
+  resolve_ids?: boolean;
+  definition_id?: number;
+  document?: TaskDefinitionDocument;
 }
 
 export interface TaskInspectSuccess {

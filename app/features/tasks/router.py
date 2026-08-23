@@ -6,9 +6,12 @@ from pydantic import ValidationError
 
 from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
 from app.features.core.utils import api_error_response, build_pagination, format_validation_errors, normalize_pagination
+from app.features.tasks.definitions.repository import TaskDefinitionsRepository
 from app.features.tasks.definitions.results import HandleTask as ExtendedTask
 from app.features.tasks.definitions.results import TaskFailure, TaskResult
+from app.features.tasks.definitions.schemas import TaskDefinitionInspectRequest
 from app.features.tasks.definitions.service import TaskHandle
+from app.features.tasks.definitions.utils import model_to_schema
 from app.features.tasks.repository import TasksRepository
 from app.features.tasks.schemas import Task, TaskList, TaskPatch
 from app.features.ytdlp.utils import parse_outtmpl
@@ -16,7 +19,7 @@ from app.library.ag_utils import ag
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 from app.library.Utils import get_channel_images, get_file, validate_url
 
@@ -555,6 +558,15 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
             params={"field": "api.fields.url"},
         )
 
+    resolve_ids = data.get("resolve_ids", True) if isinstance(data, dict) else True
+    if not isinstance(resolve_ids, bool):
+        return api_error_response(
+            "resolve_ids must be a boolean.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"field": "resolve_ids"},
+        )
+
     static_only: bool = data.get("static_only", False) if isinstance(data, dict) else False
     if not static_only:
         try:
@@ -573,7 +585,11 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
 
     try:
         result: TaskResult | TaskFailure = await handler.inspect(
-            url=url, preset=preset, handler_name=handler_name, static_only=static_only
+            url=url,
+            preset=preset,
+            handler_name=handler_name,
+            static_only=static_only,
+            resolve_ids=resolve_ids,
         )
     except Exception as e:
         LOG.exception(
@@ -583,6 +599,7 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
                 "handler_name": handler_name,
                 "url": url,
                 "static_only": static_only,
+                "resolve_ids": resolve_ids,
                 "exception_type": type(e).__name__,
             },
         )
@@ -592,6 +609,87 @@ async def task_handler_inspect(request: Request, handler: TaskHandle, encoder: E
             status=web.HTTPInternalServerError.status_code,
             params={"resource": "api.resources.task"},
             message=str(e),
+        )
+
+    return web.json_response(
+        data=result,
+        status=web.HTTPBadRequest.status_code if isinstance(result, TaskFailure) else web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
+
+
+@route("POST", "api/tasks/definitions/inspect", "task_definition_inspect")
+async def task_definition_inspect(
+    request: Request, handler: TaskHandle, repo: TaskDefinitionsRepository, encoder: Encoder
+) -> Response:
+    """Inspect a URL against one saved or supplied generic task definition."""
+    try:
+        payload = TaskDefinitionInspectRequest.model_validate(await request.json())
+    except (TypeError, ValueError, ValidationError) as exc:
+        detail = format_validation_errors(exc) if isinstance(exc, ValidationError) else str(exc)
+        return api_error_response(
+            "Failed to validate definition inspection request.",
+            code="VALIDATION_FAILED",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+            detail=detail,
+        )
+
+    definition = payload.document
+    try:
+        if payload.definition_id is not None:
+            model = await repo.get(payload.definition_id)
+            if model is None:
+                return api_error_response(
+                    "Task definition not found.",
+                    code="NOT_FOUND",
+                    status=web.HTTPNotFound.status_code,
+                    params={"resource": "api.resources.task"},
+                )
+            definition = model_to_schema(model)
+    except Exception as exc:
+        LOG.exception(
+            "Failed to load task definition '%s' for inspection.",
+            payload.definition_id,
+            extra={"definition_id": payload.definition_id, "exception_type": type(exc).__name__},
+        )
+        return api_error_response(
+            "Failed to load task definition.",
+            code="OPERATION_FAILED",
+            status=web.HTTPInternalServerError.status_code,
+            params={"resource": "api.resources.task"},
+        )
+
+    assert definition is not None
+    from app.features.tasks.definitions.handlers.generic import GenericTaskHandler
+
+    if not GenericTaskHandler.matches_url(definition, payload.url):
+        return api_error_response(
+            "URL does not match the selected task definition.",
+            code="INVALID",
+            status=web.HTTPBadRequest.status_code,
+            params={"resource": "api.resources.task"},
+        )
+
+    try:
+        result = await handler.inspect_definition(
+            payload.url,
+            definition,
+            payload.preset,
+            resolve_ids=payload.resolve_ids,
+        )
+    except Exception as exc:
+        LOG.exception(
+            "Failed to inspect task definition for '%s': %s",
+            payload.url,
+            exc,
+            extra={"url": payload.url, "error": str(exc), "exception_type": type(exc).__name__},
+        )
+        return api_error_response(
+            "Failed to inspect task definition.",
+            code="OPERATION_FAILED",
+            status=web.HTTPInternalServerError.status_code,
+            params={"resource": "api.resources.task"},
         )
 
     return web.json_response(

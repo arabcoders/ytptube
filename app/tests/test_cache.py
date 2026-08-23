@@ -1,11 +1,12 @@
 import asyncio
+import json
 import threading
 import time
 from unittest.mock import MagicMock
 
 import pytest
 
-from app.library.cache import Cache
+from app.library.cache import Cache, CacheEntry, JsonPersistence
 
 
 class TestCache:
@@ -26,6 +27,128 @@ class TestCache:
         """Test basic cache set and get operations."""
         self.cache.set("key1", "value1")
         assert self.cache.get("key1") == "value1"
+
+    def test_persistence_roundtrip(self, tmp_path):
+        persistence = JsonPersistence(tmp_path / "cache.json")
+        self.cache.set("key", {"value": 1}, ttl=60, persist=True)
+        self.cache._persistence = persistence
+        asyncio.run(self.cache.flush())
+
+        Cache._reset_singleton()
+        restored = Cache(persistence)
+        restored.attach(MagicMock(on_shutdown=[]))
+        assert restored.get("key") == {"value": 1}
+
+    def test_nonpersistent_not_saved(self, tmp_path):
+        persistence = JsonPersistence(tmp_path / "cache.json")
+        self.cache._persistence = persistence
+        self.cache.set("memory", "value")
+        self.cache.set("disk", "value", persist=True)
+
+        asyncio.run(self.cache.flush())
+
+        assert persistence.load() == {"disk": CacheEntry(value="value", persist=True)}
+
+    def test_set_removes_persistence(self, tmp_path):
+        persistence = JsonPersistence(tmp_path / "cache.json")
+        self.cache._persistence = persistence
+        self.cache.set("key", "disk", persist=True)
+        asyncio.run(self.cache.flush())
+
+        self.cache.set("key", "memory")
+        asyncio.run(self.cache.flush())
+
+        assert persistence.load() == {}
+
+    def test_expiration_restore(self, tmp_path):
+        persistence = JsonPersistence(tmp_path / "cache.json")
+        self.cache._persistence = persistence
+        self.cache.set("expired", "value", ttl=-1, persist=True)
+        asyncio.run(self.cache.flush())
+
+        Cache._reset_singleton()
+        restored = Cache(persistence)
+        restored.attach(MagicMock(on_shutdown=[]))
+        assert not restored.has("expired")
+
+    def test_json_rejection(self):
+        for value in (object(), ("tuple",), {1: "non-string-key"}, float("inf")):
+            with pytest.raises(TypeError):
+                self.cache.set("object", value, persist=True)
+        assert not self.cache.has("object")
+
+        with pytest.raises(TypeError):
+            self.cache.set("object", "value", ttl=float("inf"), persist=True)
+
+    def test_persistence_deletes(self, tmp_path):
+        persistence = JsonPersistence(tmp_path / "cache.json")
+        self.cache._persistence = persistence
+        self.cache.set("key", "value", persist=True)
+        self.cache.delete("key")
+        asyncio.run(self.cache.flush())
+        assert persistence.load() == {}
+
+    def test_persistence_clear(self, tmp_path):
+        persistence = JsonPersistence(tmp_path / "cache.json")
+        self.cache._persistence = persistence
+        self.cache.set("key", "value", persist=True)
+        asyncio.run(self.cache.flush())
+        self.cache.clear()
+        asyncio.run(self.cache.flush())
+        assert persistence.load() == {}
+
+    def test_persistence_versions(self, tmp_path):
+        path = tmp_path / "cache.json"
+        path.write_text('{"version": 99, "entries": {"key": {"value": "value"}}}')
+        persistence = JsonPersistence(path)
+        assert persistence.load() == {}
+        with pytest.raises(RuntimeError, match="newer version"):
+            persistence.save({"key": CacheEntry(value="replacement", persist=True)})
+        assert json.loads(path.read_text())["version"] == 99
+
+    def test_malformed_file_ignored(self, tmp_path):
+        path = tmp_path / "cache.json"
+        path.write_text("not-json")
+
+        assert JsonPersistence(path).load() == {}
+
+    @pytest.mark.asyncio
+    async def test_flush_serializes_updates(self):
+        class BlockingPersistence:
+            def __init__(self) -> None:
+                self.started = threading.Event()
+                self.release = threading.Event()
+                self.snapshots = []
+
+            def load(self):
+                return {}
+
+            def save(self, entries):
+                if not self.snapshots:
+                    self.started.set()
+                    self.release.wait(timeout=1)
+                self.snapshots.append(dict(entries))
+
+            def validate(self, entry):
+                pass
+
+            def close(self):
+                pass
+
+        persistence = BlockingPersistence()
+        self.cache._persistence = persistence
+        self.cache.set("first", 1, persist=True)
+        first = asyncio.create_task(self.cache.flush())
+        await asyncio.to_thread(persistence.started.wait, 1)
+        self.cache.set("second", 2, persist=True)
+        second = asyncio.create_task(self.cache.flush())
+        persistence.release.set()
+        await asyncio.gather(first, second)
+
+        assert persistence.snapshots[-1] == {
+            "first": CacheEntry(value=1, persist=True),
+            "second": CacheEntry(value=2, persist=True),
+        }
 
     def test_get_with_default(self):
         """Test get with default value for non-existent keys."""
@@ -287,7 +410,7 @@ class TestCache:
 
         # Create cache and attach
         cache = Cache.get_instance()
-        mock_app = MagicMock()
+        mock_app = MagicMock(on_shutdown=[])
         cache.attach(mock_app)
 
         # Verify cache is registered with Services
@@ -297,6 +420,7 @@ class TestCache:
         # Verify cleanup job is scheduled
         scheduler = Scheduler.get_instance(loop=loop)
         assert scheduler.has(f"{Cache.__name__}.{Cache.cleanup.__name__}"), "Should schedule cleanup job"
+        assert cache.on_shutdown in mock_app.on_shutdown
 
 
 if __name__ == "__main__":

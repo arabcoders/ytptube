@@ -5,7 +5,7 @@ from typing import Any
 from app.features.presets.schemas import Preset
 from app.features.ytdlp.utils import arg_converter
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import calc_download_path, create_cookies_file, merge_dict
 
 LOG = get_logger()
@@ -123,7 +123,7 @@ class YTDLPCli:
             config (Config|None): The Config instance (optional)
 
         """
-        from app.library.ItemDTO import Item
+        from app.features.downloads.items import Item
 
         if not isinstance(item, Item):
             msg = f"Expected Item instance, got {type(item).__name__}"

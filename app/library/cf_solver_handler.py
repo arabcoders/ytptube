@@ -19,7 +19,7 @@ from yt_dlp.networking.exceptions import HTTPError
 from yt_dlp.utils.networking import clean_headers
 
 from app.library.cf_solver_shared import CACHE, is_cf_challenge, solver
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 LOG = get_logger()
 

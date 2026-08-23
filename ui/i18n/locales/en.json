@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "Set up account",
     "setupHeading": "Create your account",
     "setupSubtitle": "Set up YTPTube to get started.",
     "setupAction": "Create account",
-    "login": "Log in",
     "loginHeading": "Welcome back",
     "loginSubtitle": "Sign in to continue to YTPTube.",
     "loginAction": "Log in",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "Open password reset instructions",
     "username": "Username",
     "password": "Password",
-    "continue": "Continue",
     "account": "Account",
     "accountDetails": "Account details",
     "accountDetailsDescription": "Update the username and password used to sign in.",
@@ -50,7 +47,6 @@
     "copyWarning": "Copy this key now. It will not be shown again.",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "language": "Language",
     "brandAlt": "YTPTube logo",
     "errorTitle": "Something went wrong"
   },
@@ -58,6 +54,9 @@
     "add": "Add",
     "save": "Save",
     "cancel": "Cancel",
+    "continue": "Continue",
+    "language": "Language",
+    "details": "Details",
     "delete": "Delete",
     "edit": "Edit",
     "confirm": "Confirm",
@@ -117,7 +116,6 @@
     "streaming": "Streaming",
     "invalid": "Invalid",
     "offline": "Offline",
-    "refreshQueue": "Refresh Queue",
     "webuiSettings": "WebUI Settings",
     "start": "Start",
     "stop": "Stop",
@@ -155,7 +153,6 @@
     "cancelDownload": "Cancel Download",
     "runNow": "Run now",
     "generateMetadata": "Generate metadata",
-    "inspectHandler": "Handler (For testing)",
     "archiveAll": "Archive All",
     "unarchiveAll": "Unarchive All",
     "updateDescription": "Update this item.",
@@ -190,7 +187,6 @@
     "enterValidUrl": "Please enter a valid URL.",
     "resetConfigDone": "Local configuration has been reset.",
     "enterUrlFirst": "Please enter a URL first.",
-    "failedGenerateCommand": "Failed to generate command.",
     "failedCreateCommand": "Failed to create and navigate to command",
     "failedTestOptions": "Failed to test download options",
     "logLevelUpdated": "log level updated until next restart.",
@@ -215,6 +211,9 @@
     "hidden": "Hidden",
     "showMore": "Show more",
     "loadingData": "Loading data. Please wait...",
+    "loadingDataElapsed": "Loading data. Please wait... Elapsed: {time}",
+    "resolveIds": "Resolve real archive IDs",
+    "resolveIdsDesc": "Have yt-dlp identify each item and check its archive status. May take longer.",
     "filterDisplayedContent": "Filter displayed content",
     "queueOverview": "Queue overview",
     "limitsDataDesc": "Data is based on the current queue state and configured limits.",
@@ -427,8 +426,6 @@
     "handlerDisabledCron": "This task needs a CRON timer because the handler is disabled.",
     "handlerVerifyFailed": "Failed to verify handler support. Set a CRON timer or try again.",
     "handlerNoMatch": "This task needs a CRON timer because no supported handler matches the URL.",
-    "addField": "Add field",
-    "addHeader": "Add Header",
     "advancedTab": "Advanced",
     "anyFilter": "Any",
     "appriseDetected": "Apprise target detected",
@@ -446,9 +443,8 @@
     "definitionPriorityDesc": "Lower values are evaluated first.",
     "desc": "Desc",
     "display": "Display",
-    "editorInfo": "Only a single container selector and per-field extractors are exposed. More advanced constructs require raw view mode.",
     "engine": "Engine",
-    "engineDesc": "HTTPX is recommended.",
+    "engineDesc": "HTTP requests or browser rendering.",
     "exception": "Exception",
     "extractedFields": "Extracted fields",
     "fieldAttribute": "Attribute",
@@ -465,13 +461,7 @@
     "groupFilter": "Group Filter",
     "guiTab": "GUI",
     "headerEmptyWarning": "If header key or value is empty, the header will not be sent.",
-    "headerKey": "Header key",
-    "headerValue": "Header value",
     "importFromExisting": "Import from existing",
-    "inspectHandlerDesc": "For testing only. Auto-detected in real usage.",
-    "inspecting": "Inspecting",
-    "inspectingDesc": "Inspecting.. please wait.",
-    "inspectPresetDesc": "Overrides the preset during testing only.",
     "invalidImportDefinition": "Import string is not a task definition export.",
     "invalidJson": "Invalid JSON",
     "level": "Level",
@@ -491,8 +481,25 @@
     "rawData": "Raw Data",
     "rawJson": "Raw JSON definition",
     "requestMethod": "Request method",
-    "requestMethodDesc": "HTTP method for the webhook.",
+    "requestMethodDesc": "HTTP method used for the request.",
     "requestSetup": "Request setup",
+    "queryParameters": "Query parameters",
+    "queryParametersDesc": "Appended to the request URL.",
+    "requestHeaders": "Request headers",
+    "requestHeadersDesc": "Sent with the request.",
+    "requestBodyType": "Request body",
+    "requestBodyTypeDesc": "Choose how the body is encoded.",
+    "requestBodyNone": "None",
+    "requestBodyRaw": "Raw text",
+    "requestBody": "Body content",
+    "requestBodyDesc": "Sent exactly as entered.",
+    "requestFormFieldsDesc": "Form fields are sent as key/value pairs.",
+    "requestJsonFieldsDesc": "Values must be valid JSON, including quotes around strings.",
+    "jsonValue": "JSON value",
+    "requestKeyRequired": "{label} requires a key.",
+    "validationRequestTimeout": "Request timeout must be zero or greater.",
+    "validationJsonValue": "JSON value for {key} is invalid.",
+    "stripFieldsConfirm": "The following values do not apply to the current selections and will be removed:\n\n{fields}",
     "requestType": "Request Type",
     "requestTypeDesc": "JSON or Form encoding.",
     "requestUrl": "Request URL (optional)",
@@ -507,8 +514,31 @@
     "selectPresetsDesc": "Leave empty for all presets.",
     "selectorExpression": "Selector / Expression",
     "selectorType": "Selector type",
-    "seleniumHubUrl": "Selenium Hub URL (Required)",
-    "seleniumHubUrlDesc": "Remote webdriver endpoint.",
+    "browserEndpointUrl": "Browser endpoint URL (Required)",
+    "browserEndpointUrlDesc": "HTTP(S) endpoint for the selected browser protocol.",
+    "parseMode": "Parse mode",
+    "parseSetup": "Parsing setup",
+    "parseModeDesc": "Choose a container or direct field layout.",
+    "parseContainer": "Container",
+    "parseDirect": "Direct",
+    "responseType": "Response type",
+    "responseTypeDesc": "Choose the expected response format.",
+    "responseHtml": "HTML",
+    "impersonate": "Impersonate",
+    "impersonateDesc": "Optional client identity for HTTP requests.",
+    "curlDefaultHeaders": "cURL default headers",
+    "curlDefaultHeadersDesc": "Include cURL's default request headers.",
+    "flaresolverr": "FlareSolverr",
+    "flaresolverrDesc": "Route protected requests through FlareSolverr.",
+    "waitFor": "Wait for element",
+    "waitForDesc": "Wait until this element is available.",
+    "waitExpression": "CSS or XPath expression",
+    "waitTimeout": "Wait timeout",
+    "waitTimeoutDesc": "Maximum wait time in seconds (0–300).",
+    "pageLoadTimeout": "Page-load timeout",
+    "pageLoadTimeoutDesc": "Maximum page-load time in seconds (0–300).",
+    "validationUrlFieldRequired": "A URL field is required.",
+    "validationBrowserEndpointRequired": "A browser endpoint URL is required.",
     "shortFilter": "Short Only (-x)",
     "sortBy": "Sort By",
     "sortByFlag": "Flag",
@@ -516,6 +546,9 @@
     "targetUrl": "Target URL",
     "type": "Type",
     "unsupportedVersion": "Unsupported or missing _version field.",
+    "valueBoolean": "Boolean",
+    "valueNull": "Null",
+    "valueNumber": "Number",
     "yesLabel": "Yes",
     "browseYtdlpFlags": "Browse available yt-dlp flags and descriptions.",
     "conditionDescPlaceholder": "Describe what this condition does",
@@ -568,14 +601,12 @@
     "bothKeyValueRequired": "Both key and value are required.",
     "keyAlreadyExists": "Key '{key}' already exists.",
     "optionsOrExtraRequired": "Command options for yt-dlp or at least one extra option is required.",
-    "failedTestCondition": "Failed to test condition. {error}",
     "failedImportNotification": "Failed to import notification. {error}",
     "requestTypeJson": "Json",
     "requestTypeForm": "Form",
     "prefillFromDef": "Pre-fill from an existing task definition.",
     "advancedModeRequired": "Advanced mode required",
     "advancedModeRequiredDesc": "Cannot be represented in the visual editor.",
-    "guiLimitations": "GUI limitations",
     "unableToBuildDef": "Unable to build definition",
     "lineDetail": "Line",
     "functionDetail": "Function",
@@ -619,6 +650,7 @@
     "allGroups": "All groups",
     "invalidJsonDocument": "Invalid JSON document.",
     "validationMatchRequired": "At least one match pattern is required.",
+    "validationPairValue": "Value for {key} must match the selected type.",
     "validationSelectorRequired": "Container selector is required.",
     "validationExpressionRequired": "Expression is required for field \"{key}\".",
     "validationFieldsRequired": "Configure at least one extractor field.",
@@ -709,30 +741,6 @@
       "shutdown": "Shutdown",
       "monitoring": "Resource monitoring",
       "fileLogging": "File logging"
-    },
-    "actions": {
-      "add": "add",
-      "addDownload": "add download",
-      "create": "create",
-      "update": "update",
-      "patch": "patch",
-      "delete": "delete",
-      "import": "import",
-      "export": "export",
-      "start": "start",
-      "pause": "pause",
-      "cancel": "cancel",
-      "download": "download",
-      "processPlaylist": "process playlist"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "private video",
-      "geoRestricted": "geographic restriction",
-      "ageRestricted": "age restriction"
     }
   },
   "app": {
@@ -777,9 +785,7 @@
     "connection": {
       "connected": "Connected",
       "connecting": "Connecting...",
-      "disconnected": "Disconnected",
-      "connectingServer": "Connecting to websocket server...",
-      "lost": "Websocket connection lost."
+      "disconnected": "Disconnected"
     },
     "config": {
       "loading": "Loading configuration...",
@@ -791,8 +797,7 @@
       "clickHere": "click here",
       "or": "or",
       "reloadConfig": "reload configuration",
-      "reloadPage": "reload the page",
-      "socketError": "{error}. Check the developer console for more information."
+      "reloadPage": "reload the page"
     },
     "update": {
       "newVersionInstalled": "A new WebUI version is installed.",
@@ -810,13 +815,11 @@
       "applicationError": "Application error",
       "unknownError": "Unknown Error",
       "description": "An unexpected error interrupted this view. You can go back home or retry the current route.",
-      "details": "Details",
       "stackTrace": "Stack trace",
       "backToHome": "Back to Home"
     },
     "footer": {
       "poweredBy": "Powered by",
-      "started": "Started:",
       "versionUnknown": "unknown"
     },
     "theme": {
@@ -848,7 +851,6 @@
       "saveLayout": "Save layout",
       "appearance": "Appearance",
       "theme": "Theme",
-      "language": "Language",
       "animationsDesc": "Enable page transition animations.",
       "background": "Background",
       "bgDesc": "Show a random panoramic background image.",
@@ -919,7 +921,6 @@
     "waiting": " - Waiting..",
     "queuedCount": "Queued: {shown} displayed / {total} total",
     "queuedCountShort": "Queued: {count}",
-    "pauseDownloadsTitle": "Pause Downloads",
     "pauseDownloadsDesc": "Are you sure you want to pause all non-active downloads?",
     "filterKeyValue": "You can also do a targeted search using <code><u>key</u>:value</code>.",
     "filterExample1": "items containing that text",
@@ -941,7 +942,6 @@
     "streamed": "Streamed",
     "partialError": "Partial Error",
     "premiere": "Premiere",
-    "unknown": "Unknown",
     "player": "Player",
     "empty": "Download history is empty.",
     "clearCompletedConfirm": "Clear all completed downloads? No files will be removed.",
@@ -1030,8 +1030,7 @@
     "generateMetadataConfirmDesc": "This action will generate:\n- tvshow.nfo - for media center compatibility\n- title [id].info.json - yt-dlp metadata file\n- Thumbnails: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg if they are available.\n\nWarning: This will overwrite existing metadata files if they exist.",
     "allMarkedDownloaded": "All items marked as downloaded.",
     "allRemovedArchive": "All items removed from archive.",
-    "metadataCompleted": "Metadata generation completed.",
-    "handlerPlaceholder": "Handler class name"
+    "metadataCompleted": "Metadata generation completed."
   },
   "taskDefinitions": {
     "description": "Create definitions to turn any website into a downloadable feed of links.",
@@ -1039,9 +1038,7 @@
     "updated": "Updated",
     "patterns": "Patterns: {count} match/s",
     "urlPatterns": "URL patterns",
-    "unnamed": "(Unnamed definition)",
-    "editorLoadingDesc": "Loading full definition before editing.",
-    "editorDesc": "Use the GUI editor when it fits, or switch to advanced JSON for full control."
+    "unnamed": "(Unnamed definition)"
   },
   "presets": {
     "description": "Pre-defined yt-dlp command options.",
@@ -1095,7 +1092,6 @@
     "loadingLogs": "Loading logs...",
     "connectingStream": "Connecting to log stream.",
     "loadOlder": "Load older lines into filter",
-    "details": "Details",
     "copyRendered": "Copy Rendered Logs",
     "copyRaw": "Copy Raw Logs",
     "allLevels": "All levels",
@@ -1191,7 +1187,6 @@
     "connections": "Connections: {count}",
     "diskTemp": "Temp",
     "diskConfig": "Config",
-    "system": "System",
     "systemCpuHint": "System {value}"
   },
   "diagnostics": {
@@ -1218,12 +1213,6 @@
     "skippedDesc": "Not configured or not needed.",
     "appDesc": "Current build.",
     "hostDesc": "OS and machine.",
-    "resourceStats": "Resource stats",
-    "shareTitle": "YTPTube diagnostics",
-    "shareGenerated": "Generated: {date}",
-    "shareStarted": "Started",
-    "shareWindow": "Window",
-    "shareSamples": "Samples",
     "feature": {
       "core": {
         "label": "Core setup",
@@ -1250,7 +1239,6 @@
   "changelog": {
     "description": "Latest project changes",
     "filterPlaceholder": "Filter changelog entries",
-    "releaseDate": "Release Date:",
     "releaseDateValue": "Release Date: {date}",
     "installed": "Installed",
     "commits": "{count} commits",
@@ -1273,8 +1261,6 @@
     "requeue": "Requeue",
     "video": "Video",
     "embed": "Embed",
-    "queuedCount": "{shown} displayed / {total} queued",
-    "queuedCountShort": "{count} queued",
     "abilityRequeue": "Unable to requeue item; missing URL.",
     "removedFromHistory": "Removed from history queue.",
     "videoThumbnail": "Video thumbnail",
@@ -1289,6 +1275,11 @@
         "title": "README",
         "navLabel": "README",
         "description": "Project overview"
+      },
+      "features": {
+        "title": "Features",
+        "navLabel": "Features",
+        "description": "Downloads, automation, and media-library features."
       },
       "faq": {
         "title": "FAQ",
@@ -1306,10 +1297,6 @@
         "description": "Security policy and vulnerability reporting guidance."
       }
     }
-  },
-  "socket": {
-    "disconnected": "Disconnected from server.",
-    "connectionError": "Connection error: {error}"
   },
   "player": {
     "subtitleLoadFailed": "Failed to load subtitles for this video.",

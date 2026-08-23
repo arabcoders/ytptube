@@ -35,18 +35,10 @@ type TerminalSessionsResponse = {
   items: Array<TerminalSessionItem>;
 };
 
-type YtpPageHeaderProps = {
-  icon?: string;
-  sectionLabel?: string;
-  pageLabel?: string;
-  contentClass?: string;
-};
-
 export {
   ImportedItem,
   TerminalSessionItem,
   TerminalSessionStatus,
   TerminalSessionsResponse,
-  YtpPageHeaderProps,
   version_check,
 };

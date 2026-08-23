@@ -10,6 +10,18 @@ if TYPE_CHECKING:
 
 class BaseHandler:
     @staticmethod
+    def _get_params(task: HandleTask, *, inspection: bool = False) -> dict[str, Any]:
+        params = task.get_ytdlp_opts().get_all()
+        if not inspection:
+            return params
+
+        extractor_args = dict(params.get("extractor_args") or {})
+        generic = dict(extractor_args.get("generic") or {})
+        generic["wait"] = ["0"]
+        extractor_args["generic"] = generic
+        return {**params, "extractor_args": extractor_args}
+
+    @staticmethod
     async def can_handle(task: HandleTask) -> bool:
         _ = task
         return False
@@ -19,7 +31,10 @@ class BaseHandler:
         raise NotImplementedError
 
     @classmethod
-    async def inspect(cls, task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
+    async def inspect(
+        cls, task: HandleTask, config: Config | None = None, *, resolve_ids: bool = True
+    ) -> TaskResult | TaskFailure:
+        _ = resolve_ids
         return await cls.extract(task=task, config=config)
 
     @staticmethod

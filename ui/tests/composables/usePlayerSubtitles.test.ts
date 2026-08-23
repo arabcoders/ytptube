@@ -63,7 +63,9 @@ async function flushPromises(times = 4) {
 }
 
 describe('usePlayerSubtitles', () => {
-  const fetchMock = mock(async (_input: RequestInfo | URL) => createMockResponse({ ok: true, status: 200, jsonData: {} }));
+  const fetchMock = mock(async (_input: RequestInfo | URL) =>
+    createMockResponse({ ok: true, status: 200, jsonData: {} }),
+  );
   const assShowMock = mock(() => {});
   const assDestroyMock = mock(() => {});
   const assConstructorMock = mock(() => ({
@@ -133,7 +135,10 @@ describe('usePlayerSubtitles', () => {
 
     await flushPromises();
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/player/subtitles/manifest/video%20file.mkv', expect.anything());
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/player/subtitles/manifest/video%20file.mkv',
+      expect.anything(),
+    );
     expect(hasSubtitles.value).toBe(true);
     expect(selectedSubtitleTrack.value?.source_format).toBe('vtt');
     expect(nativeSubtitleTrack.value?.url).toBe('/api/player/subtitles/vtt/video.vtt');

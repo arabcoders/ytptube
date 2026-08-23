@@ -13,7 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.features.streaming.types import FFProbeError
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Utils import timed_lru_cache
 
 LOG = get_logger()

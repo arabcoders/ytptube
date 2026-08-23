@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "إعداد الحساب",
     "setupHeading": "أنشئ حسابك",
     "setupSubtitle": "أكمل إعداد YTPTube للبدء.",
     "setupAction": "إنشاء الحساب",
-    "login": "تسجيل الدخول",
     "loginHeading": "مرحباً بعودتك",
     "loginSubtitle": "سجّل الدخول للمتابعة إلى YTPTube.",
     "loginAction": "تسجيل الدخول",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "فتح تعليمات إعادة تعيين كلمة المرور",
     "username": "اسم المستخدم",
     "password": "كلمة المرور",
-    "continue": "متابعة",
     "account": "الحساب",
     "accountDetails": "تفاصيل الحساب",
     "accountDetailsDescription": "حدّث اسم المستخدم وكلمة المرور المستخدمين لتسجيل الدخول.",
@@ -50,7 +47,6 @@
     "copyWarning": "انسخ المفتاح الآن. لن يظهر مرة أخرى.",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
-    "language": "اللغة",
     "brandAlt": "شعار YTPTube",
     "errorTitle": "حدث خطأ ما"
   },
@@ -58,6 +54,9 @@
     "add": "إضافة",
     "save": "حفظ",
     "cancel": "إلغاء",
+    "continue": "متابعة",
+    "language": "اللغة",
+    "details": "التفاصيل",
     "delete": "حذف",
     "edit": "تعديل",
     "confirm": "تأكيد",
@@ -117,7 +116,6 @@
     "streaming": "جاري البث",
     "invalid": "غير صالح",
     "offline": "غير متصل",
-    "refreshQueue": "تحديث قائمة الانتظار",
     "webuiSettings": "إعدادات الواجهة",
     "start": "بدء",
     "stop": "إيقاف",
@@ -155,7 +153,6 @@
     "cancelDownload": "إلغاء التنزيل",
     "runNow": "تشغيل الآن",
     "generateMetadata": "إنشاء بيانات وصفية",
-    "inspectHandler": "المعالج (للاختبار)",
     "archiveAll": "أرشفة الكل",
     "unarchiveAll": "إلغاء أرشفة الكل",
     "updateDescription": "تحديث هذا العنصر.",
@@ -190,7 +187,6 @@
     "enterValidUrl": "يرجى إدخال رابط صالح.",
     "resetConfigDone": "تمت إعادة تعيين الإعدادات المحلية.",
     "enterUrlFirst": "يرجى إدخال رابط أولاً.",
-    "failedGenerateCommand": "فشل إنشاء الأمر.",
     "failedCreateCommand": "فشل إنشاء الأمر والانتقال إليه",
     "failedTestOptions": "فشل اختبار خيارات التنزيل",
     "logLevelUpdated": "تم تحديث مستوى السجل حتى إعادة التشغيل التالية.",
@@ -215,6 +211,9 @@
     "hidden": "مخفي",
     "showMore": "عرض المزيد",
     "loadingData": "جارِ تحميل البيانات. يرجى الانتظار...",
+    "loadingDataElapsed": "جارِ تحميل البيانات. يرجى الانتظار... الوقت المنقضي: {time}",
+    "resolveIds": "حلّ معرّفات الأرشيف الفعلية",
+    "resolveIdsDesc": "اطلب من yt-dlp تحديد كل عنصر والتحقق من حالة أرشفته. قد يستغرق ذلك وقتًا أطول.",
     "filterDisplayedContent": "تصفية المحتوى المعروض",
     "queueOverview": "نظرة عامة على قائمة الانتظار",
     "limitsDataDesc": "البيانات مبنية على حالة قائمة الانتظار الحالية والحدود المكونة.",
@@ -427,8 +426,6 @@
     "handlerDisabledCron": "تحتاج هذه المهمة إلى مؤقت CRON لأن المعالج معطل.",
     "handlerVerifyFailed": "فشل التحقق من دعم المعالج. قم بتعيين مؤقت CRON أو حاول مرة أخرى.",
     "handlerNoMatch": "تحتاج هذه المهمة إلى مؤقت CRON لأنه لا يوجد معالج مدعوم يطابق الرابط.",
-    "addField": "إضافة حقل",
-    "addHeader": "إضافة ترويسة",
     "advancedTab": "متقدم",
     "anyFilter": "الكل",
     "appriseDetected": "تم اكتشاف هدف Apprise",
@@ -446,9 +443,8 @@
     "definitionPriorityDesc": "القيم الأقل يتم تقييمها أولاً.",
     "desc": "تنازلي",
     "display": "العرض",
-    "editorInfo": "يتم عرض محدد حاوية واحد وحقول استخراج لكل حقل فقط. التركيبات الأكثر تعقيداً تتطلب وضع العرض الخام.",
     "engine": "المحرك",
-    "engineDesc": "يُفضل HTTPX.",
+    "engineDesc": "طلبات HTTP أو عرض المتصفح.",
     "exception": "استثناء",
     "extractedFields": "الحقول المستخرجة",
     "fieldAttribute": "السمة",
@@ -465,13 +461,7 @@
     "groupFilter": "تصفية المجموعة",
     "guiTab": "واجهة",
     "headerEmptyWarning": "إذا كان مفتاح أو قيمة الترويسة فارغاً، لن يتم إرسال الترويسة.",
-    "headerKey": "مفتاح الترويسة",
-    "headerValue": "قيمة الترويسة",
     "importFromExisting": "استيراد من موجود",
-    "inspectHandlerDesc": "للاختبار فقط. يُكتشف تلقائياً في الاستخدام الحقيقي.",
-    "inspecting": "جارِ الفحص",
-    "inspectingDesc": "جارِ الفحص.. يرجى الانتظار.",
-    "inspectPresetDesc": "يتجاوز الإعداد المسبق أثناء الاختبار فقط.",
     "invalidImportDefinition": "سلسلة الاستيراد ليست تصدير تعريف مهمة.",
     "invalidJson": "JSON غير صالح",
     "level": "المستوى",
@@ -491,8 +481,25 @@
     "rawData": "بيانات خام",
     "rawJson": "تعريف JSON خام",
     "requestMethod": "طريقة الطلب",
-    "requestMethodDesc": "طريقة HTTP للخطاف.",
+    "requestMethodDesc": "طريقة HTTP المستخدمة للطلب.",
     "requestSetup": "إعداد الطلب",
+    "queryParameters": "معلمات الاستعلام",
+    "queryParametersDesc": "تُضاف إلى رابط الطلب.",
+    "requestHeaders": "ترويسات الطلب",
+    "requestHeadersDesc": "تُرسل مع الطلب.",
+    "requestBodyType": "جسم الطلب",
+    "requestBodyTypeDesc": "اختر طريقة ترميز الجسم.",
+    "requestBodyNone": "بدون",
+    "requestBodyRaw": "نص خام",
+    "requestBody": "محتوى الجسم",
+    "requestBodyDesc": "يُرسل كما تم إدخاله.",
+    "requestFormFieldsDesc": "تُرسل حقول النموذج كأزواج مفتاح وقيمة.",
+    "requestJsonFieldsDesc": "يجب أن تكون القيم JSON صالحة، مع وضع النصوص بين علامتي اقتباس.",
+    "jsonValue": "قيمة JSON",
+    "requestKeyRequired": "يتطلب {label} مفتاحًا.",
+    "validationRequestTimeout": "يجب أن تكون مهلة الطلب صفراً أو أكثر.",
+    "validationJsonValue": "قيمة JSON للحقل {key} غير صالحة.",
+    "stripFieldsConfirm": "القيم التالية لا تنطبق على الاختيارات الحالية وستتم إزالتها:\n\n{fields}",
     "requestType": "نوع الطلب",
     "requestTypeDesc": "ترميز JSON أو Form.",
     "requestUrl": "رابط الطلب (اختياري)",
@@ -507,8 +514,31 @@
     "selectPresetsDesc": "اترك فارغاً لجميع الإعدادات المسبقة.",
     "selectorExpression": "المحدد / التعبير",
     "selectorType": "نوع المحدد",
-    "seleniumHubUrl": "رابط Selenium Hub (مطلوب)",
-    "seleniumHubUrlDesc": "نقطة نهاية متصفح الويب عن بعد.",
+    "browserEndpointUrl": "رابط نقطة نهاية المتصفح (مطلوب)",
+    "browserEndpointUrlDesc": "نقطة نهاية HTTP(S) لبروتوكول المتصفح المحدد.",
+    "parseMode": "وضع التحليل",
+    "parseSetup": "إعداد التحليل",
+    "parseModeDesc": "اختر بنية حاوية أو حقول مباشرة.",
+    "parseContainer": "حاوية",
+    "parseDirect": "مباشر",
+    "responseType": "نوع الاستجابة",
+    "responseTypeDesc": "اختر تنسيق الاستجابة المتوقع.",
+    "responseHtml": "HTML",
+    "impersonate": "انتحال العميل",
+    "impersonateDesc": "هوية عميل اختيارية لطلبات HTTP.",
+    "curlDefaultHeaders": "ترويسات cURL الافتراضية",
+    "curlDefaultHeadersDesc": "تضمين ترويسات طلب cURL الافتراضية.",
+    "flaresolverr": "FlareSolverr",
+    "flaresolverrDesc": "مرّر الطلبات المحمية عبر FlareSolverr.",
+    "waitFor": "انتظار العنصر",
+    "waitForDesc": "انتظر حتى يصبح هذا العنصر متاحًا.",
+    "waitExpression": "تعبير CSS أو XPath",
+    "waitTimeout": "مهلة الانتظار",
+    "waitTimeoutDesc": "أقصى وقت انتظار بالثواني (0–300).",
+    "pageLoadTimeout": "مهلة تحميل الصفحة",
+    "pageLoadTimeoutDesc": "أقصى وقت لتحميل الصفحة بالثواني (0–300).",
+    "validationUrlFieldRequired": "حقل url مطلوب.",
+    "validationBrowserEndpointRequired": "رابط نقطة نهاية المتصفح مطلوب.",
     "shortFilter": "قصيرة فقط (-x)",
     "sortBy": "الترتيب حسب",
     "sortByFlag": "العلامة",
@@ -516,6 +546,9 @@
     "targetUrl": "رابط الهدف",
     "type": "النوع",
     "unsupportedVersion": "حقل _version غير مدعوم أو مفقود.",
+    "valueBoolean": "قيمة منطقية",
+    "valueNull": "فارغ",
+    "valueNumber": "رقم",
     "yesLabel": "نعم",
     "browseYtdlpFlags": "تصفح خيارات yt-dlp المتاحة وأوصافها.",
     "conditionDescPlaceholder": "صف ما يفعله هذا الشرط",
@@ -568,14 +601,12 @@
     "bothKeyValueRequired": "المفتاح والقيمة مطلوبان.",
     "keyAlreadyExists": "المفتاح '{key}' موجود بالفعل.",
     "optionsOrExtraRequired": "خيارات أوامر yt-dlp أو خيار إضافي واحد على الأقل مطلوب.",
-    "failedTestCondition": "فشل اختبار الشرط. {error}",
     "failedImportNotification": "فشل استيراد الإشعار. {error}",
     "requestTypeJson": "JSON",
     "requestTypeForm": "Form",
     "prefillFromDef": "التعبئة المسبقة من تعريف مهمة موجود.",
     "advancedModeRequired": "يتطلب الوضع المتقدم",
     "advancedModeRequiredDesc": "لا يمكن تمثيله في المحرر المرئي.",
-    "guiLimitations": "قيود واجهة المستخدم",
     "unableToBuildDef": "تعذر بناء التعريف",
     "lineDetail": "السطر",
     "functionDetail": "الدالة",
@@ -619,6 +650,7 @@
     "allGroups": "جميع المجموعات",
     "invalidJsonDocument": "مستند JSON غير صالح.",
     "validationMatchRequired": "مطلوب نمط مطابقة واحد على الأقل.",
+    "validationPairValue": "يجب أن تتطابق قيمة {key} مع النوع المحدد.",
     "validationSelectorRequired": "محدد الحاوية مطلوب.",
     "validationExpressionRequired": "التعبير مطلوب للحقل \"{key}\".",
     "validationFieldsRequired": "قم بتكوين حقل مستخرج واحد على الأقل.",
@@ -709,30 +741,6 @@
       "shutdown": "إيقاف التشغيل",
       "monitoring": "مراقبة الموارد",
       "fileLogging": "تسجيل الملفات"
-    },
-    "actions": {
-      "add": "الإضافة",
-      "addDownload": "إضافة التنزيل",
-      "create": "الإنشاء",
-      "update": "التحديث",
-      "patch": "التعديل الجزئي",
-      "delete": "الحذف",
-      "import": "الاستيراد",
-      "export": "التصدير",
-      "start": "البدء",
-      "pause": "الإيقاف المؤقت",
-      "cancel": "الإلغاء",
-      "download": "التنزيل",
-      "processPlaylist": "معالجة قائمة التشغيل"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "فيديو خاص",
-      "geoRestricted": "تقييد جغرافي",
-      "ageRestricted": "تقييد عمري"
     }
   },
   "app": {
@@ -777,9 +785,7 @@
     "connection": {
       "connected": "متصل",
       "connecting": "جاري الاتصال...",
-      "disconnected": "غير متصل",
-      "connectingServer": "جاري الاتصال بالخادم...",
-      "lost": "انقطع الاتصال بالخادم."
+      "disconnected": "غير متصل"
     },
     "config": {
       "loading": "جاري تحميل الإعدادات...",
@@ -791,8 +797,7 @@
       "clickHere": "انقر هنا",
       "or": "أو",
       "reloadConfig": "إعادة تحميل الإعدادات",
-      "reloadPage": "إعادة تحميل الصفحة",
-      "socketError": "{error}. تحقق من وحدة تحكم المطور لمزيد من المعلومات."
+      "reloadPage": "إعادة تحميل الصفحة"
     },
     "update": {
       "newVersionInstalled": "تم تثبيت إصدار جديد من واجهة الويب.",
@@ -810,13 +815,11 @@
       "applicationError": "خطأ في التطبيق",
       "unknownError": "خطأ غير معروف",
       "description": "حدث خطأ غير متوقع في هذه الصفحة. يمكنك العودة إلى الرئيسية أو إعادة المحاولة.",
-      "details": "التفاصيل",
       "stackTrace": "تتبع المكدس",
       "backToHome": "العودة للرئيسية"
     },
     "footer": {
       "poweredBy": "مدعوم من",
-      "started": "بدأ:",
       "versionUnknown": "غير معروف"
     },
     "theme": {
@@ -848,7 +851,6 @@
       "saveLayout": "حفظ التخطيط",
       "appearance": "المظهر",
       "theme": "السمة",
-      "language": "اللغة",
       "animationsDesc": "تفعيل حركات انتقال الصفحات.",
       "background": "الخلفية",
       "bgDesc": "عرض صورة خلفية بانورامية عشوائية.",
@@ -919,7 +921,6 @@
     "waiting": " - في الانتظار..",
     "queuedCount": "في الانتظار: {shown} معروض / {total} إجمالي",
     "queuedCountShort": "في الانتظار: {count}",
-    "pauseDownloadsTitle": "إيقاف التنزيلات مؤقتاً",
     "pauseDownloadsDesc": "هل أنت متأكد من رغبتك في إيقاف جميع التنزيلات غير النشطة مؤقتاً؟",
     "filterKeyValue": "يمكنك أيضاً البحث المستهدف باستخدام <code><u>مفتاح</u>:قيمة</code>.",
     "filterExample1": "العناصر التي تحتوي على هذا النص",
@@ -941,7 +942,6 @@
     "streamed": "تم البث",
     "partialError": "خطأ جزئي",
     "premiere": "عرض أول",
-    "unknown": "غير معروف",
     "player": "المشغل",
     "empty": "سجل التنزيل فارغ.",
     "clearCompletedConfirm": "مسح جميع التنزيلات المكتملة؟ لن يتم حذف أي ملفات.",
@@ -1030,8 +1030,7 @@
     "generateMetadataConfirmDesc": "سيقوم هذا الإجراء بإنشاء:\n- tvshow.nfo - للتوافق مع مراكز الوسائط\n- title [id].info.json - ملف بيانات وصفية لـ yt-dlp\n- الصور المصغرة: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg إذا كانت متاحة.\n\nتحذير: سيؤدي هذا إلى استبدال ملفات البيانات الوصفية الموجودة إذا كانت موجودة.",
     "allMarkedDownloaded": "تم وضع علامة تم التنزيل على جميع العناصر.",
     "allRemovedArchive": "تمت إزالة جميع العناصر من الأرشيف.",
-    "metadataCompleted": "اكتمل إنشاء البيانات الوصفية.",
-    "handlerPlaceholder": "اسم فئة المعالج"
+    "metadataCompleted": "اكتمل إنشاء البيانات الوصفية."
   },
   "taskDefinitions": {
     "description": "إنشاء تعريفات لتحويل أي موقع إلى قائمة روابط قابلة للتنزيل.",
@@ -1039,9 +1038,7 @@
     "updated": "تاريخ التحديث",
     "patterns": "الأنماط: {count} تطابق",
     "urlPatterns": "أنماط URL",
-    "unnamed": "(تعريف غير مسمى)",
-    "editorLoadingDesc": "جارِ تحميل التعريف الكامل قبل التعديل.",
-    "editorDesc": "استخدم محرر الواجهة عندما يناسبك أو انتقل إلى JSON المتقدم للتحكم الكامل."
+    "unnamed": "(تعريف غير مسمى)"
   },
   "presets": {
     "description": "خيارات أوامر yt-dlp محددة مسبقاً.",
@@ -1095,7 +1092,6 @@
     "loadingLogs": "جارِ تحميل السجلات...",
     "connectingStream": "جارِ الاتصال بدفق السجلات.",
     "loadOlder": "تحميل سجلات أقدم إلى التصفية",
-    "details": "تفاصيل",
     "copyRendered": "نسخ السجلات المعروضة",
     "copyRaw": "نسخ السجلات الخام",
     "allLevels": "جميع المستويات",
@@ -1191,7 +1187,6 @@
     "connections": "الاتصالات: {count}",
     "diskTemp": "مؤقت",
     "diskConfig": "الإعدادات",
-    "system": "النظام",
     "systemCpuHint": "النظام {value}"
   },
   "diagnostics": {
@@ -1218,12 +1213,6 @@
     "skippedDesc": "غير مكونة أو غير مطلوبة.",
     "appDesc": "النسخة الحالية.",
     "hostDesc": "نظام التشغيل والجهاز.",
-    "resourceStats": "إحصائيات الموارد",
-    "shareTitle": "تشخيصات YTPTube",
-    "shareGenerated": "تاريخ الإنشاء: {date}",
-    "shareStarted": "تاريخ البدء",
-    "shareWindow": "النافذة",
-    "shareSamples": "العينات",
     "feature": {
       "core": {
         "label": "الإعدادات الأساسية",
@@ -1250,7 +1239,6 @@
   "changelog": {
     "description": "آخر تغييرات المشروع",
     "filterPlaceholder": "تصفية مدخلات سجل التغييرات",
-    "releaseDate": "تاريخ الإصدار:",
     "releaseDateValue": "تاريخ الإصدار: {date}",
     "installed": "مثبت",
     "commits": "{count} تعديل",
@@ -1273,8 +1261,6 @@
     "requeue": "إعادة إضافة",
     "video": "فيديو",
     "embed": "تضمين",
-    "queuedCount": "{shown} معروض / {total} في الانتظار",
-    "queuedCountShort": "{count} في الانتظار",
     "abilityRequeue": "غير قادر على إعادة الإضافة؛ الرابط مفقود.",
     "removedFromHistory": "تمت الإزالة من سجل قائمة الانتظار.",
     "videoThumbnail": "صورة مصغرة للفيديو",
@@ -1289,6 +1275,11 @@
         "title": "README",
         "navLabel": "README",
         "description": "نظرة عامة على المشروع"
+      },
+      "features": {
+        "title": "الميزات",
+        "navLabel": "الميزات",
+        "description": "ميزات التنزيل والأتمتة ومكتبة الوسائط."
       },
       "faq": {
         "title": "FAQ",
@@ -1306,10 +1297,6 @@
         "description": "سياسة الأمان وإرشادات الإبلاغ عن الثغرات الأمنية."
       }
     }
-  },
-  "socket": {
-    "disconnected": "تم قطع الاتصال بالخادم.",
-    "connectionError": "خطأ في الاتصال: {error}"
   },
   "player": {
     "subtitleLoadFailed": "فشل تحميل الترجمات لهذا الفيديو.",

@@ -1,22 +1,17 @@
 import logging
-import multiprocessing
 import os
 import re
 import shutil
 import sys
 import time
-from logging.handlers import TimedRotatingFileHandler
-from multiprocessing.managers import SyncManager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import coloredlogs
 from dotenv import load_dotenv
 
-from app.library.log import get_logger
+from app.library.logging import get_logger, get_runtime_log_level, setup_logging
 
 from .Singleton import Singleton
-from .Utils import JsonLogFormatter
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 
 APP_THIRD_PARTY_LOG_LEVELS: tuple[tuple[str, int], ...] = (
@@ -106,10 +101,10 @@ class Config(metaclass=Singleton):
     """VAAPI device path used for VAAPI encoder when available."""
 
     auth_username: str | None = None
-    """The username to use for basic authentication."""
+    """The username for bootstrapping the initial account."""
 
     auth_password: str | None = None
-    """The password to use for basic authentication."""
+    """The password for bootstrapping the initial account."""
 
     auth_session_days: int = 30
     """The number of days to keep authentication sessions active."""
@@ -194,9 +189,6 @@ class Config(metaclass=Singleton):
 
     file_logging: bool = True
     "Enable file logging."
-
-    secret_key: str | bytes
-    "The secret key to use for the application."
 
     tasks_handler_timer: str = "15 */1 * * *"
     """The cron expression for the tasks timer."""
@@ -387,9 +379,6 @@ class Config(metaclass=Singleton):
     )
     "The variables that are relevant to the frontend."
 
-    _manager: SyncManager | None = None
-    "The manager instance."
-
     os_sep: str = os.path.sep
     "The system path separator."
 
@@ -398,13 +387,6 @@ class Config(metaclass=Singleton):
         cls = Config(is_native)
         cls.is_native = is_native or cls.is_native
         return cls
-
-    @staticmethod
-    def get_manager() -> SyncManager:
-        if not Config._manager:
-            Config._manager = multiprocessing.Manager()
-
-        return Config._manager
 
     def __init__(self, is_native: bool = False):
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
@@ -474,17 +456,15 @@ class Config(metaclass=Singleton):
         if not self.base_path.endswith("/"):
             self.base_path += "/"
 
-        numeric_level: int | None = getattr(logging, self.log_level.upper(), None)
-        if not isinstance(numeric_level, int):
+        try:
+            setup_logging(
+                level=self.log_level,
+                log_path=Path(self.config_path) / "logs" / "app.jsonl" if self.file_logging else None,
+                third_party_levels=APP_THIRD_PARTY_LOG_LEVELS,
+            )
+        except ValueError as e:
             msg = f"Invalid log level '{self.log_level}' specified."
-            raise TypeError(msg)
-
-        coloredlogs.install(
-            level=numeric_level,
-            fmt="%(asctime)s [%(name)s] [%(levelname)-5.5s] %(message)s",
-            datefmt="%H:%M:%S",
-            encoding="utf-8",
-        )
+            raise TypeError(msg) from e
 
         if self.debug:
             try:
@@ -510,49 +490,7 @@ class Config(metaclass=Singleton):
         if self.temp_keep:
             LOG.warning("Keep temp files option is enabled.")
 
-        if self.auth_password and self.auth_username:
-            LOG.info(
-                "Basic authentication is enabled for user '%s'.",
-                self.auth_username,
-                extra={"auth_username": self.auth_username},
-            )
-
-        if self.file_logging:
-            file_log_level: int | None = getattr(logging, self.log_level.upper(), None)
-            if not isinstance(file_log_level, int):
-                msg = f"Invalid log level '{self.log_level}' specified."
-                raise TypeError(msg)
-
-            loggingPath: Path = Path(self.config_path) / "logs"
-            if not loggingPath.exists():
-                loggingPath.mkdir(parents=True, exist_ok=True)
-
-            handler = TimedRotatingFileHandler(
-                filename=loggingPath / "app.jsonl",
-                when="midnight",
-                backupCount=3,
-                encoding="utf-8",
-            )
-
-            handler.setLevel(file_log_level)
-            formatter = JsonLogFormatter()
-            handler.setFormatter(formatter)
-            logging.getLogger().addHandler(handler)
-
-        key_file: Path = Path(self.config_path) / "secret.key"
-
-        if key_file.exists() and key_file.stat().st_size > 2:
-            with open(key_file, "rb") as f:
-                self.secret_key = f.read().strip()
-        else:
-            self.secret_key = os.urandom(32)
-            with open(key_file, "wb") as f:
-                f.write(self.secret_key)
-
         self.started = int(time.time())
-
-        for _tool, _level in APP_THIRD_PARTY_LOG_LEVELS:
-            logging.getLogger(_tool).setLevel(_level)
 
         if self.app_env not in ("production", "development"):
             msg: str = f"Invalid app environment '{self.app_env}' specified. Must be 'production' or 'development'."
@@ -626,8 +564,6 @@ class Config(metaclass=Singleton):
         data: dict[str, Any] = {k: getattr(self, k) for k in self._frontend_vars}
 
         data["ytdlp_version"] = Config._ytdlp_version()
-        from app.library.log_control import get_runtime_log_level
-
         data["runtime_log_level"] = get_runtime_log_level()
         return data
 

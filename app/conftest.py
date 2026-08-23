@@ -5,6 +5,7 @@ import tempfile
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
+import pytest
 import pytest_asyncio
 from aiohttp.test_utils import TestClient, TestServer
 
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
 Handler = Callable[..., Awaitable[Any]]
 
 
+@pytest.hookimpl(tryfirst=True)
 def pytest_configure(config) -> None:
     temp_root = get_test_system_temp_root()
     for env_name in ("TMPDIR", "TEMP", "TMP"):
@@ -30,9 +32,11 @@ def pytest_configure(config) -> None:
 
     tempfile.tempdir = None
 
+    run_root = get_test_run_root()
     if getattr(config.option, "basetemp", None) is None:
-        config.option.basetemp = str(get_test_run_root() / "pytest")
+        config.option.basetemp = str(run_root / "pytest")
 
+    config._inicache["cache_dir"] = str(run_root / "pytest-cache")
     os.environ["YTP_FILE_LOGGING"] = "false"
 
 

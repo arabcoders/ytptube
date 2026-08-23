@@ -1,4 +1,6 @@
+import re
 from pathlib import Path, PurePosixPath
+from typing import TypedDict
 
 import magic
 from aiohttp import web
@@ -6,7 +8,7 @@ from aiohttp.web import Request, StreamResponse
 
 from app.features.core.utils import api_error_response
 from app.library.config import Config
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import add_route
 from app.library.Utils import get_file
 
@@ -24,6 +26,23 @@ EXT_TO_MIME: dict[str, str] = {
 }
 
 
+class StaticAlias(TypedDict):
+    match: str
+    regex: bool
+    path: str
+    immutable: bool
+
+
+STATIC_ALIASES: tuple[StaticAlias, ...] = (
+    {
+        "match": r"/apple-touch-icon\.[a-f0-9]{12}\.png",
+        "regex": True,
+        "path": "images/favicon.png",
+        "immutable": True,
+    },
+)
+
+
 class StaticState:
     def __init__(self) -> None:
         self.root: Path | None = None
@@ -31,6 +50,16 @@ class StaticState:
 
 
 STATIC_STATE = StaticState()
+
+
+def get_static_alias(path: str) -> StaticAlias | None:
+    """Return the configured alias matching a request path."""
+    for file in STATIC_ALIASES:
+        matches: bool = re.fullmatch(file["match"], path) is not None if file["regex"] else file["match"] == path
+        if matches:
+            return file
+
+    return None
 
 
 def get_root(root_path: Path, config: Config) -> Path | None:
@@ -109,7 +138,8 @@ def get_static_file(path: str) -> Path | None:
     if STATIC_STATE.root is None:
         return None
 
-    relative_path: str = path.lstrip("/")
+    alias: StaticAlias | None = get_static_alias(path)
+    relative_path: str = alias["path"] if alias else path.lstrip("/")
     if not relative_path:
         return STATIC_STATE.index_file if STATIC_STATE.index_file and STATIC_STATE.index_file.is_file() else None
 
@@ -133,6 +163,7 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
 
     """
     path: str = normalize_path(request.path, config.base_path)
+    alias: StaticAlias | None = get_static_alias(path)
     file_path: Path | None = get_static_file(path)
 
     if file_path is None:
@@ -154,7 +185,15 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
         path=file_path,
         headers={
             "Pragma": "public",
-            "Cache-Control": "public, max-age=31536000",
+            "Cache-Control": (
+                "public, max-age=0, must-revalidate"
+                if STATIC_STATE.index_file is not None and file_path == STATIC_STATE.index_file
+                else (
+                    "public, max-age=31536000, immutable"
+                    if alias is not None and alias["immutable"]
+                    else "public, max-age=31536000"
+                )
+            ),
             "Content-Type": EXT_TO_MIME.get(file_path.suffix, MIME.from_file(str(file_path))),
         },
         status=web.HTTPOk.status_code,

@@ -137,6 +137,20 @@
 
                 <template #right>
                   <div class="flex items-center gap-1 sm:gap-2">
+                    <UButton
+                      v-if="socket.connectionStatus !== 'connected'"
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-refresh-cw"
+                      :loading="socket.connectionStatus === 'connecting'"
+                      :disabled="socket.connectionStatus === 'connecting'"
+                      :aria-label="t('common.reconnect')"
+                      :title="t('common.reconnect')"
+                      @click="socket.reconnect"
+                    >
+                      <span class="hidden xl:inline">{{ t('common.reconnect') }}</span>
+                    </UButton>
                     <NotifyDropdown />
 
                     <UButton
@@ -242,26 +256,9 @@
                             </button>
                             {{ t('app.config.failedTextEnd') }}
                           </p>
-
-                          <div
-                            v-if="socket.error"
-                            class="flex flex-wrap items-center gap-2 border-t border-default pt-3 text-error"
-                          >
-                            <UIcon name="i-lucide-triangle-alert" class="size-4" />
-                            <span
-                              class="inline-flex min-w-6 items-center justify-center rounded-full bg-error px-2 py-0.5 text-xs font-semibold text-white"
-                            >
-                              {{ socket.error_count }}
-                            </span>
-                            <span>
-                              {{ t('app.config.socketError', { error: socket.error }) }}
-                            </span>
-                          </div>
                         </div>
                       </template>
                     </UAlert>
-
-                    <ConnectionBanner />
 
                     <div
                       v-if="config.is_loaded"
@@ -423,7 +420,6 @@ import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
 import { ref, computed, onBeforeUnmount, onMounted, readonly } from 'vue';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import AppRoot from '~/components/AppRoot.vue';
-import ConnectionBanner from '~/components/ConnectionBanner.vue';
 import { formatPageTitle, parse_api_response, request, uri } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
 import { formatDateTime } from '~/utils/date';
@@ -839,7 +835,7 @@ const routeSearchGroups = computed(() => [
   },
   {
     id: 'language',
-    label: t('app.settings.language'),
+    label: t('common.language'),
     items: locales.value
       .filter((entry) => typeof entry !== 'string')
       .map((entry) => {

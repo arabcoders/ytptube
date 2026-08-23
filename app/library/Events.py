@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.features.core.utils import gen_random
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 from .BackgroundWorker import BackgroundWorker
 from .Singleton import Singleton

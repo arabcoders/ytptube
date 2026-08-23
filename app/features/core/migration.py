@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from app.library.log import get_logger
+from app.library.logging import get_logger
 
 if TYPE_CHECKING:
     from app.library.config import Config

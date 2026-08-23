@@ -10,15 +10,15 @@ from aiohttp.web_runner import GracefulExit
 
 from app.features.core.utils import api_error_response
 from app.features.dl_fields.service import DLFields
+from app.features.downloads.runtime.core import Download
+from app.features.downloads.runtime.queue_manager import DownloadQueue
 from app.features.presets.service import Presets
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.diagnostics import collect_diagnostics, diagnostics_error_report
-from app.library.downloads import DownloadQueue
-from app.library.downloads.core import Download
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.router import route
 from app.library.TerminalSessionManager import TerminalSessionConflictError, TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker

@@ -86,5 +86,4 @@ describe('useAppLocale', () => {
     await changeLocale('ar');
     expect(locale.value).toBe('ar');
   });
-
 });

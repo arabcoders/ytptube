@@ -1,37 +1,37 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeAll, beforeEach, describe, expect, it, mock } from 'bun:test';
 
-import type { Preset } from '~/types/presets'
+import type { Preset } from '~/types/presets';
 
 let configState = {
   presets: [] as Preset[],
   app: {
     download_path: '/downloads',
   },
-}
+};
 
 mock.module('~/composables/useYtpConfig', () => ({
   useYtpConfig: () => configState,
-}))
+}));
 
 mock.module('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string) => key,
     locale: { value: 'en' },
   }),
-}))
+}));
 
-let usePresetOptions: typeof import('~/composables/usePresetOptions').usePresetOptions
+let usePresetOptions: typeof import('~/composables/usePresetOptions').usePresetOptions;
 
 beforeAll(async () => {
-  ;({ usePresetOptions } = await import('~/composables/usePresetOptions'))
-})
+  ({ usePresetOptions } = await import('~/composables/usePresetOptions'));
+});
 
 beforeEach(() => {
   globalThis.useI18n = () => ({
     t: (key: string) => key,
     locale: { value: 'en' },
-  })
-})
+  });
+});
 
 const buildPreset = (name: string, isDefault: boolean): Preset => ({
   name,
@@ -42,7 +42,7 @@ const buildPreset = (name: string, isDefault: boolean): Preset => ({
   cookies: '',
   cli: '',
   priority: 0,
-})
+});
 
 const setConfigStore = (presets: Preset[]) => {
   configState = {
@@ -50,39 +50,33 @@ const setConfigStore = (presets: Preset[]) => {
     app: {
       download_path: '/downloads',
     },
-  }
-}
+  };
+};
 
 describe('usePresetOptions', () => {
   it('group_custom_first', () => {
-    setConfigStore([
-      buildPreset('default_video', true),
-      buildPreset('custom_audio', false),
-    ])
+    setConfigStore([buildPreset('default_video', true), buildPreset('custom_audio', false)]);
 
-    const { selectItems } = usePresetOptions()
+    const { selectItems } = usePresetOptions();
 
     expect(selectItems.value).toEqual([
       { type: 'label', label: 'common.customPresets' },
       { label: 'custom_audio', value: 'custom_audio' },
       { type: 'label', label: 'common.defaultPresets' },
       { label: 'default_video', value: 'default_video' },
-    ])
-  })
+    ]);
+  });
 
   it('group_default_first', () => {
-    setConfigStore([
-      buildPreset('default_video', true),
-      buildPreset('custom_audio', false),
-    ])
+    setConfigStore([buildPreset('default_video', true), buildPreset('custom_audio', false)]);
 
-    const { selectItems } = usePresetOptions(undefined, { order: 'default-first' })
+    const { selectItems } = usePresetOptions(undefined, { order: 'default-first' });
 
     expect(selectItems.value).toEqual([
       { type: 'label', label: 'common.defaultPresets' },
       { label: 'default_video', value: 'default_video' },
       { type: 'label', label: 'common.customPresets' },
       { label: 'custom_audio', value: 'custom_audio' },
-    ])
-  })
-})
+    ]);
+  });
+});

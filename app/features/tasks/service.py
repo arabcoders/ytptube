@@ -6,7 +6,7 @@ from app.features.core.schemas import CEAction, CEFeature, ConfigEvent
 from app.features.tasks.models import TaskModel
 from app.features.tasks.utils import cron_time
 from app.library.Events import Event, EventBus, Events
-from app.library.log import get_logger
+from app.library.logging import get_logger
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.Singleton import Singleton
@@ -126,9 +126,9 @@ class Tasks(metaclass=Singleton):
         import time
         from datetime import UTC, datetime
 
+        from app.features.downloads.items import Item
+        from app.features.downloads.runtime.queue_manager import DownloadQueue
         from app.library.config import Config
-        from app.library.downloads import DownloadQueue
-        from app.library.ItemDTO import Item
 
         timeNow: str = datetime.now(UTC).isoformat()
         task_id = task.id

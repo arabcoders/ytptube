@@ -1,16 +1,22 @@
+import asyncio
 import logging
 import pickle
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app.features.ytdlp.extractor import (
+    ExtractorBatch,
     ExtractorConfig,
     ExtractorPool,
     REEXTRACT_INFO_KEY,
     _LogCapture,
     _get_process_pool_kwargs,
+    _init_extractor_worker,
     _process_safe_info,
     _ytdlp_logger,
     extract_info_sync,
+    fetch_info,
 )
 from app.features.ytdlp.utils import LogWrapper
 
@@ -63,7 +69,7 @@ class TestProcessPoolConfiguration:
         pool = ExtractorPool.get_instance()
         result = pool.get_pool(ExtractorConfig(concurrency=3, keep_alive=True))
 
-        executor_cls.assert_called_once_with(max_workers=3, mp_context=context)
+        executor_cls.assert_called_once_with(max_workers=3, initializer=_init_extractor_worker, mp_context=context)
         assert result is executor
         assert pool.get_pool(ExtractorConfig(concurrency=3, keep_alive=True)) is executor
 
@@ -79,8 +85,18 @@ class TestProcessPoolConfiguration:
         result = pool.get_pool(ExtractorConfig(concurrency=3))
         pool.release_pool(result)
 
-        executor_cls.assert_called_once_with(max_workers=1, mp_context=context)
+        executor_cls.assert_called_once_with(max_workers=1, initializer=_init_extractor_worker, mp_context=context)
         executor.shutdown.assert_called_once_with(wait=False, cancel_futures=True)
+
+    def test_parallel_pool(self, monkeypatch):
+        executor = MagicMock()
+        executor_cls = MagicMock(return_value=executor)
+        monkeypatch.setattr("app.features.ytdlp.extractor.ProcessPoolExecutor", executor_cls)
+
+        pool = ExtractorPool.get_instance()
+        pool.get_pool(ExtractorConfig(concurrency=3), parallel=True)
+
+        executor_cls.assert_called_once_with(max_workers=3, initializer=_init_extractor_worker)
 
 
 class TestExtractInfo:
@@ -100,6 +116,44 @@ class TestExtractInfo:
         assert isinstance(result, dict), "Result should be a dictionary"
         assert isinstance(logs, list), "Logs should be a list"
         mock_ytdlp.extract_info.assert_called_once()
+
+    @patch("app.features.ytdlp.extractor.YTDLP")
+    def test_generic_engine_forced(self, mock_ytdlp_class):
+        mock_ytdlp = MagicMock()
+        mock_ytdlp.extract_info.return_value = {"id": "item", "extractor_key": "Generic"}
+        mock_ytdlp_class.return_value = mock_ytdlp
+
+        result, _ = extract_info_sync(
+            {},
+            "https://example.com/item",
+            generic_args={"http": "true"},
+        )
+
+        assert result is not None
+        assert mock_ytdlp_class.call_args.kwargs["params"]["extractor_args"]["generic"]["http"] == ["true"]
+        mock_ytdlp.extract_info.assert_called_once_with("https://example.com/item", download=False, ie_key="Generic")
+
+    @patch("app.features.ytdlp.extractor.YTDLP")
+    def test_no_log_capture(self, mock_ytdlp_class):
+        def fake_extract_info(url, download=False):  # noqa: ARG001
+            logger = mock_ytdlp_class.call_args.kwargs["params"]["logger"]
+            logger.warning("hidden warning")
+            logger.error("browser connection failed")
+            return None
+
+        mock_ytdlp = MagicMock()
+        mock_ytdlp.extract_info.side_effect = fake_extract_info
+        mock_ytdlp_class.return_value = mock_ytdlp
+
+        result, logs = extract_info_sync(
+            {},
+            "https://example.com/video",
+            no_log=True,
+            capture_logs=logging.ERROR,
+        )
+
+        assert result is None
+        assert logs == ["browser connection failed"]
 
     @patch("app.features.ytdlp.extractor.YTDLP")
     def test_info_mirrors_debug_console(self, mock_ytdlp_class):
@@ -232,6 +286,54 @@ class TestExtractInfo:
 
         assert result["formats"] == [{"format_id": "0"}, {"format_id": "1"}]
         pickle.dumps(result)
+
+    @pytest.mark.asyncio
+    async def test_batch_lifecycle(self, monkeypatch):
+        pool = ExtractorPool.get_instance()
+        executor = MagicMock()
+        release = MagicMock()
+        get_pool = MagicMock(return_value=executor)
+        monkeypatch.setattr(pool, "get_pool", get_pool)
+        monkeypatch.setattr(pool, "release_pool", release)
+
+        async def run_in_executor(*_args, **_kwargs):
+            return {"id": "video-id"}, []
+
+        loop = asyncio.get_running_loop()
+        monkeypatch.setattr(loop, "run_in_executor", run_in_executor)
+
+        async with ExtractorBatch(ExtractorConfig()) as batch:
+            await fetch_info({}, "https://example.com/one", batch=batch)
+            await fetch_info({}, "https://example.com/two", batch=batch)
+
+        get_pool.assert_called_once()
+        release.assert_called_once_with(executor)
+
+    @pytest.mark.asyncio
+    async def test_parallel_keeps_workers(self, monkeypatch):
+        pool = ExtractorPool.get_instance()
+        executor = MagicMock()
+        monkeypatch.setattr(pool, "get_pool", MagicMock(return_value=executor))
+        release = MagicMock()
+        monkeypatch.setattr(pool, "release_pool", release)
+
+        loop = asyncio.get_running_loop()
+        calls = 0
+
+        async def run_in_executor(*_args, **_kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise RuntimeError("worker failed")
+            return {"id": "video-id"}, []
+
+        monkeypatch.setattr(loop, "run_in_executor", run_in_executor)
+
+        async with ExtractorBatch(ExtractorConfig(), parallel=True) as batch:
+            await fetch_info({}, "https://example.com/one", batch=batch)
+            await fetch_info({}, "https://example.com/two", batch=batch)
+
+        release.assert_called_once_with(executor)
 
 
 class TestYtdlpLogger:
