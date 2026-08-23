@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "48626c2bd0d8201550e92338e48548b3aef3cd46",
-    "date": "2026-08-23T19:49:35+00:00",
+    "full_sha": "a54ba022edb82e9f595ba7428013cb6e66c1d4e0",
+    "date": "2026-08-23T19:57:20+00:00",
     "commits": [
+      {
+        "sha": "a54ba022",
+        "full_sha": "a54ba022edb82e9f595ba7428013cb6e66c1d4e0",
+        "message": "fix: fix flakey frontend tests",
+        "author": "arabcoders",
+        "date": "2026-08-23T19:57:20+00:00"
+      },
       {
         "sha": "48626c2b",
         "full_sha": "48626c2bd0d8201550e92338e48548b3aef3cd46",
