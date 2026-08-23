@@ -1,9 +1,37 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a8938380f060383eec788a8761ff70bf69a4f3d4",
-    "date": "2026-08-22T20:48:31+00:00",
+    "full_sha": "7c4b6b68d1aad7016c88c31c7c3f77174d60cc62",
+    "date": "2026-08-23T07:18:33+00:00",
     "commits": [
+      {
+        "sha": "7c4b6b68",
+        "full_sha": "7c4b6b68d1aad7016c88c31c7c3f77174d60cc62",
+        "message": "fix: apply frontend formatting",
+        "author": "arabcoders",
+        "date": "2026-08-23T07:18:33+00:00"
+      },
+      {
+        "sha": "e013b7c1",
+        "full_sha": "e013b7c10e158e76ee070bd0b40719201d83d794",
+        "message": "chore: consolidate and validate translations",
+        "author": "arabcoders",
+        "date": "2026-08-23T07:18:08+00:00"
+      },
+      {
+        "sha": "db6da19b",
+        "full_sha": "db6da19bc3567b76dbf082294dc395785bb5b44c",
+        "message": "feat: improve task inspection results",
+        "author": "arabcoders",
+        "date": "2026-08-23T07:17:46+00:00"
+      },
+      {
+        "sha": "0a8b3e34",
+        "full_sha": "0a8b3e34338ea66f066e52de7a6bb3857388e3fd",
+        "message": "refactor: add some persistence to some cache keys.",
+        "author": "arabcoders",
+        "date": "2026-08-23T05:53:27+00:00"
+      },
       {
         "sha": "a8938380",
         "full_sha": "a8938380f060383eec788a8761ff70bf69a4f3d4",
