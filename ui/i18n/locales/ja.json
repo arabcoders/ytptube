@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "アカウント設定",
     "setupHeading": "アカウントを作成",
     "setupSubtitle": "YTPTubeを設定して始めましょう。",
     "setupAction": "アカウントを作成",
-    "login": "ログイン",
     "loginHeading": "おかえりなさい",
     "loginSubtitle": "ログインしてYTPTubeを続けます。",
     "loginAction": "ログイン",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "パスワードリセット手順を開く",
     "username": "ユーザー名",
     "password": "パスワード",
-    "continue": "続行",
     "account": "アカウント",
     "accountDetails": "アカウント詳細",
     "accountDetailsDescription": "ログインに使用するユーザー名とパスワードを更新します。",
@@ -50,7 +47,6 @@
     "copyWarning": "今すぐコピーしてください。再表示されません。",
     "showPassword": "パスワードを表示",
     "hidePassword": "パスワードを非表示",
-    "language": "言語",
     "brandAlt": "YTPTubeロゴ",
     "errorTitle": "問題が発生しました"
   },
@@ -58,6 +54,9 @@
     "add": "追加",
     "save": "保存",
     "cancel": "キャンセル",
+    "continue": "続行",
+    "language": "言語",
+    "details": "詳細",
     "delete": "削除",
     "edit": "編集",
     "confirm": "確認",
@@ -155,7 +154,6 @@
     "cancelDownload": "ダウンロードをキャンセル",
     "runNow": "今すぐ実行",
     "generateMetadata": "メタデータを生成",
-    "inspectHandler": "ハンドラー (テスト用)",
     "archiveAll": "すべてアーカイブ",
     "unarchiveAll": "すべてアーカイブ解除",
     "updateDescription": "このアイテムを更新します。",
@@ -190,7 +188,6 @@
     "enterValidUrl": "有効な URL を入力してください。",
     "resetConfigDone": "ローカル設定をリセットしました。",
     "enterUrlFirst": "最初に URL を入力してください。",
-    "failedGenerateCommand": "コマンドの生成に失敗しました。",
     "failedCreateCommand": "コマンドの作成と移動に失敗しました",
     "failedTestOptions": "ダウンロードオプションのテストに失敗しました",
     "logLevelUpdated": "ログレベルは次回再起動まで更新されます。",
@@ -463,10 +460,6 @@
     "guiTab": "GUI",
     "headerEmptyWarning": "ヘッダーのキーまたは値が空の場合、そのヘッダーは送信されません。",
     "importFromExisting": "既存からインポート",
-    "inspectHandlerDesc": "テスト用のみ。実際の使用時は自動検出されます。",
-    "inspecting": "調査中",
-    "inspectingDesc": "調査中です。お待ちください。",
-    "inspectPresetDesc": "テスト中のみプリセットを上書きします。",
     "invalidImportDefinition": "インポート文字列はタスク定義のエクスポートではありません。",
     "invalidJson": "無効な JSON",
     "level": "レベル",
@@ -606,7 +599,6 @@
     "bothKeyValueRequired": "キーと値は両方とも必須です。",
     "keyAlreadyExists": "キー '{key}' は既に存在します。",
     "optionsOrExtraRequired": "yt-dlp のコマンドオプションまたは少なくとも 1 つの追加オプションが必要です。",
-    "failedTestCondition": "条件のテストに失敗しました。{error}",
     "failedImportNotification": "通知のインポートに失敗しました。{error}",
     "requestTypeJson": "JSON",
     "requestTypeForm": "Form",
@@ -700,6 +692,8 @@
     "FEATURE_DISABLED": "{feature} は無効です。",
     "OPERATION_FAILED": "操作に失敗しました。",
     "DEPENDENCY_FAILED": "必須の依存関係が失敗しました。",
+    "FFMPEG_UNAVAILABLE": "このシステムではffmpegを利用できません。トランスコードとストリーミングは利用できません。",
+    "FFPROBE_UNAVAILABLE": "このシステムではffprobeを利用できません。メディアのメタデータを読み取れません。",
     "TIMEOUT": "操作がタイムアウトしました。",
     "INTERNAL_ERROR": "内部サーバーエラー。",
     "VIDEO_UNAVAILABLE": "動画は利用できません。",
@@ -745,30 +739,6 @@
       "shutdown": "シャットダウン",
       "monitoring": "リソース監視",
       "fileLogging": "ファイルログ"
-    },
-    "actions": {
-      "add": "追加",
-      "addDownload": "ダウンロードを追加",
-      "create": "作成",
-      "update": "更新",
-      "patch": "パッチ",
-      "delete": "削除",
-      "import": "インポート",
-      "export": "エクスポート",
-      "start": "開始",
-      "pause": "一時停止",
-      "cancel": "キャンセル",
-      "download": "ダウンロード",
-      "processPlaylist": "プレイリストを処理"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "非公開動画",
-      "geoRestricted": "地域制限",
-      "ageRestricted": "年齢制限"
     }
   },
   "app": {
@@ -846,13 +816,11 @@
       "applicationError": "アプリケーションエラー",
       "unknownError": "不明なエラー",
       "description": "予期しないエラーがこの画面の表示を中断しました。ホームに戻るか、現在のルートを再試行できます。",
-      "details": "詳細",
       "stackTrace": "スタックトレース",
       "backToHome": "ホームに戻る"
     },
     "footer": {
       "poweredBy": "Powered by",
-      "started": "開始:",
       "versionUnknown": "不明"
     },
     "theme": {
@@ -884,7 +852,6 @@
       "saveLayout": "レイアウトを保存",
       "appearance": "外観",
       "theme": "テーマ",
-      "language": "言語",
       "animationsDesc": "ページ遷移アニメーションを有効化します。",
       "background": "背景",
       "bgDesc": "ランダムなパノラマ背景画像を表示します。",
@@ -955,7 +922,6 @@
     "waiting": " - 待機中..",
     "queuedCount": "キュー: {shown} 件表示 / 合計 {total} 件",
     "queuedCountShort": "キュー: {count}",
-    "pauseDownloadsTitle": "ダウンロードを一時停止",
     "pauseDownloadsDesc": "非アクティブなすべてのダウンロードを一時停止してもよろしいですか?",
     "filterKeyValue": "<code><u>キー</u>:値</code> を使った絞り込み検索も可能です。",
     "filterExample1": "そのテキストを含むアイテム",
@@ -977,7 +943,6 @@
     "streamed": "ストリーミング済み",
     "partialError": "部分エラー",
     "premiere": "プレミア公開",
-    "unknown": "不明",
     "player": "プレーヤー",
     "empty": "ダウンロード履歴は空です。",
     "clearCompletedConfirm": "完了したすべてのダウンロードをクリアしますか? ファイルは削除されません。",
@@ -1066,8 +1031,7 @@
     "generateMetadataConfirmDesc": "このアクションは以下を生成します:\n- tvshow.nfo - メディアセンター互換用\n- title [id].info.json - yt-dlp メタデータファイル\n- サムネイル: poster.jpg、fanart.jpg、thumb.jpg、banner.jpg、icon.jpg、landscape.jpg (利用可能な場合)。\n\n警告: 既存のメタデータファイルが存在する場合は上書きされます。",
     "allMarkedDownloaded": "すべてのアイテムをダウンロード済みとしてマークしました。",
     "allRemovedArchive": "すべてのアイテムをアーカイブから削除しました。",
-    "metadataCompleted": "メタデータの生成が完了しました。",
-    "handlerPlaceholder": "ハンドラークラス名"
+    "metadataCompleted": "メタデータの生成が完了しました。"
   },
   "taskDefinitions": {
     "description": "任意の Web サイトをダウンロード可能なリンクのフィードに変換する定義を作成します。",
@@ -1129,7 +1093,6 @@
     "loadingLogs": "ログを読み込み中...",
     "connectingStream": "ログストリームに接続しています。",
     "loadOlder": "古い行をフィルターに読み込み",
-    "details": "詳細",
     "copyRendered": "レンダリング済みログをコピー",
     "copyRaw": "生ログをコピー",
     "allLevels": "すべてのレベル",
@@ -1225,7 +1188,6 @@
     "connections": "接続数: {count}",
     "diskTemp": "温度",
     "diskConfig": "設定",
-    "system": "システム",
     "systemCpuHint": "システム {value}"
   },
   "diagnostics": {
@@ -1252,12 +1214,6 @@
     "skippedDesc": "未設定または不要。",
     "appDesc": "現在のビルド。",
     "hostDesc": "OS とマシン。",
-    "resourceStats": "リソース統計",
-    "shareTitle": "YTPTube 診断",
-    "shareGenerated": "生成日時: {date}",
-    "shareStarted": "開始",
-    "shareWindow": "ウィンドウ",
-    "shareSamples": "サンプル",
     "feature": {
       "core": {
         "label": "コア設定",
@@ -1284,7 +1240,6 @@
   "changelog": {
     "description": "最新のプロジェクト変更",
     "filterPlaceholder": "変更履歴エントリをフィルター",
-    "releaseDate": "リリース日:",
     "releaseDateValue": "リリース日: {date}",
     "installed": "インストール済み",
     "commits": "{count} コミット",

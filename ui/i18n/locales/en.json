@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "Set up account",
     "setupHeading": "Create your account",
     "setupSubtitle": "Set up YTPTube to get started.",
     "setupAction": "Create account",
-    "login": "Log in",
     "loginHeading": "Welcome back",
     "loginSubtitle": "Sign in to continue to YTPTube.",
     "loginAction": "Log in",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "Open password reset instructions",
     "username": "Username",
     "password": "Password",
-    "continue": "Continue",
     "account": "Account",
     "accountDetails": "Account details",
     "accountDetailsDescription": "Update the username and password used to sign in.",
@@ -50,7 +47,6 @@
     "copyWarning": "Copy this key now. It will not be shown again.",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "language": "Language",
     "brandAlt": "YTPTube logo",
     "errorTitle": "Something went wrong"
   },
@@ -58,6 +54,9 @@
     "add": "Add",
     "save": "Save",
     "cancel": "Cancel",
+    "continue": "Continue",
+    "language": "Language",
+    "details": "Details",
     "delete": "Delete",
     "edit": "Edit",
     "confirm": "Confirm",
@@ -155,7 +154,6 @@
     "cancelDownload": "Cancel Download",
     "runNow": "Run now",
     "generateMetadata": "Generate metadata",
-    "inspectHandler": "Handler (For testing)",
     "archiveAll": "Archive All",
     "unarchiveAll": "Unarchive All",
     "updateDescription": "Update this item.",
@@ -190,7 +188,6 @@
     "enterValidUrl": "Please enter a valid URL.",
     "resetConfigDone": "Local configuration has been reset.",
     "enterUrlFirst": "Please enter a URL first.",
-    "failedGenerateCommand": "Failed to generate command.",
     "failedCreateCommand": "Failed to create and navigate to command",
     "failedTestOptions": "Failed to test download options",
     "logLevelUpdated": "log level updated until next restart.",
@@ -463,10 +460,6 @@
     "guiTab": "GUI",
     "headerEmptyWarning": "If header key or value is empty, the header will not be sent.",
     "importFromExisting": "Import from existing",
-    "inspectHandlerDesc": "For testing only. Auto-detected in real usage.",
-    "inspecting": "Inspecting",
-    "inspectingDesc": "Inspecting.. please wait.",
-    "inspectPresetDesc": "Overrides the preset during testing only.",
     "invalidImportDefinition": "Import string is not a task definition export.",
     "invalidJson": "Invalid JSON",
     "level": "Level",
@@ -606,7 +599,6 @@
     "bothKeyValueRequired": "Both key and value are required.",
     "keyAlreadyExists": "Key '{key}' already exists.",
     "optionsOrExtraRequired": "Command options for yt-dlp or at least one extra option is required.",
-    "failedTestCondition": "Failed to test condition. {error}",
     "failedImportNotification": "Failed to import notification. {error}",
     "requestTypeJson": "Json",
     "requestTypeForm": "Form",
@@ -747,30 +739,6 @@
       "shutdown": "Shutdown",
       "monitoring": "Resource monitoring",
       "fileLogging": "File logging"
-    },
-    "actions": {
-      "add": "add",
-      "addDownload": "add download",
-      "create": "create",
-      "update": "update",
-      "patch": "patch",
-      "delete": "delete",
-      "import": "import",
-      "export": "export",
-      "start": "start",
-      "pause": "pause",
-      "cancel": "cancel",
-      "download": "download",
-      "processPlaylist": "process playlist"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "private video",
-      "geoRestricted": "geographic restriction",
-      "ageRestricted": "age restriction"
     }
   },
   "app": {
@@ -848,13 +816,11 @@
       "applicationError": "Application error",
       "unknownError": "Unknown Error",
       "description": "An unexpected error interrupted this view. You can go back home or retry the current route.",
-      "details": "Details",
       "stackTrace": "Stack trace",
       "backToHome": "Back to Home"
     },
     "footer": {
       "poweredBy": "Powered by",
-      "started": "Started:",
       "versionUnknown": "unknown"
     },
     "theme": {
@@ -886,7 +852,6 @@
       "saveLayout": "Save layout",
       "appearance": "Appearance",
       "theme": "Theme",
-      "language": "Language",
       "animationsDesc": "Enable page transition animations.",
       "background": "Background",
       "bgDesc": "Show a random panoramic background image.",
@@ -957,7 +922,6 @@
     "waiting": " - Waiting..",
     "queuedCount": "Queued: {shown} displayed / {total} total",
     "queuedCountShort": "Queued: {count}",
-    "pauseDownloadsTitle": "Pause Downloads",
     "pauseDownloadsDesc": "Are you sure you want to pause all non-active downloads?",
     "filterKeyValue": "You can also do a targeted search using <code><u>key</u>:value</code>.",
     "filterExample1": "items containing that text",
@@ -979,7 +943,6 @@
     "streamed": "Streamed",
     "partialError": "Partial Error",
     "premiere": "Premiere",
-    "unknown": "Unknown",
     "player": "Player",
     "empty": "Download history is empty.",
     "clearCompletedConfirm": "Clear all completed downloads? No files will be removed.",
@@ -1068,8 +1031,7 @@
     "generateMetadataConfirmDesc": "This action will generate:\n- tvshow.nfo - for media center compatibility\n- title [id].info.json - yt-dlp metadata file\n- Thumbnails: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg if they are available.\n\nWarning: This will overwrite existing metadata files if they exist.",
     "allMarkedDownloaded": "All items marked as downloaded.",
     "allRemovedArchive": "All items removed from archive.",
-    "metadataCompleted": "Metadata generation completed.",
-    "handlerPlaceholder": "Handler class name"
+    "metadataCompleted": "Metadata generation completed."
   },
   "taskDefinitions": {
     "description": "Create definitions to turn any website into a downloadable feed of links.",
@@ -1131,7 +1093,6 @@
     "loadingLogs": "Loading logs...",
     "connectingStream": "Connecting to log stream.",
     "loadOlder": "Load older lines into filter",
-    "details": "Details",
     "copyRendered": "Copy Rendered Logs",
     "copyRaw": "Copy Raw Logs",
     "allLevels": "All levels",
@@ -1227,7 +1188,6 @@
     "connections": "Connections: {count}",
     "diskTemp": "Temp",
     "diskConfig": "Config",
-    "system": "System",
     "systemCpuHint": "System {value}"
   },
   "diagnostics": {
@@ -1254,12 +1214,6 @@
     "skippedDesc": "Not configured or not needed.",
     "appDesc": "Current build.",
     "hostDesc": "OS and machine.",
-    "resourceStats": "Resource stats",
-    "shareTitle": "YTPTube diagnostics",
-    "shareGenerated": "Generated: {date}",
-    "shareStarted": "Started",
-    "shareWindow": "Window",
-    "shareSamples": "Samples",
     "feature": {
       "core": {
         "label": "Core setup",
@@ -1286,7 +1240,6 @@
   "changelog": {
     "description": "Latest project changes",
     "filterPlaceholder": "Filter changelog entries",
-    "releaseDate": "Release Date:",
     "releaseDateValue": "Release Date: {date}",
     "installed": "Installed",
     "commits": "{count} commits",

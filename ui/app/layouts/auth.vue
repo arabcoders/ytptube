@@ -19,7 +19,7 @@
               icon="i-lucide-languages"
               size="sm"
               class="min-w-32"
-              :aria-label="t('auth.language')"
+              :aria-label="t('common.language')"
               @update:model-value="(value: unknown) => void changeLocale(value as string)"
             />
           </div>

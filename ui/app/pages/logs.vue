@@ -397,7 +397,7 @@ const copyMenuItems = computed(() => [
 const logMenuItems = (log: log_line) => [
   [
     {
-      label: t('logs.details'),
+      label: t('common.details'),
       icon: 'i-lucide-panel-right-open',
       onSelect: () => openLogDetails(log),
     },

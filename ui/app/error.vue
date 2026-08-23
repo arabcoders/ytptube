@@ -36,7 +36,7 @@
             color="warning"
             variant="soft"
             icon="i-lucide-circle-alert"
-            :title="t('app.error.details')"
+            :title="t('common.details')"
             :description="error.message"
           />
 

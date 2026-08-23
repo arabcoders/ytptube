@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "Configurer le compte",
     "setupHeading": "Créez votre compte",
     "setupSubtitle": "Configurez YTPTube pour commencer.",
     "setupAction": "Créer le compte",
-    "login": "Connexion",
     "loginHeading": "Bon retour",
     "loginSubtitle": "Connectez-vous pour continuer sur YTPTube.",
     "loginAction": "Se connecter",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "Ouvrir les instructions de réinitialisation",
     "username": "Nom d’utilisateur",
     "password": "Mot de passe",
-    "continue": "Continuer",
     "account": "Compte",
     "accountDetails": "Détails du compte",
     "accountDetailsDescription": "Modifiez le nom et le mot de passe utilisés pour vous connecter.",
@@ -50,7 +47,6 @@
     "copyWarning": "Copiez cette clé maintenant. Elle ne sera plus affichée.",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
-    "language": "Langue",
     "brandAlt": "Logo YTPTube",
     "errorTitle": "Une erreur est survenue"
   },
@@ -58,6 +54,9 @@
     "add": "Ajouter",
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "continue": "Continuer",
+    "language": "Langue",
+    "details": "Détails",
     "delete": "Supprimer",
     "edit": "Modifier",
     "confirm": "Confirmer",
@@ -155,7 +154,6 @@
     "cancelDownload": "Annuler le téléchargement",
     "runNow": "Exécuter maintenant",
     "generateMetadata": "Générer les métadonnées",
-    "inspectHandler": "Gestionnaire (pour les tests)",
     "archiveAll": "Tout archiver",
     "unarchiveAll": "Tout désarchiver",
     "updateDescription": "Mettre à jour cet élément.",
@@ -190,7 +188,6 @@
     "enterValidUrl": "Veuillez saisir une URL valide.",
     "resetConfigDone": "La configuration locale a été réinitialisée.",
     "enterUrlFirst": "Veuillez d'abord saisir une URL.",
-    "failedGenerateCommand": "Échec de la génération de la commande.",
     "failedCreateCommand": "Échec de la création et de la navigation vers la commande",
     "failedTestOptions": "Échec du test des options de téléchargement",
     "logLevelUpdated": "niveau de journalisation mis à jour jusqu'au prochain redémarrage.",
@@ -463,10 +460,6 @@
     "guiTab": "GUI",
     "headerEmptyWarning": "Si la clé ou la valeur de l'en-tête est vide, l'en-tête ne sera pas envoyé.",
     "importFromExisting": "Importer depuis un existant",
-    "inspectHandlerDesc": "Pour les tests uniquement. Détecté automatiquement en utilisation réelle.",
-    "inspecting": "Inspection",
-    "inspectingDesc": "Inspection en cours.. veuillez patienter.",
-    "inspectPresetDesc": "Remplace le préréglage uniquement pendant les tests.",
     "invalidImportDefinition": "La chaîne d'import n'est pas une exportation de définition de tâche.",
     "invalidJson": "JSON invalide",
     "level": "Niveau",
@@ -606,7 +599,6 @@
     "bothKeyValueRequired": "La clé et la valeur sont toutes deux requises.",
     "keyAlreadyExists": "La clé « {key} » existe déjà.",
     "optionsOrExtraRequired": "Les options de commande pour yt-dlp ou au moins une option supplémentaire sont requises.",
-    "failedTestCondition": "Échec du test de la condition. {error}",
     "failedImportNotification": "Échec de l'import de la notification. {error}",
     "requestTypeJson": "Json",
     "requestTypeForm": "Formulaire",
@@ -700,6 +692,8 @@
     "FEATURE_DISABLED": "{feature} est désactivé.",
     "OPERATION_FAILED": "L'opération a échoué.",
     "DEPENDENCY_FAILED": "Une dépendance requise a échoué.",
+    "FFMPEG_UNAVAILABLE": "ffmpeg n'est pas disponible sur ce système. Le transcodage et la diffusion en continu sont indisponibles.",
+    "FFPROBE_UNAVAILABLE": "ffprobe n'est pas disponible sur ce système. Les métadonnées multimédias ne peuvent pas être lues.",
     "TIMEOUT": "L'opération a expiré.",
     "INTERNAL_ERROR": "Erreur interne du serveur.",
     "VIDEO_UNAVAILABLE": "La vidéo est indisponible.",
@@ -745,30 +739,6 @@
       "shutdown": "Arrêt",
       "monitoring": "Surveillance des ressources",
       "fileLogging": "Journalisation dans un fichier"
-    },
-    "actions": {
-      "add": "ajouter",
-      "addDownload": "ajouter un téléchargement",
-      "create": "créer",
-      "update": "mettre à jour",
-      "patch": "corriger",
-      "delete": "supprimer",
-      "import": "importer",
-      "export": "exporter",
-      "start": "démarrer",
-      "pause": "mettre en pause",
-      "cancel": "annuler",
-      "download": "télécharger",
-      "processPlaylist": "traiter la playlist"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "vidéo privée",
-      "geoRestricted": "restriction géographique",
-      "ageRestricted": "restriction d'âge"
     }
   },
   "app": {
@@ -846,13 +816,11 @@
       "applicationError": "Erreur de l'application",
       "unknownError": "Erreur inconnue",
       "description": "Une erreur inattendue a interrompu cette vue. Vous pouvez revenir à l'accueil ou réessayer la route actuelle.",
-      "details": "Détails",
       "stackTrace": "Trace de la pile",
       "backToHome": "Retour à l'accueil"
     },
     "footer": {
       "poweredBy": "Propulsé par",
-      "started": "Démarré :",
       "versionUnknown": "inconnue"
     },
     "theme": {
@@ -884,7 +852,6 @@
       "saveLayout": "Enregistrer la disposition",
       "appearance": "Apparence",
       "theme": "Thème",
-      "language": "Langue",
       "animationsDesc": "Activer les animations de transition de page.",
       "background": "Arrière-plan",
       "bgDesc": "Afficher une image de fond panoramique aléatoire.",
@@ -955,7 +922,6 @@
     "waiting": " - En attente..",
     "queuedCount": "En file : {shown} affichés / {total} au total",
     "queuedCountShort": "En file : {count}",
-    "pauseDownloadsTitle": "Mettre en pause les téléchargements",
     "pauseDownloadsDesc": "Êtes-vous sûr de vouloir mettre en pause tous les téléchargements non actifs ?",
     "filterKeyValue": "Vous pouvez également faire une recherche ciblée en utilisant <code><u>clé</u>:valeur</code>.",
     "filterExample1": "éléments contenant ce texte",
@@ -977,7 +943,6 @@
     "streamed": "Diffusé",
     "partialError": "Erreur partielle",
     "premiere": "Avant-première",
-    "unknown": "Inconnu",
     "player": "Lecteur",
     "empty": "L'historique de téléchargement est vide.",
     "clearCompletedConfirm": "Effacer tous les téléchargements terminés ? Aucun fichier ne sera supprimé.",
@@ -1066,8 +1031,7 @@
     "generateMetadataConfirmDesc": "Cette action générera :\n- tvshow.nfo - pour la compatibilité avec les médias center\n- title [id].info.json - fichier de métadonnées yt-dlp\n- Miniatures : poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg si elles sont disponibles.\n\nAvertissement : Cela écrasera les fichiers de métadonnées existants s'ils existent.",
     "allMarkedDownloaded": "Tous les éléments marqués comme téléchargés.",
     "allRemovedArchive": "Tous les éléments retirés de l'archive.",
-    "metadataCompleted": "Génération des métadonnées terminée.",
-    "handlerPlaceholder": "Nom de la classe du gestionnaire"
+    "metadataCompleted": "Génération des métadonnées terminée."
   },
   "taskDefinitions": {
     "description": "Créez des définitions pour transformer n'importe quel site web en un flux téléchargeable de liens.",
@@ -1129,7 +1093,6 @@
     "loadingLogs": "Chargement des journaux...",
     "connectingStream": "Connexion au flux de journaux.",
     "loadOlder": "Charger les lignes plus anciennes dans le filtre",
-    "details": "Détails",
     "copyRendered": "Copier les journaux rendus",
     "copyRaw": "Copier les journaux bruts",
     "allLevels": "Tous les niveaux",
@@ -1225,7 +1188,6 @@
     "connections": "Connexions : {count}",
     "diskTemp": "Temp",
     "diskConfig": "Config",
-    "system": "Système",
     "systemCpuHint": "Système {value}"
   },
   "diagnostics": {
@@ -1252,12 +1214,6 @@
     "skippedDesc": "Non configuré ou non nécessaire.",
     "appDesc": "Build actuel.",
     "hostDesc": "Système d'exploitation et machine.",
-    "resourceStats": "Statistiques des ressources",
-    "shareTitle": "Diagnostics YTPTube",
-    "shareGenerated": "Généré : {date}",
-    "shareStarted": "Démarré",
-    "shareWindow": "Fenêtre",
-    "shareSamples": "Échantillons",
     "feature": {
       "core": {
         "label": "Configuration principale",
@@ -1284,7 +1240,6 @@
   "changelog": {
     "description": "Dernières modifications du projet",
     "filterPlaceholder": "Filtrer les entrées du journal",
-    "releaseDate": "Date de publication :",
     "releaseDateValue": "Date de publication : {date}",
     "installed": "Installé",
     "commits": "{count} commits",

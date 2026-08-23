@@ -1,10 +1,8 @@
 {
   "auth": {
-    "setup": "إعداد الحساب",
     "setupHeading": "أنشئ حسابك",
     "setupSubtitle": "أكمل إعداد YTPTube للبدء.",
     "setupAction": "إنشاء الحساب",
-    "login": "تسجيل الدخول",
     "loginHeading": "مرحباً بعودتك",
     "loginSubtitle": "سجّل الدخول للمتابعة إلى YTPTube.",
     "loginAction": "تسجيل الدخول",
@@ -13,7 +11,6 @@
     "recoveryInstructions": "فتح تعليمات إعادة تعيين كلمة المرور",
     "username": "اسم المستخدم",
     "password": "كلمة المرور",
-    "continue": "متابعة",
     "account": "الحساب",
     "accountDetails": "تفاصيل الحساب",
     "accountDetailsDescription": "حدّث اسم المستخدم وكلمة المرور المستخدمين لتسجيل الدخول.",
@@ -50,7 +47,6 @@
     "copyWarning": "انسخ المفتاح الآن. لن يظهر مرة أخرى.",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
-    "language": "اللغة",
     "brandAlt": "شعار YTPTube",
     "errorTitle": "حدث خطأ ما"
   },
@@ -58,6 +54,9 @@
     "add": "إضافة",
     "save": "حفظ",
     "cancel": "إلغاء",
+    "continue": "متابعة",
+    "language": "اللغة",
+    "details": "التفاصيل",
     "delete": "حذف",
     "edit": "تعديل",
     "confirm": "تأكيد",
@@ -155,7 +154,6 @@
     "cancelDownload": "إلغاء التنزيل",
     "runNow": "تشغيل الآن",
     "generateMetadata": "إنشاء بيانات وصفية",
-    "inspectHandler": "المعالج (للاختبار)",
     "archiveAll": "أرشفة الكل",
     "unarchiveAll": "إلغاء أرشفة الكل",
     "updateDescription": "تحديث هذا العنصر.",
@@ -190,7 +188,6 @@
     "enterValidUrl": "يرجى إدخال رابط صالح.",
     "resetConfigDone": "تمت إعادة تعيين الإعدادات المحلية.",
     "enterUrlFirst": "يرجى إدخال رابط أولاً.",
-    "failedGenerateCommand": "فشل إنشاء الأمر.",
     "failedCreateCommand": "فشل إنشاء الأمر والانتقال إليه",
     "failedTestOptions": "فشل اختبار خيارات التنزيل",
     "logLevelUpdated": "تم تحديث مستوى السجل حتى إعادة التشغيل التالية.",
@@ -463,10 +460,6 @@
     "guiTab": "واجهة",
     "headerEmptyWarning": "إذا كان مفتاح أو قيمة الترويسة فارغاً، لن يتم إرسال الترويسة.",
     "importFromExisting": "استيراد من موجود",
-    "inspectHandlerDesc": "للاختبار فقط. يُكتشف تلقائياً في الاستخدام الحقيقي.",
-    "inspecting": "جارِ الفحص",
-    "inspectingDesc": "جارِ الفحص.. يرجى الانتظار.",
-    "inspectPresetDesc": "يتجاوز الإعداد المسبق أثناء الاختبار فقط.",
     "invalidImportDefinition": "سلسلة الاستيراد ليست تصدير تعريف مهمة.",
     "invalidJson": "JSON غير صالح",
     "level": "المستوى",
@@ -606,7 +599,6 @@
     "bothKeyValueRequired": "المفتاح والقيمة مطلوبان.",
     "keyAlreadyExists": "المفتاح '{key}' موجود بالفعل.",
     "optionsOrExtraRequired": "خيارات أوامر yt-dlp أو خيار إضافي واحد على الأقل مطلوب.",
-    "failedTestCondition": "فشل اختبار الشرط. {error}",
     "failedImportNotification": "فشل استيراد الإشعار. {error}",
     "requestTypeJson": "JSON",
     "requestTypeForm": "Form",
@@ -747,30 +739,6 @@
       "shutdown": "إيقاف التشغيل",
       "monitoring": "مراقبة الموارد",
       "fileLogging": "تسجيل الملفات"
-    },
-    "actions": {
-      "add": "الإضافة",
-      "addDownload": "إضافة التنزيل",
-      "create": "الإنشاء",
-      "update": "التحديث",
-      "patch": "التعديل الجزئي",
-      "delete": "الحذف",
-      "import": "الاستيراد",
-      "export": "التصدير",
-      "start": "البدء",
-      "pause": "الإيقاف المؤقت",
-      "cancel": "الإلغاء",
-      "download": "التنزيل",
-      "processPlaylist": "معالجة قائمة التشغيل"
-    },
-    "dependencies": {
-      "ytdlp": "yt-dlp",
-      "ffmpeg": "FFmpeg"
-    },
-    "reasons": {
-      "privateVideo": "فيديو خاص",
-      "geoRestricted": "تقييد جغرافي",
-      "ageRestricted": "تقييد عمري"
     }
   },
   "app": {
@@ -848,13 +816,11 @@
       "applicationError": "خطأ في التطبيق",
       "unknownError": "خطأ غير معروف",
       "description": "حدث خطأ غير متوقع في هذه الصفحة. يمكنك العودة إلى الرئيسية أو إعادة المحاولة.",
-      "details": "التفاصيل",
       "stackTrace": "تتبع المكدس",
       "backToHome": "العودة للرئيسية"
     },
     "footer": {
       "poweredBy": "مدعوم من",
-      "started": "بدأ:",
       "versionUnknown": "غير معروف"
     },
     "theme": {
@@ -886,7 +852,6 @@
       "saveLayout": "حفظ التخطيط",
       "appearance": "المظهر",
       "theme": "السمة",
-      "language": "اللغة",
       "animationsDesc": "تفعيل حركات انتقال الصفحات.",
       "background": "الخلفية",
       "bgDesc": "عرض صورة خلفية بانورامية عشوائية.",
@@ -957,7 +922,6 @@
     "waiting": " - في الانتظار..",
     "queuedCount": "في الانتظار: {shown} معروض / {total} إجمالي",
     "queuedCountShort": "في الانتظار: {count}",
-    "pauseDownloadsTitle": "إيقاف التنزيلات مؤقتاً",
     "pauseDownloadsDesc": "هل أنت متأكد من رغبتك في إيقاف جميع التنزيلات غير النشطة مؤقتاً؟",
     "filterKeyValue": "يمكنك أيضاً البحث المستهدف باستخدام <code><u>مفتاح</u>:قيمة</code>.",
     "filterExample1": "العناصر التي تحتوي على هذا النص",
@@ -979,7 +943,6 @@
     "streamed": "تم البث",
     "partialError": "خطأ جزئي",
     "premiere": "عرض أول",
-    "unknown": "غير معروف",
     "player": "المشغل",
     "empty": "سجل التنزيل فارغ.",
     "clearCompletedConfirm": "مسح جميع التنزيلات المكتملة؟ لن يتم حذف أي ملفات.",
@@ -1068,8 +1031,7 @@
     "generateMetadataConfirmDesc": "سيقوم هذا الإجراء بإنشاء:\n- tvshow.nfo - للتوافق مع مراكز الوسائط\n- title [id].info.json - ملف بيانات وصفية لـ yt-dlp\n- الصور المصغرة: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg إذا كانت متاحة.\n\nتحذير: سيؤدي هذا إلى استبدال ملفات البيانات الوصفية الموجودة إذا كانت موجودة.",
     "allMarkedDownloaded": "تم وضع علامة تم التنزيل على جميع العناصر.",
     "allRemovedArchive": "تمت إزالة جميع العناصر من الأرشيف.",
-    "metadataCompleted": "اكتمل إنشاء البيانات الوصفية.",
-    "handlerPlaceholder": "اسم فئة المعالج"
+    "metadataCompleted": "اكتمل إنشاء البيانات الوصفية."
   },
   "taskDefinitions": {
     "description": "إنشاء تعريفات لتحويل أي موقع إلى قائمة روابط قابلة للتنزيل.",
@@ -1131,7 +1093,6 @@
     "loadingLogs": "جارِ تحميل السجلات...",
     "connectingStream": "جارِ الاتصال بدفق السجلات.",
     "loadOlder": "تحميل سجلات أقدم إلى التصفية",
-    "details": "تفاصيل",
     "copyRendered": "نسخ السجلات المعروضة",
     "copyRaw": "نسخ السجلات الخام",
     "allLevels": "جميع المستويات",
@@ -1227,7 +1188,6 @@
     "connections": "الاتصالات: {count}",
     "diskTemp": "مؤقت",
     "diskConfig": "الإعدادات",
-    "system": "النظام",
     "systemCpuHint": "النظام {value}"
   },
   "diagnostics": {
@@ -1254,12 +1214,6 @@
     "skippedDesc": "غير مكونة أو غير مطلوبة.",
     "appDesc": "النسخة الحالية.",
     "hostDesc": "نظام التشغيل والجهاز.",
-    "resourceStats": "إحصائيات الموارد",
-    "shareTitle": "تشخيصات YTPTube",
-    "shareGenerated": "تاريخ الإنشاء: {date}",
-    "shareStarted": "تاريخ البدء",
-    "shareWindow": "النافذة",
-    "shareSamples": "العينات",
     "feature": {
       "core": {
         "label": "الإعدادات الأساسية",
@@ -1286,7 +1240,6 @@
   "changelog": {
     "description": "آخر تغييرات المشروع",
     "filterPlaceholder": "تصفية مدخلات سجل التغييرات",
-    "releaseDate": "تاريخ الإصدار:",
     "releaseDateValue": "تاريخ الإصدار: {date}",
     "installed": "مثبت",
     "commits": "{count} تعديل",

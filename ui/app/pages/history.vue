@@ -1437,7 +1437,7 @@ const setStatus = (item: StoreItem): string => {
     return t('common.skipped');
   }
 
-  return item.status || t('history.unknown');
+  return item.status || t('common.unknown');
 };
 
 const retryIncomplete = async (): Promise<void> => {

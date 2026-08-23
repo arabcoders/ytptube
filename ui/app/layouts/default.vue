@@ -839,7 +839,7 @@ const routeSearchGroups = computed(() => [
   },
   {
     id: 'language',
-    label: t('app.settings.language'),
+    label: t('common.language'),
     items: locales.value
       .filter((entry) => typeof entry !== 'string')
       .map((entry) => {

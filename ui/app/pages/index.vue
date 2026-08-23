@@ -1035,7 +1035,7 @@ const resumeDownload = async (): Promise<void> => {
 
 const pauseDownload = async (): Promise<void> => {
   const { status } = await confirmDialog({
-    title: t('queue.pauseDownloadsTitle'),
+    title: t('app.pauseAll'),
     confirmText: t('common.pause'),
     cancelText: t('common.cancel'),
     confirmColor: 'warning',
