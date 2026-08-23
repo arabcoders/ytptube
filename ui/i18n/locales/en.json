@@ -1271,6 +1271,11 @@
   "docs": {
     "notFound": "Documentation not found",
     "entries": {
+      "index": {
+        "title": "Documentation",
+        "navLabel": "Help",
+        "description": "Guides and project references."
+      },
       "readme": {
         "title": "README",
         "navLabel": "README",
@@ -1295,6 +1300,11 @@
         "title": "Security",
         "navLabel": "Security",
         "description": "Security policy and vulnerability reporting guidance."
+      },
+      "taskDefinitions": {
+        "title": "Task Definitions",
+        "navLabel": "Task Definitions",
+        "description": "Create and test custom source definitions."
       }
     }
   },

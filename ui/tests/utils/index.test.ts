@@ -62,6 +62,8 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+  storageMap.set('random_bg', { value: false });
+  utils.syncOpacity();
   resetStorage();
   runtimeConfig.app.baseURL = '/base-path';
   notificationMock.info.mockClear();
@@ -99,6 +101,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  storageMap.set('random_bg', { value: false });
+  utils.syncOpacity();
+
   if (fetchSpy) {
     fetchSpy.mockRestore();
   } else if (!originalFetch) {

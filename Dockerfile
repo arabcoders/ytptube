@@ -66,6 +66,8 @@ RUN sed -i -E '/^Suites:[[:space:]]*trixie[[:space:]]+trixie-updates$/ {n; s/^(C
 COPY entrypoint.sh /
 COPY --chown=app:app yt-dlp /opt/bin/yt-dlp
 COPY --chown=app:app ./app /app/app
+COPY --chown=app:app ./docs /app/docs
+COPY --chown=app:app ./README.md ./FAQ.md ./API.md ./SECURITY.md ./sc_short.jpg ./sc_simple.jpg /app/
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
 COPY --chown=app:app --from=python_builder /opt/python /opt/python
 COPY --from=ghcr.io/arabcoders/alpine-mp4box /usr/bin/mp4box /usr/bin/mp4box

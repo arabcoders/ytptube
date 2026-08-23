@@ -245,6 +245,11 @@
   user-select: none;
 }
 
+.markdown-alert-title svg {
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
 .markdown-alert-note {
   --markdown-alert-accent: var(--ui-info);
 }
@@ -357,7 +362,7 @@ const createMarkdownParser = () => {
     },
     walkTokens: (token: MarkdownToken) => {
       if (token.type === 'link' && token.href) {
-        const resolved = resolveDocsLink(token.href);
+        const resolved = resolveDocsLink(token.href, props.file);
         token.href = resolved.href;
         token._external = resolved.external;
         token._docRoute = resolved.docRoute;
@@ -365,7 +370,7 @@ const createMarkdownParser = () => {
       }
 
       if (token.type === 'image' && token.href) {
-        const resolvedHref = resolveDocsImageSrc(token.href);
+        const resolvedHref = resolveDocsImageSrc(token.href, props.file);
         token._isExternalImage = /^https?:\/\//i.test(resolvedHref);
         token.href = resolvedHref;
       }
@@ -450,7 +455,7 @@ const loader = async (file?: string, markdown?: string) => {
     content.value = '';
     const markdownParser = createMarkdownParser();
 
-    const response = await request(`${file}?_=${Date.now()}`, {
+    const response = await request(file, {
       headers: {
         Accept: 'text/plain',
       },

@@ -1,4 +1,11 @@
-export type DocsFile = 'README.md' | 'FEATURES.md' | 'FAQ.md' | 'API.md' | 'SECURITY.md';
+export type DocsFile =
+  | 'README.md'
+  | 'FAQ.md'
+  | 'API.md'
+  | 'SECURITY.md'
+  | 'docs/README.md'
+  | 'docs/features.md'
+  | 'docs/task-definitions.md';
 
 export type DocsEntry = {
   id: string;
@@ -12,10 +19,20 @@ export type DocsEntry = {
 };
 
 const DOCS_ASSETS = ['sc_short.jpg', 'sc_simple.jpg'] as const;
-
+const RAW_ASSET_PATH = 'ArabCoders/ytptube/dev/';
 const DOCS_ENTRIES: DocsEntry[] = [
   {
-    id: 'readme',
+    id: 'docs-index',
+    title: 'docs.entries.index.title',
+    description: 'docs.entries.index.description',
+    file: 'docs/README.md',
+    route: '/docs',
+    slug: [],
+    icon: 'i-lucide-book-open',
+    navLabel: 'docs.entries.index.navLabel',
+  },
+  {
+    id: 'docs-readme',
     title: 'docs.entries.readme.title',
     description: 'docs.entries.readme.description',
     file: 'README.md',
@@ -25,17 +42,17 @@ const DOCS_ENTRIES: DocsEntry[] = [
     navLabel: 'docs.entries.readme.navLabel',
   },
   {
-    id: 'features',
+    id: 'docs-features',
     title: 'docs.entries.features.title',
     description: 'docs.entries.features.description',
-    file: 'FEATURES.md',
+    file: 'docs/features.md',
     route: '/docs/features',
     slug: ['features'],
     icon: 'i-lucide-list-checks',
     navLabel: 'docs.entries.features.navLabel',
   },
   {
-    id: 'faq',
+    id: 'docs-faq',
     title: 'docs.entries.faq.title',
     description: 'docs.entries.faq.description',
     file: 'FAQ.md',
@@ -64,128 +81,93 @@ const DOCS_ENTRIES: DocsEntry[] = [
     icon: 'i-lucide-shield-check',
     navLabel: 'docs.entries.security.navLabel',
   },
+  {
+    id: 'docs-task-definitions',
+    title: 'docs.entries.taskDefinitions.title',
+    description: 'docs.entries.taskDefinitions.description',
+    file: 'docs/task-definitions.md',
+    route: '/docs/task-definitions',
+    slug: ['task-definitions'],
+    icon: 'i-lucide-list-tree',
+    navLabel: 'docs.entries.taskDefinitions.navLabel',
+  },
 ];
 
-const DOCS_ROUTE_BY_FILE = new Map(DOCS_ENTRIES.map((entry) => [entry.file, entry.route]));
-const normalizeSlugParts = (slug?: string | string[]): string[] => {
-  if (!slug) {
-    return [];
-  }
+const DOCS_BY_FILE = new Map(DOCS_ENTRIES.map((entry) => [entry.file, entry]));
+const GITHUB_DOCS = 'https://github.com/arabcoders/ytptube/blob/dev/';
+const RESOLVER_ORIGIN = 'https://ytptube.local';
 
-  return (Array.isArray(slug) ? slug : [slug])
+const normalizeSlugParts = (slug?: string | string[]): string[] =>
+  (Array.isArray(slug) ? slug : slug ? [slug] : [])
     .map((part) => part.trim().toLowerCase())
     .filter(Boolean);
-};
 
 const getDocsEntryBySlug = (slug?: string | string[]): DocsEntry | undefined => {
-  const parts = normalizeSlugParts(slug);
-
-  if (parts.length === 0) {
-    return DOCS_ENTRIES[0];
-  }
-
-  const key = parts.join('/');
-
-  if (key === 'readme') {
-    return DOCS_ENTRIES[0];
-  }
-
+  const key = normalizeSlugParts(slug).join('/');
   return DOCS_ENTRIES.find((entry) => entry.slug.join('/') === key);
 };
 
-const getDocsNavigationEntries = () =>
-  DOCS_ENTRIES.map((entry) => ({
-    id: entry.id,
-    label: entry.navLabel,
-    description: entry.description,
-    icon: entry.icon,
-    to: entry.route,
-  }));
+const getSourcePath = (source?: string): string =>
+  source?.replace(/^\/api\/docs\//, '').replace(/^\//, '') || 'README.md';
 
-const extractKnownDocsTarget = (href: string): { name: string; hash: string } | undefined => {
-  if (!href || href.startsWith('#')) {
-    return undefined;
-  }
+const resolveSourceUrl = (href: string, source?: string): URL =>
+  new URL(href, `${RESOLVER_ORIGIN}/${getSourcePath(source)}`);
 
-  try {
-    const parsed = new URL(href, window?.origin || 'http://localhost');
-    const segments = parsed.pathname.split('/').filter(Boolean);
-    const name = segments.at(-1) || '';
-
-    if (
-      DOCS_ROUTE_BY_FILE.has(name as DocsFile) ||
-      DOCS_ASSETS.includes(name as (typeof DOCS_ASSETS)[number])
-    ) {
-      return { name, hash: parsed.hash || '' };
-    }
-  } catch {}
-
-  return undefined;
-};
-
-const resolveDocsLink = (href: string): { href: string; external: boolean; docRoute?: string } => {
+const resolveDocsLink = (
+  href: string,
+  source?: string,
+): { href: string; external: boolean; docRoute?: string } => {
   if (!href) {
     return { href, external: false };
   }
 
   if (href.startsWith('#')) {
-    const route = window?.location?.pathname || '';
-    const currentRoute = `${route}${href}`;
-    return { href: currentRoute, external: false, docRoute: currentRoute };
+    const route = `${window.location.pathname}${href}`;
+    return { href: route, external: false, docRoute: route };
   }
 
-  try {
-    const parsed = new URL(href, window?.origin || 'http://localhost');
-    const currentPath = window?.location?.pathname || '';
-
-    if (
-      parsed.origin === (window?.origin || parsed.origin) &&
-      parsed.hash &&
-      parsed.pathname === currentPath
-    ) {
-      const currentRoute = `${parsed.pathname}${parsed.hash}`;
-      return { href: currentRoute, external: false, docRoute: currentRoute };
+  if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(href)) {
+    const url = new URL(href, window.location.origin);
+    if (url.origin !== window.location.origin) {
+      return { href, external: true };
     }
-  } catch {}
 
-  const match = extractKnownDocsTarget(href);
-  if (!match) {
-    return { href, external: true };
+    const entry = DOCS_ENTRIES.find((item) => item.route === url.pathname);
+    if (!entry) {
+      return { href, external: true };
+    }
+
+    const route = `${entry.route}${url.hash}`;
+    return { href: route, external: false, docRoute: route };
   }
 
-  const docsRoute = DOCS_ROUTE_BY_FILE.get(match.name as DocsFile);
-  if (docsRoute) {
-    const route = `${docsRoute}${match.hash}`;
-    return {
-      href: route,
-      external: false,
-      docRoute: route,
-    };
+  const url = resolveSourceUrl(href, source);
+  const path = url.pathname.slice(1);
+  const entry = DOCS_BY_FILE.get(path as DocsFile);
+  if (entry) {
+    const route = `${entry.route}${url.hash}`;
+    return { href: route, external: false, docRoute: route };
+  }
+
+  if (DOCS_ASSETS.includes(path as (typeof DOCS_ASSETS)[number])) {
+    return { href: `/api/docs/${path}`, external: false };
   }
 
   return {
-    href: `/api/docs/${match.name}`,
-    external: false,
+    href: `${GITHUB_DOCS}${path}${url.search}${url.hash}`,
+    external: true,
   };
 };
 
-const resolveDocsImageSrc = (href: string): string => {
-  const match = extractKnownDocsTarget(href);
-  if (!match) {
-    return href;
-  }
+const resolveDocsImageSrc = (href: string, source?: string): string => {
+  const url = resolveSourceUrl(href, source);
+  const path = url.pathname.slice(1);
+  const asset =
+    url.origin === 'https://raw.githubusercontent.com' && path.startsWith(RAW_ASSET_PATH)
+      ? path.slice(RAW_ASSET_PATH.length)
+      : path;
 
-  if (DOCS_ASSETS.includes(match.name as (typeof DOCS_ASSETS)[number])) {
-    return `/api/docs/${match.name}`;
-  }
-
-  return href;
+  return DOCS_ASSETS.includes(asset as (typeof DOCS_ASSETS)[number]) ? `/api/docs/${asset}` : href;
 };
 
-export {
-  DOCS_ENTRIES,
-  getDocsEntryBySlug,
-  getDocsNavigationEntries,
-  resolveDocsImageSrc,
-  resolveDocsLink,
-};
+export { DOCS_ENTRIES, getDocsEntryBySlug, resolveDocsImageSrc, resolveDocsLink };

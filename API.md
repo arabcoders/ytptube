@@ -3817,14 +3817,15 @@ If both `since` and `Last-Event-ID` are present, the larger value is used.
 ---
 
 ### GET /api/docs/{file}
-**Purpose**: Serve files from the GitHub repository.
+**Purpose**: Serve documentation files.
 
 **Path Parameter**:
-- `file`: Documentation filename (e.g., `README.md`, `FAQ.md`, `API.md`, `SECURITY.md`, `sc_short.jpg`, `sc_simple.jpg`)
+- `file`: Allowed root file or nested path: `README.md`, `FAQ.md`, `API.md`, `SECURITY.md`, `docs/README.md`,
+  `docs/features.md`, `docs/task-definitions.md`, `sc_short.jpg`, or `sc_simple.jpg`.
 
 **Response**:
 - File content with appropriate `Content-Type` header (text/markdown for .md, image/jpeg for .jpg, etc.)
-- Cached for 1 hour
+- `Cache-Control: no-store`
 
 or an error:
 ```json
@@ -3832,9 +3833,7 @@ or an error:
 ```
 
 - `404 Not Found` if the file is not in the allowed list.
-- `500 Internal Server Error` if fetching from GitHub fails.
-
-> **Note**: This endpoint also responds to direct file paths like `/README.md`, `/FAQ.md`, etc. without the `/api/docs/` prefix.
+- `404 Not Found` for unknown, absolute, or traversal paths.
 
 ---
 

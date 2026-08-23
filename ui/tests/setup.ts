@@ -12,6 +12,7 @@ globalThis.navigator = window.navigator;
 globalThis.HTMLElement = window.HTMLElement;
 globalThis.Node = window.Node;
 globalThis.CustomEvent = window.CustomEvent;
+globalThis.MutationObserver = window.MutationObserver;
 globalThis.getComputedStyle = window.getComputedStyle;
 globalThis.requestAnimationFrame = window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = window.cancelAnimationFrame;

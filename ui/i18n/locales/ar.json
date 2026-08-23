@@ -1271,6 +1271,11 @@
   "docs": {
     "notFound": "التوثيق غير موجود",
     "entries": {
+      "index": {
+        "title": "التوثيق",
+        "navLabel": "مساعدة",
+        "description": "أدلة ومراجع المشروع."
+      },
       "readme": {
         "title": "README",
         "navLabel": "README",
@@ -1295,6 +1300,11 @@
         "title": "الأمان",
         "navLabel": "الأمان",
         "description": "سياسة الأمان وإرشادات الإبلاغ عن الثغرات الأمنية."
+      },
+      "taskDefinitions": {
+        "title": "تعريفات المهام",
+        "navLabel": "تعريفات المهام",
+        "description": "إنشاء واختبار مصادر مخصصة."
       }
     }
   },
