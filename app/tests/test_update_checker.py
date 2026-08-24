@@ -5,10 +5,7 @@ import pytest
 
 
 class TestUpdateChecker:
-    """Test UpdateChecker functionality."""
-
     def setup_method(self):
-        """Set up test fixtures."""
         from app.library.cache import Cache
         from app.library.config import Config
         from app.library.Events import EventBus
@@ -22,7 +19,6 @@ class TestUpdateChecker:
         Cache._reset_singleton()
 
     def test_attach_enabled(self):
-        """Test that attach schedules update check when config.check_for_updates is True."""
         import asyncio
 
         from app.library.config import Config
@@ -51,7 +47,6 @@ class TestUpdateChecker:
                 loop.close()
 
     def test_attach_disabled(self):
-        """Test that attach skips scheduling when config.check_for_updates is False."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 
@@ -66,7 +61,6 @@ class TestUpdateChecker:
         assert checker._job_id is None, "Should not have scheduled a job when disabled"
 
     def test_skips_scheduling_dev_version(self):
-        """Test that attach skips scheduling when running dev version."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 
@@ -83,7 +77,6 @@ class TestUpdateChecker:
 
     @pytest.mark.asyncio
     async def test_shutdown_removes_scheduled_job(self):
-        """Test that on_shutdown removes the scheduled job."""
         import asyncio
 
         from app.library.config import Config
@@ -112,7 +105,6 @@ class TestUpdateChecker:
 
     @pytest.mark.asyncio
     async def test_check_for_updates_disabled(self):
-        """Test that check_for_updates skips when config.check_for_updates is False."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 
@@ -135,7 +127,6 @@ class TestUpdateChecker:
     @pytest.mark.asyncio
     @patch("app.library.UpdateChecker.get_async_client")
     async def test_updates_finds_newer_version(self, mock_client):
-        """Test that check_for_updates detects when a newer version is available."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 
@@ -166,7 +157,6 @@ class TestUpdateChecker:
         assert "2026.12.31" == config.yt_new_version, "Should store yt-dlp tag_name"
 
     def test_subscribe_to_started_event(self):
-        """Test that attach subscribes to Events.STARTED."""
         import asyncio
 
         from app.library.config import Config
@@ -202,7 +192,6 @@ class TestUpdateChecker:
     @pytest.mark.asyncio
     @patch("app.library.UpdateChecker.get_async_client")
     async def test_version_finds_newer_version(self, mock_client):
-        """Test that yt-dlp check detects when a newer version is available."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 
@@ -229,7 +218,6 @@ class TestUpdateChecker:
     @pytest.mark.asyncio
     @patch("app.library.UpdateChecker.get_async_client")
     async def test_version_no_update_available(self, mock_client):
-        """Test that yt-dlp check correctly handles when no update is available."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 
@@ -256,7 +244,6 @@ class TestUpdateChecker:
     @pytest.mark.asyncio
     @patch("app.library.UpdateChecker.get_async_client")
     async def test_ytdlp_version_http_error(self, mock_client):
-        """Test that yt-dlp check handles HTTP errors gracefully."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 
@@ -281,7 +268,6 @@ class TestUpdateChecker:
     @pytest.mark.asyncio
     @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_updates_caches_separately(self, mock_client):
-        """Test that app and yt-dlp checks are cached separately."""
         from app.library.config import Config
         from app.library.UpdateChecker import UpdateChecker
 

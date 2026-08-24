@@ -30,11 +30,8 @@ def cf_handler_module():
 
 
 class TestCfSolverFunction:
-    """Test the cf_solver function."""
-
     @patch("app.library.cf_solver_handler.solver")
     def test_cf_solver_success(self, mock_solver, cf_handler_module):
-        """Test successful solving of Cloudflare challenge."""
         mock_solver.return_value = {"cookies": [], "userAgent": "Mozilla/5.0"}
 
         handler = cf_handler_module.CFSolverRH(logger=Mock())
@@ -54,7 +51,6 @@ class TestCfSolverFunction:
 
     @patch("app.library.cf_solver_handler.solver")
     def test_cf_solver_no_solution(self, mock_solver, cf_handler_module):
-        """Test when solver returns no solution."""
         mock_solver.return_value = None
 
         handler = cf_handler_module.CFSolverRH(logger=Mock())
@@ -74,7 +70,6 @@ class TestCfSolverFunction:
 
     @patch("app.library.cf_solver_handler.solver")
     def test_cf_solver_existing_cookies(self, mock_solver, cf_handler_module):
-        """Test solving with existing cookies in jar."""
         mock_solver.return_value = {"cookies": [], "userAgent": "Mozilla/5.0"}
 
         handler = cf_handler_module.CFSolverRH(logger=Mock())
@@ -160,16 +155,12 @@ class TestCfSolverFunction:
 
 
 class TestSetCfHandler:
-    """Test set_cf_handler function."""
-
     def test_set_cf_handler_default(self, cf_handler_module):
-        """Test setting CF handler with default solver."""
         result = cf_handler_module.set_cf_handler()
         assert result is cf_handler_module.CFSolverRH
         assert cf_handler_module.CFSolverRH.solver is None or callable(cf_handler_module.CFSolverRH.solver)
 
     def test_cf_handler_custom_solver(self, cf_handler_module):
-        """Test setting CF handler with custom solver."""
 
         def custom_solver(req, resp, handler):
             return req
@@ -180,22 +171,17 @@ class TestSetCfHandler:
 
 
 class TestCFSolverRH:
-    """Test CFSolverRH request handler class."""
-
     @pytest.fixture(autouse=True)
     def setup(self, cf_handler_module):
-        """Set up test fixtures."""
         self.module = cf_handler_module
         self.handler = self.module.CFSolverRH(logger=Mock(), verbose=False)
 
     def test_init_default(self):
-        """Test initialization with defaults."""
         handler = self.module.CFSolverRH(logger=Mock(), verbose=False)
         assert handler._solver is not None
         assert handler._fallback_director is None
 
     def test_init_custom_solver(self):
-        """Test initialization with custom solver."""
 
         def custom_solver(req, resp, handler):
             return req
@@ -204,7 +190,6 @@ class TestCFSolverRH:
         assert handler._solver is custom_solver
 
     def test_close(self):
-        """Test closing handler."""
         mock_director = Mock()
         self.handler._fallback_director = mock_director
 
@@ -214,7 +199,6 @@ class TestCFSolverRH:
         assert self.handler._fallback_director is None
 
     def test_solve(self):
-        """Test solving challenge."""
         request = Mock()
         request.url = "https://example.com"
         request.headers = {}
@@ -232,7 +216,6 @@ class TestCFSolverRH:
         assert result is None
 
     def test_mark_retry(self):
-        """Test marking request as retry."""
         request = Mock()
         request.copy = Mock(return_value=Mock())
         request.copy.return_value.extensions = {}

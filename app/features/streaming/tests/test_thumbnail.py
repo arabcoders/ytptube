@@ -364,7 +364,6 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.asyncio
 async def test_missing_binaries_degrades(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Thumbnail generation raises OSError and caches a miss when binaries are missing."""
     from app.features.streaming.library import thumbnail
 
     thumbnail._IN_PROCESS.clear()

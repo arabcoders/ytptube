@@ -97,12 +97,7 @@ class Download:
         self._hook_handlers: HookHandlers | None = None
 
     def _download(self) -> None:
-        """
-        Execute the download in a subprocess.
-
-        This method runs in a separate process and performs the actual
-        download using yt-dlp.
-        """
+        """Run yt-dlp across the subprocess boundary."""
         cookie_file: Path | None = None
         params: dict[str, Any] = {}
         download_skipped = False
@@ -582,15 +577,12 @@ class Download:
         return ret
 
     def started(self) -> bool:
-        """Check if download process has been started."""
         return self._process_manager.started()
 
     def cancel(self) -> bool:
-        """Cancel the download task."""
         return self._process_manager.cancel()
 
     async def close(self) -> bool:
-        """Close download process and clean up resources."""
         started = self.started()
         if self._process_manager.cancel_in_progress or (not started and self.status_queue is None):
             return False

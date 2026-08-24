@@ -1,5 +1,3 @@
-"""Tests for ConditionsRepository."""
-
 from __future__ import annotations
 
 import pytest
@@ -17,7 +15,6 @@ async def repo():
     store = SqliteStore(db_path=make_in_memory_db_path("conditions-repository"))
     await store.get_connection()
 
-    # Create repository
     repository = ConditionsRepository.get_instance()
 
     yield repository
@@ -31,11 +28,8 @@ async def repo():
 
 
 class TestConditionsRepository:
-    """Test suite for ConditionsRepository database operations."""
-
     @pytest.mark.asyncio
     async def test_create_condition(self, repo):
-        """Create condition with valid data."""
         data = {
             "name": "Test Condition",
             "filter": "duration > 60",
@@ -59,7 +53,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_create_with_defaults(self, repo):
-        """Create condition with minimal data uses defaults."""
         data = {
             "name": "Minimal",
             "filter": "duration > 30",
@@ -75,7 +68,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
-        """Get condition by integer ID."""
         created = await repo.create({"name": "Get Test", "filter": "duration > 40"})
 
         retrieved = await repo.get(created.id)
@@ -86,7 +78,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_name(self, repo):
-        """Get condition by string name."""
         await repo.create({"name": "Named Test", "filter": "duration > 50"})
 
         retrieved = await repo.get("Named Test")
@@ -96,7 +87,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_get_nonexistent(self, repo):
-        """Get nonexistent condition returns None."""
         result = await repo.get(99999)
         assert result is None, "Should return None for nonexistent ID"
 
@@ -105,7 +95,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_update_condition(self, repo):
-        """Update existing condition."""
         created = await repo.create({"name": "Update Test", "filter": "duration > 60"})
 
         updated = await repo.update(
@@ -124,13 +113,11 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_raises(self, repo):
-        """Update nonexistent condition raises KeyError."""
         with pytest.raises(KeyError, match="not found"):
             await repo.update(99999, {"name": "Should Fail"})
 
     @pytest.mark.asyncio
     async def test_delete_condition(self, repo):
-        """Delete existing condition."""
         created = await repo.create({"name": "Delete Test", "filter": "duration > 70"})
 
         deleted = await repo.delete(created.id)
@@ -142,13 +129,11 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_raises(self, repo):
-        """Delete nonexistent condition raises KeyError."""
         with pytest.raises(KeyError, match="not found"):
             await repo.delete(99999)
 
     @pytest.mark.asyncio
     async def test_list_paginated(self, repo):
-        """List paginated returns correct subset."""
         for i in range(5):
             await repo.create({"name": f"Item {i}", "filter": "duration > 10", "priority": i})
 
@@ -161,7 +146,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_list_ordering(self, repo):
-        """List orders by priority desc then name asc."""
         await repo.create({"name": "B", "filter": "test", "priority": 1})
         await repo.create({"name": "A", "filter": "test", "priority": 1})
         await repo.create({"name": "C", "filter": "test", "priority": 2})
@@ -174,7 +158,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_get_name_without_id(self, repo):
-        """Get by name can exclude specific ID."""
         first = await repo.create({"name": "Duplicate", "filter": "test"})
 
         result = await repo.get_by_name("Duplicate", exclude_id=first.id)
@@ -185,7 +168,6 @@ class TestConditionsRepository:
 
     @pytest.mark.asyncio
     async def test_replace_all(self, repo):
-        """Replace all conditions atomically."""
         await repo.create({"name": "Old 1", "filter": "test"})
         await repo.create({"name": "Old 2", "filter": "test"})
 

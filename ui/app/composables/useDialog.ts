@@ -9,44 +9,17 @@ export type DialogOption = {
 };
 
 type BaseOptions = {
-  /**
-   * Title of the dialog
-   */
   title?: string;
-  /**
-   * Message to display in the dialog
-   */
   message?: string;
-  /**
-   * Text for the confirm button
-   */
   confirmText?: string;
-  /**
-   * Color for the confirm button.
-   */
   confirmColor?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral';
-  /**
-   * Icon for the confirm button.
-   */
   confirmIcon?: string;
 };
 
 export type PromptOptions = BaseOptions & {
-  /**
-   * Text for the input field
-   */
   initial?: string;
-  /**
-   * Placeholder text for the input field
-   */
   placeholder?: string;
-  /**
-   * Text for the cancel button
-   */
   cancelText?: string;
-  /**
-   * Icon for the cancel button.
-   */
   cancelIcon?: string;
   /**
    * Function to validate the input value
@@ -56,13 +29,7 @@ export type PromptOptions = BaseOptions & {
 };
 
 export type ConfirmOptions = BaseOptions & {
-  /**
-   * Text for the confirm button
-   */
   cancelText?: string;
-  /**
-   * Icon for the cancel button.
-   */
   cancelIcon?: string;
   /**
    * Optional checkbox-style options to return with the confirmation result.

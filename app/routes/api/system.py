@@ -195,7 +195,6 @@ async def shutdown_system(config: Config, encoder: Encoder) -> Response:
     def do_shutdown() -> None:
         raise GracefulExit
 
-    # Schedule shutdown after response
     asyncio.get_running_loop().call_later(0.5, do_shutdown)
     LOG.info("Shutdown initiated by user request. Stopping the server...")
     return web.json_response(

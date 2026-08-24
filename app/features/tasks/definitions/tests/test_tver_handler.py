@@ -28,7 +28,6 @@ class DummyOpts:
 
 @pytest.mark.asyncio
 async def test_tver_handler_extract(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Test tver handler extraction of episodes from series."""
     session_response = {
         "result": {
             "platform_uid": "test_uid_123",
@@ -151,7 +150,6 @@ async def test_tver_handler_extract(monkeypatch: pytest.MonkeyPatch, tmp_path: P
 
 @pytest.mark.parametrize(("url", "should_match"), TverHandler.tests())
 def test_parse(url: str, should_match: bool) -> None:
-    """Test tver URL parsing."""
     result = TverHandler.parse(url)
     if should_match:
         assert result is not None
@@ -162,7 +160,6 @@ def test_parse(url: str, should_match: bool) -> None:
 
 @pytest.mark.asyncio
 async def test_can_handle() -> None:
-    """Test tver handler can_handle method."""
     task_valid = HandleTask(id=1, name="Test", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
     task_invalid = HandleTask(id=2, name="Test", url="https://youtube.com/watch?v=123", preset="default")
     assert await TverHandler.can_handle(task_valid) is True

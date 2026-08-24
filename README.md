@@ -35,16 +35,16 @@ The interface is available in English, العربية, Français, 中文, and �
 - Individual URLs, playlists, channels, live streams, and upcoming streams
 - Concurrent downloads with global and per-extractor limits
 - Scheduled Tasks for recurring sources and sites without RSS feeds
-- Reusable default presets, including custom NFO Maker, and media-server presets.
+- Reusable default presets, including NFO Maker and media-server presets
 - Conditions that apply yt-dlp options from extracted metadata
 - Notifications for selected events through Apprise or direct HTTP webhooks
 - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/) and [Chrome/Chromium](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil) extensions
 - [iOS Shortcuts](docs/features.md#send-links-to-ytptube), a [bookmarklet](FAQ.md#simple-bookmarklet), and an [HTTP API](API.md)
-- A file browser and built-in player with external sidecar subtitle support, and optional file action controls.
+- A file browser and built-in player with external sidecar subtitle support and optional file action controls
 - Kodi-style TV and movie NFO sidecars, `.info.json` metadata, artwork, and media-library naming
 - curl-cffi impersonation and a bundled PO-token provider
 - An optional browser extraction over existing Chrome instance
-- An optional direct yt-dlp control via terminal interface.
+- Optional direct yt-dlp control through the terminal interface
 - Optional integration with FlareSolverr or Trawl to allow yt-dlp to bypass some WAF protection.
 - Queue and archive controls, live logs, diagnostics, and optional resource monitoring
 - Docker, Podman, Unraid, and native builds for Windows, macOS, and Linux
@@ -53,9 +53,9 @@ Read [Features](docs/features.md) for details and links to the relevant configur
 
 ## Media Libraries
 
-YTPTube does more than place downloaded files in a folder. For example, its NFO Maker integration turns yt-dlp metadata 
-into Kodi-style TV or movie `.nfo` sidecars, cleans descriptions for library use, creates stable IDs, and keeps each NFO
-beside its media file. NFO files can be generated during the download or later from history.
+YTPTube NFO Maker integration turns yt-dlp metadata into Kodi-style TV or movie `.nfo` sidecars, cleans descriptions for
+library use, creates stable IDs, and keeps each NFO beside its media file. NFO files can be generated during the download
+or later from history.
 
 Scheduled Tasks can separately create collection metadata like `tvshow.nfo`, `.info.json`, and artwork images when the 
 source provides them. A separate info-reader Preset writes predictable channel and season layouts with yt-dlp metadata 
@@ -182,7 +182,7 @@ built for my own needs and use cases, and I maintain it according to my own pref
 
 You are welcome to use it if it works for you, but I will not change the project's development approach to accommodate 
 your objections. I believe these tools can be genuinely useful when used appropriately. If the use of AI-assisted tools 
-is a deal-breaker for you, this project may simply not be the right fit for you. Feel free to build your own.
+is a deal-breaker for you, this project may not be the right fit for you. Feel free to build your own.
 
 YTPTube is not affiliated with yt-dlp or any supported service. It is intended for downloading content you are 
 permitted to access, not for piracy or unlawful use.

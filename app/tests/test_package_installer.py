@@ -501,7 +501,6 @@ class TestActionAndCheck:
 
         mock_action.side_effect = side_effect
 
-        # Should not raise
         inst.check(pkgs)
         assert mock_action.call_count == 2
         mock_action.assert_any_call("foo", upgrade=True)

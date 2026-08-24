@@ -16,37 +16,29 @@ from app.library.httpx_client import (
 
 
 class TestGetTransport:
-    """Test transport factory function."""
-
     def test_transport_cf_enabled_async(self):
-        """Test getting async transport with CF enabled."""
         transport = _get_transport(enable_cf=True, is_async=True, transport=None)
         assert isinstance(transport, CFAsyncTransport)
 
     def test_transport_cf_enabled_sync(self):
-        """Test getting sync transport with CF enabled."""
         transport = _get_transport(enable_cf=False, is_async=False, transport=None)
         assert isinstance(transport, httpx.HTTPTransport)
 
     def test_transport_cf_disabled_async(self):
-        """Test getting async transport with CF disabled."""
         transport = _get_transport(enable_cf=False, is_async=True, transport=None)
         assert isinstance(transport, httpx.AsyncHTTPTransport)
 
     def test_transport_cf_disabled_sync(self):
-        """Test getting sync transport with CF disabled."""
         transport = _get_transport(enable_cf=False, is_async=False, transport=None)
         assert isinstance(transport, httpx.HTTPTransport)
 
     def test_transport_custom_base_async(self):
-        """Test getting transport with custom base transport."""
         custom_transport = httpx.AsyncHTTPTransport()
         transport = _get_transport(enable_cf=True, is_async=True, transport=custom_transport)
         assert isinstance(transport, CFAsyncTransport)
         assert transport.base is custom_transport
 
     def test_transport_custom_base_sync(self):
-        """Test getting transport with custom base transport."""
         custom_transport = httpx.HTTPTransport()
         transport = _get_transport(enable_cf=True, is_async=False, transport=custom_transport)
         assert isinstance(transport, CFTransport)
@@ -54,28 +46,22 @@ class TestGetTransport:
 
 
 class TestCFAsyncTransport:
-    """Test async Cloudflare transport wrapper."""
-
     def setup_method(self):
-        """Set up test fixtures."""
         self.base_transport = AsyncMock(spec=httpx.AsyncHTTPTransport)
         self.transport = CFAsyncTransport(base=self.base_transport)
 
     @pytest.mark.asyncio
     async def test_init_default(self):
-        """Test initialization with defaults."""
         transport = CFAsyncTransport()
         assert isinstance(transport.base, httpx.AsyncHTTPTransport)
 
     @pytest.mark.asyncio
     async def test_init_custom(self):
-        """Test initialization with custom base."""
         assert self.transport.base is self.base_transport
 
     @pytest.mark.asyncio
     @patch("app.library.httpx_client.is_cf_challenge")
     async def test_handle_request_no_challenge(self, mock_is_cf):
-        """Test handling request without Cloudflare challenge."""
         mock_is_cf.return_value = False
 
         request = httpx.Request("GET", "https://example.com")
@@ -93,7 +79,6 @@ class TestCFAsyncTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     async def test_handle_request_cached_solution(self, mock_is_cf, mock_solver):
-        """Test handling request with Cloudflare solution from cache."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
             "cookies": [{"name": "cf_clearance", "value": "token123"}],
@@ -122,7 +107,6 @@ class TestCFAsyncTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     async def test_handle_request_solve_challenge(self, mock_is_cf, mock_solver):
-        """Test handling request by solving Cloudflare challenge."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
             "cookies": [{"name": "cf_clearance", "value": "token123"}, {"name": "__cf_bm", "value": "bm456"}],
@@ -151,7 +135,6 @@ class TestCFAsyncTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     async def test_merge_existing_cookies(self, mock_is_cf, mock_solver):
-        """Test that existing cookies are preserved when adding CF cookies."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
             "cookies": [{"name": "cf_clearance", "value": "token123"}],
@@ -179,7 +162,6 @@ class TestCFAsyncTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     async def test_handle_request_solve_failed(self, mock_is_cf, mock_solver):
-        """Test handling request when solving fails."""
         mock_is_cf.return_value = True
         mock_solver.return_value = None
 
@@ -197,32 +179,25 @@ class TestCFAsyncTransport:
         response.close.assert_not_called()
 
     def test_close(self):
-        """Test closing transport."""
         self.base_transport.close = Mock()
         self.transport.close()
         self.base_transport.close.assert_called_once()
 
 
 class TestCFTransport:
-    """Test sync Cloudflare transport wrapper."""
-
     def setup_method(self):
-        """Set up test fixtures."""
         self.base_transport = Mock(spec=httpx.HTTPTransport)
         self.transport = CFTransport(base=self.base_transport)
 
     def test_init_default(self):
-        """Test initialization with defaults."""
         transport = CFTransport()
         assert isinstance(transport.base, httpx.HTTPTransport)
 
     def test_init_custom(self):
-        """Test initialization with custom base."""
         assert self.transport.base is self.base_transport
 
     @patch("app.library.httpx_client.is_cf_challenge")
     def test_handle_request_no_challenge(self, mock_is_cf):
-        """Test handling request without Cloudflare challenge."""
         mock_is_cf.return_value = False
 
         request = httpx.Request("GET", "https://example.com")
@@ -238,7 +213,6 @@ class TestCFTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     def test_handle_request_cached_solution(self, mock_is_cf, mock_solver):
-        """Test handling request with Cloudflare solution from cache."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
             "cookies": [{"name": "cf_clearance", "value": "token123"}],
@@ -266,7 +240,6 @@ class TestCFTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     def test_handle_request_solve_challenge(self, mock_is_cf, mock_solver):
-        """Test handling request by solving Cloudflare challenge."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
             "cookies": [{"name": "cf_clearance", "value": "token123"}, {"name": "__cf_bm", "value": "bm456"}],
@@ -294,7 +267,6 @@ class TestCFTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     def test_request_merge_existing_cookies(self, mock_is_cf, mock_solver):
-        """Test that existing cookies are preserved when adding CF cookies."""
         mock_is_cf.return_value = True
         mock_solver.return_value = {
             "cookies": [{"name": "cf_clearance", "value": "token123"}],
@@ -321,7 +293,6 @@ class TestCFTransport:
     @patch("app.library.httpx_client.solver")
     @patch("app.library.httpx_client.is_cf_challenge")
     def test_handle_request_solve_failed(self, mock_is_cf, mock_solver):
-        """Test handling request when solving fails."""
         mock_is_cf.return_value = True
         mock_solver.return_value = None
 
@@ -339,32 +310,26 @@ class TestCFTransport:
         response.close.assert_not_called()
 
     def test_close(self):
-        """Test closing transport."""
         self.base_transport.close = Mock()
         self.transport.close()
         self.base_transport.close.assert_called_once()
 
 
 class TestAsyncClient:
-    """Test async client factory function."""
-
     @pytest.mark.asyncio
     async def test_async_client_cf_enabled(self):
-        """Test creating async client with CF enabled."""
         async with async_client(enable_cf=True) as client:
             assert isinstance(client, httpx.AsyncClient)
             assert isinstance(client._transport, CFAsyncTransport)
 
     @pytest.mark.asyncio
     async def test_client_custom_cf_off(self):
-        """Test creating async client with CF disabled."""
         async with async_client(enable_cf=False) as client:
             assert isinstance(client, httpx.AsyncClient)
             assert isinstance(client._transport, httpx.AsyncHTTPTransport)
 
     @pytest.mark.asyncio
     async def test_async_client_kwargs(self):
-        """Test creating async client with additional kwargs."""
         async with async_client(enable_cf=True, timeout=30.0, follow_redirects=True) as client:
             assert isinstance(client, httpx.AsyncClient)
             assert isinstance(client._transport, CFAsyncTransport)
@@ -373,7 +338,6 @@ class TestAsyncClient:
 
     @pytest.mark.asyncio
     async def test_async_client_custom_transport(self):
-        """Test creating async client with custom transport."""
         custom = httpx.AsyncHTTPTransport()
         async with async_client(enable_cf=True, transport=custom) as client:
             assert isinstance(client, httpx.AsyncClient)
@@ -382,7 +346,6 @@ class TestAsyncClient:
 
     @pytest.mark.asyncio
     async def test_async_client_cf_disabled(self):
-        """Test creating async client with custom transport and CF disabled."""
         custom = httpx.AsyncHTTPTransport()
         async with async_client(enable_cf=False, transport=custom) as client:
             assert isinstance(client, httpx.AsyncClient)
@@ -391,24 +354,19 @@ class TestAsyncClient:
 
 
 class TestSyncClient:
-    """Test sync client factory function."""
-
     def test_sync_client_cf_enabled(self):
-        """Test creating sync client with CF enabled."""
         client = sync_client(enable_cf=True)
         assert isinstance(client, httpx.Client)
         assert isinstance(client._transport, CFTransport)
         client.close()
 
     def test_custom_cf_off(self):
-        """Test creating sync client with CF disabled."""
         client = sync_client(enable_cf=False)
         assert isinstance(client, httpx.Client)
         assert isinstance(client._transport, httpx.HTTPTransport)
         client.close()
 
     def test_sync_client_kwargs(self):
-        """Test creating sync client with additional kwargs."""
         client = sync_client(enable_cf=True, timeout=30.0, follow_redirects=True)
         assert isinstance(client, httpx.Client)
         assert isinstance(client._transport, CFTransport)
@@ -417,7 +375,6 @@ class TestSyncClient:
         client.close()
 
     def test_sync_client_custom_transport(self):
-        """Test creating sync client with custom transport."""
         custom = httpx.HTTPTransport()
         client = sync_client(enable_cf=True, transport=custom)
         assert isinstance(client, httpx.Client)
@@ -426,7 +383,6 @@ class TestSyncClient:
         client.close()
 
     def test_sync_client_cf_disabled(self):
-        """Test creating sync client with custom transport and CF disabled."""
         custom = httpx.HTTPTransport()
         client = sync_client(enable_cf=False, transport=custom)
         assert isinstance(client, httpx.Client)

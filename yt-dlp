@@ -40,5 +40,4 @@ if [ -d "${USER_SITE}" ]; then
   export PYTHONPATH
 fi
 
-# Execute yt-dlp with passed arguments
 exec /opt/python/bin/python -m yt_dlp "${@}"

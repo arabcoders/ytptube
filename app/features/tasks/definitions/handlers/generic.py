@@ -1045,7 +1045,6 @@ class GenericTaskHandler(BaseHandler):
 
         cleaned: str = value.strip()
         if rule.post_filter:
-            # Apply post-filter inline (removed helper method)
             try:
                 pattern = re.compile(rule.post_filter.filter)
                 match = pattern.search(cleaned)
@@ -1059,7 +1058,7 @@ class GenericTaskHandler(BaseHandler):
                         return None
 
                 if match.groupdict():
-                    # Prefer first named group when available
+                    # A named capture identifies the value selected by the rule author.
                     for group_value in match.groupdict().values():
                         if group_value is not None:
                             return group_value

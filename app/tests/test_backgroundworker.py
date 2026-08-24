@@ -11,7 +11,6 @@ class TestBackgroundWorker:
         BackgroundWorker._reset_singleton()
 
     def teardown_method(self) -> None:
-        # Attempt to stop any running worker thread
         try:
             worker = BackgroundWorker()
             if worker.thread and worker.thread.is_alive():
@@ -30,9 +29,6 @@ class TestBackgroundWorker:
         assert worker.thread is not None
         assert worker.thread.is_alive() is True
 
-        # Shutdown should stop the worker thread
-        # on_shutdown is async; call via event loop runner
-        # Using a small helper to run the coroutine
         import asyncio
 
         try:
@@ -42,7 +38,6 @@ class TestBackgroundWorker:
 
         asyncio.get_event_loop().run_until_complete(worker.on_shutdown(app))
 
-        # Give a short moment for the background thread to exit
         worker.thread.join(timeout=2)
         assert worker.thread.is_alive() is False
 
@@ -63,7 +58,6 @@ class TestBackgroundWorker:
         assert done.wait(timeout=2.0) is True
         assert received["sum"] == 5
 
-        # Cleanup
         import asyncio
 
         asyncio.get_event_loop().run_until_complete(worker.on_shutdown(app))
@@ -76,16 +70,13 @@ class TestBackgroundWorker:
         done = threading.Event()
 
         async def coro_task(flag: threading.Event) -> None:
-            # Simulate a small async operation
             await asyncio.sleep(0)
             flag.set()
 
-        # Submit coroutine factory
         import asyncio
 
         worker.submit(coro_task, done)
 
         assert done.wait(timeout=2.0) is True
 
-        # Cleanup
         asyncio.get_event_loop().run_until_complete(worker.on_shutdown(app))

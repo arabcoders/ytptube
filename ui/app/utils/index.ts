@@ -13,24 +13,11 @@ const separators = [
   { name: 'common.sepSpace', value: ' ' },
 ];
 
-/**
- * Get value from object or function.
- *
- * @param obj - A function or value.
- * @returns The result of calling the function if it's a function, otherwise the value.
- */
 const getValue = <T>(obj: (() => T) | T): T => {
   return 'function' === typeof obj ? (obj as () => T)() : obj;
 };
 
-/**
- * Safely get a value from a nested object using a path string. Returns default value if not found.
- *
- * @param obj - The object to get the value from.
- * @param path - Dot-delimited string path (e.g. 'a.b.c').
- * @param defaultValue - The fallback value if path is not found or value is null/undefined.
- * @returns The value at the path or the default value.
- */
+/** Read a dot-delimited path, resolving callable defaults when the value is missing or null. */
 const ag = <T = any>(obj: any, path: string, defaultValue: T | null = null): T | null => {
   const keys = path.split(AG_SEPARATOR);
   let at = obj;
@@ -46,15 +33,7 @@ const ag = <T = any>(obj: any, path: string, defaultValue: T | null = null): T |
   return getValue(null === at ? defaultValue : at);
 };
 
-/**
- * Set a value in a nested object using a dot-delimited path.
- *
- * @param obj - The object to modify.
- * @param path - Dot-delimited string path (e.g. 'a.b.c').
- * @param value - The value to set.
- * @returns The original object with the updated value.
- * @throws Error if a path segment is not an object.
- */
+/** Set a dot-delimited path, creating missing objects along the path. */
 const ag_set = (obj: Record<string, any>, path: string, value: any): Record<string, any> => {
   const keys = path.split(AG_SEPARATOR);
   let at: any = obj;
@@ -78,13 +57,7 @@ const ag_set = (obj: Record<string, any>, path: string, value: any): Record<stri
   return obj;
 };
 
-/**
- * Replace template tags in a string with values from a context object.
- *
- * @param text - The input string containing tags in `{key}` format.
- * @param context - An object whose keys are used for tag replacement.
- * @returns The string with all matching tags replaced.
- */
+/** Replace `{path}` tags with values read from the supplied context. */
 const r = (text: string, context: Record<string, any> = {}): string => {
   const tagLeft = '{';
   const tagRight = '}';
@@ -110,12 +83,6 @@ const r = (text: string, context: Record<string, any> = {}): string => {
   return text;
 };
 
-/**
- * Safely encode a path string for use in a URL.
- *
- * @param item - The input path string.
- * @returns The URL-encoded path.
- */
 const encodePath = (item: string): string => {
   if (!item) {
     return item;
@@ -159,13 +126,7 @@ const encodePath = (item: string): string => {
     .join('/');
 };
 
-/**
- * Request content from the API with automatic token handling and URL prefixing.
- *
- * @param url - The URL to request. If relative, it will be passed through the `uri` helper.
- * @param options - Optional fetch options, automatically extended with common headers and credentials.
- * @returns The fetch Response promise.
- */
+/** Apply API defaults, timeout handling, and login redirection to a fetch request. */
 const request = (
   url: string,
   options: RequestInit & { timeout?: number } = {},
@@ -218,12 +179,6 @@ const request = (
     });
 };
 
-/**
- * Remove ANSI color codes from a string.
- *
- * @param text - The text potentially containing ANSI codes.
- * @returns A string without ANSI escape sequences.
- */
 const removeANSIColors = (text: string): string => {
   return (
     text?.replace(
@@ -234,13 +189,6 @@ const removeANSIColors = (text: string): string => {
   );
 };
 
-/**
- * Return the basename of a given path.
- *
- * @param path - The input path.
- * @param ext - Optional extension to strip from the basename.
- * @returns The last segment of the path, minus the extension if matched.
- */
 const basename = (path: string, ext: string = ''): string => {
   if (!path) return '';
   const segments = path.replace(/\\/g, '/').split('/');
@@ -254,12 +202,6 @@ const basename = (path: string, ext: string = ''): string => {
   return base;
 };
 
-/**
- * Return the directory portion of a path.
- *
- * @param filePath - The input file path.
- * @returns The directory part of the path.
- */
 const dirname = (filePath: string): string => {
   const lastIndex = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   if (-1 === lastIndex) {
@@ -273,13 +215,6 @@ const dirname = (filePath: string): string => {
   return filePath.substring(0, lastIndex);
 };
 
-/**
- * Copy text to clipboard with optional notification and storage flag.
- *
- * @param str - The string to copy.
- * @param notify - Whether to show a toast notification (default: true).
- * @param store - Whether to persist the notification (optional).
- */
 const copyText = (str: string, notify: boolean = true, store: boolean = false): void => {
   const toast = useNotification();
   const { $i18n } = useNuxtApp();
@@ -310,15 +245,6 @@ const copyText = (str: string, notify: boolean = true, store: boolean = false): 
   }
 };
 
-/**
- * Trim delimiter characters from a string at specified positions.
- *
- * @param str - The input string to trim.
- * @param delim - The delimiter character to trim.
- * @param position - Where to trim the delimiter from: 'start', 'end', or 'both'. Defaults to 'both'.
- * @returns The trimmed string.
- * @throws Will throw an error if `delim` is not provided.
- */
 const iTrim = (str: string, delim: string, position: 'start' | 'end' | 'both' = 'both'): string => {
   if (!str) {
     return str;
@@ -343,30 +269,10 @@ const iTrim = (str: string, delim: string, position: 'start' | 'end' | 'both' = 
   return str;
 };
 
-/**
- * Trim delimiter characters from the end of a string.
- *
- * @param str - The input string to trim.
- * @param delim - The delimiter character to trim.
- * @returns The trimmed string.
- */
 const eTrim = (str: string, delim: string): string => iTrim(str, delim, 'end');
 
-/**
- * Trim delimiter characters from the start of a string.
- *
- * @param str - The input string to trim.
- * @param delim - The delimiter character to trim.
- * @returns The trimmed string.
- */
 const sTrim = (str: string, delim: string): string => iTrim(str, delim, 'start');
 
-/**
- * Uppercase the first character of the string.
- *
- * @param str - The input string.
- * @returns The string with the first character capitalized.
- */
 const ucFirst = (str: string): string => (!str ? str : str.charAt(0).toUpperCase() + str.slice(1));
 
 const normalizePresetName = (name: string): string =>
@@ -398,13 +304,6 @@ const browserSummary = (userAgent: string | null): string => {
 const prettyName = (name: string): string =>
   name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-/**
- * Get the name of a separator based on its value
- *
- * @param {string} value - The separator value
- *
- * @returns {string} The name of the separator, or 'Unknown' if not found
- */
 const getSeparatorsName = (value: string): string => {
   const sep = separators.find((s) => s.value === value);
   if (!sep) return useNuxtApp().$i18n?.t('common.unknown') ?? 'Unknown';
@@ -412,13 +311,6 @@ const getSeparatorsName = (value: string): string => {
   return `${tr(sep.name)} (${value})`;
 };
 
-/**
- * Convert options to JSON
- *
- * @param {string} opts
- *
- * @returns {Promise<convert_args_response>} The converted options
- */
 const convertCliOptions = async (opts: string): Promise<convert_args_response> => {
   const response = await request('/api/yt-dlp/convert', {
     method: 'POST',
@@ -433,25 +325,10 @@ const convertCliOptions = async (opts: string): Promise<convert_args_response> =
   return data;
 };
 
-/**
- * Get query parameters from a URL string or the current location.
- *
- * @param url - The full URL or search string (default: current URL's search).
- * @returns A key-value map of query parameters.
- */
 const getQueryParams = (url: string = window.location.search): Record<string, string> => {
   return Object.fromEntries(new URLSearchParams(url).entries());
 };
 
-/**
- * Build a download URL based on config and item metadata.
- *
- * @param config - The application config object.
- * @param item - The item containing filename/folder.
- * @param base - The base endpoint type (default: 'api/download').
- * @param playlist - Whether to generate a playlist URL (default: false).
- * @returns The fully constructed download URI.
- */
 const makeDownload = (
   config: any,
   item: StoreItem | { folder?: string; filename: string },
@@ -487,14 +364,6 @@ const SIZE_UNIT_KEYS = [
   'common.yib',
 ] as const;
 
-/**
- * Convert bytes to human readable format.
- *
- * @param bytes - The number of bytes.
- * @param decimals - Number of decimal places to include.
- * @param t - Optional i18n translate function for localized units.
- * @returns A formatted size string (e.g., '2.00 MiB').
- */
 const formatBytes = (bytes: number, decimals: number = 2, t?: (key: string) => string): string => {
   if (!+bytes) {
     return t ? `0 ${t('common.bytes')}` : '0 Bytes';
@@ -507,12 +376,6 @@ const formatBytes = (bytes: number, decimals: number = 2, t?: (key: string) => s
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${unit}`;
 };
 
-/**
- * Check if input has non-empty data.
- *
- * @param item - The input (object, array, or JSON string).
- * @returns True if it contains data, false otherwise.
- */
 const has_data = (item: any): boolean => {
   if (!item) {
     return false;
@@ -535,12 +398,6 @@ const has_data = (item: any): boolean => {
   }
 };
 
-/**
- * Toggle a class on a DOM element. Supports array of class names.
- *
- * @param target - The HTML element to toggle classes on.
- * @param className - Class name or array of class names.
- */
 const toggleClass = (target: HTMLElement, className: string | string[]): void => {
   if (Array.isArray(className)) {
     className.forEach((cls) => toggleClass(target, cls));
@@ -554,13 +411,6 @@ const toggleClass = (target: HTMLElement, className: string | string[]): void =>
   }
 };
 
-/**
- * Remove specified fields from an object.
- *
- * @param item - Input object.
- * @param fields - Keys to exclude.
- * @returns A new object without the excluded keys.
- */
 const cleanObject = <T extends Record<string, any>>(item: T, fields: string[] = []): Partial<T> => {
   if (!item || typeof item !== 'object' || fields.length < 1) return item;
   const cleaned: Partial<T> = {};
@@ -572,12 +422,6 @@ const cleanObject = <T extends Record<string, any>>(item: T, fields: string[] = 
   return cleaned;
 };
 
-/**
- * Prefix URL with baseURL if needed.
- *
- * @param u - The input path.
- * @returns The fully prefixed URI.
- */
 const uri = (u: string): string => {
   const runtimeConfig = useRuntimeConfig();
 
@@ -592,12 +436,6 @@ const uri = (u: string): string => {
   return `${eTrim(runtimeConfig.app.baseURL, '/')}/${sTrim(u, '/')}`;
 };
 
-/**
- * Format seconds into HH:MM:SS or MM:SS.
- *
- * @param seconds - Time in seconds.
- * @returns A time string.
- */
 const formatTime = (seconds: number): string => {
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
@@ -615,24 +453,10 @@ const formatTime = (seconds: number): string => {
   return `${secs}`;
 };
 
-/**
- * Pause execution for a number of seconds.
- *
- * @param seconds - Number of seconds to sleep.
- * @returns A promise that resolves after the delay.
- */
 const sleep = (seconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 
-/**
- * Waits for the test function to return a truthy value.
- *
- * @param test - The function to test
- * @param timeout_ms - The maximum time to wait in milliseconds.
- * @param frequency - The frequency to check the test function in milliseconds.
- *
- * @returns The result of the test function.
- */
+/** Waits for a truthy result and returns false when the timeout expires. */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 const awaiter = async (test: Function, timeout_ms: number = 20 * 1000, frequency: number = 200) => {
   if (typeof test != 'function') {
@@ -656,12 +480,6 @@ const awaiter = async (test: Function, timeout_ms: number = 20 * 1000, frequency
   return result;
 };
 
-/**
- * Encode a JavaScript object into a URL-safe base64 string.
- *
- * @param obj - The object to encode.
- * @returns A URL-safe base64-encoded string.
- */
 const encode = (obj: Record<string, any>): string => {
   const jsonStr = JSON.stringify(obj);
   const utf8Bytes = new TextEncoder().encode(jsonStr);
@@ -670,12 +488,6 @@ const encode = (obj: Record<string, any>): string => {
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
-/**
- * Decode a URL-safe base64 string into an object.
- *
- * @param str - The URL-safe base64-encoded string.
- * @returns The decoded JavaScript object.
- */
 const decode = (str: string): object => {
   const base64 = str
     .replace(/-/g, '+')

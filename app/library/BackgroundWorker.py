@@ -18,19 +18,12 @@ class CloseThread:
 
 
 class BackgroundWorker(metaclass=Singleton):
-    """
-    Background worker to run tasks in a separate thread.
-    This class uses a queue to submit tasks that will be executed in the background.
-    It is designed to run in a separate thread and uses asyncio to handle asynchronous tasks.
-    """
+    """Run queued synchronous work in one thread and coroutine work on its event-loop thread."""
 
     def __init__(self):
         self.queue: Queue = Queue()
-        "The queue to hold the tasks."
         self.running = True
-        "Whether the background worker is running or not."
         self.thread: threading.Thread | None = None
-        "The thread that runs the background worker."
 
     @staticmethod
     def get_instance() -> "BackgroundWorker":
@@ -62,7 +55,6 @@ class BackgroundWorker(metaclass=Singleton):
         asyncio.set_event_loop(asyncio.new_event_loop())
         loop = asyncio.get_event_loop()
 
-        # Start loop in a background thread
         def _loop_runner():
             try:
                 loop.run_forever()

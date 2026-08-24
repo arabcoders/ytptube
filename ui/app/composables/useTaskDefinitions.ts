@@ -10,13 +10,7 @@ import type {
 } from '~/types/task_definitions';
 import type { Pagination } from '~/types/responses';
 
-/**
- * Reactive list of all task definition summaries, sorted by priority and name.
- */
 const definitions = ref<Array<TaskDefinitionSummary>>([]);
-/**
- * Pagination state for task definitions list.
- */
 const pagination = ref<Pagination>({
   page: 1,
   per_page: 50,
@@ -25,34 +19,17 @@ const pagination = ref<Pagination>({
   has_next: false,
   has_prev: false,
 });
-/**
- * Indicates if a request is in progress.
- */
 const isLoading = ref<boolean>(false);
-/**
- * Stores the last error message, if any.
- */
 const lastError = ref<string | null>(null);
 const impersonateTargets = ref<string[]>([]);
 const targetsLoaded = ref(false);
 
-/**
- * If true, methods will throw errors instead of returning null/false (for testing)
- */
+// Test hook: rethrow request errors instead of returning fallback values.
 const throwInstead = ref(false);
 
 const { $i18n } = useNuxtApp();
 const t = $i18n?.t ?? ((key: string) => key);
 
-/**
- * Notification composable for showing success/error messages.
- */
-
-/**
- * Sorts task definition summaries by priority (ascending), then name (A-Z).
- * @param items Array of TaskDefinitionSummary
- * @returns Sorted array of TaskDefinitionSummary
- */
 const sortSummaries = (items: Array<TaskDefinitionSummary>): Array<TaskDefinitionSummary> => {
   return [...items].sort((a, b) => {
     if (a.priority === b.priority) {
@@ -63,10 +40,6 @@ const sortSummaries = (items: Array<TaskDefinitionSummary>): Array<TaskDefinitio
   });
 };
 
-/**
- * Handles errors by updating lastError and showing a notification.
- * @param error Error object or unknown
- */
 const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
@@ -78,10 +51,6 @@ const handleError = (error: unknown): void => {
   useNotification().error(message);
 };
 
-/**
- * Updates or adds a summary in the definitions list, keeping sort order.
- * @param summary TaskDefinitionSummary to update/add
- */
 const updateSummaries = (summary: TaskDefinitionSummary): void => {
   const isNew = !definitions.value.some((item) => item.id === summary.id);
   definitions.value = sortSummaries([
@@ -93,10 +62,6 @@ const updateSummaries = (summary: TaskDefinitionSummary): void => {
   }
 };
 
-/**
- * Removes a summary from the definitions list by ID.
- * @param id Task definition ID
- */
 const removeSummary = (id: number) => {
   const initialLength = definitions.value.length;
   definitions.value = definitions.value.filter((item) => item.id !== id);
@@ -105,10 +70,6 @@ const removeSummary = (id: number) => {
   }
 };
 
-/**
- * Loads all task definition summaries from the API.
- * Updates definitions and lastError.
- */
 const loadDefinitions = async (
   page: number = 1,
   perPage: number | undefined = undefined,
@@ -137,11 +98,6 @@ const loadDefinitions = async (
   }
 };
 
-/**
- * Fetches a detailed task definition by ID from the API.
- * @param id Task definition ID
- * @returns TaskDefinitionDetailed or null on error
- */
 const getDefinition = async (id: number): Promise<TaskDefinitionDetailed | null> => {
   try {
     const response = await request(`/api/tasks/definitions/${id}`);
@@ -174,11 +130,6 @@ const loadImpersonateTargets = async (): Promise<void> => {
   }
 };
 
-/**
- * Creates a new task definition via API.
- * @param definition TaskDefinitionDocument to create
- * @returns Created TaskDefinitionDetailed or null on error
- */
 const createDefinition = async (
   definition: TaskDefinitionDocument,
 ): Promise<TaskDefinitionDetailed | null> => {
@@ -211,12 +162,6 @@ const createDefinition = async (
   }
 };
 
-/**
- * Updates an existing task definition via API.
- * @param id Task definition ID
- * @param definition Updated TaskDefinitionDocument
- * @returns Updated TaskDefinitionDetailed or null on error
- */
 const updateDefinition = async (
   id: number,
   definition: TaskDefinitionDocument,
@@ -252,11 +197,6 @@ const updateDefinition = async (
   }
 };
 
-/**
- * Deletes a task definition by ID via API.
- * @param id Task definition ID
- * @returns true if deleted, false on error
- */
 const deleteDefinition = async (id: number): Promise<boolean> => {
   try {
     const response = await request(`/api/tasks/definitions/${id}`, { method: 'DELETE' });
@@ -273,12 +213,6 @@ const deleteDefinition = async (id: number): Promise<boolean> => {
   }
 };
 
-/**
- * Toggles the enabled status of a task definition.
- * @param id Task definition ID
- * @param enabled New enabled status
- * @returns Updated TaskDefinitionDetailed or null on error
- */
 const toggleEnabled = async (
   id: number,
   enabled: boolean,
@@ -317,17 +251,8 @@ const toggleEnabled = async (
   }
 };
 
-/**
- * Clears the last error message.
- */
 const clearError = () => (lastError.value = null);
 
-/**
- * useTaskDefinitions composable
- *
- * Returns reactive state and CRUD methods for task definitions.
- * @returns Object with state and API methods
- */
 export const useTaskDefinitions = () => ({
   definitions: readonly(definitions),
   impersonateTargets: readonly(impersonateTargets),

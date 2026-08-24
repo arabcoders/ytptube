@@ -373,8 +373,8 @@
     "cronTimer": "CRON Timer",
     "cronTimerDesc": "If not set, the task runner is disabled.",
     "presetDescription": "Ignored if -f/--format is in CLI options.",
-    "downloadPathDesc": "Relative to download root. Empty = preset/default.",
-    "outputTemplateDesc": "Empty = preset/default.",
+    "downloadPathDesc": "Relative to the download root. Leave empty to use the preset or default.",
+    "outputTemplateDesc": "Leave empty to use the preset or default template.",
     "enableHandler": "Enable Handler",
     "enableHandlerDesc": "Tasks without a supported handler must use a timer.",
     "archiveAllDesc": "Mark all existing items as downloaded after add.",
@@ -1062,7 +1062,7 @@
     "info1": "Filtering is based on yt-dlp's <code>--match-filter</code> logic. Any expression that works with yt-dlp will also work here, including the same boolean operators. We added extended support for the <code>OR</code> ( <code>{'||'}</code> ) operator, which yt-dlp does not natively support. This allows you to combine multiple conditions more flexibly.",
     "info2": "The primary use case for this feature is to apply custom cli arguments to specific returned info.",
     "info3": "For example, i follow specific channel that sometimes region lock some videos, by using the following filter i am able to bypass it <code>availability = 'needs_auth' &amp; channel_id = 'channel_id'</code>. and set proxy for that specific video, while leaving the rest of the videos to be downloaded normally.",
-    "info4": "The data which the filter is applied on is the same data that yt-dlp returns, simply, click on the information button, and check the data to craft your filter. You will get instant feedback if the filter matches or not.",
+    "info4": "Filters use the data returned by yt-dlp. Click the information button to inspect that data while writing a filter. The form shows whether the filter matches.",
     "priorityPlaceholder": "0 (higher = first)"
   },
   "notificationsPage": {

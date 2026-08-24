@@ -88,10 +88,7 @@ class TestShutdownEndpoint:
 
 
 class TestCheckUpdatesEndpoint:
-    """Tests for the check updates endpoint."""
-
     def setup_method(self):
-        """Reset singletons before each test."""
         if "system.check_updates" not in ROUTES.get("http", {}):
             importlib.reload(system)
         Config._reset_singleton()
@@ -99,7 +96,6 @@ class TestCheckUpdatesEndpoint:
 
     @pytest.mark.asyncio
     async def test_check_updates_disabled(self, test_client):
-        """Test check updates returns error when disabled in config."""
         config = Config.get_instance()
         config.check_for_updates = False
         encoder = Encoder()
@@ -117,7 +113,6 @@ class TestCheckUpdatesEndpoint:
 
     @pytest.mark.asyncio
     async def test_updates_current(self, test_client):
-        """Test check updates returns up_to_date status."""
         config = Config.get_instance()
         config.check_for_updates = True
         config.app_version = "v1.0.0"
@@ -140,7 +135,6 @@ class TestCheckUpdatesEndpoint:
 
     @pytest.mark.asyncio
     async def test_check_updates_update_available(self, test_client):
-        """Test check updates returns update_available status with new version."""
         config = Config.get_instance()
         config.check_for_updates = True
         config.app_version = "v1.0.0"

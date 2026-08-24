@@ -5,13 +5,7 @@ import { request, parse_list_response, parse_api_response, ensure_api_success } 
 import type { Preset, PresetRequest } from '~/types/presets';
 import type { APIResponse, Pagination } from '~/types/responses';
 
-/**
- * List of all presets in memory.
- */
 const presets = ref<Array<Preset>>([]);
-/**
- * Pagination state for presets list.
- */
 const pagination = ref<Pagination>({
   page: 1,
   per_page: 50,
@@ -20,35 +14,15 @@ const pagination = ref<Pagination>({
   has_next: false,
   has_prev: false,
 });
-/**
- * Indicates if a request is in progress.
- */
 const isLoading = ref<boolean>(false);
-/**
- * Indicates if an add/update operation is in progress.
- */
 const addInProgress = ref<boolean>(false);
-/**
- * Stores the last error message, if any.
- */
 const lastError = ref<string | null>(null);
-/**
- * If true, methods will throw errors instead of returning null/false (for testing)
- */
+// Test hook: rethrow request errors instead of returning fallback values.
 const throwInstead = ref(false);
 
 const { $i18n } = useNuxtApp();
 const t = $i18n?.t ?? ((key: string) => key);
 
-/**
- * Notification composable for showing success/error messages.
- */
-
-/**
- * Sorts presets by priority (descending), then name (A-Z).
- * @param items Array of Preset
- * @returns Sorted array of Preset
- */
 const sortPresets = (items: Array<Preset>): Array<Preset> => {
   return [...items].sort((a, b) => {
     if (a.priority === b.priority) {
@@ -59,10 +33,6 @@ const sortPresets = (items: Array<Preset>): Array<Preset> => {
   });
 };
 
-/**
- * Handles errors by updating lastError and showing a notification.
- * @param error Error object or unknown
- */
 const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
@@ -74,11 +44,6 @@ const handleError = (error: unknown): void => {
   useNotification().error(message);
 };
 
-/**
- * Updates or adds a preset in the presets list, keeping sort order.
- * Also increments pagination.total if it's a new preset.
- * @param preset Preset to update/add
- */
 const updatePresets = (preset: Preset): void => {
   const isNew = !presets.value.some((item) => item.id === preset.id);
   presets.value = sortPresets([...presets.value.filter((item) => item.id !== preset.id), preset]);
@@ -87,11 +52,6 @@ const updatePresets = (preset: Preset): void => {
   }
 };
 
-/**
- * Removes a preset from the presets list by ID.
- * Also decrements pagination.total.
- * @param id Preset ID
- */
 const removePreset = (id: number) => {
   const initialLength = presets.value.length;
   presets.value = presets.value.filter((item) => item.id !== id);
@@ -100,12 +60,6 @@ const removePreset = (id: number) => {
   }
 };
 
-/**
- * Loads all presets from the API with pagination support.
- * Updates presets, pagination, and lastError.
- * @param page Page number
- * @param perPage Items per page
- */
 const loadPresets = async (
   page: number = 1,
   perPage: number | undefined = undefined,
@@ -138,11 +92,6 @@ const loadPresets = async (
   }
 };
 
-/**
- * Fetches a single preset by ID from the API.
- * @param id Preset ID
- * @returns Preset or null on error
- */
 const getPreset = async (id: number): Promise<Preset | null> => {
   try {
     const response = await request(`/api/presets/${id}`);
@@ -160,12 +109,6 @@ const getPreset = async (id: number): Promise<Preset | null> => {
   }
 };
 
-/**
- * Creates a new preset via API.
- * @param preset PresetRequest to create
- * @param callback Optional callback with APIResponse result
- * @returns Created Preset or null on error
- */
 const createPreset = async (
   preset: PresetRequest,
   callback?: (response: APIResponse<Preset>) => void,
@@ -205,13 +148,6 @@ const createPreset = async (
   }
 };
 
-/**
- * Updates an existing preset via API (PUT - full update).
- * @param id Preset ID
- * @param preset Updated Preset data
- * @param callback Optional callback with APIResponse result
- * @returns Updated Preset or null on error
- */
 const updatePreset = async (
   id: number,
   preset: Preset,
@@ -261,13 +197,6 @@ const updatePreset = async (
   }
 };
 
-/**
- * Partially updates an existing preset via API (PATCH).
- * @param id Preset ID
- * @param patch Partial Preset data
- * @param callback Optional callback with APIResponse result
- * @returns Updated Preset or null on error
- */
 const patchPreset = async (
   id: number,
   patch: Partial<Preset>,
@@ -318,12 +247,6 @@ const patchPreset = async (
   }
 };
 
-/**
- * Deletes a preset by ID via API.
- * @param id Preset ID
- * @param callback Optional callback with APIResponse result
- * @returns true if deleted, false on error
- */
 const deletePreset = async (
   id: number,
   callback?: (response: APIResponse<boolean>) => void,
@@ -354,17 +277,8 @@ const deletePreset = async (
   }
 };
 
-/**
- * Clears the last error message.
- */
 const clearError = () => (lastError.value = null);
 
-/**
- * usePresets composable
- *
- * Returns reactive state and CRUD methods for presets.
- * @returns Object with state and API methods
- */
 export const usePresets = () => ({
   presets: readonly(presets),
   pagination: readonly(pagination),

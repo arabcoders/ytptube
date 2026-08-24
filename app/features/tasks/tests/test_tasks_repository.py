@@ -1,5 +1,3 @@
-"""Tests for TasksRepository."""
-
 from __future__ import annotations
 
 import pytest
@@ -12,7 +10,6 @@ from app.tests.helpers import make_in_memory_db_path
 
 @pytest_asyncio.fixture
 async def repo():
-    """Provide a fresh repository instance with initialized database for each test."""
     TasksRepository._reset_singleton()
     SqliteStore._reset_singleton()
 
@@ -30,11 +27,8 @@ async def repo():
 
 
 class TestTasksRepository:
-    """Test suite for TasksRepository database operations."""
-
     @pytest.mark.asyncio
     async def test_create_task(self, repo):
-        """Create task with valid data."""
         data = {
             "name": "Daily Download",
             "url": "https://example.com/video",
@@ -66,7 +60,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_create_with_minimal_data(self, repo):
-        """Create task with minimal required data."""
         data = {
             "name": "Simple Task",
             "url": "https://example.com",
@@ -87,7 +80,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
-        """Get task by integer ID."""
         created = await repo.create(
             {
                 "name": "Get Test",
@@ -103,7 +95,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_string_id(self, repo):
-        """Get task by string ID."""
         created = await repo.create(
             {
                 "name": "String ID Test",
@@ -118,7 +109,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_get_nonexistent(self, repo):
-        """Get nonexistent task returns None."""
         result = await repo.get(99999)
         assert result is None, "Should return None for nonexistent ID"
 
@@ -127,7 +117,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_update_task(self, repo):
-        """Update existing task."""
         created = await repo.create(
             {
                 "name": "Update Test",
@@ -153,13 +142,11 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_raises(self, repo):
-        """Update nonexistent task raises KeyError."""
         with pytest.raises(KeyError, match="not found"):
             await repo.update(99999, {"name": "should_fail"})
 
     @pytest.mark.asyncio
     async def test_delete_task(self, repo):
-        """Delete existing task."""
         created = await repo.create(
             {
                 "name": "Delete Test",
@@ -176,13 +163,11 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_raises(self, repo):
-        """Delete nonexistent task raises KeyError."""
         with pytest.raises(KeyError, match="not found"):
             await repo.delete(99999)
 
     @pytest.mark.asyncio
     async def test_get_by_name(self, repo):
-        """Get task by name."""
         await repo.create(
             {
                 "name": "Named Task",
@@ -197,7 +182,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_get_name_excludes_id(self, repo):
-        """Get by name can exclude specific ID."""
         first = await repo.create(
             {
                 "name": "duplicate",
@@ -213,7 +197,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_get_all_enabled(self, repo):
-        """Get all enabled tasks."""
         await repo.create({"name": "Enabled 1", "url": "https://example.com", "enabled": True})
         await repo.create({"name": "Disabled", "url": "https://example.com", "enabled": False})
         await repo.create({"name": "Enabled 2", "url": "https://example.com", "enabled": True})
@@ -225,7 +208,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_get_all_with_timer(self, repo):
-        """Get all tasks with timer configured."""
         await repo.create({"name": "With Timer", "url": "https://example.com", "timer": "0 0 * * *"})
         await repo.create({"name": "No Timer", "url": "https://example.com", "timer": ""})
         await repo.create({"name": "Another Timer", "url": "https://example.com", "timer": "0 12 * * *"})
@@ -237,7 +219,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_list_paginated(self, repo):
-        """List paginated returns correct subset."""
         for i in range(5):
             await repo.create(
                 {
@@ -255,7 +236,6 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_list_ordering(self, repo):
-        """List orders by name ascending."""
         await repo.create({"name": "Charlie", "url": "https://example.com"})
         await repo.create({"name": "Alice", "url": "https://example.com"})
         await repo.create({"name": "Bob", "url": "https://example.com"})

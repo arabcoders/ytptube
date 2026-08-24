@@ -36,10 +36,6 @@ def ffmpeg_bin() -> str | None:
 
 
 class FFStream:
-    """
-    An object representation of an individual stream in a multimedia file.
-    """
-
     def __init__(self, json_data: dict):
         for key, val in json_data.items():
             setattr(self, key, val)
@@ -77,30 +73,18 @@ class FFStream:
         return f"<Stream: #{index} [{codec_type}]>"
 
     def is_audio(self):
-        """
-        Is this stream labelled as an audio stream?
-        """
         return self.__dict__.get("codec_type", None) == "audio"
 
     def is_video(self):
-        """
-        Is the stream labelled as a video stream.
-        """
         if self.__dict__.get("codec_type", None) != "video":
             return False
 
         return self.__dict__.get("codec_name", None) not in ["png", "mjpeg", "gif", "bmp", "tiff", "webp"]
 
     def is_subtitle(self):
-        """
-        Is the stream labelled as a subtitle stream.
-        """
         return self.__dict__.get("codec_type", None) == "subtitle"
 
     def is_attachment(self):
-        """
-        Is the stream labelled as a attachment stream.
-        """
         return self.__dict__.get("codec_type", None) == "attachment"
 
     def frame_size(self):
@@ -163,27 +147,15 @@ class FFStream:
         return duration
 
     def language(self):
-        """
-        Returns language tag of stream. e.g. eng
-        """
         return self.__dict__.get("TAG:language", None)
 
     def codec(self):
-        """
-        Returns a string representation of the stream codec.
-        """
         return self.__dict__.get("codec_name", None)
 
     def codec_description(self):
-        """
-        Returns a long representation of the stream codec.
-        """
         return self.__dict__.get("codec_long_name", None)
 
     def codec_tag(self):
-        """
-        Returns a short representative tag of the stream codec.
-        """
         return self.__dict__.get("codec_tag_string", None)
 
     def bit_rate(self):
@@ -217,19 +189,15 @@ class FFProbeResult:
         return getattr(self, key) if hasattr(self, key) else default
 
     def streams(self) -> list[FFStream]:
-        """List of all streams."""
         return self.video + self.audio + self.subtitle + self.attachment
 
     def has_video(self):
-        """Is there a video stream?"""
         return len(self.video) > 0
 
     def has_audio(self):
-        """Is there an audio stream?"""
         return len(self.audio) > 0
 
     def has_subtitle(self):
-        """Is there a subtitle stream?"""
         return len(self.subtitle) > 0
 
     def __repr__(self):

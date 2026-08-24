@@ -175,7 +175,7 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
         test: Path = root_dir
         rel_for_listing: str = "/"
     else:
-        # Strip leading slash so joinpath doesn't ignore the base path.
+        # A leading slash would make joinpath discard the configured root.
         test = root_dir.joinpath(raw_req.lstrip("/")).resolve(strict=False)
         rel_for_listing: str = raw_req.lstrip("/")
 
@@ -287,7 +287,6 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
         )
         return api_error_response("Invalid JSON.", code="BAD_REQUEST", status=web.HTTPBadRequest.status_code)
 
-    # validate each action before performing any operations
     for params in actions:
         action = params.get("action").lower()
         if not action or action not in ["rename", "delete", "move", "directory"]:
@@ -357,7 +356,6 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
 
         operations_status.append(entry)
 
-    # perform each action
     for params in actions:
         req_path: str = params.get("path")
         if not req_path:

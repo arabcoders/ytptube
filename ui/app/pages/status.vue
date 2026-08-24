@@ -472,7 +472,6 @@ const toggleSection = (id: string): void => {
   }
 };
 
-// Bottleneck alert
 const showBottleneckAlert = computed(() => {
   const b = bottlenecks.value;
   return b && b.status === 'attention' && b.bottlenecks.length > 0;
@@ -501,7 +500,6 @@ const bottleneckDescription = computed(() => {
   return bottlenecks.value?.bottlenecks[0]?.summary ?? '';
 });
 
-// Derived values
 const diskReadBps = computed(() => sample.value?.disk_read_bps ?? 0);
 const diskWriteNow = computed(() => sample.value?.disk_write_bps ?? 0);
 const networkTotalBps = computed(() => {
@@ -572,7 +570,6 @@ const connectionsHint = computed(() => {
   return t('status.connections', { count: conn });
 });
 
-// Sparkline data (last 60 samples)
 const historyCpu = computed(() => {
   return statsState.history.value.slice(-60).map((s) => s.process_cpu_percent);
 });
@@ -590,7 +587,6 @@ const historyTimestamps = computed(() => {
   return statsState.history.value.slice(-60).map((s) => s.ts);
 });
 
-// Helpers
 const fmtPct = (v: number | null | undefined): string => {
   if (v == null) return '\u2014';
   return `${Math.round(v)}%`;

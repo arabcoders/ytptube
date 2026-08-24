@@ -667,7 +667,7 @@ or an error:
 ---
 
 ### GET /api/history/add
-**Purpose**: **(Quick Add)** Add a single URL to the download queue via GET.  
+**Purpose**: Add a single URL to the download queue with a GET request.
 
 **Query Parameters**:
 - `url=<video-url>`
@@ -685,9 +685,9 @@ or an error:
 - If `preset` is set and not found, returns `404 Not Found`.
 
 > [!NOTE]
-> This endpoint is a quick way to add a single item to the queue without needing to format a full JSON body. It is primarily for convenience and may not support all options available in the full POST `/api/history` endpoint.
-> Also note, that the endpoint uses different error format compared to the other endpoints, returning a simple JSON object with `status` and `message` fields.
-> This is to make easier to script bookmarklets or simple API requests.
+> This convenience endpoint adds one queue item without a full JSON body and does not support every option accepted by
+> `POST /api/history`. It returns a simple JSON object with `status` and `message` fields, which is useful for bookmarklets
+> and simple scripts.
 
 ---
 

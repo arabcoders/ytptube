@@ -10,10 +10,7 @@ from app.library.encoder import Encoder
 
 
 class TestEncoder:
-    """Test the Encoder class."""
-
     def setup_method(self):
-        """Set up test fixtures."""
         self.encoder = Encoder()
 
     @pytest.mark.parametrize("path", [Path("/tmp/test/file.txt"), Path("relative/path/file.txt")])
@@ -23,13 +20,11 @@ class TestEncoder:
         assert isinstance(result, str)
 
     def test_date_serialization(self):
-        """Test that date objects are serialized as strings."""
         test_date = date(2024, 3, 15)
         result = self.encoder.default(test_date)
         assert result == "2024-03-15"
 
     def test_object_with_serialize_method(self):
-        """Test that objects with serialize method use it."""
 
         class CustomObject:
             def serialize(self):
@@ -40,7 +35,6 @@ class TestEncoder:
         assert result == {"custom": "data", "type": "test"}
 
     def test_object_with_dict_fallback(self):
-        """Test that objects without serialize method fall back to __dict__."""
 
         class SimpleObject:
             def __init__(self):
@@ -52,13 +46,11 @@ class TestEncoder:
         assert result == {"name": "test", "value": 42}
 
     def test_object_default(self):
-        """Test that objects without __dict__ fall back to default JSONEncoder."""
         # This should raise TypeError since complex is not JSON serializable
         with pytest.raises(TypeError):
             self.encoder.default(complex(1, 2))
 
     def test_json_dumps_integration(self):
-        """Test full JSON serialization with various types."""
         data = {"path": Path("/tmp/test.txt"), "date": date(2024, 1, 1), "number": 42, "string": "test"}
 
         result = json.dumps(data, cls=Encoder)
@@ -70,7 +62,6 @@ class TestEncoder:
         assert parsed["string"] == "test"
 
     def test_json_dumps_custom_object(self):
-        """Test JSON serialization with custom objects."""
 
         class TestObject:
             def __init__(self):
@@ -87,7 +78,6 @@ class TestEncoder:
         assert parsed["regular"] == "data"
 
     def test_nested_serialization(self):
-        """Test serialization of nested structures with various types."""
 
         class CustomObj:
             def serialize(self):
@@ -110,7 +100,6 @@ class TestEncoder:
         assert parsed["nested"]["date"] == "2024-06-15"
 
     def test_mock_daterange_serialization(self):
-        """Test DateRange serialization with mock object."""
         # Mock a DateRange-like object
         mock_daterange = MagicMock()
         mock_daterange.start = date(2024, 1, 15)

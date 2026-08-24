@@ -730,7 +730,6 @@ async def task_mark(request: Request, repo: TasksRepository, encoder: Encoder) -
                 params={"resource": "api.resources.task"},
             )
 
-        # Convert to extended Task with handler methods
         task = ExtendedTask.model_validate(model)
         _status, _message = await task.mark()
 
@@ -784,7 +783,6 @@ async def task_unmark(request: Request, repo: TasksRepository, encoder: Encoder)
                 params={"resource": "api.resources.task"},
             )
 
-        # Convert to extended Task with handler methods
         task = ExtendedTask.model_validate(model)
         _status, _message = await task.unmark()
 

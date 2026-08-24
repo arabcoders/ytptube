@@ -1,4 +1,3 @@
-// Types for api/tasks/inspect
 import type { TaskDefinitionDocument } from '~/types/task_definitions';
 
 export interface TaskInspectRequest {

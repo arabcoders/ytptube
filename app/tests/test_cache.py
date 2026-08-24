@@ -10,21 +10,16 @@ from app.library.cache import Cache, CacheEntry, JsonPersistence
 
 
 class TestCache:
-    """Test the Cache class."""
-
     def setup_method(self):
-        """Set up test fixtures."""
         Cache._reset_singleton()
         self.cache = Cache()
 
     def test_singleton_behavior(self):
-        """Test that Cache follows singleton pattern."""
         cache1 = Cache()
         cache2 = Cache()
         assert cache1 is cache2
 
     def test_basic_set_and_get(self):
-        """Test basic cache set and get operations."""
         self.cache.set("key1", "value1")
         assert self.cache.get("key1") == "value1"
 
@@ -151,12 +146,10 @@ class TestCache:
         }
 
     def test_get_with_default(self):
-        """Test get with default value for non-existent keys."""
         assert self.cache.get("nonexistent", "default") == "default"
         assert self.cache.get("nonexistent") is None
 
     def test_set_with_ttl(self):
-        """Test setting values with TTL."""
         self.cache.set("temp_key", "temp_value", ttl=0.1)
         assert self.cache.get("temp_key") == "temp_value"
 
@@ -165,23 +158,19 @@ class TestCache:
         assert self.cache.get("temp_key") is None
 
     def test_set_no_ttl(self):
-        """Test setting values without TTL (permanent)."""
         self.cache.set("permanent_key", "permanent_value")
         assert self.cache.get("permanent_key") == "permanent_value"
 
-        # Should still be there after some time
         time.sleep(0.1)
         assert self.cache.get("permanent_key") == "permanent_value"
 
     def test_has_key(self):
-        """Test key existence checking."""
         assert not self.cache.has("nonexistent")
 
         self.cache.set("existing", "value")
         assert self.cache.has("existing")
 
     def test_has_key_with_expiration(self):
-        """Test key existence with expired keys."""
         self.cache.set("expiring", "value", ttl=0.1)
         assert self.cache.has("expiring")
 
@@ -189,7 +178,6 @@ class TestCache:
         assert not self.cache.has("expiring")
 
     def test_ttl_method(self):
-        """Test TTL retrieval."""
         # Key without TTL
         self.cache.set("permanent", "value")
         assert self.cache.ttl("permanent") is None
@@ -204,7 +192,6 @@ class TestCache:
         assert self.cache.ttl("nonexistent") is None
 
     def test_delete_key(self):
-        """Test key deletion."""
         self.cache.set("to_delete", "value")
         assert self.cache.get("to_delete") == "value"
 
@@ -212,11 +199,9 @@ class TestCache:
         assert self.cache.get("to_delete") is None
 
     def test_delete_nonexistent_key(self):
-        """Test deleting non-existent key (should not raise error)."""
         self.cache.delete("nonexistent")  # Should not raise
 
     def test_clear_cache(self):
-        """Test clearing all cache entries."""
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2")
 
@@ -226,7 +211,6 @@ class TestCache:
         assert self.cache.get("key2") is None
 
     def test_hash_method(self):
-        """Test hash generation."""
         hash1 = self.cache.hash("test_string")
         hash2 = self.cache.hash("test_string")
         hash3 = self.cache.hash("different_string")
@@ -237,12 +221,10 @@ class TestCache:
         # Different input should produce different hash
         assert hash1 != hash3
 
-        # Should be valid SHA-256 hex string
         assert len(hash1) == 64
         assert all(c in "0123456789abcdef" for c in hash1)
 
     def test_thread_safety(self):
-        """Test thread safety of cache operations."""
         results = []
         errors = []
 
@@ -273,12 +255,10 @@ class TestCache:
         for thread in threads:
             thread.join()
 
-        # Check results
         assert len(errors) == 0, f"Thread safety errors: {errors}"
         assert len(results) == 50  # 5 workers * 10 operations each
 
     def test_async_set(self):
-        """Test async set method using asyncio.run."""
 
         async def async_test():
             await self.cache.aset("async_key", "async_value")
@@ -287,7 +267,6 @@ class TestCache:
         asyncio.run(async_test())
 
     def test_async_set_with_ttl(self):
-        """Test async set with TTL using asyncio.run."""
 
         async def async_test():
             await self.cache.aset("async_temp", "async_value", ttl=0.1)
@@ -301,7 +280,6 @@ class TestCache:
         asyncio.run(async_test())
 
     def test_expired_key_cleanup_get(self):
-        """Test that expired keys are cleaned up when accessed."""
         # Set a key with very short TTL
         self.cache.set("cleanup_test", "value", ttl=0.05)
 
@@ -318,7 +296,6 @@ class TestCache:
         assert "cleanup_test" not in self.cache._cache
 
     def test_expired_key_cleanup_has(self):
-        """Test that expired keys are cleaned up when checking existence."""
         # Set a key with very short TTL
         self.cache.set("has_cleanup", "value", ttl=0.05)
 
@@ -335,7 +312,6 @@ class TestCache:
         assert "has_cleanup" not in self.cache._cache
 
     def test_complex_data_types(self):
-        """Test caching of complex data types."""
         # Test list
         test_list = [1, 2, {"nested": "dict"}]
         self.cache.set("list_key", test_list)
@@ -364,7 +340,6 @@ class TestCache:
 
     @pytest.mark.asyncio
     async def test_cleanup_removes_expired_entries(self):
-        """Test that _cleanup removes only expired entries."""
         # Set some keys with different TTLs
         self.cache.set("permanent", "value")
         self.cache.set("short", "value1", ttl=0.1)
@@ -383,7 +358,6 @@ class TestCache:
 
     @pytest.mark.asyncio
     async def test_cleanup_no_expired_entries(self):
-        """Test that _cleanup handles cache with no expired entries."""
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2", ttl=1.0)
 
@@ -396,7 +370,6 @@ class TestCache:
 
     @pytest.mark.asyncio
     async def test_attach_registers_with_services(self):
-        """Test that attach method registers cache with Services and schedules cleanup."""
         from app.library.Scheduler import Scheduler
         from app.library.Services import Services
 

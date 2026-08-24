@@ -60,7 +60,6 @@ async def test_m3u8_video_without_ffprobe(tmp_path: Path, monkeypatch: pytest.Mo
 
 @pytest.mark.asyncio
 async def test_m3u8_subtitle_without_ffprobe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client) -> None:
-    """Subtitle playlists do not depend on ffprobe and must keep working."""
     media = _make_media(tmp_path)
     monkeypatch.setattr("app.features.streaming.router.get_file", lambda **_kwargs: (media, web.HTTPOk.status_code))
 

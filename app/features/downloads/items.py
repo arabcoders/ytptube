@@ -24,150 +24,51 @@ LOG = get_logger()
 
 @dataclass(kw_only=True)
 class Item:
-    """
-    This class represents a single download request for data transfer purposes.
-    """
-
     url: str
-    """The URL of the item to be downloaded."""
-
     preset: str = field(default_factory=lambda: Item._default_preset())
-    """The preset to be used for this download."""
-
     folder: str = ""
-    """The folder to save the download to."""
-
     cookies: str = ""
-    """The cookies to be used for this download."""
-
     template: str = ""
-    """The template to be used for this download."""
-
     cli: str = ""
-    """The command options for yt-dlp to be used for this download."""
-
     extras: dict = field(default_factory=dict)
-    """Extra data to be added to the download."""
-
+    # Prevent condition-triggered retries from being requeued indefinitely.
     requeued: bool = False
-    """If the item has been retried already via conditions."""
-
     auto_start: bool = True
-    """If the item should be started automatically."""
-
+    # Starts this item even when the scheduler's worker limit is reached.
     force_start: bool = False
-    """If the scheduler should bypass worker limits for this item."""
 
     def serialize(self) -> dict:
-        """
-        Serialize the item to a dictionary.
-
-        Returns:
-            dict: The serialized item.
-
-        """
         return self.__dict__.copy()
 
     def json(self) -> str:
-        """
-        Convert the item to a JSON string.
-
-        Returns:
-            str: The JSON string representation of the item.
-
-        """
         return Encoder(sort_keys=True, indent=4).encode(self.serialize())
 
     def get(self, key: str, default: Any = None) -> Any:
-        """
-        Get a value from the item by key.
-
-        Args:
-            key (str): The key to get the value for.
-            default (Any): The default value to return if the key is not found.
-
-        Returns:
-            Any: The value for the key, or the default value if the key is not found
-
-        """
         return self.__dict__.get(key, default)
 
     def has_extras(self) -> bool:
-        """
-        Check if the item has any extras data associated with it.
-
-        Returns:
-            bool: True if the item has extras, False otherwise.
-
-        """
         return bool(self.extras and len(self.extras) > 0)
 
     def add_extras(self, key: str, value: Any) -> None:
-        """
-        Add an extra data to the item.
-
-        Args:
-            key (str): The key of the extra data.
-            value (Any): The value of the extra data.
-
-        """
         if not self.extras:
             self.extras = {}
 
         self.extras[key] = value
 
     def has_cli(self) -> bool:
-        """
-        Check if the item has any command options for yt-dlp associated with it.
-
-        Returns:
-            bool: True if the item has command options for yt, False otherwise.
-
-        """
         return bool(self.cli and len(self.cli) > 2)
 
     @staticmethod
     def _default_preset() -> str:
-        """
-        Get the default preset from the configuration.
-
-        Returns:
-            str: The default preset name.
-
-        """
         from app.library.config import Config
 
         return Config.get_instance().default_preset
 
     def new_with(self, **kwargs) -> "Item":
-        """
-        Create a new instance of Item with the given parameters.
-
-        Args:
-            **kwargs: The parameters to be used for creating the new instance.
-
-        Returns:
-            Item: A new instance of Item with the given parameters.
-
-        """
         return Item.format({**self.serialize(), **kwargs})
 
     @staticmethod
     def format(item: dict) -> "Item":
-        """
-        Format the item to be added to the download queue.
-
-        Args:
-            item (dict): The item to be formatted.
-
-        Raises:
-            ValueError: If the url is not provided.
-            ValueError: If the command options for yt-cli are invalid.
-
-        Returns:
-            Item: The formatted item.
-
-        """
         url = item.get("url")
 
         if not url or not isinstance(url, str):
@@ -176,7 +77,7 @@ class Item:
 
         url = url.strip()
 
-        # If it's only a YouTube video ID, convert to a full URL.
+        # Accept bare YouTube video IDs as download URLs.
         if len(url) >= 11 and re.fullmatch(r"[A-Za-z0-9_-]{11}", url):
             url = f"https://www.youtube.com/watch?v={url}"
 
@@ -232,45 +133,17 @@ class Item:
         return Item(**data)
 
     def get_preset(self) -> "Preset | None":
-        """
-        Get the preset for the item.
-
-        Returns:
-            Preset | None: The preset for the item. If not found, None.
-
-        """
         from app.features.presets.service import Presets
 
         return Presets.get_instance().get(self.preset or self._default_preset())
 
     def get_archive_id(self) -> str | None:
-        """
-        Get the archive ID for the download URL.
-
-        Returns:
-            str | None: The archive ID if available, None otherwise.
-
-        """
         return get_archive_id(self.url).get("archive_id") if self.url else None
 
     def get_extractor(self) -> str | None:
-        """
-        Get the extractor key for the download URL.
-
-        Returns:
-            str | None: The extractor key if available, None otherwise.
-
-        """
         return get_archive_id(self.url).get("ie_key") if self.url else None
 
     def get_ytdlp_opts(self) -> YTDLPOpts:
-        """
-        Get the yt-dlp options for the item.
-
-        Returns:
-            YTDLPOpts: The yt-dlp options for the item.
-
-        """
         params: YTDLPOpts = YTDLPOpts.get_instance()
 
         if self.preset:
@@ -282,35 +155,14 @@ class Item:
         return params
 
     def get_archive_file(self) -> str | None:
-        """
-        Get the archive file path from the yt-dlp options.
-
-        Returns:
-            str | None: The archive file path if available, None otherwise.
-
-        """
         return self.get_ytdlp_opts().get_all().get("download_archive")
 
     def is_archived(self) -> bool:
-        """
-        Check if the item has been archived.
-
-        Returns:
-            bool: True if the item has been archived, False otherwise.
-
-        """
         archive_id: str | None = self.get_archive_id()
         archive_file: str | None = self.get_archive_file()
         return len(archive_read(archive_file, [archive_id])) > 0 if archive_file and archive_id else False
 
     def __repr__(self) -> str:
-        """
-        Get a short string representation of the item.
-
-        Returns:
-            str: A short string representation of the item.
-
-        """
         from app.library.config import Config
         from app.library.Utils import calc_download_path, strip_newline
 
@@ -462,27 +314,9 @@ class ItemDTO:
         )
 
     def get(self, key: str, default: Any = None) -> Any:
-        """
-        Get a value from the item by key.
-
-        Args:
-            key (str): The key to get the value for.
-            default (Any): The default value to return if the key is not found.
-
-        Returns:
-            Any: The value for the key, or the default value if the key is not found
-
-        """
         return self.__dict__.get(key, default)
 
     def get_id(self) -> str:
-        """
-        Get the unique identifier for the item.
-
-        Returns:
-            str: The unique identifier for the item.
-
-        """
         return self._id
 
     def name(self) -> str:
@@ -566,13 +400,6 @@ class ItemDTO:
         return idDict.get("ie_key") if self.url else None
 
     def get_ytdlp_opts(self) -> YTDLPOpts:
-        """
-        Get the yt-dlp options for the item.
-
-        Returns:
-            YTDLPOpts: The yt-dlp options for the item.
-
-        """
         params: YTDLPOpts = YTDLPOpts.get_instance()
 
         if self.preset:

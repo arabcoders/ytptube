@@ -1,5 +1,3 @@
-"""Tests for NotificationsRepository."""
-
 from __future__ import annotations
 
 import pytest
@@ -30,8 +28,6 @@ async def repo():
 
 
 class TestNotificationsRepository:
-    """Test suite for NotificationsRepository database operations."""
-
     @pytest.mark.asyncio
     async def test_list_empty(self, repo):
         """List returns empty when no notifications exist."""
@@ -40,7 +36,6 @@ class TestNotificationsRepository:
 
     @pytest.mark.asyncio
     async def test_create_notification(self, repo):
-        """Create notification with valid data."""
         payload = {
             "name": "Webhook",
             "on": ["item_completed"],
@@ -62,7 +57,6 @@ class TestNotificationsRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
-        """Get notification by integer ID."""
         created = await repo.create(
             {
                 "name": "Get Test",
@@ -84,7 +78,6 @@ class TestNotificationsRepository:
 
     @pytest.mark.asyncio
     async def test_update_notification(self, repo):
-        """Update existing notification."""
         created = await repo.create(
             {
                 "name": "Update Test",
@@ -106,7 +99,6 @@ class TestNotificationsRepository:
 
     @pytest.mark.asyncio
     async def test_delete_notification(self, repo):
-        """Delete existing notification."""
         created = await repo.create(
             {
                 "name": "Delete Test",

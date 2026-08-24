@@ -7,28 +7,23 @@ from app.tests.helpers import make_test_temp_dir
 
 
 class TestFFProbe:
-    """Test the ffprobe module functionality."""
-
     @pytest.fixture(autouse=True)
     def _patch_ffprobe_bin(self):
         with patch("app.features.streaming.library.ffprobe.ffprobe_bin", return_value="/usr/bin/ffprobe"):
             yield
 
     def setup_method(self):
-        """Set up test files."""
         self.temp_dir = str(make_test_temp_dir("ffprobe"))
         self.test_file = Path(self.temp_dir) / "test_video.mp4"
         self.test_file.touch()
 
     def teardown_method(self):
-        """Clean up test files."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @pytest.mark.asyncio
     async def test_ffprobe_with_nonexistent_file(self):
-        """Test ffprobe with a non-existent file."""
         from app.features.streaming.library.ffprobe import ffprobe
 
         nonexistent_file = Path(self.temp_dir) / "does_not_exist.mp4"
@@ -38,7 +33,6 @@ class TestFFProbe:
 
     @pytest.mark.asyncio
     async def test_ffprobe_missing_binary(self):
-        """Test ffprobe raises a typed error when the binary is unavailable."""
         from app.features.streaming.library.ffprobe import ffprobe
         from app.features.streaming.types import FFProbeError
 
@@ -48,7 +42,6 @@ class TestFFProbe:
 
     @pytest.mark.asyncio
     async def test_ffprobe_caching_behavior(self):
-        """Test that ffprobe results are cached with enhanced async timed_lru_cache."""
         from app.features.streaming.library.ffprobe import ffprobe
 
         assert hasattr(ffprobe, "cache_clear"), (
@@ -96,7 +89,6 @@ class TestFFProbe:
 
     @pytest.mark.asyncio
     async def test_ffprobe_with_path_object(self):
-        """Test ffprobe with Path object input."""
         from app.features.streaming.library.ffprobe import ffprobe
 
         # Mock subprocess to avoid actual ffprobe execution
@@ -115,7 +107,6 @@ class TestFFProbe:
                 assert result.metadata == {"duration": "10.0"}
 
     def test_ffprobe_result_properties(self):
-        """Test FFProbeResult object properties."""
         from app.features.streaming.library.ffprobe import FFStream, FFProbeResult
 
         result = FFProbeResult()
@@ -142,7 +133,6 @@ class TestFFProbe:
         assert result.audio[0].is_audio()
 
     def test_stream_object_methods(self):
-        """Test Stream object methods."""
         from app.features.streaming.library.ffprobe import FFStream
 
         # Test video stream

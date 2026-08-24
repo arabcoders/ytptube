@@ -114,9 +114,6 @@ class Main:
         )
 
     def start(self, host: str | None = None, port: int | None = None, cb=None):
-        """
-        Start the application.
-        """
         host = host or self._config.host
         port = port or self._config.port
 

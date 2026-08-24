@@ -76,8 +76,8 @@ Preset, set cookies, skip an item, or bypass an archive check.
 This is useful when one channel or feed contains different types of content. A Condition can be tested against a URL 
 before it is enabled, and it can be ignored for an individual submission.
 
-Real example, suppose a feed usually releases videos open to all, but sometimes region lock is used on a few videos. A 
-Condition can detect the region lock and apply proxy for that item, or skip the item entirely. 
+For example, a feed may usually release videos openly but occasionally region-lock a few items. A Condition can detect
+the region lock and apply a proxy for that item or skip it entirely.
 
 Another Condition could detect a specific keyword in the title and apply a different Preset for that item, or use cookies
 for that specific item. This allows for more granular control over how different types of content are handled within the 
@@ -103,7 +103,8 @@ the media again.
 A Task can prepare the directory for a channel or recurring source. It generates `tvshow.nfo`, yt-dlp `.info.json` 
 metadata, and available artwork such as posters, fanart, banners, icons, thumbnails, and landscape images.
 
-This describes the collection directory. The TV and movie NFO Presets describe each downloaded item inside it.
+Collection metadata describes the collection directory while the TV and movie NFO Presets describe each downloaded item 
+inside it.
 
 ### Info-Reader and WatchState Workflows
 
@@ -152,8 +153,8 @@ to download media directly to the iOS device. The latter is provided without sup
 
 ## Security Boundary
 
-YTPTube is an administrative interface around yt-dlp, not a multi-user sandbox. Authenticated users can control downloads 
-and supply powerful yt-dlp options, including options that execute commands.
+YTPTube is an administrative interface around yt-dlp, not a multi-user sandbox. Authenticated users can control downloads
+and supply yt-dlp options, including options that execute commands.
 
 Keep authentication enabled on untrusted networks and limit container mounts and permissions to what YTPTube needs. 
 Read the [security recommendations](../FAQ.md#security-recommendations) before exposing an instance.

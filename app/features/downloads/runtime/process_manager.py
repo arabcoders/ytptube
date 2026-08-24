@@ -268,15 +268,7 @@ class ProcessManager:
         return False
 
     async def close(self) -> bool:
-        """
-        Close the download process and clean up resources.
-
-        This method must be called to properly release resources.
-
-        Returns:
-            True if close was successful, False otherwise
-
-        """
+        """Close the process and release its resources."""
         if not self.started() or self.cancel_in_progress:
             return False
 

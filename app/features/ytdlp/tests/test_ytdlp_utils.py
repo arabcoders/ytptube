@@ -116,33 +116,25 @@ class TestLogWrapper:
 
 
 class TestExtractYtdlpLogs:
-    """Test YTDLP log extraction function."""
-
     def test_extract_ytdlp_logs_basic(self):
-        """Test basic log extraction."""
         logs = ["This live event will begin soon", "ERROR: Failed", "WARNING: Deprecated"]
         result = extract_ytdlp_logs(logs)
         assert isinstance(result, list)
         assert len(result) >= 1  # Should match "This live event will begin"
 
     def test_extract_ytdlp_logs_filters(self):
-        """Test log extraction with filters."""
         logs = ["INFO: Downloading", "ERROR: Failed", "WARNING: Deprecated"]
         filters: list[str | re.Pattern[str]] = [re.compile(r"ERROR")]
         result = extract_ytdlp_logs(logs, filters)
         assert result == ["ERROR: Failed"]
 
     def test_extract_ytdlp_logs_empty(self):
-        """Test with empty logs."""
         result = extract_ytdlp_logs([])
         assert result == []
 
 
 class TestYtdlpReject:
-    """Test the ytdlp_reject function."""
-
     def test_ytdlp_reject_basic(self):
-        """Test basic rejection logic."""
         entry = {"title": "Test Video", "view_count": 1000}
         yt_params = {}
 
@@ -151,7 +143,6 @@ class TestYtdlpReject:
         assert message == ""
 
     def test_ytdlp_reject_with_filters(self):
-        """Test rejection with filters."""
         entry = {"title": "Test Video", "upload_date": "20230101"}
         yt_params = {"daterange": MagicMock()}
 
@@ -165,16 +156,12 @@ class TestYtdlpReject:
 
 
 class TestParseOuttmpl:
-    """Test the parse_outtmpl function."""
-
     def setup_method(self):
-        """Reset YTDLP singleton state before each test."""
         from app.features.ytdlp.utils import _DATA
 
         _DATA.YTDLP_INFO_CLS = None
 
     def test_parse_outtmpl_basic(self):
-        """Test basic template parsing with simple placeholders."""
 
         template = "%(title)s.%(ext)s"
         info_dict = {
@@ -187,7 +174,6 @@ class TestParseOuttmpl:
         assert result == "Test Video.mp4"
 
     def test_parse_outtmpl_with_id(self):
-        """Test template parsing with video ID."""
 
         template = "[%(id)s] %(title)s.%(ext)s"
         info_dict = {
@@ -201,7 +187,6 @@ class TestParseOuttmpl:
         assert result == "[dQw4w9WgXcQ] Never Gonna Give You Up.webm"
 
     def test_parse_outtmpl_with_uploader(self):
-        """Test template parsing with uploader information."""
 
         template = "%(uploader)s - %(title)s.%(ext)s"
         info_dict = {
@@ -215,7 +200,6 @@ class TestParseOuttmpl:
         assert result == "Rick Astley - Never Gonna Give You Up.mp4"
 
     def test_parse_outtmpl_nested_path(self):
-        """Test template parsing with nested directory structure."""
 
         template = "%(uploader)s/%(title)s.%(ext)s"
         info_dict = {
@@ -229,7 +213,6 @@ class TestParseOuttmpl:
         assert result == "Test Channel/Test Video.mkv"
 
     def test_parse_outtmpl_missing_field(self):
-        """Test template parsing with missing field defaults to NA."""
 
         template = "%(title)s - %(upload_date)s.%(ext)s"
         info_dict = {
@@ -242,7 +225,6 @@ class TestParseOuttmpl:
         assert result == "Test Video - NA.mp4", "Missing field upload_date should default to NA"
 
     def test_parse_outtmpl_complex(self):
-        """Test complex template with multiple fields."""
 
         template = "%(uploader)s/%(playlist_title)s/%(playlist_index)03d - %(title)s [%(id)s].%(ext)s"
         info_dict = {
@@ -259,7 +241,6 @@ class TestParseOuttmpl:
         assert result == "Test Channel/Best Videos/005 - Amazing Content [abc123xyz].mp4"
 
     def test_parse_outtmpl_special_chars(self):
-        """Test template parsing handles special characters in values."""
 
         template = "%(title)s.%(ext)s"
         info_dict = {
@@ -273,7 +254,6 @@ class TestParseOuttmpl:
         assert "Test" in result, "yt-dlp should preserve safe parts of title"
 
     def test_parse_outtmpl_playlist_info(self):
-        """Test template parsing with playlist information."""
 
         template = "%(playlist)s/%(title)s.%(ext)s"
         info_dict = {
@@ -287,7 +267,6 @@ class TestParseOuttmpl:
         assert result == "My Playlist/Video Title.webm"
 
     def test_parse_outtmpl_restrict(self):
-        """Test template parsing with restrict_filename parameter."""
 
         template = "%(uploader)s/%(title)s.%(ext)s"
         info_dict = {
@@ -305,12 +284,10 @@ class TestParseOuttmpl:
 
 class TestGetThumbnail:
     def test_empty_list(self):
-        """Test that None is returned for an empty thumbnail list."""
 
         assert get_thumbnail([]) is None
 
     def test_non_list(self):
-        """Test that None is returned for non-list input."""
 
         bad_none: Any = None
         bad_str: Any = "not a list"
@@ -320,7 +297,6 @@ class TestGetThumbnail:
         assert get_thumbnail(bad_dict) is None
 
     def test_thumbnail_preference(self):
-        """Test that the thumbnail with highest preference is returned."""
 
         thumbnails = [
             {"url": "low.jpg", "preference": 1, "width": 100, "height": 100},
@@ -332,7 +308,6 @@ class TestGetThumbnail:
         assert result == {"url": "high.jpg", "preference": 10, "width": 200, "height": 200}
 
     def test_thumbnail_width(self):
-        """Test that the thumbnail with highest width is returned when preference is equal."""
 
         thumbnails = [
             {"url": "small.jpg", "preference": 1, "width": 100, "height": 100},
@@ -344,7 +319,6 @@ class TestGetThumbnail:
         assert result == {"url": "large.jpg", "preference": 1, "width": 200, "height": 200}
 
     def test_missing_attrs(self):
-        """Test that thumbnails with missing attributes are handled correctly."""
 
         thumbnails = [
             {"url": "no_pref.jpg", "width": 100},
@@ -356,7 +330,6 @@ class TestGetThumbnail:
         assert result["url"] == "with_pref.jpg"
 
     def test_all_equal(self):
-        """Test that any thumbnail is returned when all attributes are equal."""
 
         thumbnails = [
             {"url": "first.jpg"},
@@ -368,19 +341,16 @@ class TestGetThumbnail:
 
 class TestGetExtras:
     def test_none(self):
-        """Test that empty dict is returned for None input."""
         bad: Any = None
         assert get_extras(bad) == {}
 
     def test_non_dict(self):
-        """Test that empty dict is returned for non-dict input."""
         bad_str: Any = "not a dict"
         bad_list: Any = []
         assert get_extras(bad_str) == {}
         assert get_extras(bad_list) == {}
 
     def test_extracts_video_information(self):
-        """Test extracting information from a video entry."""
 
         entry = {
             "id": "test123",
@@ -400,7 +370,6 @@ class TestGetExtras:
         assert result["is_premiere"] is False
 
     def test_extracts_playlist_information(self):
-        """Test extracting information from a playlist entry."""
 
         entry = {
             "id": "playlist123",
@@ -417,7 +386,6 @@ class TestGetExtras:
         assert result["playlist_uploader_id"] == "owner123"
 
     def test_release_timestamp(self):
-        """Test handling of release_timestamp for upcoming content."""
 
         entry = {
             "release_timestamp": 1234567890,
@@ -429,7 +397,6 @@ class TestGetExtras:
         assert result["release_in"] == "Fri, 13 Feb 2009 23:31:30 GMT"
 
     def test_upcoming_live(self):
-        """Test handling of upcoming live stream."""
 
         entry = {
             "release_timestamp": 1234567890,
@@ -442,7 +409,6 @@ class TestGetExtras:
         assert "release_in" in result
 
     def test_premiere_flag(self):
-        """Test handling of is_premiere flag."""
 
         entry = {
             "is_premiere": True,
@@ -456,7 +422,6 @@ class TestGetExtras:
         assert result2["is_premiere"] is False
 
     def test_youtube_fallback_thumbnail(self):
-        """Test fallback thumbnail generation for YouTube videos."""
 
         entry = {
             "id": "dQw4w9WgXcQ",
@@ -468,7 +433,6 @@ class TestGetExtras:
         assert result["thumbnail"] == "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
 
     def test_thumbnail_string_fallback(self):
-        """Test fallback to thumbnail string when thumbnails list not available."""
 
         entry = {
             "thumbnail": "https://example.com/thumb.jpg",
@@ -480,16 +444,12 @@ class TestGetExtras:
 
 
 class TestGetStaticYtdlp:
-    """Test the get_static_ytdlp function."""
-
     def setup_method(self):
-        """Reset YTDLP singleton state before each test."""
         from app.features.ytdlp.utils import _DATA
 
         _DATA.YTDLP_INFO_CLS = None
 
     def test_get_static_ytdlp_same(self):
-        """Test that get_static_ytdlp returns the same cached instance."""
 
         instance1 = get_ytdlp()
         instance2 = get_ytdlp()
@@ -497,7 +457,6 @@ class TestGetStaticYtdlp:
         assert instance1 is instance2
 
     def test_static_ytdlp_params(self):
-        """Test that get_static_ytdlp returns a new instance when params are provided."""
 
         instance1 = get_ytdlp()
         instance2 = get_ytdlp(params={"quiet": False})
@@ -506,7 +465,6 @@ class TestGetStaticYtdlp:
         assert instance2 is not None
 
     def test_get_static_ytdlp_params(self):
-        """Test that get_static_ytdlp initializes with correct parameters."""
 
         instance = get_ytdlp()
 
@@ -522,21 +480,16 @@ class TestGetStaticYtdlp:
 
 
 class TestArchiveFunctions:
-    """Test archive-related functions."""
-
     def setup_method(self):
-        """Set up test archive file."""
         self.temp_dir = str(make_test_temp_dir("ytdlp-archive"))
         self.archive_file = Path(self.temp_dir) / "archive.txt"
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_archive_add_and_read(self):
-        """Test adding and reading archive entries."""
         ids = ["youtube id1", "youtube id2", "youtube id3"]
 
         result = archive_add(self.archive_file, ids)
@@ -546,7 +499,6 @@ class TestArchiveFunctions:
         assert set(read_ids) == set(ids)
 
     def test_archive_delete(self):
-        """Test deleting archive entries."""
         archive_add(self.archive_file, ["youtube id1", "youtube id2", "youtube id3"])
 
         delete_ids = ["youtube id2"]
@@ -555,7 +507,6 @@ class TestArchiveFunctions:
         assert set(archive_read(self.archive_file)) == {"youtube id1", "youtube id3"}
 
     def test_archive_read_nonexistent(self):
-        """Test reading from non-existent archive."""
         nonexistent = Path(self.temp_dir) / "nonexistent.txt"
         result = archive_read(nonexistent)
         assert result == []
