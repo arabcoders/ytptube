@@ -1,3 +1,4 @@
+import asyncio
 import json
 import importlib
 from dataclasses import dataclass
@@ -286,6 +287,29 @@ class TestSystemDiagnosticsEndpoint:
             importlib.reload(system)
         Config._reset_singleton()
         Cache.get_instance().clear()
+
+    @pytest.mark.asyncio
+    async def test_command_timeout_kills(self, monkeypatch: pytest.MonkeyPatch):
+        from app.library import diagnostics
+
+        class HangingProcess:
+            returncode = None
+            killed = False
+
+            def kill(self) -> None:
+                self.killed = True
+
+            async def communicate(self):
+                if not self.killed:
+                    await asyncio.Event().wait()
+                return b"", b""
+
+        proc = HangingProcess()
+        monkeypatch.setattr(diagnostics.asyncio, "create_subprocess_exec", AsyncMock(return_value=proc))
+
+        with pytest.raises(TimeoutError):
+            await diagnostics._run_command("test", wait_seconds=0.001)
+        assert proc.killed is True
 
     @pytest.mark.asyncio
     async def test_diagnostics_always_200(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client):

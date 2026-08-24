@@ -1,30 +1,9 @@
 import asyncio
-import sys
-import types
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# Scheduler imports aiocron at module load; these tests replace it with controlled stubs.
-if "aiocron" not in sys.modules:
-    aiocron_stub = types.ModuleType("aiocron")
-
-    class _CronImportStub:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def stop(self) -> None:
-            pass
-
-        @property
-        def uuid(self) -> str:
-            return "stub-uuid"
-
-    setattr(aiocron_stub, "Cron", _CronImportStub)
-    sys.modules["aiocron"] = aiocron_stub
-
 
 from app.library.Events import EventBus, Events
 from app.library.Scheduler import Scheduler
@@ -71,6 +50,9 @@ class TestScheduler:
         EventBus._reset_singleton()
 
     def teardown_method(self) -> None:
+        scheduler = Scheduler()
+        for job_id in list(scheduler.get_all()):
+            scheduler.remove(job_id)
         Scheduler._reset_singleton()
         EventBus._reset_singleton()
 
@@ -189,7 +171,15 @@ class TestScheduler:
             "on_shutdown handler should be registered"
         )
 
-        add_spy = MagicMock(wraps=sched.add)
+        completed = asyncio.Event()
+        original_add = sched.add
+
+        def add_job(*args, **kwargs):
+            result = original_add(*args, **kwargs)
+            completed.set()
+            return result
+
+        add_spy = MagicMock(side_effect=add_job)
         sched.add = add_spy
 
         EventBus.get_instance().emit(
@@ -203,7 +193,7 @@ class TestScheduler:
             },
         )
 
-        await asyncio.sleep(0.02)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         add_spy.assert_called_once()
         kwargs = add_spy.call_args.kwargs
@@ -273,9 +263,11 @@ class TestScheduler:
         sched.attach(app)
 
         bucket: list[tuple[int, str]] = []
+        completed = asyncio.Event()
 
         def job(val: int, tag: str) -> None:
             bucket.append((val, tag))
+            completed.set()
 
         EventBus.get_instance().emit(
             Events.SCHEDULE_ADD,
@@ -288,6 +280,6 @@ class TestScheduler:
             },
         )
 
-        await asyncio.sleep(0.02)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         assert bucket == [(7, "evt")]

@@ -198,6 +198,9 @@ link-mode = "copy"
 pythonpath = ["."]
 testpaths = ["app/tests", "app/features"]
 addopts = "-v --tb=short"
+required_plugins = ["pytest-timeout>=2.4.0"]
+timeout = 30
+session_timeout = 300
 filterwarnings = [
   "ignore:Parsing dates involving a day of month without a year:DeprecationWarning",
   "ignore:This process \\(pid\\=.*\\) is multi-threaded, use of fork\\(\\) may lead to deadlocks in the child\\.:DeprecationWarning",
@@ -208,6 +211,7 @@ dev = [
   "debugpy>=1.8.16",
   "pytest>=8.4.2",
   "pytest-asyncio>=1.1.0",
+  "pytest-timeout>=2.4.0",
   "ruff>=0.13.0",
   "pip>=26.0.0",
   "ty>=0.0.53",

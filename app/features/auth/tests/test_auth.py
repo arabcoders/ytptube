@@ -259,10 +259,19 @@ async def test_sessions_and_keys(monkeypatch) -> None:
     assert await auth.create_user("second", "different-secret") is None
     try:
         config.auth_session_days = 3
-        token = await auth.create_session(user["id"], "Browser/1", "192.0.2.1")
-        owner_session = await auth.create_session(user["id"], "Browser/2", "192.0.2.2")
-        expired = await auth.create_session(user["id"])
-        other_token = await auth.create_session(other["id"])
+        fixed_now = datetime.now(UTC)
+
+        class FixedDateTime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return fixed_now if tz is not None else fixed_now.replace(tzinfo=None)
+
+        with monkeypatch.context() as patcher:
+            patcher.setattr("app.features.auth.service.datetime", FixedDateTime)
+            token = await auth.create_session(user["id"], "Browser/1", "192.0.2.1")
+            owner_session = await auth.create_session(user["id"], "Browser/2", "192.0.2.2")
+            expired = await auth.create_session(user["id"])
+            other_token = await auth.create_session(other["id"])
         expires = (
             await store.fetch_raw(
                 "SELECT expires_at FROM sessions WHERE token_digest = :digest",
@@ -270,7 +279,7 @@ async def test_sessions_and_keys(monkeypatch) -> None:
             )
         )[0]["expires_at"]
         expiry = datetime.strptime(expires, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=UTC)
-        assert timedelta(days=2, hours=23) < expiry - datetime.now(UTC) < timedelta(days=3, minutes=1)
+        assert expiry == fixed_now + timedelta(days=3)
         await store.execute_raw(
             "UPDATE sessions SET expires_at = :expires WHERE token_digest = :digest",
             {

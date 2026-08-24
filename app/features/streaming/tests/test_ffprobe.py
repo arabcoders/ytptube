@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -60,6 +61,7 @@ class TestFFProbe:
                 nonlocal call_count
                 call_count += 1
                 mock_process = AsyncMock()
+                mock_process.returncode = 0
                 mock_process.wait.return_value = 0
                 mock_process.communicate.return_value = (b'{"format": {"duration": "10.0"}, "streams": []}', b"")
                 return mock_process
@@ -94,6 +96,7 @@ class TestFFProbe:
         # Mock subprocess to avoid actual ffprobe execution
         with patch("asyncio.create_subprocess_exec") as mock_subprocess:
             mock_process = AsyncMock()
+            mock_process.returncode = 0
             mock_process.wait.return_value = 0
             mock_process.communicate.return_value = (b'{"format": {"duration": "10.0"}}', b"")
             mock_subprocess.return_value = mock_process
@@ -103,8 +106,38 @@ class TestFFProbe:
                 mock_open_file.return_value.__aenter__.return_value = mock_file
 
                 # Test with Path object
-                result = await ffprobe(self.test_file)
-                assert result.metadata == {"duration": "10.0"}
+            result = await ffprobe(self.test_file)
+            assert result.metadata == {"duration": "10.0"}
+
+    @pytest.mark.asyncio
+    async def test_ffprobe_timeout_kills(self, monkeypatch: pytest.MonkeyPatch):
+        from app.features.streaming.library import ffprobe as module
+
+        module.ffprobe.cache_clear()
+        killed = False
+
+        class HangingProcess:
+            returncode = None
+
+            def kill(self):
+                nonlocal killed
+                killed = True
+
+            async def communicate(self):
+                if not killed:
+                    await asyncio.Event().wait()
+                return b"", b""
+
+        async def create_process(*_args, **_kwargs):
+            return HangingProcess()
+
+        monkeypatch.setattr(module, "FFPROBE_TIMEOUT", 0.001)
+        monkeypatch.setattr(module, "PROCESS_CLEANUP_TIMEOUT", 0.1)
+        monkeypatch.setattr(module.asyncio, "create_subprocess_exec", create_process)
+
+        with pytest.raises(TimeoutError):
+            await module.ffprobe(self.test_file)
+        assert killed is True
 
     def test_ffprobe_result_properties(self):
         from app.features.streaming.library.ffprobe import FFStream, FFProbeResult

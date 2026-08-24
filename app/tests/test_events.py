@@ -7,6 +7,13 @@ import pytest
 from app.library.Events import Event, EventBus, EventListener, Events
 
 
+@pytest.fixture(autouse=True)
+def reset_event_bus():
+    EventBus._reset_singleton()
+    yield
+    EventBus._reset_singleton()
+
+
 class TestEvents:
     def test_events_get_all(self):
         all_events = Events.get_all()
@@ -220,6 +227,7 @@ class TestEvent:
     async def test_event_mutation_between_listeners(self):
         bus = EventBus()
         mutations = []
+        completed = asyncio.Event()
 
         async def listener1(event, name, **kwargs):  # noqa: ARG001
             # First listener adds data
@@ -248,6 +256,7 @@ class TestEvent:
             event.put("listener3", "data3")
             event.put("final_count", len(event.extras))
             mutations.append("listener3_executed")
+            completed.set()
 
         # Subscribe listeners in order
         bus.subscribe(Events.TEST, listener1, "listener1")
@@ -258,7 +267,7 @@ class TestEvent:
         bus.emit(Events.TEST, data={"original": "data"})
 
         # Wait for execution (fire-and-forget)
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Verify all listeners executed
         assert mutations == ["listener1_executed", "listener2_executed", "listener3_executed"]
@@ -268,6 +277,7 @@ class TestEvent:
 
         bus = EventBus()
         mutations = []
+        completed = asyncio.Event()
 
         async def async_listener1(event, name, **kwargs):  # noqa: ARG001
             event.put("async1", "value1")
@@ -285,6 +295,7 @@ class TestEvent:
             assert event.extras.get("async2") == "value2"
             event.put("sync", "value3")
             mutations.append("sync")
+            completed.set()
 
         bus.subscribe(Events.STARTUP, async_listener1, "async1")
         bus.subscribe(Events.STARTUP, async_listener2, "async2")
@@ -293,7 +304,7 @@ class TestEvent:
         bus.emit(Events.STARTUP, data={"test": "data"})
 
         # Wait for execution
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         assert mutations == ["async1", "async2", "sync"]
 
@@ -301,11 +312,13 @@ class TestEvent:
     async def test_event_mutation_data_types(self):
         bus = EventBus()
         final_extras = {}
+        completed = asyncio.Event()
 
         async def collector(event, name, **kwargs):  # noqa: ARG001
             # Store reference to final extras
             nonlocal final_extras
             final_extras = event.extras
+            completed.set()
 
         async def mutator1(event, name, **kwargs):  # noqa: ARG001
             event.put("string", "test")
@@ -338,7 +351,7 @@ class TestEvent:
         bus.emit(Events.SHUTDOWN, data={})
 
         # Wait for execution
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Verify final state
         assert final_extras["string"] == "test"
@@ -353,34 +366,27 @@ class TestEvent:
     async def test_sync_handler_async_wrapping(self):
         bus = EventBus()
         execution_order = []
+        completed = asyncio.Event()
 
         def slow_sync_handler(event, name, **kwargs):  # noqa: ARG001
-            """A sync handler that simulates blocking work"""
-            import time
-
-            time.sleep(0.05)  # Simulate some work
             execution_order.append(f"sync_{name}")
+            if len(execution_order) == 2:
+                completed.set()
 
         async def fast_async_handler(event, name, **kwargs):  # noqa: ARG001
-            """A fast async handler"""
             execution_order.append(f"async_{name}")
+            if len(execution_order) == 2:
+                completed.set()
 
         # Subscribe both handlers
         bus.subscribe(Events.TEST, slow_sync_handler, "slow_sync")
         bus.subscribe(Events.TEST, fast_async_handler, "fast_async")
 
-        # Emit should return immediately (non-blocking)
-        import time
-
-        start_time = time.time()
         bus.emit(Events.TEST, data={"test": "wrapping"})
-        emit_time = time.time() - start_time
-
-        # Emit should be very fast (< 0.01s) because sync handler is wrapped
-        assert emit_time < 0.01, f"Emit took too long: {emit_time:.4f}s - sync handler may be blocking"
+        assert execution_order == []
 
         # Wait for handlers to complete
-        await asyncio.sleep(0.1)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Both handlers should have executed
         assert len(execution_order) == 2
@@ -391,6 +397,7 @@ class TestEvent:
     async def test_handler_no_race_condition(self):
         bus = EventBus()
         results = []
+        completed = asyncio.Event()
 
         def handler1(event, name, **kwargs):  # noqa: ARG001
             results.append(f"handler1_{event.data['id']}")
@@ -400,6 +407,8 @@ class TestEvent:
 
         def handler3(event, name, **kwargs):  # noqa: ARG001
             results.append(f"handler3_{event.data['id']}")
+            if len(results) == 9:
+                completed.set()
 
         # Subscribe multiple sync handlers
         bus.subscribe(Events.TEST, handler1, "handler1")
@@ -411,7 +420,7 @@ class TestEvent:
             bus.emit(Events.TEST, data={"id": i})
 
         # Wait for all handlers to complete
-        await asyncio.sleep(0.05)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         assert len(results) == 9
 
@@ -424,49 +433,27 @@ class TestEvent:
     @pytest.mark.asyncio
     async def test_mixed_handlers_order(self):
         bus = EventBus()
-        execution_times = []
+        execution_order = []
+        completed = asyncio.Event()
 
         def sync_handler(event, name, **kwargs):  # noqa: ARG001
-            import time
-
-            start = time.time()
-            time.sleep(0.02)  # Simulate work
-            execution_times.append(("sync", time.time() - start))
+            execution_order.append("sync")
 
         async def async_handler(event, name, **kwargs):  # noqa: ARG001
-            import time
-
-            start = time.time()
-            await asyncio.sleep(0.01)  # Async work
-            execution_times.append(("async", time.time() - start))
+            execution_order.append("async")
+            completed.set()
 
         # Subscribe mixed handlers
         bus.subscribe(Events.TEST, sync_handler, "sync")
         bus.subscribe(Events.TEST, async_handler, "async")
 
-        # Emit and measure total time
-        import time
-
-        start_time = time.time()
         bus.emit(Events.TEST, data={"test": "mixed"})
-        emit_time = time.time() - start_time
-
-        # Emit should be instant (non-blocking)
-        assert emit_time < 0.01, f"Emit blocked for {emit_time:.4f}s"
+        assert execution_order == []
 
         # Wait for execution
-        await asyncio.sleep(0.1)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
-        # Both handlers should have executed
-        assert len(execution_times) >= 1, f"Expected at least 1 handler, got {len(execution_times)}: {execution_times}"
-
-        # At least the sync handler should have executed with proper timing
-        sync_results = [t for type_name, t in execution_times if type_name == "sync"]
-        assert len(sync_results) >= 1, "Sync handler didn't execute"
-
-        # Sync handler should have taken approximately 0.02s
-        sync_time = sync_results[0]
-        assert 0.015 < sync_time < 0.04, f"Sync handler time unexpected: {sync_time:.4f}s"
+        assert execution_order == ["sync", "async"]
 
 
 class TestEventListener:
@@ -556,10 +543,6 @@ class TestEventListener:
 
 
 class TestEventBus:
-    def setup_method(self):
-        """Clear EventBus listeners and reset singleton before each test."""
-        EventBus._reset_singleton()
-
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_event_bus_singleton_behavior(self, mock_bg_worker, mock_config):
@@ -778,6 +761,7 @@ class TestEventBus:
         bus = EventBus()
 
         results = []
+        completed = asyncio.Event()
 
         async def callback1(event, name, **kwargs):  # noqa: ARG001
             results.append(f"callback1_{event.event}")
@@ -785,6 +769,7 @@ class TestEventBus:
 
         async def callback2(event, name, **kwargs):  # noqa: ARG001
             results.append(f"callback2_{event.event}")
+            completed.set()
             return "result2"
 
         bus.subscribe(Events.TEST, callback1, "subscriber1")
@@ -795,7 +780,7 @@ class TestEventBus:
         assert result is None
 
         # Give async tasks a moment to execute
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Side effects should have occurred
         assert len(results) == 2, f"Expected 2 results, got {len(results)}: {results}"
@@ -860,10 +845,12 @@ class TestEventBus:
         bus: EventBus = EventBus()
 
         received_kwargs = {}
+        completed = asyncio.Event()
 
         async def callback_with_kwargs(event, name, extra_param=None, **kwargs):  # noqa: ARG001
             received_kwargs["extra_param"] = extra_param
             received_kwargs["kwargs"] = kwargs
+            completed.set()
             return "result"
 
         bus.subscribe(Events.TEST, callback_with_kwargs, "kwargs_subscriber")
@@ -872,7 +859,7 @@ class TestEventBus:
         assert result is None
 
         # Give async tasks a moment to execute
-        await asyncio.sleep(0.02)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Side effects should have occurred
         assert "extra_param" in received_kwargs, f"received_kwargs: {received_kwargs}"
@@ -885,10 +872,12 @@ class TestEventBus:
         bus = EventBus()
 
         received_event = None
+        completed = asyncio.Event()
 
         async def test_callback(event, name, **kwargs):  # noqa: ARG001
             nonlocal received_event
             received_event = event
+            completed.set()
             return "result"
 
         bus.subscribe(Events.TEST, test_callback, "default_subscriber")
@@ -902,7 +891,7 @@ class TestEventBus:
         assert result is None
 
         # Give async tasks a moment to execute
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Side effects should have occurred
         assert received_event is not None, "Callback was not called"

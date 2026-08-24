@@ -18,13 +18,16 @@ from typing import Any, Literal
 
 from app.library.config import Config
 from app.library.httpx_client import resolve_curl_transport
+from app.library.logging import get_logger
 from app.library.monitor import ResourceTracker
 from app.library.monitor_bottlenecks import detect as detect_bottlenecks
 
 CheckStatus = Literal["pass", "fail", "warn", "skip"]
 ReportStatus = Literal["ok", "degraded", "error"]
 
+LOG = get_logger()
 MIN_PYTHON: tuple[int, int] = (3, 13)
+COMMAND_CLEANUP_TIMEOUT = 5.0
 
 
 @dataclass(kw_only=True)
@@ -470,9 +473,12 @@ async def _run_command(command: str, *args: str, wait_seconds: float = 5.0) -> t
 
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=wait_seconds)
-    except TimeoutError:
+    except (TimeoutError, asyncio.CancelledError):
         proc.kill()
-        await proc.communicate()
+        try:
+            await asyncio.wait_for(asyncio.shield(proc.communicate()), timeout=COMMAND_CLEANUP_TIMEOUT)
+        except (TimeoutError, asyncio.CancelledError, OSError):
+            LOG.warning("Command '%s' did not finish cleanup.", command)
         raise
 
     return proc.returncode or 0, stdout.decode("utf-8", errors="replace"), stderr.decode("utf-8", errors="replace")

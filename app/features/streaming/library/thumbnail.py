@@ -21,6 +21,8 @@ THUMBNAIL_MIN_SEEK_SECONDS = 1.0
 THUMBNAIL_MAX_SEEK_SECONDS = 15.0
 THUMBNAIL_END_MARGIN_SECONDS = 0.1
 THUMBNAIL_MISS_TTL = 3600.0
+THUMBNAIL_TIMEOUT = 30.0
+PROCESS_CLEANUP_TIMEOUT = 5.0
 
 _LOCK = asyncio.Lock()
 _IN_PROCESS: dict[str, asyncio.Task[Path | None]] = {}
@@ -195,7 +197,16 @@ async def _run_ffmpeg(media_file: Path, output_file: Path) -> Path | None:
                 msg = "ffmpeg not found."
                 raise OSError(msg) from exc
 
-            stdout, stderr = await proc.communicate()
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=THUMBNAIL_TIMEOUT)
+            except (TimeoutError, asyncio.CancelledError):
+                proc.kill()
+                try:
+                    await asyncio.wait_for(asyncio.shield(proc.communicate()), timeout=PROCESS_CLEANUP_TIMEOUT)
+                except (TimeoutError, asyncio.CancelledError, OSError):
+                    LOG.warning("ffmpeg did not finish cleanup for '%s'.", media_file)
+                temp_file.unlink(missing_ok=True)
+                raise
             if 0 == proc.returncode and temp_file.exists() and temp_file.stat().st_size > 0:
                 temp_file.replace(output_file)
                 LOG.info(

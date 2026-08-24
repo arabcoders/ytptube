@@ -89,16 +89,16 @@ class TestSingleton:
     def test_threadsafe_thread_safety(self):
         instances = []
         errors = []
+        barrier = threading.Barrier(10)
 
         class ThreadSafeClass(metaclass=ThreadSafe):
             def __init__(self):
-                # Add a small delay to increase chance of race condition
-                time.sleep(0.01)
                 self.thread_id = threading.current_thread().ident
                 self.creation_time = time.time()
 
         def worker():
             try:
+                barrier.wait(timeout=1)
                 instance = ThreadSafeClass()
                 instances.append(instance)
             except Exception as e:
@@ -116,7 +116,8 @@ class TestSingleton:
 
         # Wait for all threads to complete
         for thread in threads:
-            thread.join()
+            thread.join(timeout=1)
+            assert not thread.is_alive()
 
         assert len(errors) == 0, f"Thread safety errors: {errors}"
         assert len(instances) == 10

@@ -17,6 +17,8 @@ from app.library.logging import get_logger
 from app.library.Utils import timed_lru_cache
 
 LOG = get_logger()
+FFPROBE_TIMEOUT = 30.0
+PROCESS_CLEANUP_TIMEOUT = 5.0
 
 
 @lru_cache(maxsize=1)
@@ -255,9 +257,19 @@ async def ffprobe(file: Path | str) -> FFProbeResult:
         creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
     )
 
-    exitCode: int = await p.wait()
-
-    data, err = await p.communicate()
+    try:
+        data, err = await asyncio.wait_for(p.communicate(), timeout=FFPROBE_TIMEOUT)
+    except (TimeoutError, asyncio.CancelledError):
+        p.kill()
+        try:
+            await asyncio.wait_for(asyncio.shield(p.communicate()), timeout=PROCESS_CLEANUP_TIMEOUT)
+        except (TimeoutError, asyncio.CancelledError, OSError):
+            LOG.warning("ffprobe did not finish cleanup.")
+        raise
+    if not isinstance(p.returncode, int):
+        msg = "ffprobe exited without a return code."
+        raise FFProbeError(msg)
+    exitCode: int = p.returncode
     if 0 == exitCode:
         parsed: dict = json.loads(data.decode("utf-8"))
     else:

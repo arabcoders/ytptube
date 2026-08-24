@@ -335,12 +335,12 @@ class TestServices:
 
     def test_concurrent_access_safety(self):
         import threading
-        import time
 
         results = []
+        barrier = threading.Barrier(10)
 
         def get_instance():
-            time.sleep(0.01)  # Small delay to increase chance of race condition
+            barrier.wait(timeout=1)
             instance = Services()
             results.append(id(instance))
 
@@ -353,7 +353,8 @@ class TestServices:
 
         # Wait for all threads
         for thread in threads:
-            thread.join()
+            thread.join(timeout=1)
+            assert not thread.is_alive()
 
         # All should be the same instance
         assert len(set(results)) == 1, "All threads should get the same singleton instance"

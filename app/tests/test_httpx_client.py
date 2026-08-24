@@ -355,36 +355,31 @@ class TestAsyncClient:
 
 class TestSyncClient:
     def test_sync_client_cf_enabled(self):
-        client = sync_client(enable_cf=True)
-        assert isinstance(client, httpx.Client)
-        assert isinstance(client._transport, CFTransport)
-        client.close()
+        with sync_client(enable_cf=True) as client:
+            assert isinstance(client, httpx.Client)
+            assert isinstance(client._transport, CFTransport)
 
     def test_custom_cf_off(self):
-        client = sync_client(enable_cf=False)
-        assert isinstance(client, httpx.Client)
-        assert isinstance(client._transport, httpx.HTTPTransport)
-        client.close()
+        with sync_client(enable_cf=False) as client:
+            assert isinstance(client, httpx.Client)
+            assert isinstance(client._transport, httpx.HTTPTransport)
 
     def test_sync_client_kwargs(self):
-        client = sync_client(enable_cf=True, timeout=30.0, follow_redirects=True)
-        assert isinstance(client, httpx.Client)
-        assert isinstance(client._transport, CFTransport)
-        assert 30.0 == client.timeout.read
-        assert client.follow_redirects is True
-        client.close()
+        with sync_client(enable_cf=True, timeout=30.0, follow_redirects=True) as client:
+            assert isinstance(client, httpx.Client)
+            assert isinstance(client._transport, CFTransport)
+            assert 30.0 == client.timeout.read
+            assert client.follow_redirects is True
 
     def test_sync_client_custom_transport(self):
         custom = httpx.HTTPTransport()
-        client = sync_client(enable_cf=True, transport=custom)
-        assert isinstance(client, httpx.Client)
-        assert isinstance(client._transport, CFTransport)
-        assert client._transport.base is custom
-        client.close()
+        with sync_client(enable_cf=True, transport=custom) as client:
+            assert isinstance(client, httpx.Client)
+            assert isinstance(client._transport, CFTransport)
+            assert client._transport.base is custom
 
     def test_sync_client_cf_disabled(self):
         custom = httpx.HTTPTransport()
-        client = sync_client(enable_cf=False, transport=custom)
-        assert isinstance(client, httpx.Client)
-        assert client._transport is custom, "When CF is disabled, custom transport should be used directly"
-        client.close()
+        with sync_client(enable_cf=False, transport=custom) as client:
+            assert isinstance(client, httpx.Client)
+            assert client._transport is custom, "When CF is disabled, custom transport should be used directly"

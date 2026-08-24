@@ -6,7 +6,6 @@ from aiohttp import web
 
 from app.tests.helpers import (
     get_test_per_run_root,
-    get_test_run_root,
     get_test_system_temp_root,
     make_test_disk_path,
     make_test_temp_dir,
@@ -32,7 +31,7 @@ def test_temp_dir_created() -> None:
 
 
 def test_tmp_path_root(tmp_path: Path) -> None:
-    expected_root = get_test_run_root() / "pytest"
+    expected_root = get_test_per_run_root() / "pytest"
 
     assert tmp_path.is_relative_to(expected_root)
     assert get_test_system_temp_root().is_relative_to(get_test_per_run_root())

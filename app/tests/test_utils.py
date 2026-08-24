@@ -64,9 +64,9 @@ class TestTimedLruCache:
         assert result3 == 20
         assert call_count == 2
 
-    def test_timed_lru_cache_expiration(self):
-        import time
-
+    def test_timed_lru_cache_expiration(self, monkeypatch: pytest.MonkeyPatch):
+        now = [1000.0]
+        monkeypatch.setattr("app.library.Utils.time.monotonic", lambda: now[0])
         call_count = 0
 
         @timed_lru_cache(ttl_seconds=1, max_size=10)  # 1 second TTL
@@ -83,7 +83,7 @@ class TestTimedLruCache:
         assert result2 == 10
         assert call_count == 1
 
-        time.sleep(1.1)
+        now[0] += 2
 
         result3 = test_function(5)
         assert result3 == 10
@@ -161,9 +161,11 @@ class TestAsyncTimedLruCache:
         assert call_count == 2
 
     @pytest.mark.asyncio
-    async def test_timed_lru_cache_expiry(self):
+    async def test_timed_lru_cache_expiry(self, monkeypatch: pytest.MonkeyPatch):
         from app.library.Utils import timed_lru_cache
 
+        now = [1000.0]
+        monkeypatch.setattr("app.library.Utils.time.monotonic", lambda: now[0])
         call_count = 0
 
         @timed_lru_cache(ttl_seconds=0.1, max_size=128)  # 100ms TTL
@@ -180,7 +182,7 @@ class TestAsyncTimedLruCache:
         assert result2 == 6
         assert call_count == 1
 
-        await asyncio.sleep(0.15)
+        now[0] += 1
 
         result3 = await async_expire_func(2)
         assert result3 == 6
