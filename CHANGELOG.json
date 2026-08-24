@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "2825f1944f9678d50611c1bff9ab7c9ce2451030",
-    "date": "2026-08-24T16:28:15+00:00",
+    "full_sha": "a7ae66d932ac7debac7b284bc50a181329dd9a6f",
+    "date": "2026-08-24T17:47:48+00:00",
     "commits": [
+      {
+        "sha": "a7ae66d9",
+        "full_sha": "a7ae66d932ac7debac7b284bc50a181329dd9a6f",
+        "message": "refactor: remove task_disaptched event in favor of task_finished/error events",
+        "author": "arabcoders",
+        "date": "2026-08-24T17:47:48+00:00"
+      },
       {
         "sha": "2825f194",
         "full_sha": "2825f1944f9678d50611c1bff9ab7c9ce2451030",
