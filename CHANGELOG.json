@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "f2db7d63c9cc4fc6950cbb17d04d3239e3a43843",
-    "date": "2026-08-23T20:10:26+00:00",
+    "full_sha": "2825f1944f9678d50611c1bff9ab7c9ce2451030",
+    "date": "2026-08-24T16:28:15+00:00",
     "commits": [
+      {
+        "sha": "2825f194",
+        "full_sha": "2825f1944f9678d50611c1bff9ab7c9ce2451030",
+        "message": "docs: minor docs update",
+        "author": "arabcoders",
+        "date": "2026-08-24T16:28:15+00:00"
+      },
       {
         "sha": "f2db7d63",
         "full_sha": "f2db7d63c9cc4fc6950cbb17d04d3239e3a43843",
