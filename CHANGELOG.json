@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a7ae66d932ac7debac7b284bc50a181329dd9a6f",
-    "date": "2026-08-24T17:47:48+00:00",
+    "full_sha": "775a015551b0305ecb11c1b3e547510f9511173b",
+    "date": "2026-08-24T19:45:58+00:00",
     "commits": [
+      {
+        "sha": "775a0155",
+        "full_sha": "775a015551b0305ecb11c1b3e547510f9511173b",
+        "message": "refactror: improve tests reliability.",
+        "author": "arabcoders",
+        "date": "2026-08-24T19:45:58+00:00"
+      },
+      {
+        "sha": "661291d9",
+        "full_sha": "661291d9d94a29356aacb9d2e421ee603dd280a5",
+        "message": "chore: remove useless docstirngs",
+        "author": "arabcoders",
+        "date": "2026-08-24T19:03:51+00:00"
+      },
       {
         "sha": "a7ae66d9",
         "full_sha": "a7ae66d932ac7debac7b284bc50a181329dd9a6f",
