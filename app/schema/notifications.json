@@ -25,7 +25,8 @@
         "log_success",
         "log_warning",
         "log_error",
-        "task_dispatched"
+        "task_finished",
+        "task_error"
       ],
       "description": "Event identifier emitted by the backend event bus."
     },

@@ -30,19 +30,12 @@ LOG = get_logger()
 class TaskHandle:
     def __init__(self, scheduler: Scheduler, tasks: TasksRepository, config: Config) -> None:
         self._handlers: list[type[BaseHandler]] = []
-        "The available handlers."
         self._repo: TasksRepository = tasks
-        "The tasks manager."
         self._scheduler: Scheduler = scheduler
-        "The scheduler."
         self._config: Config = config
-        "The configuration."
         self._task_name: str = f"{TaskHandle.__name__}._dispatcher"
-        "The task name for the scheduler."
         self._queued: dict[str, set[str]] = {}
-        "Queued archive IDs per handler."
         self._failure_count: dict[str, dict[str, int]] = {}
-        "Failure counts per handler and archive ID."
 
         EventBus.get_instance().subscribe(
             Events.ITEM_ERROR,
@@ -186,18 +179,7 @@ class TaskHandle:
     async def _dispatch(
         self, task: HandleTask, handler: type[BaseHandler], delay: float
     ) -> TaskResult | TaskFailure | None:
-        """
-        Dispatch a task after a random delay to avoid rate limiting.
-
-        Args:
-            task: The task to dispatch.
-            handler: The handler to use.
-            delay: The delay in seconds before dispatching.
-
-        Returns:
-            The dispatch result.
-
-        """
+        notify: EventBus = EventBus.get_instance()
         if delay > 0:
             LOG.debug(
                 "Delaying dispatch of task '%s' by %.1f seconds.",
@@ -206,7 +188,38 @@ class TaskHandle:
                 extra={"task_id": task.id, "task_name": task.name, "delay_s": round(delay, 1)},
             )
             await asyncio.sleep(delay)
-        return await self.dispatch(task, handler=handler)
+
+        try:
+            result = await self.dispatch(task, handler=handler)
+        except Exception as exc:
+            notify.emit(
+                Events.TASK_ERROR,
+                data={"task_id": task.id, "task_name": task.name, "preset": task.preset, "error": str(exc)},
+                title=f"Task '{task.name}' failed",
+                message=f"Task '{task.name}' failed while dispatching items.",
+            )
+            raise
+
+        if isinstance(result, TaskFailure) or result is None:
+            notify.emit(
+                Events.TASK_ERROR,
+                data={
+                    "task_id": task.id,
+                    "task_name": task.name,
+                    "preset": task.preset,
+                    "error": getattr(result, "message", "No handler result"),
+                },
+                title=f"Task '{task.name}' failed",
+                message=f"Task '{task.name}' failed while dispatching items.",
+            )
+        else:
+            notify.emit(
+                Events.TASK_FINISHED,
+                data={"task_id": task.id, "task_name": task.name, "preset": task.preset, "status": "ok"},
+                title=f"Task '{task.name}' finished",
+                message=f"Task '{task.name}' finished dispatching items.",
+            )
+        return result
 
     def _handle_exception(self, fut: asyncio.Task, task: HandleTask) -> None:
         if fut.cancelled():
@@ -247,18 +260,6 @@ class TaskHandle:
         **kwargs,
     ) -> TaskResult | TaskFailure | None:
         _ = kwargs
-        """
-        Dispatch a task to the appropriate handler.
-
-        Args:
-            task: The task to dispatch.
-            handler: Optional specific handler to use instead of finding one.
-            **kwargs: Additional context to pass to the handler.
-
-        Returns:
-            The extraction outcome, or None if no handler matched.
-
-        """
         if not handler:
             handler = await self._find_handler(task)
             if handler is None:
@@ -596,7 +597,6 @@ class TaskHandle:
         *,
         resolve_ids: bool = True,
     ) -> TaskResult | TaskFailure:
-        """Inspect one validated generic definition without handler discovery."""
         from app.features.tasks.definitions.handlers.generic import GenericTaskHandler
 
         task = HandleTask(
@@ -652,7 +652,6 @@ class TaskHandle:
         return TaskResult(items=items, metadata=combined_metadata)
 
     def _discover(self) -> list[type[BaseHandler]]:
-        """Discover all available task handlers."""
         import app.features.tasks.definitions.handlers as handlers_pkg
 
         handlers: list[type[BaseHandler]] = []
@@ -672,7 +671,6 @@ class TaskHandle:
         return handlers
 
     async def _handle_item_error(self, event, _name, **_kwargs):
-        """Handle item error events to clean up queued items and track failures."""
         item: ItemDTO | None = getattr(event, "data", None)
         if not isinstance(item, ItemDTO):
             return

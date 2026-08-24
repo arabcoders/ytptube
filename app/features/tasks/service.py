@@ -28,7 +28,6 @@ class Tasks(metaclass=Singleton):
 
     @staticmethod
     def get_instance() -> Tasks:
-        """Get the singleton instance of Tasks."""
         return Tasks()
 
     def attach(self, _: web.Application) -> None:
@@ -78,7 +77,6 @@ class Tasks(metaclass=Singleton):
                 )
 
     async def _init_handlers_service(self, scheduler) -> None:
-        """Initialize the handlers service after migrations."""
         if self._handlers_service is not None:
             return
 
@@ -116,13 +114,6 @@ class Tasks(metaclass=Singleton):
                 )
 
     async def _runner(self, task: TaskModel) -> None:
-        """
-        Execute a scheduled task.
-
-        Args:
-            task: The TaskModel to execute.
-
-        """
         import time
         from datetime import UTC, datetime
 
@@ -131,8 +122,9 @@ class Tasks(metaclass=Singleton):
         from app.library.config import Config
 
         timeNow: str = datetime.now(UTC).isoformat()
-        task_id = task.id
-        task_name = task.name
+        task_id: int = task.id
+        task_name: str = task.name
+        notify: EventBus = EventBus.get_instance()
         try:
             current_task = await self._repo.get(task_id)
             if not current_task:
@@ -154,6 +146,12 @@ class Tasks(metaclass=Singleton):
                     task.name,
                     extra={"task_id": task.id, "task_name": task.name},
                 )
+                notify.emit(
+                    Events.TASK_ERROR,
+                    data={"task_id": task.id, "task_name": task.name, "preset": task.preset},
+                    title=f"Task '{task.name}' failed",
+                    message=f"Task '{task.name}' failed because it has no URL.",
+                )
                 return
 
             started: float = time.time()
@@ -163,8 +161,6 @@ class Tasks(metaclass=Singleton):
             folder: str = task.folder or ""
             template: str = task.template or ""
             cli: str = task.cli or ""
-
-            notify: EventBus = EventBus.get_instance()
 
             status = await DownloadQueue.get_instance().add(
                 item=Item.format(
@@ -186,8 +182,23 @@ class Tasks(metaclass=Singleton):
 
             timeNow = datetime.now(UTC).isoformat()
             ended: float = time.time()
+            status_data = {
+                "task_id": task.id,
+                "task_name": task.name,
+                "preset": preset,
+                **(status or {}),
+            }
+            if status and status.get("status") == "error":
+                notify.emit(
+                    Events.TASK_ERROR,
+                    data=status_data,
+                    title=f"Task '{task.name}' failed",
+                    message=f"Task '{task.name}' failed while dispatching items.",
+                )
+                return
+
             LOG.info(
-                "Task '%s' completed in %.2f seconds.",
+                "Task '%s' finished dispatching items in %.2f seconds.",
                 task.name,
                 ended - started,
                 extra={
@@ -201,16 +212,10 @@ class Tasks(metaclass=Singleton):
             )
 
             notify.emit(
-                Events.TASK_DISPATCHED,
-                data={**status, "preset": task.preset} if status else {"preset": task.preset},
-                title=f"Task '{task.name}' dispatched",
-                message=f"Task '{task.name}' dispatched at '{timeNow}'.",
-            )
-            notify.emit(
-                Events.LOG_SUCCESS,
-                data={"preset": task.preset, "lowPriority": True},
-                title="Task completed",
-                message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
+                Events.TASK_FINISHED,
+                data=status_data,
+                title=f"Task '{task.name}' finished",
+                message=f"Task '{task.name}' finished dispatching items at '{timeNow}'.",
             )
         except Exception as e:
             LOG.exception(
@@ -224,14 +229,13 @@ class Tasks(metaclass=Singleton):
                     "exception_type": type(e).__name__,
                 },
             )
-            EventBus.get_instance().emit(
-                Events.LOG_ERROR,
-                data={"preset": task.preset},
-                title="Task failed",
-                message=f"Failed to execute '{task.name}'. '{e!s}'",
+            notify.emit(
+                Events.TASK_ERROR,
+                data={"task_id": task.id, "task_name": task.name, "preset": task.preset, "error": str(e)},
+                title=f"Task '{task.name}' failed",
+                message=f"Task '{task.name}' failed while dispatching items.",
             )
 
     @property
     def handlers(self):
-        """Get the handlers service instance."""
         return self._handlers_service

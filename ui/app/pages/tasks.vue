@@ -900,6 +900,16 @@ const page = ref<number>(route.query.page ? parseInt(route.query.page as string,
 const CACHE_KEY = 'tasks:handler_support';
 const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_KEY) || {});
 
+const handleTaskEvent = (payload: WSEP['task_finished'] | WSEP['task_error']) => {
+  const rawTaskId = payload.data?.task_id;
+  const taskId = typeof rawTaskId === 'number' ? rawTaskId : Number(rawTaskId);
+  if (Number.isSafeInteger(taskId) && taskId > 0) {
+    clearTaskInProgress(taskId);
+  }
+};
+const taskFinishedHandler = (payload: WSEP['task_finished']) => handleTaskEvent(payload);
+const taskErrorHandler = (payload: WSEP['task_error']) => handleTaskEvent(payload);
+
 const displayStyle = computed<'list' | 'grid'>(() =>
   display_style.value === 'list' ? 'list' : 'grid',
 );
@@ -990,8 +1000,12 @@ watch(
   () => socket.isConnected,
   (connected) => {
     socket.off('item_status', statusHandler);
+    socket.off('task_finished', taskFinishedHandler);
+    socket.off('task_error', taskErrorHandler);
     if (connected) {
       socket.on('item_status', statusHandler);
+      socket.on('task_finished', taskFinishedHandler);
+      socket.on('task_error', taskErrorHandler);
     }
   },
   { immediate: true },
@@ -1331,10 +1345,7 @@ const runSelected = async () => {
   selectedElms.value = [];
   toast.success(t('common.dispatchedTasks'));
 
-  setTimeout(async () => {
-    await nextTick();
-    massRun.value = false;
-  }, 500);
+  massRun.value = false;
 };
 
 const runNow = async (item: Task, mass: boolean = false) => {
@@ -1356,7 +1367,7 @@ const runNow = async (item: Task, mass: boolean = false) => {
     extras: {
       source_name: item.name,
       source_id: item.id,
-      source_handler: 'Web',
+      source_handler: 'web',
     },
   };
 
@@ -1382,12 +1393,9 @@ const runNow = async (item: Task, mass: boolean = false) => {
     return;
   }
 
-  setTimeout(async () => {
-    await nextTick();
-    if (item.id) {
-      clearTaskInProgress(item.id);
-    }
-  }, 500);
+  if (!socket.isConnected) {
+    clearTaskInProgress(item.id);
+  }
 };
 
 async function statusHandler(payload: WSEP['item_status']) {
@@ -1577,5 +1585,9 @@ onMounted(async () => {
   await loadContent(page.value, true);
 });
 
-onBeforeUnmount(() => socket.off('item_status', statusHandler));
+onBeforeUnmount(() => {
+  socket.off('item_status', statusHandler);
+  socket.off('task_finished', taskFinishedHandler);
+  socket.off('task_error', taskErrorHandler);
+});
 </script>

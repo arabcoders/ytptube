@@ -31,20 +31,15 @@ LOG = get_logger()
 
 class DownloadQueue(metaclass=Singleton):
     def __init__(self, config: Config | None = None):
-        # Import here to avoid circular import with DataStore
+        # Imported here to avoid circular import with DataStore
         from app.features.downloads.store import DataStore, StoreType
 
         self.config: Config = config or Config.get_instance()
-        "Configuration instance."
         self._notify: EventBus = EventBus.get_instance()
-        "Event bus instance."
         repository = DownloadsRepository.get_instance()
         self.done = DataStore(type=StoreType.HISTORY, connection=repository)
-        "DataStore for the completed downloads."
         self.queue = DataStore(type=StoreType.QUEUE, connection=repository)
-        "DataStore for the download queue."
         self.pool = PoolManager(queue=self, config=self.config)
-        "Pool manager for coordinating download execution."
         self._retry_lock = asyncio.Lock()
         self._retry_limit = asyncio.Semaphore(max(1, self.config.extract_info_concurrency))
 
@@ -107,11 +102,6 @@ class DownloadQueue(metaclass=Singleton):
 
     async def start_items(self, ids: list[str]) -> dict[str, str]:
         """
-        Start one or more queued downloads that were added with auto_started=False.
-
-        Args:
-            ids (list[str]): List of item IDs to start.
-
         Returns:
             dict[str, str]: Dictionary of per-ID results and overall status.
 
@@ -212,7 +202,6 @@ class DownloadQueue(metaclass=Singleton):
         )
 
     async def force_start_items(self, ids: list[str]) -> dict[str, str]:
-        """Start queued downloads using the scheduler hot path."""
         status: dict[str, str] = {"status": "ok"}
         started = False
 
@@ -241,7 +230,6 @@ class DownloadQueue(metaclass=Singleton):
         return status
 
     async def position_items(self, ids: list[str], position: str) -> dict[str, str]:
-        """Move pending downloads to the front or back of the pending queue."""
         status: dict[str, str] = {"status": "ok"}
         promotable: list[str] = []
 
@@ -283,11 +271,6 @@ class DownloadQueue(metaclass=Singleton):
 
     async def pause_items(self, ids: list[str]) -> dict[str, str]:
         """
-        Pause one or more queued downloads that were added with auto_started=True.
-
-        Args:
-            ids (list[str]): List of item IDs to pause.
-
         Returns:
             dict[str, str]: Dictionary of per-ID results and overall status.
 
@@ -327,13 +310,6 @@ class DownloadQueue(metaclass=Singleton):
         return status
 
     def pause(self, shutdown: bool = False) -> bool:
-        """
-        Pause the download queue.
-
-        Returns:
-            bool: True if the download is paused, False otherwise
-
-        """
         if not self.pool.is_paused():
             self.pool.pause()
             if not shutdown:
@@ -344,13 +320,6 @@ class DownloadQueue(metaclass=Singleton):
         return False
 
     def resume(self) -> bool:
-        """
-        Resume the download queue.
-
-        Returns:
-            bool: True if the download is resumed, False otherwise
-
-        """
         if self.pool.is_paused():
             self.pool.resume()
             resumed_at = datetime.now(tz=UTC).isoformat()
@@ -360,13 +329,6 @@ class DownloadQueue(metaclass=Singleton):
         return False
 
     def is_paused(self) -> bool:
-        """
-        Check if the download queue is paused.
-
-        Returns:
-            bool: True if the download queue is paused, False otherwise
-
-        """
         return self.pool.is_paused()
 
     async def on_shutdown(self, _: web.Application):
@@ -385,7 +347,33 @@ class DownloadQueue(metaclass=Singleton):
             dict[str, str]: Status dict with "status" and optional "msg" keys
 
         """
-        result = await add_impl(queue=self, item=item, already=already, entry=entry)
+        source: str = str(item.extras.get("source_handler", "")).casefold()
+        task_source: bool = source == "web" and item.extras.get("source_id") is not None
+        task_data = {
+            "task_id": item.extras.get("source_id"),
+            "task_name": item.extras.get("source_name"),
+            "preset": item.preset,
+        }
+        try:
+            result = await add_impl(queue=self, item=item, already=already, entry=entry)
+        except Exception as exc:
+            if task_source and already is None:
+                self._notify.emit(
+                    Events.TASK_ERROR,
+                    data={**task_data, "error": str(exc)},
+                    title=f"Task '{task_data['task_name']}' failed",
+                    message=f"Task '{task_data['task_name']}' failed while dispatching items.",
+                )
+            raise
+
+        if task_source and already is None:
+            event = Events.TASK_ERROR if result.get("status") == "error" else Events.TASK_FINISHED
+            self._notify.emit(
+                event,
+                data={**task_data, **result},
+                title=f"Task '{task_data['task_name']}' {'failed' if event == Events.TASK_ERROR else 'finished'}",
+                message=f"Task '{task_data['task_name']}' {'failed' if event == Events.TASK_ERROR else 'finished'} dispatching items.",
+            )
 
         if result.get("status") == "error" and not result.get("hidden"):
             self._notify.emit(
@@ -399,11 +387,6 @@ class DownloadQueue(metaclass=Singleton):
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """
-        Cancel the download.
-
-        Args:
-            ids (list): The list of ids to cancel.
-
         Returns:
             dict: The status of the operation.
 
@@ -496,12 +479,6 @@ class DownloadQueue(metaclass=Singleton):
 
     async def clear(self, ids: list[str], remove_file: bool = False) -> dict[str, str]:
         """
-        Clear the download history.
-
-        Args:
-            ids (list): The list of ids to clear.
-            remove_file (bool): Only considered if config.remove_files is True.
-
         Returns:
             dict: The status of the operation.
 
@@ -878,7 +855,6 @@ class DownloadQueue(metaclass=Singleton):
         return items
 
     def live_queue(self, limit: int = 0) -> dict[str, int | dict[str, ItemDTO]]:
-        """Return a display-limited live queue snapshot with total metadata."""
         limit = max(0, int(limit or 0))
         items: dict[str, ItemDTO] = {}
         active = self.pool.get_active_downloads()

@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import inspect
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -14,10 +15,6 @@ LOG = get_logger()
 
 
 class Events:
-    """
-    The events that can be emitted.
-    """
-
     STARTUP: str = "startup"
     LOADED: str = "loaded"
     STARTED: str = "started"
@@ -53,32 +50,17 @@ class Events:
     RESUMED: str = "resumed"
 
     TASKS_ADD: str = "task_add"
-    TASK_DISPATCHED: str = "task_dispatched"
     TASK_FINISHED: str = "task_finished"
     TASK_ERROR: str = "task_error"
 
     SCHEDULE_ADD: str = "schedule_add"
 
     def get_all() -> list:
-        """
-        Get all the events.
-
-        Returns:
-            list: The list of events.
-
-        """
         return [
             getattr(Events, ev) for ev in dir(Events) if not ev.startswith("_") and not callable(getattr(Events, ev))
         ]
 
     def frontend() -> list:
-        """
-        Get the frontend events.
-
-        Returns:
-            list: The list of frontend events.
-
-        """
         return [
             Events.CONFIG_UPDATE,
             Events.CONNECTED,
@@ -97,54 +79,25 @@ class Events:
             Events.ITEM_STATUS,
             Events.PAUSED,
             Events.RESUMED,
+            Events.TASK_FINISHED,
+            Events.TASK_ERROR,
         ]
 
     def only_debug() -> list:
-        """
-        High frequency events that should only be logged in debug mode.
-
-        Returns:
-            list: The list of debug events.
-
-        """
         return [Events.ITEM_UPDATED, Events.ITEM_PROGRESS]
 
 
 @dataclass(kw_only=True)
 class Event:
-    """
-    Event is a data transfer object that represents an event that was emitted.
-    """
-
     id: str = field(default_factory=lambda: str(gen_random(16)), init=False)
-    """The id of the event."""
-
     created_at: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.UTC).isoformat()))
-    """The time the event was created."""
-
     event: str
-    """The event that was emitted."""
-
     title: str | None = None
-    """The title of the event, if any."""
-
     message: str | None = None
-    """The message of the event, if any."""
-
     data: Any
-    """The data that was passed to the event."""
-
     extras: dict = field(default_factory=dict)
-    """Listeners can add extra data to the event."""
 
     def serialize(self) -> dict:
-        """
-        Serialize the event.
-
-        Returns:
-            dict: The serialized event.
-
-        """
         return {
             "id": self.id,
             "created_at": self.created_at,
@@ -158,24 +111,9 @@ class Event:
         return f"Event(id={self.id}, created_at={self.created_at}, event={self.event}, title={self.title}, message={self.message} data={self.data})"
 
     def put(self, key: str, value: Any) -> None:
-        """
-        Put extra data to the event.
-
-        Args:
-            key (str): The key of the extra data.
-            value (Any): The value of the extra data.
-
-        """
         self.extras[key] = value
 
     def datatype(self) -> str:
-        """
-        Get the datatype of the data.
-
-        Returns:
-            str: The datatype of the data.
-
-        """
         return type(self.data).__name__
 
     def __str__(self):
@@ -185,11 +123,8 @@ class Event:
 class EventListener:
     def __init__(self, name: str, callback: Callable[..., Any]):
         self.name: str = name
-        "The name of the listener."
         self.call_back: Callable[..., Any] = callback
-        "The callback function to call when the event is emitted."
-        self.is_coroutine: bool = asyncio.iscoroutinefunction(callback)
-        "Whether the callback is a coroutine function or not."
+        self.is_coroutine: bool = inspect.iscoroutinefunction(callback)
 
     async def handle(self, event: Event, **kwargs):
         if self.is_coroutine:
@@ -199,44 +134,16 @@ class EventListener:
 
 
 class EventBus(metaclass=Singleton):
-    """
-    This class is used to subscribe to and emit events to the registered listeners.
-    """
-
     def __init__(self):
         self._listeners: dict[str, list[tuple[str, EventListener]]] = {}
-        "The listeners for the events."
-
         self.debug: bool = False
-        "Whether to log debug messages or not."
-
         self._offload: BackgroundWorker | None = None
-        "The background worker to offload tasks to."
 
     @staticmethod
     def get_instance() -> "EventBus":
-        """
-        Get the instance of the EventsSubscriber.
-
-        Returns:
-            EventsSubscriber: The instance of the EventsSubscriber
-
-        """
         return EventBus()
 
     def subscribe(self, event: str | list | tuple, callback: Callable[..., Any], name: str | None = None) -> "EventBus":
-        """
-        Subscribe to an event.
-
-        Args:
-            event (str): The event to subscribe to.
-            name (str|None): The name of the subscriber, if None a random uuid will be generated.
-            callback(Event, name, **kwargs) (Awaitable): The function to call. Must be a coroutine.
-
-        Returns:
-            EventsSubscriber: The instance of the EventsSubscriber
-
-        """
         all_events = Events.get_all()
 
         if isinstance(event, str):
@@ -280,17 +187,6 @@ class EventBus(metaclass=Singleton):
         return self
 
     def unsubscribe(self, event: str | list | tuple, name: str) -> "EventBus":
-        """
-        Unsubscribe from an event.
-
-        Args:
-            event (str): The event to unsubscribe from.
-            name (str): The name of the subscriber.
-
-        Returns:
-            EventsSubscriber: The instance of the EventsSubscriber
-
-        """
         if isinstance(event, str):
             event = [event]
 
@@ -310,17 +206,6 @@ class EventBus(metaclass=Singleton):
     def emit(
         self, event: str, data: Any | None = None, title: str | None = None, message: str | None = None, **kwargs
     ) -> None:
-        """
-        Emit an event to all registered listeners.
-
-        Args:
-            event (str): The event to emit.
-            data (Any|None): The data to pass to the event.
-            title (str | None): The title of the event, if any.
-            message (str | None): The message of the event, if any.
-            **kwargs: The keyword arguments to pass to the event.
-
-        """
         if event not in self._listeners:
             return
 
@@ -402,21 +287,12 @@ class EventBus(metaclass=Singleton):
                     )
 
     def clear(self) -> None:
-        """
-        Clear all listeners. Useful for testing.
-        """
         self._listeners.clear()
 
     def debug_enable(self) -> None:
-        """
-        Enable debug logging.
-        """
         self.debug = True
 
     def debug_disable(self) -> None:
-        """
-        Disable debug logging.
-        """
         self.debug = False
 
     @staticmethod
