@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "775a015551b0305ecb11c1b3e547510f9511173b",
-    "date": "2026-08-24T19:45:58+00:00",
+    "full_sha": "bb9338d039990d48a798d9194d693bc5ecb5f0e9",
+    "date": "2026-08-25T06:18:32+00:00",
     "commits": [
+      {
+        "sha": "bb9338d0",
+        "full_sha": "bb9338d039990d48a798d9194d693bc5ecb5f0e9",
+        "message": "fix: restore missing toasts for task related actions",
+        "author": "arabcoders",
+        "date": "2026-08-25T06:18:32+00:00"
+      },
       {
         "sha": "775a0155",
         "full_sha": "775a015551b0305ecb11c1b3e547510f9511173b",
