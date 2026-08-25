@@ -147,7 +147,7 @@ def test_native_reset_username(monkeypatch, capsys) -> None:
 
 @pytest.mark.asyncio
 async def test_reset_missing_database(monkeypatch, tmp_path) -> None:
-    monkeypatch.setenv("YTP_CONFIG_PATH", str(tmp_path))
+    set_test_env(monkeypatch, {"config_path": tmp_path, "file_logging": False})
     db_file = Path(tmp_path) / "ytptube.db"
     monkeypatch.setattr(reset_password, "getpass", lambda _: pytest.fail("password was requested"))
 

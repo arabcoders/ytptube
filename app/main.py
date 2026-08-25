@@ -178,6 +178,10 @@ class Main:
             )
             if self._config.is_native:
                 LOG.info("Running in native mode.")
+
+            if self._config.disable_auth:
+                LOG.info("Authentication is disabled.")
+
             LOG.info("=" * 40)
 
             loop = asyncio.get_event_loop()

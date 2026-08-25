@@ -21,7 +21,7 @@ from app.routes.api.system import (
 )
 from app.routes.api import system
 from app.library.router import ROUTES
-from app.tests.helpers import url_for
+from app.tests.helpers import set_test_env, url_for
 
 
 @dataclass
@@ -273,10 +273,10 @@ class TestSystemLimitsEndpoint:
             "available": 3,
         }
 
-    def test_config_reads_live_premiere(self):
-        with patch.dict("os.environ", {"YTP_PREVENT_LIVE_PREMIERE": "false"}, clear=False):
-            Config._reset_singleton()
-            config = Config.get_instance()
+    def test_config_reads_live_premiere(self, monkeypatch: pytest.MonkeyPatch):
+        set_test_env(monkeypatch, {"prevent_live_premiere": False, "file_logging": False})
+        Config._reset_singleton()
+        config = Config.get_instance()
 
         assert config.prevent_live_premiere is False
 

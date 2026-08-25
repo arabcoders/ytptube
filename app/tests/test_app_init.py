@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from app import _add_package_paths
+from app.tests.helpers import set_test_env
 
 
 def test_adds_package_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -14,8 +15,7 @@ def test_adds_package_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     second.mkdir()
     config = tmp_path / "config"
     config.mkdir()
-    monkeypatch.setenv("YTP_CONFIG_PATH", str(config))
-    monkeypatch.setenv("YTP_PYTHON_PATH", os.pathsep.join((str(first), str(second))))
+    set_test_env(monkeypatch, {"config_path": config, "python_path": os.pathsep.join((str(first), str(second)))})
     monkeypatch.setattr(sys, "path", ["bundled"])
 
     _add_package_paths()
@@ -27,8 +27,7 @@ def test_adds_package_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 def test_ignores_missing_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     existing = tmp_path / "existing"
     existing.mkdir()
-    monkeypatch.delenv("YTP_CONFIG_PATH", raising=False)
-    monkeypatch.setenv("YTP_PYTHON_PATH", os.pathsep.join((str(tmp_path / "missing"), str(existing))))
+    set_test_env(monkeypatch, {"python_path": os.pathsep.join((str(tmp_path / "missing"), str(existing)))})
     monkeypatch.setattr(sys, "path", ["bundled"])
 
     _add_package_paths()
@@ -39,8 +38,7 @@ def test_ignores_missing_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
 def test_moves_existing_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     external = tmp_path / "external"
     external.mkdir()
-    monkeypatch.delenv("YTP_CONFIG_PATH", raising=False)
-    monkeypatch.setenv("YTP_PYTHON_PATH", str(external))
+    set_test_env(monkeypatch, {"python_path": external})
     monkeypatch.setattr(sys, "path", ["bundled", str(external)])
 
     _add_package_paths()
@@ -53,8 +51,7 @@ def test_ignores_package_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     config.mkdir()
     user_site = config / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
     user_site.write_text("not a directory")
-    monkeypatch.setenv("YTP_CONFIG_PATH", str(config))
-    monkeypatch.delenv("YTP_PYTHON_PATH", raising=False)
+    set_test_env(monkeypatch, {"config_path": config})
     monkeypatch.setattr(sys, "path", ["bundled"])
 
     _add_package_paths()

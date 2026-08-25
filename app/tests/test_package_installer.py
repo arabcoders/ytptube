@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.library.PackageInstaller import PackageInstaller, Packages, parse_version
+from app.tests.helpers import set_test_env
 
 
 @pytest.fixture(autouse=True)
@@ -56,7 +57,7 @@ class TestPackageInstallerInit:
         assert len(sys.path) == original_len + 1
 
     def test_init_with_env_var(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("YTP_CONFIG_PATH", str(tmp_path))
+        set_test_env(monkeypatch, {"config_path": tmp_path})
         installer = PackageInstaller(pkg_path=None)
 
         assert installer.user_site is not None
@@ -64,7 +65,7 @@ class TestPackageInstallerInit:
         assert str(installer.user_site) in sys.path
 
     def test_init_no_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("YTP_CONFIG_PATH", raising=False)
+        set_test_env(monkeypatch)
         installer = PackageInstaller(pkg_path=None)
         # No user_site is set when no path or env provided
         assert installer.user_site is None
