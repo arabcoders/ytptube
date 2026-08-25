@@ -47,7 +47,7 @@ The interface is available in English, العربية, Français, 中文, and �
 - Optional direct yt-dlp control through the terminal interface
 - Optional integration with FlareSolverr or Trawl to allow yt-dlp to bypass some WAF protection.
 - Queue and archive controls, live logs, diagnostics, and optional resource monitoring
-- Docker, Podman, Unraid, and native builds for Windows, macOS, and Linux
+- Docker, Podman, Unraid, and [native builds](docs/native-builds.md) for Windows, macOS, and Linux
 
 Read [Features](docs/features.md) for details and links to the relevant configuration guides.
 
@@ -138,18 +138,8 @@ Install the **Community Applications** plugin, search for **ytptube**, and use t
 
 ### Native Builds
 
-ZIP archives for Windows, Linux, and macOS are published on the [GitHub Releases](https://github.com/arabcoders/ytptube/releases) page. Archive names follow this pattern:
-
-```text
-ytptube-{OS}-{arch}-{tag}.zip
-```
-
-Extract the archive and run `YTPTube`, or `YTPTube.exe` on Windows. Native builds disable application authentication 
-by default. Set `YTP_DISABLE_AUTH=false` to require a local account.
-
-Native builds do not support automatic yt-dlp or custom-package updates. The built-in player also requires 
-`ffmpeg` on `PATH`. Some extractors require [Deno](https://deno.land/#installation). 
-See [Manually update yt-dlp in a native executable](FAQ.md#manually-update-yt-dlp-in-native-executable).
+Download the Windows, macOS, or Linux archive from [GitHub Releases](https://github.com/arabcoders/ytptube/releases).
+Read the [native-build guide](docs/native-builds.md) for installation and usage instructions.
 
 ## Security
 
@@ -166,6 +156,7 @@ to report vulnerabilities.
 
 - [Documentation index](docs/README.md)
 - [Features](docs/features.md)
+- [Native builds](docs/native-builds.md)
 - [Configuration, usage, and troubleshooting](FAQ.md)
 - [HTTP API](API.md)
 - [Security policy](SECURITY.md)

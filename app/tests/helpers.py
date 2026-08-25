@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import atexit
 import contextlib
+import os
 import shutil
 from contextvars import ContextVar
 from pathlib import Path
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator, Mapping
     from typing import Any
 
+    import pytest
     from yarl import URL
 
     Handler = Callable[..., Awaitable[Any]]
@@ -25,6 +27,18 @@ _TMP_BASE = Path(gettempdir()) / "tests-ytptube"
 _TMP_PER_RUN = _TMP_BASE / uuid4().hex
 _TMP_RUNTIME = _TMP_PER_RUN / "tmp"
 _CURRENT_TEST_APP: ContextVar[web.Application | None] = ContextVar("current_test_app", default=None)
+
+
+def set_test_env(monkeypatch: pytest.MonkeyPatch, values: Mapping[str, object] | None = None) -> None:
+    for key in tuple(os.environ):
+        if key.startswith("YTP_"):
+            monkeypatch.delenv(key)
+
+    for key, value in (values or {}).items():
+        name = key.upper()
+        if not name.startswith("YTP_"):
+            name = f"YTP_{name}"
+        monkeypatch.setenv(name, str(value).lower() if isinstance(value, bool) else str(value))
 
 
 def _slugify(name: str) -> str:

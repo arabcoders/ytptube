@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
-import { getNavItems, isNavItemActive } from '~/utils/topLevelNavigation';
+import { DOCS_ENTRIES } from '~/composables/useDocs';
+import { getNavItems, getSearchNavItems, isNavItemActive } from '~/utils/topLevelNavigation';
 
 describe('documentation navigation', () => {
   it('limits permanent links', () => {
@@ -18,5 +19,22 @@ describe('documentation navigation', () => {
       .map((entry) => entry.id);
 
     expect(active).toEqual(['docs-readme']);
+
+    const nativeActive = getNavItems()
+      .filter((entry) => entry.section === 'docs' && entry.sidebarVisible)
+      .filter((entry) => isNavItemActive(entry, { path: '/docs/native-builds' }))
+      .map((entry) => entry.id);
+
+    expect(nativeActive).not.toContain('docs-index');
+  });
+
+  it('indexes all docs', () => {
+    const docs = getSearchNavItems().filter((entry) => entry.id.startsWith('docs-'));
+
+    expect(docs.map((entry) => entry.id)).toEqual(DOCS_ENTRIES.map((entry) => entry.id));
+    expect(docs.find((entry) => entry.id === 'docs-native-builds')).toMatchObject({
+      searchable: true,
+      sidebarVisible: false,
+    });
   });
 });

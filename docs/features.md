@@ -162,6 +162,7 @@ Read the [security recommendations](../FAQ.md#security-recommendations) before e
 ## More Documentation
 
 - [README](../README.md): installation and project overview
+- [Native builds](native-builds.md): Windows, macOS, and Linux installation and operation
 - [FAQ](../FAQ.md): configuration, integrations, and troubleshooting
 - [API](../API.md): programmatic access
 - [Security policy](../SECURITY.md): vulnerability reporting and supported boundaries

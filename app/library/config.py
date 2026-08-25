@@ -30,6 +30,20 @@ SUPPORTED_CODECS: tuple[str, ...] = ("h264_qsv", "h264_nvenc", "h264_amf", "h264
 "Supported encoder names in order of preference."
 
 
+def native_defaults() -> dict[str, Any]:
+    import platformdirs
+
+    return {
+        "config_path": platformdirs.user_config_dir("ytptube", "arabcoders"),
+        "temp_path": platformdirs.user_cache_dir("ytptube", "arabcoders"),
+        "download_path": platformdirs.user_downloads_dir(),
+        "host": "127.0.0.1",
+        "access_log": False,
+        "disable_auth": True,
+        "cors_origins": "",
+    }
+
+
 class Config(metaclass=Singleton):
     app_env: str = "production"
     """The application environment, can be 'production' or 'development'."""
@@ -123,6 +137,9 @@ class Config(metaclass=Singleton):
 
     access_log: bool = True
     """Enable access logging."""
+
+    no_browser: bool = False
+    """Prevent native builds from opening the browser on startup."""
 
     debug: bool = False
     """Enable debugging."""
@@ -321,6 +338,7 @@ class Config(metaclass=Singleton):
         "debug",
         "temp_keep",
         "access_log",
+        "no_browser",
         "remove_files",
         "ignore_ui",
         "pip_ignore_updates",
@@ -383,16 +401,21 @@ class Config(metaclass=Singleton):
     "The system path separator."
 
     @staticmethod
-    def get_instance(is_native: bool = False) -> "Config":
-        cls = Config(is_native)
-        cls.is_native = is_native or cls.is_native
-        return cls
+    def get_instance(is_native: bool | None = None) -> "Config":
+        instance = Config(is_native is True)
+        if is_native is not None and instance.is_native is not is_native:
+            msg = "Config is already initialized for a different runtime mode."
+            raise RuntimeError(msg)
+        return instance
 
     def __init__(self, is_native: bool = False):
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
         LOG = get_logger()
+        runtime_defaults = native_defaults() if is_native else {}
 
-        self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or str(Path(baseDefaultPath) / "var" / "config")
+        self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or runtime_defaults.get(
+            "config_path", str(Path(baseDefaultPath) / "var" / "config")
+        )
         envFile: Path = Path(self.config_path) / ".env"
 
         if envFile.exists():
@@ -400,9 +423,11 @@ class Config(metaclass=Singleton):
             load_dotenv(envFile)
 
         self.is_native = is_native
-        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or str(Path(baseDefaultPath) / "var" / "tmp")
-        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or str(
-            Path(baseDefaultPath) / "var" / "downloads"
+        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or runtime_defaults.get(
+            "temp_path", str(Path(baseDefaultPath) / "var" / "tmp")
+        )
+        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or runtime_defaults.get(
+            "download_path", str(Path(baseDefaultPath) / "var" / "downloads")
         )
         self.app_path = str(Path(__file__).parent.parent.absolute())
 
@@ -416,8 +441,10 @@ class Config(metaclass=Singleton):
                 continue
 
             lookUpKey: str = f"YTP_{k}".upper()
-            default = True if k == "disable_auth" and is_native and lookUpKey not in os.environ else v
+            default = runtime_defaults.get(k, v)
             setattr(self, k, os.environ.get(lookUpKey, default))
+
+        self.is_native = is_native
 
         for k, v in self.__dict__.items():
             if k.startswith("_") or k in self._immutable or k in self._manual_vars:

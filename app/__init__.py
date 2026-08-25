@@ -3,12 +3,12 @@ import sys
 from pathlib import Path
 
 
-def _add_package_paths() -> None:
+def _add_package_paths(config_path: str | Path | None = None) -> None:
     paths: list[Path] = []
     if value := os.environ.get("YTP_PYTHON_PATH"):
         paths.extend(path for item in value.split(os.pathsep) if (path := Path(item).expanduser()).is_dir())
 
-    if base_dir := os.environ.get("YTP_CONFIG_PATH"):
+    if base_dir := config_path or os.environ.get("YTP_CONFIG_PATH"):
         user_site = Path(base_dir) / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
         if not user_site.exists():
             user_site.mkdir(parents=True, exist_ok=True)

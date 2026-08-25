@@ -41,7 +41,7 @@ from app.library.HttpAPI import HttpAccessLogger, HttpAPI, redact_url
 from app.library.sqlite_store import SqliteStore
 from app.library.router import ROUTES, RouteType, add_route, get_route, get_routes
 from app.scripts import reset_password
-from app.tests.helpers import make_in_memory_db_path, url_for
+from app.tests.helpers import make_in_memory_db_path, set_test_env, url_for
 
 
 AUTH_ROUTE_NAMES = (
@@ -107,24 +107,36 @@ def test_reset_command_input(monkeypatch, capsys) -> None:
     assert "different" not in output.err
 
 
-def test_native_reset_forwarding(monkeypatch) -> None:
+def test_native_reset_forwarding(monkeypatch, tmp_path: Path) -> None:
     import app.local as local_module
 
     reset = Mock(return_value=0)
-    monkeypatch.setattr(local_module, "set_env", lambda: None)
+    Config._reset_singleton()
+    set_test_env(
+        monkeypatch,
+        {
+            "config_path": tmp_path / "config",
+            "temp_path": tmp_path / "temp",
+            "download_path": tmp_path / "downloads",
+            "file_logging": False,
+        },
+    )
+    monkeypatch.setattr("app._add_package_paths", lambda _: None)
     monkeypatch.setattr(reset_password, "main", reset)
     monkeypatch.setattr("sys.argv", ["local.py", "--reset-password", "--username", "owner"])
 
-    with pytest.raises(SystemExit) as exc_info:
-        local_module.main()
-    assert exc_info.value.code == 0
-    reset.assert_called_once_with(["--username", "owner"])
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            local_module.main()
+        assert exc_info.value.code == 0
+        reset.assert_called_once_with(["--username", "owner"])
+    finally:
+        Config._reset_singleton()
 
 
 def test_native_reset_username(monkeypatch, capsys) -> None:
     import app.local as local_module
 
-    monkeypatch.setattr(local_module, "set_env", lambda: None)
     monkeypatch.setattr("sys.argv", ["local.py", "--reset-password"])
 
     with pytest.raises(SystemExit) as exc_info:
@@ -918,6 +930,30 @@ async def test_disable_auth_public() -> None:
             assert (await response.json())["code"] == "FEATURE_DISABLED"
     finally:
         await client.close()
+
+
+@pytest.mark.asyncio
+async def test_disabled_auth_origin() -> None:
+    async def handler(_: web.Request) -> web.Response:
+        return web.json_response({"ok": True})
+
+    config = Config.get_instance()
+    config.disable_auth = True
+    config.cors_origins = ""
+    config.base_path = "/"
+    app = web.Application(middlewares=[auth_middleware(FakeAuth(), config)])
+    app.router.add_post("/api/value", handler, name="api_value")
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    try:
+        response = await client.post(url_for("api_value", app=app), headers={"Origin": "https://attacker.example"})
+        assert response.status == web.HTTPForbidden.status_code
+        assert (await response.json())["code"] == "FORBIDDEN"
+        assert (await client.post(url_for("api_value", app=app))).status == web.HTTPOk.status_code
+    finally:
+        await client.close()
+        config.disable_auth = False
+        config.cors_origins = "*"
 
 
 @pytest.mark.asyncio

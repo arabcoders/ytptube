@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from aiohttp import web
@@ -10,6 +11,7 @@ from app.tests.helpers import (
     make_test_disk_path,
     make_test_temp_dir,
     reset_current_test_app,
+    set_test_env,
     set_current_test_app,
     url_for,
 )
@@ -35,6 +37,18 @@ def test_tmp_path_root(tmp_path: Path) -> None:
 
     assert tmp_path.is_relative_to(expected_root)
     assert get_test_system_temp_root().is_relative_to(get_test_per_run_root())
+
+
+def test_env_namespace_reset(monkeypatch) -> None:
+    monkeypatch.setenv("YTP_OLD_VALUE", "old")
+    monkeypatch.setenv("UNRELATED_VALUE", "kept")
+
+    set_test_env(monkeypatch, {"host": "127.0.0.2", "YTP_FILE_LOGGING": False})
+
+    assert "YTP_OLD_VALUE" not in os.environ
+    assert os.environ["YTP_HOST"] == "127.0.0.2"
+    assert os.environ["YTP_FILE_LOGGING"] == "false"
+    assert os.environ["UNRELATED_VALUE"] == "kept"
 
 
 def test_app_context_restores() -> None:

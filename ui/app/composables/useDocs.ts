@@ -5,6 +5,7 @@ export type DocsFile =
   | 'SECURITY.md'
   | 'docs/README.md'
   | 'docs/features.md'
+  | 'docs/native-builds.md'
   | 'docs/task-definitions.md';
 
 export type DocsEntry = {
@@ -16,6 +17,7 @@ export type DocsEntry = {
   slug: string[];
   icon: string;
   navLabel: string;
+  sidebarVisible: boolean;
 };
 
 const DOCS_ASSETS = ['sc_short.jpg', 'sc_simple.jpg'] as const;
@@ -30,6 +32,7 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: [],
     icon: 'i-lucide-book-open',
     navLabel: 'docs.entries.index.navLabel',
+    sidebarVisible: true,
   },
   {
     id: 'docs-readme',
@@ -40,6 +43,7 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['readme'],
     icon: 'i-lucide-book-open',
     navLabel: 'docs.entries.readme.navLabel',
+    sidebarVisible: true,
   },
   {
     id: 'docs-features',
@@ -50,6 +54,18 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['features'],
     icon: 'i-lucide-list-checks',
     navLabel: 'docs.entries.features.navLabel',
+    sidebarVisible: false,
+  },
+  {
+    id: 'docs-native-builds',
+    title: 'docs.entries.nativeBuilds.title',
+    description: 'docs.entries.nativeBuilds.description',
+    file: 'docs/native-builds.md',
+    route: '/docs/native-builds',
+    slug: ['native-builds'],
+    icon: 'i-lucide-download',
+    navLabel: 'docs.entries.nativeBuilds.navLabel',
+    sidebarVisible: false,
   },
   {
     id: 'docs-faq',
@@ -60,6 +76,7 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['faq'],
     icon: 'i-lucide-circle-help',
     navLabel: 'docs.entries.faq.navLabel',
+    sidebarVisible: true,
   },
   {
     id: 'docs-api',
@@ -70,6 +87,7 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['api'],
     icon: 'i-lucide-code-xml',
     navLabel: 'docs.entries.api.navLabel',
+    sidebarVisible: true,
   },
   {
     id: 'docs-security',
@@ -80,6 +98,7 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['security'],
     icon: 'i-lucide-shield-check',
     navLabel: 'docs.entries.security.navLabel',
+    sidebarVisible: false,
   },
   {
     id: 'docs-task-definitions',
@@ -90,6 +109,7 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['task-definitions'],
     icon: 'i-lucide-list-tree',
     navLabel: 'docs.entries.taskDefinitions.navLabel',
+    sidebarVisible: false,
   },
 ];
 

@@ -3,9 +3,13 @@
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
 or the `environment:` section in `compose.yaml` file.
 
+> [!NOTE]
+>
+> Most environment variables are shared between native and container deployments, but some default values differ for 
+> native builds. See [Native builds](docs/native-builds.md#files-and-settings) for the native-specific defaults.
 
 <details>
-<summary>Click to expand all environment Variables</summary>
+<summary>Click to expand all environment variables</summary>
 
 | Environment Variable            | Description                                                         | Default               |
 | ------------------------------- | ------------------------------------------------------------------- | --------------------- |
@@ -127,10 +131,8 @@ this use case beyond the shortcut itself. The shortcut doesn't parse `http_heade
 
 # Authentication
 
-Server installations require a local account by default. Native builds disable authentication by default. You can
-set `YTP_DISABLE_AUTH=false` to enable auth for native builds.
-
-Open the account menu, select **Create key**, enter a name, and copy the key when it appears. The key is shown once.
+Server installations require a local account by default. Open the account menu, select **Create key**, enter a name, 
+and copy the key when it appears. The key is shown once.
 
 Send API keys in the `Authorization: Bearer ytp_...` header.
 
@@ -156,15 +158,7 @@ docker exec -ti -w /app ytptube python -m app.scripts.reset_password --username 
 
 For Podman, replace `docker` with `podman` in the command above.
 
-For a native build:
-
-```bash
-YTPTube --reset-password --username USERNAME
-```
-
-For windows replace `YTPTube` with the path to the `YTPTube.exe` binary.
-
-After secussfull password reset. the related user cookie sessions will be invalidated.
+A successful password reset invalidates the related user's sessions.
 
 # Security recommendations
 
@@ -260,75 +254,6 @@ YTP_YTDLP_VERSION=2025.07.21 or master or nightly
 ```
 
 Then restart the container to apply the changes.
-
-# Manually update yt-dlp in native executable?
-
-Stop YTPTube before changing its Python packages. Use a Python interpreter with the same major and minor version and
-architecture as the native build.
-
-Install yt-dlp into the versioned package directory under YTPTube's config location. On Linux:
-
-```bash
-export YTP_CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/ytptube"
-TARGET="$YTP_CONFIG_PATH/python3.13-packages"
-mkdir -p "$TARGET"
-python3.13 -m pip install --upgrade --target "$TARGET" "yt-dlp[default]"
-./YTPTube
-```
-
-On macOS, use `export YTP_CONFIG_PATH="$HOME/Library/Application Support/ytptube"` before the remaining commands.
-These are the native executable's default config locations, so later launches find the override without requiring a
-custom environment variable.
-
-On Windows, use PowerShell and a matching 64-bit or ARM64 Python installation:
-
-```powershell
-$env:YTP_CONFIG_PATH = Join-Path $env:LOCALAPPDATA "arabcoders\ytptube"
-$target = Join-Path $env:YTP_CONFIG_PATH "python3.13-packages"
-New-Item -ItemType Directory -Force $target | Out-Null
-py -3.13 -m pip install --upgrade --target $target "yt-dlp[default]"
-.\YTPTube.exe
-```
-
-The same target supports pinned, nightly, and master versions:
-
-```bash
-# Pinned release
-python3.13 -m pip install --upgrade --target "$TARGET" "yt-dlp[default]==2026.01.26"
-
-# Nightly channel
-python3.13 -m pip install --upgrade --pre --target "$TARGET" "yt-dlp[default]"
-
-# Master channel; requires Git
-python3.13 -m pip install --upgrade --target "$TARGET" \
-  "yt-dlp[default] @ git+https://github.com/yt-dlp/yt-dlp.git@master"
-```
-
-The equivalent PowerShell commands use the `$target` variable defined above:
-
-```powershell
-# Pinned release
-py -3.13 -m pip install --upgrade --target $target "yt-dlp[default]==2026.01.26"
-
-# Nightly channel
-py -3.13 -m pip install --upgrade --pre --target $target "yt-dlp[default]"
-
-# Master channel; requires Git
-py -3.13 -m pip install --upgrade --target $target "yt-dlp[default] @ git+https://github.com/yt-dlp/yt-dlp.git@master"
-```
-
-To keep packages elsewhere, set `YTP_PYTHON_PATH` when starting YTPTube. For application packages loaded after startup,
-such as yt-dlp, these directories take precedence over the config-local directory and bundled copy:
-
-```bash
-YTP_PYTHON_PATH="/path/to/packages" ./YTPTube
-```
-
-Separate multiple directories with `:` on Linux and macOS or `;` on Windows. Keep `YTP_PYTHON_PATH` set on every
-launch. On Windows, for example, use `$env:YTP_PYTHON_PATH = "C:\path\to\packages"` before running `YTPTube.exe`.
-Only add trusted directories that cannot be modified by untrusted users, because Python modules loaded from these
-locations execute with the same permissions as YTPTube. Reinstall the override when a future native build changes its
-bundled Python major or minor version.
 
 # Custom output template placeholders
 
@@ -756,22 +681,3 @@ YTPTube supports multiple languages with RTL support. Currently the following la
 
 On first visit, YTPTube attempts to detect your browser's preferred language and switches automatically if a matching 
 translation is available.
-
----
-
-# MacOS execuable
-
-Recent MacOS versions have introduced stricter security measures that can prevent the YTPTube from running. You may 
-receive errors like:
-
-- Failed to load Python shared library '...'
-
-To fix this, you need to run
-
-```bash
-# Replace the version number with the actual version you downloaded.
-xattr -cr "/Users/abf/Downloads/dist/YTPTube-v2.6.7"
-```
-This command removes the quarantine attribute from the application.
-
-If that doesnt fix it you may have to allow the app to run in your security settings. Go to `System Preferences > Security & Privacy > General` and click `Open Anyway` for YTPTube.

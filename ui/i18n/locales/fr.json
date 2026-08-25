@@ -1286,6 +1286,11 @@
         "navLabel": "Fonctionnalités",
         "description": "Téléchargements, automatisation et fonctions pour les médiathèques."
       },
+      "nativeBuilds": {
+        "title": "Versions natives",
+        "navLabel": "Versions natives",
+        "description": "Installer et utiliser les versions Windows, macOS et Linux."
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

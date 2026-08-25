@@ -1286,6 +1286,11 @@
         "navLabel": "Features",
         "description": "Downloads, automation, and media-library features."
       },
+      "nativeBuilds": {
+        "title": "Native Builds",
+        "navLabel": "Native Builds",
+        "description": "Install and run the Windows, macOS, and Linux releases."
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

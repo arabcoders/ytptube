@@ -57,6 +57,9 @@ const SECTIONS: Array<NavSection> = [
   { id: 'tools', label: 'app.nav.sections.tools' },
   { id: 'docs', label: 'app.nav.sections.docs' },
 ];
+const DOCS_INDEX_EXCLUSIONS = DOCS_ENTRIES.filter((entry) => entry.id !== 'docs-index').map(
+  (entry) => entry.route,
+);
 
 const NavItems: Array<NavDefinition> = [
   {
@@ -218,10 +221,8 @@ const NavItems: Array<NavDefinition> = [
     icon: entry.icon,
     to: entry.route,
     matchPath: entry.route,
-    excludeMatchPaths:
-      entry.id === 'docs-index' ? ['/docs/readme', '/docs/faq', '/docs/api'] : undefined,
-    sidebarVisible: ['docs-index', 'docs-readme', 'docs-faq', 'docs-api'].includes(entry.id),
-    searchable: ['docs-index', 'docs-readme', 'docs-faq', 'docs-api'].includes(entry.id),
+    excludeMatchPaths: entry.id === 'docs-index' ? DOCS_INDEX_EXCLUSIONS : undefined,
+    sidebarVisible: entry.sidebarVisible,
   })),
   {
     id: 'changelog',
@@ -281,6 +282,9 @@ export const getNavItems = (options?: NavAvailability): Array<NavItem> => {
 
   return resolvedNavigation.filter((entry) => matchesAvailability(entry, options));
 };
+
+export const getSearchNavItems = (options?: NavAvailability): Array<NavItem> =>
+  getNavItems(options).filter((entry) => entry.searchable);
 
 export const getNavSections = (): Array<NavSection> => {
   return SECTIONS;
