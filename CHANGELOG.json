@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "57bcd7cdb9446fb701eab58c179d6e58246e1dca",
-    "date": "2026-08-25T14:12:58+00:00",
+    "full_sha": "c09898a890aa759f1dcc708c4e4d999e99d78aab",
+    "date": "2026-08-25T15:56:07+00:00",
     "commits": [
+      {
+        "sha": "c09898a8",
+        "full_sha": "c09898a890aa759f1dcc708c4e4d999e99d78aab",
+        "message": "refactor(tests): replace monkeypatch environment variable settings with set_test_env helper",
+        "author": "arabcoders",
+        "date": "2026-08-25T15:56:07+00:00"
+      },
+      {
+        "sha": "427d814e",
+        "full_sha": "427d814e6f9292f86fabf2fab6dc364ec1999cb1",
+        "message": "docs: add native builds documentation and update configuration",
+        "author": "arabcoders",
+        "date": "2026-08-25T15:42:30+00:00"
+      },
       {
         "sha": "57bcd7cd",
         "full_sha": "57bcd7cdb9446fb701eab58c179d6e58246e1dca",
