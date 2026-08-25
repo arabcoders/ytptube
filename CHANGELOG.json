@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "bb9338d039990d48a798d9194d693bc5ecb5f0e9",
-    "date": "2026-08-25T06:18:32+00:00",
+    "full_sha": "57bcd7cdb9446fb701eab58c179d6e58246e1dca",
+    "date": "2026-08-25T14:12:58+00:00",
     "commits": [
+      {
+        "sha": "57bcd7cd",
+        "full_sha": "57bcd7cdb9446fb701eab58c179d6e58246e1dca",
+        "message": "fix(ass.js): patch assjs to fix rendering bug in iOS",
+        "author": "arabcoders",
+        "date": "2026-08-25T14:12:58+00:00"
+      },
       {
         "sha": "bb9338d0",
         "full_sha": "bb9338d039990d48a798d9194d693bc5ecb5f0e9",
