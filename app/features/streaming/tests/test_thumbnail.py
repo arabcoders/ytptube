@@ -43,7 +43,7 @@ async def test_singleflight(monkeypatch: pytest.MonkeyPatch) -> None:
 
         async def fake_run_ffmpeg(_file: Path, output_file: Path) -> Path:
             calls["count"] += 1
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
             output_file.parent.mkdir(parents=True, exist_ok=True)
             output_file.write_text("image")
             return output_file
@@ -301,6 +301,45 @@ async def test_retry_no_seek(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_timeout_cleans_temp(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.features.streaming.library.ffprobe import FFProbeResult, FFStream
+    from app.features.streaming.library import thumbnail
+
+    with temporary_test_dir("thumb-timeout") as temp_dir:
+        media = temp_dir / "video.mp4"
+        output = temp_dir / "output.jpg"
+        media.write_text("video")
+        info = FFProbeResult()
+        info.video = [FFStream({"codec_type": "video", "codec_name": "h264"})]
+
+        class HangingProcess:
+            returncode = None
+            killed = False
+
+            def kill(self):
+                self.killed = True
+
+            async def communicate(self):
+                if not self.killed:
+                    await asyncio.Event().wait()
+                return b"", b""
+
+        async def create_process(*_args, **_kwargs):
+            return HangingProcess()
+
+        monkeypatch.setattr(thumbnail, "ffprobe", AsyncMock(return_value=info))
+        monkeypatch.setattr(thumbnail, "ffmpeg_bin", lambda: "/usr/bin/ffmpeg")
+        monkeypatch.setattr(thumbnail, "ffprobe_bin", lambda: "/usr/bin/ffprobe")
+        monkeypatch.setattr(thumbnail, "THUMBNAIL_TIMEOUT", 0.001)
+        monkeypatch.setattr(thumbnail, "PROCESS_CLEANUP_TIMEOUT", 0.1)
+        monkeypatch.setattr(thumbnail.asyncio, "create_subprocess_exec", create_process)
+
+        with pytest.raises(TimeoutError):
+            await thumbnail._run_ffmpeg(media, output)
+        assert not output.with_suffix(".tmp.jpg").exists()
+
+
+@pytest.mark.asyncio
 async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.features.streaming.library import thumbnail
     from app.features.streaming.library.ffprobe import FFProbeResult
@@ -341,7 +380,7 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
             async def communicate(self) -> tuple[bytes, bytes]:
                 active["count"] += 1
                 active["max"] = max(active["max"], active["count"])
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0)
                 self._out_path.write_text("image")
                 active["count"] -= 1
                 return b"", b""
@@ -364,7 +403,6 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.asyncio
 async def test_missing_binaries_degrades(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Thumbnail generation raises OSError and caches a miss when binaries are missing."""
     from app.features.streaming.library import thumbnail
 
     thumbnail._IN_PROCESS.clear()

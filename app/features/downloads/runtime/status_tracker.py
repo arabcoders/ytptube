@@ -370,7 +370,6 @@ class StatusTracker:
         self._flush_progress()
 
     def cancel_update_task(self) -> None:
-        """Cancel the progress update task if it's running."""
         try:
             if self.update_task and not self.update_task.done():
                 self.update_task.cancel()

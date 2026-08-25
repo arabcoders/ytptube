@@ -14,19 +14,8 @@ LOG = get_logger()
 class ARGSMerger:
     def __init__(self):
         self.args: list[str] = []
-        "Args merger"
 
     def add(self, args: str) -> "ARGSMerger":
-        """
-        Add command options for yt-dlp.
-
-        Args:
-            args (str): The command options for yt-dlp to add
-
-        Returns:
-            YTDLPCli: The instance of the class
-
-        """
         if not args or not isinstance(args, str) or len(args) < 2:
             return self
 
@@ -41,64 +30,22 @@ class ARGSMerger:
         return self
 
     def as_string(self) -> str:
-        """
-        Get all the options as a string.
-
-        Returns:
-            str: The options as a string
-
-        """
         return str(self)
 
     def as_dict(self) -> list[str]:
-        """
-        Get all the options as a shell argument list.
-
-        Returns:
-            list[str]: The options as shell arguments.
-
-        """
         return shlex.split(shlex.join(self.args))
 
     def as_ytdlp(self) -> dict:
-        """
-        Get all options as yt-dlp JSON options.
-
-        Returns:
-            dict: The options as a dict for yt-dlp
-
-        """
         return arg_converter(args=shlex.join(self.args), level=False)
 
     def __str__(self) -> str:
-        """
-        Get all the options as a string.
-
-        Returns:
-            str: The options as a string
-
-        """
         return shlex.join(self.args)
 
     @staticmethod
     def get_instance() -> "ARGSMerger":
-        """
-        Get the instance of the class.
-
-        Returns:
-            Presets: The instance of the class
-
-        """
         return ARGSMerger()
 
     def reset(self) -> "ARGSMerger":
-        """
-        Reset the command options.
-
-        Returns:
-            YTDLPCli: The instance of the class
-
-        """
         self.args = []
 
         return self
@@ -115,14 +62,6 @@ class YTDLPCli:
     """
 
     def __init__(self, item, config: Config | None = None):
-        """
-        Initialize the CLI builder.
-
-        Args:
-            item: Item request
-            config (Config|None): The Config instance (optional)
-
-        """
         from app.features.downloads.items import Item
 
         if not isinstance(item, Item):
@@ -141,13 +80,6 @@ class YTDLPCli:
         return Presets.get_instance()
 
     def build(self) -> tuple[str, dict]:
-        """
-        Build the CLI command following make_command logic.
-
-        Returns:
-            tuple[str, dict]: (command_string, info_dict)
-
-        """
         template: str | None = None
         save_path: str | None = None
         cookie_file: Path | None = None
@@ -214,16 +146,6 @@ class YTDLPCli:
         return command, info
 
     def _replace_vars(self, text: str) -> str:
-        """
-        Replace variables in the given text.
-
-        Args:
-            text (str): The text to replace variables in
-
-        Returns:
-            str: The text with variables replaced
-
-        """
         for k, v in self._config.get_replacers().items():
             text: str = text.replace(f"%({k})s", v if isinstance(v, str) else str(v))
 
@@ -233,39 +155,16 @@ class YTDLPCli:
 class YTDLPOpts:
     def __init__(self):
         self._config: Config = Config.get_instance()
-        "The config instance."
         self._item_opts: dict = {}
-        "The item options."
         self._preset_opts: dict = {}
-        "The preset options."
         self._item_cli: list = []
-        "The command options for yt-dlp from item."
         self._preset_cli: str = ""
-        "The command options for yt-dlp from preset."
 
     @staticmethod
     def get_instance() -> "YTDLPOpts":
-        """
-        Get the instance of the class.
-
-        Returns:
-            Presets: The instance of the class
-
-        """
         return YTDLPOpts().reset()
 
     def add_cli(self, args: str, from_user: int | bool = False) -> "YTDLPOpts":
-        """
-        Parse and add command options for yt-dlp to the item options.
-
-        Args:
-            args (str): The command options for yt-dlp to add
-            from_user (bool): If the options are from the user
-
-        Returns:
-            YTDLPOpts: The instance of the class
-
-        """
         if not args or not isinstance(args, str) or len(args) < 2:
             return self
 
@@ -280,17 +179,6 @@ class YTDLPOpts:
         return self
 
     def add(self, config: dict, from_user: bool = False) -> "YTDLPOpts":
-        """
-        Add the options to the item options.
-
-        Args:
-            config (dict): The options to add
-            from_user (bool): If the options are from the user
-
-        Returns:
-            YTDLPOpts: The instance of the class
-
-        """
         bad_options: dict = {}
         if from_user:
             from app.features.ytdlp.utils import _DATA
@@ -306,16 +194,6 @@ class YTDLPOpts:
         return self
 
     def preset(self, name: str) -> "YTDLPOpts":
-        """
-        Add the preset options to the item options.
-
-        Args:
-            name (str): The name of the preset
-
-        Returns:
-            YTDLPOpts: The instance of the class
-
-        """
         preset: Preset | None = YTDLPCli._get_presets().get(name)
         if not preset:
             return self
@@ -354,16 +232,6 @@ class YTDLPOpts:
         return self
 
     def get_all(self, keep: bool = False) -> dict:
-        """
-        Get all the options.
-
-        Args:
-            keep (bool): If the options should be kept
-
-        Returns:
-            dict: The options
-
-        """
         default_opts: dict = {}
         default_opts["paths"] = {"home": self._config.download_path, "temp": self._config.temp_path}
         default_opts["outtmpl"] = {
@@ -413,13 +281,6 @@ class YTDLPOpts:
         return data
 
     def reset(self) -> "YTDLPOpts":
-        """
-        Reset the item options.
-
-        Returns:
-            YTDLPOpts: The instance of the class
-
-        """
         self._item_opts = {}
         self._item_cli = []
         self._preset_cli = ""

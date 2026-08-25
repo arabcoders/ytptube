@@ -1,4 +1,3 @@
-// --- Task Definition Schema Types ---
 import type { Paginated } from '~/types/responses';
 
 export type EngineType = 'http' | 'browser';

@@ -1,5 +1,3 @@
-"""Tests for dl_fields feature service."""
-
 from __future__ import annotations
 
 import pytest
@@ -33,8 +31,6 @@ async def repo():
 
 
 class TestDLFieldsService:
-    """Test suite for DLFields service methods."""
-
     @pytest.mark.asyncio
     async def test_save_creates_field(self, repo):
         """Save should create a new dl field when ID is missing."""
@@ -55,7 +51,6 @@ class TestDLFieldsService:
 
     @pytest.mark.asyncio
     async def test_get_all_serialized(self, repo):
-        """Get all serialized returns list of dictionaries."""
         service = DLFields.get_instance()
         await service.save(
             {

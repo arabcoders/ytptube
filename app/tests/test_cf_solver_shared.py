@@ -11,8 +11,6 @@ from app.library.cf_solver_shared import _host_matches_cookie_domain, solver
 
 
 class TestHostMatchesCookieDomain:
-    """Test the _host_matches_cookie_domain helper."""
-
     @pytest.mark.parametrize(
         ("host", "domain", "expected"),
         [
@@ -46,8 +44,6 @@ def _make_config():
 
 
 class TestSolver:
-    """Test the solver() FlareSolverr entry point."""
-
     @patch("app.library.cf_solver_shared.CACHE")
     @patch("app.library.cf_solver_shared.urllib.request.urlopen")
     @patch("app.library.config.Config")

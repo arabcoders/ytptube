@@ -387,14 +387,21 @@ class TerminalSessionManager(metaclass=Singleton):
             await self._append_event(session_id, "close", {"exitcode": return_code})
             await self._finalize_session(session_id=session_id, status=final_status, exit_code=return_code)
 
-            if read_task is not None and not read_task.done():
-                read_task.cancel()
-
             if master_fd is not None:
                 try:
                     os.close(master_fd)
                 except OSError:
                     pass
+                master_fd = None
+
+            if read_task is not None and not read_task.done():
+                read_task.cancel()
+                try:
+                    await asyncio.wait_for(read_task, timeout=self._shutdown_timeout)
+                except asyncio.CancelledError:
+                    pass
+                except TimeoutError:
+                    LOG.warning("Terminal session '%s' reader did not finish during cleanup.", session_id)
 
     async def _read_process_output(self, session_id: str, proc: Process, use_pty: bool, master_fd: int | None) -> None:
         if use_pty is False:

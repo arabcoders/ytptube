@@ -52,6 +52,8 @@ export type WSEP = {
   log_warning: EventPayload<Record<string, unknown>>;
   log_error: EventPayload<Record<string, unknown>>;
   config_update: EventPayload<ConfigUpdatePayload>;
+  task_finished: EventPayload<TaskEvent>;
+  task_error: EventPayload<TaskEvent>;
 };
 
 export type WebSocketClientEmits = {
@@ -71,6 +73,14 @@ type ConfigUpdatePayload<T = unknown> = {
   action: ConfigUpdateAction;
   data: T | Array<T>;
   meta?: Record<string, unknown>;
+};
+
+type TaskEvent = {
+  task_id?: number | string;
+  task_name?: string;
+  preset?: string;
+  status?: string;
+  error?: string;
 };
 
 export type { ConfigUpdateAction, ConfigFeature, ConfigUpdatePayload };

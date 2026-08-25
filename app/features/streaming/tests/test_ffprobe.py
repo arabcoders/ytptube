@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -7,28 +8,23 @@ from app.tests.helpers import make_test_temp_dir
 
 
 class TestFFProbe:
-    """Test the ffprobe module functionality."""
-
     @pytest.fixture(autouse=True)
     def _patch_ffprobe_bin(self):
         with patch("app.features.streaming.library.ffprobe.ffprobe_bin", return_value="/usr/bin/ffprobe"):
             yield
 
     def setup_method(self):
-        """Set up test files."""
         self.temp_dir = str(make_test_temp_dir("ffprobe"))
         self.test_file = Path(self.temp_dir) / "test_video.mp4"
         self.test_file.touch()
 
     def teardown_method(self):
-        """Clean up test files."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @pytest.mark.asyncio
     async def test_ffprobe_with_nonexistent_file(self):
-        """Test ffprobe with a non-existent file."""
         from app.features.streaming.library.ffprobe import ffprobe
 
         nonexistent_file = Path(self.temp_dir) / "does_not_exist.mp4"
@@ -38,7 +34,6 @@ class TestFFProbe:
 
     @pytest.mark.asyncio
     async def test_ffprobe_missing_binary(self):
-        """Test ffprobe raises a typed error when the binary is unavailable."""
         from app.features.streaming.library.ffprobe import ffprobe
         from app.features.streaming.types import FFProbeError
 
@@ -48,7 +43,6 @@ class TestFFProbe:
 
     @pytest.mark.asyncio
     async def test_ffprobe_caching_behavior(self):
-        """Test that ffprobe results are cached with enhanced async timed_lru_cache."""
         from app.features.streaming.library.ffprobe import ffprobe
 
         assert hasattr(ffprobe, "cache_clear"), (
@@ -67,6 +61,7 @@ class TestFFProbe:
                 nonlocal call_count
                 call_count += 1
                 mock_process = AsyncMock()
+                mock_process.returncode = 0
                 mock_process.wait.return_value = 0
                 mock_process.communicate.return_value = (b'{"format": {"duration": "10.0"}, "streams": []}', b"")
                 return mock_process
@@ -96,12 +91,12 @@ class TestFFProbe:
 
     @pytest.mark.asyncio
     async def test_ffprobe_with_path_object(self):
-        """Test ffprobe with Path object input."""
         from app.features.streaming.library.ffprobe import ffprobe
 
         # Mock subprocess to avoid actual ffprobe execution
         with patch("asyncio.create_subprocess_exec") as mock_subprocess:
             mock_process = AsyncMock()
+            mock_process.returncode = 0
             mock_process.wait.return_value = 0
             mock_process.communicate.return_value = (b'{"format": {"duration": "10.0"}}', b"")
             mock_subprocess.return_value = mock_process
@@ -111,11 +106,40 @@ class TestFFProbe:
                 mock_open_file.return_value.__aenter__.return_value = mock_file
 
                 # Test with Path object
-                result = await ffprobe(self.test_file)
-                assert result.metadata == {"duration": "10.0"}
+            result = await ffprobe(self.test_file)
+            assert result.metadata == {"duration": "10.0"}
+
+    @pytest.mark.asyncio
+    async def test_ffprobe_timeout_kills(self, monkeypatch: pytest.MonkeyPatch):
+        from app.features.streaming.library import ffprobe as module
+
+        module.ffprobe.cache_clear()
+        killed = False
+
+        class HangingProcess:
+            returncode = None
+
+            def kill(self):
+                nonlocal killed
+                killed = True
+
+            async def communicate(self):
+                if not killed:
+                    await asyncio.Event().wait()
+                return b"", b""
+
+        async def create_process(*_args, **_kwargs):
+            return HangingProcess()
+
+        monkeypatch.setattr(module, "FFPROBE_TIMEOUT", 0.001)
+        monkeypatch.setattr(module, "PROCESS_CLEANUP_TIMEOUT", 0.1)
+        monkeypatch.setattr(module.asyncio, "create_subprocess_exec", create_process)
+
+        with pytest.raises(TimeoutError):
+            await module.ffprobe(self.test_file)
+        assert killed is True
 
     def test_ffprobe_result_properties(self):
-        """Test FFProbeResult object properties."""
         from app.features.streaming.library.ffprobe import FFStream, FFProbeResult
 
         result = FFProbeResult()
@@ -142,7 +166,6 @@ class TestFFProbe:
         assert result.audio[0].is_audio()
 
     def test_stream_object_methods(self):
-        """Test Stream object methods."""
         from app.features.streaming.library.ffprobe import FFStream
 
         # Test video stream

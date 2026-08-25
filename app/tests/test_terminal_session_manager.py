@@ -1,9 +1,11 @@
 import asyncio
+from collections.abc import AsyncIterator
 from pathlib import Path
 import time
 from typing import Any, cast
 
 import pytest
+import pytest_asyncio
 from aiohttp import web
 
 from app.library.Scheduler import Scheduler
@@ -87,8 +89,8 @@ class _TerminableProc:
         return self.returncode
 
 
-@pytest.fixture
-def terminal_setup(tmp_path: Path) -> tuple[Config, TerminalSessionManager, Encoder]:
+@pytest_asyncio.fixture
+async def terminal_setup(tmp_path: Path) -> AsyncIterator[tuple[Config, TerminalSessionManager, Encoder]]:
     Scheduler._reset_singleton()
     Services._reset_singleton()
     Config._reset_singleton()
@@ -103,7 +105,16 @@ def terminal_setup(tmp_path: Path) -> tuple[Config, TerminalSessionManager, Enco
 
     manager = TerminalSessionManager.get_instance()
     encoder = Encoder()
-    return config, manager, encoder
+    try:
+        yield config, manager, encoder
+    finally:
+        manager._shutdown_timeout = 0.05
+        await asyncio.wait_for(manager.on_shutdown(cast(Any, None)), timeout=1)
+        await asyncio.wait_for(Scheduler.get_instance().on_shutdown(web.Application()), timeout=1)
+        TerminalSessionManager._reset_singleton()
+        Scheduler._reset_singleton()
+        Services._reset_singleton()
+        Config._reset_singleton()
 
 
 def _terminal_handlers(config: Config, encoder: Encoder, manager: TerminalSessionManager) -> dict[str, Any]:
@@ -136,25 +147,25 @@ def _terminal_handlers(config: Config, encoder: Encoder, manager: TerminalSessio
 
 
 async def _wait_for_active(manager: TerminalSessionManager) -> None:
-    for _ in range(10):
-        if manager._active is not None:
-            return
-        await asyncio.sleep(0)
-    assert manager._active is not None
+    async with asyncio.timeout(1):
+        while manager._active is None:
+            await asyncio.sleep(0)
 
 
 async def _wait_for_status(manager: TerminalSessionManager, session_id: str, status: str) -> None:
-    for _ in range(10):
-        metadata = await manager.get_session(session_id)
-        if metadata is not None and metadata["status"] == status:
-            return
-        await asyncio.sleep(0)
-    assert metadata is not None
-    assert metadata["status"] == status
+    async with asyncio.timeout(1):
+        while True:
+            metadata = await manager.get_session(session_id)
+            if metadata is not None and metadata["status"] == status:
+                return
+            await asyncio.sleep(0)
 
 
 class TestTerminalSessionRoutes:
-    def test_attach_registers_cleanup_job(self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]) -> None:
+    @pytest.mark.asyncio
+    async def test_attach_registers_cleanup_job(
+        self, terminal_setup: tuple[Config, TerminalSessionManager, Encoder]
+    ) -> None:
         _config, manager, _encoder = terminal_setup
         app = web.Application()
 
@@ -302,8 +313,10 @@ class TestTerminalSessionRoutes:
         test_client,
     ) -> None:
         config, manager, encoder = terminal_setup
-        manager._completed_retention = 0.2
-        manager._drain_ttl = 0.01
+        now = 1000.0
+        monkeypatch.setattr("app.library.TerminalSessionManager.time.time", lambda: now)
+        manager._completed_retention = 20.0
+        manager._drain_ttl = 1.0
         await manager.initialize()
 
         async def fake_create_subprocess_exec(*_args, **_kwargs):
@@ -320,7 +333,7 @@ class TestTerminalSessionRoutes:
 
         await _wait_for_status(manager, session_id, "completed")
 
-        await asyncio.sleep(0.03)
+        now += 3.0
 
         listed_response = await client.get(url_for("system.terminal.list"))
         listed_payload = await listed_response.json()
@@ -334,7 +347,7 @@ class TestTerminalSessionRoutes:
         persisted = await manager.get_session(session_id)
         assert persisted is not None
 
-        await asyncio.sleep(0.19)
+        now += 19.0
 
         expired = await manager.get_session(session_id)
         assert expired is None
@@ -440,7 +453,7 @@ class TestTerminalSessionRoutes:
         start_response = await client.post(url_for("system.terminal"), json={"command": "--help"})
         session_id = (await start_response.json())["session_id"]
 
-        await proc.wait_started.wait()
+        await asyncio.wait_for(proc.wait_started.wait(), timeout=1)
         await manager.on_shutdown(cast(Any, None))
 
         metadata = await manager.get_session(session_id)
@@ -478,6 +491,15 @@ class TestTerminalSessionRoutes:
             "app.library.TerminalSessionManager.asyncio.create_subprocess_exec", fake_create_subprocess_exec
         )
         monkeypatch.setattr(manager, "_open_pty", lambda: None)
+        keepalive = asyncio.Event()
+        emit_keepalive = manager._emit_keepalive
+
+        async def track_keepalive(*, request, response):
+            emitted = await emit_keepalive(request=request, response=response)
+            keepalive.set()
+            return emitted
+
+        monkeypatch.setattr(manager, "_emit_keepalive", track_keepalive)
         client = await test_client(_terminal_handlers(config, encoder, manager))
 
         start_response = await client.post(url_for("system.terminal"), json={"command": "--version"})
@@ -486,12 +508,17 @@ class TestTerminalSessionRoutes:
         session_task = manager._active.task
 
         stream_task = asyncio.create_task(client.get(url_for("system.terminal.stream", session_id=session_id)))
-
-        await asyncio.sleep(0.03)
-        done_event.set()
-        await session_task
-        stream_response = await stream_task
-        stream_payload = await stream_response.text()
+        try:
+            await asyncio.wait_for(keepalive.wait(), timeout=1)
+            done_event.set()
+            await asyncio.wait_for(session_task, timeout=1)
+            stream_response = await asyncio.wait_for(stream_task, timeout=1)
+            stream_payload = await stream_response.text()
+        finally:
+            done_event.set()
+            if not stream_task.done():
+                stream_task.cancel()
+            await asyncio.gather(stream_task, return_exceptions=True)
 
         assert ": keepalive" in stream_payload
         assert "id: 1" in stream_payload
@@ -524,7 +551,7 @@ class TestTerminalSessionRoutes:
         await _wait_for_active(manager)
         assert manager._active is not None
         active_task = manager._active.task
-        await proc.wait_started.wait()
+        await asyncio.wait_for(proc.wait_started.wait(), timeout=1)
 
         cancel_response = await client.delete(url_for("system.terminal.cancel", session_id=session_id))
         cancel_payload = await cancel_response.json()
@@ -532,7 +559,7 @@ class TestTerminalSessionRoutes:
         assert 200 == cancel_response.status
         assert session_id == cancel_payload["session_id"]
 
-        await active_task
+        await asyncio.wait_for(active_task, timeout=1)
 
         metadata = await manager.get_session(session_id)
         transcript = manager._read_transcript(session_id=session_id, since=0)

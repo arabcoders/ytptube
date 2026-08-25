@@ -10,13 +10,7 @@ import type {
 } from '~/types/conditions';
 import type { APIResponse } from '~/types/responses';
 
-/**
- * List of all conditions in memory.
- */
 const conditions = ref<Array<Condition>>([]);
-/**
- * Pagination state for conditions list.
- */
 const pagination = ref<Pagination>({
   page: 1,
   per_page: 50,
@@ -25,39 +19,15 @@ const pagination = ref<Pagination>({
   has_next: false,
   has_prev: false,
 });
-/**
- * Indicates if a request is in progress.
- */
 const isLoading = ref<boolean>(false);
-
-/**
- * Indicates if an add/update operation is in progress.
- * Used separately from isLoading for finer control.
- */
 const addInProgress = ref<boolean>(false);
-
-/**
- * Stores the last error message, if any.
- */
 const lastError = ref<string | null>(null);
-
-/**
- * If true, methods will throw errors instead of returning null/false (for testing)
- */
+// Test hook: rethrow request errors instead of returning fallback values.
 const throwInstead = ref(false);
 
 const { $i18n } = useNuxtApp();
 const t = $i18n?.t ?? ((key: string) => key);
 
-/**
- * Notification composable for showing success/error messages.
- */
-
-/**
- * Sorts conditions by priority (descending - higher number first), then name (A-Z).
- * @param items Array of Condition
- * @returns Sorted array of Condition
- */
 const sortConditions = (items: Array<Condition>): Array<Condition> => {
   return [...items].sort((a, b) => {
     if (a.priority === b.priority) {
@@ -68,10 +38,6 @@ const sortConditions = (items: Array<Condition>): Array<Condition> => {
   });
 };
 
-/**
- * Handles errors by updating lastError and showing a notification.
- * @param error Error object or unknown
- */
 const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
@@ -83,11 +49,6 @@ const handleError = (error: unknown): void => {
   useNotification().error(message);
 };
 
-/**
- * Updates or adds a condition in the conditions list, keeping sort order.
- * Also increments pagination.total if it's a new condition.
- * @param condition Condition to update/add
- */
 const updateConditions = (condition: Condition): void => {
   const isNew = !conditions.value.some((item) => item.id === condition.id);
   conditions.value = sortConditions([
@@ -99,11 +60,6 @@ const updateConditions = (condition: Condition): void => {
   }
 };
 
-/**
- * Removes a condition from the conditions list by ID.
- * Also decrements pagination.total.
- * @param id Condition ID
- */
 const removeCondition = (id: number) => {
   const initialLength = conditions.value.length;
   conditions.value = conditions.value.filter((item) => item.id !== id);
@@ -112,12 +68,6 @@ const removeCondition = (id: number) => {
   }
 };
 
-/**
- * Loads all conditions from the API with pagination support.
- * Updates conditions, pagination, and lastError.
- * @param page Page number
- * @param perPage Items per page
- */
 const loadConditions = async (
   page: number = 1,
   perPage: number | undefined = undefined,
@@ -145,11 +95,6 @@ const loadConditions = async (
   }
 };
 
-/**
- * Fetches a single condition by ID from the API.
- * @param id Condition ID
- * @returns Condition or null on error
- */
 const getCondition = async (id: number): Promise<Condition | null> => {
   try {
     const response = await request(`/api/conditions/${id}`);
@@ -167,12 +112,6 @@ const getCondition = async (id: number): Promise<Condition | null> => {
   }
 };
 
-/**
- * Creates a new condition via API.
- * @param condition Condition to create
- * @param callback Optional callback with APIResponse result
- * @returns Created Condition or null on error
- */
 const createCondition = async (
   condition: Omit<Condition, 'id'>,
   callback?: (response: APIResponse<Condition>) => void,
@@ -212,13 +151,6 @@ const createCondition = async (
   }
 };
 
-/**
- * Updates an existing condition via API (PUT - full update).
- * @param id Condition ID
- * @param condition Updated Condition data
- * @param callback Optional callback with APIResponse result
- * @returns Updated Condition or null on error
- */
 const updateCondition = async (
   id: number,
   condition: Condition,
@@ -264,13 +196,6 @@ const updateCondition = async (
   }
 };
 
-/**
- * Partially updates an existing condition via API (PATCH).
- * @param id Condition ID
- * @param patch Partial Condition data to update
- * @param callback Optional callback with APIResponse result
- * @returns Updated Condition or null on error
- */
 const patchCondition = async (
   id: number,
   patch: Partial<Condition>,
@@ -316,12 +241,6 @@ const patchCondition = async (
   }
 };
 
-/**
- * Deletes a condition by ID via API.
- * @param id Condition ID
- * @param callback Optional callback with APIResponse result
- * @returns true if deleted, false on error
- */
 const deleteCondition = async (
   id: number,
   callback?: (response: APIResponse<boolean>) => void,
@@ -352,11 +271,6 @@ const deleteCondition = async (
   }
 };
 
-/**
- * Tests a condition against a URL.
- * @param testRequest Test request parameters
- * @returns Test result or null on error
- */
 const testCondition = async (
   testRequest: ConditionTestRequest,
 ): Promise<ConditionTestResponse | null> => {
@@ -380,17 +294,7 @@ const testCondition = async (
   }
 };
 
-/**
- * Clears the last error message.
- */
 const clearError = () => (lastError.value = null);
-
-/**
- * useConditions composable
- *
- * Returns reactive state and CRUD methods for conditions.
- * @returns Object with state and API methods
- */
 export const useConditions = () => ({
   conditions: readonly(conditions),
   pagination: readonly(pagination),

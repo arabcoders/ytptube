@@ -1,37 +1,28 @@
 type DLFieldType = 'string' | 'text' | 'bool';
 
 type DLField = {
-  /** The id of the field */
   id?: number;
 
-  /** The name of the preset */
   name: string;
 
-  /** The description of the preset */
   description: string;
 
-  /** The yt-dlp field to use in long format */
   field: string;
 
-  /** The kind of the field. i.e. string, bool */
   kind: DLFieldType;
 
-  /** The icon of the field, use a Lucide/Iconify name like `i-lucide-image` */
+  /** Lucide/Iconify name, such as `i-lucide-image`. */
   icon?: string;
 
-  /** The order of the field, used to sort the fields in the UI. */
+  /** Sort position in the download form. */
   order: number;
 
-  /** The default value of the field, It's currently unused */
+  /** Reserved for a future default value. */
   value: string;
 
-  /** Additional options for the field */
   extras: Record<string, any>;
 };
 
-/**
- * Request payload for creating/updating DLField
- */
 type DLFieldRequest = {
   name: string;
   description: string;

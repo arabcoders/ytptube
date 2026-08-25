@@ -159,7 +159,6 @@ async def stats_stream(request: Request, encoder: Encoder, config: Config) -> St
             if not await _emit_event("sample", encoder.encode(sample_dict)):
                 break
 
-            # Update bottleneck window and check for changes.
             history_window.append(sample_dict)
             if len(history_window) >= 30:
                 result: dict[str, Any] = detect_bottlenecks(list(history_window))

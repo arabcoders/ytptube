@@ -7,17 +7,19 @@ import pytest
 from app.library.Events import Event, EventBus, EventListener, Events
 
 
-class TestEvents:
-    """Test the Events constants class."""
+@pytest.fixture(autouse=True)
+def reset_event_bus():
+    EventBus._reset_singleton()
+    yield
+    EventBus._reset_singleton()
 
+
+class TestEvents:
     def test_events_get_all(self):
-        """Test Events.get_all() method returns all constants."""
         all_events = Events.get_all()
 
-        # Should be a list
         assert isinstance(all_events, list)
 
-        # Should contain expected events
         expected_events = [
             "startup",
             "loaded",
@@ -49,13 +51,11 @@ class TestEvents:
         for expected in expected_events:
             assert expected in all_events
 
-        # Should not contain private or callable attributes
         for event in all_events:
             assert not event.startswith("_")
             assert isinstance(event, str)
 
     def test_events_frontend(self):
-        """Test Events.frontend() method returns frontend events."""
         frontend_events = Events.frontend()
 
         assert isinstance(frontend_events, list)
@@ -77,7 +77,6 @@ class TestEvents:
             assert expected in frontend_events
 
     def test_events_only_debug(self):
-        """Test Events.only_debug() method returns debug-only events."""
         debug_events = Events.only_debug()
 
         assert isinstance(debug_events, list)
@@ -85,10 +84,7 @@ class TestEvents:
 
 
 class TestEvent:
-    """Test the Event dataclass."""
-
     def test_event_creation_minimal(self):
-        """Test creating an Event with minimal required parameters."""
         event = Event(event="test_event", data={"key": "value"})
 
         # Check required fields
@@ -105,7 +101,6 @@ class TestEvent:
         assert event.message is None
 
     def test_event_creation_fields(self):
-        """Test creating an Event with all fields specified."""
         test_data = {"test": "data"}
         event = Event(event="custom_event", title="Test Title", message="Test Message", data=test_data)
 
@@ -117,7 +112,6 @@ class TestEvent:
         assert event.created_at is not None
 
     def test_event_serialize(self):
-        """Test Event serialization."""
         test_data = {"nested": {"key": "value"}}
         event = Event(event="serialize_test", title="Serialize Title", message="Serialize Message", data=test_data)
 
@@ -132,87 +126,69 @@ class TestEvent:
         assert "created_at" in serialized
 
     def test_event_datatype(self):
-        """Test Event datatype() method."""
-        # Test with dictionary data
         event_dict = Event(event="test", data={"key": "value"})
         assert event_dict.datatype() == "dict"
 
-        # Test with list data
         event_list = Event(event="test", data=["item1", "item2"])
         assert event_list.datatype() == "list"
 
-        # Test with string data
         event_str = Event(event="test", data="string_data")
         assert event_str.datatype() == "str"
 
-        # Test with None data
         event_none = Event(event="test", data=None)
         assert event_none.datatype() == "NoneType"
 
     def test_event_str_representation(self):
-        """Test Event string representations."""
         event = Event(event="repr_test", title="Repr Title", message="Repr Message", data={"test": True})
 
-        # Test __str__ method
         str_repr = str(event)
         assert "repr_test" in str_repr
         assert "Repr Title" in str_repr
         assert "Repr Message" in str_repr
         assert event.id in str_repr
 
-        # Test __repr__ method
         repr_str = repr(event)
         assert "Event(" in repr_str
         assert "repr_test" in repr_str
         assert event.id in repr_str
 
     def test_event_created_at_format(self):
-        """Test that created_at is in ISO format."""
         event = Event(event="time_test", data={})
 
-        # Should be able to parse as ISO datetime
         parsed_time = datetime.datetime.fromisoformat(event.created_at)
         assert isinstance(parsed_time, datetime.datetime)
 
-        # Should be recent (within last few seconds)
         now = datetime.datetime.now(tz=datetime.UTC)
         time_diff = abs((now - parsed_time).total_seconds())
         assert time_diff < 5  # Within 5 seconds
 
     def test_event_put_method(self):
-        """Test Event.put() method for adding extra data."""
         event = Event(event="put_test", data={"original": "data"})
 
         # Initially extras should be empty
         assert event.extras == {}
 
-        # Test putting single value
         event.put("key1", "value1")
         assert event.extras["key1"] == "value1"
         assert len(event.extras) == 1
 
-        # Test putting multiple values
         event.put("key2", 42)
         event.put("key3", {"nested": "object"})
         assert event.extras["key2"] == 42
         assert event.extras["key3"] == {"nested": "object"}
         assert len(event.extras) == 3
 
-        # Test overwriting existing key
         event.put("key1", "new_value1")
         assert event.extras["key1"] == "new_value1"
         assert len(event.extras) == 3
 
-        # Test putting None value
         event.put("key4", None)
         assert event.extras["key4"] is None
         assert len(event.extras) == 4
 
     def test_event_put_complex_data(self):
-        """Test Event.put() with complex data types."""
         event = Event(event="complex_put_test", data={})
 
-        # Test with list
         test_list = [1, 2, 3, "string", {"nested": True}]
         event.put("list_data", test_list)
         assert event.extras["list_data"] == test_list
@@ -231,7 +207,6 @@ class TestEvent:
         assert event.extras["func_data"]() == "test"
 
     def test_event_put_extras_persistence(self):
-        """Test that extras persist and don't interfere with original data."""
         original_data = {"original": "value"}
         event = Event(event="persistence_test", data=original_data)
 
@@ -250,9 +225,9 @@ class TestEvent:
 
     @pytest.mark.asyncio
     async def test_event_mutation_between_listeners(self):
-        """Test that multiple listeners can mutate the same event and see each other's changes."""
         bus = EventBus()
         mutations = []
+        completed = asyncio.Event()
 
         async def listener1(event, name, **kwargs):  # noqa: ARG001
             # First listener adds data
@@ -281,6 +256,7 @@ class TestEvent:
             event.put("listener3", "data3")
             event.put("final_count", len(event.extras))
             mutations.append("listener3_executed")
+            completed.set()
 
         # Subscribe listeners in order
         bus.subscribe(Events.TEST, listener1, "listener1")
@@ -291,17 +267,17 @@ class TestEvent:
         bus.emit(Events.TEST, data={"original": "data"})
 
         # Wait for execution (fire-and-forget)
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Verify all listeners executed
         assert mutations == ["listener1_executed", "listener2_executed", "listener3_executed"]
 
     @pytest.mark.asyncio
     async def test_event_mutation_async_listeners(self):
-        """Test event mutation with async listeners."""
 
         bus = EventBus()
         mutations = []
+        completed = asyncio.Event()
 
         async def async_listener1(event, name, **kwargs):  # noqa: ARG001
             event.put("async1", "value1")
@@ -319,6 +295,7 @@ class TestEvent:
             assert event.extras.get("async2") == "value2"
             event.put("sync", "value3")
             mutations.append("sync")
+            completed.set()
 
         bus.subscribe(Events.STARTUP, async_listener1, "async1")
         bus.subscribe(Events.STARTUP, async_listener2, "async2")
@@ -327,20 +304,21 @@ class TestEvent:
         bus.emit(Events.STARTUP, data={"test": "data"})
 
         # Wait for execution
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         assert mutations == ["async1", "async2", "sync"]
 
     @pytest.mark.asyncio
     async def test_event_mutation_data_types(self):
-        """Test event mutation with various data types."""
         bus = EventBus()
         final_extras = {}
+        completed = asyncio.Event()
 
         async def collector(event, name, **kwargs):  # noqa: ARG001
             # Store reference to final extras
             nonlocal final_extras
             final_extras = event.extras
+            completed.set()
 
         async def mutator1(event, name, **kwargs):  # noqa: ARG001
             event.put("string", "test")
@@ -373,7 +351,7 @@ class TestEvent:
         bus.emit(Events.SHUTDOWN, data={})
 
         # Wait for execution
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Verify final state
         assert final_extras["string"] == "test"
@@ -386,37 +364,29 @@ class TestEvent:
 
     @pytest.mark.asyncio
     async def test_sync_handler_async_wrapping(self):
-        """Test that sync handlers are properly wrapped in async functions to avoid blocking."""
         bus = EventBus()
         execution_order = []
+        completed = asyncio.Event()
 
         def slow_sync_handler(event, name, **kwargs):  # noqa: ARG001
-            """A sync handler that simulates blocking work"""
-            import time
-
-            time.sleep(0.05)  # Simulate some work
             execution_order.append(f"sync_{name}")
+            if len(execution_order) == 2:
+                completed.set()
 
         async def fast_async_handler(event, name, **kwargs):  # noqa: ARG001
-            """A fast async handler"""
             execution_order.append(f"async_{name}")
+            if len(execution_order) == 2:
+                completed.set()
 
         # Subscribe both handlers
         bus.subscribe(Events.TEST, slow_sync_handler, "slow_sync")
         bus.subscribe(Events.TEST, fast_async_handler, "fast_async")
 
-        # Emit should return immediately (non-blocking)
-        import time
-
-        start_time = time.time()
         bus.emit(Events.TEST, data={"test": "wrapping"})
-        emit_time = time.time() - start_time
-
-        # Emit should be very fast (< 0.01s) because sync handler is wrapped
-        assert emit_time < 0.01, f"Emit took too long: {emit_time:.4f}s - sync handler may be blocking"
+        assert execution_order == []
 
         # Wait for handlers to complete
-        await asyncio.sleep(0.1)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Both handlers should have executed
         assert len(execution_order) == 2
@@ -425,9 +395,9 @@ class TestEvent:
 
     @pytest.mark.asyncio
     async def test_handler_no_race_condition(self):
-        """Test that multiple sync handlers don't have race conditions with loop variables."""
         bus = EventBus()
         results = []
+        completed = asyncio.Event()
 
         def handler1(event, name, **kwargs):  # noqa: ARG001
             results.append(f"handler1_{event.data['id']}")
@@ -437,6 +407,8 @@ class TestEvent:
 
         def handler3(event, name, **kwargs):  # noqa: ARG001
             results.append(f"handler3_{event.data['id']}")
+            if len(results) == 9:
+                completed.set()
 
         # Subscribe multiple sync handlers
         bus.subscribe(Events.TEST, handler1, "handler1")
@@ -448,9 +420,8 @@ class TestEvent:
             bus.emit(Events.TEST, data={"id": i})
 
         # Wait for all handlers to complete
-        await asyncio.sleep(0.05)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
-        # Should have 9 results (3 handlers x 3 events)
         assert len(results) == 9
 
         # Each handler should have processed each event with correct data
@@ -461,58 +432,32 @@ class TestEvent:
 
     @pytest.mark.asyncio
     async def test_mixed_handlers_order(self):
-        """Test that mixed sync/async handlers execute properly without blocking."""
         bus = EventBus()
-        execution_times = []
+        execution_order = []
+        completed = asyncio.Event()
 
         def sync_handler(event, name, **kwargs):  # noqa: ARG001
-            import time
-
-            start = time.time()
-            time.sleep(0.02)  # Simulate work
-            execution_times.append(("sync", time.time() - start))
+            execution_order.append("sync")
 
         async def async_handler(event, name, **kwargs):  # noqa: ARG001
-            import time
-
-            start = time.time()
-            await asyncio.sleep(0.01)  # Async work
-            execution_times.append(("async", time.time() - start))
+            execution_order.append("async")
+            completed.set()
 
         # Subscribe mixed handlers
         bus.subscribe(Events.TEST, sync_handler, "sync")
         bus.subscribe(Events.TEST, async_handler, "async")
 
-        # Emit and measure total time
-        import time
-
-        start_time = time.time()
         bus.emit(Events.TEST, data={"test": "mixed"})
-        emit_time = time.time() - start_time
-
-        # Emit should be instant (non-blocking)
-        assert emit_time < 0.01, f"Emit blocked for {emit_time:.4f}s"
+        assert execution_order == []
 
         # Wait for execution
-        await asyncio.sleep(0.1)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
-        # Both handlers should have executed
-        assert len(execution_times) >= 1, f"Expected at least 1 handler, got {len(execution_times)}: {execution_times}"
-
-        # At least the sync handler should have executed with proper timing
-        sync_results = [t for type_name, t in execution_times if type_name == "sync"]
-        assert len(sync_results) >= 1, "Sync handler didn't execute"
-
-        # Sync handler should have taken approximately 0.02s
-        sync_time = sync_results[0]
-        assert 0.015 < sync_time < 0.04, f"Sync handler time unexpected: {sync_time:.4f}s"
+        assert execution_order == ["sync", "async"]
 
 
 class TestEventListener:
-    """Test the EventListener class."""
-
     def test_listener_sync_init(self):
-        """Test creating EventListener with synchronous callback."""
 
         def sync_callback(event, name, **kwargs):  # noqa: ARG001
             return f"sync_result_{event.event}"
@@ -524,7 +469,6 @@ class TestEventListener:
         assert listener.is_coroutine is False
 
     def test_listener_async_init(self):
-        """Test creating EventListener with asynchronous callback."""
 
         async def async_callback(event, name, **kwargs):  # noqa: ARG001
             return f"async_result_{event.event}"
@@ -537,7 +481,6 @@ class TestEventListener:
 
     @pytest.mark.asyncio
     async def test_async_callback(self):
-        """Test EventListener with async callback."""
 
         async def async_callback(event, name, **kwargs):  # noqa: ARG001
             return "async_result"
@@ -576,7 +519,6 @@ class TestEventListener:
 
     @pytest.mark.asyncio
     async def test_event_listener_handle_kwargs(self):
-        """Test EventListener handling with additional kwargs."""
 
         async def callback_with_kwargs(event, name, extra_param=None, **kwargs):  # noqa: ARG001
             return {"event": event.event, "extra": extra_param}
@@ -601,16 +543,9 @@ class TestEventListener:
 
 
 class TestEventBus:
-    """Test the EventBus singleton class."""
-
-    def setup_method(self):
-        """Clear EventBus listeners and reset singleton before each test."""
-        EventBus._reset_singleton()
-
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_event_bus_singleton_behavior(self, mock_bg_worker, mock_config):
-        """Test that EventBus follows singleton pattern."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -621,7 +556,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_event_bus_get_instance(self, mock_bg_worker, mock_config):
-        """Test EventBus.get_instance() method."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -630,7 +564,6 @@ class TestEventBus:
         assert bus1 is bus2
 
     def test_event_bus_initialization(self):
-        """Test EventBus initialization with new clean design."""
         # Create EventBus with clean initialization
         bus = EventBus()
 
@@ -649,7 +582,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_bus_subscribe_single_event(self, mock_bg_worker, mock_config):
-        """Test subscribing to a single event."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -670,7 +602,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_bus_subscribe_multiple_events(self, mock_bg_worker, mock_config):
-        """Test subscribing to multiple events."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -689,7 +620,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_event_bus_subscribe_wildcard(self, mock_bg_worker, mock_config):
-        """Test subscribing to all events with wildcard."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -708,7 +638,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_event_bus_subscribe_frontend(self, mock_bg_worker, mock_config):
-        """Test subscribing to frontend events."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -727,7 +656,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_bus_subscribe_invalid_event(self, mock_bg_worker, mock_config):
-        """Test subscribing to invalid event."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -736,7 +664,6 @@ class TestEventBus:
         async def test_callback(event, name, **kwargs):  # noqa: ARG001
             return "callback_result"
 
-        # Should not raise an exception but log an error
         result = bus.subscribe("invalid_event", test_callback, "invalid_subscriber")
 
         assert result is bus
@@ -745,7 +672,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_subscribe_auto_generated_name(self, mock_bg_worker, mock_config):
-        """Test subscribing without providing name (auto-generated)."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -762,7 +688,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_bus_unsubscribe_single_event(self, mock_bg_worker, mock_config):
-        """Test unsubscribing from a single event."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -784,7 +709,6 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_bus_unsubscribe_multiple_events(self, mock_bg_worker, mock_config):
-        """Test unsubscribing from multiple events."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -807,21 +731,17 @@ class TestEventBus:
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_event_bus_unsubscribe_nonexistent(self, mock_bg_worker, mock_config):
-        """Test unsubscribing from nonexistent subscription."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
         bus = EventBus()
 
-        # Should not raise an exception
         result = bus.unsubscribe(Events.TEST, "nonexistent_subscriber")
         assert result is bus
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     def test_bus_emit_no_listeners(self, mock_config, mock_bg_worker):
-        """Test emit with no listeners."""
-        # Setup mocks
         mock_config_instance = MagicMock()
         mock_config_instance.debug = True
         mock_config.get_instance.return_value = mock_config_instance
@@ -834,15 +754,14 @@ class TestEventBus:
         # Emit event with no listeners - new fire-and-forget API returns None immediately
         result = bus.emit(Events.TEST, data={"test": "data"})
 
-        # Should return None for fire-and-forget execution
         assert result is None
 
     @pytest.mark.asyncio
     async def test_event_bus_emit_listeners(self):
-        """Test emitting event with listeners (fire-and-forget)."""
         bus = EventBus()
 
         results = []
+        completed = asyncio.Event()
 
         async def callback1(event, name, **kwargs):  # noqa: ARG001
             results.append(f"callback1_{event.event}")
@@ -850,6 +769,7 @@ class TestEventBus:
 
         async def callback2(event, name, **kwargs):  # noqa: ARG001
             results.append(f"callback2_{event.event}")
+            completed.set()
             return "result2"
 
         bus.subscribe(Events.TEST, callback1, "subscriber1")
@@ -860,7 +780,7 @@ class TestEventBus:
         assert result is None
 
         # Give async tasks a moment to execute
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Side effects should have occurred
         assert len(results) == 2, f"Expected 2 results, got {len(results)}: {results}"
@@ -871,7 +791,6 @@ class TestEventBus:
     @patch("app.library.BackgroundWorker.BackgroundWorker")
     @pytest.mark.asyncio
     async def test_bus_emit_error_handler(self, mock_bg_worker, mock_config):
-        """Test emitting event when a handler raises an exception."""
         mock_config.get_instance.return_value.debug = False
         mock_bg_worker.get_instance.return_value = MagicMock()
 
@@ -887,18 +806,14 @@ class TestEventBus:
         bus.subscribe(Events.TEST, failing_callback, "failing_subscriber")
         bus.subscribe(Events.TEST, working_callback, "working_subscriber")
 
-        # Should not raise exception, but log error
         bus.emit(Events.TEST, data={"test": "data"})
 
     def test_bus_emit_fire_forget(self):
-        """Test emit() returns None immediately (fire-and-forget)."""
         bus = EventBus()
 
-        # Should return None for no listeners
         result = bus.emit(Events.TEST, data={"test": "data"})
         assert result is None
 
-        # Should return None even with listeners
         async def test_callback(event, name, **kwargs):  # noqa: ARG001
             return "result"
 
@@ -907,7 +822,6 @@ class TestEventBus:
         assert result is None
 
     def test_emit_lazy_background_worker(self):
-        """Test that BackgroundWorker is only initialized when needed."""
         bus = EventBus()
 
         bus._offload = None  # Ensure offload is None
@@ -928,14 +842,15 @@ class TestEventBus:
 
     @pytest.mark.asyncio
     async def test_event_bus_emit_kwargs(self):
-        """Test emitting event with additional kwargs (fire-and-forget)."""
         bus: EventBus = EventBus()
 
         received_kwargs = {}
+        completed = asyncio.Event()
 
         async def callback_with_kwargs(event, name, extra_param=None, **kwargs):  # noqa: ARG001
             received_kwargs["extra_param"] = extra_param
             received_kwargs["kwargs"] = kwargs
+            completed.set()
             return "result"
 
         bus.subscribe(Events.TEST, callback_with_kwargs, "kwargs_subscriber")
@@ -944,7 +859,7 @@ class TestEventBus:
         assert result is None
 
         # Give async tasks a moment to execute
-        await asyncio.sleep(0.02)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Side effects should have occurred
         assert "extra_param" in received_kwargs, f"received_kwargs: {received_kwargs}"
@@ -954,14 +869,15 @@ class TestEventBus:
 
     @pytest.mark.asyncio
     async def test_emit_event_data_defaults(self):
-        """Test emitting event with default data handling (fire-and-forget)."""
         bus = EventBus()
 
         received_event = None
+        completed = asyncio.Event()
 
         async def test_callback(event, name, **kwargs):  # noqa: ARG001
             nonlocal received_event
             received_event = event
+            completed.set()
             return "result"
 
         bus.subscribe(Events.TEST, test_callback, "default_subscriber")
@@ -975,7 +891,7 @@ class TestEventBus:
         assert result is None
 
         # Give async tasks a moment to execute
-        await asyncio.sleep(0.01)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         # Side effects should have occurred
         assert received_event is not None, "Callback was not called"

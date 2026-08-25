@@ -29,7 +29,8 @@ class NotificationEvents:
     LOG_WARNING: str = Events.LOG_WARNING
     LOG_ERROR: str = Events.LOG_ERROR
 
-    TASK_DISPATCHED: str = Events.TASK_DISPATCHED
+    TASK_FINISHED: str = Events.TASK_FINISHED
+    TASK_ERROR: str = Events.TASK_ERROR
 
     @staticmethod
     def get_events() -> dict[str, str]:

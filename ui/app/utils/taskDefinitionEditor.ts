@@ -1044,7 +1044,7 @@ export const parseImportedDocument = (payload: unknown): TaskDefinitionDocument 
   return document as unknown as TaskDefinitionDocument;
 };
 
-/** Return the first match URL that can safely be used as a concrete inspect URL. */
+/** Return the first absolute HTTP(S) match URL without wildcard or pattern syntax. */
 export const getInspectUrl = (matchUrls: readonly string[]): string => {
   for (const matchUrl of matchUrls) {
     if (

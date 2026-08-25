@@ -6,14 +6,10 @@ from app.library.Services import ServiceEntry, Services
 
 
 class TestServices:
-    """Test the Services singleton class."""
-
     def setup_method(self):
-        """Clear services before each test."""
         Services._reset_singleton()
 
     def test_add_and_get_service(self):
-        """Test adding and retrieving services."""
         services = Services()
         test_service = "test_value"
 
@@ -23,14 +19,12 @@ class TestServices:
         assert retrieved == test_service, "Should retrieve the same service that was added"
 
     def test_get_nonexistent_service(self):
-        """Test retrieving a service that doesn't exist."""
         services = Services()
         result = services.get("nonexistent")
 
         assert result is None, "Should return None for nonexistent service"
 
     def test_has_service(self):
-        """Test checking if service exists."""
         services = Services()
         services.add("existing", "value")
 
@@ -38,7 +32,6 @@ class TestServices:
         assert services.has("nonexistent") is False, "Should return False for nonexistent service"
 
     def test_remove_service(self):
-        """Test removing a service."""
         services = Services()
         services.add("to_remove", "value")
 
@@ -47,14 +40,11 @@ class TestServices:
         assert services.has("to_remove") is False, "Service should not exist after removal"
 
     def test_remove_nonexistent_service(self):
-        """Test removing a service that doesn't exist."""
         services = Services()
-        # Should not raise an exception
         services.remove("nonexistent")
         assert services.has("nonexistent") is False
 
     def test_clear_services(self):
-        """Test clearing all services."""
         services = Services()
         services.add("service1", "value1")
         services.add("service2", "value2")
@@ -64,7 +54,6 @@ class TestServices:
         assert len(services.get_all()) == 0, "Should have 0 services after clear"
 
     def test_add_all_services(self):
-        """Test adding multiple services at once."""
         services = Services()
         services_dict = {"service1": "value1", "service2": "value2", "service3": "value3"}
 
@@ -76,7 +65,6 @@ class TestServices:
         assert len(services.get_all()) == 3
 
     def test_get_all_copy(self):
-        """Test that get_all returns a copy, not the original dict."""
         services = Services()
         services.add("test", "value")
 
@@ -86,7 +74,6 @@ class TestServices:
         assert services.get("injected") is None, "Modifying returned dict should not affect internal state"
 
     def test_handle_sync_matching_args(self):
-        """Test synchronous handler with matching arguments."""
         services = Services()
         services.add("db", "database_connection")
         services.add("logger", "logger_instance")
@@ -99,7 +86,6 @@ class TestServices:
         assert result == expected
 
     def test_handle_sync_extra_kwargs(self):
-        """Test synchronous handler with additional kwargs."""
         services = Services()
         services.add("db", "database_connection")
 
@@ -111,7 +97,6 @@ class TestServices:
         assert result == expected
 
     def test_handle_sync_missing_args(self):
-        """Test synchronous handler with missing arguments."""
         services = Services()
         services.add("db", "database_connection")
 
@@ -124,7 +109,6 @@ class TestServices:
             with pytest.raises(TypeError, match=r"missing .* required positional argument"):
                 services.handle_sync(test_handler)
 
-            # Should still log error about missing arguments
             mock_logger.error.assert_called_once()
             error_call = mock_logger.error.call_args[0][0]
             assert "Missing arguments for handler" in error_call, (
@@ -132,7 +116,6 @@ class TestServices:
             )
 
     def test_sync_no_args_handler(self):
-        """Test synchronous handler that takes no arguments."""
         services = Services()
         services.add("unused", "value")
 
@@ -144,7 +127,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_handle_async_matching_args(self):
-        """Test asynchronous handler with matching arguments."""
         services = Services()
         services.add("db", "database_connection")
         services.add("logger", "logger_instance")
@@ -158,7 +140,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_handle_async_extra_kwargs(self):
-        """Test asynchronous handler with additional kwargs."""
         services = Services()
         services.add("db", "database_connection")
 
@@ -171,7 +152,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_handle_async_missing_args(self):
-        """Test asynchronous handler with missing arguments."""
         services = Services()
         services.add("db", "database_connection")
 
@@ -184,7 +164,6 @@ class TestServices:
             with pytest.raises(TypeError, match=r"missing .* required positional argument"):
                 await services.handle_async(test_handler)
 
-            # Should still log error about missing arguments
             mock_logger.error.assert_called_once()
             error_call = mock_logger.error.call_args[0][0]
             assert "Missing arguments for handler" in error_call, (
@@ -193,7 +172,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_async_no_args_handler(self):
-        """Test asynchronous handler that takes no arguments."""
         services = Services()
         services.add("unused", "value")
 
@@ -204,7 +182,6 @@ class TestServices:
         assert result == "No args async handler"
 
     def test_sync_kwargs_override_services(self):
-        """Test that kwargs override services with same name."""
         services = Services()
         services.add("param", "service_value")
 
@@ -216,7 +193,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_async_kwargs_override_services(self):
-        """Test that kwargs override services with same name in async handler."""
         services = Services()
         services.add("param", "service_value")
 
@@ -227,7 +203,6 @@ class TestServices:
         assert result == "Received: override_value"
 
     def test_handle_sync_complex_signature(self):
-        """Test synchronous handler with complex function signature."""
         services = Services()
         services.add("db", "database")
         services.add("cache", "redis")
@@ -241,7 +216,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_handle_async_complex_signature(self):
-        """Test asynchronous handler with complex function signature."""
         services = Services()
         services.add("db", "database")
         services.add("cache", "redis")
@@ -254,7 +228,6 @@ class TestServices:
         assert result == expected
 
     def test_add_none_service(self):
-        """Test adding None as a service value."""
         services = Services()
         services.add("none_service", None)
 
@@ -262,7 +235,6 @@ class TestServices:
         assert services.get("none_service") is None
 
     def test_overwrite_existing_service(self):
-        """Test overwriting an existing service."""
         services = Services()
         services.add("service", "original_value")
         services.add("service", "new_value")
@@ -270,7 +242,6 @@ class TestServices:
         assert services.get("service") == "new_value"
 
     def test_handler_exception_propagation(self):
-        """Test that exceptions in handlers are properly propagated."""
         services = Services()
 
         def failing_handler():
@@ -282,7 +253,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_async_handler_exception_propagation(self):
-        """Test that exceptions in async handlers are properly propagated."""
         services = Services()
 
         async def failing_async_handler():
@@ -293,7 +263,6 @@ class TestServices:
             await services.handle_async(failing_async_handler)
 
     def test_handle_sync_callable_object(self):
-        """Test handle_sync with callable object instead of function."""
         services = Services()
         services.add("data", "test_data")
 
@@ -307,7 +276,6 @@ class TestServices:
 
     @pytest.mark.asyncio
     async def test_handle_async_callable_object(self):
-        """Test handle_async with callable object instead of function."""
         services = Services()
         services.add("data", "test_data")
 
@@ -320,7 +288,6 @@ class TestServices:
         assert result == "Async callable received: test_data"
 
     def test_inspect_signature_edge_cases(self):
-        """Test that inspect.signature works correctly with edge cases."""
         services = Services()
 
         # Lambda function replacement
@@ -332,7 +299,6 @@ class TestServices:
         assert result == "Lambda: lambda_value"
 
     def test_service_container_isolation(self):
-        """Test that services don't interfere with each other."""
         services = Services()
 
         # Add services with potentially conflicting names
@@ -348,7 +314,6 @@ class TestServices:
         assert services.get("data_backup")["type"] == "backup"
 
     def test_add_all_overwrites_existing(self):
-        """Test that add_all overwrites existing services."""
         services = Services()
         services.add("existing", "original")
 
@@ -360,25 +325,22 @@ class TestServices:
         assert services.get("new") == "value"
 
     def test_add_all_empty_dict(self):
-        """Test add_all with empty dictionary."""
         services = Services()
         services.add("existing", "value")
 
         services.add_all({})
 
-        # Should not affect existing services
         assert services.get("existing") == "value"
         assert len(services.get_all()) == 1
 
     def test_concurrent_access_safety(self):
-        """Test basic thread safety aspects of singleton."""
         import threading
-        import time
 
         results = []
+        barrier = threading.Barrier(10)
 
         def get_instance():
-            time.sleep(0.01)  # Small delay to increase chance of race condition
+            barrier.wait(timeout=1)
             instance = Services()
             results.append(id(instance))
 
@@ -391,7 +353,8 @@ class TestServices:
 
         # Wait for all threads
         for thread in threads:
-            thread.join()
+            thread.join(timeout=1)
+            assert not thread.is_alive()
 
         # All should be the same instance
         assert len(set(results)) == 1, "All threads should get the same singleton instance"

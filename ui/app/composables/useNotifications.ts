@@ -5,13 +5,7 @@ import { request, parse_list_response, parse_api_response, ensure_api_success } 
 import type { notification } from '~/types/notification';
 import type { APIResponse, Pagination } from '~/types/responses';
 
-/**
- * List of all notifications in memory.
- */
 const notifications = ref<Array<notification>>([]);
-/**
- * Pagination state for notifications list.
- */
 const pagination = ref<Pagination>({
   page: 1,
   per_page: 50,
@@ -20,46 +14,20 @@ const pagination = ref<Pagination>({
   has_next: false,
   has_prev: false,
 });
-/**
- * List of allowed notification events.
- */
 const events = ref<Array<string>>([]);
-/**
- * Indicates if a request is in progress.
- */
 const isLoading = ref<boolean>(false);
-/**
- * Indicates if an add/update operation is in progress.
- */
 const addInProgress = ref<boolean>(false);
-/**
- * Stores the last error message, if any.
- */
 const lastError = ref<string | null>(null);
-/**
- * If true, methods will throw errors instead of returning null/false (for testing)
- */
+// Test hook: rethrow request errors instead of returning fallback values.
 const throwInstead = ref(false);
-/**
- * Notification composable for showing success/error messages.
- */
 const notify = useNotification();
 const { $i18n } = useNuxtApp();
 const t = $i18n?.t ?? ((key: string) => key);
 
-/**
- * Sorts notifications by name (A-Z).
- * @param items Array of notifications
- * @returns Sorted array of notifications
- */
 const sortNotifications = (items: Array<notification>): Array<notification> => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
 
-/**
- * Handles errors by updating lastError and showing a notification.
- * @param error Error object or unknown
- */
 const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
@@ -71,11 +39,6 @@ const handleError = (error: unknown): void => {
   notify.error(message);
 };
 
-/**
- * Updates or adds a notification in the list, keeping sort order.
- * Also increments pagination.total if it's a new notification.
- * @param item Notification to update/add
- */
 const updateNotifications = (item: notification): void => {
   const isNew = !notifications.value.some((existing) => existing.id === item.id);
   notifications.value = sortNotifications([
@@ -87,11 +50,6 @@ const updateNotifications = (item: notification): void => {
   }
 };
 
-/**
- * Removes a notification from the list by ID.
- * Also decrements pagination.total.
- * @param id Notification ID
- */
 const removeNotification = (id: number) => {
   const initialLength = notifications.value.length;
   notifications.value = notifications.value.filter((item) => item.id !== id);
@@ -100,11 +58,6 @@ const removeNotification = (id: number) => {
   }
 };
 
-/**
- * Loads notification targets from the API with pagination support.
- * @param page Page number
- * @param perPage Items per page
- */
 const loadNotifications = async (
   page: number = 1,
   perPage: number | undefined = undefined,
@@ -134,9 +87,6 @@ const loadNotifications = async (
   }
 };
 
-/**
- * Loads notification events from the API.
- */
 const loadNotificationEvents = async (): Promise<void> => {
   if (events.value.length > 0) {
     return;
@@ -155,11 +105,6 @@ const loadNotificationEvents = async (): Promise<void> => {
   }
 };
 
-/**
- * Fetches a single notification by ID from the API.
- * @param id Notification ID
- * @returns Notification or null on error
- */
 const getNotification = async (id: number): Promise<notification | null> => {
   try {
     const response = await request(`/api/notifications/${id}`);
@@ -177,12 +122,6 @@ const getNotification = async (id: number): Promise<notification | null> => {
   }
 };
 
-/**
- * Creates a new notification via API.
- * @param item Notification to create
- * @param callback Optional callback with APIResponse result
- * @returns Created notification or null on error
- */
 const createNotification = async (
   item: Omit<notification, 'id'>,
   callback?: (response: APIResponse<notification>) => void,
@@ -221,13 +160,6 @@ const createNotification = async (
   }
 };
 
-/**
- * Updates an existing notification via API (PUT - full update).
- * @param id Notification ID
- * @param item Updated notification data
- * @param callback Optional callback with APIResponse result
- * @returns Updated notification or null on error
- */
 const updateNotification = async (
   id: number,
   item: notification,
@@ -272,13 +204,6 @@ const updateNotification = async (
   }
 };
 
-/**
- * Partially updates an existing notification via API (PATCH).
- * @param id Notification ID
- * @param patch Partial notification data to update
- * @param callback Optional callback with APIResponse result
- * @returns Updated notification or null on error
- */
 const patchNotification = async (
   id: number,
   patch: Partial<notification>,
@@ -323,12 +248,6 @@ const patchNotification = async (
   }
 };
 
-/**
- * Deletes a notification by ID via API.
- * @param id Notification ID
- * @param callback Optional callback with APIResponse result
- * @returns true if deleted, false on error
- */
 const deleteNotification = async (
   id: number,
   callback?: (response: APIResponse<boolean>) => void,
@@ -359,24 +278,10 @@ const deleteNotification = async (
   }
 };
 
-/**
- * Determines if a notification URL is for Apprise (non-HTTP).
- * @param url Notification URL
- * @returns true if Apprise URL, false otherwise
- */
 const isApprise = (url: string) => !url.startsWith('http');
 
-/**
- * Clears the last error message.
- */
 const clearError = () => (lastError.value = null);
 
-/**
- * useNotifications composable
- *
- * Returns reactive state and CRUD methods for notifications.
- * @returns Object with state and API methods
- */
 export const useNotifications = () => ({
   notifications: readonly(notifications),
   pagination: readonly(pagination),

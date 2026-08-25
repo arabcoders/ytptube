@@ -100,11 +100,8 @@ class TestProcessPoolConfiguration:
 
 
 class TestExtractInfo:
-    """Test the extract_info function."""
-
     @patch("app.features.ytdlp.extractor.YTDLP")
     def test_extract_info_basic(self, mock_ytdlp_class):
-        """Test basic extract_info functionality."""
         mock_ytdlp = MagicMock()
         mock_ytdlp.extract_info.return_value = {"title": "Test Video", "id": "test123"}
         mock_ytdlp_class.return_value = mock_ytdlp

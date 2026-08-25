@@ -71,7 +71,6 @@ def parse_args() -> argparse.Namespace:
 
 
 async def connect_db(db_file: Path) -> tuple[AsyncConnection, AsyncEngine]:
-    """Create async SQLAlchemy connection."""
     engine = create_async_engine(f"sqlite+aiosqlite:///{db_file}")
     conn = await engine.connect()
     await conn.execute(text("PRAGMA journal_mode=wal"))

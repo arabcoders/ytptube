@@ -201,7 +201,7 @@ class TestRetry:
             nonlocal active, peak
             active += 1
             peak = max(peak, active)
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
             active -= 1
             return {"status": "ok"}
 
@@ -762,7 +762,7 @@ class TestDownloadFlow:
         final_file.write_text("test content")
 
         async def fake_ffprobe(_file: Path):
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
             return SimpleNamespace(
                 metadata={"duration": "10"},
                 video=[SimpleNamespace(width=1280, height=720, framerate=30, codec_name="h264")],
@@ -1407,6 +1407,46 @@ class TestProcessManager:
         result = await pm.close()
         assert result is True, "Should return True on successful close"
         assert pm.proc is None, "Process reference should be cleared"
+
+    @pytest.mark.asyncio
+    async def test_close_bounds_join(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import threading
+
+        logger = logging.getLogger("test")
+        pm = ProcessManager("test-id", is_live=False, logger=logger)
+        release = threading.Event()
+
+        class SlowProcess:
+            ident = 12345
+            pid = 12345
+            alive = True
+
+            def is_alive(self) -> bool:
+                return self.alive
+
+            def join(self, _timeout: float) -> None:
+                release.wait()
+
+            def terminate(self) -> None:
+                self.alive = False
+                release.set()
+
+            def kill(self) -> None:
+                self.alive = False
+                release.set()
+
+            def close(self) -> None:
+                return None
+
+        monkeypatch.setattr(pm, "proc", SlowProcess())
+        monkeypatch.setattr(pm, "kill", Mock(return_value=False))
+        monkeypatch.setattr("app.features.downloads.runtime.process_manager.PROCESS_JOIN_TIMEOUT", 0.001)
+
+        try:
+            assert await pm.close() is True
+            assert pm.proc is None
+        finally:
+            release.set()
 
 
 class TestStatusTracker:

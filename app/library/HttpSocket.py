@@ -63,10 +63,6 @@ class WebSocketHub:
 
 
 class HttpSocket:
-    """
-    This class is used to handle WebSocket events.
-    """
-
     config: Config
     sio: WebSocketHub
     di_context: dict[str, Any] = {}
@@ -195,7 +191,6 @@ class HttpSocket:
             await handle_connect(sid)
 
             async def handle_message_safe(sid: str, message: str) -> None:
-                """Wrapper to handle message with error logging"""
                 try:
                     await handle_message(sid, message)
                 except Exception as e:

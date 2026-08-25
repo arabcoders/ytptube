@@ -1,5 +1,3 @@
-"""Tests for DLFieldsRepository."""
-
 from __future__ import annotations
 
 import pytest
@@ -30,11 +28,8 @@ async def repo():
 
 
 class TestDLFieldsRepository:
-    """Test suite for DLFieldsRepository database operations."""
-
     @pytest.mark.asyncio
     async def test_create_field(self, repo):
-        """Create field with valid data."""
         data = {
             "name": "quality",
             "description": "Video quality setting",
@@ -60,7 +55,6 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_create_with_defaults(self, repo):
-        """Create field with minimal data uses defaults."""
         data = {
             "name": "minimal",
             "description": "Minimal",
@@ -77,7 +71,6 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
-        """Get field by integer ID."""
         created = await repo.create(
             {
                 "name": "get_test",
@@ -95,7 +88,6 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_name(self, repo):
-        """Get field by string name."""
         await repo.create(
             {
                 "name": "named_test",
@@ -112,7 +104,6 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_get_nonexistent(self, repo):
-        """Get nonexistent field returns None."""
         result = await repo.get(99999)
         assert result is None, "Should return None for nonexistent ID"
 
@@ -121,7 +112,6 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_update_field(self, repo):
-        """Update existing field."""
         created = await repo.create(
             {
                 "name": "update_test",
@@ -147,13 +137,11 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_raises(self, repo):
-        """Update nonexistent field raises KeyError."""
         with pytest.raises(KeyError, match="not found"):
             await repo.update(99999, {"name": "should_fail"})
 
     @pytest.mark.asyncio
     async def test_delete_field(self, repo):
-        """Delete existing field."""
         created = await repo.create(
             {
                 "name": "delete_test",
@@ -172,7 +160,6 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_raises(self, repo):
-        """Delete nonexistent field raises KeyError."""
         with pytest.raises(KeyError, match="not found"):
             await repo.delete(99999)
 
@@ -212,7 +199,6 @@ class TestDLFieldsRepository:
 
     @pytest.mark.asyncio
     async def test_get_name_excludes_id(self, repo):
-        """Get by name can exclude specific ID."""
         first = await repo.create(
             {
                 "name": "duplicate",

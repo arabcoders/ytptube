@@ -9,7 +9,6 @@ from app.library.logging import get_logger
 LOG = get_logger()
 
 
-# make a enum for route types
 class RouteType(str, Enum):
     HTTP = "http"
     SOCKET = "socket"
@@ -20,17 +19,6 @@ class RouteType(str, Enum):
 
 
 class Route:
-    """
-    A class to represent an route.
-
-    Attributes:
-        method (str): The HTTP method (GET, POST, etc.).
-        path (str): The path for the route.
-        name (str): The name of the route.
-        handler (Callable[..., Awaitable]): The function that handles the route.
-
-    """
-
     def __init__(
         self,
         method: str,
@@ -63,7 +51,7 @@ def make_route_name(method: str, path: str) -> str:
 
     segments: list = []
     for part in path.split("/"):
-        part = re.sub(r"[^\w]", "_", part)  # remove invalid chars
+        part = re.sub(r"[^\w]", "_", part)
         if not part:
             part = "part"
         elif part[0].isdigit():
@@ -215,29 +203,8 @@ def add_route(
 
 
 def get_route(route_type: RouteType, name: str) -> Route | None:
-    """
-    Get the route information by name.
-
-    Args:
-        route_type (RouteType): The type of the route (e.g., RouteType.HTTP, RouteType.SOCKET).
-        name (str): The name of the route.
-
-    Returns:
-        dict: The route information, or None if not found.
-
-    """
     return ROUTES.get(route_type, {}).get(name, None)
 
 
 def get_routes(route_type: RouteType) -> dict[str, Route]:
-    """
-    Get all registered routes.
-
-    Args:
-        route_type (RouteType): The type of the route (e.g., RouteType.HTTP, RouteType.SOCKET).
-
-    Returns:
-        dict[str, dict]: A dictionary of all registered routes.
-
-    """
     return ROUTES.get(route_type, {})

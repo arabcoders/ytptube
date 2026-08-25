@@ -20,7 +20,6 @@ from app.tests.helpers import make_in_memory_db_path
 
 
 async def reset_sqlite_store() -> None:
-    """Close and reset SqliteStore singleton for testing."""
     if DownloadsRepository in DownloadsRepository._instances:
         await DownloadsRepository._instances[DownloadsRepository].shutdown()
     if SqliteStore in SqliteStore._instances:
@@ -37,7 +36,6 @@ async def reset_sqlite_store() -> None:
 
 
 async def make_db(data: int = 0) -> Any:
-    """Create a named in-memory database with test data."""
     await reset_sqlite_store()
     ins = SqliteStore.get_instance(db_path=make_in_memory_db_path("test-datastore"))
     await ins.get_connection()
@@ -153,7 +151,6 @@ class TestDataStore:
         assert '"datetime"' not in row["data"], "JSON should not contain datetime field"
         assert row["id"] == item._id, "ID should match"
 
-        # Delete and ensure removal
         await store.delete(item._id)
         await asyncio.sleep(0)
         await db.flush()
@@ -255,7 +252,6 @@ class TestDataStore:
     @pytest.mark.asyncio
     async def test_test_method_executes_query(self) -> None:
         store = await make_store_async(StoreType.QUEUE)
-        # Should not raise
         ok = await store.test()
         assert ok is True
 
@@ -286,7 +282,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_get_item_no_filters(self) -> None:
-        """Test that get_item returns None when no kwargs provided."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -296,11 +291,9 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_item_finds_single_attribute(self) -> None:
-        """Test that get_item correctly finds item by a single attribute."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
-        # Create items with different attributes
         item1 = make_item(id="vid1", url="http://example.com/1", title="Video 1", folder="folder1")
         item1._id = "id1"  # Override auto-generated UUID
         item2 = make_item(id="vid2", url="http://example.com/2", title="Video 2", folder="folder2")
@@ -313,19 +306,16 @@ class TestDataStore:
         await store.put(d2)
         await store._connection.flush()
 
-        # Test finding by title
         result = await store.get_item(title="Video 1")
         assert result is not None
         assert result.info._id == "id1"
         assert result.info.title == "Video 1"
 
-        # Test finding by folder
         result = await store.get_item(folder="folder2")
         assert result is not None
         assert result.info._id == "id2"
         assert result.info.folder == "folder2"
 
-        # Test finding by url
         result = await store.get_item(url="http://example.com/1")
         assert result is not None
         assert result.info._id == "id1"
@@ -333,7 +323,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_item_finds_multiple_attributes(self) -> None:
-        """Test that get_item finds item when ANY of the provided attributes match."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -349,12 +338,10 @@ class TestDataStore:
         await store.put(d2)
         await store._connection.flush()
 
-        # Test finding by multiple attributes where one matches
         result = await store.get_item(title="Video 1", folder="wrong_folder")
         assert result is not None
         assert result.info._id == "id1"
 
-        # Test finding where second attribute matches
         result = await store.get_item(title="Wrong Title", folder="folder2")
         assert result is not None
         assert result.info._id == "id2"
@@ -362,7 +349,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_get_item_miss(self) -> None:
-        """Test that get_item returns None when no attributes match."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -372,22 +358,18 @@ class TestDataStore:
         await store.put(d)
         await store._connection.flush()
 
-        # Test with non-matching attribute
         result = await store.get_item(title="Nonexistent Video")
         assert result is None
 
-        # Test with non-existent attribute key
         result = await store.get_item(nonexistent_field="value")
         assert result is None
         await db.close()
 
     @pytest.mark.asyncio
     async def test_skips_items_no_info(self) -> None:
-        """Test that get_item skips items that have no info attribute."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
-        # Create a valid item
         item = make_item(id="vid1", url="http://example.com/1", title="Video 1")
         item._id = "id1"
         d = StubDownload(info=item)
@@ -402,7 +384,6 @@ class TestDataStore:
         broken: Any = BrokenDownload()
         store._dict["broken"] = broken
 
-        # Should still find the valid item
         result = await store.get_item(title="Video 1")
         assert result is not None
         assert result.info._id == "id1"
@@ -410,11 +391,9 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_get_item_first_match(self) -> None:
-        """Test that get_item returns the first matching item when multiple match."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
-        # Create multiple items with same title
         item1 = make_item(id="vid1", url="http://example.com/1", title="Same Title", folder="folder1")
         item1._id = "id1"
         item2 = make_item(id="vid2", url="http://example.com/2", title="Same Title", folder="folder2")
@@ -427,7 +406,6 @@ class TestDataStore:
         await store.put(d2)
         await store._connection.flush()
 
-        # Should return first match (note: OrderedDict maintains insertion order)
         result = await store.get_item(title="Same Title")
         assert result is not None
         assert result.info._id == "id1"
@@ -435,7 +413,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_init(self) -> None:
-        """Test DataStore initialization."""
         store = await make_store_async(StoreType.QUEUE)
 
         assert store._type == StoreType.QUEUE
@@ -445,7 +422,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_load(self) -> None:
-        """Test loading items from database into memory."""
         db = await make_db()
 
         # Insert items directly into database
@@ -489,7 +465,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_load_different_store_types(self) -> None:
-        """Test that load only loads items matching the store type."""
         db = await make_db()
         # conn = db._conn  # No longer needed
 
@@ -537,7 +512,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_get_by_id(self) -> None:
-        """Test getting item by ID."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -553,7 +527,6 @@ class TestDataStore:
         await store.put(d2)
         await store._connection.flush()
 
-        # Test getting existing items
         result = await store.get_by_id("id1")
         assert result is not None
         assert result.info._id == "id1"
@@ -563,14 +536,12 @@ class TestDataStore:
         assert result is not None
         assert result.info._id == "id2"
 
-        # Test getting non-existent item
         result = await store.get_by_id("nonexistent")
         assert result is None
         await db.close()
 
     @pytest.mark.asyncio
     async def test_items(self) -> None:
-        """Test getting all items as list of tuples."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -591,7 +562,6 @@ class TestDataStore:
         await store.put(d2)
         await store._connection.flush()
 
-        # Test getting all items
         result = list(store.items())
         assert len(result) == 2
 
@@ -606,7 +576,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_total_count_empty_store(self) -> None:
-        """Test get_total_count with empty datastore."""
         store = await make_store_async(StoreType.QUEUE)
 
         count = await store.get_total_count()
@@ -615,7 +584,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_get_total_count_items(self) -> None:
-        """Test get_total_count with items in database."""
         store = await make_store_async(StoreType.QUEUE)
         db: Any = store._connection
         # conn = db._conn  # No longer needed
@@ -637,7 +605,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_count_respects_store_type(self) -> None:
-        """Test that get_total_count only counts items of the correct type."""
         db = await make_db()
         # conn = db._conn  # No longer needed
 
@@ -671,7 +638,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_error_status_emits_event(self) -> None:
-        """Test that put() emits an event when item has error status."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -690,7 +656,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_no_notify_skips_event(self) -> None:
-        """Test that put() with no_notify=True doesn't emit events."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -700,7 +665,6 @@ class TestDataStore:
 
         d = StubDownload(info=item)
 
-        # Should not emit event when no_notify=True
         result = await store.put(d, no_notify=True)
         await store._connection.flush()
         assert result is not None
@@ -709,11 +673,9 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_item(self) -> None:
-        """Test that deleting non-existent item doesn't raise error."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
-        # Should not raise error
         await store.delete("nonexistent_id")
 
         # Verify nothing was deleted from database
@@ -724,7 +686,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_has_downloads_empty_dict(self) -> None:
-        """Test has_downloads returns False when dict is empty."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -733,7 +694,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_has_downloads_ineligible(self) -> None:
-        """Test has_downloads returns False when no downloads are eligible."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -752,7 +712,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_next_download_empty(self) -> None:
-        """Test get_next_download returns None when no eligible downloads."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -762,7 +721,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_next_download_skips_cancelled(self) -> None:
-        """Test get_next_download skips cancelled downloads."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -784,7 +742,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_update_item_drops_dt(self) -> None:
-        """Test that _update_store_item removes datetime field before storage."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -804,7 +761,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_update_item_drops_live(self) -> None:
-        """Test that _update_store_item removes live_in field when status is finished."""
         store = await make_store_async(StoreType.QUEUE)
         conn: Any = store._connection
 
@@ -825,7 +781,6 @@ class TestDataStore:
 
     @pytest.mark.asyncio
     async def test_update_item_keeps_live(self) -> None:
-        """Test that _update_store_item keeps live_in field when status is not finished."""
         store = await make_store_async(StoreType.QUEUE)
         conn: Any = store._connection
 
@@ -848,10 +803,7 @@ class TestDataStore:
 
 @pytest.mark.asyncio
 class TestDataStoreOperations:
-    """Test get_item with different comparison operations."""
-
     async def test_operation_equal(self) -> None:
-        """Test EQUAL operation (default behavior)."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -859,23 +811,19 @@ class TestDataStoreOperations:
         item1._id = "id1"
         await store.put(StubDownload(info=item1))
 
-        # Test with explicit EQUAL operation
         result = await store.get_item(title=(Operation.EQUAL, "Exact Match"))
         assert result is not None
         assert result.info._id == "id1"
 
-        # Test default behavior (no operation specified)
         result = await store.get_item(title="Exact Match")
         assert result is not None
         assert result.info._id == "id1"
 
-        # Test no match
         result = await store.get_item(title=(Operation.EQUAL, "No Match"))
         assert result is None
         await db.close()
 
     async def test_operation_not_equal(self) -> None:
-        """Test NOT_EQUAL operation."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -894,7 +842,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_contain(self) -> None:
-        """Test CONTAIN operation (substring match)."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -922,7 +869,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_not_contain(self) -> None:
-        """Test NOT_CONTAIN operation."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -941,7 +887,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_starts_with(self) -> None:
-        """Test STARTS_WITH operation."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -969,7 +914,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_ends_with(self) -> None:
-        """Test ENDS_WITH operation."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -997,7 +941,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_greater_than(self) -> None:
-        """Test GREATER_THAN operation with numeric values."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1023,7 +966,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_less_than(self) -> None:
-        """Test LESS_THAN operation."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1044,7 +986,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_greater_equal(self) -> None:
-        """Test GREATER_EQUAL operation."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1054,23 +995,19 @@ class TestDataStoreOperations:
 
         await store.put(StubDownload(info=item1))
 
-        # Test >= with exact match
         result = await store.get_item(filesize=(Operation.GREATER_EQUAL, 1000))
         assert result is not None
         assert result.info._id == "id1"
 
-        # Test >= with less than
         result = await store.get_item(filesize=(Operation.GREATER_EQUAL, 500))
         assert result is not None
         assert result.info._id == "id1"
 
-        # Test >= with greater than
         result = await store.get_item(filesize=(Operation.GREATER_EQUAL, 1500))
         assert result is None
         await db.close()
 
     async def test_operation_less_equal(self) -> None:
-        """Test LESS_EQUAL operation."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1080,21 +1017,17 @@ class TestDataStoreOperations:
 
         await store.put(StubDownload(info=item1))
 
-        # Test <= with exact match
         result = await store.get_item(filesize=(Operation.LESS_EQUAL, 1000))
         assert result is not None
 
-        # Test <= with greater than
         result = await store.get_item(filesize=(Operation.LESS_EQUAL, 1500))
         assert result is not None
 
-        # Test <= with less than
         result = await store.get_item(filesize=(Operation.LESS_EQUAL, 500))
         assert result is None
         await db.close()
 
     async def test_mixed_operations(self) -> None:
-        """Test using multiple operations in a single query."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1121,7 +1054,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_with_none_values(self) -> None:
-        """Test operations handle None values gracefully."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1145,7 +1077,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_with_invalid_comparisons(self) -> None:
-        """Test that invalid comparisons are handled gracefully."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1160,7 +1091,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_backward_compatibility(self) -> None:
-        """Test that string operation names work for backward compatibility."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
@@ -1180,7 +1110,6 @@ class TestDataStoreOperations:
         await db.close()
 
     async def test_operation_with_nonexistent_field(self) -> None:
-        """Test operations with fields that don't exist."""
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 

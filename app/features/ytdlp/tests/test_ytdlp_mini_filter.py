@@ -24,23 +24,6 @@ class TestMiniFilter(unittest.TestCase):
     def _test(
         self, expr: str, test_data: dict, *, expected_result: bool, test_name: str = "", skip_ytdlp: bool = False
     ):
-        """
-        Test both our implementation and yt-dlp's implementation to ensure they give the same result.
-
-        This method:
-        1. Tests our implementation directly on the full expression (supports OR, grouping)
-        2. Exports our expression to yt-dlp compatible format (flattens OR/grouping to multiple AND-only filters)
-        3. Tests yt-dlp on each exported filter (OR logic: any filter match = True)
-        4. Verifies both implementations agree
-
-        Args:
-            expr: Filter expression string (may contain OR, parentheses)
-            test_data: Dictionary to test against
-            expected_result: Expected boolean result (keyword-only)
-            test_name: Optional test name for better error messages
-            skip_ytdlp: Skip yt-dlp comparison due to known bugs (keyword-only)
-
-        """
         from yt_dlp.utils import match_str
 
         # Step 1: Test our implementation directly
@@ -115,31 +98,25 @@ class TestMiniFilter(unittest.TestCase):
         )
 
     def test_unary_presence(self):
-        # Test duration presence
         self._test("duration", {"duration": 100}, expected_result=True, test_name="unary_duration_present")
         self._test("duration", {}, expected_result=False, test_name="unary_duration_absent")
 
-        # Test duration absence
         self._test("!duration", {}, expected_result=True, test_name="unary_not_duration_absent")
         self._test("!duration", {"duration": 100}, expected_result=False, test_name="unary_not_duration_present")
 
     def test_duration_units(self):
-        # Test with numeric duration values to avoid yt-dlp's inconsistent unit parsing
         # Using 120 seconds = 2 minutes
         self._test("duration<120", {"duration": 30}, expected_result=True, test_name="duration_120_positive")
         self._test("duration<120", {"duration": 200}, expected_result=False, test_name="duration_120_negative")
 
-        # Test 90 seconds
         self._test("duration<90", {"duration": 30}, expected_result=True, test_name="duration_90_positive")
         self._test("duration<90", {"duration": 120}, expected_result=False, test_name="duration_90_negative")
 
-        # Test 3600 seconds = 1 hour
         self._test("duration<3600", {"duration": 3599}, expected_result=True, test_name="duration_3600_positive")
         self._test("duration<3600", {"duration": 3700}, expected_result=False, test_name="duration_3600_negative")
 
     def test_duration_units_with_suffixes(self):
         """Test duration comparisons with time unit suffixes (m, h). Skip yt-dlp due to known parsing bugs."""
-        # Test 2 minutes (120 seconds)
         self._test(
             "duration<2m", {"duration": 90}, expected_result=True, test_name="duration_2m_positive", skip_ytdlp=True
         )
@@ -147,7 +124,6 @@ class TestMiniFilter(unittest.TestCase):
             "duration<2m", {"duration": 150}, expected_result=False, test_name="duration_2m_negative", skip_ytdlp=True
         )
 
-        # Test 5 minutes (300 seconds)
         self._test(
             "duration<5m", {"duration": 240}, expected_result=True, test_name="duration_5m_positive", skip_ytdlp=True
         )
@@ -155,7 +131,6 @@ class TestMiniFilter(unittest.TestCase):
             "duration<5m", {"duration": 360}, expected_result=False, test_name="duration_5m_negative", skip_ytdlp=True
         )
 
-        # Test 10 minutes (600 seconds)
         self._test(
             "duration<10m", {"duration": 480}, expected_result=True, test_name="duration_10m_positive", skip_ytdlp=True
         )
@@ -163,7 +138,6 @@ class TestMiniFilter(unittest.TestCase):
             "duration<10m", {"duration": 720}, expected_result=False, test_name="duration_10m_negative", skip_ytdlp=True
         )
 
-        # Test 1 hour (3600 seconds)
         self._test(
             "duration<1h", {"duration": 3000}, expected_result=True, test_name="duration_1h_positive", skip_ytdlp=True
         )
@@ -171,7 +145,6 @@ class TestMiniFilter(unittest.TestCase):
             "duration<1h", {"duration": 4000}, expected_result=False, test_name="duration_1h_negative", skip_ytdlp=True
         )
 
-        # Test >= operator with minutes
         self._test(
             "duration>=5m", {"duration": 300}, expected_result=True, test_name="duration_gte_5m_equal", skip_ytdlp=True
         )
@@ -187,17 +160,14 @@ class TestMiniFilter(unittest.TestCase):
         )
 
     def test_filesize_units(self):
-        # Test 1MB
         self._test("filesize>1MB", {"filesize": 2000000}, expected_result=True, test_name="filesize_1mb_positive")
         self._test("filesize>1MB", {"filesize": 500000}, expected_result=False, test_name="filesize_1mb_negative")
 
-        # Test 1GiB
         self._test("filesize>=1GiB", {"filesize": 2**30}, expected_result=True, test_name="filesize_1gib_positive")
         self._test("filesize>=1GiB", {"filesize": 1000000}, expected_result=False, test_name="filesize_1gib_negative")
 
     def test_duration_or_grouping(self):
         """Test complex expressions with duration units, OR operations, and grouping. Skip yt-dlp due to known parsing bugs."""
-        # Test grouping with duration units
         expr = "(filesize>1MB & duration<10m) || uploader='BBC'"
         self._test(
             expr,
@@ -221,7 +191,6 @@ class TestMiniFilter(unittest.TestCase):
             skip_ytdlp=True,
         )
 
-        # Test OR with different duration units
         expr = "duration<2m || duration>1h"
         self._test(expr, {"duration": 60}, expected_result=True, test_name="complex_or_duration_short", skip_ytdlp=True)
         self._test(
@@ -231,7 +200,6 @@ class TestMiniFilter(unittest.TestCase):
             expr, {"duration": 1800}, expected_result=False, test_name="complex_or_duration_middle", skip_ytdlp=True
         )
 
-        # Test complex expression with multiple duration conditions
         expr = "(duration>30s & duration<5m) || (duration>1h & uploader*='BBC')"
         self._test(
             expr,
@@ -265,13 +233,11 @@ class TestMiniFilter(unittest.TestCase):
     def test_string_operators(self):
         d: dict[str, str] = {"uploader": "BBC News Channel"}
 
-        # Test all string operators with both implementations
         self._test("uploader*='News'", d, expected_result=True, test_name="string_contains")
         self._test("uploader^='BBC'", d, expected_result=True, test_name="string_startswith")
         self._test("uploader$='Channel'", d, expected_result=True, test_name="string_endswith")
         self._test("uploader~='News\\s+Channel'", d, expected_result=True, test_name="string_regex")
 
-        # Test negative cases
         self._test("uploader*='CNN'", d, expected_result=False, test_name="string_contains_negative")
         self._test("uploader^='CNN'", d, expected_result=False, test_name="string_startswith_negative")
         self._test("uploader$='BBC'", d, expected_result=False, test_name="string_endswith_negative")
@@ -336,10 +302,8 @@ class TestMiniFilter(unittest.TestCase):
             MiniFilter("uploader='BBC' stray")
 
     def test_spaces_around_operators(self):
-        """Test that spaces around operators are handled correctly."""
         d: dict[str, str] = {"channel_id": "UC-7oMv6E4Uz2tF51w5Sj49w", "uploader": "BBC"}
 
-        # Test with spaces around equals
         self._test("channel_id = 'UC-7oMv6E4Uz2tF51w5Sj49w'", d, expected_result=True, test_name="spaced_equals_match")
         self._test("channel_id = 'different-id'", d, expected_result=False, test_name="spaced_equals_non_match")
 
@@ -365,7 +329,6 @@ class TestMiniFilter(unittest.TestCase):
         self._test("duration <= 200", d_numeric, expected_result=True, test_name="spaced_less_equal")
 
     def test_original_bug_reproduction(self):
-        """Test the exact case from the original bug report."""
         # Exact data from the original bug report
         test_data: dict[str, Any] = {
             "age_limit": 0,
@@ -400,7 +363,6 @@ class TestMiniFilter(unittest.TestCase):
         )
 
     def test_or_operator_precedence(self):
-        """Test operator precedence and grouping with OR statements."""
         # Test data for the examples
         test_data: dict[str, int] = {
             "age_limit": 0,
@@ -450,7 +412,6 @@ class TestMiniFilter(unittest.TestCase):
         self._test(expr2, test_data_edge, expected_result=True, test_name="or_precedence_case2_edge")
 
     def test_complex_or_precedence_scenarios(self):
-        """Test more complex OR precedence scenarios."""
         # Test case where only the OR part is true
         test_data_or_only: dict[str, int] = {
             "age_limit": 1,  # False

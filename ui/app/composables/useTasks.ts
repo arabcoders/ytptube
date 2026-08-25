@@ -10,13 +10,7 @@ import type {
 } from '~/types/tasks';
 import type { APIResponse, Pagination } from '~/types/responses';
 
-/**
- * List of all tasks in memory.
- */
 const tasks = ref<Array<Task>>([]);
-/**
- * Pagination state for tasks list.
- */
 const pagination = ref<Pagination>({
   page: 1,
   per_page: 50,
@@ -25,47 +19,20 @@ const pagination = ref<Pagination>({
   has_next: false,
   has_prev: false,
 });
-/**
- * Indicates if a request is in progress.
- */
 const isLoading = ref<boolean>(false);
-/**
- * Indicates if an add/update operation is in progress.
- */
 const addInProgress = ref<boolean>(false);
-/**
- * Set of task IDs that are currently in progress.
- */
 const inProgressIds = ref<Set<number>>(new Set());
-/**
- * Stores the last error message, if any.
- */
 const lastError = ref<string | null>(null);
-/**
- * If true, methods will throw errors instead of returning null/false (for testing)
- */
+// Test hook: rethrow request errors instead of returning fallback values.
 const throwInstead = ref(false);
 
 const { $i18n } = useNuxtApp();
 const t = $i18n?.t ?? ((key: string) => key);
 
-/**
- * Notification composable for showing success/error messages.
- */
-
-/**
- * Sorts tasks by name (A-Z).
- * @param items Array of tasks
- * @returns Sorted array of tasks
- */
 const sortTasks = (items: Array<Task>): Array<Task> => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
 
-/**
- * Handles errors by updating lastError and showing a notification.
- * @param error Error object or unknown
- */
 const setError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : t('common.unknownError');
   lastError.value = message;
@@ -77,11 +44,6 @@ const handleError = (error: unknown): void => {
   useNotification().error(message);
 };
 
-/**
- * Updates or adds a task in the list, keeping sort order.
- * Also increments pagination.total if it's a new task.
- * @param item Task to update/add
- */
 const updateTasksList = (item: Task): void => {
   const isNew = !tasks.value.some((existing) => existing.id === item.id);
   tasks.value = sortTasks([...tasks.value.filter((existing) => existing.id !== item.id), item]);
@@ -90,11 +52,6 @@ const updateTasksList = (item: Task): void => {
   }
 };
 
-/**
- * Removes a task from the list by ID.
- * Also decrements pagination.total.
- * @param id Task ID
- */
 const removeTask = (id: number) => {
   const initialLength = tasks.value.length;
   tasks.value = tasks.value.filter((item) => item.id !== id);
@@ -103,11 +60,6 @@ const removeTask = (id: number) => {
   }
 };
 
-/**
- * Loads tasks from the API with pagination support.
- * @param page Page number
- * @param perPage Items per page
- */
 const loadTasks = async (
   page: number = 1,
   perPage: number | undefined = undefined,
@@ -135,11 +87,6 @@ const loadTasks = async (
   }
 };
 
-/**
- * Fetches a single task by ID from the API.
- * @param id Task ID
- * @returns Task or null on error
- */
 const getTask = async (id: number): Promise<Task | null> => {
   try {
     const response = await request(`/api/tasks/${id}`);
@@ -157,12 +104,6 @@ const getTask = async (id: number): Promise<Task | null> => {
   }
 };
 
-/**
- * Creates a new task via API.
- * @param task Task to create (single task or array for batch)
- * @param callback Optional callback with APIResponse result
- * @returns Created task(s) or null on error
- */
 const createTask = async (
   task:
     | Omit<Task, 'id' | 'created_at' | 'updated_at'>
@@ -215,13 +156,6 @@ const createTask = async (
   }
 };
 
-/**
- * Updates an existing task via API (PUT - full update).
- * @param id Task ID
- * @param task Updated task data
- * @param callback Optional callback with APIResponse result
- * @returns Updated task or null on error
- */
 const updateTask = async (
   id: number,
   task: Omit<Task, 'id' | 'created_at' | 'updated_at'>,
@@ -266,13 +200,6 @@ const updateTask = async (
   }
 };
 
-/**
- * Partially updates an existing task via API (PATCH).
- * @param id Task ID
- * @param patch Partial task data to update
- * @param callback Optional callback with APIResponse result
- * @returns Updated task or null on error
- */
 const patchTask = async (
   id: number,
   patch: TaskPatch,
@@ -314,12 +241,6 @@ const patchTask = async (
   }
 };
 
-/**
- * Deletes a task by ID via API.
- * @param id Task ID
- * @param callback Optional callback with APIResponse result
- * @returns true if deleted, false on error
- */
 const deleteTask = async (
   id: number,
   callback?: (response: APIResponse<boolean>) => void,
@@ -350,11 +271,6 @@ const deleteTask = async (
   }
 };
 
-/**
- * Inspects a task handler to check if it can process the given URL.
- * @param request Task inspect request parameters
- * @returns Inspect result or null on error
- */
 const inspectTaskHandler = async (
   payload: TaskInspectRequest,
 ): Promise<TaskInspectResponse | null> => {
@@ -374,11 +290,6 @@ const inspectTaskHandler = async (
   }
 };
 
-/**
- * Marks all items from a task as downloaded in the download archive.
- * @param id Task ID
- * @returns Success message or null on error
- */
 const markTaskItems = async (id: number): Promise<string | null> => {
   try {
     const response = await request(`/api/tasks/${id}/mark`, { method: 'POST' });
@@ -397,11 +308,6 @@ const markTaskItems = async (id: number): Promise<string | null> => {
   }
 };
 
-/**
- * Removes all items from a task from the download archive.
- * @param id Task ID
- * @returns Success message or null on error
- */
 const unmarkTaskItems = async (id: number): Promise<string | null> => {
   try {
     const response = await request(`/api/tasks/${id}/mark`, { method: 'DELETE' });
@@ -420,11 +326,6 @@ const unmarkTaskItems = async (id: number): Promise<string | null> => {
   }
 };
 
-/**
- * Generates metadata for a task (tvshow.nfo, info.json, thumbnails).
- * @param id Task ID
- * @returns Metadata response or null on error
- */
 const generateTaskMetadata = async (id: number): Promise<TaskMetadataResponse | null> => {
   try {
     const response = await request(`/api/tasks/${id}/metadata`, { method: 'POST' });
@@ -443,37 +344,18 @@ const generateTaskMetadata = async (id: number): Promise<TaskMetadataResponse | 
   }
 };
 
-/**
- * Clears the last error message.
- */
 const clearError = () => (lastError.value = null);
 
-/**
- * Checks if a task is currently in progress.
- * @param id Task ID
- * @returns true if the task is in progress
- */
 const isTaskInProgress = (id: number): boolean => inProgressIds.value.has(id);
 
-/**
- * Sets a task as in progress.
- * @param id Task ID
- */
 const setTaskInProgress = (id: number): void => {
   inProgressIds.value.add(id);
 };
 
-/**
- * Clears the in progress state for a task.
- * @param id Task ID
- */
 const clearTaskInProgress = (id: number): void => {
   inProgressIds.value.delete(id);
 };
 
-/**
- * Resets all state to initial values (for testing only).
- */
 const __resetForTesting = () => {
   tasks.value = [];
   pagination.value = {
@@ -491,12 +373,6 @@ const __resetForTesting = () => {
   inProgressIds.value = new Set();
 };
 
-/**
- * useTasks composable
- *
- * Returns reactive state and CRUD methods for tasks.
- * @returns Object with state and API methods
- */
 export const useTasks = () => ({
   tasks: readonly(tasks),
   pagination: readonly(pagination),

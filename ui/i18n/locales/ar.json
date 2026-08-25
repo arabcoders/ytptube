@@ -1286,6 +1286,11 @@
         "navLabel": "الميزات",
         "description": "ميزات التنزيل والأتمتة ومكتبة الوسائط."
       },
+      "nativeBuilds": {
+        "title": "الإصدارات الأصلية",
+        "navLabel": "الإصدارات الأصلية",
+        "description": "تثبيت وتشغيل إصدارات Windows وmacOS وLinux."
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

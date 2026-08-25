@@ -1,10 +1,21 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, mock } from 'bun:test';
 
 import {
   createConnectionAttempt,
   createConnectionDeadline,
+  handleNotification,
   withWsTicket,
 } from '~/composables/useAppSocket';
+import type { EventPayload } from '~/types/sockets';
+
+const event = (message: string): EventPayload<Record<string, unknown>> => ({
+  id: 'event-id',
+  created_at: '2026-08-25T00:00:00Z',
+  event: 'task_finished',
+  title: 'Task finished',
+  message,
+  data: {},
+});
 
 describe('createConnectionDeadline', () => {
   it('keeps total deadline', () => {
@@ -88,5 +99,35 @@ describe('withWsTicket', () => {
   it('keeps_url_without_ticket', () => {
     const url = 'wss://backend.example/base-path/ws?_=1';
     expect(withWsTicket(url)).toBe(url);
+  });
+});
+
+describe('handleNotification', () => {
+  it('hides task completion', () => {
+    const success = mock(() => {});
+    const toast = {
+      info: mock(() => {}),
+      success,
+      warning: mock(() => {}),
+      error: mock(() => {}),
+    };
+
+    handleNotification('task_finished', event('Task finished'), toast);
+
+    expect(success).toHaveBeenCalledWith('Task finished', { lowPriority: true });
+  });
+
+  it('shows task failure', () => {
+    const error = mock(() => {});
+    const toast = {
+      info: mock(() => {}),
+      success: mock(() => {}),
+      warning: mock(() => {}),
+      error,
+    };
+
+    handleNotification('task_error', event('Task failed'), toast);
+
+    expect(error).toHaveBeenCalledWith('Task failed', {});
   });
 });

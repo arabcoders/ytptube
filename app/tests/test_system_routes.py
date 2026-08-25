@@ -1,3 +1,4 @@
+import asyncio
 import json
 import importlib
 from dataclasses import dataclass
@@ -20,7 +21,7 @@ from app.routes.api.system import (
 )
 from app.routes.api import system
 from app.library.router import ROUTES
-from app.tests.helpers import url_for
+from app.tests.helpers import set_test_env, url_for
 
 
 @dataclass
@@ -88,10 +89,7 @@ class TestShutdownEndpoint:
 
 
 class TestCheckUpdatesEndpoint:
-    """Tests for the check updates endpoint."""
-
     def setup_method(self):
-        """Reset singletons before each test."""
         if "system.check_updates" not in ROUTES.get("http", {}):
             importlib.reload(system)
         Config._reset_singleton()
@@ -99,7 +97,6 @@ class TestCheckUpdatesEndpoint:
 
     @pytest.mark.asyncio
     async def test_check_updates_disabled(self, test_client):
-        """Test check updates returns error when disabled in config."""
         config = Config.get_instance()
         config.check_for_updates = False
         encoder = Encoder()
@@ -117,7 +114,6 @@ class TestCheckUpdatesEndpoint:
 
     @pytest.mark.asyncio
     async def test_updates_current(self, test_client):
-        """Test check updates returns up_to_date status."""
         config = Config.get_instance()
         config.check_for_updates = True
         config.app_version = "v1.0.0"
@@ -140,7 +136,6 @@ class TestCheckUpdatesEndpoint:
 
     @pytest.mark.asyncio
     async def test_check_updates_update_available(self, test_client):
-        """Test check updates returns update_available status with new version."""
         config = Config.get_instance()
         config.check_for_updates = True
         config.app_version = "v1.0.0"
@@ -278,10 +273,10 @@ class TestSystemLimitsEndpoint:
             "available": 3,
         }
 
-    def test_config_reads_live_premiere(self):
-        with patch.dict("os.environ", {"YTP_PREVENT_LIVE_PREMIERE": "false"}, clear=False):
-            Config._reset_singleton()
-            config = Config.get_instance()
+    def test_config_reads_live_premiere(self, monkeypatch: pytest.MonkeyPatch):
+        set_test_env(monkeypatch, {"prevent_live_premiere": False, "file_logging": False})
+        Config._reset_singleton()
+        config = Config.get_instance()
 
         assert config.prevent_live_premiere is False
 
@@ -292,6 +287,29 @@ class TestSystemDiagnosticsEndpoint:
             importlib.reload(system)
         Config._reset_singleton()
         Cache.get_instance().clear()
+
+    @pytest.mark.asyncio
+    async def test_command_timeout_kills(self, monkeypatch: pytest.MonkeyPatch):
+        from app.library import diagnostics
+
+        class HangingProcess:
+            returncode = None
+            killed = False
+
+            def kill(self) -> None:
+                self.killed = True
+
+            async def communicate(self):
+                if not self.killed:
+                    await asyncio.Event().wait()
+                return b"", b""
+
+        proc = HangingProcess()
+        monkeypatch.setattr(diagnostics.asyncio, "create_subprocess_exec", AsyncMock(return_value=proc))
+
+        with pytest.raises(TimeoutError):
+            await diagnostics._run_command("test", wait_seconds=0.001)
+        assert proc.killed is True
 
     @pytest.mark.asyncio
     async def test_diagnostics_always_200(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_client):

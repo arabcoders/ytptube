@@ -3,9 +3,13 @@
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
 or the `environment:` section in `compose.yaml` file.
 
+> [!NOTE]
+>
+> Most environment variables are shared between native and container deployments, but some default values differ for 
+> native builds. See [Native builds](docs/native-builds.md#files-and-settings) for the native-specific defaults.
 
 <details>
-<summary>Click to expand all environment Variables</summary>
+<summary>Click to expand all environment variables</summary>
 
 | Environment Variable            | Description                                                         | Default               |
 | ------------------------------- | ------------------------------------------------------------------- | --------------------- |
@@ -109,30 +113,26 @@ Set `url`, `preset`, and `apiKey` for your YTPTube instance. Create the API key 
 
 ## iOS Shortcuts
 
-You can download [Add To YTPTube](https://www.icloud.com/shortcuts/6df61c97d97b4e539c9100999ba39dd4) shortcut and use it to send links to your YTPTube instance.
-You have to edit the shortcut and replace the following:
+You can download [Add To YTPTube](https://www.icloud.com/shortcuts/6df61c97d97b4e539c9100999ba39dd4) shortcut and use it 
+to send links to your YTPTube instance. You have to edit the shortcut and replace the following:
 
 - `https://ytp.example.org` with your YTPTube instance.
 - The shortcut currently uses Basic authentication. Replace its credential value with `username:ytp_...`: your account
   username and an API key, not your account password. Leave it empty when authentication is disabled.
 
-This shortcut is powerful, as it's allow you to select your preset on the fly pulled directly from your instance.
-Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
-and use that preset to download directly from your iOS device.
+This shortcut lets you select a preset from your instance. You can add presets for websites that need cookies and use
+those presets to download directly from your iOS device.
 
 ### Advanced iOS Shortcut
 
-This shortcut [YTPTube To Media](https://www.icloud.com/shortcuts/4dc579382f254635ad5785424055f173) is more advanced, as it's parses
-the `yt-dlp` output and attempt to download the media directly to your iOS device. It doesn't always work, but it's a good
-starting point for those who want to download media directly to their iOS device. We provide no support for this use case
-other than the shortcut itself. this shortcut missing support for parsing the http_headers, it's only parse the cookies.
+This shortcut [YTPTube To Media](https://www.icloud.com/shortcuts/4dc579382f254635ad5785424055f173) parses the `yt-dlp`
+output and attempts to download media directly to your iOS device. It doesn't always work. We provide no support for
+this use case beyond the shortcut itself. The shortcut doesn't parse `http_headers`; it parses only cookies.
 
 # Authentication
 
-Server installations require a local account by default. Native builds disable authentication by default. You can
-set `YTP_DISABLE_AUTH=false` to enable auth for native builds.
-
-Open the account menu, select **Create key**, enter a name, and copy the key when it appears. The key is shown once.
+Server installations require a local account by default. Open the account menu, select **Create key**, enter a name, 
+and copy the key when it appears. The key is shown once.
 
 Send API keys in the `Authorization: Bearer ytp_...` header.
 
@@ -158,15 +158,7 @@ docker exec -ti -w /app ytptube python -m app.scripts.reset_password --username 
 
 For Podman, replace `docker` with `podman` in the command above.
 
-For a native build:
-
-```bash
-YTPTube --reset-password --username USERNAME
-```
-
-For windows replace `YTPTube` with the path to the `YTPTube.exe` binary.
-
-After secussfull password reset. the related user cookie sessions will be invalidated.
+A successful password reset invalidates the related user's sessions.
 
 # Security recommendations
 
@@ -228,11 +220,30 @@ Reference: [Issue #363](https://github.com/arabcoders/ytptube/issues/363)
 
 # I want to use link with playlist but only download the video not all the videos in the playlist?
 
-Simply create a preset, and in the `CLI options` field set `--no-playlist`. Then select the preset
-whenever the link includes a playlist id.
+You can do it in 3 different ways:
 
-> [!NOTE]
-> You can also do the same via advanced options `CLI options` field, but presets are more convenient.
+1. use the `--no-playlist` option in the `CLI options` field in the download form.
+
+2. create custom field using type bool and set the field as `--no-playlist` or use the following import string
+
+<details>
+<summary>import as custom field</summary>
+
+```text
+eyJuYW1lIjoiTm8gcGxheWxpc3QiLCJkZXNjcmlwdGlvbiI6ImRvIG5vdCBwcm9jZXNzIHBsYXlsaXN0IiwiZmllbGQiOiItLW5vLXBsYXlsaXN0Iiwia2luZCI6ImJvb2wiLCJpY29uIjoiaS1sdWNpZGUtbGlzdC12aWRlbyIsIm9yZGVyIjoxLCJleHRyYXMiOnt9LCJfdHlwZSI6ImRsX2ZpZWxkIiwiX3ZlcnNpb24iOiIxLjAifQ
+```
+
+</details>
+
+3. Create a preset, and in the `CLI options` field set `--no-playlist`. Then select the preset, or use the following import string:
+
+<details>
+<summary>import as preset</summary>
+
+```text
+eyJuYW1lIjoibm9fcGxheWxpc3QiLCJjbGkiOiItLW5vLXBsYXlsaXN0IiwiX3R5cGUiOiJwcmVzZXQiLCJfdmVyc2lvbiI6IjIuNiJ9
+```
+</details>
 
 # Install specific yt-dlp version?
 
@@ -243,75 +254,6 @@ YTP_YTDLP_VERSION=2025.07.21 or master or nightly
 ```
 
 Then restart the container to apply the changes.
-
-# Manually update yt-dlp in native executable?
-
-Stop YTPTube before changing its Python packages. Use a Python interpreter with the same major and minor version and
-architecture as the native build.
-
-Install yt-dlp into the versioned package directory under YTPTube's config location. On Linux:
-
-```bash
-export YTP_CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/ytptube"
-TARGET="$YTP_CONFIG_PATH/python3.13-packages"
-mkdir -p "$TARGET"
-python3.13 -m pip install --upgrade --target "$TARGET" "yt-dlp[default]"
-./YTPTube
-```
-
-On macOS, use `export YTP_CONFIG_PATH="$HOME/Library/Application Support/ytptube"` before the remaining commands.
-These are the native executable's default config locations, so later launches find the override without requiring a
-custom environment variable.
-
-On Windows, use PowerShell and a matching 64-bit or ARM64 Python installation:
-
-```powershell
-$env:YTP_CONFIG_PATH = Join-Path $env:LOCALAPPDATA "arabcoders\ytptube"
-$target = Join-Path $env:YTP_CONFIG_PATH "python3.13-packages"
-New-Item -ItemType Directory -Force $target | Out-Null
-py -3.13 -m pip install --upgrade --target $target "yt-dlp[default]"
-.\YTPTube.exe
-```
-
-The same target supports pinned, nightly, and master versions:
-
-```bash
-# Pinned release
-python3.13 -m pip install --upgrade --target "$TARGET" "yt-dlp[default]==2026.01.26"
-
-# Nightly channel
-python3.13 -m pip install --upgrade --pre --target "$TARGET" "yt-dlp[default]"
-
-# Master channel; requires Git
-python3.13 -m pip install --upgrade --target "$TARGET" \
-  "yt-dlp[default] @ git+https://github.com/yt-dlp/yt-dlp.git@master"
-```
-
-The equivalent PowerShell commands use the `$target` variable defined above:
-
-```powershell
-# Pinned release
-py -3.13 -m pip install --upgrade --target $target "yt-dlp[default]==2026.01.26"
-
-# Nightly channel
-py -3.13 -m pip install --upgrade --pre --target $target "yt-dlp[default]"
-
-# Master channel; requires Git
-py -3.13 -m pip install --upgrade --target $target "yt-dlp[default] @ git+https://github.com/yt-dlp/yt-dlp.git@master"
-```
-
-To keep packages elsewhere, set `YTP_PYTHON_PATH` when starting YTPTube. For application packages loaded after startup,
-such as yt-dlp, these directories take precedence over the config-local directory and bundled copy:
-
-```bash
-YTP_PYTHON_PATH="/path/to/packages" ./YTPTube
-```
-
-Separate multiple directories with `:` on Linux and macOS or `;` on Windows. Keep `YTP_PYTHON_PATH` set on every
-launch. On Windows, for example, use `$env:YTP_PYTHON_PATH = "C:\path\to\packages"` before running `YTPTube.exe`.
-Only add trusted directories that cannot be modified by untrusted users, because Python modules loaded from these
-locations execute with the same permissions as YTPTube. Reinstall the override when a future native build changes its
-bundled Python major or minor version.
 
 # Custom output template placeholders
 
@@ -379,7 +321,7 @@ Then create a new preset, and in the `CLI options` field set the following:
 --extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416" 
 ```
 
-For more information please visit [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.
+See the [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.
 
 # Troubleshooting and submitting issues
 
@@ -388,14 +330,14 @@ Before asking a question or submitting an issue for YTPTube, please remember tha
 postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that 
 concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project.
 
-In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, 
-and once that is working, importing the options that worked for you into a new `preset`.
+To debug these problems, first run the `yt-dlp` binary directly, bypassing the UI. Once the command works, import its
+options into a new `preset`.
 
 ## Via HTTP
 
-If you have enabled the web terminal via `YTP_CONSOLE_ENABLED` environment variable, simply go to `Other > Terminal` use
- the yt-dlp command, the interface is jailed to the `yt-dlp` binary you can't access anything else. Or from download form 
- by clicking `advanced options` button than the yellow terminal icon `Run directly in console`.
+If you have enabled the web terminal with the `YTP_CONSOLE_ENABLED` environment variable, go to `Other > Terminal` and
+run the `yt-dlp` command. You can also open the download form, click `advanced options`, and then click the 
+yellow terminal icon, `Run directly in console`.
 
 ## Via CLI 
 
@@ -411,7 +353,7 @@ Once there, you can use the yt-dlp command freely.
 
 # Run behind reverse proxy.
 
-It's advisable to run YTPTube behind a reverse proxy, if better authentication and/or HTTPS support are required.
+A reverse proxy can provide additional authentication and/or HTTPS support for YTPTube.
 
 ## Caddy http server
 
@@ -437,16 +379,15 @@ example.org {
 
 # How to autoload yt-dlp plugins?
 
-Loading yt-dlp plugins in YTPTube is quite simple, we already have everything setup for you. simply, create a folder 
-inside the `/config` directory named `yt-dlp` so, the path will be `/config/yt-dlp`. then follow 
-[yt-dlp plugins docs](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#plugins) to know how to install the plugins.
+To load yt-dlp plugins in YTPTube, create a folder named `yt-dlp` inside `/config`. The path will be `/config/yt-dlp`.
+Follow the [yt-dlp plugins docs](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#plugins) to install the plugins.
 
 Once you have installed the plugins, restart the container and the plugins will be auto-loaded on demand.
 
 # How to load random backgrounds from WatchState or any other source?
 
-YTPTube can be configured to pull random background images from different sources, including `WatchState` which is another 
-project of mine, simply change the `YTP_PICTURES_BACKENDS` environment variable to the following url
+YTPTube can pull random background images from different sources, including `WatchState`, another project of mine. Set the
+`YTP_PICTURES_BACKENDS` environment variable to the following URL:
 
 ```env
 YTP_PICTURES_BACKENDS=https://watchstate.ip/v1/api/system/images/background?apikey=[api_key]
@@ -456,9 +397,9 @@ Where `[api_key]` is the api key you get from your WatchState instance.
 
 # How to use share folder or external storage as download target?
 
-You can simply mount the share folder as target for `/downloads` path, but in some cases you might face issues with permissions or
-cross-device link errors. To avoid these issues, you can mount the share folder as a named volume, and then mount the 
-named volume to `/downloads/smb` or `/downloads/nfs`.
+Mount the share folder as the target for `/downloads`. This can cause permission or cross-device link errors. To avoid
+these issues, mount the share folder as a named volume, then mount the named volume at `/downloads/smb` or
+`/downloads/nfs`.
 
 <details>
 <summary>External storage Compose example</summary>
@@ -511,7 +452,7 @@ the file browser will expose the entire container filesystem.**
 The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
 rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
 project and what i wanted to achieve with it.
-
+  
 # How to use hardware acceleration for video transcoding?
 
 As the container is rootless, we cannot do the necessary changes to the container to enable hardware acceleration.
@@ -527,7 +468,7 @@ services:
  ytptube:
     ........ # see above for the rest of the configuration
     devices:
-      # mount the dri devices to the container if you only have one gpu you can simply do the following
+       # Mount all DRI devices when the host has one GPU.
       - /dev/dri:/dev/dri                       
       # Otherwise, selectively mount the devices you need.
       - /dev/dri/card0      # Intel GPU device
@@ -540,7 +481,7 @@ services:
 
 </details>
 
-This setup should work for at VAAPI encoding in `x86_64` containers.
+This setup should enable VAAPI encoding in `x86_64` containers.
 
 > [!NOTE]
 > Your `video`, `render` group id might be different from mine, you can run the follow command in docker host server to get the group ids for both groups.
@@ -560,18 +501,19 @@ software encoding by setting the `YTP_STREAMER_VCODEC` environment variable to `
 `YTP_STREAMER_VCODEC` environment variable to one of the supported GPU codecs, for example `h264_vaapi` or `h264_nvenc` depending on your GPU.
 For the supported codec implementations, see [segment_encoders.py](app/features/streaming/library/segment_encoders.py).
 
-If GPU encoding fails and software encoding is used, you will have to restart the container to try GPU encoding again. 
-as we only test for GPU encoding once on first video stream.
+If GPU encoding fails and software encoding is used, restart the container before trying GPU encoding again. YTPTube
+tests GPU encoding only once, when the first video stream starts.
 
 # How to setup CI on Gitea?
 
-The docker container builder already support self-hosted repositories like Gitea, you simply need to define two things at your repository settings.
+The Docker container builder supports self-hosted repositories such as Gitea. Define two values in your repository
+settings:
 
 1. Create a secret named `GIT_TOKEN` and set it to your Gitea personal access token.
 2. Create a variable named `REGISTRY` and set it to your docker registry, for example `gitea.domain.org`.
 
-Thats it, the `main.yml` will now disable the docker/github container registries, and use your Gitea repository instead. It will follow the usual
-naming, your container name will be named `REGISTRY/ytptube` and the tags will be the same as the ones used in the github registry.
+The `main.yml` workflow will then disable the Docker/GitHub container registries and use your Gitea repository instead.
+The container name will be `REGISTRY/ytptube`, and the tags will match those used in the GitHub registry.
 
 Unfortunately, the `native-builder.yml` workflow doesn't support self-hosted repositories at the moment.
 
@@ -614,13 +556,11 @@ services:
 > [!NOTE]
 > Replace the `tmpfs` mount with a local directory volume (`./temp:/tmp:rw`). This allows temporary files to use disk space instead of RAM.
 
-After making the changes, restart your container. This should resolve the "No space left on device" 
-error during download.
+Restart the container to apply the mount change. Temporary files will then use the mounted disk path instead of RAM.
 
 # How to prevent loading screen during YouTube premieres?
 
-Depending on how you look at it, YTPTube live download implementation is rather great and fast. However, during YouTube 
-premieres, usually streams will contain a loading screen of say, 1-5 minutes before the actual video content starts 
+During YouTube premieres, streams usually contain a loading screen of 1-5 minutes before the actual video content starts
 playing. By default we wait for 5min + the duration of the video before starting the download to ensure we get the full video without
 the loading screen. However, you can override the behavior by setting the following environment variable:
 
@@ -665,7 +605,8 @@ services:
 
 </details>
 
-For more information please visit [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or [Trawl](https://github.com/germondai/trawl) projects.
+See the [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) and [Trawl](https://github.com/germondai/trawl)
+projects.
 
 # How to use the browser extractor?
 
@@ -684,7 +625,7 @@ shorter limit, add this to the CLI options:
 --extractor-args "generic:wait=30"
 ```
 
-If for whatever reason the browser extractor fails, YTPTube falls back to the normal generic extractor.
+If the browser extractor fails, YTPTube falls back to the normal generic extractor.
 
 ## Example compose setup
 
@@ -740,22 +681,3 @@ YTPTube supports multiple languages with RTL support. Currently the following la
 
 On first visit, YTPTube attempts to detect your browser's preferred language and switches automatically if a matching 
 translation is available.
-
----
-
-# MacOS execuable
-
-Recent MacOS versions have introduced stricter security measures that can prevent the YTPTube from running. You may 
-receive errors like:
-
-- Failed to load Python shared library '...'
-
-To fix this, you need to run
-
-```bash
-# Replace the version number with the actual version you downloaded.
-xattr -cr "/Users/abf/Downloads/dist/YTPTube-v2.6.7"
-```
-This command removes the quarantine attribute from the application.
-
-If that doesnt fix it you may have to allow the app to run in your security settings. Go to `System Preferences > Security & Privacy > General` and click `Open Anyway` for YTPTube.

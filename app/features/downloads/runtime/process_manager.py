@@ -1,5 +1,6 @@
 """Process lifecycle management for downloads."""
 
+import asyncio
 import logging
 import multiprocessing
 import os
@@ -8,6 +9,8 @@ from collections.abc import Callable
 from typing import Any
 
 from .utils import wait_for_process_with_timeout
+
+PROCESS_JOIN_TIMEOUT = 2.0
 
 
 class ProcessManager:
@@ -244,6 +247,14 @@ class ProcessManager:
                     proc.kill()
                     wait_for_process_with_timeout(proc, 1)
 
+            if proc.is_alive():
+                self.logger.error(
+                    "Download process PID=%s remained alive after forced termination.",
+                    proc.pid,
+                    extra={"download": {"download_id": self.download_id, "process_id": proc.pid, "force": True}},
+                )
+                return False
+
             self.logger.info(
                 "Download process PID=%s stopped.",
                 proc.pid,
@@ -268,15 +279,7 @@ class ProcessManager:
         return False
 
     async def close(self) -> bool:
-        """
-        Close the download process and clean up resources.
-
-        This method must be called to properly release resources.
-
-        Returns:
-            True if close was successful, False otherwise
-
-        """
+        """Close the process and release its resources."""
         if not self.started() or self.cancel_in_progress:
             return False
 
@@ -298,11 +301,7 @@ class ProcessManager:
         )
 
         try:
-            self.kill()
-
-            import asyncio
-
-            loop = asyncio.get_running_loop()
+            await asyncio.to_thread(self.kill)
 
             current = self.proc
             if current is not None and current.is_alive():
@@ -311,7 +310,21 @@ class ProcessManager:
                     procId,
                     extra={"download": {"download_id": self.download_id, "process_ident": procId}},
                 )
-                await loop.run_in_executor(None, current.join)
+                for action in (None, current.terminate, current.kill):
+                    if action is not None and current.is_alive():
+                        action()
+                    try:
+                        await asyncio.wait_for(
+                            asyncio.to_thread(current.join, PROCESS_JOIN_TIMEOUT), PROCESS_JOIN_TIMEOUT + 0.1
+                        )
+                    except TimeoutError:
+                        self.logger.warning("Download process PID='%s' did not join before the deadline.", procId)
+                    if not current.is_alive():
+                        break
+
+                if current.is_alive():
+                    self.logger.error("Download process PID='%s' remained after forced cleanup.", procId)
+                    return False
                 self.logger.debug(
                     "Download process PID='%s' closed.",
                     procId,
@@ -319,8 +332,12 @@ class ProcessManager:
                 )
 
             if self.proc:
-                self.proc.close()
-                self.proc = None
+                try:
+                    self.proc.close()
+                except Exception:
+                    self.logger.warning("Could not close process handle PID='%s'.", procId, exc_info=True)
+                finally:
+                    self.proc = None
 
             self.logger.debug(
                 "Closed download process PID='%s'.",

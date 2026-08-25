@@ -1286,6 +1286,11 @@
         "navLabel": "機能",
         "description": "ダウンロード、自動化、メディアライブラリ機能。"
       },
+      "nativeBuilds": {
+        "title": "ネイティブビルド",
+        "navLabel": "ネイティブビルド",
+        "description": "Windows、macOS、Linux 版のインストールと実行。"
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

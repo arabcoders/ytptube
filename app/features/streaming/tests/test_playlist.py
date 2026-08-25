@@ -10,7 +10,6 @@ from app.features.streaming.types import StreamingError
 
 @pytest.mark.asyncio
 async def test_make_playlist_no_subtitles(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    # Setup paths
     base = tmp_path / "downloads"
     base.mkdir()
     # Use a relative subpath with spaces to validate quoting behavior

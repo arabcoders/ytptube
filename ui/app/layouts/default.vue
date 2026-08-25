@@ -433,6 +433,7 @@ import {
   getActiveNavItem,
   getNavItems,
   getNavSections,
+  getSearchNavItems,
   isNavItemActive,
   type NavItem,
 } from '~/utils/topLevelNavigation';
@@ -677,6 +678,7 @@ const navigationAvailability = computed(() => ({
 }));
 
 const navItems = computed(() => getNavItems(navigationAvailability.value));
+const searchNavItems = computed(() => getSearchNavItems(navigationAvailability.value));
 
 const groupSectionEntries = (entries: Array<NavItem>): Array<Array<NavItem>> => {
   const order = [...new Set(entries.map((entry) => entry.group))];
@@ -786,13 +788,12 @@ const sidebarSections = computed<Array<SidebarSection>>(() =>
 );
 
 const routeSearchGroups = computed(() => [
-  ...sidebarItems.value
+  ...getNavSections()
     .map((section) => ({
       id: section.id,
       label: t(section.label),
-      items: section.items
-        .flat()
-        .filter((entry) => entry.searchable !== false)
+      items: searchNavItems.value
+        .filter((entry) => entry.section === section.id)
         .map((entry) => ({
           label: t(entry.label),
           description: t(entry.description),

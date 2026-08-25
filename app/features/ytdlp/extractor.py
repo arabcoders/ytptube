@@ -101,14 +101,9 @@ def _sleep_timeout(config: dict[str, Any], timeout: float, budget_sleep: bool) -
 
 
 class ExtractorPool(metaclass=Singleton):
-    """
-    Manages process pool and semaphore for video information extraction.
-
-    This class uses the Singleton pattern to ensure only one instance exists.
-    """
+    """Manage extraction process pools and their concurrency limit."""
 
     def __init__(self):
-        """Initialize the extractor pool."""
         self._pool: ProcessPoolExecutor | None = None
         self._transient_pools: set[ProcessPoolExecutor] = set()
         self._semaphore: asyncio.Semaphore | None = None
@@ -116,17 +111,9 @@ class ExtractorPool(metaclass=Singleton):
 
     @classmethod
     def get_instance(cls) -> "ExtractorPool":
-        """
-        Get the singleton instance.
-
-        Returns:
-            ExtractorPool instance
-
-        """
         return cls()
 
     def attach(self, app: web.Application) -> None:
-        """Attach the extractor pool to the application (no-op for now)."""
         app.on_shutdown.append(self.shutdown)
         Services.get_instance().add(type(self).__name__, self)
 

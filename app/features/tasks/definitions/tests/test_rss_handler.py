@@ -32,8 +32,6 @@ def _opts(tmp_path: Path) -> DummyOpts:
 
 
 class TestRssHandlerParsing:
-    """Test URL parsing for RSS/Atom feeds using the tests() method."""
-
     @pytest.mark.parametrize(("url", "expected"), RssGenericHandler.tests())
     def test_url_parsing(self, url: str, expected: bool):
         result = RssGenericHandler.parse(url)
@@ -44,8 +42,6 @@ class TestRssHandlerParsing:
 
 
 class TestRssHandlerExtraction:
-    """Test RSS feed extraction and parsing."""
-
     @pytest.mark.asyncio
     async def test_podcast_enclosure(self, monkeypatch: pytest.MonkeyPatch) -> None:
         podcast = """<?xml version="1.0" encoding="UTF-8"?>
@@ -88,7 +84,6 @@ class TestRssHandlerExtraction:
 
     @pytest.mark.asyncio
     async def test_rss_atom_feed_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """Test extraction from Atom feed."""
         atom_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
   <title>Example Feed</title>
@@ -160,7 +155,6 @@ class TestRssHandlerExtraction:
 
     @pytest.mark.asyncio
     async def test_rss_feed_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """Test extraction from RSS feed."""
         rss_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
@@ -379,7 +373,6 @@ class TestRssHandlerExtraction:
 
     @pytest.mark.asyncio
     async def test_can_handle(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """Test can_handle method."""
         atom_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <entry>
@@ -417,11 +410,8 @@ class TestRssHandlerExtraction:
 
 
 class TestRssHandlerEdgeCases:
-    """Test edge cases in RSS handling."""
-
     @pytest.mark.asyncio
     async def test_empty_feed(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """Test handling of empty feed."""
         empty_feed = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
@@ -451,7 +441,6 @@ class TestRssHandlerEdgeCases:
 
     @pytest.mark.asyncio
     async def test_invalid_feed_url(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """Test handling of invalid feed URL."""
         from app.features.tasks.definitions.results import TaskFailure
 
         async def fake_request(**kwargs):  # noqa: ARG001
@@ -474,7 +463,6 @@ class TestRssHandlerEdgeCases:
 
     @pytest.mark.asyncio
     async def test_missing_urls_in_feed(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """Test handling of entries missing URLs."""
         feed = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
@@ -504,7 +492,6 @@ class TestRssHandlerEdgeCases:
 
         result = await RssGenericHandler.extract(task)
 
-        # Should only include the item with URL
         assert isinstance(result, TaskResult)
         assert len(result.items) == 1
         assert result.items[0].title == "Valid Item"

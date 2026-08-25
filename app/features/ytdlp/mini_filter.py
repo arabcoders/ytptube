@@ -12,22 +12,6 @@ type AST_NODE = tuple[Any, ...]
 
 
 def match_str(expr: str, dct: dict) -> bool:
-    """
-    Convenience function to evaluate a filter expression against a dict.
-
-    Note: This implementation uses numeric duration/filesize values in tests to avoid
-    yt-dlp's inconsistent unit parsing behavior. yt-dlp's match_str has known issues
-    with duration unit formats like "2m" that don't behave consistently with their
-    numeric equivalents (e.g., "120").
-
-    Args:
-        expr (str): Filter expression string
-        dct (dict):  Dictionary of values to check against
-
-    Returns:
-        bool: True/False if expression matches
-
-    """
     return MiniFilter(expr).evaluate(dct)
 
 
@@ -42,11 +26,9 @@ class MiniFilter:
     - Export to yt-dlp compatible `--match-filters`.
     """
 
-    # Type aliases for better readability
     Token = tuple[str, str]
     ASTNode = tuple[str, ...]
 
-    # Supported string operators
     STRING_OPERATORS: dict[str, Callable[[Any, Any], bool]] = {
         "*=": operator.contains,
         "^=": lambda attr, value: isinstance(attr, str) and attr.startswith(value),
@@ -54,7 +36,6 @@ class MiniFilter:
         "~=": lambda attr, value: bool(re.search(value, attr or "")),
     }
 
-    # Comparison operators (numeric + string)
     COMPARISON_OPERATORS: dict[str, Callable[[Any, Any], bool]] = {
         **STRING_OPERATORS,
         "<=": operator.le,
@@ -64,18 +45,12 @@ class MiniFilter:
         "=": operator.eq,
     }
 
-    # Unary operators (for presence/absence checks)
     UNARY_OPERATORS: dict[str, Callable[[Any], bool]] = {
         "": lambda v: (v is True) if isinstance(v, bool) else (v is not None),
         "!": lambda v: (v is False) if isinstance(v, bool) else (v is None),
     }
 
     def __init__(self, expr: str) -> None:
-        """
-        Initialize a parser for the given filter expression.
-
-        :param expr: Filter expression string, e.g. "(duration<10m & filesize>1MB) || uploader*='BBC'"
-        """
         self.expr: str = expr
         self.tokens: list[TOKEN] = self._tokenize(expr)
         self.pos: int = 0
@@ -86,22 +61,9 @@ class MiniFilter:
 
     @staticmethod
     def run(expr: str, dct: dict[str, Any] | bool = False) -> bool:
-        """
-        Convenience method to evaluate an expression directly.
-
-        :param expr: Filter expression string
-        :param dct:  Dictionary of values to check against
-        :return:     True/False if expression matches
-        """
         return MiniFilter(expr).evaluate(dct)
 
     def evaluate(self, dct: dict[str, Any] | bool = False) -> bool:
-        """
-        Evaluate the parsed expression against a dictionary.
-
-        :param dct: Dictionary of attributes (video metadata, etc.)
-        :return:    True/False result of expression
-        """
         data: dict[str, Any] = dct if isinstance(dct, dict) else {}
         return self._eval(self.ast, data)
 
@@ -122,10 +84,6 @@ class MiniFilter:
         return ["&".join(parts) for parts in self._export(self.ast)]
 
     def _tokenize(self, expr: str) -> list[TOKEN]:
-        """
-        Split expression into tokens (AND, OR, LPAREN, RPAREN, ATOM).
-        Parentheses, OR, and AND are only treated as syntax outside quoted values.
-        """
         tokens: list[TOKEN] = []
         atom: list[str] = []
         quote: str | None = None
@@ -243,9 +201,6 @@ class MiniFilter:
         return normalized_atom
 
     def _parse_or(self) -> AST_NODE:
-        """
-        Parse OR-expression: and_expr ('||' and_expr)*
-        """
         left: AST_NODE = self._parse_and()
         while self._accept("OR"):
             right: AST_NODE = self._parse_and()
@@ -253,9 +208,6 @@ class MiniFilter:
         return left
 
     def _parse_and(self) -> AST_NODE:
-        """
-        Parse AND-expression: atom ('&' atom)*
-        """
         left: AST_NODE = self._parse_atom()
         while self._accept("AND"):
             right: AST_NODE = self._parse_atom()
@@ -263,9 +215,6 @@ class MiniFilter:
         return left
 
     def _parse_atom(self) -> AST_NODE:
-        """
-        Parse atomic expression: '(' expr ')' | ATOM
-        """
         if self._accept("LPAREN"):
             node: AST_NODE = self._parse_or()
             self._expect("RPAREN")
@@ -275,9 +224,6 @@ class MiniFilter:
         return ("ATOM", tok[1].strip())
 
     def _accept(self, kind: str) -> bool:
-        """
-        Consume token if it matches expected kind.
-        """
         if self.pos < len(self.tokens) and kind == self.tokens[self.pos][0]:
             self.pos += 1
             return True
@@ -285,10 +231,6 @@ class MiniFilter:
         return False
 
     def _expect(self, kind: str) -> TOKEN:
-        """
-        Consume and return token if it matches expected kind,
-        otherwise raise SyntaxError.
-        """
         if self.pos < len(self.tokens) and kind == self.tokens[self.pos][0]:
             tok = self.tokens[self.pos]
             self.pos += 1
@@ -297,9 +239,6 @@ class MiniFilter:
         raise SyntaxError("Expected " + kind)
 
     def _eval(self, node: AST_NODE, dct: dict[str, Any]) -> bool:
-        """
-        Recursively evaluate AST node against dict.
-        """
         node_type: str = node[0]
 
         if "ATOM" == node_type:
@@ -314,9 +253,6 @@ class MiniFilter:
         raise ValueError("Invalid AST node " + node_type)
 
     def _export(self, node: AST_NODE) -> list[list[str]]:
-        """
-        Recursively flatten AST into AND-only filter groups.
-        """
         node_type = node[0]
         if "ATOM" == node_type:
             return [[node[1]]]
@@ -364,7 +300,7 @@ class MiniFilter:
             if None is actual_value:
                 return False
 
-            # numeric coercion using yt-dlp utils
+            # Coerce duration and filesize strings through yt-dlp's parsers.
             numeric_comparison = None
             try:
                 numeric_comparison = int(comparison_value)
@@ -377,7 +313,7 @@ class MiniFilter:
                 msg = f"Operator {g['op']} only supports string values!"
                 raise ValueError(msg)
 
-            # Also try to convert actual_value to numeric if we have a numeric comparison
+            # Apply the same coercion to string metadata before comparing.
             final_actual_value = actual_value
             if numeric_comparison is not None and isinstance(actual_value, str):
                 try:
@@ -387,7 +323,6 @@ class MiniFilter:
 
             return op(final_actual_value, numeric_comparison if None is not numeric_comparison else comparison_value)
 
-        # unary operators
         operator_rex = re.compile(r"(?P<op>{})\s*(?P<key>[a-z_]+)".format("|".join(self.UNARY_OPERATORS)))
         if m := operator_rex.fullmatch(filter_part.strip()):
             op: Any = self.UNARY_OPERATORS[m.group("op")]

@@ -43,10 +43,7 @@ from app.tests.helpers import make_test_temp_dir, temporary_test_dir
 
 
 class TestTimedLruCache:
-    """Test the timed_lru_cache decorator."""
-
     def test_basic(self):
-        """Test that timed_lru_cache caches function results."""
         call_count = 0
 
         @timed_lru_cache(ttl_seconds=60, max_size=10)
@@ -55,25 +52,21 @@ class TestTimedLruCache:
             call_count += 1
             return x * 2
 
-        # First call should execute the function
         result1 = test_function(5)
         assert result1 == 10
         assert call_count == 1
 
-        # Second call with same argument should return cached result
         result2 = test_function(5)
         assert result2 == 10
         assert call_count == 1  # Should not increment
 
-        # Different argument should execute the function again
         result3 = test_function(10)
         assert result3 == 20
         assert call_count == 2
 
-    def test_timed_lru_cache_expiration(self):
-        """Test that cache expires after TTL."""
-        import time
-
+    def test_timed_lru_cache_expiration(self, monkeypatch: pytest.MonkeyPatch):
+        now = [1000.0]
+        monkeypatch.setattr("app.library.Utils.time.monotonic", lambda: now[0])
         call_count = 0
 
         @timed_lru_cache(ttl_seconds=1, max_size=10)  # 1 second TTL
@@ -82,26 +75,21 @@ class TestTimedLruCache:
             call_count += 1
             return x * 2
 
-        # First call
         result1 = test_function(5)
         assert result1 == 10
         assert call_count == 1
 
-        # Second call immediately should be cached
         result2 = test_function(5)
         assert result2 == 10
         assert call_count == 1
 
-        # Wait for cache to expire
-        time.sleep(1.1)
+        now[0] += 2
 
-        # Call after expiration should execute function again
         result3 = test_function(5)
         assert result3 == 10
         assert call_count == 2
 
     def test_lru_cache_methods_exposed(self):
-        """Test that cache_clear and cache_info methods are exposed."""
         from app.library.Utils import timed_lru_cache
 
         @timed_lru_cache(ttl_seconds=60, max_size=10)
@@ -111,56 +99,45 @@ class TestTimedLruCache:
         assert hasattr(test_function, "cache_clear"), "Cached function should have cache_clear method"
         assert hasattr(test_function, "cache_info"), "Cached function should have cache_info method"
 
-        # Call function to populate cache
         test_function(5)
 
-        # Get cache info
         info = test_function.cache_info()
         assert info.hits == 0
         assert info.misses == 1
 
-        # Call again to test hit
         test_function(5)
         info = test_function.cache_info()
         assert info.hits == 1
         assert info.misses == 1
 
-        # Clear cache
         test_function.cache_clear()
         info = test_function.cache_info()
         assert info.hits == 0
         assert info.misses == 0
 
     def test_lru_cache_max_size(self):
-        """Test that cache respects max_size limit."""
         from app.library.Utils import timed_lru_cache
 
         @timed_lru_cache(ttl_seconds=60, max_size=2)
         def test_function(x):
             return x * 2
 
-        # Fill cache to max size
         test_function(1)
         test_function(2)
 
         info = test_function.cache_info()
         assert info.misses == 2
 
-        # Adding another item should not exceed max size
         test_function(3)
         info = test_function.cache_info()
         assert info.misses == 3
 
-        # Test that earlier entries may be evicted
         test_function(1)  # This might be a cache miss due to LRU eviction
 
 
 class TestAsyncTimedLruCache:
-    """Test async functionality of timed_lru_cache decorator."""
-
     @pytest.mark.asyncio
     async def test_timed_lru_cache_basic(self):
-        """Test basic async caching functionality."""
         from app.library.Utils import timed_lru_cache
 
         call_count = 0
@@ -171,26 +148,24 @@ class TestAsyncTimedLruCache:
             call_count += 1
             return x * 2
 
-        # First call should execute the function
         result1 = await async_test_func(5)
         assert result1 == 10
         assert call_count == 1
 
-        # Second call should use cached result
         result2 = await async_test_func(5)
         assert result2 == 10
         assert call_count == 1  # Should not increment
 
-        # Different argument should execute function again
         result3 = await async_test_func(3)
         assert result3 == 6
         assert call_count == 2
 
     @pytest.mark.asyncio
-    async def test_timed_lru_cache_expiry(self):
-        """Test that async cache entries expire after TTL."""
+    async def test_timed_lru_cache_expiry(self, monkeypatch: pytest.MonkeyPatch):
         from app.library.Utils import timed_lru_cache
 
+        now = [1000.0]
+        monkeypatch.setattr("app.library.Utils.time.monotonic", lambda: now[0])
         call_count = 0
 
         @timed_lru_cache(ttl_seconds=0.1, max_size=128)  # 100ms TTL
@@ -199,27 +174,22 @@ class TestAsyncTimedLruCache:
             call_count += 1
             return x * 3
 
-        # First call
         result1 = await async_expire_func(2)
         assert result1 == 6
         assert call_count == 1
 
-        # Immediate second call should use cache
         result2 = await async_expire_func(2)
         assert result2 == 6
         assert call_count == 1
 
-        # Wait for cache to expire
-        await asyncio.sleep(0.15)
+        now[0] += 1
 
-        # Third call should execute function again due to expiry
         result3 = await async_expire_func(2)
         assert result3 == 6
         assert call_count == 2
 
     @pytest.mark.asyncio
     async def test_async_cache_methods(self):
-        """Test that async cached functions expose cache management methods."""
         from app.library.Utils import timed_lru_cache
 
         @timed_lru_cache(ttl_seconds=300, max_size=128)
@@ -229,7 +199,6 @@ class TestAsyncTimedLruCache:
         assert hasattr(async_method_test, "cache_clear"), "Async cached function should have cache_clear method"
         assert hasattr(async_method_test, "cache_info"), "Async cached function should have cache_info method"
 
-        # Test cache_info
         info = async_method_test.cache_info()
         assert hasattr(info, "hits")
         assert hasattr(info, "misses")
@@ -237,7 +206,6 @@ class TestAsyncTimedLruCache:
         assert hasattr(info, "currsize")
         assert info.maxsize == 128
 
-        # Test cache_clear
         await async_method_test(1)
         async_method_test.cache_clear()
         info_after_clear = async_method_test.cache_info()
@@ -245,14 +213,12 @@ class TestAsyncTimedLruCache:
 
     @pytest.mark.asyncio
     async def test_async_cache_max_size(self):
-        """Test that async cache respects max_size parameter."""
         from app.library.Utils import timed_lru_cache
 
         @timed_lru_cache(ttl_seconds=300, max_size=2)
         async def async_limited_func(x):
             return x * 4
 
-        # Fill cache beyond max_size
         result1 = await async_limited_func(1)
         result2 = await async_limited_func(2)
         result3 = await async_limited_func(3)
@@ -261,39 +227,31 @@ class TestAsyncTimedLruCache:
         assert result2 == 8, "async_limited_func(2) should return 8"
         assert result3 == 12, "async_limited_func(3) should return 12 (should evict oldest entry)"
 
-        # Check cache size is limited
         info = async_limited_func.cache_info()
         assert info.currsize <= 2
 
 
 class TestCalcDownloadPath:
-    """Test the calc_download_path function."""
-
     def setup_method(self):
-        """Set up test directory."""
         self.temp_dir = str(make_test_temp_dir("calc-download-path"))
         self.base_path = Path(self.temp_dir)
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_download_path_base_only(self):
-        """Test calculating download path with only base path."""
         result = calc_download_path(str(self.base_path), create_path=False)
         assert result == str(self.base_path), "Should return base path when no folder is provided"
 
     def test_calc_download_path_folder(self):
-        """Test calculating download path with folder."""
         folder = "test_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / folder)
         assert result == expected, "Should append folder to base path"
 
     def test_download_path_creates_directory(self):
-        """Test that the function creates directories when create_path=True."""
         folder = "new_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / folder
@@ -301,14 +259,12 @@ class TestCalcDownloadPath:
         assert expected_path.exists(), "Directory should be created"
 
     def test_download_path_path_object(self):
-        """Test with Path object as input."""
         folder = "test_folder"
         result = calc_download_path(self.base_path, folder, create_path=False)
         expected = str(self.base_path / folder)
         assert result == expected, "Should handle Path object for base path"
 
     def test_download_path_nested_folder(self):
-        """Test with nested folder structure."""
         folder = "parent/child"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "parent" / "child"
@@ -316,56 +272,47 @@ class TestCalcDownloadPath:
         assert expected_path.exists(), "Nested directories should be created"
 
     def test_download_path_none_folder(self):
-        """Test with None folder."""
         result = calc_download_path(str(self.base_path), None, create_path=False)
         assert result == str(self.base_path), "Should return base path when folder is None"
 
     def test_path_strips_leading_slash(self):
-        """Test that leading slash is removed from folder."""
         folder = "/test_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / "test_folder")
         assert result == expected, "Should remove leading slash from folder"
 
     def test_calc_path_dotdot(self):
-        """Test path traversal prevention with .. sequences."""
         folder = "../outside"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_nested_dotdot(self):
-        """Test path traversal prevention with nested .. sequences."""
         folder = "safe/../../outside"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_multi_dotdot(self):
-        """Test path traversal prevention with multiple .. sequences."""
         folder = "../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_absolute(self):
-        """Test that absolute paths are made safe by removing leading slash."""
         folder = "/etc/passwd"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / "etc/passwd")
         assert result == expected, "Should remove leading slash and treat as relative path"
 
     def test_calc_path_absolute_dotdot(self):
-        """Test path traversal with absolute path containing .. sequences."""
         folder = "/../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_path_traversal_mixed(self):
-        """Test path traversal prevention with mixed safe/unsafe paths."""
         folder = "safe/../../../unsafe"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_url_encoded(self):
-        """Test path traversal prevention with URL encoded sequences."""
         folder = "safe%2F..%2F..%2Funsafe"  # safe/../unsafe encoded
         # This should be handled at a higher level, but let's test it anyway
         result = calc_download_path(str(self.base_path), folder, create_path=False)
@@ -373,7 +320,6 @@ class TestCalcDownloadPath:
         assert result == expected, "URL encoded sequences should be treated as literal"
 
     def test_path_safe_nested_paths(self):
-        """Test that legitimate nested paths work correctly."""
         folder = "videos/2024/january"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "videos" / "2024" / "january"
@@ -381,7 +327,6 @@ class TestCalcDownloadPath:
         assert expected_path.exists(), "Nested directories should be created"
 
     def test_download_path_safe_dotfiles(self):
-        """Test that paths with legitimate dot files work."""
         folder = ".hidden/folder"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / ".hidden" / "folder"
@@ -389,20 +334,17 @@ class TestCalcDownloadPath:
         assert expected_path.exists(), "Hidden directories should be created"
 
     def test_download_path_empty_folder(self):
-        """Test with empty string folder."""
         folder = ""
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         assert result == str(self.base_path), "Should return base path for empty folder"
 
     def test_download_path_whitespace_folder(self):
-        """Test with whitespace-only folder."""
         folder = "   "
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "   "
         assert result == str(expected_path), "Should handle whitespace folder names"
 
     def test_download_path_unicode_folder(self):
-        """Test with Unicode characters in folder name."""
         folder = "测试文件夹/русский/العربية"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "测试文件夹" / "русский" / "العربية"
@@ -410,7 +352,6 @@ class TestCalcDownloadPath:
         assert expected_path.exists(), "Unicode directories should be created"
 
     def test_download_path_special_characters(self):
-        """Test with special characters in folder name."""
         folder = "folder-with_special.chars(123)"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / folder
@@ -418,64 +359,54 @@ class TestCalcDownloadPath:
         assert expected_path.exists(), "Directory with special chars should be created"
 
     def test_path_null_byte_attack(self):
-        """Test that null bytes are prevented."""
         folder = "folder\x00../../../etc/passwd"
         # Any exception is acceptable for null byte attacks
         with pytest.raises((ValueError, Exception)):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_null_byte_at_end(self):
-        """Test that null bytes at end are prevented."""
         folder = "../../../etc/passwd\x00"
         # Any exception is acceptable for null byte attacks
         with pytest.raises((ValueError, Exception)):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_download_path_newline_attack(self):
-        """Test that newlines in path traversal are prevented."""
         folder = "folder\n../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_carriage_return(self):
-        """Test that carriage returns in path traversal are prevented."""
         folder = "folder\r../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_download_path_tab_attack(self):
-        """Test that tabs in path traversal are prevented."""
         folder = "folder\t../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_vertical_tab_attack(self):
-        """Test that vertical tabs in path traversal are prevented."""
         folder = "folder\x0b../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_form_feed_attack(self):
-        """Test that form feeds in path traversal are prevented."""
         folder = "folder\x0c../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_url_encoded_safe(self):
-        """Test that URL encoded sequences are treated as literals (safe)."""
         folder = "folder%00../../../etc/passwd"  # %00 is URL encoded null
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_url_encoded_safe(self):
-        """Test that URL encoded path traversal is treated as literal (safe)."""
         folder = "folder..%2F..%2F..%2Fetc%2Fpasswd"  # ..%2F = ../ encoded
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / folder)  # Should be treated as literal filename
         assert result == expected, "URL encoded sequences should be treated as literal filename"
 
     def test_download_path_backslash_attack(self):
-        """Test that backslashes in path traversal are handled correctly."""
         folder = "folder\\..\\..\\..\\etc\\passwd"
         # On Unix systems, backslashes are treated as literal characters in filenames
         result = calc_download_path(str(self.base_path), folder, create_path=False)
@@ -483,7 +414,6 @@ class TestCalcDownloadPath:
         assert result == expected, "Backslashes should be treated as literal characters on Unix"
 
     def test_calc_path_mixed_separators(self):
-        """Test path traversal with mixed separators."""
         folder = "folder/../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
@@ -509,7 +439,6 @@ class TestCalcDownloadPath:
         shutil.rmtree(sibling_dir, ignore_errors=True)
 
     def test_calc_path_symlink_outside(self):
-        """Test that symlinks pointing outside base directory are blocked."""
         # Create a symlink pointing outside the base directory
         outside_dir = Path(self.temp_dir).parent / "outside_target"
         outside_dir.mkdir(exist_ok=True)
@@ -528,7 +457,6 @@ class TestCalcDownloadPath:
             shutil.rmtree(outside_dir, ignore_errors=True)
 
     def test_calc_path_symlink_traversal(self):
-        """Test symlink combined with path traversal."""
         # Create a directory outside base
         outside_dir = Path(self.temp_dir).parent / "target_dir"
         outside_dir.mkdir(exist_ok=True)
@@ -552,7 +480,6 @@ class TestCalcDownloadPath:
             shutil.rmtree(outside_dir, ignore_errors=True)
 
     def test_calc_path_symlink_internal(self):
-        """Test that symlinks pointing inside base directory are allowed."""
         # Create target directory inside base
         target_dir = self.base_path / "target"
         target_dir.mkdir(exist_ok=True)
@@ -572,7 +499,6 @@ class TestCalcDownloadPath:
             shutil.rmtree(target_dir, ignore_errors=True)
 
     def test_path_extremely_long_path(self):
-        """Test handling of extremely long paths."""
         # Create a very long folder name (most filesystems limit to 255 chars per component)
         long_component = "a" * 300
 
@@ -581,7 +507,6 @@ class TestCalcDownloadPath:
             calc_download_path(str(self.base_path), long_component, create_path=True)
 
     def test_path_many_nested_levels(self):
-        """Test deeply nested directory structure."""
         # Create a path with many nested levels
         deep_path = "/".join([f"level{i}" for i in range(100)])
 
@@ -591,7 +516,6 @@ class TestCalcDownloadPath:
         assert result == expected, "Should handle deeply nested paths"
 
     def test_calc_path_spaces(self):
-        """Test paths with multiple spaces and special spacing."""
         folder = "folder with   multiple    spaces"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / folder
@@ -600,10 +524,7 @@ class TestCalcDownloadPath:
 
 
 class TestMergeDict:
-    """Test the merge_dict function."""
-
     def test_merge_dict_basic(self):
-        """Test basic dictionary merging."""
         source = {"a": 1, "b": 2}
         destination = {"c": 3, "d": 4}
         result = merge_dict(source, destination)
@@ -611,7 +532,6 @@ class TestMergeDict:
         assert result == expected
 
     def test_merge_dict_overwrites(self):
-        """Test that source values overwrite destination values."""
         source = {"a": 1, "b": 2}
         destination = {"b": 99, "c": 3}
         result = merge_dict(source, destination)
@@ -619,7 +539,6 @@ class TestMergeDict:
         assert result == expected
 
     def test_merge_dict_nested(self):
-        """Test merging nested dictionaries."""
         source = {"nested": {"a": 1}}
         destination = {"nested": {"b": 2}, "other": 3}
         result = merge_dict(source, destination)
@@ -627,28 +546,24 @@ class TestMergeDict:
         assert "other" in result, "Should preserve other keys"
 
     def test_merge_dict_empty_source(self):
-        """Test merging with empty source."""
         source = {}
         destination = {"a": 1, "b": 2}
         result = merge_dict(source, destination)
         assert result == destination
 
     def test_merge_dict_empty_destination(self):
-        """Test merging with empty destination."""
         source = {"a": 1, "b": 2}
         destination = {}
         result = merge_dict(source, destination)
         assert result == source
 
     def test_merge_dict_both_empty(self):
-        """Test merging two empty dictionaries."""
         result = merge_dict({}, {})
         assert result == {}
 
     # Parameter Pollution Security Tests
 
     def test_dict_blocks_class_pollution(self):
-        """Test that __class__ attribute pollution is blocked."""
         source = {"__class__": "malicious_class", "safe": "value"}
         destination = {"existing": "data"}
         result = merge_dict(source, destination)
@@ -658,7 +573,6 @@ class TestMergeDict:
         assert result["existing"] == "data", "Existing data should be preserved"
 
     def test_dict_blocks_dict_pollution(self):
-        """Test that __dict__ attribute pollution is blocked."""
         source = {"__dict__": {"injected": "payload"}, "normal": "data"}
         destination = {"target": "value"}
         result = merge_dict(source, destination)
@@ -668,7 +582,6 @@ class TestMergeDict:
         assert result["target"] == "value", "Target data should be preserved"
 
     def test_dict_blocks_globals_pollution(self):
-        """Test that __globals__ attribute pollution is blocked."""
         source = {"__globals__": {"malicious": "code"}, "data": "safe"}
         destination = {"existing": "value"}
         result = merge_dict(source, destination)
@@ -677,7 +590,6 @@ class TestMergeDict:
         assert result["data"] == "safe", "Safe data should be preserved"
 
     def test_dict_blocks_builtins_pollution(self):
-        """Test that __builtins__ attribute pollution is blocked."""
         source = {"__builtins__": {"eval": "dangerous"}, "normal": "value"}
         destination = {"target": "data"}
         result = merge_dict(source, destination)
@@ -686,7 +598,6 @@ class TestMergeDict:
         assert result["normal"] == "value", "Normal values should be preserved"
 
     def test_merge_dict_blocks_dunders(self):
-        """Test that multiple dangerous dunder attributes are blocked."""
         source = {
             "__class__": "malicious",
             "__dict__": {"bad": "data"},
@@ -706,7 +617,6 @@ class TestMergeDict:
         assert result["existing"] == "data", "Existing data should be preserved"
 
     def test_dict_nested_dunder_pollution(self):
-        """Test that nested dangerous attributes are handled correctly."""
         source = {"nested": {"__class__": "malicious_nested", "safe_nested": "value"}, "normal": "data"}
         destination = {"nested": {"existing_nested": "original"}}
         result = merge_dict(source, destination)
@@ -716,7 +626,6 @@ class TestMergeDict:
         assert result["nested"]["existing_nested"] == "original", "Existing nested data should be preserved"
 
     def test_dict_prototype_pollution_attempt(self):
-        """Test protection against prototype pollution attempts."""
         source = {"__proto__": {"polluted": True}, "constructor": {"prototype": {"polluted": True}}, "safe": "data"}
         destination = {"existing": "value"}
         result = merge_dict(source, destination)
@@ -727,7 +636,6 @@ class TestMergeDict:
         assert result["existing"] == "value", "Existing data should be preserved"
 
     def test_dict_special_method_pollution(self):
-        """Test with various Python special methods."""
         source = {
             "__init__": "malicious_init",
             "__new__": "malicious_new",
@@ -745,7 +653,6 @@ class TestMergeDict:
         assert result["target"] == "data", "Target data should be preserved"
 
     def test_dict_list_pollution_safe(self):
-        """Test that list merging doesn't allow dangerous manipulation."""
         source = {"items": ["new1", "new2"]}
         destination = {"items": ["old1", "old2"]}
         result = merge_dict(source, destination)
@@ -755,7 +662,6 @@ class TestMergeDict:
         )
 
     def test_dict_deep_nested_pollution(self):
-        """Test with deeply nested dangerous attributes."""
         source = {
             "level1": {
                 "level2": {
@@ -777,7 +683,6 @@ class TestMergeDict:
         assert result["level1"]["level2"]["existing"] == "data", "Existing nested data should be preserved"
 
     def test_merge_dict_type_validation(self):
-        """Test that non-dict parameters are properly rejected."""
         # Test with non-dict source
         bad_src: Any = "not_a_dict"
         with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
@@ -795,7 +700,6 @@ class TestMergeDict:
             merge_dict(bad_src2, bad_dst2)
 
     def test_merge_dict_immutability(self):
-        """Test that original dictionaries are not modified (immutability)."""
         original_source = {"a": 1, "nested": {"b": 2}}
         original_destination = {"c": 3, "nested": {"d": 4}}
 
@@ -814,7 +718,6 @@ class TestMergeDict:
         assert result != original_destination, "Result should be different from destination original"
 
     def test_dict_custom_max_depth(self):
-        """Test custom max_depth parameter."""
         # Create a deep nested structure
         deep_source = {}
         current = deep_source
@@ -836,7 +739,6 @@ class TestMergeDict:
         assert self._get_nested_value(result, ["level"] * 10 + ["data"]) == "deep_value"
 
     def test_custom_max_list_size(self):
-        """Test custom max_list_size parameter."""
         large_list = list(range(5000))
         source = {"data": large_list}
 
@@ -856,7 +758,6 @@ class TestMergeDict:
         assert result["data"] == large_list
 
     def test_merge_dict_list_limits(self):
-        """Test list merging respects size limits."""
         source = {"items": list(range(3000))}
         destination = {"items": list(range(2000, 5000))}  # 3000 items
 
@@ -870,7 +771,6 @@ class TestMergeDict:
         assert result["items"][3000:] == list(range(1000)), "Next 1000 items should be from source (truncated)"
 
     def test_merge_dict_nested_limits(self):
-        """Test nested merging with both depth and size limits."""
         # Create nested structure that exceeds depth limit
         deep_source = {"level1": {"level2": {"level3": {"level4": {"data": "deep"}}}}}
 
@@ -891,7 +791,6 @@ class TestMergeDict:
             merge_dict(deep_source, destination, max_depth=3)
 
     def test_merge_dict_zero_limits(self):
-        """Test behavior with zero limits."""
         source = {"data": [1, 2, 3]}
         destination = {"existing": "value"}
 
@@ -905,7 +804,6 @@ class TestMergeDict:
             merge_dict({"nested": {"data": "value"}}, {}, max_depth=0)
 
     def test_merge_dict_extreme_limits(self):
-        """Test with very high limits."""
         # Create moderately nested structure
         source = {"a": {"b": {"c": {"data": "nested"}}}}
 
@@ -914,7 +812,6 @@ class TestMergeDict:
         assert result["a"]["b"]["c"]["data"] == "nested"
 
     def test_merge_dict_circular_guard(self):
-        """Test that limits work together with circular reference protection."""
         source = {"data": {}}
         source["data"]["circular"] = source  # Create circular reference
 
@@ -923,7 +820,6 @@ class TestMergeDict:
             merge_dict(source, {}, max_depth=100)
 
     def test_merge_dict_backward_compatibility(self):
-        """Test that existing code works without specifying new parameters."""
         source = {"a": 1, "nested": {"b": 2}}
         destination = {"c": 3, "nested": {"d": 4}}
 
@@ -944,122 +840,96 @@ class TestMergeDict:
 
 
 class TestDeleteDir:
-    """Test the delete_dir function."""
-
     def setup_method(self):
-        """Set up test directory."""
         self.temp_dir = str(make_test_temp_dir("delete-dir"))
         self.test_dir = Path(self.temp_dir) / "test_delete"
         self.test_dir.mkdir()
         (self.test_dir / "file.txt").write_text("test content")
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_delete_dir_success(self):
-        """Test successful directory deletion."""
         assert self.test_dir.exists()
         result = delete_dir(self.test_dir)
         assert result is True
         assert not self.test_dir.exists()
 
     def test_delete_dir_nonexistent(self):
-        """Test deleting non-existent directory."""
         nonexistent = Path(self.temp_dir) / "nonexistent"
         result = delete_dir(nonexistent)
         assert result is False
 
 
 class TestValidateUuid:
-    """Test UUID validation function."""
-
     def test_valid_uuid4(self):
-        """Test with valid UUID4."""
         test_uuid = str(uuid.uuid4())
         assert validate_uuid(test_uuid, 4) is True
 
     def test_valid_uuid1(self):
-        """Test with valid UUID1."""
         test_uuid = str(uuid.uuid1())
         assert validate_uuid(test_uuid, 1) is True
 
     def test_invalid_uuid_string(self):
-        """Test with invalid UUID string."""
         assert validate_uuid("invalid-uuid", 4) is False
 
     def test_empty_string(self):
-        """Test with empty string."""
         assert validate_uuid("", 4) is False
 
     def test_wrong_version(self):
-        """Test UUID4 against version 1 check."""
         test_uuid = str(uuid.uuid4())
         assert validate_uuid(test_uuid, 1) is True
 
 
 class TestStripNewline:
-    """Test string newline stripping function."""
-
     def test_strip_newline_basic(self):
-        """Test stripping newlines from string."""
         text = "line1\nline2\r\nline3\r"
         result = strip_newline(text)
         assert result == "line1 line2 line3"  # Function replaces with spaces, not removes
 
     def test_strip_newline_no_newlines(self):
-        """Test string with no newlines."""
         text = "no newlines here"
         result = strip_newline(text)
         assert result == text
 
     def test_strip_newline_empty(self):
-        """Test empty string."""
         result = strip_newline("")
         assert result == ""
 
     def test_strip_newline_only_newlines(self):
-        """Test string with only newlines."""
         text = "\n\r\n\r"
         result = strip_newline(text)
         assert result == ""
 
 
 class TestDtDelta:
-    """Test timedelta formatting function."""
-
     def test_dt_delta_seconds(self):
-        """Test formatting seconds."""
         delta = timedelta(seconds=30)
         result = dt_delta(delta)
         assert "30" in result
         assert "s" in result
 
     def test_dt_delta_minutes(self):
-        """Test formatting minutes."""
         delta = timedelta(minutes=5)
         result = dt_delta(delta)
         assert "5" in result
         assert "m" in result
 
     def test_dt_delta_hours(self):
-        """Test formatting hours."""
         delta = timedelta(hours=2)
         result = dt_delta(delta)
         assert "2" in result
         assert "h" in result
 
     def test_dt_delta_days(self):
-        """Test formatting days."""
         delta = timedelta(days=3)
         result = dt_delta(delta)
         assert "3" in result
         assert "d" in result
 
     def test_dt_delta_complex(self):
-        """Test formatting complex timedelta."""
         delta = timedelta(days=1, hours=2, minutes=30, seconds=45)
         result = dt_delta(delta)
         assert isinstance(result, str)
@@ -1067,10 +937,7 @@ class TestDtDelta:
 
 
 class TestParseTags:
-    """Test tag parsing function."""
-
     def test_parse_tags_simple(self):
-        """Test parsing simple tags."""
         text = "Hello [tag1] world [tag2:value]"
         result_text, tags = parse_tags(text)
         assert "Hello" in result_text
@@ -1078,24 +945,19 @@ class TestParseTags:
         assert isinstance(tags, dict)
 
     def test_parse_tags_no_tags(self):
-        """Test text with no tags."""
         text = "Hello world"
         result_text, tags = parse_tags(text)
         assert result_text == text
         assert tags == {}
 
     def test_parse_tags_empty(self):
-        """Test empty string."""
         result_text, tags = parse_tags("")
         assert result_text == ""
         assert tags == {}
 
 
 class TestCleanItem:
-    """Test item cleaning function."""
-
     def test_clean_item_basic(self):
-        """Test cleaning item with specified keys."""
         item = {"key1": "value1", "key2": "value2", "key3": "value3"}
         keys = ["key2"]
         cleaned_item, changed = clean_item(item, keys)
@@ -1106,7 +968,6 @@ class TestCleanItem:
         assert changed is True
 
     def test_clean_item_no_change(self):
-        """Test cleaning item with non-existent keys."""
         item = {"key1": "value1", "key2": "value2"}
         keys = ["nonexistent"]
         cleaned_item, changed = clean_item(item, keys)
@@ -1115,7 +976,6 @@ class TestCleanItem:
         assert changed is False
 
     def test_clean_item_empty_keys(self):
-        """Test cleaning item with empty keys list."""
         item = {"key1": "value1"}
         keys = []
         cleaned_item, changed = clean_item(item, keys)
@@ -1125,10 +985,7 @@ class TestCleanItem:
 
 
 class TestValidateUrl:
-    """Test URL validation function."""
-
     def test_validate_url_basic(self):
-        """Test basic URL validation functionality."""
         if importlib.util.find_spec("yarl") is None:
             with pytest.raises(ModuleNotFoundError):
                 validate_url("https://example.com")
@@ -1144,10 +1001,7 @@ class TestValidateUrl:
 
 
 class TestGetFileSidecar:
-    """Test file sidecar function."""
-
     def test_get_file_sidecar_files(self):
-        """Test getting sidecar files when they exist."""
         with temporary_test_dir("file-sidecar") as base_path:
             video_file = base_path / "video.mp4"
             srt_file = base_path / "video.srt"
@@ -1162,7 +1016,6 @@ class TestGetFileSidecar:
             assert result["text"] == [{"file": nfo_file}]
 
     def test_file_sidecar_no_files(self):
-        """Test getting sidecar files when none exist."""
         with temporary_test_dir("file-sidecar-empty") as base_path:
             video_file = base_path / "video.mp4"
             video_file.write_text("video content")
@@ -1172,21 +1025,16 @@ class TestGetFileSidecar:
 
 
 class TestCheckId:
-    """Test the check_id function."""
-
     def setup_method(self):
-        """Set up test files."""
         self.temp_dir = str(make_test_temp_dir("check-id"))
         self.test_dir = Path(self.temp_dir)
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_check_id_youtube_id(self):
-        """Test check_id with a YouTube ID in filename."""
         # Create a file with YouTube ID
         test_file = self.test_dir / "video[test12345678].srt"
         test_file.write_text("subtitle content")
@@ -1199,7 +1047,6 @@ class TestCheckId:
         assert isinstance(result, (bool, str))
 
     def test_check_id_no_id(self):
-        """Test check_id with no ID in filename."""
         test_file = self.test_dir / "video.srt"
         test_file.write_text("subtitle content")
 
@@ -1208,10 +1055,7 @@ class TestCheckId:
 
 
 class TestArgConverter:
-    """Test the arg_converter function."""
-
     def test_arg_converter_basic(self):
-        """Test basic arg_converter functionality."""
         if importlib.util.find_spec("yt_dlp") is None:
             with pytest.raises(ModuleNotFoundError):
                 arg_converter("--quiet --match-filters 'duration<2min' --download-archive archive.txt")
@@ -1224,7 +1068,6 @@ class TestArgConverter:
         assert "match_filter" in result, "match_filters should be in result"
 
     def test_arg_converter_empty_args(self):
-        """Test arg_converter with empty args."""
         if importlib.util.find_spec("yt_dlp") is None:
             with pytest.raises(ModuleNotFoundError):
                 arg_converter("")
@@ -1234,7 +1077,6 @@ class TestArgConverter:
         assert isinstance(result, dict)
 
     def test_arg_converter_replace_metadata(self):
-        """Test arg_converter handles replace-in-metadata without assertions."""
         if importlib.util.find_spec("yt_dlp") is None:
             with pytest.raises(ModuleNotFoundError):
                 arg_converter("--replace-in-metadata title foo bar")
@@ -1257,10 +1099,7 @@ class TestArgConverter:
 
 
 class TestGetPossibleImages:
-    """Test the get_possible_images function."""
-
     def setup_method(self):
-        """Set up test directory with images."""
         self.temp_dir = str(make_test_temp_dir("possible-images"))
         self.test_dir = Path(self.temp_dir)
 
@@ -1269,18 +1108,15 @@ class TestGetPossibleImages:
         (self.test_dir / "thumbnail.png").write_text("image")
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_possible_images(self):
-        """Test getting possible images."""
         result = get_possible_images(str(self.test_dir))
         assert isinstance(result, list)
 
     def test_possible_images_empty_dir(self):
-        """Test getting images from empty directory."""
         empty_dir = Path(self.temp_dir) / "empty"
         empty_dir.mkdir()
 
@@ -1289,10 +1125,7 @@ class TestGetPossibleImages:
 
 
 class TestGetMimeType:
-    """Test the get_mime_type function."""
-
     def test_get_mime_type_mp4(self):
-        """Test MIME type detection for MP4."""
         metadata = {"format_name": "mp4"}
         file_path = Path("test.mp4")
 
@@ -1301,7 +1134,6 @@ class TestGetMimeType:
         assert "video" in result
 
     def test_get_mime_type_mkv(self):
-        """Test MIME type detection for MKV."""
         metadata = {"format_name": "matroska"}
         file_path = Path("test.mkv")
 
@@ -1309,7 +1141,6 @@ class TestGetMimeType:
         assert isinstance(result, str)
 
     def test_get_mime_type_fallback(self):
-        """Test MIME type fallback."""
         metadata = {}
         file_path = Path("test.unknown")
 
@@ -1318,21 +1149,16 @@ class TestGetMimeType:
 
 
 class TestGetFile:
-    """Test the get_file function."""
-
     def setup_method(self):
-        """Set up test files."""
         self.temp_dir = str(make_test_temp_dir("get-file"))
         self.download_path = Path(self.temp_dir)
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_file_exists(self):
-        """Test getting existing file."""
         test_file = self.download_path / "test.txt"
         test_file.write_text("content")
 
@@ -1341,7 +1167,6 @@ class TestGetFile:
         assert isinstance(status_code, int)
 
     def test_get_file_not_exists(self):
-        """Test getting non-existent file."""
         result_path, status_code = get_file(self.download_path, "nonexistent.txt")
         assert isinstance(result_path, Path)
         assert status_code == 404
@@ -1368,45 +1193,35 @@ class TestGetFile:
 
 
 class TestGet:
-    """Test the get function for nested data access."""
-
     def test_get_basic_dict(self):
-        """Test getting value from dictionary."""
         data = {"key": "value"}
         result = get(data, "key")
         assert result == "value"
 
     def test_get_nested_dict(self):
-        """Test getting nested value."""
         data = {"level1": {"level2": {"level3": "value"}}}
         result = get(data, "level1.level2.level3")
         assert result == "value"
 
     def test_get_with_default(self):
-        """Test getting with default value."""
         data = {"key": "value"}
         result = get(data, "nonexistent", default="default")
         assert result == "default"
 
     def test_get_list_access(self):
-        """Test getting from list."""
         data = ["item0", "item1", "item2"]
         key: Any = 1
         result = get(data, key)
         assert result == "item1"
 
     def test_get_empty_path(self):
-        """Test with empty path."""
         data = {"key": "value"}
         result = get(data, None)
         assert result == data
 
 
 class TestGetFiles:
-    """Test the get_files function."""
-
     def setup_method(self):
-        """Set up test directory structure."""
         self.temp_dir = str(make_test_temp_dir("get-files"))
         self.base_path = Path(self.temp_dir)
 
@@ -1417,39 +1232,31 @@ class TestGetFiles:
         (self.base_path / "subdir" / "file3.txt").write_text("content")
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_files_root(self):
-        """Test getting files from root directory."""
         result, total = get_files(self.base_path)
         assert isinstance(result, list)
         assert len(result) > 0
 
     def test_get_files_subdir(self):
-        """Test getting files from subdirectory."""
         result, total = get_files(self.base_path, "subdir")
         assert isinstance(result, list)
 
 
 class TestLoadCookies:
-    """Test the load_cookies function."""
-
     def setup_method(self):
-        """Set up test cookie file."""
         self.temp_dir = str(make_test_temp_dir("load-cookies"))
         self.cookie_file = Path(self.temp_dir) / "cookies.txt"
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_cookies_invalid_file(self):
-        """Test loading invalid cookie file."""
         self.cookie_file.write_text("invalid cookie content")
 
         try:
@@ -1461,10 +1268,7 @@ class TestLoadCookies:
 
 
 class TestStrToDt:
-    """Test the str_to_dt function."""
-
     def test_str_to_dt_basic(self):
-        """Test basic string to datetime conversion."""
         if importlib.util.find_spec("dateparser") is None:
             with pytest.raises(ModuleNotFoundError):
                 str_to_dt("2023-01-02 12:00:00 UTC")
@@ -1474,7 +1278,6 @@ class TestStrToDt:
         assert isinstance(result, datetime)
 
     def test_str_to_dt_relative(self):
-        """Test relative time string."""
         if importlib.util.find_spec("dateparser") is None:
             with pytest.raises(ModuleNotFoundError):
                 str_to_dt("1 hour ago")
@@ -1485,10 +1288,7 @@ class TestStrToDt:
 
 
 class TestInitClass:
-    """Test the init_class function."""
-
     def test_init_class_basic(self):
-        """Test basic class initialization."""
 
         @dataclass
         class TestClass:
@@ -1506,10 +1306,7 @@ class TestInitClass:
 
 
 class TestGetChannelImages:
-    """Test the get_channel_images function."""
-
     def test_channel_images_poster_portrait(self):
-        """Test extracting poster image from portrait ratio thumbnail."""
         from app.library.Utils import get_channel_images
 
         thumbnails = [{"url": "http://example.com/poster.jpg", "width": 200, "height": 300, "id": "some_id"}]
@@ -1520,7 +1317,6 @@ class TestGetChannelImages:
         assert result["poster"] == "http://example.com/poster.jpg"
 
     def test_channel_images_thumb_square(self):
-        """Test extracting thumbnail from square ratio."""
         from app.library.Utils import get_channel_images
 
         thumbnails = [{"url": "http://example.com/thumb.jpg", "width": 300, "height": 300, "id": "id"}]
@@ -1531,7 +1327,6 @@ class TestGetChannelImages:
         assert result["thumb"] == "http://example.com/thumb.jpg"
 
     def test_channel_images_banner_wide(self):
-        """Test extracting banner from very wide image."""
         from app.library.Utils import get_channel_images
 
         thumbnails = [{"url": "http://example.com/banner.jpg", "width": 1920, "height": 200, "id": "id"}]
@@ -1542,7 +1337,6 @@ class TestGetChannelImages:
         assert result["banner"] == "http://example.com/banner.jpg"
 
     def test_channel_images_icon_avatar(self):
-        """Test extracting icon from avatar uncropped."""
         from app.library.Utils import get_channel_images
 
         thumbnails = [{"url": "http://example.com/icon.jpg", "id": "avatar_uncropped"}]
@@ -1553,7 +1347,6 @@ class TestGetChannelImages:
         assert result["icon"] == "http://example.com/icon.jpg"
 
     def test_channel_images_landscape_banner(self):
-        """Test extracting landscape from banner uncropped."""
         from app.library.Utils import get_channel_images
 
         thumbnails = [{"url": "http://example.com/landscape.jpg", "id": "banner_uncropped"}]
@@ -1564,7 +1357,6 @@ class TestGetChannelImages:
         assert result["landscape"] == "http://example.com/landscape.jpg"
 
     def test_channel_images_empty_list(self):
-        """Test with empty thumbnail list."""
         from app.library.Utils import get_channel_images
 
         result = get_channel_images([])
@@ -1572,7 +1364,6 @@ class TestGetChannelImages:
         assert result == {}
 
     def test_get_channel_images_fallbacks(self):
-        """Test fallback logic for missing images."""
         from app.library.Utils import get_channel_images
 
         # Create image with fanart but no banner
@@ -1585,7 +1376,6 @@ class TestGetChannelImages:
         assert result["banner"] == result["fanart"]
 
     def test_channel_images_no_url(self):
-        """Test handling of thumbnail without URL."""
         from app.library.Utils import get_channel_images
 
         thumbnails = [
@@ -1600,10 +1390,7 @@ class TestGetChannelImages:
 
 
 class TestIsSafeKey:
-    """Test the _is_safe_key function (indirectly through merge_dict)."""
-
     def test_safe_key_normal_string(self):
-        """Test that normal strings are considered safe keys."""
         from app.library.Utils import merge_dict
 
         source = {"normal_key": "value"}
@@ -1615,7 +1402,6 @@ class TestIsSafeKey:
         assert result["normal_key"] == "value"
 
     def test_unsafe_key_dunder_attributes(self):
-        """Test that dunder attributes are blocked."""
         from app.library.Utils import merge_dict
 
         source = {"__class__": "should_not_merge", "normal_key": "value"}
@@ -1627,7 +1413,6 @@ class TestIsSafeKey:
         assert "normal_key" in result
 
     def test_unsafe_key_empty_string(self):
-        """Test that empty keys are blocked."""
         from app.library.Utils import merge_dict
 
         source = {"": "empty_key_value", "normal_key": "value"}
@@ -1639,7 +1424,6 @@ class TestIsSafeKey:
         assert "normal_key" in result
 
     def test_unsafe_key_whitespace_only(self):
-        """Test that whitespace-only keys are blocked."""
         from app.library.Utils import merge_dict
 
         source = {"   ": "whitespace_key", "normal_key": "value"}
@@ -1651,7 +1435,6 @@ class TestIsSafeKey:
         assert "normal_key" in result
 
     def test_unsafe_key_non_string(self):
-        """Test that non-string keys are blocked."""
         from app.library.Utils import merge_dict
 
         source = {123: "numeric_key", "normal_key": "value"}
@@ -1667,7 +1450,6 @@ class TestArgConverterAdvanced:
     """Advanced tests for arg_converter function."""
 
     def test_arg_converter_removed_options(self):
-        """Test arg_converter with removed options tracking."""
         if importlib.util.find_spec("yt_dlp") is None:
             with pytest.raises(ModuleNotFoundError):
                 arg_converter("--quiet --skip-download", level=True, removed_options=[])
@@ -1680,7 +1462,6 @@ class TestArgConverterAdvanced:
         assert removed
 
     def test_arg_converter_dumps_enabled(self):
-        """Test arg_converter with dumps flag enabled."""
         if importlib.util.find_spec("yt_dlp") is None:
             with pytest.raises(ModuleNotFoundError):
                 arg_converter("--format best", dumps=True)
@@ -1692,22 +1473,17 @@ class TestArgConverterAdvanced:
 
 
 class TestCreateCookiesFile:
-    """Test the create_cookies_file function."""
-
     def setup_method(self):
-        """Set up test environment."""
         self.temp_dir = str(make_test_temp_dir("create-cookies-file"))
         self.test_path = Path(self.temp_dir)
 
     def teardown_method(self):
-        """Clean up after tests."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @patch("app.library.Utils.load_cookies")
     def test_create_cookies_file_path(self, mock_load_cookies):
-        """Test creating a cookies file with a specific path."""
         from app.library.Utils import create_cookies_file
 
         mock_load_cookies.return_value = (True, MagicMock())
@@ -1724,7 +1500,6 @@ class TestCreateCookiesFile:
     @patch("app.library.config.Config")
     @patch("app.library.Utils.load_cookies")
     def test_cookies_file_auto_path(self, mock_load_cookies, mock_config):
-        """Test creating a cookies file without a specific path (auto temp file)."""
         from app.library.Utils import create_cookies_file
 
         mock_config_inst = MagicMock()
@@ -1743,7 +1518,6 @@ class TestCreateCookiesFile:
 
     @patch("app.library.Utils.load_cookies")
     def test_cookies_file_invalid_cookies(self, mock_load_cookies):
-        """Test creating a cookies file with invalid cookies raises error."""
         from app.library.Utils import create_cookies_file
 
         mock_load_cookies.side_effect = ValueError("Invalid cookies")
@@ -1754,7 +1528,6 @@ class TestCreateCookiesFile:
 
     @patch("app.library.Utils.load_cookies")
     def test_create_cookies_parent_dir(self, mock_load_cookies):
-        """Test that create_cookies_file creates parent directories as needed."""
         from app.library.Utils import create_cookies_file
 
         mock_load_cookies.return_value = (True, MagicMock())
@@ -1769,7 +1542,6 @@ class TestCreateCookiesFile:
 
     @patch("app.library.Utils.load_cookies")
     def test_create_cookies_special_chars(self, mock_load_cookies):
-        """Test create_cookies_file with special characters in cookie data."""
         from app.library.Utils import create_cookies_file
 
         mock_load_cookies.return_value = (True, MagicMock())
@@ -1783,7 +1555,6 @@ class TestCreateCookiesFile:
 
     @patch("app.library.Utils.load_cookies")
     def test_cookies_file_overwrites_existing(self, mock_load_cookies):
-        """Test that create_cookies_file overwrites existing files."""
         from app.library.Utils import create_cookies_file
 
         mock_load_cookies.return_value = (True, MagicMock())
@@ -1801,8 +1572,6 @@ class TestCreateCookiesFile:
 
 
 class TestRenameFile:
-    """Test rename_file function."""
-
     @pytest.mark.parametrize(
         "new_name",
         [
@@ -1826,7 +1595,6 @@ class TestRenameFile:
         assert test_file.exists()
 
     def test_single_file_no_sidecars(self, tmp_path: Path):
-        """Test renaming a single file without sidecar files."""
         # Create test file
         test_file = tmp_path / "video.mp4"
         test_file.write_text("test content")
@@ -1840,7 +1608,6 @@ class TestRenameFile:
         assert 0 == len(sidecars), "Should have no sidecar files"
 
     def test_rename_file_subtitle_sidecar(self, tmp_path: Path):
-        """Test renaming a file with subtitle sidecar."""
         # Create test files
         test_file = tmp_path / "video.mp4"
         test_file.write_text("test video")
@@ -1863,7 +1630,6 @@ class TestRenameFile:
         assert not subtitle_file.exists()
 
     def test_rename_file_multiple_sidecars(self, tmp_path: Path):
-        """Test renaming a file with multiple sidecar files."""
         # Create test files
         test_file = tmp_path / "video.mp4"
         test_file.write_text("test video")
@@ -1897,7 +1663,6 @@ class TestRenameFile:
         assert not info_file.exists(), "Old info file should not exist after rename"
 
     def test_rename_file_destination_exists(self, tmp_path: Path):
-        """Test renaming a file when destination already exists."""
         # Create test files
         test_file = tmp_path / "video.mp4"
         test_file.write_text("test content")
@@ -1913,7 +1678,6 @@ class TestRenameFile:
         assert existing_file.exists(), "Existing file should still exist when rename fails"
 
     def test_file_sidecar_destination_exists(self, tmp_path: Path):
-        """Test renaming when sidecar destination already exists."""
         # Create test files
         test_file = tmp_path / "video.mp4"
         test_file.write_text("test video")
@@ -1935,7 +1699,6 @@ class TestRenameFile:
         assert conflicting_sidecar.exists()
 
     def test_rename_sidecar_extensions(self, tmp_path: Path):
-        """Test that rename preserves complex sidecar extensions."""
         # Create test files with complex extensions
         test_file = tmp_path / "video.mp4"
         test_file.write_text("test video")
@@ -1959,10 +1722,7 @@ class TestRenameFile:
 
 
 class TestMoveFile:
-    """Test move_file function."""
-
     def test_file_no_sidecars(self, tmp_path: Path):
-        """Test moving a single file without sidecar files."""
         # Create test file
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -1982,7 +1742,6 @@ class TestMoveFile:
         assert 0 == len(sidecars), "Should have no sidecar files"
 
     def test_move_file_subtitle_sidecar(self, tmp_path: Path):
-        """Test moving a file with subtitle sidecar."""
         # Create test files
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -2012,7 +1771,6 @@ class TestMoveFile:
         assert not subtitle_file.exists()
 
     def test_move_file_multiple_sidecars(self, tmp_path: Path):
-        """Test moving a file with multiple sidecar files."""
         # Create test files
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -2056,7 +1814,6 @@ class TestMoveFile:
         assert not info_file.exists(), "Old info file should not exist after move"
 
     def test_move_file_destination_exists(self, tmp_path: Path):
-        """Test moving a file when destination already exists."""
         # Create test files
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -2076,7 +1833,6 @@ class TestMoveFile:
         assert existing_file.exists(), "Existing file should still exist when move fails"
 
     def test_sidecar_destination_exists(self, tmp_path: Path):
-        """Test moving when sidecar destination already exists."""
         # Create test files
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -2103,7 +1859,6 @@ class TestMoveFile:
         assert conflicting_sidecar.exists()
 
     def test_file_target_not_directory(self, tmp_path: Path):
-        """Test moving when target is not a directory."""
         # Create test file
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -2122,7 +1877,6 @@ class TestMoveFile:
         assert test_file.exists()
 
     def test_target_does_not_exist(self, tmp_path: Path):
-        """Test moving when target directory doesn't exist."""
         # Create test file
         source_dir = tmp_path / "source"
         source_dir.mkdir()

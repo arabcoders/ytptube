@@ -20,6 +20,7 @@ STATIC_FILES: set[str] = {
     "sc_simple.jpg",
     "docs/README.md",
     "docs/features.md",
+    "docs/native-builds.md",
     "docs/task-definitions.md",
 }
 

@@ -33,7 +33,6 @@ def _patch_ffmpeg_bin(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.asyncio
 async def test_stream_without_ffmpeg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Segments streaming raises StreamingError when ffmpeg is unavailable."""
     from app.features.streaming.library.segments import Segments
     from app.features.streaming.types import StreamingError
 
@@ -389,7 +388,7 @@ async def test_stream_normal_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
     assert bytes(resp.data) == b"abcdef"
     assert not _ffmpeg_input_path(captured_args[0]).exists()
     assert media.exists()
-    # EOF behavior may differ; don't require True
+    # The response implementation may or may not receive EOF after streaming.
 
 
 @pytest.mark.asyncio

@@ -106,7 +106,6 @@ class TestItemDTO:
     @patch("app.features.downloads.items.YTDLPOpts")
     @patch("app.features.downloads.items.archive_read")
     def test_init_sets_archive_flags(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
-        # Setup archive id and archive file
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
@@ -190,8 +189,6 @@ class TestItemDTO:
         assert isinstance(dto.get_id(), str)
 
     def test_get_file_method(self):
-        """Test ItemDTO get_file method returns correct path."""
-        # Create ItemDTO with filename but no folder
         dto = ItemDTO(
             id="test-id",
             title="Test Video",
@@ -201,7 +198,6 @@ class TestItemDTO:
             filename="test_video.mp4",
         )
 
-        # Test with no filename returns None
         dto_no_file = ItemDTO(
             id="test-id-2",
             title="Test Video 2",
@@ -222,7 +218,6 @@ class TestItemDTO:
             result = dto.get_file()
             assert result == Path("/downloads/test_video.mp4")
 
-        # Test with folder
         dto_with_folder = ItemDTO(
             id="test-id-3",
             title="Test Video 3",
@@ -242,7 +237,6 @@ class TestItemDTO:
             result = dto_with_folder.get_file()
             assert result == Path("/downloads/media/test_video.mp4")
 
-        # Test with file not found
         with (
             patch("app.features.downloads.items.get_file") as mock_get_file,
             patch("app.library.config.Config") as mock_config,
@@ -253,7 +247,6 @@ class TestItemDTO:
             result = dto.get_file()
             assert result is None
 
-        # Test with exception during file access
         with (
             patch("app.features.downloads.items.get_file") as mock_get_file,
             patch("app.library.config.Config") as mock_config,
@@ -264,7 +257,6 @@ class TestItemDTO:
             result = dto.get_file()
             assert result is None
 
-        # Test with custom download_path parameter (Config not imported in this case)
         with patch("app.features.downloads.items.get_file") as mock_get_file:
             mock_get_file.return_value = ("/custom/test_video.mp4", 200)
 
@@ -319,7 +311,6 @@ class TestItemDTO:
         assert dto.sidecar is existing
 
     def test_get_preset_hit(self):
-        """Test ItemDTO.get_preset returns the Preset instance."""
         from app.features.presets.schemas import Preset
 
         mock_preset = Preset(id=1, name="test-preset", cli="--format best")
@@ -337,7 +328,6 @@ class TestItemDTO:
             assert result.name == "test-preset"
 
     def test_get_preset_default(self):
-        """Test ItemDTO.get_preset uses 'default' when preset is empty."""
         from app.features.presets.schemas import Preset
 
         mock_preset = Preset(id=2, name="default", cli="--format best")
@@ -354,7 +344,6 @@ class TestItemDTO:
             assert result is mock_preset
 
     def test_get_preset_miss(self):
-        """Test ItemDTO.get_preset returns None when preset not found."""
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="nonexistent")
 
@@ -369,7 +358,6 @@ class TestItemDTO:
 
 class TestItemAddExtras:
     def test_add_extras_empty_dict(self):
-        """Test adding extras when extras dict is empty."""
         item = Item(url="https://example.com")
         item.extras = {}
 
@@ -378,7 +366,6 @@ class TestItemAddExtras:
         assert item.extras["key1"] == "value1"
 
     def test_add_extras_none(self):
-        """Test adding extras when extras is None."""
         item = Item(url="https://example.com")
         setattr(item, "extras", None)
 
@@ -387,7 +374,6 @@ class TestItemAddExtras:
         assert item.extras == {"key1": "value1"}
 
     def test_add_extras_existing_dict(self):
-        """Test adding extras to an existing extras dict."""
         item = Item(url="https://example.com", extras={"existing": "data"})
 
         item.add_extras("new_key", "new_value")
@@ -396,7 +382,6 @@ class TestItemAddExtras:
         assert item.extras["new_key"] == "new_value"
 
     def test_extras_overwrites_existing_key(self):
-        """Test that adding extras overwrites existing keys."""
         item = Item(url="https://example.com", extras={"key1": "old_value"})
 
         item.add_extras("key1", "new_value")
@@ -404,7 +389,6 @@ class TestItemAddExtras:
         assert item.extras["key1"] == "new_value"
 
     def test_add_extras_various_types(self):
-        """Test adding extras with various data types."""
         item = Item(url="https://example.com")
         item.extras = {}
 

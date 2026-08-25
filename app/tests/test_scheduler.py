@@ -1,38 +1,15 @@
 import asyncio
-import sys
-import types
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Ensure aiocron module exists to allow importing Scheduler without external dep
-if "aiocron" not in sys.modules:
-    aiocron_stub = types.ModuleType("aiocron")
-
-    class _CronImportStub:  # Minimal placeholder; tests will patch real behavior per-test
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def stop(self) -> None:
-            pass
-
-        @property
-        def uuid(self) -> str:
-            return "stub-uuid"
-
-    setattr(aiocron_stub, "Cron", _CronImportStub)
-    sys.modules["aiocron"] = aiocron_stub
-
-
 from app.library.Events import EventBus, Events
 from app.library.Scheduler import Scheduler
 
 
 class DummyCron:
-    """Simple Cron stub to capture construction and allow stop()."""
-
     def __init__(
         self,
         *,
@@ -68,14 +45,14 @@ class FailingCron(DummyCron):
 
 
 class TestScheduler:
-    """Tests for the Scheduler singleton and behavior."""
-
     def setup_method(self) -> None:
-        # Reset singletons between tests
         Scheduler._reset_singleton()
         EventBus._reset_singleton()
 
     def teardown_method(self) -> None:
+        scheduler = Scheduler()
+        for job_id in list(scheduler.get_all()):
+            scheduler.remove(job_id)
         Scheduler._reset_singleton()
         EventBus._reset_singleton()
 
@@ -120,11 +97,9 @@ class TestScheduler:
     def test_add_replaces_existing_job(self) -> None:
         sched = Scheduler()
 
-        # Seed with an existing job
         old = DummyCron(spec="* * * * *", func=lambda: None, uuid="job1", start=True, loop=sched._loop)
         sched._jobs["job1"] = old
 
-        # Replace with a new one
         new_id = sched.add(timer="*/2 * * * *", func=lambda: None, id="job1")
 
         assert new_id == "job1"
@@ -196,12 +171,17 @@ class TestScheduler:
             "on_shutdown handler should be registered"
         )
 
-        # Patch add to verify it is called from event handler
-        add_spy = MagicMock(wraps=sched.add)
-        # Bind spy to the instance
+        completed = asyncio.Event()
+        original_add = sched.add
+
+        def add_job(*args, **kwargs):
+            result = original_add(*args, **kwargs)
+            completed.set()
+            return result
+
+        add_spy = MagicMock(side_effect=add_job)
         sched.add = add_spy
 
-        # Emit schedule add event
         EventBus.get_instance().emit(
             Events.SCHEDULE_ADD,
             data={
@@ -213,8 +193,7 @@ class TestScheduler:
             },
         )
 
-        # Allow event loop to schedule and run handler
-        await asyncio.sleep(0.02)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         add_spy.assert_called_once()
         kwargs = add_spy.call_args.kwargs
@@ -226,7 +205,6 @@ class TestScheduler:
 
     @patch("app.library.Scheduler.Cron")
     def test_add_executes_on_start(self, cron_patch) -> None:
-        # Cron stub that auto-runs the function on creation when start=True
         class AutoRunCron(DummyCron):
             def __init__(
                 self,
@@ -241,7 +219,6 @@ class TestScheduler:
             ):
                 super().__init__(spec=spec, func=func, args=args, kwargs=kwargs, uuid=uuid, start=start, loop=loop)
                 if start:
-                    # Simulate immediate execution
                     self.func(*self.args, **self.kwargs)
 
         cron_patch.side_effect = AutoRunCron
@@ -261,7 +238,6 @@ class TestScheduler:
     @pytest.mark.asyncio
     @patch("app.library.Scheduler.Cron")
     async def test_event_schedule_runs_function(self, cron_patch) -> None:
-        # Cron stub that auto-runs the function on creation
         class AutoRunCron(DummyCron):
             def __init__(
                 self,
@@ -287,11 +263,12 @@ class TestScheduler:
         sched.attach(app)
 
         bucket: list[tuple[int, str]] = []
+        completed = asyncio.Event()
 
         def job(val: int, tag: str) -> None:
             bucket.append((val, tag))
+            completed.set()
 
-        # Emit event that should cause add() and immediate execution via AutoRunCron
         EventBus.get_instance().emit(
             Events.SCHEDULE_ADD,
             data={
@@ -303,7 +280,6 @@ class TestScheduler:
             },
         )
 
-        # Give the event handler a tick to run
-        await asyncio.sleep(0.02)
+        await asyncio.wait_for(completed.wait(), timeout=1)
 
         assert bucket == [(7, "evt")]

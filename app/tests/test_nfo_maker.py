@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
@@ -55,11 +56,11 @@ def test_generate_nfo_tv_mode(tmp_path: Path) -> None:
 
     nfo_path.unlink()
     pp = NFOMakerPP(None, mode="tv", prefix=True)
-    media_mtime = media_file.stat().st_mtime
+    media_mtime = 1_700_000_000
+    os.utime(media_file, (media_mtime, media_mtime))
     pp.run(info.copy())
     assert nfo_path.exists()
-    nfo_mtime = nfo_path.stat().st_mtime
-    assert abs(nfo_mtime - media_mtime) < 2.0
+    assert nfo_path.stat().st_mtime == media_mtime
 
 
 def test_movie_mode_run_wrapper(tmp_path: Path) -> None:
@@ -85,14 +86,14 @@ def test_movie_mode_run_wrapper(tmp_path: Path) -> None:
     pp = NFOMakerPP(None, mode="movie", prefix=False)
     assert media_file.exists()
 
-    media_mtime = media_file.stat().st_mtime
+    media_mtime = 1_700_000_000
+    os.utime(media_file, (media_mtime, media_mtime))
 
     pp.run(info.copy())
 
     assert nfo_path.exists()
 
-    nfo_mtime = nfo_path.stat().st_mtime
-    assert abs(nfo_mtime - media_mtime) < 2.0
+    assert nfo_path.stat().st_mtime == media_mtime
 
 
 def test_nfo_no_xml(tmp_path: Path) -> None:

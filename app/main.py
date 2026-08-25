@@ -114,9 +114,6 @@ class Main:
         )
 
     def start(self, host: str | None = None, port: int | None = None, cb=None):
-        """
-        Start the application.
-        """
         host = host or self._config.host
         port = port or self._config.port
 
@@ -181,6 +178,10 @@ class Main:
             )
             if self._config.is_native:
                 LOG.info("Running in native mode.")
+
+            if self._config.disable_auth:
+                LOG.info("Authentication is disabled.")
+
             LOG.info("=" * 40)
 
             loop = asyncio.get_event_loop()

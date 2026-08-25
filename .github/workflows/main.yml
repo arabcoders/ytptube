@@ -54,6 +54,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -78,7 +79,7 @@ jobs:
         run: uv run ty check app/
 
       - name: Run Python tests
-        run: uv run pytest app/tests/ -v --tb=short
+        run: uv run pytest app/ -v --tb=short
 
       - name: Cache bun installation
         id: cache-bun

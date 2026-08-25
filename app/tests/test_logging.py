@@ -5,6 +5,7 @@ import sys
 import uuid
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -149,22 +150,40 @@ async def test_tail_missing(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_tail_records(tmp_path):
+async def test_tail_records(tmp_path, monkeypatch):
+    from app.library.logging import storage
+
     file = tmp_path / "app.jsonl"
     file.write_text("")
     emitted: list[dict] = []
+    polling = asyncio.Event()
+    resume = asyncio.Event()
+
+    async def wait_for_record(_: float) -> None:
+        polling.set()
+        await resume.wait()
+
+    monkeypatch.setattr(storage, "asyncio", SimpleNamespace(sleep=wait_for_record))
 
     async def emit(entry: dict) -> None:
         emitted.append(entry)
         raise asyncio.CancelledError
 
     task = asyncio.create_task(tail_log(file, emit, sleep_time=0.01))
-    await asyncio.sleep(0.02)
-    file.write_text(
-        json.dumps({"id": "tail-1", "datetime": "now", "level": "info", "logger": "tail", "message": "live"}) + "\n"
-    )
-    with pytest.raises(asyncio.CancelledError):
-        await asyncio.wait_for(task, timeout=1)
+    try:
+        await asyncio.wait_for(polling.wait(), timeout=1)
+        file.write_text(
+            json.dumps({"id": "tail-1", "datetime": "now", "level": "info", "logger": "tail", "message": "live"}) + "\n"
+        )
+        resume.set()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(task, timeout=1)
+    finally:
+        resume.set()
+        if not task.done():
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
     assert emitted[0]["message"] == "live"
     assert emitted[0]["id"] == "tail-1"
 

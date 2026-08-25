@@ -91,10 +91,7 @@ class TestYtDlpOptions:
 
 
 class TestYTDLP:
-    """Test the YTDLP class overridden methods."""
-
     def _create_ytdlp(self, params=None):
-        """Helper to create a YTDLP instance with mocked parent __init__."""
         with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params=params)
             ytdlp.params = params or {}
@@ -102,7 +99,6 @@ class TestYTDLP:
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
     def test_init_archive_param(self, mock_super_init, tmp_path: Path) -> None:
-        """Test that __init__ removes download_archive before calling super, then restores it."""
         mock_super_init.return_value = None
 
         file = _archive_path(tmp_path)
@@ -130,7 +126,6 @@ class TestYTDLP:
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
     def test_init_no_archive(self, mock_super_init) -> None:
-        """Test __init__ works correctly when download_archive is not in params."""
         mock_super_init.return_value = None
 
         params = {"quiet": True}
@@ -148,7 +143,6 @@ class TestYTDLP:
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
     def test_init_none_params(self, mock_super_init) -> None:
-        """Test __init__ handles None params gracefully."""
         mock_super_init.return_value = None
 
         ytdlp = YTDLP(params=None)
@@ -200,7 +194,6 @@ class TestYTDLP:
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
     def test_delete_interrupted(self, mock_super_delete) -> None:
-        """Test _delete_downloaded_files skips cleanup when _interrupted is True."""
         with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params={})
             mock_obj: Any = ytdlp
@@ -211,16 +204,12 @@ class TestYTDLP:
 
             result = ytdlp._delete_downloaded_files("arg1", "arg2", kwarg1="value1")
 
-            # Should not call super method
             mock_super_delete.assert_not_called()
-            # Should show message
             mock_obj.to_screen.assert_called_once_with("[info] Cancelled - skipping temp cleanup.")
-            # Should return None
             assert result is None
 
     @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
     def test_delete_calls_super(self, mock_super_delete) -> None:
-        """Test _delete_downloaded_files calls super when not interrupted."""
         mock_super_delete.return_value = "cleanup_result"
 
         with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
@@ -229,23 +218,18 @@ class TestYTDLP:
 
             result = ytdlp._delete_downloaded_files("arg1", kwarg1="value1")
 
-            # Should call super method with same args
             mock_super_delete.assert_called_once_with("arg1", kwarg1="value1")
-            # Should return super's result
             assert result == "cleanup_result"
 
     def test_record_archive_missing(self) -> None:
-        """Test record_download_archive returns early when download_archive is not set."""
         ytdlp = self._create_ytdlp(params={})
         ytdlp.archive = Mock()
 
         ytdlp.record_download_archive({"id": "test123"})
 
-        # Should not interact with archive
         ytdlp.archive.add.assert_not_called()
 
     def test_record_archive_adds_id(self, tmp_path: Path) -> None:
-        """Test record_download_archive adds the archive ID."""
         ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.write_debug = Mock()
         ytdlp.archive = Mock()
@@ -263,7 +247,6 @@ class TestYTDLP:
         ytdlp.write_debug.assert_called_with("Adding to archive: youtube test123")
 
     def test_record_archive_old_ids(self, tmp_path: Path) -> None:
-        """Test record_download_archive adds _old_archive_ids when present."""
         ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.write_debug = Mock()
         ytdlp.archive = Mock()
@@ -277,53 +260,44 @@ class TestYTDLP:
 
         ytdlp.record_download_archive(info_dict)
 
-        # Should add main archive_id
         assert ytdlp.archive.add.call_count == 3
         calls = [call[0][0] for call in ytdlp.archive.add.call_args_list]
 
         assert calls[0] == "youtube new123", "First call is main archive_id"
 
-        # Should add old IDs except the duplicate
         assert "youtube old123" in calls
         assert "youtube old456" in calls
-        # Should not add duplicate (youtube new123 appears only once)
         assert calls.count("youtube new123") == 1
 
     def test_archive_empty_old_ids(self, tmp_path: Path) -> None:
-        """Test record_download_archive handles empty or invalid _old_archive_ids."""
         ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.write_debug = Mock()
         ytdlp.archive = Mock()
         ytdlp._make_archive_id = Mock(return_value="youtube test123")
 
-        # Test with empty list
         info_dict = {"id": "test123", "ie_key": "Youtube", "_old_archive_ids": []}
         ytdlp.record_download_archive(info_dict)
         assert ytdlp.archive.add.call_count == 1  # Only main ID
 
         ytdlp.archive.reset_mock()
 
-        # Test with None
         info_dict = {"id": "test123", "ie_key": "Youtube", "_old_archive_ids": None}
         ytdlp.record_download_archive(info_dict)
         assert ytdlp.archive.add.call_count == 1  # Only main ID
 
         ytdlp.archive.reset_mock()
 
-        # Test with non-list value
         info_dict = {"id": "test123", "ie_key": "Youtube", "_old_archive_ids": "not a list"}
         ytdlp.record_download_archive(info_dict)
         assert ytdlp.archive.add.call_count == 1  # Only main ID
 
     def test_record_archive_empty_id(self, tmp_path: Path) -> None:
-        """Test record_download_archive returns early when _make_archive_id returns empty."""
         ytdlp = self._create_ytdlp(params={"download_archive": _archive_path(tmp_path)})
         ytdlp.archive = Mock()
         ytdlp._make_archive_id = Mock(return_value=None)
 
         ytdlp.record_download_archive({"id": "test123"})
 
-        # Should not add anything
         ytdlp.archive.add.assert_not_called()
 
     def test_outtmpl_callable(self) -> None:

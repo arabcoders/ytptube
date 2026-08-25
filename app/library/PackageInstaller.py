@@ -345,19 +345,14 @@ class PackageInstaller:
                 )
 
     def compare_versions(self, current: str, target: str) -> bool:
-        """
-        Compare versions, handling yt-dlp format where pip uses 2025.7.21 but actual is 2025.07.21
-        Returns True if versions match, False otherwise
-        """
+        """Compare versions after zero-padding each single-digit numeric component to two digits."""
         if current == target:
             return True
 
-        # Handle yt-dlp version format differences
         current_parts: list[str] = current.split(".")
         target_parts: list[str] = target.split(".")
 
         if len(current_parts) == len(target_parts):
-            # Normalize parts by zero-padding single digits
             current_normalized: list[str] = [
                 part.zfill(2) if part.isdigit() and len(part) == 1 else part for part in current_parts
             ]

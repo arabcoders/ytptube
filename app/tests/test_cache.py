@@ -1,7 +1,6 @@
 import asyncio
 import json
 import threading
-import time
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,22 +8,28 @@ import pytest
 from app.library.cache import Cache, CacheEntry, JsonPersistence
 
 
-class TestCache:
-    """Test the Cache class."""
+@pytest.fixture
+def advance_clock(monkeypatch: pytest.MonkeyPatch):
+    now = [1000.0]
+    monkeypatch.setattr("app.library.cache.time.time", lambda: now[0])
 
+    def advance(seconds: float) -> None:
+        now[0] += seconds
+
+    return advance
+
+
+class TestCache:
     def setup_method(self):
-        """Set up test fixtures."""
         Cache._reset_singleton()
         self.cache = Cache()
 
     def test_singleton_behavior(self):
-        """Test that Cache follows singleton pattern."""
         cache1 = Cache()
         cache2 = Cache()
         assert cache1 is cache2
 
     def test_basic_set_and_get(self):
-        """Test basic cache set and get operations."""
         self.cache.set("key1", "value1")
         assert self.cache.get("key1") == "value1"
 
@@ -139,11 +144,19 @@ class TestCache:
         self.cache._persistence = persistence
         self.cache.set("first", 1, persist=True)
         first = asyncio.create_task(self.cache.flush())
-        await asyncio.to_thread(persistence.started.wait, 1)
-        self.cache.set("second", 2, persist=True)
-        second = asyncio.create_task(self.cache.flush())
-        persistence.release.set()
-        await asyncio.gather(first, second)
+        tasks = [first]
+        try:
+            assert await asyncio.to_thread(persistence.started.wait, 1)
+            self.cache.set("second", 2, persist=True)
+            tasks.append(asyncio.create_task(self.cache.flush()))
+            persistence.release.set()
+            await asyncio.gather(*tasks)
+        finally:
+            persistence.release.set()
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
 
         assert persistence.snapshots[-1] == {
             "first": CacheEntry(value=1, persist=True),
@@ -151,45 +164,37 @@ class TestCache:
         }
 
     def test_get_with_default(self):
-        """Test get with default value for non-existent keys."""
         assert self.cache.get("nonexistent", "default") == "default"
         assert self.cache.get("nonexistent") is None
 
-    def test_set_with_ttl(self):
-        """Test setting values with TTL."""
+    def test_set_with_ttl(self, advance_clock):
         self.cache.set("temp_key", "temp_value", ttl=0.1)
         assert self.cache.get("temp_key") == "temp_value"
 
-        # Wait for expiration
-        time.sleep(0.2)
+        advance_clock(0.2)
         assert self.cache.get("temp_key") is None
 
-    def test_set_no_ttl(self):
-        """Test setting values without TTL (permanent)."""
+    def test_set_no_ttl(self, advance_clock):
         self.cache.set("permanent_key", "permanent_value")
         assert self.cache.get("permanent_key") == "permanent_value"
 
-        # Should still be there after some time
-        time.sleep(0.1)
+        advance_clock(10)
         assert self.cache.get("permanent_key") == "permanent_value"
 
     def test_has_key(self):
-        """Test key existence checking."""
         assert not self.cache.has("nonexistent")
 
         self.cache.set("existing", "value")
         assert self.cache.has("existing")
 
-    def test_has_key_with_expiration(self):
-        """Test key existence with expired keys."""
+    def test_has_key_with_expiration(self, advance_clock):
         self.cache.set("expiring", "value", ttl=0.1)
         assert self.cache.has("expiring")
 
-        time.sleep(0.2)
+        advance_clock(0.2)
         assert not self.cache.has("expiring")
 
     def test_ttl_method(self):
-        """Test TTL retrieval."""
         # Key without TTL
         self.cache.set("permanent", "value")
         assert self.cache.ttl("permanent") is None
@@ -204,7 +209,6 @@ class TestCache:
         assert self.cache.ttl("nonexistent") is None
 
     def test_delete_key(self):
-        """Test key deletion."""
         self.cache.set("to_delete", "value")
         assert self.cache.get("to_delete") == "value"
 
@@ -212,11 +216,9 @@ class TestCache:
         assert self.cache.get("to_delete") is None
 
     def test_delete_nonexistent_key(self):
-        """Test deleting non-existent key (should not raise error)."""
         self.cache.delete("nonexistent")  # Should not raise
 
     def test_clear_cache(self):
-        """Test clearing all cache entries."""
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2")
 
@@ -226,7 +228,6 @@ class TestCache:
         assert self.cache.get("key2") is None
 
     def test_hash_method(self):
-        """Test hash generation."""
         hash1 = self.cache.hash("test_string")
         hash2 = self.cache.hash("test_string")
         hash3 = self.cache.hash("different_string")
@@ -237,12 +238,10 @@ class TestCache:
         # Different input should produce different hash
         assert hash1 != hash3
 
-        # Should be valid SHA-256 hex string
         assert len(hash1) == 64
         assert all(c in "0123456789abcdef" for c in hash1)
 
     def test_thread_safety(self):
-        """Test thread safety of cache operations."""
         results = []
         errors = []
 
@@ -271,14 +270,13 @@ class TestCache:
 
         # Wait for all threads to complete
         for thread in threads:
-            thread.join()
+            thread.join(timeout=1)
+            assert not thread.is_alive()
 
-        # Check results
         assert len(errors) == 0, f"Thread safety errors: {errors}"
         assert len(results) == 50  # 5 workers * 10 operations each
 
     def test_async_set(self):
-        """Test async set method using asyncio.run."""
 
         async def async_test():
             await self.cache.aset("async_key", "async_value")
@@ -286,30 +284,25 @@ class TestCache:
 
         asyncio.run(async_test())
 
-    def test_async_set_with_ttl(self):
-        """Test async set with TTL using asyncio.run."""
+    def test_async_set_with_ttl(self, advance_clock):
 
         async def async_test():
             await self.cache.aset("async_temp", "async_value", ttl=0.1)
             assert self.cache.get("async_temp") == "async_value"
 
-            await asyncio.sleep(0.2)
+            advance_clock(0.2)
             assert self.cache.get("async_temp") is None
 
         asyncio.run(async_test())
 
-        asyncio.run(async_test())
-
-    def test_expired_key_cleanup_get(self):
-        """Test that expired keys are cleaned up when accessed."""
+    def test_expired_key_cleanup_get(self, advance_clock):
         # Set a key with very short TTL
         self.cache.set("cleanup_test", "value", ttl=0.05)
 
         # Verify it's initially there
         assert self.cache.get("cleanup_test") == "value"
 
-        # Wait for expiration
-        time.sleep(0.1)
+        advance_clock(0.1)
 
         # Getting expired key should clean it up and return None
         assert self.cache.get("cleanup_test") is None
@@ -317,16 +310,14 @@ class TestCache:
         # Key should be removed from internal cache
         assert "cleanup_test" not in self.cache._cache
 
-    def test_expired_key_cleanup_has(self):
-        """Test that expired keys are cleaned up when checking existence."""
+    def test_expired_key_cleanup_has(self, advance_clock):
         # Set a key with very short TTL
         self.cache.set("has_cleanup", "value", ttl=0.05)
 
         # Verify it's initially there
         assert self.cache.has("has_cleanup")
 
-        # Wait for expiration
-        time.sleep(0.1)
+        advance_clock(0.1)
 
         # Checking existence of expired key should clean it up
         assert not self.cache.has("has_cleanup")
@@ -335,7 +326,6 @@ class TestCache:
         assert "has_cleanup" not in self.cache._cache
 
     def test_complex_data_types(self):
-        """Test caching of complex data types."""
         # Test list
         test_list = [1, 2, {"nested": "dict"}]
         self.cache.set("list_key", test_list)
@@ -363,15 +353,13 @@ class TestCache:
         assert retrieved == custom_obj
 
     @pytest.mark.asyncio
-    async def test_cleanup_removes_expired_entries(self):
-        """Test that _cleanup removes only expired entries."""
+    async def test_cleanup_removes_expired_entries(self, advance_clock):
         # Set some keys with different TTLs
         self.cache.set("permanent", "value")
         self.cache.set("short", "value1", ttl=0.1)
         self.cache.set("medium", "value2", ttl=1.0)
 
-        # Wait for short to expire
-        time.sleep(0.15)
+        advance_clock(0.15)
 
         # Run cleanup
         await self.cache.cleanup()
@@ -383,7 +371,6 @@ class TestCache:
 
     @pytest.mark.asyncio
     async def test_cleanup_no_expired_entries(self):
-        """Test that _cleanup handles cache with no expired entries."""
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2", ttl=1.0)
 
@@ -396,7 +383,6 @@ class TestCache:
 
     @pytest.mark.asyncio
     async def test_attach_registers_with_services(self):
-        """Test that attach method registers cache with Services and schedules cleanup."""
         from app.library.Scheduler import Scheduler
         from app.library.Services import Services
 
@@ -410,17 +396,21 @@ class TestCache:
 
         # Create cache and attach
         cache = Cache.get_instance()
-        mock_app = MagicMock(on_shutdown=[])
-        cache.attach(mock_app)
-
-        # Verify cache is registered with Services
-        services = Services.get_instance()
-        assert services.get("cache") is cache, "Should register cache with Services"
-
-        # Verify cleanup job is scheduled
         scheduler = Scheduler.get_instance(loop=loop)
-        assert scheduler.has(f"{Cache.__name__}.{Cache.cleanup.__name__}"), "Should schedule cleanup job"
-        assert cache.on_shutdown in mock_app.on_shutdown
+        try:
+            mock_app = MagicMock(on_shutdown=[])
+            cache.attach(mock_app)
+
+            services = Services.get_instance()
+            assert services.get("cache") is cache, "Should register cache with Services"
+            assert scheduler.has(f"{Cache.__name__}.{Cache.cleanup.__name__}"), "Should schedule cleanup job"
+            assert cache.on_shutdown in mock_app.on_shutdown
+        finally:
+            await asyncio.wait_for(cache.on_shutdown(None), timeout=1)
+            await asyncio.wait_for(scheduler.on_shutdown(MagicMock()), timeout=1)
+            Cache._reset_singleton()
+            Scheduler._reset_singleton()
+            Services._reset_singleton()
 
 
 if __name__ == "__main__":

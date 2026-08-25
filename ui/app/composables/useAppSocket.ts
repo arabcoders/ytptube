@@ -1,6 +1,7 @@
 import { proxyRefs, readonly, ref } from 'vue';
 import { useYtpConfig } from '~/composables/useYtpConfig';
 import { useHistoryState } from '~/composables/useHistoryState';
+import { useNotification, type notificationOptions } from '~/composables/useNotification';
 import { useQueueState } from '~/composables/useQueueState';
 import { ensure_api_success, request } from '~/utils';
 import type { StoreItem } from '~/types/store';
@@ -19,6 +20,14 @@ export type connectionStatus = 'connected' | 'disconnected' | 'connecting';
 type SocketHandler = (...args: unknown[]) => void;
 type HandlerRegistry = Map<SocketHandler, SocketHandler>;
 type KnownEvent = keyof WSEP;
+type NotificationEvent =
+  | 'log_info'
+  | 'log_success'
+  | 'log_warning'
+  | 'log_error'
+  | 'task_finished'
+  | 'task_error';
+type ToastApi = Pick<ReturnType<typeof useNotification>, 'info' | 'success' | 'warning' | 'error'>;
 
 const getRuntimeConfig = () => useRuntimeConfig();
 const getConfig = () => useYtpConfig();
@@ -492,30 +501,42 @@ on('item_added', (data: WSEP['item_added']) => {
 
 on('queue_reordered', (data: WSEP['queue_reordered']) => getQueueState().reorder(data.data.order));
 
+export const handleNotification = (
+  event: NotificationEvent,
+  data: WSEP[NotificationEvent],
+  toast: ToastApi = getToast(),
+): void => {
+  const message =
+    'string' === typeof data?.message
+      ? data.message
+      : String((data?.data as Record<string, unknown>)?.message ?? '');
+  const extra = ((data?.data as Record<string, unknown>)?.data ||
+    data?.data ||
+    {}) as notificationOptions;
+
+  switch (event) {
+    case 'log_info':
+      toast.info(message, extra);
+      break;
+    case 'log_success':
+      toast.success(message, extra);
+      break;
+    case 'log_warning':
+      toast.warning(message, extra);
+      break;
+    case 'log_error':
+    case 'task_error':
+      toast.error(message, extra);
+      break;
+    case 'task_finished':
+      toast.success(message, { ...extra, lowPriority: true });
+      break;
+  }
+};
+
 on(
-  ['log_info', 'log_success', 'log_warning', 'log_error'],
-  (event, data: WSEP['log_info']) => {
-    const toast = getToast();
-    const message =
-      'string' === typeof data?.message
-        ? data.message
-        : String((data?.data as Record<string, unknown>)?.message ?? '');
-    const extra = (data?.data as Record<string, unknown>)?.data || data?.data || {};
-    switch (event) {
-      case 'log_info':
-        toast.info(message, extra);
-        break;
-      case 'log_success':
-        toast.success(message, extra);
-        break;
-      case 'log_warning':
-        toast.warning(message, extra);
-        break;
-      case 'log_error':
-        toast.error(message, extra);
-        break;
-    }
-  },
+  ['log_info', 'log_success', 'log_warning', 'log_error', 'task_finished', 'task_error'],
+  handleNotification,
   true,
 );
 

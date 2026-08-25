@@ -15,40 +15,13 @@ if __name__ == "__main__":
 
     freeze_support()
 
-import dotenv
-
 os.environ["PYTHONUTF8"] = "1"
 
 sys.path.insert(0, os.path.join(getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__))), "app"))
 
-APP_NAME = "YTPTube"
 APP_ROOT = str((pathlib.Path(__file__).parent / "..").resolve())
 if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
-
-import platformdirs
-
-
-def set_env():
-    dct = {}
-
-    if not os.getenv("YTP_CONFIG_PATH"):
-        dct["YTP_CONFIG_PATH"] = platformdirs.user_config_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True)
-
-    if not os.getenv("YTP_TEMP_PATH"):
-        dct["YTP_TEMP_PATH"] = platformdirs.user_cache_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True)
-
-    if not os.getenv("YTP_DOWNLOAD_PATH"):
-        dct["YTP_DOWNLOAD_PATH"] = platformdirs.user_downloads_dir()
-
-    if os.getenv("YTP_ACCESS_LOG", None) is None:
-        dct["YTP_ACCESS_LOG"] = "false"
-
-    if not os.getenv("YTP_HOST"):
-        dct["YTP_HOST"] = "127.0.0.1"
-
-    if dct:
-        os.environ.update(dct)
 
 
 def open_browser_when_ready(url: str, timeout: float = 5.0) -> None:
@@ -113,6 +86,7 @@ def update_env_file(env_file: pathlib.Path, port: int) -> None:
     else:
         lines.append(port_line)
 
+    env_file.parent.mkdir(parents=True, exist_ok=True)
     with env_file.open("w", encoding="utf-8") as f:
         f.writelines(lines)
 
@@ -124,25 +98,25 @@ def main():
     parser.add_argument("--username", help="Account username for password reset")
     args, _ = parser.parse_known_args()
 
-    set_env()
+    if args.reset_password and not args.username:
+        parser.error("--username is required with --reset-password")
 
-    env_file: pathlib.Path = pathlib.Path(os.getenv("YTP_CONFIG_PATH", "")) / ".env"
+    from app import _add_package_paths
+    from app.library.config import Config
 
-    port = None
-    if env_file.exists():
-        dotenv.load_dotenv(env_file)
-        port = os.getenv("YTP_PORT")
+    config = Config.get_instance(is_native=True)
+    _add_package_paths(config.config_path)
+    env_file = pathlib.Path(config.config_path) / ".env"
+    port = config.port
 
     if args.reset_password:
-        if not args.username:
-            parser.error("--username is required with --reset-password")
         from app.scripts.reset_password import main as reset_password
 
         raise SystemExit(reset_password(["--username", args.username]))
 
-    host = os.getenv("YTP_HOST", "127.0.0.1")
+    host = config.host
 
-    if not port or 8081 == int(port):
+    if 8081 == port:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((host, 0))
             port = s.getsockname()[1]
@@ -150,8 +124,7 @@ def main():
 
     url = f"http://{host}:{port}"
 
-    env_no_browser: bool = os.getenv("YTP_NO_BROWSER", "false").lower() in ("1", "true", "yes")
-    if not args.no_browser and not env_no_browser:
+    if not args.no_browser and not config.no_browser:
         open_browser_when_ready(url)
 
     app_start(host, int(port))

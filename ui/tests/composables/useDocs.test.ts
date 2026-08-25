@@ -6,6 +6,7 @@ describe('docs resolver', () => {
   it('distinguishes index and root readme', () => {
     expect(getDocsEntryBySlug()?.file).toBe('docs/README.md');
     expect(getDocsEntryBySlug('readme')?.file).toBe('README.md');
+    expect(getDocsEntryBySlug('native-builds')?.file).toBe('docs/native-builds.md');
   });
 
   it('resolves relative docs links', () => {
@@ -17,6 +18,9 @@ describe('docs resolver', () => {
     );
     expect(resolveDocsLink('features.md', '/api/docs/docs/README.md').docRoute).toBe(
       '/docs/features',
+    );
+    expect(resolveDocsLink('native-builds.md', '/api/docs/docs/README.md').docRoute).toBe(
+      '/docs/native-builds',
     );
   });
 

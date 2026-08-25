@@ -14,36 +14,16 @@ LOG = get_logger()
 
 
 class Scheduler(metaclass=Singleton):
-    """
-    This class is used to manage the schedule.
-    """
-
     def __init__(self, loop: asyncio.AbstractEventLoop | None = None):
         self._jobs: dict[str, Cron] = {}
-        "The scheduled jobs."
 
         self._loop: asyncio.AbstractEventLoop | None = loop
-        "The event loop to use."
 
     @staticmethod
     def get_instance(loop: asyncio.AbstractEventLoop | None = None) -> "Scheduler":
-        """
-        Get the instance of the class.
-
-        Returns:
-            Scheduler: The instance of the class
-
-        """
         return Scheduler(loop=loop)
 
     async def on_shutdown(self, _: web.Application):
-        """
-        Do any jobs before shutdown.
-
-        Args:
-            _: The aiohttp application.
-
-        """
         LOG.debug("Shutting down the scheduler.")
 
         for job in self._jobs:
@@ -71,52 +51,17 @@ class Scheduler(metaclass=Singleton):
         EventBus.get_instance().subscribe(Events.SCHEDULE_ADD, event_handler, f"{type(self).__name__}.add")
 
     def get_all(self) -> dict[str, Cron]:
-        """Return the jobs."""
         return self._jobs
 
     def get(self, id: str) -> Cron | None:
-        """
-        Get a job by its id.
-
-        Args:
-            id (str): The id of the job.
-
-        Returns:
-            Cron | None: The job if it exists, None otherwise
-
-        """
         return self._jobs.get(id)
 
     def has(self, id: str) -> bool:
-        """
-        Check if a job with the given id exists.
-
-        Args:
-            id (str): The id of the job.
-
-        Returns:
-            bool: True if the job exists, False otherwise
-
-        """
         return id in self._jobs
 
     def add(
         self, timer: str, func: Callable[..., Any], args: tuple = (), kwargs: dict | None = None, id: str | None = None
     ) -> str:
-        """
-        Add a job to the schedule.
-
-        Args:
-            timer (str): The timer for the job.
-            func (callable): The function to call.
-            args (tuple): The arguments to pass to the function.
-            kwargs (dict): The keyword arguments to pass to the function.
-            id (str): The id of the job.
-
-        Returns:
-            str: The id of the job
-
-        """
         if id and id in self._jobs:
             self.remove(id)
 
@@ -138,16 +83,6 @@ class Scheduler(metaclass=Singleton):
         return job_id
 
     def remove(self, id: str | list[str]) -> bool:
-        """
-        Remove a job from the scheduler.
-
-        Args:
-            id (str|list[str]): The id of the job to remove.
-
-        Returns:
-            bool: True if the job was removed, False otherwise
-
-        """
         if isinstance(id, list):
             for i in id:
                 self.remove(i)

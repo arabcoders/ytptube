@@ -57,8 +57,6 @@ async def execute(
 
 @contextlib.asynccontextmanager
 async def transaction(conn: AsyncConnection) -> AsyncIterator[None]:
-    # SQLAlchemy AsyncConnection manages transactions automatically
-    # when used with context managers, so we just yield
     try:
         yield
         await conn.commit()
@@ -68,8 +66,6 @@ async def transaction(conn: AsyncConnection) -> AsyncIterator[None]:
 
 
 class Migration:
-    """This class represents a migration version."""
-
     def __init__(self, path: str):
         self.path: str = path
         self.filename: str = os.path.basename(path)
@@ -137,7 +133,6 @@ class Database:
 
     async def __aenter__(self):
         if self._owns_connection and self.conn is None:
-            # Create connection from string URL
             from sqlalchemy.ext.asyncio import create_async_engine
 
             self._engine = create_async_engine(f"sqlite+aiosqlite:///{self.db_url}")
@@ -206,10 +201,6 @@ class Database:
             database_version = str(next_version)
 
     async def get_version(self) -> str | None:
-        """
-        Return the database's version, or None if it is not under version
-        control.
-        """
         assert self.conn
         if not await self.is_version_controlled():
             return None
@@ -242,7 +233,6 @@ def _assert_migration_exists(migrations: Iterable[Migration], version: str | int
 
 
 def load_migrations(directory: str | Path) -> list[Migration]:
-    """Return the migrations contained in the given directory."""
     directory = str(directory)
     if not os.path.exists(directory) or not os.path.isdir(directory):
         msg: str = f"{directory} is not a directory."
@@ -251,11 +241,6 @@ def load_migrations(directory: str | Path) -> list[Migration]:
 
 
 async def upgrade(db_url: AsyncConnection | str, migration_dir: str | Path, version: str | None = None) -> None:
-    """
-    Upgrade the given database with the migrations contained in the
-    migrations directory. If a version is not specified, upgrade
-    to the most recent version.
-    """
     async with Database(db_url) as db:
         if not await db.is_version_controlled():
             await db.initialize_version_control()
@@ -264,10 +249,6 @@ async def upgrade(db_url: AsyncConnection | str, migration_dir: str | Path, vers
 
 
 async def downgrade(db_url: str | AsyncConnection, migration_dir: str | Path, version: str) -> None:
-    """
-    Downgrade the database to the given version with the migrations
-    contained in the given migration directory.
-    """
     async with Database(db_url) as db:
         if not await db.is_version_controlled():
             msg = f"The database {db_url} is not version controlled."
@@ -277,16 +258,11 @@ async def downgrade(db_url: str | AsyncConnection, migration_dir: str | Path, ve
 
 
 async def get_version(db_url: AsyncConnection | str) -> str | None:
-    """Return the migration version of the given database."""
     async with Database(db_url) as db:
         return await db.get_version()
 
 
 def create_migration(name: str, directory: str | None = None) -> str:
-    """
-    Create a migration with the given name. If no directory is specified,
-    the current working directory will be used.
-    """
     directory = directory or "."
     if not os.path.exists(directory) or not os.path.isdir(directory):
         msg: str = f"{directory} is not a directory."

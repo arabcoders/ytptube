@@ -652,11 +652,11 @@ async def test_lookup_cancels_siblings(monkeypatch: pytest.MonkeyPatch) -> None:
 
     async def fake_fetch(config, url, **kwargs):  # noqa: ARG001
         if url.endswith("/first"):
-            await sibling_started.wait()
+            await asyncio.wait_for(sibling_started.wait(), timeout=1)
             raise TimeoutError
         sibling_started.set()
         try:
-            await asyncio.sleep(60)
+            await asyncio.wait_for(asyncio.Event().wait(), timeout=1)
         except asyncio.CancelledError:
             sibling_cancelled.set()
             raise

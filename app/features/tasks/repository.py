@@ -106,7 +106,6 @@ class TasksRepository(metaclass=Singleton):
             return result.scalar_one_or_none()
 
     async def get_all_enabled(self) -> list[TaskModel]:
-        """Get all enabled tasks."""
         async with self.session() as session:
             result: Result[tuple[TaskModel]] = await session.execute(
                 select(TaskModel).where(TaskModel.enabled).order_by(TaskModel.name.asc())
@@ -114,7 +113,6 @@ class TasksRepository(metaclass=Singleton):
             return list(result.scalars().all())
 
     async def get_all_with_timer(self) -> list[TaskModel]:
-        """Get all tasks that have a timer configured."""
         async with self.session() as session:
             result: Result[tuple[TaskModel]] = await session.execute(
                 select(TaskModel).where(TaskModel.timer != "").order_by(TaskModel.name.asc())

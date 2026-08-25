@@ -15,7 +15,6 @@ from app.tests.helpers import make_in_memory_db_path
 
 
 async def reset_sqlite_store() -> None:
-    """Close and reset SqliteStore singleton for testing."""
     if DownloadsRepository in DownloadsRepository._instances:
         await DownloadsRepository._instances[DownloadsRepository].shutdown()
     if SqliteStore in SqliteStore._instances:
@@ -32,7 +31,6 @@ async def reset_sqlite_store() -> None:
 
 
 async def make_db(data: int = 100) -> Any:
-    """Create a named in-memory database with test data."""
     await reset_sqlite_store()
     db_path = make_in_memory_db_path("test-datastore-pagination")
     ins = SqliteStore.get_instance(db_path=db_path)
@@ -68,15 +66,11 @@ async def make_db(data: int = 100) -> Any:
 
 @pytest.mark.asyncio
 class TestDataStorePagination:
-    """Test pagination functionality of DataStore."""
-
     @pytest_asyncio.fixture
     async def make_db(self, data: int = 100):
-        """Fixture to provide a temporary database with test data."""
         return await make_db(data=data)
 
     async def test_get_total_count(self):
-        """Test getting total count of items."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -86,7 +80,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_basic(self):
-        """Test basic pagination functionality."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -103,7 +96,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_last_page(self):
-        """Test pagination on last page."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -116,7 +108,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_partial_page(self):
-        """Test pagination with partial last page."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -129,7 +120,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_out_of_range(self):
-        """Test pagination with page number out of range."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -142,7 +132,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_invalid_page(self):
-        """Test pagination with invalid page number."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -155,7 +144,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_invalid_per_page(self):
-        """Test pagination with invalid per_page value."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -169,7 +157,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_invalid_order(self):
-        """Test pagination with invalid order parameter."""
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -179,7 +166,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_empty_store(self):
-        """Test pagination with empty datastore."""
         db = await make_db(data=0)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -193,7 +179,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_single_item(self):
-        """Test pagination with single item."""
         db = await make_db(data=1)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -207,7 +192,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_status_filter_include(self):
-        """Test pagination with status filter (inclusion)."""
         # Add some items with different status values
         item_data_pending = {
             "url": "https://example.com/pending",
@@ -293,7 +277,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_pagination_status_filter_exclude(self):
-        """Test pagination with status filter (exclusion)."""
         # Add some items with different status values
         item_data_pending = {
             "url": "https://example.com/pending2",
@@ -376,7 +359,6 @@ class TestDataStorePagination:
             await db.close()
 
     async def test_status_filter_none_matching(self):
-        """Test pagination with status filter that matches no items."""
         db = await make_db(data=0)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)

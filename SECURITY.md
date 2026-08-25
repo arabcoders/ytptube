@@ -4,7 +4,7 @@
 
 Report security issues via [GitHub](https://github.com/arabcoders/ytptube/security/advisories/new). Do not open a public issue.
 
-Expect reply within a few days at most usually in hours. Include:
+Expect a reply within a few days, usually within hours. Include:
 
 - The security impact
 - A working re-production. `PoC` code is preferred, but a detailed description of the steps to reproduce is acceptable.

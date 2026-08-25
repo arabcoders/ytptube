@@ -1,17 +1,3 @@
-"""
-Tests for Singleton.py - Singleton metaclass utilities.
-
-This test suite provides comprehensive coverage for the singleton metaclasses:
-- Tests Singleton metaclass behavior
-- Tests ThreadSafe metaclass behavior
-- Tests thread safety of ThreadSafe metaclass
-- Tests that different classes get different instances
-- Tests that same class gets same instance
-
-Total test functions: 8
-All singleton patterns and edge cases are covered.
-"""
-
 import threading
 import time
 
@@ -19,16 +5,12 @@ from app.library.Singleton import Singleton, ThreadSafe
 
 
 class TestSingleton:
-    """Test the Singleton metaclass."""
-
     def setup_method(self):
-        """Set up test fixtures by clearing singleton instances."""
         # Clear singleton instances before each test
         Singleton._instances.clear()
         ThreadSafe._instances.clear()
 
     def test_singleton_same_instance(self):
-        """Test that Singleton returns same instance for same class."""
 
         class TestClass(metaclass=Singleton):
             def __init__(self, value=None):
@@ -37,14 +19,12 @@ class TestSingleton:
         instance1 = TestClass("first")
         instance2 = TestClass("second")
 
-        # Should be the same instance
         assert instance1 is instance2
         # First initialization should win
         assert instance1.value == "first"
         assert instance2.value == "first"
 
     def test_singleton_different_classes(self):
-        """Test that Singleton creates different instances for different classes."""
 
         class ClassA(metaclass=Singleton):
             def __init__(self):
@@ -69,7 +49,6 @@ class TestSingleton:
         assert instance_b1.name == "B"
 
     def test_threadsafe_same_instance(self):
-        """Test that ThreadSafe returns same instance for same class."""
 
         class TestClass(metaclass=ThreadSafe):
             def __init__(self, value=None):
@@ -78,14 +57,12 @@ class TestSingleton:
         instance1 = TestClass("first")
         instance2 = TestClass("second")
 
-        # Should be the same instance
         assert instance1 is instance2
         # First initialization should win
         assert instance1.value == "first"
         assert instance2.value == "first"
 
     def test_threadsafe_different_classes(self):
-        """Test that ThreadSafe creates different instances for different classes."""
 
         class ClassA(metaclass=ThreadSafe):
             def __init__(self):
@@ -110,19 +87,18 @@ class TestSingleton:
         assert instance_b1.name == "B"
 
     def test_threadsafe_thread_safety(self):
-        """Test that ThreadSafe is actually thread-safe."""
         instances = []
         errors = []
+        barrier = threading.Barrier(10)
 
         class ThreadSafeClass(metaclass=ThreadSafe):
             def __init__(self):
-                # Add a small delay to increase chance of race condition
-                time.sleep(0.01)
                 self.thread_id = threading.current_thread().ident
                 self.creation_time = time.time()
 
         def worker():
             try:
+                barrier.wait(timeout=1)
                 instance = ThreadSafeClass()
                 instances.append(instance)
             except Exception as e:
@@ -140,9 +116,9 @@ class TestSingleton:
 
         # Wait for all threads to complete
         for thread in threads:
-            thread.join()
+            thread.join(timeout=1)
+            assert not thread.is_alive()
 
-        # Check results
         assert len(errors) == 0, f"Thread safety errors: {errors}"
         assert len(instances) == 10
 
@@ -156,7 +132,6 @@ class TestSingleton:
         assert hasattr(first_instance, "creation_time")
 
     def test_singleton_inheritance(self):
-        """Test singleton behavior with inheritance."""
 
         class BaseClass(metaclass=Singleton):
             def __init__(self):
@@ -186,7 +161,6 @@ class TestSingleton:
         assert child1.child_value == "child"
 
     def test_threadsafe_inheritance(self):
-        """Test threadsafe singleton behavior with inheritance."""
 
         class BaseClass(metaclass=ThreadSafe):
             def __init__(self):
@@ -216,7 +190,6 @@ class TestSingleton:
         assert child1.child_value == "child"
 
     def test_singleton_args_kwargs(self):
-        """Test singleton behavior with various constructor arguments."""
 
         class ConfigClass(metaclass=Singleton):
             def __init__(self, name, value=None, **kwargs):
@@ -230,14 +203,12 @@ class TestSingleton:
         # Second instantiation with different arguments (should be ignored)
         instance2 = ConfigClass("different", value=100, other_param="other")
 
-        # Should be same instance with original values
         assert instance1 is instance2
         assert instance1.name == "test"
         assert instance1.value == 42
         assert instance1.extra == {"extra_param": "extra"}
 
     def test_threadsafe_args_kwargs(self):
-        """Test threadsafe singleton behavior with various constructor arguments."""
 
         class ConfigClass(metaclass=ThreadSafe):
             def __init__(self, name, value=None, **kwargs):
@@ -251,7 +222,6 @@ class TestSingleton:
         # Second instantiation with different arguments (should be ignored)
         instance2 = ConfigClass("different", value=100, other_param="other")
 
-        # Should be same instance with original values
         assert instance1 is instance2
         assert instance1.name == "test"
         assert instance1.value == 42

@@ -1,156 +1,110 @@
 # Contributing to YTPTube
 
-YTPTube is a **personal-first project**. While contributions are welcome, **all final decisions rest with the maintainer**.
+YTPTube is a personal-first project maintained according to the maintainer's needs and preferences. Contributions are
+welcome after discussion and approval, but the maintainer decides the project's direction and which changes are
+accepted.
 
-## Core Principles
+Do not start work or open a pull request without approval. Unsolicited pull requests will be closed without review.
 
-* **The maintainer has final say** on all changes and project direction.
-* This project is built **for personal use first**. Community contributions are secondary.
-* **All contributions require prior discussion and approval.**
-* **All pull requests must target the `dev` branch** never `master`.
-* Contributions must align with the project's goals, architecture, and coding standards.
+## Before You Start
 
-**Opening a PR without prior approval will result in immediate closure without review.**
+Open a GitHub issue for a bug fix or small feature. Use a GitHub discussion for a larger change or a general question.
+Your proposal should explain:
 
----
+* What you want to change
+* Why the change is needed
+* How you plan to implement it
+* Which use cases or existing behavior are relevant
 
-## Contribution Process
+Bug fixes, functional improvements, and measurable performance work take priority. A personal preference or a claim
+that something looks better is not enough reason to change the interface. Large refactors, new abstractions, and
+architectural changes need approval before implementation.
 
-### 1. Start a Discussion
+Wait for an explicit response from the maintainer before writing code. Approval may include limits or a requested
+approach. A proposal can be declined if it does not fit the project's goals or the maintainer's use cases.
 
-Before writing any code, **propose your idea** through one of these channels:
+## Development
 
-* Open a **GitHub Issue** for bug fixes or small features
-* Start a **GitHub Discussion** for larger changes or questions
+Branch from `dev`:
 
-**Include in your proposal:**
-* **What** you want to change
-* **Why** it's needed or beneficial
-  * Bug fixes and functional improvements are prioritized
-  * Performance enhancements with measurable impact
-  * Features that align with the project's core purpose
-  * **Not acceptable:** Personal UI/UX preferences, stylistic changes, or "I think it looks better" rationale
-* **How** you plan to implement it (high-level approach)
-* Any relevant context or use cases
-
-### 2. Wait for Approval
-
-* Only proceed after **explicit approval** from the maintainer to not waste effort.
-* The maintainer may suggest modifications or alternative approaches.
-* Not all proposals will be accepted this protects project coherence.
-
-### 3. Develop Your Changes
-
-**Branch from `dev`:**
 ```bash
 git checkout dev
 git pull origin dev
 git switch -C feature/descriptive-name
 ```
 
-**Run the backend:**
+Run the backend from the repository root:
+
 ```bash
 uv run python -m app.main --dev
 ```
 
-**Follow project standards:**
-* Match existing code style and conventions
-* Add or update tests for all changes:
-  * New features **MUST** include tests
-  * Bug fixes **MUST** include a regression test
-* Ensure all linting, type checking, and tests pass
-* Keep changes focused and atomic
+Run the frontend from `ui/`:
 
-### 4. Submit a Pull Request
+```bash
+bun run dev
+```
 
-**Target the `dev` branch:**
-* Reference the approved issue or discussion number
-* Provide a clear description of what changed and why
-* List any breaking changes or migration steps
-* Ensure CI checks pass
+Keep each change focused and follow the patterns already used in the codebase. New features require tests. Bug fixes
+require a regression test that fails before the fix and passes after it. Update documentation when behavior, setup, or
+an API changes.
 
-**PR template checklist:**
-- [ ] Discussed and approved beforehand
-- [ ] Targets `dev` branch
-- [ ] Tests added/updated and passing
-- [ ] Linting passes
-- [ ] Type checking passes
-- [ ] Documentation updated (if needed)
+Run the checks that apply to the files you changed.
 
----
+Backend checks:
 
-## Automatic Rejections
+```bash
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/
+uv run pytest app/ -q
+```
 
-The following will be **closed immediately without review**:
+Frontend checks, run from `ui/`:
 
-* PRs opened without prior discussion and approval
-* PRs targeting `master` instead of `dev`
-* Large refactors or architectural changes without approval
-* Fully AI-generated code without meaningful human oversight
-* Changes that don't align with project goals or philosophy
-* PRs where the contributor cannot explain or justify the changes
+```bash
+bun run format:check
+bun run lint:ci
+bun run typecheck
+bun run test:ci
+```
 
----
+## AI-Assisted Work
 
-## AI-Assisted Development
+AI-assisted tools are allowed in this project. Disclosure is not required. The standard for a contribution does not
+change based on which tools were used to produce it.
 
-AI tools are **permitted** as development aids, but **you remain fully responsible** for all submitted code.
+You must understand every submitted change, check it against the existing code, test it, and explain its behavior and
+design decisions. Generated code, tests, or documentation that has not received meaningful human review will be
+rejected. Tests must validate behavior rather than exist only to increase coverage.
 
-### Acceptable Use
+## Pull Requests
 
-AI-assisted code is welcome **when**:
+Every pull request must target `dev`, never `master`. Reference the approved issue or discussion and describe what
+changed and why. Include any breaking changes or migration steps, and make sure the applicable checks pass.
 
-* You **fully understand** every line being submitted
-* The code **seamlessly integrates** with existing patterns and style
-* You have **reviewed, tested, and validated** the output yourself
-* **Comprehensive tests** are included (not AI-generated stubs)
-* The code is **indistinguishable in quality** from hand-written contributions
-* You can **explain and defend** design decisions in the PR
+Use this checklist before submitting:
 
-**AI is a tool, not a substitute for understanding.**
+- [ ] The change was discussed and approved before implementation
+- [ ] The pull request targets `dev`
+- [ ] Relevant tests were added or updated and pass
+- [ ] Applicable formatting, linting, and type checks pass
+- [ ] Documentation was updated where needed
 
-### Not Acceptable
+A pull request will be closed without review if it:
 
-The following will be rejected:
+* Was opened without prior discussion and approval
+* Targets `master` instead of `dev`
+* Includes an unapproved large refactor or architectural change
+* Does not fit the approved scope or project goals
+* Contains work the contributor cannot explain or justify
+* Purely AI-generated dump with no human understanding, review, or testing.
 
-* Fully AI-generated PRs with minimal human review
-* Code that introduces new patterns or abstractions without approval
-* "Prompt-dump" output that doesn't match project conventions
-* Changes the contributor cannot explain or justify
-* AI-generated test suites that don't meaningfully validate behavior
+## Questions
 
-### Disclosure
-
-You are **not required** to disclose AI usage. However, if code quality suggests pure AI generation without human oversight, the PR will be closed.
-
-**You are accountable for correctness, maintainability, and alignment regardless of how the code was created.**
-
----
-
-## Testing Requirements
-
-All contributions must include appropriate tests:
-
-* **All changes:** Type checking must pass (`uv run ty check app/`)
-* **New features:** Full test coverage including edge cases
-* **Bug fixes:** Regression test that fails before the fix and passes after
-* **Refactors:** Existing tests must continue to pass
-* **Performance changes:** Benchmarks or performance tests when applicable
-
-Tests should be clear, maintainable, and actually validate the intended behavior.
-
----
-
-## Questions?
-
-* Check existing **Issues** and **Discussions** first
-* Join the project **Discord** for real-time discussion
-* Be patient, this is a personal project with limited maintenance time
-
----
+Check existing GitHub issues and discussions first. For short questions, join the project
+[Discord server](https://discord.gg/G3GpVR8xpb). YTPTube is maintained as a solo project, so replies may take some time.
 
 ## License
 
-By contributing, you agree that your code will be licensed under the project's **MIT License**.
-
-Thank you for respecting this contribution process. It helps maintain project quality and the maintainer's sanity.
+By contributing, you agree that your contribution will be licensed under the project's MIT License.

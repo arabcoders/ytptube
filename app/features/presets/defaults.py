@@ -1,13 +1,13 @@
 from datetime import UTC, datetime
 
-DEFAULT_PRESET_UPDATED_AT: datetime = datetime(2026, 1, 25, tzinfo=UTC)
+DEFAULT_PRESET_UPDATED_AT: datetime = datetime(2026, 8, 24, tzinfo=UTC)
 
 DEFAULT_PRESETS: list[dict[str, object]] = [
     {
         "name": "default",
         "default": True,
         "cli": "--socket-timeout 30 --download-archive %(archive_file)s",
-        "description": "Default preset for yt-dlp. It will download whatever yt-dlp decides is the best quality for the video and audio.",
+        "description": "Downloads the best video and audio quality selected by yt-dlp.",
         "folder": "",
         "template": "",
         "cookies": "",
@@ -18,7 +18,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "name": "mobile",
         "cli": '--socket-timeout 30 --download-archive %(archive_file)s\n-t mp4 --merge-output-format mp4 --add-chapters --remux-video mp4 \n--embed-metadata --embed-thumbnail \n--postprocessor-args "-movflags +faststart"',
         "default": True,
-        "description": "This preset is designed for mobile devices. It will download the best quality video and audio in mp4 format, merge them, and add chapters, metadata, and thumbnail.",
+        "description": "Downloads the best video and audio quality in MP4, then adds chapters, metadata, and a thumbnail for mobile devices.",
         "folder": "",
         "template": "",
         "cookies": "",
@@ -29,7 +29,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "name": "1080p",
         "cli": "--socket-timeout 30 --download-archive %(archive_file)s\n-S vcodec:h264 --format 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
         "default": True,
-        "description": "Download the best quality video and audio in mp4 format for 1080p resolution.",
+        "description": "Downloads the best video and audio quality in MP4 at up to 1080p.",
         "folder": "",
         "template": "",
         "cookies": "",
@@ -40,7 +40,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "name": "720p",
         "cli": "--socket-timeout 30 --download-archive %(archive_file)s\n-S vcodec:h264 --format 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
         "default": True,
-        "description": "Download the best quality video and audio in mp4 format for 720p resolution.",
+        "description": "Downloads the best video and audio quality in MP4 at up to 720p.",
         "folder": "",
         "template": "",
         "cookies": "",
@@ -51,7 +51,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "name": "audio_only",
         "cli": "--socket-timeout 30 --download-archive %(archive_file)s\n--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
         "default": True,
-        "description": "This preset is designed to download only the audio of the video. It will extract the audio, add chapters, metadata, and thumbnail.",
+        "description": "Downloads audio only, then adds chapters, metadata, and a thumbnail.",
         "folder": "",
         "template": "",
         "cookies": "",
@@ -60,7 +60,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
     },
     {
         "name": "info_reader_plugin",
-        "description": 'This preset generate specific filename format and metadata to work with yt-dlp info reader plugins for jellyfin/emby and plex and to make play state sync work for WatchState.\n\nThere is one more step you need to do via Other > Terminal if you have it enabled or directly from container shell\n\nyt-dlp -I0 --write-info-json --write-thumbnail --convert-thumbnails jpg --paths /downloads/youtube -o "%(channel|Unknown_title)s [%(channel_id|Unknown_id)s]/%(title).180B [%(channel_id|Unknown_id)s].%(ext)s" -- https://www.youtube.com/channel/UCClfFsWcT3N2I7VTXXyt84A\n\nChange the url to the channel you want to download.\n\nFor more information please visit \nhttps://github.com/arabcoders/watchstate/blob/master/FAQ.md#how-to-get-watchstate-working-with-youtube-contentlibrary',
+        "description": "Uses a predictable filename layout and metadata for yt-dlp info-reader plugins in Jellyfin, Emby, Plex, and WatchState.",
         "folder": "",
         "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/%(release_date>%Y%m%d,upload_date>%Y%m%d)s - %(title).180B [%(id)s].%(ext)s",
         "cli": "--socket-timeout 30 --download-archive %(archive_file)s\n--windows-filenames --write-info-json --embed-info-json \n--convert-thumbnails jpg --write-thumbnail --embed-metadata",
@@ -71,7 +71,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
     },
     {
         "name": "nfo_maker_tv",
-        "description": "This preset generate specific filename format and metadata to work with media servers like jellyfin/emby and plex for episodes.",
+        "description": "Generates a filename layout and metadata for Jellyfin, Emby, and Plex episodes.",
         "folder": "",
         "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/S%(release_date>%Y,upload_date>%Y)sE%(release_date>%m%d,upload_date>%m%d)s - %(title).100B [%(id)s].%(ext)s",
         "cli": '--socket-timeout 30 --download-archive %(archive_file)s\n--use-postprocessor "NFOMakerPP:when=after_move" \n--windows-filenames --convert-thumbnails jpg --write-thumbnail',
@@ -82,7 +82,7 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
     },
     {
         "name": "nfo_maker_movie",
-        "description": "This preset generate specific filename format and metadata to work with media servers like jellyfin/emby and plex for movies.",
+        "description": "Generates a filename layout and metadata for Jellyfin, Emby, and Plex movies.",
         "folder": "",
         "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/S%(release_date>%Y,upload_date>%Y)sE%(release_date>%m%d,upload_date>%m%d)s - %(title).100B [%(id)s].%(ext)s",
         "cli": '--socket-timeout 30 --download-archive %(archive_file)s\n--use-postprocessor "NFOMakerPP:when=after_move;mode=movie" \n--windows-filenames --convert-thumbnails jpg --write-thumbnail',

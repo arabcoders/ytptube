@@ -1282,6 +1282,11 @@
         "navLabel": "功能",
         "description": "下载、自动化和媒体库功能。"
       },
+      "nativeBuilds": {
+        "title": "原生版本",
+        "navLabel": "原生版本",
+        "description": "安装和运行 Windows、macOS 和 Linux 版本。"
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",
