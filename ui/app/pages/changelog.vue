@@ -213,13 +213,12 @@
           :description="t('changelog.noResultsFor', { query })"
         />
 
-        <UAlert
+        <UEmpty
           v-else
-          color="warning"
-          variant="soft"
-          icon="i-lucide-circle-alert"
+          icon="i-lucide-scroll-text"
           :title="t('changelog.noItems')"
           :description="t('changelog.empty')"
+          class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
         />
       </div>
     </template>

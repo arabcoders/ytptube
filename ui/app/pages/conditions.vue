@@ -425,13 +425,12 @@
       />
     </div>
 
-    <UAlert
+    <UEmpty
       v-else-if="!filteredItems.length"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-circle-alert"
+      icon="i-lucide-git-branch"
       :title="t('common.noItems')"
       :description="t('common.empty')"
+      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 
     <div v-if="filteredItems.length > 0 && paging?.total_pages > 1" class="flex justify-end">

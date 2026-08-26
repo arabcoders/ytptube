@@ -415,13 +415,12 @@
       />
     </div>
 
-    <UAlert
+    <UEmpty
       v-else-if="!definitions.length"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-circle-alert"
+      icon="i-lucide-file-cog"
       :title="t('common.noItems')"
       :description="t('common.empty')"
+      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 
     <UModal

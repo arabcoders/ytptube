@@ -641,13 +641,12 @@
       />
     </div>
 
-    <UAlert
-      v-if="!query && tasks.length < 1"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-circle-alert"
+    <UEmpty
+      v-else-if="!query && tasks.length < 1"
+      icon="i-lucide-calendar-clock"
       :title="t('common.noItems')"
       :description="t('common.empty')"
+      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 
     <div v-if="filteredTasks.length > 0 && paging?.total_pages > 1" class="flex justify-end">

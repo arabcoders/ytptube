@@ -449,12 +449,11 @@
                       </div>
                     </TransitionGroup>
 
-                    <UAlert
+                    <UEmpty
                       v-else
-                      color="neutral"
-                      variant="soft"
                       icon="i-lucide-inbox"
                       :title="t('simple.queueEmpty')"
+                      class="rounded-lg border border-dashed border-default bg-muted/10 py-8"
                     />
                   </div>
                 </Transition>
@@ -698,12 +697,11 @@
                       :title="t('history.loading')"
                     />
 
-                    <UAlert
+                    <UEmpty
                       v-else
-                      color="neutral"
-                      variant="soft"
                       icon="i-lucide-history"
                       :title="t('simple.historyEmpty')"
+                      class="rounded-lg border border-dashed border-default bg-muted/10 py-8"
                     />
 
                     <div v-if="historyPagination.total_pages > 1" class="flex justify-end py-2">
