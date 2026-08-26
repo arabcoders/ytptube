@@ -41,16 +41,17 @@
             <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
-          <div class="flex flex-col gap-2 sm:flex-row">
+          <UFieldGroup size="lg" class="w-full">
             <UInput
               id="import_string"
               dir="ltr"
               v-model="importString"
               type="text"
               autocomplete="off"
-              size="lg"
-              class="w-full"
+              class="min-w-0 flex-1"
               :ui="inputUi"
+              :disabled="importInProgress"
+              @keydown.enter.prevent="() => void importItem()"
             />
 
             <UButton
@@ -58,14 +59,14 @@
               color="neutral"
               variant="outline"
               icon="i-lucide-import"
-              size="lg"
               class="justify-center sm:min-w-28"
-              :disabled="!importString"
+              :loading="importInProgress"
+              :disabled="!importString || importInProgress"
               @click="() => void importItem()"
             >
               {{ t('common.import') }}
             </UButton>
-          </div>
+          </UFieldGroup>
         </UFormField>
       </template>
 
@@ -193,18 +194,19 @@
           <span>{{ t('common.selectEventsDesc') }}</span>
         </template>
 
-        <select
+        <USelectMenu
           id="on"
           dir="ltr"
           v-model="form.on"
+          :items="eventItems"
           multiple
+          color="neutral"
+          size="lg"
+          class="w-full"
           :disabled="addInProgress"
-          class="min-h-40 w-full rounded-md border border-default bg-elevated/60 px-3 py-2 text-sm text-default outline-none transition focus:border-primary"
-        >
-          <option v-for="aEvent in allowedEvents" :key="aEvent" :value="aEvent">
-            {{ aEvent }}
-          </option>
-        </select>
+          :search-input="{ placeholder: t('common.search') }"
+          :ui="selectUi"
+        />
       </UFormField>
 
       <UFormField class="w-full" :ui="fieldUi">
@@ -229,25 +231,20 @@
           <span>{{ t('common.selectPresetsDesc') }}</span>
         </template>
 
-        <select
+        <USelectMenu
           id="presets"
           v-model="form.presets"
+          :items="selectItems"
+          value-key="value"
+          label-key="label"
           multiple
+          color="neutral"
+          size="lg"
+          class="w-full"
           :disabled="addInProgress"
-          class="min-h-40 w-full rounded-md border border-default bg-elevated/60 px-3 py-2 text-sm text-default outline-none transition focus:border-primary"
-        >
-          <optgroup v-if="filterPresets(false).length > 0" :label="t('common.customPresets')">
-            <option v-for="preset in filterPresets(false)" :key="preset.id" :value="preset.name">
-              {{ preset.name }}
-            </option>
-          </optgroup>
-
-          <optgroup :label="t('common.defaultPresets')">
-            <option v-for="preset in filterPresets(true)" :key="preset.id" :value="preset.name">
-              {{ preset.name }}
-            </option>
-          </optgroup>
-        </select>
+          :search-input="{ placeholder: t('common.searchPresets') }"
+          :ui="selectUi"
+        />
       </UFormField>
     </div>
 
@@ -417,8 +414,9 @@ const props = defineProps<{
 
 const box = useConfirm();
 const { isApprise } = useNotifications();
-const { filterPresets, hasPreset } = usePresetOptions();
+const { hasPreset, selectItems } = usePresetOptions();
 
+const eventItems = computed(() => [...props.allowedEvents]);
 const requestMethods = ['POST', 'PUT'];
 const requestTypeItems = computed(() => [
   { label: t('common.requestTypeJson'), value: 'json' },
@@ -427,6 +425,7 @@ const requestTypeItems = computed(() => [
 
 const showImport = useStorage('showImport', false);
 const importString = ref('');
+const importInProgress = ref(false);
 
 const requestType = computed(() => form.request.type);
 
@@ -590,6 +589,10 @@ const checkInfo = async (): Promise<void> => {
 };
 
 const importItem = async (): Promise<void> => {
+  if (importInProgress.value) {
+    return;
+  }
+
   action.clear();
   const value = importString.value.trim();
   if (!value) {
@@ -597,6 +600,7 @@ const importItem = async (): Promise<void> => {
     return;
   }
 
+  importInProgress.value = true;
   try {
     const item = decode(value) as notification & ImportedItem;
 
@@ -629,6 +633,8 @@ const importItem = async (): Promise<void> => {
         }),
       ),
     );
+  } finally {
+    importInProgress.value = false;
   }
 };
 

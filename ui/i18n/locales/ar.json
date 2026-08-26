@@ -566,7 +566,7 @@
     "filterSyntaxDesc": "يحدد هذا المرشح متى يُطبق الشرط. يستخدم نفس صيغة <code>--match-filters</code> في <bdi>yt-dlp</bdi> مع دعم <code>OR</code> و <code>{'||'}</code>.",
     "fullPath": "المسار الكامل: {path}",
     "importPreset": "استيراد من إعداد مسبق موجود",
-    "importPresetDesc": "اختر إعداداً مسبقاً لاستيراد بياناته. تحذير: سيؤدي هذا إلى استبدال بيانات النموذج الحالية.",
+    "importPresetDesc": "اختر إعداداً مسبقاً لاستيراد بياناته.",
     "keyLabel": "المفتاح",
     "leaveEmptyDefault": "اتركه فارغاً لاستخدام مسار التنزيل الافتراضي",
     "leaveEmptyDefaultTemplate": "اتركه فارغاً لاستخدام القالب الافتراضي.",

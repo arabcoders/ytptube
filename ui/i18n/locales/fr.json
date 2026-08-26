@@ -566,7 +566,7 @@
     "filterSyntaxDesc": "Ce filtre détermine quand la condition s'applique. Il utilise la même syntaxe que <code>--match-filters</code> de yt-dlp avec prise en charge de <code>OR</code> et <code>{'||'}</code>.",
     "fullPath": "Chemin complet : {path}",
     "importPreset": "Importer depuis un préréglage existant",
-    "importPresetDesc": "Sélectionnez un préréglage pour importer ses données. Avertissement : Cela écrasera les données du formulaire actuel.",
+    "importPresetDesc": "Sélectionnez un préréglage pour importer ses données.",
     "keyLabel": "Clé",
     "leaveEmptyDefault": "Laissez vide pour utiliser le chemin de téléchargement par défaut",
     "leaveEmptyDefaultTemplate": "Laissez vide pour utiliser le modèle par défaut.",

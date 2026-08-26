@@ -566,7 +566,7 @@
     "filterSyntaxDesc": "This filter determines when the condition applies. It uses the same syntax as yt-dlp’s <code>--match-filters</code> with <code>OR</code> and <code>{'||'}</code> support.",
     "fullPath": "Full Path: {path}",
     "importPreset": "Import from pre-existing preset",
-    "importPresetDesc": "Select a preset to import its data. Warning: This will overwrite the current form data.",
+    "importPresetDesc": "Select a preset to import its data.",
     "keyLabel": "Key",
     "leaveEmptyDefault": "Leave empty to use default download path",
     "leaveEmptyDefaultTemplate": "Leave empty to use default template.",

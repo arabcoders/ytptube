@@ -27,7 +27,7 @@
         v-model="boolModel"
         :disabled="disabled"
         color="success"
-        label=""
+        :aria-label="label"
         size="lg"
         class="shrink-0"
         :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-sm' }"

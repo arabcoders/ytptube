@@ -48,16 +48,17 @@
             <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
-          <div class="flex flex-col gap-2 sm:flex-row">
+          <UFieldGroup size="lg" class="w-full">
             <UInput
               id="import_string"
               dir="ltr"
               v-model="importString"
               type="text"
               autocomplete="off"
-              size="lg"
-              class="w-full"
+              class="min-w-0 flex-1"
               :ui="inputUi"
+              :disabled="importInProgress"
+              @keydown.enter.prevent="() => void importItem()"
             />
 
             <UButton
@@ -65,14 +66,14 @@
               color="neutral"
               variant="outline"
               icon="i-lucide-import"
-              size="lg"
               class="justify-center sm:min-w-28"
-              :disabled="!importString"
+              :loading="importInProgress"
+              :disabled="!importString || importInProgress"
               @click="() => void importItem()"
             >
               {{ t('common.import') }}
             </UButton>
-          </div>
+          </UFieldGroup>
         </UFormField>
       </template>
 
@@ -249,6 +250,7 @@ const iconOptions: AutoCompleteOptions = bundledUiIconNames.map((name) => ({
 }));
 const showImport = useStorage('showDlFieldsImport', false);
 const importString = ref('');
+const importInProgress = ref(false);
 
 const dirtySource = computed(() => ({
   reference: props.reference ?? null,
@@ -359,6 +361,10 @@ const formError = computed(() => {
 watch(formError, (value) => emitter('valid-change', !value), { immediate: true });
 
 const importItem = async (): Promise<void> => {
+  if (importInProgress.value) {
+    return;
+  }
+
   action.clear();
   const value = importString.value.trim();
   if (!value) {
@@ -366,6 +372,7 @@ const importItem = async (): Promise<void> => {
     return;
   }
 
+  importInProgress.value = true;
   try {
     const item = decode(value) as DLField & ImportedItem;
 
@@ -400,6 +407,8 @@ const importItem = async (): Promise<void> => {
         }),
       ),
     );
+  } finally {
+    importInProgress.value = false;
   }
 };
 

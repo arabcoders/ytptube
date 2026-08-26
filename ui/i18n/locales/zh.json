@@ -566,7 +566,7 @@
     "filterSyntaxDesc": "此筛选器决定条件何时适用。它使用与 yt-dlp 的 <code>--match-filters</code> 相同的语法，并支持 <code>OR</code> 和 <code>{'||'}</code>。",
     "fullPath": "完整路径：{path}",
     "importPreset": "从现有预设导入",
-    "importPresetDesc": "选择一个预设以导入其数据。警告：这将覆盖当前表单数据。",
+    "importPresetDesc": "选择一个预设以导入其数据。",
     "keyLabel": "键",
     "leaveEmptyDefault": "留空以使用默认下载路径",
     "leaveEmptyDefaultTemplate": "留空以使用默认模板。",
