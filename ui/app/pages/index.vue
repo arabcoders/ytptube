@@ -783,6 +783,7 @@ import {
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { formatLongDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
+import { useFormHandoff } from '~/composables/useFormHandoff';
 import { isShareTarget, parseShareUrls, removeShareQuery } from '~/composables/useShareTarget';
 const { locale, t } = useI18n();
 
@@ -793,10 +794,7 @@ const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
-const pendingDownloadFormItem = useState<item_request | Record<string, never>>(
-  'pending-download-form-item',
-  () => ({}),
-);
+const downloadFormHandoff = useFormHandoff<item_request>('download');
 
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
@@ -935,9 +933,9 @@ onMounted(async () => {
     await toNewDownload({ url: sharedUrl });
   }
 
-  if (Object.keys(pendingDownloadFormItem.value).length > 0) {
-    await toNewDownload(pendingDownloadFormItem.value);
-    pendingDownloadFormItem.value = {};
+  const pendingDownload = downloadFormHandoff.take();
+  if (pendingDownload) {
+    await toNewDownload(pendingDownload);
   }
 
   await refreshQueue();

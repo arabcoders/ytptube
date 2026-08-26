@@ -9,14 +9,13 @@ YTPTube is a self-hosted download manager, automation interface, and media libra
 [yt-dlp](https://github.com/yt-dlp/yt-dlp). It handles one-off downloads, recurring sources, metadata-based rules,
 concurrent queues, and organized output from the same web interface.
 
-The main workflow combines three parts:
+YTPTube's automation tools can be used separately or together:
 
 - **Tasks** check channels, playlists, feeds, and supported custom sources on a schedule.
-- **Conditions** inspect metadata returned by yt-dlp and apply matching options.
 - **Presets** store reusable yt-dlp options, output templates, paths, cookies, and post-processing settings.
+- **Conditions** optionally inspect metadata returned by yt-dlp and apply matching options.
 
-This lets a scheduled source discover an item, select options from its metadata, and add it to the download queue 
-without manual work. See [Features](docs/features.md) for the full workflow.
+See [Features](docs/features.md) for the full workflow.
 
 ## Screenshots
 

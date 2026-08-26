@@ -7,11 +7,11 @@ reusable download settings, and media library preparation.
 
 1. A **Task** checks a source for new items.
 2. yt-dlp extracts metadata for each item.
-3. **Conditions** decide how matching items should be handled.
+3. Matching **Conditions** can adjust how items are handled.
 4. A **Preset** supplies the download settings.
 5. The item enters the queue.
 
-These parts also work independently. Presets and Conditions can be used with URLs submitted manually.
+These parts also work independently, and can be used with URLs submitted manually.
 
 ## Downloads, Queue, and History
 
@@ -42,6 +42,8 @@ Tasks monitor sources on a schedule and add new items to the queue. Built-in han
 - Twitch channel VODs
 - TVer series
 - Other sites through generic Task definitions
+
+From the download form, open the Download menu and select **Schedule** to open a prefilled Task before saving it.
 
 A Task can have its own Preset, folder, filename template, yt-dlp options, archive behavior, and automatic start policy. 
 It can also be inspected before running to show the matched handler and discovered items.

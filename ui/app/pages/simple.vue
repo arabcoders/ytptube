@@ -81,30 +81,30 @@
                       />
                     </UTooltip>
 
-                    <UInput
-                      id="download-url"
-                      dir="ltr"
-                      v-model="formUrl"
-                      type="url"
-                      :placeholder="t('common.urlPlaceholder')"
-                      size="lg"
-                      required
-                      :disabled="isFormDisabled"
-                      class="min-w-0 flex-1"
-                      :ui="urlInputUi"
-                    />
+                    <UFieldGroup size="lg" class="min-w-0 flex-1">
+                      <UInput
+                        id="download-url"
+                        dir="ltr"
+                        v-model="formUrl"
+                        type="url"
+                        :placeholder="t('common.urlPlaceholder')"
+                        required
+                        :disabled="isFormDisabled"
+                        class="min-w-0 flex-1"
+                        :ui="urlInputUi"
+                      />
 
-                    <UButton
-                      type="submit"
-                      color="primary"
-                      size="lg"
-                      icon="i-lucide-plus"
-                      :loading="addInProgress"
-                      :disabled="isFormDisabled || !formUrl.trim()"
-                      class="shrink-0 justify-center min-w-20 sm:min-w-28"
-                    >
-                      {{ t('common.add') }}
-                    </UButton>
+                      <UButton
+                        type="submit"
+                        color="primary"
+                        icon="i-lucide-download"
+                        :loading="addInProgress"
+                        :disabled="isFormDisabled || !formUrl.trim()"
+                        class="shrink-0 justify-center min-w-20 sm:min-w-28"
+                      >
+                        {{ t('common.download') }}
+                      </UButton>
+                    </UFieldGroup>
                   </div>
 
                   <div v-if="showExtras" class="space-y-3 ytp-border-top-soft pt-4">

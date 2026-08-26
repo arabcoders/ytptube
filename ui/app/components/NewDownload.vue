@@ -18,10 +18,52 @@
                 t('common.urlsSeparatedBy', { separator: getSeparatorsName(separator) })
               }}</span>
             </template>
-            <div class="flex flex-row gap-2 items-start">
+            <UFieldGroup v-if="!isMultiLineInput" size="lg" class="w-full">
+              <UInput
+                id="url"
+                v-model="form.url"
+                dir="ltr"
+                type="text"
+                :placeholder="t('common.urlsPlaceholder')"
+                :disabled="addInProgress"
+                :variant="show_description ? 'soft' : 'outline'"
+                color="neutral"
+                class="min-w-0 flex-1"
+                :ui="{
+                  root: 'w-full',
+                  base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
+                }"
+                @keydown="handleKeyDown"
+                @paste="handlePaste"
+                @update:model-value="clearPickedEntries"
+                autofocus
+              />
+
+              <UButton
+                type="submit"
+                color="primary"
+                icon="i-lucide-download"
+                :loading="addInProgress"
+                :disabled="addInProgress || !hasValidUrl"
+                class="justify-center sm:min-w-28"
+              >
+                {{ t('common.download') }}
+              </UButton>
+              <UDropdownMenu :items="downloadActionGroups" :modal="false">
+                <UButton
+                  color="primary"
+                  icon="i-lucide-chevron-down"
+                  :aria-label="t('common.actions')"
+                  :loading="scheduleInProgress"
+                  :disabled="addInProgress || scheduleInProgress || !hasValidUrl"
+                  square
+                />
+              </UDropdownMenu>
+            </UFieldGroup>
+
+            <div v-else class="flex flex-row gap-2 items-start">
               <div class="min-w-0 flex-1">
                 <UTextarea
-                  v-if="isMultiLineInput"
                   ref="urlTextarea"
                   id="url"
                   v-model="form.url"
@@ -42,33 +84,13 @@
                   @update:model-value="clearPickedEntries"
                   autofocus
                 />
-                <UInput
-                  v-else
-                  id="url"
-                  v-model="form.url"
-                  dir="ltr"
-                  type="text"
-                  :placeholder="t('common.urlsPlaceholder')"
-                  :disabled="addInProgress"
-                  size="lg"
-                  :variant="show_description ? 'soft' : 'outline'"
-                  color="neutral"
-                  class="w-full"
-                  :ui="{
-                    root: 'w-full',
-                    base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
-                  }"
-                  @keydown="handleKeyDown"
-                  @paste="handlePaste"
-                  @update:model-value="clearPickedEntries"
-                  autofocus
-                />
               </div>
 
               <UFieldGroup size="lg">
                 <UButton
                   type="submit"
                   color="primary"
+                  icon="i-lucide-download"
                   :loading="addInProgress"
                   :disabled="addInProgress || !hasValidUrl"
                   class="justify-center sm:min-w-28"
@@ -79,8 +101,9 @@
                   <UButton
                     color="primary"
                     icon="i-lucide-chevron-down"
-                    :aria-label="t('common.pickPlaylistVideos')"
-                    :disabled="addInProgress || !hasValidUrl"
+                    :aria-label="t('common.actions')"
+                    :loading="scheduleInProgress"
+                    :disabled="addInProgress || scheduleInProgress || !hasValidUrl"
                     square
                   />
                 </UDropdownMenu>
@@ -569,10 +592,12 @@ import { useConditions } from '~/composables/useConditions';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { Condition } from '~/types/conditions';
 import type { item_request } from '~/types/item';
+import type { TaskScheduleDraft } from '~/types/tasks';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
 import { useDialog } from '~/composables/useDialog';
 import { getSeparatorsName, parse_api_error, shortPath } from '~/utils';
+import { useFormHandoff } from '~/composables/useFormHandoff';
 
 const { t } = useI18n();
 
@@ -585,6 +610,7 @@ const config = useYtpConfig();
 const toast = useNotification();
 const dialog = useDialog();
 const conditions = useConditions();
+const tasksComposable = useTasks();
 const { findPreset, hasPreset, selectItems, getPresetDefault } = usePresetOptions();
 
 const showAdvanced = useStorage<boolean>('show_advanced', false);
@@ -596,6 +622,7 @@ const storedCommand = useStorage<string>('console_command', '');
 const testResultsClasses = useStorage<string>('modal_text_classes', '');
 
 const addInProgress = ref<boolean>(false);
+const scheduleInProgress = ref(false);
 const submitError = ref('');
 const showOptions = ref<boolean>(false);
 const showTestResults = ref<boolean>(false);
@@ -847,8 +874,16 @@ const downloadActionGroups = computed(() => [
       disabled: addInProgress.value || !hasValidUrl.value,
       onSelect: openPlaylistPicker,
     },
+    {
+      label: t('tasks.schedule'),
+      icon: 'i-lucide-calendar',
+      disabled: addInProgress.value || scheduleInProgress.value || !hasSingleUrl.value,
+      onSelect: () => void scheduleDownload(),
+    },
   ],
 ]);
+
+const taskFormHandoff = useFormHandoff<TaskScheduleDraft>('task');
 
 const is_valid_dl_field = (dl_field: string): boolean => {
   if (dlFieldsExtra.includes(dl_field)) {
@@ -1365,6 +1400,54 @@ const sortedDLFields = computed(() =>
 );
 const hasValidUrl = computed(() => form.value.url && form.value.url.trim().length > 0);
 const hasSingleUrl = computed(() => splitUrls(form.value.url || '').length === 1);
+
+const scheduleDownload = async (): Promise<void> => {
+  if (addInProgress.value || scheduleInProgress.value || !hasSingleUrl.value) {
+    return;
+  }
+
+  const url = splitUrls(form.value.url || '')[0];
+  if (!url) {
+    return;
+  }
+
+  scheduleInProgress.value = true;
+  let metadata: { title?: unknown; fulltitle?: unknown } = {};
+  try {
+    const params = new URLSearchParams({
+      url,
+      preset: form.value.preset || config.app.default_preset,
+      args: '-I0',
+    });
+    const response = await request(`/api/yt-dlp/url/info?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error('Metadata request failed');
+    }
+    metadata = (await response.json()) as typeof metadata;
+
+    const hasTitle = [metadata.title, metadata.fulltitle].some(
+      (value) => typeof value === 'string' && value.trim(),
+    );
+    if (!hasTitle) {
+      toast.warning(t('common.failedGenerateMetadata'));
+    }
+  } catch (error) {
+    console.error(error);
+    toast.warning(t('common.failedGenerateMetadata'));
+  } finally {
+    taskFormHandoff.set(
+      tasksComposable.createTaskDraft(metadata, {
+        url,
+        preset: form.value.preset || config.app.default_preset,
+        folder: form.value.folder || '',
+        template: form.value.template || '',
+        cli: form.value.cli || '',
+      }),
+    );
+    scheduleInProgress.value = false;
+    await navigateTo('/tasks');
+  }
+};
 
 watch(isMultiLineInput, async (newValue) => {
   await nextTick();

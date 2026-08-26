@@ -93,6 +93,56 @@ describe('useTasks', () => {
     tasks.__resetForTesting();
   });
 
+  describe('schedule draft', () => {
+    const settings = {
+      url: 'https://example.com/channel',
+      preset: 'audio',
+      folder: 'channels',
+      template: '%(title)s.%(ext)s',
+      cli: '--embed-metadata',
+    };
+
+    it('prefers title', () => {
+      const draft = useTasks().createTaskDraft(
+        { title: 'Title', fulltitle: 'Full title' },
+        settings,
+      );
+      expect(draft.name).toBe('Title');
+    });
+
+    it('uses full title', () => {
+      const draft = useTasks().createTaskDraft({ title: '', fulltitle: 'Full title' }, settings);
+      expect(draft.name).toBe('Full title');
+    });
+
+    it('falls back url', () => {
+      const draft = useTasks().createTaskDraft({}, settings);
+      expect(draft.name).toBe(settings.url);
+    });
+
+    it('caps name length', () => {
+      const draft = useTasks().createTaskDraft({ title: 'x'.repeat(300) }, settings);
+      expect(draft.name).toHaveLength(255);
+    });
+
+    it('creates daily timer', () => {
+      const values = [0.5, 0.25];
+      const randomSpy = spyOn(Math, 'random').mockImplementation(() => values.shift() ?? 0);
+
+      try {
+        const draft = useTasks().createTaskDraft({ title: 'Channel' }, settings);
+        expect(draft.timer).toBe('15 12 * * *');
+      } finally {
+        randomSpy.mockRestore();
+      }
+    });
+
+    it('transfers settings', () => {
+      const draft = useTasks().createTaskDraft({ title: 'Channel' }, settings);
+      expect(draft).toMatchObject({ name: 'Channel', ...settings });
+    });
+  });
+
   describe('loadTasks', () => {
     it('load_tasks', async () => {
       const requestSpy = spyOn(utils, 'request');

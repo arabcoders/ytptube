@@ -896,6 +896,7 @@ import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
 import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
+import { useFormHandoff } from '~/composables/useFormHandoff';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -906,10 +907,7 @@ const box = useConfirm();
 const { confirmDialog, promptDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
 const { canShare, shareUrl } = useWebShare();
-const pendingDownloadFormItem = useState<item_request | Record<string, never>>(
-  'pending-download-form-item',
-  () => ({}),
-);
+const downloadFormHandoff = useFormHandoff<item_request>('download');
 const {
   items: historyItems,
   pagination,
@@ -1061,7 +1059,7 @@ const toNewDownload = async (item: item_request | Partial<StoreItem>): Promise<v
     return;
   }
 
-  pendingDownloadFormItem.value = item as item_request;
+  downloadFormHandoff.set(item as item_request);
   await navigateTo('/');
 };
 
