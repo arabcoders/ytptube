@@ -8,7 +8,6 @@ import pytest
 
 from app.features.ytdlp.utils import (
     LogWrapper,
-    extract_ytdlp_logs,
     ytdlp_reject,
     parse_outtmpl,
     get_extras,
@@ -113,24 +112,6 @@ class TestLogWrapper:
         assert any(r.levelno == logging.CRITICAL for r in cap.records)
         assert any(c[0] == logging.ERROR for c in calls)
         assert any(c[0] == logging.CRITICAL for c in calls)
-
-
-class TestExtractYtdlpLogs:
-    def test_extract_ytdlp_logs_basic(self):
-        logs = ["This live event will begin soon", "ERROR: Failed", "WARNING: Deprecated"]
-        result = extract_ytdlp_logs(logs)
-        assert isinstance(result, list)
-        assert len(result) >= 1  # Should match "This live event will begin"
-
-    def test_extract_ytdlp_logs_filters(self):
-        logs = ["INFO: Downloading", "ERROR: Failed", "WARNING: Deprecated"]
-        filters: list[str | re.Pattern[str]] = [re.compile(r"ERROR")]
-        result = extract_ytdlp_logs(logs, filters)
-        assert result == ["ERROR: Failed"]
-
-    def test_extract_ytdlp_logs_empty(self):
-        result = extract_ytdlp_logs([])
-        assert result == []
 
 
 class TestYtdlpReject:

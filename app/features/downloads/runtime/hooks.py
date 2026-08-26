@@ -2,12 +2,23 @@
 
 import logging
 import re
+from collections import deque
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any
 
 from .utils import DEBUG_MESSAGE_PREFIXES, YTDLP_PROGRESS_FIELDS, create_debug_safe_dict
 
 if TYPE_CHECKING:
     from multiprocessing import Queue
+
+_MAX_WARNINGS = 5
+_MAX_FAILURE_CHARS = 2000
+_MAX_WARNING_CHARS: int = (_MAX_FAILURE_CHARS - (_MAX_WARNINGS - 1)) // _MAX_WARNINGS
+_REPORT_PREFIX: re.Pattern[str] = re.compile(r"^(?:ERROR|WARNING):\s*", re.IGNORECASE)
+
+
+def _report_body(message: str) -> str:
+    return _REPORT_PREFIX.sub("", message).strip()
 
 
 class HookHandlers:
@@ -104,8 +115,43 @@ class NestedLogger:
     message types to appropriate log levels and strips redundant prefixes.
     """
 
-    def __init__(self, logger: logging.Logger) -> None:
+    def __init__(self, logger: logging.Logger, warnings: Iterable[str] = ()) -> None:
         self.logger: logging.Logger = logger
+        self._warnings: deque[str] = deque(maxlen=_MAX_WARNINGS)
+        self.retain(warnings)
+
+    def _retain(self, msg: str) -> None:
+        warning = str(msg).strip()[:_MAX_WARNING_CHARS]
+        if warning and not any(_report_body(item) == _report_body(warning) for item in self._warnings):
+            self._warnings.append(warning)
+
+    def retain(self, warnings: Iterable[str]) -> None:
+        for warning in warnings:
+            self._retain(warning)
+
+    def failure_message(self, error: str = "", filter_out: Iterable[str] = ()) -> str:
+        error = error.strip()[:_MAX_FAILURE_CHARS]
+        error_body: str = _report_body(error)
+        filtered = {_report_body(message) for message in filter_out}
+        warnings: list[str] = [
+            warning
+            for warning in self._warnings
+            if _report_body(warning) != error_body and _report_body(warning) not in filtered
+        ]
+        remaining: int = _MAX_FAILURE_CHARS - len(error) - (1 if error and warnings else 0)
+        selected: list[str] = []
+
+        for warning in reversed(warnings):
+            size: int = len(warning) + (1 if selected else 0)
+            if size > remaining:
+                continue
+            selected.append(warning)
+            remaining -= size
+
+        lines: list[str] = [*reversed(selected)]
+        if error:
+            lines.append(error)
+        return "\n".join(lines)
 
     def debug(self, msg: str) -> None:
         levelno: int = logging.DEBUG if any(msg.startswith(x) for x in DEBUG_MESSAGE_PREFIXES) else logging.INFO
@@ -117,4 +163,5 @@ class NestedLogger:
 
     def warning(self, msg: str) -> None:
         """Log a warning message."""
+        self._retain(msg)
         self.logger.warning(msg)
