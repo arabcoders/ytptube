@@ -113,6 +113,48 @@ class TestConditionIgnorePropagation:
         assert requeued["item"].requeued is True
 
     @pytest.mark.asyncio
+    async def test_condition_replaces_options(self, tmp_path: Path) -> None:
+        queue = Mock()
+        queue.config = Mock(temp_path=str(tmp_path), ignore_archived_items=False, ytdlp_debug=False)
+        queue._notify = Mock()
+
+        item = Item(url="https://example.com/watch?v=test", preset="original", cli="--format worst")
+        item.get_ytdlp_opts = Mock(return_value=Mock(get_all=Mock(return_value={})))
+        item.get_archive_id = Mock(return_value=None)
+        item.get_archive_file = Mock(return_value=None)
+        item.is_archived = Mock(return_value=False)
+
+        condition = SimpleNamespace(
+            name="Preferred",
+            cli="--format best",
+            extras={"set_preset": "replacement", "set_cookies": "replacement cookies"},
+        )
+        matcher = Mock(match=AsyncMock(return_value=condition))
+        presets = Mock(
+            get=Mock(return_value=SimpleNamespace(folder="", template="")),
+            has=Mock(return_value=True),
+        )
+        requeued: dict[str, Any] = {}
+
+        async def capture_requeue(*, item: Item, **_kwargs: Any) -> dict[str, str]:
+            requeued["item"] = item
+            return {"status": "ok"}
+
+        original_add = add
+        with (
+            patch("app.features.downloads.runtime.item_adder.Presets.get_instance", return_value=presets),
+            patch("app.features.downloads.runtime.item_adder.Conditions.get_instance", return_value=matcher),
+            patch("app.features.downloads.runtime.item_adder.add", new=capture_requeue),
+        ):
+            result = await original_add(queue=queue, item=item, entry={"id": "video-1", "duration": 60})
+
+        assert result == {"status": "ok"}
+        assert requeued["item"].preset == "replacement"
+        assert requeued["item"].cli == "--format best"
+        assert requeued["item"].cookies == "replacement cookies"
+        assert requeued["item"].requeued is True
+
+    @pytest.mark.asyncio
     async def test_add_passes_ignore(self, tmp_path: Path) -> None:
         queue = Mock()
         queue.config = Mock(temp_path=str(tmp_path), ignore_archived_items=False, ytdlp_debug=False)

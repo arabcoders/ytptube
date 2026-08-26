@@ -58,7 +58,7 @@ See [Generic Task Definitions](task-definitions.md) for the schema, examples, ed
 
 ## Presets
 
-Presets save settings that would otherwise need to be entered for every download:
+Presets save options that would otherwise need to be entered for every download:
 
 - yt-dlp options
 - Output naming
@@ -84,6 +84,17 @@ the region lock and apply a proxy for that item or skip it entirely.
 Another Condition could detect a specific keyword in the title and apply a different Preset for that item, or use cookies
 for that specific item. This allows for more granular control over how different types of content are handled within the 
 same feed or channel.
+
+### Option precedence
+
+YTPTube resolves download options in three layers. Options attached to the download request have the highest priority.
+These options can come from the download form, API, a Task, or a matching Condition.
+
+If the request does not specify an option, YTPTube uses the value from the selected Preset. If neither the request nor
+the Preset provides one, YTPTube uses its default.
+
+In short: request options override Preset options, and Preset options override YTPTube defaults. This applies to the
+destination folder, filename template, cookies, and yt-dlp options.
 
 ## Media Servers and NFO Maker
 

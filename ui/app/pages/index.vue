@@ -226,6 +226,9 @@
                         class="completed-checkbox size-4 rounded border-default"
                         type="checkbox"
                         :value="item._id"
+                        @click="rangeSelection.handleClick"
+                        @keydown="rangeSelection.handleKeydown"
+                        @change="rangeSelection.handleChange(item._id, $event)"
                       />
                     </label>
                   </td>
@@ -518,6 +521,9 @@
                         class="completed-checkbox size-4 rounded border-default"
                         type="checkbox"
                         :value="item._id"
+                        @click="rangeSelection.handleClick"
+                        @keydown="rangeSelection.handleKeydown"
+                        @change="rangeSelection.handleChange(item._id, $event)"
                       />
                     </label>
                   </div>
@@ -785,6 +791,7 @@ import { formatLongDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 import { useFormHandoff } from '~/composables/useFormHandoff';
 import { isShareTarget, parseShareUrls, removeShareQuery } from '~/composables/useShareTarget';
+import { useRangeSelection } from '~/composables/useRangeSelection';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -857,6 +864,7 @@ const queueCountLabel = computed(() => {
 const hasItems = computed(() => displayedItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const displayedItemIds = computed(() => displayedItems.value.map((item) => item._id));
+const rangeSelection = useRangeSelection(selectedElms, displayedItemIds);
 const hasManualStart = computed(() =>
   Object.values(stateStore.queue).some((item) => !item.status && false === item.auto_start),
 );
@@ -1030,6 +1038,8 @@ watch(embed_url, (value) => {
 });
 
 const toggleMasterSelection = (): void => {
+  rangeSelection.reset();
+
   if (masterSelectAll.value) {
     selectedElms.value = [];
     masterSelectAll.value = false;

@@ -188,6 +188,9 @@
                       class="completed-checkbox size-4 rounded border-default"
                       type="checkbox"
                       :value="item._id"
+                      @click="rangeSelection.handleClick"
+                      @keydown="rangeSelection.handleKeydown"
+                      @change="rangeSelection.handleChange(item._id, $event)"
                     />
                   </label>
                 </td>
@@ -497,6 +500,9 @@
                       class="completed-checkbox size-4 rounded border-default"
                       type="checkbox"
                       :value="item._id"
+                      @click="rangeSelection.handleClick"
+                      @keydown="rangeSelection.handleKeydown"
+                      @change="rangeSelection.handleChange(item._id, $event)"
                     />
                   </label>
                 </div>
@@ -897,6 +903,7 @@ import { mediaProfileLabel } from '~/utils/mediaProfile';
 import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 import { useFormHandoff } from '~/composables/useFormHandoff';
+import { useRangeSelection } from '~/composables/useRangeSelection';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -1077,6 +1084,7 @@ const displayedItems = computed(() => historyItems.value.filter(filterItem));
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const hasItems = computed(() => displayedItems.value.length > 0);
 const displayedItemIds = computed(() => displayedItems.value.map((item) => item._id));
+const rangeSelection = useRangeSelection(selectedElms, displayedItemIds);
 
 watch(
   displayedItemIds,
@@ -1118,6 +1126,8 @@ const thumbnailRatioClass = computed(() =>
 );
 
 const toggleMasterSelection = (): void => {
+  rangeSelection.reset();
+
   if (masterSelectAll.value) {
     selectedElms.value = [];
     masterSelectAll.value = false;

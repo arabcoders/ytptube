@@ -222,6 +222,28 @@ class TestYTDLPOpts:
                 assert result["paths"]["home"] == "/downloads"
                 assert result["outtmpl"]["default"] == "default_template"
 
+    def test_structured_precedence(self):
+        with patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config:
+            mock_config_instance = Mock()
+            mock_config_instance.download_path = "/downloads"
+            mock_config_instance.temp_path = "/temp"
+            mock_config_instance.output_template = "default_template"
+            mock_config_instance.output_template_chapter = "chapter_template"
+            mock_config_instance.debug = False
+            mock_config.get_instance.return_value = mock_config_instance
+
+            opts = YTDLPOpts()
+            opts._preset_opts = {
+                "format": "preset",
+                "paths": {"home": "/preset", "temp": "/preset-temp"},
+            }
+            opts.add({"format": "direct", "paths": {"home": "/direct"}})
+
+            result = opts.get_all(keep=True)
+
+            assert result["format"] == "direct"
+            assert result["paths"] == {"home": "/direct", "temp": "/preset-temp"}
+
     def test_get_processes_cli_arguments(self):
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
