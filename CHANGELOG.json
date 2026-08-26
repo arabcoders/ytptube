@@ -1,9 +1,30 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "e819929d22d8d7b6bd75d247f6f12204ad442922",
-    "date": "2026-08-26T17:20:45+00:00",
+    "full_sha": "7ecd66e98201343b0ff2738e6e947b65ab531644",
+    "date": "2026-08-26T18:34:11+00:00",
     "commits": [
+      {
+        "sha": "7ecd66e9",
+        "full_sha": "7ecd66e98201343b0ff2738e6e947b65ab531644",
+        "message": "feat: add range selection",
+        "author": "arabcoders",
+        "date": "2026-08-26T18:34:11+00:00"
+      },
+      {
+        "sha": "85a481c5",
+        "full_sha": "85a481c5540b70ac3c4a732375327b00a0edf0d9",
+        "message": "refactor: switch from ualert t uempty for empty content.",
+        "author": "arabcoders",
+        "date": "2026-08-26T17:55:03+00:00"
+      },
+      {
+        "sha": "9f4ab594",
+        "full_sha": "9f4ab5940f8a3abebbe0ee6d214db2fe32a853fb",
+        "message": "fix: allow scheduling only playlist",
+        "author": "arabcoders",
+        "date": "2026-08-26T17:49:03+00:00"
+      },
       {
         "sha": "e819929d",
         "full_sha": "e819929d22d8d7b6bd75d247f6f12204ad442922",
