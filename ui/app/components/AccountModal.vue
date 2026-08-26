@@ -34,7 +34,7 @@
       </div>
       <div v-else class="space-y-6">
         <section class="space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
               <span class="ytp-detail-icon">
                 <UIcon name="i-lucide-user-round-cog" class="size-4" />
@@ -49,6 +49,7 @@
               variant="outline"
               size="sm"
               icon="i-lucide-pencil"
+              class="shrink-0"
               :disabled="busy"
               @click="openEdit"
             >
@@ -67,7 +68,7 @@
         </section>
 
         <section class="space-y-3 border-t border-default pt-5">
-          <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
               <span class="ytp-detail-icon">
                 <UIcon name="i-lucide-key-round" class="size-4" />
@@ -82,6 +83,7 @@
               variant="outline"
               size="sm"
               icon="i-lucide-plus"
+              class="shrink-0"
               :disabled="busy"
               @click="openCreateKey"
             >
