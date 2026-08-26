@@ -5,7 +5,7 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/arabcoders/ytptube.svg)
 ![GHCR Pulls](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
 
-YTPTube is a self-hosted download manager, automation interface, and media-library preparation layer for
+YTPTube is a self-hosted download manager, automation interface, and media library preparation layer for
 [yt-dlp](https://github.com/yt-dlp/yt-dlp). It handles one-off downloads, recurring sources, metadata-based rules,
 concurrent queues, and organized output from the same web interface.
 
@@ -41,7 +41,7 @@ The interface is available in English, العربية, Français, 中文, and �
 - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/) and [Chrome/Chromium](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil) extensions
 - [iOS Shortcuts](docs/features.md#send-links-to-ytptube), a [bookmarklet](FAQ.md#simple-bookmarklet), and an [HTTP API](API.md)
 - A file browser and built-in player with external sidecar subtitle support and optional file action controls
-- Kodi-style TV and movie NFO sidecars, `.info.json` metadata, artwork, and media-library naming
+- Kodi-style TV and movie NFO sidecars, `.info.json` metadata, artwork, and media library naming
 - curl-cffi impersonation and a bundled PO-token provider
 - An optional browser extraction over existing Chrome instance
 - Optional direct yt-dlp control through the terminal interface

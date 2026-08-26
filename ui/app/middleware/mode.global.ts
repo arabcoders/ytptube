@@ -1,4 +1,5 @@
 import { cookieDefault, parseMode, routeTarget, savePref, usePref } from '~/composables/useMode';
+import { isShareTarget } from '~/composables/useShareTarget';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const path = to.path.replace(/\/+$/, '') || '/';
@@ -18,6 +19,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (path !== '/') {
+    return;
+  }
+
+  if (isShareTarget(to.query)) {
     return;
   }
 

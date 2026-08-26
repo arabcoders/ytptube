@@ -1,7 +1,7 @@
 [project]
 name = "ytptube"
 version = "1.0.0"
-description = "A self-hosted download manager, automation interface, and media-library preparation layer for yt-dlp."
+description = "A self-hosted download manager, automation interface, and media library preparation layer for yt-dlp."
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "MIT" }

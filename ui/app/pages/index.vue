@@ -783,6 +783,7 @@ import {
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { formatLongDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
+import { isShareTarget, parseShareUrls, removeShareQuery } from '~/composables/useShareTarget';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -825,6 +826,10 @@ const embed_url = ref('');
 const isRefreshing = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const hadSocketDisconnect = ref(false);
+const route = useRoute();
+const router = useRouter();
+const shared = isShareTarget(route.query);
+const sharedUrl = parseShareUrls(route.query).join('\n');
 
 const hasQueueContent = computed(() => stateStore.count() > 0 || query.value.trim().length > 0);
 const contentStyle = computed<'grid' | 'list'>(() =>
@@ -922,6 +927,14 @@ const stopAutoRefresh = (): void => {
 };
 
 onMounted(async () => {
+  if (shared) {
+    await router.replace({ query: removeShareQuery(route.query) });
+  }
+
+  if (sharedUrl) {
+    await toNewDownload({ url: sharedUrl });
+  }
+
   if (Object.keys(pendingDownloadFormItem.value).length > 0) {
     await toNewDownload(pendingDownloadFormItem.value);
     pendingDownloadFormItem.value = {};

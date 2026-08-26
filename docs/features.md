@@ -1,7 +1,7 @@
 # YTPTube Features
 
 YTPTube is a self-hosted download manager for yt-dlp. It handles manual downloads, recurring sources, metadata rules, 
-reusable download settings, and media-library preparation.
+reusable download settings, and media library preparation.
 
 ## How Automation Works
 
@@ -66,7 +66,7 @@ Presets save settings that would otherwise need to be entered for every download
 - Post-processing options
 
 Built-in Presets cover normal downloads, audio-only output, mobile-compatible files, preferred 1080p and 720p output, 
-NFO generation, and media-library layouts.
+NFO generation, and media library layouts.
 
 ## Conditions
 
@@ -85,7 +85,7 @@ same feed or channel.
 
 ## Media Servers and NFO Maker
 
-YTPTube supports three media-library workflows: NFO sidecars for individual downloads, collection metadata for recurring 
+YTPTube supports three media library workflows: NFO sidecars for individual downloads, collection metadata for recurring 
 sources, and info-reader layouts for integrations that use yt-dlp metadata.
 
 ### TV and Movie NFO Files

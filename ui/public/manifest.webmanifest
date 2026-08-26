@@ -1,8 +1,18 @@
 {
   "short_name": "YTP",
   "name": "YTPTube",
-  "description": "Web-based GUI for yt-dlp. Download videos, playlists, channels, and live streams from various platforms.",
+  "description": "A self-hosted download manager, automation interface, and media library preparation layer for yt-dlp.",
   "start_url": "/",
+  "share_target": {
+    "action": "./?share=1",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
