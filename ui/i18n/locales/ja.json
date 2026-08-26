@@ -1013,6 +1013,7 @@
     "handlerOnly": "ハンドラーのみ",
     "openSourceUrl": "ソース URL を開く",
     "schedule": "スケジュール",
+    "schedulePlaylistOnly": "スケジュールできるのはプレイリストまたはチャンネルの URL のみです。",
     "runTasksConfirm": "以下のタスクを実行しますか?",
     "archiveAllConfirm": "'{name}' のすべてのアイテムをダウンロードアーカイブでダウンロード済みとしてマークしますか?",
     "unarchiveAllConfirm": "'{name}' のすべてのアイテムをダウンロードアーカイブから削除しますか?",

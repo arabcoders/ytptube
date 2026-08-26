@@ -1013,6 +1013,7 @@
     "handlerOnly": "Gestionnaire uniquement",
     "openSourceUrl": "Ouvrir l'URL source",
     "schedule": "Planification",
+    "schedulePlaylistOnly": "Seules les URL de playlists ou de chaînes peuvent être planifiées.",
     "runTasksConfirm": "Exécuter les tâches suivantes ?",
     "archiveAllConfirm": "Marquer tous les éléments de « {name} » comme téléchargés dans l'archive de téléchargement ?",
     "unarchiveAllConfirm": "Retirer tous les éléments de « {name} » de l'archive de téléchargement ?",

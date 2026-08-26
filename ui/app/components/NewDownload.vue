@@ -592,7 +592,7 @@ import { useConditions } from '~/composables/useConditions';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { Condition } from '~/types/conditions';
 import type { item_request } from '~/types/item';
-import type { TaskScheduleDraft } from '~/types/tasks';
+import type { TaskScheduleDraft, TaskScheduleMetadata } from '~/types/tasks';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
 import { useDialog } from '~/composables/useDialog';
@@ -1412,7 +1412,7 @@ const scheduleDownload = async (): Promise<void> => {
   }
 
   scheduleInProgress.value = true;
-  let metadata: { title?: unknown; fulltitle?: unknown } = {};
+  let metadata: TaskScheduleMetadata = {};
   try {
     const params = new URLSearchParams({
       url,
@@ -1424,6 +1424,14 @@ const scheduleDownload = async (): Promise<void> => {
       throw new Error('Metadata request failed');
     }
     metadata = (await response.json()) as typeof metadata;
+    if (!tasksComposable.isTaskSource(metadata)) {
+      await dialog.alertDialog({
+        message: t('tasks.schedulePlaylistOnly'),
+        confirmText: t('common.ok'),
+        confirmColor: 'warning',
+      });
+      return;
+    }
 
     const hasTitle = [metadata.title, metadata.fulltitle].some(
       (value) => typeof value === 'string' && value.trim(),
@@ -1435,18 +1443,19 @@ const scheduleDownload = async (): Promise<void> => {
     console.error(error);
     toast.warning(t('common.failedGenerateMetadata'));
   } finally {
-    taskFormHandoff.set(
-      tasksComposable.createTaskDraft(metadata, {
-        url,
-        preset: form.value.preset || config.app.default_preset,
-        folder: form.value.folder || '',
-        template: form.value.template || '',
-        cli: form.value.cli || '',
-      }),
-    );
     scheduleInProgress.value = false;
-    await navigateTo('/tasks');
   }
+
+  taskFormHandoff.set(
+    tasksComposable.createTaskDraft(metadata, {
+      url,
+      preset: form.value.preset || config.app.default_preset,
+      folder: form.value.folder || '',
+      template: form.value.template || '',
+      cli: form.value.cli || '',
+    }),
+  );
+  await navigateTo('/tasks');
 };
 
 watch(isMultiLineInput, async (newValue) => {

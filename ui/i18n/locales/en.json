@@ -1013,6 +1013,7 @@
     "handlerOnly": "Handler only",
     "openSourceUrl": "Open source URL",
     "schedule": "Schedule",
+    "schedulePlaylistOnly": "Only playlist or channel URLs can be scheduled.",
     "runTasksConfirm": "Run the following tasks?",
     "archiveAllConfirm": "Mark all '{name}' items as downloaded in download archive?",
     "unarchiveAllConfirm": "Remove all '{name}' items from download archive?",

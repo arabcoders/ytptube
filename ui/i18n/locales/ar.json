@@ -1013,6 +1013,7 @@
     "handlerOnly": "المعالج فقط",
     "openSourceUrl": "فتح رابط المصدر",
     "schedule": "الجدول",
+    "schedulePlaylistOnly": "يمكن جدولة روابط قوائم التشغيل أو القنوات فقط.",
     "runTasksConfirm": "تشغيل المهام التالية؟",
     "archiveAllConfirm": "وضع علامة على جميع عناصر '{name}' كمُنزلة في أرشيف التنزيل؟",
     "unarchiveAllConfirm": "إزالة جميع عناصر '{name}' من أرشيف التنزيل؟",

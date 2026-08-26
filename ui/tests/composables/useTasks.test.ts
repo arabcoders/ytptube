@@ -102,6 +102,14 @@ describe('useTasks', () => {
       cli: '--embed-metadata',
     };
 
+    it('checks source type', () => {
+      const tasks = useTasks();
+
+      expect(tasks.isTaskSource({ _type: 'playlist' })).toBe(true);
+      expect(tasks.isTaskSource({ _type: 'video' })).toBe(false);
+      expect(tasks.isTaskSource({})).toBe(false);
+    });
+
     it('prefers title', () => {
       const draft = useTasks().createTaskDraft(
         { title: 'Title', fulltitle: 'Full title' },

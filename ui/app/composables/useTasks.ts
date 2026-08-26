@@ -72,6 +72,8 @@ const createTaskDraft = (
   };
 };
 
+const isTaskSource = (metadata: TaskScheduleMetadata): boolean => metadata._type === 'playlist';
+
 const removeTask = (id: number) => {
   const initialLength = tasks.value.length;
   tasks.value = tasks.value.filter((item) => item.id !== id);
@@ -403,6 +405,7 @@ export const useTasks = () => ({
   isTaskInProgress,
   setTaskInProgress,
   clearTaskInProgress,
+  isTaskSource,
   createTaskDraft,
   loadTasks,
   getTask,

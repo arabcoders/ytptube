@@ -22,6 +22,7 @@ export type TaskPatch = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'name' |
 };
 
 export type TaskScheduleMetadata = {
+  _type?: unknown;
   title?: unknown;
   fulltitle?: unknown;
 };
