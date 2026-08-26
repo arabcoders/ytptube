@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING, Any
 import yt_dlp.utils
 
 from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, extract_info_sync
-from app.features.ytdlp.utils import extract_ytdlp_logs
 from app.features.ytdlp.ytdlp import YTDLP
 from app.library.config import Config
 from app.library.Events import EventBus, Events
@@ -101,6 +100,7 @@ class Download:
         cookie_file: Path | None = None
         params: dict[str, Any] = {}
         download_skipped = False
+        ytdlp_logger = NestedLogger(self.logger, self.logs)
 
         hook_handlers = self._hook_handlers
         if hook_handlers is None:
@@ -255,6 +255,7 @@ class Download:
                     capture_logs=logging.WARNING,
                 )
                 self.logs = logs
+                ytdlp_logger.retain(logs)
 
                 if info:
                     self.info_dict = info
@@ -286,9 +287,6 @@ class Download:
                 len(self.info_dict.get("formats", [])) > 0 or self.info_dict.get("url")
             ):
                 msg: str = f"Failed to extract any formats for '{self.info.url}'."
-                if filtered_logs := extract_ytdlp_logs(self.logs):
-                    msg += " " + ", ".join(filtered_logs)
-
                 self._raise_no_formats(msg)
 
             self.logger.info(
@@ -324,7 +322,7 @@ class Download:
                     },
                 )
 
-            params["logger"] = NestedLogger(self.logger)
+            params["logger"] = ytdlp_logger
 
             if "continuedl" in params and params["continuedl"] is False:
                 self._temp_manager.delete_temp(by_pass=True)
@@ -410,13 +408,15 @@ class Download:
                 )
                 ret = cls.download(url_list=[self.info.url])
 
-            status_queue.put(
-                {
-                    "id": self.id,
-                    "status": "finished" if 0 == ret else "error",
-                    "download_skipped": download_skipped,
-                }
-            )
+            status = {
+                "id": self.id,
+                "status": "finished" if 0 == ret else "error",
+                "download_skipped": download_skipped,
+            }
+            if ret != 0:
+                failure: str = ytdlp_logger.failure_message() or f"yt-dlp exited with code {ret}."
+                status.update({"msg": failure, "error": failure})
+            status_queue.put(status)
         except yt_dlp.utils.ExistingVideoReached as exc:
             self.logger.error(
                 f"Skipping already downloaded '{self.info.title}' from '{self.info.url}'. {exc!s}",
@@ -440,6 +440,7 @@ class Download:
                 }
             )
         except Exception as exc:
+            failure = ytdlp_logger.failure_message(str(exc))
             self.logger.exception(
                 f"Failed to download '{self.info.title}' from '{self.info.url}'.",
                 extra={
@@ -460,8 +461,8 @@ class Download:
                 {
                     "id": self.id,
                     "status": "error",
-                    "msg": str(exc),
-                    "error": str(exc),
+                    "msg": failure,
+                    "error": failure,
                     "download_skipped": download_skipped,
                 }
             )

@@ -455,13 +455,12 @@
       :description="t('files.loadingDesc')"
     />
 
-    <UAlert
+    <UEmpty
       v-else-if="!hasItems"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-circle-alert"
+      icon="i-lucide-folder-open"
       :title="t('files.noContent')"
       :description="t('files.empty')"
+      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 
     <UAlert

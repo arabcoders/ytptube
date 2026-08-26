@@ -51,15 +51,16 @@
             <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
-          <div class="flex flex-col gap-2 sm:flex-row">
+          <UFieldGroup size="lg" class="w-full">
             <UInput
               id="import_string"
               v-model="importString"
               type="text"
               autocomplete="off"
-              size="lg"
-              class="w-full"
+              class="min-w-0 flex-1"
               :ui="inputUi"
+              :disabled="importInProgress"
+              @keydown.enter.prevent="() => void importItem()"
             />
 
             <UButton
@@ -67,14 +68,14 @@
               color="neutral"
               variant="outline"
               icon="i-lucide-import"
-              size="lg"
               class="justify-center sm:min-w-28"
-              :disabled="!importString"
+              :loading="importInProgress"
+              :disabled="!importString || importInProgress"
               @click="() => void importItem()"
             >
               {{ t('common.import') }}
             </UButton>
-          </div>
+          </UFieldGroup>
         </UFormField>
       </template>
 
@@ -581,6 +582,7 @@ const form = reactive<Condition>(normalizeCondition(props.item));
 const action = useFormSubmit();
 const testAction = useFormSubmit();
 const importString = ref('');
+const importInProgress = ref(false);
 const newExtraKey = ref('');
 const newExtraValue = ref('');
 const testData = ref<{
@@ -847,6 +849,10 @@ const handleTestOpen = (open: boolean): void => {
 };
 
 const importItem = async (): Promise<void> => {
+  if (importInProgress.value) {
+    return;
+  }
+
   action.clear();
   const value = importString.value.trim();
   if (!value) {
@@ -854,6 +860,7 @@ const importItem = async (): Promise<void> => {
     return;
   }
 
+  importInProgress.value = true;
   try {
     const item = decode(value) as Condition & ImportedItem;
 
@@ -888,6 +895,8 @@ const importItem = async (): Promise<void> => {
         }),
       ),
     );
+  } finally {
+    importInProgress.value = false;
   }
 };
 

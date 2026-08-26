@@ -188,6 +188,9 @@
                       class="completed-checkbox size-4 rounded border-default"
                       type="checkbox"
                       :value="item._id"
+                      @click="rangeSelection.handleClick"
+                      @keydown="rangeSelection.handleKeydown"
+                      @change="rangeSelection.handleChange(item._id, $event)"
                     />
                   </label>
                 </td>
@@ -497,6 +500,9 @@
                       class="completed-checkbox size-4 rounded border-default"
                       type="checkbox"
                       :value="item._id"
+                      @click="rangeSelection.handleClick"
+                      @keydown="rangeSelection.handleKeydown"
+                      @change="rangeSelection.handleChange(item._id, $event)"
                     />
                   </label>
                 </div>
@@ -896,6 +902,8 @@ import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
 import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
+import { useFormHandoff } from '~/composables/useFormHandoff';
+import { useRangeSelection } from '~/composables/useRangeSelection';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -906,10 +914,7 @@ const box = useConfirm();
 const { confirmDialog, promptDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
 const { canShare, shareUrl } = useWebShare();
-const pendingDownloadFormItem = useState<item_request | Record<string, never>>(
-  'pending-download-form-item',
-  () => ({}),
-);
+const downloadFormHandoff = useFormHandoff<item_request>('download');
 const {
   items: historyItems,
   pagination,
@@ -1061,7 +1066,7 @@ const toNewDownload = async (item: item_request | Partial<StoreItem>): Promise<v
     return;
   }
 
-  pendingDownloadFormItem.value = item as item_request;
+  downloadFormHandoff.set(item as item_request);
   await navigateTo('/');
 };
 
@@ -1079,6 +1084,7 @@ const displayedItems = computed(() => historyItems.value.filter(filterItem));
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const hasItems = computed(() => displayedItems.value.length > 0);
 const displayedItemIds = computed(() => displayedItems.value.map((item) => item._id));
+const rangeSelection = useRangeSelection(selectedElms, displayedItemIds);
 
 watch(
   displayedItemIds,
@@ -1120,6 +1126,8 @@ const thumbnailRatioClass = computed(() =>
 );
 
 const toggleMasterSelection = (): void => {
+  rangeSelection.reset();
+
   if (masterSelectAll.value) {
     selectedElms.value = [];
     masterSelectAll.value = false;

@@ -73,6 +73,45 @@ class TestNestedLogger:
         assert msgs[1] == "[download] progress", "[download] prefix is not stripped by NestedLogger"
         assert msgs[2] == "info message", "info message should have [info] prefix stripped"
 
+    def test_retains_warning_context(self) -> None:
+        logger = Mock()
+        nested = NestedLogger(logger)
+
+        for index in range(7):
+            nested.warning(f"WARNING: warning {index}")
+        nested.warning("ERROR: warning 6")
+
+        assert nested.failure_message("ERROR: warning 6") == (
+            "WARNING: warning 2\nWARNING: warning 3\nWARNING: warning 4\nWARNING: warning 5\nERROR: warning 6"
+        )
+        logger.warning.assert_any_call("WARNING: warning 0")
+        logger.warning.assert_called_with("ERROR: warning 6")
+
+    def test_bounds_warning_context(self) -> None:
+        nested = NestedLogger(Mock())
+
+        for index in range(5):
+            nested.warning(f"{index}:" + "w" * 3000)
+
+        message = nested.failure_message("final error")
+        assert len(message) <= 2000
+        assert message.endswith("\nfinal error")
+
+    def test_retains_captured_warnings(self) -> None:
+        logger = Mock()
+        nested = NestedLogger(logger, ["Captured warning", "Captured warning"])
+
+        nested.retain(["Later warning"])
+
+        assert nested.failure_message("Final error") == "Captured warning\nLater warning\nFinal error"
+        logger.warning.assert_not_called()
+
+    def test_filters_warning_context(self) -> None:
+        nested = NestedLogger(Mock(), ["Useful warning", "WARNING: Redundant warning"])
+
+        assert nested.failure_message("Final error", filter_out=["Redundant warning"]) == "Useful warning\nFinal error"
+        assert nested.failure_message("Final error") == "Useful warning\nWARNING: Redundant warning\nFinal error"
+
 
 class TestScheduledRetry:
     @staticmethod
@@ -492,6 +531,71 @@ class TestDownloadClose:
 
 
 class TestDownloadFlow:
+    @staticmethod
+    def run_failure(monkeypatch: pytest.MonkeyPatch, *, ret: int = 1, error: Exception | None = None) -> dict[str, Any]:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+        monkeypatch.setattr("app.features.downloads.runtime.core.Config", Cfg)
+
+        download = Download(
+            info=make_item(),
+            info_dict={
+                "id": "test-id",
+                "url": "http://u",
+                "formats": [{"format_id": "18"}],
+                "epoch": int(time.time()),
+            },
+        )
+        download.status_queue = cast(Any, DummyQueue())
+        download._hook_handlers = Mock(
+            progress_hook=Mock(),
+            postprocessor_hook=Mock(),
+            post_hook=Mock(),
+        )
+        cast(Any, download.info).get_ytdlp_opts = Mock(
+            return_value=Mock(add=Mock(return_value=Mock(get_all=Mock(return_value={}))))
+        )
+
+        class FakeYTDLP:
+            def __init__(self, params):
+                self.params = params
+                self._download_retcode = ret
+                self._interrupted = False
+
+            def process_ie_result(self, ie_result, download):
+                self.params["logger"].warning("Earlier warning")
+                if error:
+                    raise error
+                return ie_result, download
+
+        monkeypatch.setattr("app.features.downloads.runtime.core.YTDLP", FakeYTDLP)
+        download._download()
+
+        queue = cast(DummyQueue, download.status_queue)
+        return next(item for item in queue.items if isinstance(item, dict) and item.get("status") == "error")
+
+    def test_nonzero_keeps_warning(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        status = self.run_failure(monkeypatch)
+
+        assert status["msg"] == "Earlier warning"
+        assert status["error"] == "Earlier warning"
+
+    def test_exception_keeps_warning(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        status = self.run_failure(monkeypatch, error=RuntimeError("Final error"))
+
+        assert status["msg"] == "Earlier warning\nFinal error"
+        assert status["error"] == "Earlier warning\nFinal error"
+
     def test_download_bootstraps_before_options(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from app.features.presets.models import PresetModel
         from app.features.presets.service import Presets
@@ -1941,6 +2045,56 @@ class TestQueueManager:
 
         assert result == {"status": "ok"}
         assert seen == [entry]
+
+    @pytest.mark.asyncio
+    async def test_keeps_format_warnings(self) -> None:
+        queue = self._video_queue()
+        logs = [
+            "[youtube] Join this channel to get access to members-only content like this video, and other exclusive perks.",
+            "No video formats found!",
+            "Requested format is not available",
+        ]
+        entry = {
+            "id": "members-only",
+            "title": "Members only",
+            "webpage_url": "https://example.test/members-only",
+            "availability": "subscriber_only",
+            "formats": [],
+        }
+
+        result = await add_video(queue=queue, item=self._any_video_item(), entry=entry, logs=logs)
+
+        expected = "\n".join([logs[0], "No formats. Availability is set for 'subscriber_only'."])
+        assert result == {"status": "ok"}
+        assert queue.done.put.await_args.args[0].info.error == expected
+        warning = next(call for call in queue._notify.emit.call_args_list if call.args[0] == Events.LOG_WARNING)
+        assert warning.kwargs["message"] == "\n".join(
+            [logs[0], "No formats for 'Members only'. Availability is set for 'subscriber_only'."]
+        )
+
+    @pytest.mark.asyncio
+    async def test_upcoming_context(self) -> None:
+        queue = self._video_queue()
+        logs = [
+            "[youtube] This live event will begin in 12 hours.",
+            "No video formats found!",
+            "Requested format is not available",
+        ]
+        entry = {
+            "id": "upcoming",
+            "title": "Upcoming stream",
+            "webpage_url": "https://example.test/upcoming",
+            "live_status": "is_upcoming",
+            "release_timestamp": time.time() + 3600,
+            "formats": [],
+        }
+
+        result = await add_video(queue=queue, item=self._any_video_item(), entry=entry, logs=logs)
+
+        assert result == {"status": "ok"}
+        assert queue.done.put.await_args.args[0].info.msg == (
+            "[youtube] This live event will begin in 12 hours.\nStream is not available yet."
+        )
 
     @pytest.mark.asyncio
     async def test_transparent_reextracts(self, monkeypatch: pytest.MonkeyPatch) -> None:

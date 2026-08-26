@@ -7,12 +7,13 @@ from typing import TYPE_CHECKING, Any
 
 from app.features.downloads.items import ItemDTO
 from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, needs_reextract
-from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
+from app.features.ytdlp.utils import get_extras
 from app.library.Events import Events
 from app.library.logging import get_logger
 from app.library.Utils import calc_download_path, merge_dict, str_to_dt
 
 from .core import Download
+from .hooks import NestedLogger
 
 if TYPE_CHECKING:
     from app.features.downloads.items import Item
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
 
 LOG = get_logger()
 LIGHT_EXTRACT_KEY = "_ytptube_light_extract"
+_REDUNDANT_FORMAT_WARNINGS = {"No video formats found!", "Requested format is not available"}
 
 
 async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, Any]:
@@ -163,24 +165,24 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
         nMessage: str | None = None
         nStore: str = "queue"
         hasFormats: bool = _reextract or bool(entry.get("formats") or entry.get("url"))
-
-        text_logs: str = ""
-        if filtered_logs := extract_ytdlp_logs(logs):
-            text_logs = " " + ", ".join(filtered_logs)
+        ytdlp_logger = NestedLogger(LOG, logs)
+        warning_text = ytdlp_logger.failure_message(filter_out=_REDUNDANT_FORMAT_WARNINGS)
 
         if "is_upcoming" == entry.get("live_status"):
             nEvent = Events.ITEM_MOVED
             nStore = "history"
             nTitle = "Upcoming Premiere" if is_premiere else "Upcoming Live Stream"
-            nMessage = f"{'Premiere video' if is_premiere else 'Stream'} '{dlInfo.info.title}' is not available yet. {text_logs}"
+            nMessage = f"{'Premiere video' if is_premiere else 'Stream'} '{dlInfo.info.title}' is not available yet."
 
             dlInfo.info.status = "not_live"
-            dlInfo.info.msg = nMessage.replace(f" '{dlInfo.info.title}'", "")
+            dlInfo.info.msg = ytdlp_logger.failure_message(
+                nMessage.replace(f" '{dlInfo.info.title}'", ""), filter_out=_REDUNDANT_FORMAT_WARNINGS
+            )
             queue._notify.emit(
                 Events.LOG_INFO,
                 data={"preset": dlInfo.info.preset, "lowPriority": True},
                 title=nTitle,
-                message=nMessage,
+                message=ytdlp_logger.failure_message(nMessage, filter_out=_REDUNDANT_FORMAT_WARNINGS),
             )
 
             itemDownload: Download = await queue.done.put(dlInfo)
@@ -194,15 +196,17 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
             if ava and ava not in ("public",):
                 nMessage += f" Availability is set for '{ava}'."
 
-            dlInfo.info.error = nMessage.replace(f" for '{dl.title}'.", ".") + text_logs
+            dlInfo.info.error = ytdlp_logger.failure_message(
+                nMessage.replace(f" for '{dl.title}'.", "."), filter_out=_REDUNDANT_FORMAT_WARNINGS
+            )
             dlInfo.info.status = "error"
             itemDownload = await queue.done.put(dlInfo)
 
             queue._notify.emit(
                 Events.LOG_WARNING,
-                data={"preset": dlInfo.info.preset, "logs": text_logs},
+                data={"preset": dlInfo.info.preset, "logs": warning_text},
                 title=nTitle,
-                message=nMessage,
+                message=ytdlp_logger.failure_message(nMessage, filter_out=_REDUNDANT_FORMAT_WARNINGS),
             )
         elif is_premiere and queue.config.prevent_live_premiere:
             nStore = "history"

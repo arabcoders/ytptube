@@ -11,7 +11,13 @@
 <template>
   <div class="content">
     <h1 class="has-text-white">{{ t('common.notDownloaded') }}</h1>
-    <iframe class="embed-content" :src="url" frameborder="0" allowfullscreen />
+    <iframe
+      class="embed-content"
+      :src="url"
+      :title="t('common.embeddedPlayer')"
+      frameborder="0"
+      allowfullscreen
+    />
   </div>
 </template>
 

@@ -66,12 +66,12 @@
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 sm:flex-row">
+        <UFieldGroup size="lg" class="w-full">
           <UInput
             v-model="importString"
             type="text"
             autocomplete="off"
-            class="w-full"
+            class="min-w-0 flex-1"
             :ui="inputUi"
             :disabled="isBusy"
             dir="ltr"
@@ -88,7 +88,7 @@
           >
             {{ t('common.import') }}
           </UButton>
-        </div>
+        </UFieldGroup>
       </UFormField>
     </div>
 

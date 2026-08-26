@@ -641,13 +641,12 @@
       />
     </div>
 
-    <UAlert
-      v-if="!query && tasks.length < 1"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-circle-alert"
+    <UEmpty
+      v-else-if="!query && tasks.length < 1"
+      icon="i-lucide-calendar-clock"
       :title="t('common.noItems')"
       :description="t('common.empty')"
+      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 
     <div v-if="filteredTasks.length > 0 && paging?.total_pages > 1" class="flex justify-end">
@@ -835,13 +834,14 @@ import { useConfirm } from '~/composables/useConfirm';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useTasks } from '~/composables/useTasks';
 import type TaskInspect from '~/components/TaskInspect.vue';
-import type { ExportedTask, Task } from '~/types/tasks';
+import type { ExportedTask, Task, TaskScheduleDraft } from '~/types/tasks';
 import type { WSEP } from '~/types/sockets';
 import { sleep } from '~/utils';
 import { formatRelativeTime } from '~/utils/relativeTime';
 import { useSessionCache } from '~/utils/cache';
 import type { item_request } from '~/types/item';
 import { usePageShell } from '~/composables/usePageShell';
+import { useFormHandoff } from '~/composables/useFormHandoff';
 const { locale, t } = useI18n();
 
 const box = useConfirm();
@@ -882,6 +882,8 @@ const createEmptyTask = (): Partial<Task> => ({
   handler_enabled: true,
   enabled: true,
 });
+
+const taskFormHandoff = useFormHandoff<TaskScheduleDraft>('task');
 
 const task = ref<Partial<Task>>(createEmptyTask());
 const taskRef = ref<number | null>(null);
@@ -1582,6 +1584,13 @@ const itemActionGroups = (item: Task): DropdownMenuItem[][] => [
 ];
 
 onMounted(async () => {
+  const draft = taskFormHandoff.take();
+  if (draft) {
+    task.value = { ...createEmptyTask(), ...draft };
+    editorSessionId.value += 1;
+    toggleForm.value = true;
+  }
+
   await loadContent(page.value, true);
 });
 

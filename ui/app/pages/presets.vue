@@ -416,13 +416,12 @@
       />
     </div>
 
-    <UAlert
+    <UEmpty
       v-else-if="!filteredPresets.length"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-circle-alert"
+      icon="i-lucide-sliders-horizontal"
       :title="t('common.noItems')"
       :description="t('common.empty')"
+      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
     />
 
     <div

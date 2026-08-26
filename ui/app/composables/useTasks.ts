@@ -7,6 +7,8 @@ import type {
   TaskInspectRequest,
   TaskInspectResponse,
   TaskMetadataResponse,
+  TaskScheduleDraft,
+  TaskScheduleMetadata,
 } from '~/types/tasks';
 import type { APIResponse, Pagination } from '~/types/responses';
 
@@ -23,6 +25,7 @@ const isLoading = ref<boolean>(false);
 const addInProgress = ref<boolean>(false);
 const inProgressIds = ref<Set<number>>(new Set());
 const lastError = ref<string | null>(null);
+const MAX_TASK_NAME_LENGTH = 255;
 // Test hook: rethrow request errors instead of returning fallback values.
 const throwInstead = ref(false);
 
@@ -51,6 +54,25 @@ const updateTasksList = (item: Task): void => {
     pagination.value.total++;
   }
 };
+
+const createTaskDraft = (
+  metadata: TaskScheduleMetadata,
+  settings: Omit<TaskScheduleDraft, 'name' | 'timer'>,
+): TaskScheduleDraft => {
+  const title = [metadata.title, metadata.fulltitle].find(
+    (value): value is string => typeof value === 'string' && Boolean(value.trim()),
+  );
+  const hour = Math.floor(Math.random() * 24);
+  const minute = Math.floor(Math.random() * 60);
+
+  return {
+    name: (title?.trim() || settings.url).slice(0, MAX_TASK_NAME_LENGTH),
+    timer: `${minute} ${hour} * * *`,
+    ...settings,
+  };
+};
+
+const isTaskSource = (metadata: TaskScheduleMetadata): boolean => metadata._type === 'playlist';
 
 const removeTask = (id: number) => {
   const initialLength = tasks.value.length;
@@ -383,6 +405,8 @@ export const useTasks = () => ({
   isTaskInProgress,
   setTaskInProgress,
   clearTaskInProgress,
+  isTaskSource,
+  createTaskDraft,
   loadTasks,
   getTask,
   createTask,

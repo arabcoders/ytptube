@@ -21,6 +21,16 @@ export type TaskPatch = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'name' |
   url?: string;
 };
 
+export type TaskScheduleMetadata = {
+  _type?: unknown;
+  title?: unknown;
+  fulltitle?: unknown;
+};
+
+export type TaskScheduleDraft = Required<
+  Pick<Task, 'name' | 'url' | 'preset' | 'folder' | 'template' | 'cli' | 'timer'>
+>;
+
 export type TaskList = Paginated<Task>;
 
 export interface TaskInspectRequest {

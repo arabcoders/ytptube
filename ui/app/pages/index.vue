@@ -226,6 +226,9 @@
                         class="completed-checkbox size-4 rounded border-default"
                         type="checkbox"
                         :value="item._id"
+                        @click="rangeSelection.handleClick"
+                        @keydown="rangeSelection.handleKeydown"
+                        @change="rangeSelection.handleChange(item._id, $event)"
                       />
                     </label>
                   </td>
@@ -518,6 +521,9 @@
                         class="completed-checkbox size-4 rounded border-default"
                         type="checkbox"
                         :value="item._id"
+                        @click="rangeSelection.handleClick"
+                        @keydown="rangeSelection.handleKeydown"
+                        @change="rangeSelection.handleChange(item._id, $event)"
                       />
                     </label>
                   </div>
@@ -783,6 +789,9 @@ import {
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { formatLongDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
+import { useFormHandoff } from '~/composables/useFormHandoff';
+import { isShareTarget, parseShareUrls, removeShareQuery } from '~/composables/useShareTarget';
+import { useRangeSelection } from '~/composables/useRangeSelection';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -792,10 +801,7 @@ const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
-const pendingDownloadFormItem = useState<item_request | Record<string, never>>(
-  'pending-download-form-item',
-  () => ({}),
-);
+const downloadFormHandoff = useFormHandoff<item_request>('download');
 
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
@@ -825,6 +831,10 @@ const embed_url = ref('');
 const isRefreshing = ref(false);
 const autoRefreshInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const hadSocketDisconnect = ref(false);
+const route = useRoute();
+const router = useRouter();
+const shared = isShareTarget(route.query);
+const sharedUrl = parseShareUrls(route.query).join('\n');
 
 const hasQueueContent = computed(() => stateStore.count() > 0 || query.value.trim().length > 0);
 const contentStyle = computed<'grid' | 'list'>(() =>
@@ -854,6 +864,7 @@ const queueCountLabel = computed(() => {
 const hasItems = computed(() => displayedItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const displayedItemIds = computed(() => displayedItems.value.map((item) => item._id));
+const rangeSelection = useRangeSelection(selectedElms, displayedItemIds);
 const hasManualStart = computed(() =>
   Object.values(stateStore.queue).some((item) => !item.status && false === item.auto_start),
 );
@@ -922,9 +933,17 @@ const stopAutoRefresh = (): void => {
 };
 
 onMounted(async () => {
-  if (Object.keys(pendingDownloadFormItem.value).length > 0) {
-    await toNewDownload(pendingDownloadFormItem.value);
-    pendingDownloadFormItem.value = {};
+  if (shared) {
+    await router.replace({ query: removeShareQuery(route.query) });
+  }
+
+  if (sharedUrl) {
+    await toNewDownload({ url: sharedUrl });
+  }
+
+  const pendingDownload = downloadFormHandoff.take();
+  if (pendingDownload) {
+    await toNewDownload(pendingDownload);
   }
 
   await refreshQueue();
@@ -1019,6 +1038,8 @@ watch(embed_url, (value) => {
 });
 
 const toggleMasterSelection = (): void => {
+  rangeSelection.reset();
+
   if (masterSelectAll.value) {
     selectedElms.value = [];
     masterSelectAll.value = false;

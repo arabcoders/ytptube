@@ -52,6 +52,7 @@
             class="w-full"
             :ui="{ content: 'min-w-[13rem]', item: 'ps-6' }"
             :search-input="{ placeholder: t('common.searchPresets') }"
+            :disabled="importInProgress"
             @update:model-value="() => void importExistingPreset()"
           />
         </UFormField>
@@ -68,16 +69,17 @@
             <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
-          <div class="flex flex-col gap-2 sm:flex-row">
+          <UFieldGroup size="lg" class="w-full">
             <UInput
               id="import_string"
               dir="ltr"
               v-model="importString"
               type="text"
               autocomplete="off"
-              size="lg"
-              class="w-full"
+              class="min-w-0 flex-1"
               :ui="inputUi"
+              :disabled="importInProgress"
+              @keydown.enter.prevent="() => void importItem()"
             />
 
             <UButton
@@ -85,14 +87,14 @@
               color="neutral"
               variant="outline"
               icon="i-lucide-import"
-              size="lg"
-              :disabled="!importString"
+              :loading="importInProgress"
+              :disabled="!importString || importInProgress"
               class="justify-center sm:min-w-28"
               @click="() => void importItem()"
             >
               {{ t('common.import') }}
             </UButton>
-          </div>
+          </UFieldGroup>
         </UFormField>
       </template>
 
@@ -356,6 +358,7 @@ const form = reactive<Preset>({
 const importString = ref('');
 const showImport = useStorage<boolean>('showImport', false);
 const selectedPreset = ref<string>('');
+const importInProgress = ref(false);
 const showOptions = ref(false);
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null);
@@ -552,6 +555,10 @@ const checkInfo = async (): Promise<void> => {
 };
 
 const importItem = async (): Promise<void> => {
+  if (importInProgress.value) {
+    return;
+  }
+
   action.clear();
   const value = importString.value.trim();
   if (!value) {
@@ -559,11 +566,12 @@ const importItem = async (): Promise<void> => {
     return;
   }
 
-  if (!(await confirmImportOverwrite())) {
-    return;
-  }
-
+  importInProgress.value = true;
   try {
+    if (!(await confirmImportOverwrite())) {
+      return;
+    }
+
     const item = decode(value) as Preset & ImportedItem;
 
     if (!item?._type || 'preset' !== item._type) {
@@ -605,36 +613,47 @@ const importItem = async (): Promise<void> => {
         error: error instanceof Error ? error.message : t('common.unknownError'),
       }),
     );
+  } finally {
+    importInProgress.value = false;
   }
 };
 
 const importExistingPreset = async (): Promise<void> => {
+  if (importInProgress.value) {
+    return;
+  }
+
   action.clear();
   if (!selectedPreset.value) {
     return;
   }
 
-  if (!(await confirmImportOverwrite())) {
+  importInProgress.value = true;
+  try {
+    if (!(await confirmImportOverwrite())) {
+      selectedPreset.value = '';
+      return;
+    }
+
+    const preset = findPreset(selectedPreset.value);
+    if (!preset) {
+      showActionError(t('common.presetNotFoundShort'));
+      return;
+    }
+
+    form.cli = preset.cli || '';
+    form.folder = preset.folder || '';
+    form.template = preset.template || '';
+    form.cookies = preset.cookies || '';
+    form.description = preset.description || '';
+    form.priority = preset.priority ?? 0;
+
+    await nextTick();
     selectedPreset.value = '';
-    return;
+    action.clear();
+  } finally {
+    importInProgress.value = false;
   }
-
-  const preset = findPreset(selectedPreset.value);
-  if (!preset) {
-    showActionError(t('common.presetNotFoundShort'));
-    return;
-  }
-
-  form.cli = preset.cli || '';
-  form.folder = preset.folder || '';
-  form.template = preset.template || '';
-  form.cookies = preset.cookies || '';
-  form.description = preset.description || '';
-  form.priority = preset.priority ?? 0;
-
-  await nextTick();
-  selectedPreset.value = '';
-  action.clear();
 };
 
 onMounted(() => {

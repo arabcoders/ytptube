@@ -91,16 +91,17 @@
             <span>{{ t('common.importStringDesc') }}</span>
           </template>
 
-          <div class="flex flex-col gap-2 sm:flex-row">
+          <UFieldGroup size="lg" class="w-full">
             <UInput
               id="import_string"
               dir="ltr"
               v-model="import_string"
               type="text"
               autocomplete="off"
-              size="lg"
-              class="w-full"
+              class="min-w-0 flex-1"
               :ui="inputUi"
+              :disabled="importInProgress"
+              @keydown.enter.prevent="() => void importItem()"
             />
 
             <UButton
@@ -108,14 +109,14 @@
               color="neutral"
               variant="outline"
               icon="i-lucide-import"
-              size="lg"
-              :disabled="!import_string"
+              :loading="importInProgress"
+              :disabled="!import_string || importInProgress"
               class="justify-center sm:min-w-28"
               @click="() => void importItem()"
             >
               {{ t('common.import') }}
             </UButton>
-          </div>
+          </UFieldGroup>
         </UFormField>
       </div>
 
@@ -347,7 +348,11 @@
                   <p class="text-sm font-semibold text-default">{{ t('common.enabled') }}</p>
                 </div>
               </div>
-              <USwitch v-model="form.enabled" :disabled="addInProgress" />
+              <USwitch
+                v-model="form.enabled"
+                :disabled="addInProgress"
+                :aria-label="t('common.enabled')"
+              />
             </div>
           </div>
 
@@ -359,7 +364,11 @@
                   <p class="text-sm font-semibold text-default">{{ t('common.autoStart') }}</p>
                 </div>
               </div>
-              <USwitch v-model="form.auto_start" :disabled="addInProgress" />
+              <USwitch
+                v-model="form.auto_start"
+                :disabled="addInProgress"
+                :aria-label="t('common.autoStart')"
+              />
             </div>
           </div>
 
@@ -374,7 +383,11 @@
                   {{ t('common.enableHandlerDesc') }}
                 </p>
               </div>
-              <USwitch v-model="form.handler_enabled" :disabled="addInProgress" />
+              <USwitch
+                v-model="form.handler_enabled"
+                :disabled="addInProgress"
+                :aria-label="t('common.enableHandler')"
+              />
             </div>
           </div>
 
@@ -387,7 +400,11 @@
                 </div>
                 <p class="text-xs text-toned">{{ t('common.archiveAllDesc') }}</p>
               </div>
-              <USwitch v-model="archiveAllAfterAdd" :disabled="addInProgress" />
+              <USwitch
+                v-model="archiveAllAfterAdd"
+                :disabled="addInProgress"
+                :aria-label="t('common.archiveAll')"
+              />
             </div>
           </div>
         </div>
@@ -501,6 +518,7 @@ const createDefaultTask = (source?: Partial<Task>): Task => ({
 
 const convertInProgress = ref(false);
 const import_string = ref('');
+const importInProgress = ref(false);
 const showOptions = ref(false);
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
 const archiveAllAfterAdd = ref(false);
@@ -830,6 +848,10 @@ const checkInfo = async (): Promise<void> => {
 };
 
 const importItem = async (): Promise<void> => {
+  if (importInProgress.value) {
+    return;
+  }
+
   action.clear();
   const val = import_string.value.trim();
   if (!val) {
@@ -837,11 +859,12 @@ const importItem = async (): Promise<void> => {
     return;
   }
 
-  if (!(await confirmImportOverwrite())) {
-    return;
-  }
-
+  importInProgress.value = true;
   try {
+    if (!(await confirmImportOverwrite())) {
+      return;
+    }
+
     const item = decode(val) as ExportedTask;
 
     if ('task' !== item._type) {
@@ -884,6 +907,8 @@ const importItem = async (): Promise<void> => {
         }),
       ),
     );
+  } finally {
+    importInProgress.value = false;
   }
 };
 

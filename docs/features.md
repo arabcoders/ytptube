@@ -1,17 +1,17 @@
 # YTPTube Features
 
 YTPTube is a self-hosted download manager for yt-dlp. It handles manual downloads, recurring sources, metadata rules, 
-reusable download settings, and media-library preparation.
+reusable download settings, and media library preparation.
 
 ## How Automation Works
 
 1. A **Task** checks a source for new items.
 2. yt-dlp extracts metadata for each item.
-3. **Conditions** decide how matching items should be handled.
+3. Matching **Conditions** can adjust how items are handled.
 4. A **Preset** supplies the download settings.
 5. The item enters the queue.
 
-These parts also work independently. Presets and Conditions can be used with URLs submitted manually.
+These parts also work independently, and can be used with URLs submitted manually.
 
 ## Downloads, Queue, and History
 
@@ -43,6 +43,8 @@ Tasks monitor sources on a schedule and add new items to the queue. Built-in han
 - TVer series
 - Other sites through generic Task definitions
 
+From the download form, open the Download menu and select **Schedule** to open a prefilled Task before saving it.
+
 A Task can have its own Preset, folder, filename template, yt-dlp options, archive behavior, and automatic start policy. 
 It can also be inspected before running to show the matched handler and discovered items.
 
@@ -56,7 +58,7 @@ See [Generic Task Definitions](task-definitions.md) for the schema, examples, ed
 
 ## Presets
 
-Presets save settings that would otherwise need to be entered for every download:
+Presets save options that would otherwise need to be entered for every download:
 
 - yt-dlp options
 - Output naming
@@ -66,7 +68,7 @@ Presets save settings that would otherwise need to be entered for every download
 - Post-processing options
 
 Built-in Presets cover normal downloads, audio-only output, mobile-compatible files, preferred 1080p and 720p output, 
-NFO generation, and media-library layouts.
+NFO generation, and media library layouts.
 
 ## Conditions
 
@@ -83,9 +85,20 @@ Another Condition could detect a specific keyword in the title and apply a diffe
 for that specific item. This allows for more granular control over how different types of content are handled within the 
 same feed or channel.
 
+### Option precedence
+
+YTPTube resolves download options in three layers. Options attached to the download request have the highest priority.
+These options can come from the download form, API, a Task, or a matching Condition.
+
+If the request does not specify an option, YTPTube uses the value from the selected Preset. If neither the request nor
+the Preset provides one, YTPTube uses its default.
+
+In short: request options override Preset options, and Preset options override YTPTube defaults. This applies to the
+destination folder, filename template, cookies, and yt-dlp options.
+
 ## Media Servers and NFO Maker
 
-YTPTube supports three media-library workflows: NFO sidecars for individual downloads, collection metadata for recurring 
+YTPTube supports three media library workflows: NFO sidecars for individual downloads, collection metadata for recurring 
 sources, and info-reader layouts for integrations that use yt-dlp metadata.
 
 ### TV and Movie NFO Files
