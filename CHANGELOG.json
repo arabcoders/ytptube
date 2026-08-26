@@ -1,5 +1,40 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "e819929d22d8d7b6bd75d247f6f12204ad442922",
+    "date": "2026-08-26T17:20:45+00:00",
+    "commits": [
+      {
+        "sha": "e819929d",
+        "full_sha": "e819929d22d8d7b6bd75d247f6f12204ad442922",
+        "message": "refactor: update button grouping",
+        "author": "arabcoders",
+        "date": "2026-08-26T17:20:45+00:00"
+      },
+      {
+        "sha": "a1ab79b5",
+        "full_sha": "a1ab79b558f02c2a596487d674b9b7b8dc4e4be8",
+        "message": "feat: Sschedule task from download bar",
+        "author": "arabcoders",
+        "date": "2026-08-26T16:39:44+00:00"
+      },
+      {
+        "sha": "ff0ef72d",
+        "full_sha": "ff0ef72d83de683c249e6ee668750b561a6f147a",
+        "message": "refactor: improve yt-dlp error reporting.",
+        "author": "arabcoders",
+        "date": "2026-08-26T15:39:08+00:00"
+      },
+      {
+        "sha": "0132df09",
+        "full_sha": "0132df09e0573dd0a27a943858da47ab692f3e72",
+        "message": "feat: add share target",
+        "author": "arabcoders",
+        "date": "2026-08-26T14:49:19+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.7.1",
     "full_sha": "71a50bffa89b5b782d4aaefbeaaf0af10218a929",
     "date": "2026-08-25T16:08:54+00:00",
