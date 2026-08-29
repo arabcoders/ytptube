@@ -10,7 +10,7 @@ export type AuthStatus = {
 };
 
 export const authRedirect = (state: AuthStatus, path: string): string | null => {
-  if (state.disabled) return null;
+  if (state.disabled) return path === '/setup' || path === '/login' ? '/' : null;
   if (state.setup_required) return path === '/setup' ? null : '/setup';
   if (path === '/setup' || path === '/login') return state.authenticated ? '/' : null;
   return state.authenticated ? null : '/login';

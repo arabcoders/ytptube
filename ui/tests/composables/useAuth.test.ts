@@ -20,6 +20,10 @@ describe('authRedirect', () => {
   it('routes_authenticated_login', () =>
     expect(authRedirect(state({ authenticated: true }), '/login')).toBe('/'));
   it('allows_disabled', () => expect(authRedirect(state({ disabled: true }), '/tasks')).toBeNull());
+  it('routes_disabled_auth', () => {
+    expect(authRedirect(state({ disabled: true }), '/setup')).toBe('/');
+    expect(authRedirect(state({ disabled: true }), '/login')).toBe('/');
+  });
 });
 
 describe('useAuth', () => {
