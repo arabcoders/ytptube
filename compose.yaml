@@ -1,0 +1,75 @@
+services:
+  ytptube:
+    image: ghcr.io/arabcoders/ytptube:latest
+    container_name: ytptube
+    restart: unless-stopped
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      # All envs: https://github.com/arabcoders/ytptube/blob/master/FAQ.md#environment-variables
+      TZ: "${TZ:-UTC}"
+      YTP_TEMP_PATH: /downloads/tmp
+      YTP_DOWNLOAD_PATH: /downloads/files
+      YTP_BROWSER_URL: http://127.0.0.1:9222
+      YTP_FLARESOLVERR_URL: http://flaresolverr:8191/v1
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./config:/config:rw
+      - ./downloads:/downloads:rw
+      # Replace the downloads bind mount above when using network storage.
+      # - ./downloads:/downloads/local:rw
+      # - nfs-data:/downloads/nfs:rw
+      # - smb-data:/downloads/smb:rw
+    # Hardware acceleration requires host-specific devices and group IDs.
+    # devices:
+    #   - /dev/dri:/dev/dri
+    # group_add:
+    #   - "${VIDEO_GID:-44}"
+    #   - "${RENDER_GID:-105}"
+
+  chrome:
+    image: docker.io/jlesage/chromium:v26.07.2 # latest has issue with cdp binding.
+    container_name: chrome
+    restart: unless-stopped
+    ## Uncomment the port to enable VNC access to the browser if needed.
+    #ports:
+    #  - "127.0.0.1:5800:5800"
+    environment:
+      CHROMIUM_REMOTE_DEBUGGING: "1"
+      KEEP_APP_RUNNING: "1"
+      DISPLAY_WIDTH: "1920"
+      DISPLAY_HEIGHT: "1080"
+
+  # Proxy to forward the Chrome CDP port from the Chrome container to the ytptube container.
+  # Chrome blocks Host: headers from other containers, so this proxy is needed to allow ytptube to connect to Chrome.
+  chrome-cdp-proxy:
+      image: docker.io/alpine/socat:latest
+      container_name: chrome-cdp-proxy
+      restart: unless-stopped
+      network_mode: "service:ytptube"
+      depends_on:
+        - ytptube
+        - chrome
+      command:
+        - TCP-LISTEN:9222,fork,reuseaddr
+        - TCP:chrome:9222
+
+  flaresolverr:
+    image: docker.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+
+# Replace the addresses, paths, credentials, and mount options before enabling.
+# volumes:
+#   nfs-data:
+#     driver: local
+#     driver_opts:
+#       type: nfs
+#       o: addr=10.0.0.3,rw,nfsvers=4
+#       device: :/exported/path
+#   smb-data:
+#     driver: local
+#     driver_opts:
+#       type: cifs
+#       o: username=my_username,password=my_password,vers=3.0,uid=1000,gid=1000,file_mode=0777,dir_mode=0777
+#       device: //10.0.0.3/public

@@ -9,6 +9,8 @@ RUN if [ ! -f "/app/exported/index.html" ]; then \
   bun run generate; \
   else echo "Skipping UI build, already built."; fi
 
+FROM brainicism/bgutil-ytdlp-pot-provider:deno AS bgutil_provider
+
 FROM python:3.13-bookworm AS python_builder
 
 ENV LANG=C.UTF-8
@@ -26,10 +28,13 @@ COPY --from=astral/uv:latest /uv /usr/bin/
 WORKDIR /opt/
 
 COPY ./pyproject.toml ./uv.lock ./
+COPY --from=bgutil_provider /app/package.json /tmp/bgutil-package.json
 RUN --mount=type=cache,target=/root/.cache/pip,id=pip-cache \
   --mount=type=cache,target=/root/.cache/uv,id=uv-cache \
   uv venv --system-site-packages --relocatable ./python && \
-  VIRTUAL_ENV=/opt/python uv sync --no-dev --link-mode=copy --active
+  VIRTUAL_ENV=/opt/python uv sync --no-dev --link-mode=copy --active && \
+  BGUTIL_VERSION="$(python -c 'import json; print(json.load(open("/tmp/bgutil-package.json"))["version"])')" && \
+  uv pip install --python /opt/python/bin/python "bgutil-ytdlp-pot-provider==${BGUTIL_VERSION}"
 
 FROM python:3.13-slim
 
@@ -41,8 +46,12 @@ ENV YTP_CONFIG_PATH=/config
 ENV YTP_TEMP_PATH=/tmp
 ENV YTP_DOWNLOAD_PATH=/downloads
 ENV YTP_PORT=8081
+ENV YTP_BGUTIL_ENABLED=true
 ENV XDG_CONFIG_HOME=/config
 ENV XDG_CACHE_HOME=/tmp
+ENV DENO_DIR=/tmp/bgutil-deno
+ENV DENO_NO_PROMPT=1
+ENV DENO_NO_UPDATE_CHECK=1
 ENV PYDEVD_DISABLE_FILE_VALIDATION=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONFAULTHANDLER=1
@@ -55,7 +64,7 @@ RUN sed -i -E '/^Suites:[[:space:]]*trixie[[:space:]]+trixie-updates$/ {n; s/^(C
   ARCH="$(dpkg --print-architecture)" && \
   EXTRA_PACKAGES="" && \
   if [ "$ARCH" = "amd64" ]; then EXTRA_PACKAGES="intel-media-va-driver-non-free i965-va-driver libmfx-gen1.2"; fi && \
-  apt-get install -y --no-install-recommends locales procps \
+  apt-get install -y --no-install-recommends locales procps tini \
   bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 vainfo ${EXTRA_PACKAGES} \
   && useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -63,7 +72,8 @@ RUN sed -i -E '/^Suites:[[:space:]]*trixie[[:space:]]+trixie-updates$/ {n; s/^(C
   update-locale LANG=en_US.UTF-8 \
   mkdir -p /opt/bin && rm -rf /var/lib/apt/lists/*
 
-COPY entrypoint.sh /
+COPY container/entrypoint.sh /
+COPY container/start-services.sh /usr/local/bin/start-services
 COPY --chown=app:app yt-dlp /opt/bin/yt-dlp
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app ./docs /app/docs
@@ -73,16 +83,22 @@ COPY --chown=app:app --from=python_builder /opt/python /opt/python
 COPY --from=ghcr.io/arabcoders/alpine-mp4box /usr/bin/mp4box /usr/bin/mp4box
 COPY --from=ghcr.io/arabcoders/jellyfin-ffmpeg /usr/bin/ffmpeg /usr/bin/ffmpeg
 COPY --from=ghcr.io/arabcoders/jellyfin-ffmpeg /usr/bin/ffprobe /usr/bin/ffprobe
-COPY --from=denoland/deno:latest /usr/bin/deno /usr/bin/deno
-COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
+COPY --from=bgutil_provider /usr/bin/deno /usr/bin/deno
+COPY --chown=app:app --from=bgutil_provider /app/package.json /app/deno.lock /app/tsconfig.json /opt/bgutil-provider/
+COPY --chown=app:app --from=bgutil_provider /app/node_modules /opt/bgutil-provider/node_modules
+COPY --chown=app:app --from=bgutil_provider /app/src /opt/bgutil-provider/src
+COPY --chown=app:app --from=bgutil_provider /app/types /opt/bgutil-provider/types
+COPY --chown=app:app ./container/healthcheck.sh /usr/local/bin/healthcheck
 
 ENV PATH="/opt/bin:/opt/python/bin:$PATH"
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh && chown -R app:app /config /downloads && \
-  chmod +x /usr/local/bin/healthcheck /usr/bin/mp4box /usr/bin/ffmpeg /usr/bin/ffprobe /usr/bin/deno /opt/bin/yt-dlp
+RUN sed -i 's/\r$//g' /entrypoint.sh /usr/local/bin/start-services && chmod +x /entrypoint.sh && \
+  chown -R app:app /config /downloads && \
+  chmod +x /usr/local/bin/healthcheck /usr/local/bin/start-services /usr/bin/mp4box /usr/bin/ffmpeg \
+  /usr/bin/ffprobe /usr/bin/deno /opt/bin/yt-dlp
 
 VOLUME /config
 VOLUME /downloads
@@ -95,6 +111,6 @@ WORKDIR /tmp
 
 HEALTHCHECK --interval=10s --timeout=20s --start-period=60s --retries=3 CMD [ "/usr/local/bin/healthcheck" ]
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/entrypoint.sh"]
 
 CMD ["/opt/python/bin/python", "/app/app/main.py", "--ytp-process"]
