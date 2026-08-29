@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "619110b6a4b1079b43cfef75f4b29f29d20bd3a6",
+    "date": "2026-08-29T18:54:21+00:00",
+    "commits": [
+      {
+        "sha": "619110b6",
+        "full_sha": "619110b6a4b1079b43cfef75f4b29f29d20bd3a6",
+        "message": "fix: redirect from setup if auth is disabled.",
+        "author": "arabcoders",
+        "date": "2026-08-29T18:54:21+00:00"
+      },
+      {
+        "sha": "de1e05ce",
+        "full_sha": "de1e05ceff1d1cce224d7c09454a1bccd1569873",
+        "message": "refactor: bundle bgutil server",
+        "author": "arabcoders",
+        "date": "2026-08-29T18:53:49+00:00"
+      },
+      {
+        "sha": "a3f54df2",
+        "full_sha": "a3f54df2de72db5bfbcbc190151462ddec31dbf5",
+        "message": "refactor: reflow text batter in user account modal",
+        "author": "arabcoders",
+        "date": "2026-08-26T22:07:08+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.7.2",
     "full_sha": "5c6c1b8508163af43ce2d734ab7521219930b160",
     "date": "2026-08-26T19:11:11+00:00",
