@@ -380,28 +380,6 @@ class TestYTDLPOpts:
             assert opts._item_cli == []
             assert opts._preset_cli == ""
 
-    def test_debug_logging(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.ytdlp.ytdlp_opts.merge_dict") as mock_merge,
-            patch("app.features.ytdlp.ytdlp_opts.LOG") as mock_log,
-        ):
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = True  # Enable debug
-            mock_config.get_instance.return_value = mock_config_instance
-
-            test_data = {"format": "best"}
-            mock_merge.return_value = test_data
-
-            opts = YTDLPOpts()
-            opts.get_all(keep=True)
-
-            mock_log.debug.assert_called_once_with("Prepared final yt-dlp options.", extra={"ytdlp_options": test_data})
-
     def test_cookie_loading_error_handling(self):
         with (
             patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,

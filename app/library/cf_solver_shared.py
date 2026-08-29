@@ -58,14 +58,14 @@ def _host_matches_cookie_domain(host: str, cookie_domain: str | None) -> bool:
     return host == domain or host.endswith(f".{domain}")
 
 
-def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> dict[str, Any] | None:
+def solver(url: str, cookies: list[dict[str, Any]], _user_agent: str | None) -> dict[str, Any] | None:
     """
     Run FlareSolverr solve. Returns solution dict or None.
 
     Args:
         url (str): The URL to solve the challenge for.
         cookies (list[dict]): List of existing cookies to send to FlareSolverr.
-        user_agent (str | None): The User-Agent string to send to FlareSolverr.
+        _user_agent (str | None): Retained for caller compatibility. FlareSolverr v2 chooses the browser User-Agent.
 
     Returns:
         dict[str, Any] | None: The solution dict from FlareSolverr, or None if solving fails.
@@ -86,14 +86,39 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
         return None
 
     if cached := CACHE.get(host):
+        ttl = CACHE.ttl(host)
+        LOG.debug(
+            "Using cached Cloudflare solution for '%s' (TTL remaining: %s seconds).",
+            host,
+            "unlimited" if ttl is None else f"{ttl:.1f}",
+            extra={"host": host, "cache_status": "hit", "cache_ttl_remaining": ttl},
+        )
         return cached
+
+    LOG.debug(
+        "Cloudflare solution cache miss for '%s'; waiting for solve lock.",
+        host,
+        extra={"host": host, "cache_status": "miss"},
+    )
 
     lock = _get_solve_lock(host)
     try:
         with lock:
             if cached := CACHE.get(host):
+                ttl = CACHE.ttl(host)
+                LOG.debug(
+                    "Using Cloudflare solution cached while waiting to solve for '%s' (TTL remaining: %s seconds).",
+                    host,
+                    "unlimited" if ttl is None else f"{ttl:.1f}",
+                    extra={"host": host, "cache_status": "hit_after_wait", "cache_ttl_remaining": ttl},
+                )
                 return cached
 
+            LOG.debug(
+                "Cloudflare solution still missing for '%s' after acquiring solve lock.",
+                host,
+                extra={"host": host, "cache_status": "miss_after_wait"},
+            )
             payload: dict[str, Any] = {
                 "cmd": "request.get",
                 "url": url,
@@ -114,9 +139,6 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
                 )
             if scoped_cookies:
                 payload["cookies"] = scoped_cookies
-
-        if user_agent:
-            payload.setdefault("headers", {})["User-Agent"] = user_agent
 
         req = urllib.request.Request(  # noqa: S310
             endpoint,
@@ -182,7 +204,6 @@ def solver(url: str, cookies: list[dict[str, Any]], user_agent: str | None) -> d
             {"cookies": solution.get("cookies") or [], "userAgent": solution.get("userAgent")},
             ttl=config.flaresolverr_cache_ttl,
         )
-
         return CACHE.get(host)
     finally:
         with _locks_mutex:
@@ -196,10 +217,30 @@ def is_cf_challenge(status: int | None, headers: Mapping[str, Any] | None) -> bo
     if status not in (403, 429, 503):
         return False
 
-    headers = headers or {}
-    server_header: str = str(headers.get("Server", "")).lower()
-    if "cloudflare" in server_header:
+    normalized_headers = {str(key).lower(): value for key, value in (headers or {}).items()}
+    if str(normalized_headers.get("cf-mitigated", "")).lower() == "challenge":
+        LOG.debug(
+            "Detected Cloudflare challenge from HTTP %s: 'cf-mitigated' header is 'challenge'.",
+            status,
+            extra={"status_code": status, "detection_header": "cf-mitigated"},
+        )
         return True
 
-    cf_header_keys: tuple[str, ...] = ("cf-ray", "cf-chl-bypass", "cf-cache-status", "cf-visitor")
-    return any(key in headers for key in cf_header_keys)
+    if "cf-chl-bypass" in normalized_headers:
+        LOG.debug(
+            "Detected Cloudflare challenge from HTTP %s: response contains '%s' header.",
+            status,
+            "cf-chl-bypass",
+            extra={"status_code": status, "detection_header": "cf-chl-bypass"},
+        )
+        return True
+
+    server_header: str = str(normalized_headers.get("server", "")).lower()
+    if status == 503 and "cloudflare" in server_header:
+        LOG.debug(
+            "Detected legacy Cloudflare challenge from HTTP 503: Server header contains 'cloudflare'.",
+            extra={"status_code": status, "detection_header": "server"},
+        )
+        return True
+
+    return False

@@ -83,7 +83,7 @@ def test_wait_invalid(value: str) -> None:
 
 def test_wait_existing_media() -> None:
     session, page = _make_cdp_session()
-    session.requests.append({"url": "https://cdn.example/video.mp4"})
+    session.requests.append({"url": "https://cdn.example/master.m3u8"})
 
     session.wait_for_network_idle(max_total_timeout=60)
 
@@ -95,13 +95,27 @@ def test_wait_media_during_idle() -> None:
     session, page = _make_cdp_session()
 
     def wait(*_args, **_kwargs) -> None:
-        session.requests.append({"url": "https://cdn.example/video.mp4"})
+        session.requests.append({"url": "https://cdn.example/master.m3u8"})
         raise TimeoutError
 
     page.wait_for_load_state.side_effect = wait
     session.wait_for_network_idle(max_total_timeout=1)
 
     page.wait_for_function.assert_not_called()
+
+
+def test_wait_prefers_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
+    session, page = _make_cdp_session()
+    session.requests.append({"url": "https://cdn.example/preview.mp4"})
+
+    def add_manifest(_seconds: float) -> None:
+        session.requests.append({"url": "https://cdn.example/master.m3u8"})
+
+    monkeypatch.setattr(generic_browser.time, "sleep", add_manifest)
+    session.wait_for_network_idle(max_total_timeout=60)
+
+    page.wait_for_function.assert_not_called()
+    assert session._has_possible_manifest()
 
 
 def test_wait_zero() -> None:
@@ -111,6 +125,37 @@ def test_wait_zero() -> None:
 
     page.wait_for_load_state.assert_not_called()
     page.wait_for_function.assert_not_called()
+
+
+def test_cdp_full_headers() -> None:
+    session, _page = _make_cdp_session()
+    request = Mock(
+        resource_type="media",
+        url="https://media.example/video.mp4",
+        method="GET",
+        headers={"accept": "*/*"},
+    )
+    request.all_headers.return_value = {
+        "accept": "*/*",
+        "referer": "https://example.com/watch",
+        "user-agent": "Browser/1.0",
+    }
+    response = Mock(request=request, url=request.url, status=200, headers={"content-type": "video/mp4"})
+    response.all_headers.return_value = {"content-type": "video/mp4", "content-length": "123"}
+
+    session._on_request(request)
+    session._on_response(response)
+
+    captured = session.get_requests()[0]
+    assert captured["headers"] == request.all_headers.return_value
+    assert captured["response"]["headers"] == response.all_headers.return_value
+
+
+def test_cdp_header_fallback() -> None:
+    message = Mock(headers={"content-type": "application/vnd.apple.mpegurl"})
+    message.all_headers.side_effect = RuntimeError("page closed")
+
+    assert generic_browser._all_headers(message) == message.headers
 
 
 def test_real_extract_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -303,6 +348,57 @@ def test_no_media() -> None:
     assert result is None
     ie.__wrapped__._real_extract.assert_not_called()
     ie.report_warning.assert_not_called()
+
+
+def test_format_keeps_headers() -> None:
+    ie = _make_ie()
+    ie._extract_network_formats = generic_browser.GenericBrowserIE._extract_network_formats.__get__(
+        ie, generic_browser.GenericBrowserIE
+    )
+    headers = {
+        "accept": "*/*",
+        "cookie": "session=browser-token",
+        "referer": "https://example.com/watch",
+        "user-agent": "Browser/1.0",
+        "host": "media.example",
+        "if-none-match": '"manifest-etag"',
+        "range": "bytes=0-",
+        "sec-fetch-mode": "cors",
+        "sec-ch-ua": '"Browser";v="1"',
+        "priority": "u=1, i",
+    }
+
+    result = ie._extract_network_formats(
+        [{"url": "https://media.example/video.mp4", "method": "GET", "resourceType": "media", "headers": headers}],
+        "vid",
+        {"title": "title"},
+    )
+
+    assert result is not None
+    assert result["formats"][0]["http_headers"] == {
+        "accept": "*/*",
+        "cookie": "session=browser-token",
+        "referer": "https://example.com/watch",
+        "user-agent": "Browser/1.0",
+    }
+
+
+def test_manifest_keeps_headers() -> None:
+    ie = _make_ie()
+    ie._extract_network_formats = generic_browser.GenericBrowserIE._extract_network_formats.__get__(
+        ie, generic_browser.GenericBrowserIE
+    )
+    ie._extract_m3u8_formats = Mock(return_value=[{"format_id": "hls", "url": "https://media.example/video.ts"}])
+    headers = {"Referer": "https://player.example/", "User-Agent": "Browser/1.0"}
+
+    result = ie._extract_network_formats(
+        [{"url": "https://media.example/master.m3u8", "method": "GET", "headers": headers}],
+        "vid",
+        {"title": "title"},
+    )
+
+    assert result is not None
+    assert result["formats"][0]["http_headers"] == headers
 
 
 def test_media_fallback_outside_session(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -76,6 +76,19 @@ BROWSER_WAIT_SECONDS = 60.0
 BROWSER_WAIT_MAX_SECONDS = 300.0
 NETWORK_IDLE_SLICE_MS = 500
 HARD_HTTP_STATUSES: set[int] = {404, 410, 500, 502, 503, 504}
+UNSAFE_REPLAY_HEADERS: set[str] = {
+    "accept-encoding",
+    "connection",
+    "content-length",
+    "host",
+    "if-match",
+    "if-modified-since",
+    "if-none-match",
+    "if-range",
+    "if-unmodified-since",
+    "range",
+    "transfer-encoding",
+}
 
 MEDIA_CANDIDATE_EXTS: list[str] = [
     "m3u8",
@@ -89,6 +102,7 @@ MEDIA_CANDIDATE_EXTS: list[str] = [
     "m4a",
     "ogg",
 ]
+MANIFEST_EXTENSIONS: set[str] = {"m3u8", "mpd", "f4m", "ism"}
 
 MEDIA_ELEMENT_JS: str = """() => {
     const mediaUrls = [];
@@ -109,6 +123,13 @@ MEDIA_ELEMENT_JS: str = """() => {
     });
     return mediaUrls;
 }"""
+
+
+def _all_headers(message: Any) -> dict[str, str]:
+    try:
+        return dict(message.all_headers())
+    except Exception:
+        return dict(message.headers)
 
 
 class _CdpSession:
@@ -145,7 +166,7 @@ class _CdpSession:
                 "url": url,
                 "method": request.method,
                 "resourceType": resource_type,
-                "headers": dict(request.headers),
+                "headers": _all_headers(request),
             }
         )
 
@@ -156,7 +177,7 @@ class _CdpSession:
         url = response.url
         self.pending_api.discard(url)
         existing = next((item for item in self.requests if item.get("url") == url and not item.get("response")), None)
-        payload = {"status": response.status, "headers": dict(response.headers)}
+        payload = {"status": response.status, "headers": _all_headers(response)}
         if existing:
             existing["response"] = payload
         else:
@@ -165,7 +186,7 @@ class _CdpSession:
                     "url": url,
                     "method": request.method,
                     "resourceType": request.resource_type,
-                    "headers": dict(request.headers),
+                    "headers": _all_headers(request),
                     "response": payload,
                 }
             )
@@ -227,6 +248,16 @@ class _CdpSession:
                 return True
         return False
 
+    def _has_possible_manifest(self) -> bool:
+        for request in self.requests:
+            url = request.get("url", "").lower()
+            if any(f".{ext}" in url for ext in MANIFEST_EXTENSIONS):
+                return True
+            content_type = request.get("response", {}).get("headers", {}).get("content-type", "").lower()
+            if "mpegurl" in content_type or "dash+xml" in content_type:
+                return True
+        return False
+
     def wait_for_network_idle(
         self,
         idle_timeout=30000,
@@ -262,26 +293,26 @@ class _CdpSession:
             except Exception:
                 return False
 
-        def wait_for_late_media() -> None:
+        def wait_for_late_manifest() -> None:
             for _ in range(POST_MEDIA_POLL_ATTEMPTS):
-                if self._has_possible_media():
+                if self._has_possible_manifest():
                     return
                 if not (timeout_ms := bounded_timeout_ms(POST_MEDIA_POLL_INTERVAL_MS)):
                     return
                 time.sleep(timeout_ms / 1000)
 
-        if self._has_possible_media():
+        if self._has_possible_manifest():
             return
 
         idle_deadline = min(deadline, time.monotonic() + idle_timeout / 1000)
         while timeout_ms := bounded_timeout_ms(NETWORK_IDLE_SLICE_MS, idle_deadline):
             if wait_fn(timeout_ms):
                 break
-            if self._has_possible_media():
+            if self._has_possible_manifest():
                 return
 
         for _ in range(api_poll_attempts):
-            if self._has_possible_media():
+            if self._has_possible_manifest():
                 return
             if not self.pending_api:
                 break
@@ -289,13 +320,13 @@ class _CdpSession:
                 return
             wait_fn(timeout_ms)
 
-        if self._has_possible_media():
+        if self._has_possible_manifest():
             return
-        if not (timeout_ms := bounded_timeout_ms(10000)):
-            return
-        if wait_for_media_fn(timeout_ms):
-            return
-        wait_for_late_media()
+        if not self._has_possible_media():
+            if not (timeout_ms := bounded_timeout_ms(10000)):
+                return
+            wait_for_media_fn(timeout_ms)
+        wait_for_late_manifest()
 
     def content(self) -> str:
         return self.page.content()
@@ -667,6 +698,9 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
             if effective_ext in manifest_extractors:
                 try:
                     extracted = manifest_extractors[effective_ext](url, request_headers)
+                    if request_headers:
+                        for fmt in extracted:
+                            fmt["http_headers"] = request_headers
                     formats.extend(extracted)
                     if extracted:
                         has_manifest_formats = True
@@ -733,7 +767,11 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         cleaned = {
             k: v
             for k, v in headers.items()
-            if not k.lower().startswith(":") and not (k.lower() == "cookie" and len(v) > 2000)
+            if not k.lower().startswith(":")
+            and not k.lower().startswith("sec-")
+            and k.lower() not in UNSAFE_REPLAY_HEADERS
+            and k.lower() != "priority"
+            and not (k.lower() == "cookie" and len(v) > 2000)
         }
         return cleaned if cleaned else None
 

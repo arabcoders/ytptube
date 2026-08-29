@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.library.cf_solver_shared import _host_matches_cookie_domain, solver
+from app.library.cf_solver_shared import _host_matches_cookie_domain, is_cf_challenge, solver
 
 
 class TestHostMatchesCookieDomain:
@@ -44,6 +44,33 @@ def _make_config():
 
 
 class TestSolver:
+    @patch("app.library.cf_solver_shared.CACHE")
+    @patch("app.library.config.Config")
+    def test_uses_cache(self, mock_config_cls, mock_cache):
+        mock_config_cls.get_instance.return_value = _make_config()
+        solution = {"cookies": [], "userAgent": "UA"}
+        mock_cache.get.return_value = solution
+        mock_cache.ttl.return_value = 42.5
+
+        assert solver("https://example.com/video/x-123/", [], "UA") is solution
+
+    @patch("app.library.cf_solver_shared.CACHE")
+    @patch("app.library.cf_solver_shared.urllib.request.urlopen")
+    @patch("app.library.config.Config")
+    def test_caches_solution(self, mock_config_cls, mock_urlopen, mock_cache):
+        mock_config_cls.get_instance.return_value = _make_config()
+        cached = {}
+        mock_cache.get.side_effect = cached.get
+        mock_cache.set.side_effect = lambda key, value, **_kwargs: cached.__setitem__(key, value)
+        solution = {"cookies": [], "userAgent": "FlareSolverr/Browser"}
+        response = {"status": "ok", "solution": solution}
+        mock_urlopen.return_value.__enter__.return_value.read.return_value = json.dumps(response).encode()
+
+        result = solver("https://example.com/video/x-123/", [], "UA")
+
+        assert result == solution
+        assert cached == {"example.com": solution}
+
     @patch("app.library.cf_solver_shared.CACHE")
     @patch("app.library.cf_solver_shared.urllib.request.urlopen")
     @patch("app.library.config.Config")
@@ -130,3 +157,14 @@ class TestSolver:
 
         result = solver("https://www.pexels.com/video/x-123/", [], "UA")
         assert result is None
+
+
+class TestChallengeDetection:
+    def test_detects_marker(self):
+        assert is_cf_challenge(403, {"cf-mitigated": "challenge", "server": "cloudflare"}) is True
+
+    def test_detects_bypass(self):
+        assert is_cf_challenge(429, {"cf-chl-bypass": "1"}) is True
+
+    def test_ignores_cloudflare_error(self):
+        assert is_cf_challenge(403, {"server": "cloudflare", "cf-ray": "abc123"}) is False
