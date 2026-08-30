@@ -56,6 +56,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { uri } from '~/utils';
 import { getUiLocale } from '~/utils/ui-locales';
 
 const route = useRoute();

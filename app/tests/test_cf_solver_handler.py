@@ -48,6 +48,7 @@ class TestCfSolverFunction:
 
         assert result is request
         mock_solver.assert_called_once()
+        assert request.headers["User-Agent"] == "Mozilla/5.0"
 
     @patch("app.library.cf_solver_handler.solver")
     def test_cf_solver_no_solution(self, mock_solver, cf_handler_module):
@@ -223,3 +224,26 @@ class TestCFSolverRH:
         new_request = self.module.CFSolverRH._mark_retry(request)
 
         assert new_request.extensions.get("cf_retry") is True
+
+    def test_cached_user_agent(self, cf_handler_module):
+        request = Mock(
+            url="https://example.com/path",
+            headers={"User-Agent": "original"},
+            extensions={},
+            proxies=None,
+        )
+        response = Mock(status=200, headers={})
+        director = Mock()
+        director.send.return_value = response
+        self.handler._build_fallback = Mock(return_value=director)
+        self.handler._get_cookiejar = Mock(return_value=http.cookiejar.CookieJar())
+
+        with patch.object(
+            cf_handler_module.CACHE,
+            "get",
+            return_value={"cookies": [], "userAgent": "FlareSolverr/Browser"},
+        ):
+            result = self.handler._send(request)
+
+        assert result is response
+        assert request.headers["User-Agent"] == "FlareSolverr/Browser"

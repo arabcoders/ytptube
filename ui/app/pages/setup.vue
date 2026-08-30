@@ -68,6 +68,11 @@ const submit = async (): Promise<void> => {
   busy.value = true;
   error.value = '';
   try {
+    const redirect = authRedirect(await auth.probe(true), '/setup');
+    if (redirect) {
+      await navigateTo(redirect);
+      return;
+    }
     await auth.setup(username.value, password.value);
     await navigateTo('/');
   } catch (cause) {

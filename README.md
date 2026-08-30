@@ -64,24 +64,9 @@ See [Media Servers and NFO Maker](docs/features.md#media-servers-and-nfo-maker) 
 
 ## Quick Start
 
-Create `compose.yaml`:
-
-```yaml
-services:
-  ytptube:
-    image: ghcr.io/arabcoders/ytptube:latest
-    container_name: ytptube
-    restart: unless-stopped
-    user: "${UID:-1000}:${UID:-1000}"
-    environment:
-      - YTP_TEMP_PATH=/downloads/tmp
-      - YTP_DOWNLOAD_PATH=/downloads/files
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./config:/config:rw
-      - ./downloads:/downloads:rw
-```
+The included [`compose.yaml`](compose.yaml) runs YTPTube with the bundled POT provider, Chromium browser extraction, and
+FlareSolverr support. It also contains commented host-specific examples for hardware acceleration and NFS/SMB storage.
+See the [environment variable reference](FAQ.md#environment-variables) for additional application settings.
 
 Create the directories and start the container:
 
@@ -100,7 +85,7 @@ can replace the `user` line with `userns_mode: keep-id` and run `podman-compose 
 
 ```bash
 mkdir -p ./{config,downloads/{files,tmp}} && docker run -itd --rm \
-  --user "${UID}:${UID}" \
+  --user "$(id -u):$(id -g)" \
   --name ytptube \
   -e YTP_TEMP_PATH=/downloads/tmp \
   -e YTP_DOWNLOAD_PATH=/downloads/files \

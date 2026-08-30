@@ -6,8 +6,10 @@ import yt_dlp
 from yt_dlp.globals import extractors as ytdlp_extractors
 from yt_dlp.utils import make_archive_id
 
+from app.features.ytdlp.filename import trim_filename
 from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import apply_ytdlp_patches
+from app.library.config import Config
 from app.library.cf_solver_handler import set_cf_handler
 from app.library.logging import get_logger
 
@@ -113,6 +115,20 @@ class YTDLP(yt_dlp.YoutubeDL):
         outtmpl, enriched = rewrite_outtmpl(outtmpl, info_dict, cache=self._ytptube_outtmpl_cache)
 
         return super().prepare_outtmpl(outtmpl, enriched, sanitize=sanitize, _exec=_exec)
+
+    def prepare_filename(self, info_dict, dir_type="", *, outtmpl=None, warn=False):
+        filename = super().prepare_filename(info_dict, dir_type, outtmpl=outtmpl, warn=warn)
+        config = Config.get_instance()
+        if not config.filename_trim or not filename or filename == "-":
+            return filename
+        return trim_filename(
+            filename,
+            info_dict,
+            dir_type,
+            config.filename_trim,
+            config.filename_trim_regexes,
+            self.params,
+        )
 
     def process_info(self, info_dict):
         try:

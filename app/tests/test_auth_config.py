@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import platformdirs
@@ -112,3 +113,29 @@ def test_session_minimum(config_env, monkeypatch) -> None:
 def test_proxy_override(config_env, monkeypatch) -> None:
     monkeypatch.setenv("YTP_TRUSTED_PROXIES", "10.0.0.0/24")
     assert Config.get_instance().trusted_proxies == "10.0.0.0/24"
+
+
+def test_filename_trim_config(config_env, monkeypatch) -> None:
+    monkeypatch.setenv("YTP_FILENAME_TRIM", "END")
+    monkeypatch.setenv("YTP_FILENAME_TRIM_REGEXES", r'["^\\d+", "\\[[^][]*\\]"]')
+
+    config = Config.get_instance()
+
+    assert config.filename_trim == "end"
+    assert tuple(pattern.pattern for pattern in config.filename_trim_regexes) == (r"^\d+", r"\[[^][]*\]")
+    assert all(isinstance(pattern, re.Pattern) for pattern in config.filename_trim_regexes)
+
+
+def test_filename_trim_mode(config_env, monkeypatch) -> None:
+    monkeypatch.setenv("YTP_FILENAME_TRIM", "sideways")
+
+    with pytest.raises(ValueError, match="filename_trim"):
+        Config.get_instance()
+
+
+@pytest.mark.parametrize("value", ['["("]', '"^x"', '["x", 1]'])
+def test_filename_trim_regex(config_env, monkeypatch, value: str) -> None:
+    monkeypatch.setenv("YTP_FILENAME_TRIM_REGEXES", value)
+
+    with pytest.raises(ValueError, match="filename_trim|regular expression"):
+        Config.get_instance()

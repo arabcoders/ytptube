@@ -3,6 +3,9 @@
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
 or the `environment:` section in `compose.yaml` file.
 
+The [`compose.yaml`](compose.yaml) file provides the standard container configuration. Use the reference below for
+additional application settings.
+
 > [!NOTE]
 >
 > Most environment variables are shared between native and container deployments, but some default values differ for 
@@ -15,6 +18,8 @@ or the `environment:` section in `compose.yaml` file.
 | ------------------------------- | ------------------------------------------------------------------- | --------------------- |
 | TZ                              | The timezone to use for the application                             | `(not_set)`           |
 | YTP_OUTPUT_TEMPLATE             | The template for the filenames of the downloaded videos             | `%(title)s.%(ext)s`   |
+| YTP_FILENAME_TRIM               | Remove overlong filename content from `start`, `middle`, or `end`   | `(empty)`             |
+| YTP_FILENAME_TRIM_REGEXES       | JSON array of regexes matching filename content that must be kept   | `[]`                  |
 | YTP_DEFAULT_PRESET              | The default preset to use for the download                          | `default`             |
 | YTP_INSTANCE_TITLE              | The title of the instance                                           | `(not_set)`           |
 | YTP_FILE_LOGGING                | Whether to log to file                                              | `true`                |
@@ -49,6 +54,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_PYTHON_PATH                 | Extra python library directory                                      | `(not_set)`           |
 | YTP_PICTURES_BACKENDS           | A comma separated list of picture URLs to use                       | `(default)`           |
 | YTP_BROWSER_CONTROL_ENABLED     | Whether to enable the file browser actions                          | `false`               |
+| YTP_BGUTIL_ENABLED              | Whether to run the bundled PO-token provider                        | `true`                |
 | YTP_YTDLP_AUTO_UPDATE           | Whether to enable the auto update for yt-dlp                        | `true`                |
 | YTP_YTDLP_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package     | `false`               |
 | YTP_YTDLP_VERSION               | The version of yt-dlp to use. Defaults to latest version            | `(not_set)`           |
@@ -92,6 +98,39 @@ or the `environment:` section in `compose.yaml` file.
 > `YTP_EXTRACT_INFO_KEEP_ALIVE=true` keeps yt-dlp metadata extraction worker processes alive between requests. This
 > can make playlist extraction faster, but uses more idle memory. Leave it `false` to reduce idle resource usage.
 </details>
+
+# Filename trimming
+
+## How do I prevent downloads from failing because the filename is too long?
+
+Set `YTP_FILENAME_TRIM` to choose which part of an overlong filename can be removed:
+
+- `end` trims unprotected content from the end.
+- `start` trims unprotected content from the beginning.
+- `middle` trims unprotected content from the center.
+- An empty value disables trimming (default).
+
+## How do I prevent important parts of a filename from being trimmed?
+
+Set `YTP_FILENAME_TRIM_REGEXES` to a JSON array of regular expressions. Every matched part of the filename is retained.
+For example, this protects leading digits and every non-nested bracketed section:
+
+```yaml
+YTP_FILENAME_TRIM: end
+YTP_FILENAME_TRIM_REGEXES: '["^\\d+", "\\[[^][]*\\]"]'
+```
+
+With these settings, an overlong filename such as:
+
+```text
+260812 very long title that continues for hundreds of characters [youtube-random-id].mkv
+```
+
+can be shortened to:
+
+```text
+260812 very long title that cont [youtube-random-id].mkv
+```
 
 # Browser extensions & bookmarklets
 
@@ -186,34 +225,11 @@ If you are receiving errors like:
 - "OSError: [Errno 18] Cross-device link: '/tmp/random_id/name.webm' -> '/downloads/name.webm'
 - "Operation not permitted: '/downloads/name.webm'
 
-This indicates an error with your mounts and how they interact with the container. So, the basic solution is to do the following:
-
-<details>
-<summary>Download paths Compose example</summary>
-
-```yaml
-services:
-  ytptube:
-    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
-    image: ghcr.io/arabcoders/ytptube:latest
-    container_name: ytptube
-    restart: unless-stopped
-    environment:
-      - YTP_TEMP_PATH=/downloads/tmp
-      - YTP_DOWNLOAD_PATH=/downloads/files
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./config:/config:rw
-      - ./downloads:/downloads:rw
-```
-
-</details>
-
-Then run the following command to create the necessary directories and start the container:
+This indicates an error with the container mounts. Use the paths in the root [`compose.yaml`](compose.yaml), then create
+the necessary directories and start the stack:
 
 ```bash
-mkdir -p ./config && mkdir -p ./downloads/{tmp,files} && docker compose -f compose.yaml up -d
+mkdir -p ./config && mkdir -p ./downloads/{tmp,files} && docker compose up -d
 ```
 
 Reference: [Issue #363](https://github.com/arabcoders/ytptube/issues/363)
@@ -284,42 +300,19 @@ definition for sites.
 
 # How to generate POT tokens?
 
-You need a POT provider server. The `bgutil-ytdlp-pot-provider` extractor is already included. You can use this 
-compose example:
+The container includes the [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) server
+and extractor. They are enabled by default, and yt-dlp finds the server automatically. No Preset options or additional
+container are required.
 
-<details>
-<summary>POT provider Compose example</summary>
-
-```yaml
-services:
-  ytptube:
-    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
-    image: ghcr.io/arabcoders/ytptube:latest
-    container_name: ytptube
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./config:/config:rw
-      - ./downloads:/downloads:rw
-    tmpfs:
-      - /tmp
-    depends_on:
-      - bgutil_provider
-  bgutil_provider:
-    init: true
-    image: brainicism/bgutil-ytdlp-pot-provider:latest
-    container_name: bgutil_provider
-    restart: unless-stopped    
-```
-
-</details>
-
-Then create a new preset, and in the `CLI options` field set the following:
+Set `YTP_BGUTIL_ENABLED=false` on the YTPTube container to disable the bundled server. Then to use the external POT 
+server create a Preset and add this to its `CLI options` field:
 
 ```bash
---extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416" 
+--extractor-args "youtubepot-bgutilhttp:base_url=http://[YOUR_BGUTIL_PROVIDER_IP]:4416"
 ```
+
+replace `[YOUR_BGUTIL_PROVIDER_IP]` with the IP address of the server running the POT provider. The server must be 
+reachable from the YTPTube container.
 
 See the [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.
 
@@ -397,61 +390,22 @@ Where `[api_key]` is the api key you get from your WatchState instance.
 
 # How to use share folder or external storage as download target?
 
-Mount the share folder as the target for `/downloads`. This can cause permission or cross-device link errors. To avoid
+Mounting the share folder as the target for `/downloads` can cause permission or cross-device link errors. To avoid
 these issues, mount the share folder as a named volume, then mount the named volume at `/downloads/smb` or
 `/downloads/nfs`.
 
-<details>
-<summary>External storage Compose example</summary>
+The root [`compose.yaml`](compose.yaml) contains examples of NFS and SMB mounts and volume definitions. Replace the 
+server info before enabling them. Keep `/config` on local storage because SQLite does not support network filesystems.
 
-```yaml
-services:
-  ytptube:
-    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
-    image: ghcr.io/arabcoders/ytptube:latest
-    container_name: ytptube
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    volumes:
-      # Config must be mounted locally as read-write sqlite doesn't support network mounts.
-      - ./config:/config:rw
-      # Mount a local directory
-      - ./downloads:/downloads/local:rw
-      # Mount the NFS share
-      - nfs-data:/downloads/nfs:rw
-      # Mount the SMB share
-      - smb-data:/downloads/smb:rw
-    tmpfs:
-      - /tmp
-
-volumes:
-  nfs-data:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=10.0.0.3,rw,nfsvers=4 # <--- Change server IP and options
-      device: ":/exported/path" # <--- Remote NFS path
-  
-  smb-data:
-    driver: local
-    driver_opts:
-      type: cifs
-      o: username=my_username,password=my_password,vers=3.0,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 # <--- Change options to fit your needs
-      device: "//10.0.0.3/public" # <--- Remote SMB path
-```
-
-</details>
-
-If you prefer, you can bypass YTPTube `download_path` and set it to `/` and completely manage your own mounts. However,
-please be aware that the file browser feature will expose whatever `download_path` is set to. **So, if you set it to `/`, 
-the file browser will expose the entire container filesystem.**
+> [!IMPORTANT]
+> If you prefer, you can bypass YTPTube `download_path` and set it to `/` and completely manage your own mounts. However,
+> please be aware that the file browser feature will expose whatever `download_path` is set to. **So, if you set it to `/`, 
+> the file browser will expose the entire container filesystem including the `/config` directory.**
 
 # The origin of the project.
 
 The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
-rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
-project and what i wanted to achieve with it.
+rewritten and redesigned.
   
 # How to use hardware acceleration for video transcoding?
 
@@ -460,31 +414,14 @@ However, We do have the drivers and ffmpeg already installed and the CPU transco
 hardware acceleration You need to alter your `compose.yaml` file to mount the necessary devices to the container. Here
 is an example of how to do it for debian based systems.
 
-<details>
-<summary>Hardware acceleration Compose example</summary>
-
-```yaml
-services:
- ytptube:
-    ........ # see above for the rest of the configuration
-    devices:
-       # Mount all DRI devices when the host has one GPU.
-      - /dev/dri:/dev/dri                       
-      # Otherwise, selectively mount the devices you need.
-      - /dev/dri/card0      # Intel GPU device
-      - /dev/dri/renderD128 # Intel GPU render node
-    group_add:
-      # Add the necessary groups to the container to access the gpu devices.
-      - 44   # it might be different on your system.                                 
-      - 105  # it might be different on your system.
-```
-
-</details>
+The root [`compose.yaml`](compose.yaml) contains the optional device and group settings. Uncomment them and set
+`VIDEO_GID` and `RENDER_GID` to the corresponding group IDs from the host.
 
 This setup should enable VAAPI encoding in `x86_64` containers.
 
 > [!NOTE]
-> Your `video`, `render` group id might be different from mine, you can run the follow command in docker host server to get the group ids for both groups.
+> Your `video`, `render` group id might be different from mine, you can run the follow command in docker host server 
+> to get the group ids for both groups.
 
 ```bash
 cat /etc/group | grep -E 'render|video'
@@ -497,12 +434,14 @@ In my docker host the group id for `video` is `44` and for `render` is `105`. ch
 file to match your setup.
 
 If for some reason the initial test for GPU encoding fails, YTPTube will fallback to software encoding. You can force
-software encoding by setting the `YTP_STREAMER_VCODEC` environment variable to `libx264`. If you want to force GPU encoding, set the
-`YTP_STREAMER_VCODEC` environment variable to one of the supported GPU codecs, for example `h264_vaapi` or `h264_nvenc` depending on your GPU.
-For the supported codec implementations, see [segment_encoders.py](app/features/streaming/library/segment_encoders.py).
+software encoding by setting the `YTP_STREAMER_VCODEC` environment variable to `libx264`. If you want to force GPU 
+encoding, set the `YTP_STREAMER_VCODEC` environment variable to one of the supported GPU codecs, for 
+example `h264_vaapi` or `h264_nvenc` depending on your GPU. For the supported codec implementations, 
+see [segment_encoders.py](app/features/streaming/library/segment_encoders.py).
 
-If GPU encoding fails and software encoding is used, restart the container before trying GPU encoding again. YTPTube
-tests GPU encoding only once, when the first video stream starts.
+> [!NOTE]
+> If GPU encoding fails and software encoding is used, restart the container before trying GPU encoding again. YTPTube
+> tests GPU encoding only once, when the first video stream starts.
 
 # How to setup CI on Gitea?
 
@@ -573,37 +512,11 @@ This will help in case the premiere has a longer loading screen than usual.
 
 # How to bypass some WAF challenges?
 
-You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or a compatible alternative such as [Trawl](https://github.com/germondai/trawl) (which handles newer challenge formats) and then set the `YTP_FLARESOLVERR_URL` 
-environment variable to point to your instance. For example:
+You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) or a compatible alternative such 
+as [Trawl](https://github.com/germondai/trawl) (which handles newer challenge formats) and then set 
+the `YTP_FLARESOLVERR_URL` environment variable to point to your instance. For example:
 
-<details>
-<summary>FlareSolverr Compose example</summary>
-
-```yaml
-services:
-  ytptube:
-    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
-    image: ghcr.io/arabcoders/ytptube:latest
-    container_name: ytptube
-    restart: unless-stopped
-    environment:
-      - YTP_FLARESOLVERR_URL=http://flaresolverr:8191/v1
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./config:/config:rw
-      - ./downloads:/downloads:rw
-    tmpfs:
-      - /tmp
-    depends_on:
-      - flaresolverr
-  flaresolverr:
-    image: flaresolverr/flaresolverr:latest
-    container_name: flaresolverr
-    restart: unless-stopped    
-```
-
-</details>
+The root [`compose.yaml`](compose.yaml) includes FlareSolverr and configures YTPTube to use it.
 
 See the [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) and [Trawl](https://github.com/germondai/trawl)
 projects.
@@ -627,36 +540,7 @@ shorter limit, add this to the CLI options:
 
 If the browser extractor fails, YTPTube falls back to the normal generic extractor.
 
-## Example compose setup
-
-<details>
-<summary>Browser extractor Compose example</summary>
-
-```yaml
-services:
-  chrome:
-    image: jlesage/chromium:latest
-    container_name: chrome
-    environment:
-      - CHROMIUM_REMOTE_DEBUGGING=1 # enable remote debugging
-      - KEEP_APP_RUNNING=1
-      - DISPLAY_WIDTH=1920
-      - DISPLAY_HEIGHT=1080
-  ytptube:
-    user: "${UID:-1000}:${UID:-1000}"
-    image: ghcr.io/arabcoders/ytptube:latest
-    container_name: ytptube
-    restart: unless-stopped
-    environment:
-      - YTP_BROWSER_URL=http://chrome:9222
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./config:/config:rw
-      - ./downloads:/downloads:rw
-```
-
-</details>
+The root [`compose.yaml`](compose.yaml) includes Chromium with remote debugging enabled and configures YTPTube to use it.
 
 ---
 

@@ -145,8 +145,14 @@ class CFSolverRH(RequestHandler, ABC):
                 )
             )
 
-        if ua := solution.get("userAgent"):
+        ua = solution.get("userAgent")
+        if isinstance(ua, str) and ua:
             headers["User-Agent"] = ua
+            LOG.debug(
+                "Applied FlareSolverr-selected User-Agent for '%s'.",
+                host,
+                extra={"host": host, "user_agent": ua},
+            )
 
         return True
 

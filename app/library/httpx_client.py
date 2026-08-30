@@ -194,8 +194,14 @@ class CFAsyncTransport(httpx.AsyncBaseTransport):
                 cookies=merged_cookies,
             )
 
-        if ua := solution.get("userAgent"):
+        ua = solution.get("userAgent")
+        if isinstance(ua, str) and ua:
             request.headers["User-Agent"] = ua
+            LOG.debug(
+                "Applied FlareSolverr-selected User-Agent for '%s'.",
+                request.url.host,
+                extra={"host": request.url.host, "user_agent": ua},
+            )
 
         await response.aclose()
         return await self.base.handle_async_request(request)
@@ -233,8 +239,14 @@ class CFTransport(httpx.BaseTransport):
                 cookies=merged_cookies,
             )
 
-        if ua := solution.get("userAgent"):
+        ua = solution.get("userAgent")
+        if isinstance(ua, str) and ua:
             request.headers["User-Agent"] = ua
+            LOG.debug(
+                "Applied FlareSolverr-selected User-Agent for '%s'.",
+                request.url.host,
+                extra={"host": request.url.host, "user_agent": ua},
+            )
 
         response.close()
         return self.base.handle_request(request)
