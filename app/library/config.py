@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -83,6 +84,12 @@ class Config(metaclass=Singleton):
 
     output_template_chapter: str = "%(title)s - %(section_number)s %(section_title)s.%(ext)s"
     """The output template to use for the downloaded files with chapters."""
+
+    filename_trim: str = ""
+    """Where to remove filename content when it exceeds the filesystem limit."""
+
+    filename_trim_regexes: tuple[re.Pattern[str], ...] = ()
+    """Patterns matching filename content that must not be removed."""
 
     keep_archive: bool = True
     """Keep the download archive file."""
@@ -479,6 +486,34 @@ class Config(metaclass=Singleton):
 
         if isinstance(self.pictures_backends, str) and self.pictures_backends:
             self.pictures_backends = self.pictures_backends.split(",")
+
+        self.filename_trim = self.filename_trim.strip().lower()
+        if self.filename_trim not in ("", "start", "middle", "end"):
+            msg = "Config variable 'filename_trim' must be empty, 'start', 'middle', or 'end'."
+            raise ValueError(msg)
+
+        if isinstance(self.filename_trim_regexes, str):
+            try:
+                patterns = json.loads(self.filename_trim_regexes)
+            except json.JSONDecodeError as e:
+                msg = "Config variable 'filename_trim_regexes' must be a JSON array of regular expressions."
+                raise ValueError(msg) from e
+        else:
+            patterns = self.filename_trim_regexes
+
+        if not isinstance(patterns, (list, tuple)) or any(not isinstance(pattern, str) for pattern in patterns):
+            msg = "Config variable 'filename_trim_regexes' must be a JSON array of regular expressions."
+            raise ValueError(msg)
+
+        compiled_patterns: list[re.Pattern[str]] = []
+        for index, pattern in enumerate(patterns):
+            try:
+                compiled_patterns.append(re.compile(pattern))
+            except re.error as e:
+                msg = f"Invalid filename trim regular expression at index {index}: {e!s}"
+                raise ValueError(msg) from e
+
+        self.filename_trim_regexes = tuple(compiled_patterns)
 
         if not self.base_path.endswith("/"):
             self.base_path += "/"

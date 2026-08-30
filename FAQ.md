@@ -18,6 +18,8 @@ additional application settings.
 | ------------------------------- | ------------------------------------------------------------------- | --------------------- |
 | TZ                              | The timezone to use for the application                             | `(not_set)`           |
 | YTP_OUTPUT_TEMPLATE             | The template for the filenames of the downloaded videos             | `%(title)s.%(ext)s`   |
+| YTP_FILENAME_TRIM               | Remove overlong filename content from `start`, `middle`, or `end`   | `(empty)`             |
+| YTP_FILENAME_TRIM_REGEXES       | JSON array of regexes matching filename content that must be kept   | `[]`                  |
 | YTP_DEFAULT_PRESET              | The default preset to use for the download                          | `default`             |
 | YTP_INSTANCE_TITLE              | The title of the instance                                           | `(not_set)`           |
 | YTP_FILE_LOGGING                | Whether to log to file                                              | `true`                |
@@ -96,6 +98,39 @@ additional application settings.
 > `YTP_EXTRACT_INFO_KEEP_ALIVE=true` keeps yt-dlp metadata extraction worker processes alive between requests. This
 > can make playlist extraction faster, but uses more idle memory. Leave it `false` to reduce idle resource usage.
 </details>
+
+# Filename trimming
+
+## How do I prevent downloads from failing because the filename is too long?
+
+Set `YTP_FILENAME_TRIM` to choose which part of an overlong filename can be removed:
+
+- `end` trims unprotected content from the end.
+- `start` trims unprotected content from the beginning.
+- `middle` trims unprotected content from the center.
+- An empty value disables trimming (default).
+
+## How do I prevent important parts of a filename from being trimmed?
+
+Set `YTP_FILENAME_TRIM_REGEXES` to a JSON array of regular expressions. Every matched part of the filename is retained.
+For example, this protects leading digits and every non-nested bracketed section:
+
+```yaml
+YTP_FILENAME_TRIM: end
+YTP_FILENAME_TRIM_REGEXES: '["^\\d+", "\\[[^][]*\\]"]'
+```
+
+With these settings, an overlong filename such as:
+
+```text
+260812 very long title that continues for hundreds of characters [youtube-random-id].mkv
+```
+
+can be shortened to:
+
+```text
+260812 very long title that cont [youtube-random-id].mkv
+```
 
 # Browser extensions & bookmarklets
 
