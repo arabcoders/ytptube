@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "d9c64c5ab81c290a9ed6f96f71b630bd1c6962c4",
-    "date": "2026-08-29T20:32:43+00:00",
+    "full_sha": "5a930c9dd16b0e21b353bc42983b91ff68f3c3fb",
+    "date": "2026-08-30T06:04:18+00:00",
     "commits": [
+      {
+        "sha": "5a930c9d",
+        "full_sha": "5a930c9dd16b0e21b353bc42983b91ff68f3c3fb",
+        "message": "feat: auto trim filename",
+        "author": "arabcoders",
+        "date": "2026-08-30T06:04:18+00:00"
+      },
       {
         "sha": "d9c64c5a",
         "full_sha": "d9c64c5ab81c290a9ed6f96f71b630bd1c6962c4",
