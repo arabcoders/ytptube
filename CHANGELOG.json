@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "5a930c9dd16b0e21b353bc42983b91ff68f3c3fb",
-    "date": "2026-08-30T06:04:18+00:00",
+    "full_sha": "e5de247d0fddc7d44424db5b5f0a6390cc63d651",
+    "date": "2026-08-31T17:10:25+00:00",
     "commits": [
+      {
+        "sha": "e5de247d",
+        "full_sha": "e5de247d0fddc7d44424db5b5f0a6390cc63d651",
+        "message": "refactor: remove dual view on feature pages, and improve rendering for limits page.",
+        "author": "arabcoders",
+        "date": "2026-08-31T17:10:25+00:00"
+      },
+      {
+        "sha": "1ad49883",
+        "full_sha": "1ad498834a744b7fbc82914590aa03477d8c856d",
+        "message": "refactor: cleanup tests",
+        "author": "arabcoders",
+        "date": "2026-08-31T14:47:34+00:00"
+      },
       {
         "sha": "5a930c9d",
         "full_sha": "5a930c9dd16b0e21b353bc42983b91ff68f3c3fb",
