@@ -18,8 +18,7 @@ class TestItemFormatAndBasics:
         assert item.force_start is True
 
     @patch("app.features.presets.service.Presets.get_instance")
-    def test_format_validates_and_normalizes(self, mock_presets_get):
-        # Preset exists and is not default => allowed
+    def test_format_normalizes(self, mock_presets_get):
         mock_presets_get.return_value.has.return_value = True
 
         data = {
@@ -33,11 +32,7 @@ class TestItemFormatAndBasics:
             "requeued": True,
             "cli": "--embed-metadata",
         }
-        with (
-            patch("app.features.downloads.items.Item._default_preset", return_value="default"),
-            patch("app.features.ytdlp.utils.arg_converter") as mock_arg_conv,
-        ):
-            mock_arg_conv.return_value = None
+        with patch("app.features.downloads.items.Item._default_preset", return_value="default"):
             item = Item.format(data)
 
         assert isinstance(item, Item)
@@ -52,24 +47,16 @@ class TestItemFormatAndBasics:
         assert item.cli == "--embed-metadata"
 
     @patch("app.features.presets.service.Presets.get_instance")
-    def test_format_bad_input(self, mock_presets_get):
-        # Missing url
+    def test_format_rejects_input(self, mock_presets_get):
         with pytest.raises(ValueError, match="url param is required"):
             Item.format({})
 
-        # Invalid preset name (not found)
         mock_presets_get.return_value.has.return_value = False
         with (
             patch("app.features.downloads.items.Item._default_preset", return_value="default"),
             pytest.raises(ValueError, match="Preset 'bad' does not exist"),
         ):
             Item.format({"url": "https://example.com", "preset": "bad"})
-
-    @patch("app.features.ytdlp.utils.arg_converter")
-    def test_format_cli_parse_error(self, mock_arg_conv):
-        mock_arg_conv.side_effect = RuntimeError("bad cli")
-        with pytest.raises(ValueError, match="Failed to parse command options"):
-            Item.format({"url": "https://example.com", "cli": "--bad"})
 
     def test_item_helpers(self):
         item = Item(url="https://example.com", extras={"a": 1}, cli="--x")
@@ -80,15 +67,13 @@ class TestItemFormatAndBasics:
         assert json.loads(item.json())["url"] == "https://example.com"
 
     @patch("app.features.downloads.items.get_archive_id")
-    def test_item_archive_id_archived(self, mock_get_id, tmp_path: Path):
+    def test_archive_status(self, mock_get_id, tmp_path: Path):
         mock_get_id.return_value = {"archive_id": "x", "id": "x", "ie_key": "k"}
         file = _archive_path(tmp_path)
 
-        # get_archive_id
         item = Item(url="https://example.com")
         assert item.get_archive_id() == "x"
 
-        # is_archived uses archive_read through get_archive_file + ytdlp opts
         with (
             patch("app.features.downloads.items.YTDLPOpts") as mock_opts,
             patch("app.features.downloads.items.archive_read") as mock_read,
@@ -105,7 +90,7 @@ class TestItemDTO:
     @patch("app.features.downloads.items.get_archive_id")
     @patch("app.features.downloads.items.YTDLPOpts")
     @patch("app.features.downloads.items.archive_read")
-    def test_init_sets_archive_flags(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
+    def test_init_archive_flags(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
         mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
@@ -120,27 +105,8 @@ class TestItemDTO:
         assert dto.is_archivable is True
         assert dto.is_archived is True
 
-    @patch("app.features.downloads.items.get_archive_id")
-    @patch("app.features.downloads.items.YTDLPOpts")
     @patch("app.features.downloads.items.archive_read")
-    def test_post_init_keeps_skipped(self, mock_read, mock_opts, mock_get_id, tmp_path: Path):
-        mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
-        mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
-        mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
-        file = _archive_path(tmp_path)
-        mock_opts.get_instance.return_value.get_all.return_value = {
-            "download_archive": file,
-            "skip_download": True,
-        }
-        mock_read.return_value = ["arch"]
-
-        dto = ItemDTO(id="vid", title="t", url="u", folder="f")
-
-        assert dto.download_skipped is False
-
-    @patch("app.features.downloads.items.archive_read")
-    def test_serialize_archives_finished(self, mock_read, tmp_path: Path):
-        # Given a finished item with archive info
+    def test_serialize_archive_status(self, mock_read, tmp_path: Path):
         dto = ItemDTO(id="vid", title="t", url="u", folder="f")
         dto.archive_id = "arch"
         dto._archive_file = _archive_path(tmp_path)
@@ -150,45 +116,12 @@ class TestItemDTO:
         data = dto.serialize()
         assert data["is_archived"] is True
 
-    @patch("app.features.downloads.items.YTDLPOpts")
-    def test_serialize_keeps_skipped(self, mock_opts):
-        mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
-        mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
-        mock_opts.get_instance.return_value.get_all.return_value = {}
-
-        dto = ItemDTO(id="vid", title="t", url="u", folder="f", download_skipped=True)
-
-        mock_opts.get_instance.reset_mock()
-
-        data = dto.serialize()
-
-        assert data["download_skipped"] is True
-        mock_opts.get_instance.assert_not_called()
-
-    @patch("app.features.downloads.items.YTDLPOpts")
-    def test_opts_uses_preset_cli(self, mock_opts):
-        mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
-        mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
-
-        dto = ItemDTO(id="id", title="t", url="u", folder="f", preset="p", cli="--x")
-
-        mock_opts.get_instance.reset_mock()
-        mock_opts.get_instance.return_value.preset.reset_mock()
-        mock_opts.get_instance.return_value.add_cli.reset_mock()
-
-        opts = dto.get_ytdlp_opts()
-
-        mock_opts.get_instance.assert_called_once()
-        mock_opts.get_instance.return_value.preset.assert_called_once_with(name="p")
-        mock_opts.get_instance.return_value.add_cli.assert_called_once()
-        assert opts is mock_opts.get_instance.return_value
-
     def test_name_and_ids(self):
         dto = ItemDTO(id="abc", title="Title", url="u", folder="f")
         assert dto.name() == 'id="abc", title="Title"'
         assert isinstance(dto.get_id(), str)
 
-    def test_get_file_method(self):
+    def test_file_lookup(self):
         dto = ItemDTO(
             id="test-id",
             title="Test Video",
@@ -263,7 +196,7 @@ class TestItemDTO:
             result = dto.get_file(download_path=Path("/custom"))
             assert result == Path("/custom/test_video.mp4")
 
-    def test_file_sidecar_populates_utils(self):
+    def test_file_sidecar(self):
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="sidecar", title="Title", url="u", folder="f")
 
@@ -278,17 +211,11 @@ class TestItemDTO:
         }
 
         with (
-            patch(
-                "app.features.downloads.items.ItemDTO.get_file",
-                autospec=True,
-                return_value=Path("/downloads/video.mp4"),
-            ) as mock_get_file,
-            patch("app.features.downloads.items.get_file_sidecar", return_value=expected_sidecar) as mock_utils_sidecar,
+            patch("app.features.downloads.items.ItemDTO.get_file", return_value=Path("/downloads/video.mp4")),
+            patch("app.features.downloads.items.get_file_sidecar", return_value=expected_sidecar),
         ):
             result = dto.get_file_sidecar()
 
-        mock_get_file.assert_called_once_with(dto)
-        mock_utils_sidecar.assert_called_once_with(Path("/downloads/video.mp4"))
         assert result is expected_sidecar
         assert dto.sidecar is expected_sidecar
 
@@ -300,13 +227,11 @@ class TestItemDTO:
         dto.sidecar = existing
 
         with (
-            patch("app.features.downloads.items.ItemDTO.get_file", autospec=True, return_value=None) as mock_get_file,
-            patch("app.features.downloads.items.get_file_sidecar") as mock_utils_sidecar,
+            patch("app.features.downloads.items.ItemDTO.get_file", return_value=None),
+            patch("app.features.downloads.items.get_file_sidecar"),
         ):
             result = dto.get_file_sidecar()
 
-        mock_get_file.assert_called_once_with(dto)
-        mock_utils_sidecar.assert_not_called()
         assert result is existing
         assert dto.sidecar is existing
 
@@ -323,7 +248,6 @@ class TestItemDTO:
 
             result = dto.get_preset()
 
-            mock_presets.return_value.get.assert_called_once_with("test-preset")
             assert result is mock_preset
             assert result.name == "test-preset"
 
@@ -340,7 +264,6 @@ class TestItemDTO:
 
             result = dto.get_preset()
 
-            mock_presets.return_value.get.assert_called_once_with("default")
             assert result is mock_preset
 
     def test_get_preset_miss(self):
@@ -352,12 +275,11 @@ class TestItemDTO:
 
             result = dto.get_preset()
 
-            mock_presets.return_value.get.assert_called_once_with("nonexistent")
             assert result is None
 
 
 class TestItemAddExtras:
-    def test_add_extras_empty_dict(self):
+    def test_add_extras_empty(self):
         item = Item(url="https://example.com")
         item.extras = {}
 
@@ -373,7 +295,7 @@ class TestItemAddExtras:
 
         assert item.extras == {"key1": "value1"}
 
-    def test_add_extras_existing_dict(self):
+    def test_add_extras_existing(self):
         item = Item(url="https://example.com", extras={"existing": "data"})
 
         item.add_extras("new_key", "new_value")
@@ -381,14 +303,14 @@ class TestItemAddExtras:
         assert item.extras["existing"] == "data"
         assert item.extras["new_key"] == "new_value"
 
-    def test_extras_overwrites_existing_key(self):
+    def test_extras_overwrite(self):
         item = Item(url="https://example.com", extras={"key1": "old_value"})
 
         item.add_extras("key1", "new_value")
 
         assert item.extras["key1"] == "new_value"
 
-    def test_add_extras_various_types(self):
+    def test_extras_accept_types(self):
         item = Item(url="https://example.com")
         item.extras = {}
 

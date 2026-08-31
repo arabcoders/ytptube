@@ -1,944 +1,185 @@
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
+from app.features.downloads.items import Item
 from app.features.presets.schemas import Preset
-from app.features.ytdlp.ytdlp_opts import YTDLPOpts
+from app.features.ytdlp.ytdlp_opts import ARGSMerger, YTDLPCli, YTDLPOpts
+
+
+COOKIE_DATA = "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tFALSE\t0\tsession\tvalue\n"
+
+
+def config_mock() -> Mock:
+    config = Mock()
+    config.download_path = "/downloads"
+    config.temp_path = "/temp"
+    config.config_path = "/config"
+    config.output_template = "%(title)s.%(ext)s"
+    config.output_template_chapter = "%(chapter)s"
+    config.default_preset = ""
+    config.debug = False
+    config.get_replacers.return_value = {}
+    return config
 
 
 class TestYTDLPOpts:
-    def test_add_cli_valid_args(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config"),
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter,
-        ):
-            mock_converter.return_value = {"format": "best"}
-            opts = YTDLPOpts()
+    def test_malformed_cli(self):
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config_mock()):
+            with pytest.raises(ValueError, match="Invalid command options"):
+                YTDLPOpts().add_cli('--output "unterminated')
 
-            result = opts.add_cli("--format best", from_user=False)
-
-            assert result is opts  # Returns self for chaining
-            assert "--format best" in opts._item_cli
-            mock_converter.assert_called_once_with(args="--format best", level=False)
-
-    def test_add_cli_invalid(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config"),
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter,
-        ):
-            mock_converter.side_effect = Exception("Invalid argument")
-            opts = YTDLPOpts()
-
-            with pytest.raises(ValueError, match="Invalid command options for yt-dlp were given"):
-                opts.add_cli("--invalid-arg", from_user=True)
-
-    def test_add_cli_empty(self):
-        with patch("app.features.ytdlp.ytdlp_opts.Config"):
-            opts = YTDLPOpts()
-
-            # Test empty string
-            result1 = opts.add_cli("", from_user=False)
-            assert result1 is opts
-            assert len(opts._item_cli) == 0
-
-            # Test short string
-            result2 = opts.add_cli("a", from_user=False)
-            assert result2 is opts
-            assert len(opts._item_cli) == 0
-
-            # Test non-string (this should be handled gracefully)
-            result3 = opts.add_cli(123, from_user=False)  # type: ignore
-            assert result3 is opts
-            assert len(opts._item_cli) == 0
-
-    def test_add_with_valid_config(self):
-        with patch("app.features.ytdlp.ytdlp_opts.Config"):
-            opts = YTDLPOpts()
-
-            config = {"format": "best", "quality": "720p"}
-            result = opts.add(config, from_user=False)
-
-            assert result is opts
-            assert opts._item_opts["format"] == "best"
-            assert opts._item_opts["quality"] == "720p"
-
-    def test_add_filters_bad_options(self):
-        with patch("app.features.ytdlp.ytdlp_opts.Config"):
-            opts = YTDLPOpts()
-
-            config = {
-                "format": "best",
-                "paths": "/dangerous/path",  # Should be filtered
-                "outtmpl": "dangerous_template",  # Should be filtered
-                "quality": "720p",
-            }
-
-            result = opts.add(config, from_user=True)
-
-            assert result is opts
-            assert opts._item_opts["format"] == "best"
-            assert opts._item_opts["quality"] == "720p"
-            assert "paths" not in opts._item_opts
-            assert "outtmpl" not in opts._item_opts
-
-    def test_preset_with_valid_preset(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.presets.service.Presets") as mock_presets,
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter,
-        ):
-            # Mock config
-            mock_config_instance = Mock()
-            mock_config_instance.config_path = "/test/config"
-            mock_config_instance.download_path = "/test/downloads"
-            mock_config_instance.temp_path = "/test/temp"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config.get_instance.return_value = mock_config_instance
-
-            # Mock preset
-            mock_preset = Mock(spec=Preset)
-            mock_preset.id = "test_preset"
-            mock_preset.name = "Test Preset"
-            mock_preset.cli = "--format best"
-            mock_preset.cookies = None
-            mock_preset.template = "custom_template"
-            mock_preset.folder = "custom_folder"
-
-            mock_presets_instance = Mock()
-            mock_presets_instance.get.return_value = mock_preset
-            mock_presets.get_instance.return_value = mock_presets_instance
-
-            mock_converter.return_value = {"format": "best"}
-
-            with patch("app.features.ytdlp.ytdlp_opts.calc_download_path") as mock_calc_path:
-                mock_calc_path.return_value = "/test/downloads/custom_folder"
-
-                opts = YTDLPOpts()
-                result = opts.preset("test_preset")
-
-                assert result is opts
-                assert opts._preset_cli == "--format best"
-                assert opts._preset_opts["outtmpl"]["default"] == "custom_template"
-                assert opts._preset_opts["paths"]["home"] == "/test/downloads/custom_folder"
-
-    def test_preset_with_nonexistent_preset(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config"),
-            patch("app.features.presets.service.Presets") as mock_presets,
-        ):
-            mock_presets_instance = Mock()
-            mock_presets_instance.get.return_value = None
-            mock_presets.get_instance.return_value = mock_presets_instance
-
-            opts = YTDLPOpts()
-            result = opts.preset("nonexistent")
-
-            assert result is opts
-            assert opts._preset_cli == ""
-            assert opts._preset_opts == {}
-
-    def test_preset_cookies_creates_file(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.presets.service.Presets") as mock_presets,
-        ):
-            # Mock config
-            mock_config_instance = Mock()
-            mock_config_instance.config_path = "/test/config"
-            mock_config.get_instance.return_value = mock_config_instance
-
-            # Mock preset with cookies
-            mock_preset = Mock(spec=Preset)
-            mock_preset.id = "cookie_preset"
-            mock_preset.name = "Cookie Preset"
-            mock_preset.cli = None
-            mock_preset.cookies = "cookie_data"
-            mock_preset.template = None
-            mock_preset.folder = None
-
-            # Mock cookie_file path
-            mock_cookie_path = Mock()
-            mock_cookie_path.exists.return_value = True
-            mock_cookie_path.__str__ = Mock(return_value="/test/config/cookies/cookie_preset.txt")
-            mock_preset.get_cookies_file.return_value = mock_cookie_path
-
-            mock_presets_instance = Mock()
-            mock_presets_instance.get.return_value = mock_preset
-            mock_presets.get_instance.return_value = mock_presets_instance
-
-            opts = YTDLPOpts()
-            opts.preset("cookie_preset")
-
-            # Check that the cookie file would be created at the right path
-            expected_path = "/test/config/cookies/cookie_preset.txt"
-            assert opts._preset_opts["cookiefile"] == expected_path
-            mock_preset.get_cookies_file.assert_called_once_with(config=mock_config_instance)
-
-    def test_preset_invalid_cli(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config"),
-            patch("app.features.presets.service.Presets") as mock_presets,
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter,
-        ):
-            mock_preset = Mock(spec=Preset)
-            mock_preset.id = "bad_preset"
-            mock_preset.name = "Bad Preset"
-            mock_preset.cli = "--invalid-option"
-            mock_preset.cookies = None
-            mock_preset.template = None
-            mock_preset.folder = None
-
-            mock_presets_instance = Mock()
-            mock_presets_instance.get.return_value = mock_preset
-            mock_presets.get_instance.return_value = mock_presets_instance
-
-            mock_converter.side_effect = Exception("Invalid CLI")
-
-            opts = YTDLPOpts()
-
-            with pytest.raises(ValueError, match="Invalid preset 'Bad Preset' command options for yt-dlp"):
-                opts.preset("bad_preset")
-
-    def test_get_default_options(self):
-        with patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config:
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = False
-            mock_config.get_instance.return_value = mock_config_instance
-
-            with patch("app.features.ytdlp.ytdlp_opts.merge_dict") as mock_merge:
-                mock_merge.return_value = {
-                    "paths": {"home": "/downloads", "temp": "/temp"},
-                    "outtmpl": {"default": "default_template", "chapter": "chapter_template"},
-                }
-
-                opts = YTDLPOpts()
-                result = opts.get_all(keep=True)
-
-                assert result["paths"]["home"] == "/downloads"
-                assert result["outtmpl"]["default"] == "default_template"
-
-    def test_structured_precedence(self):
-        with patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config:
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = False
-            mock_config.get_instance.return_value = mock_config_instance
-
-            opts = YTDLPOpts()
-            opts._preset_opts = {
-                "format": "preset",
-                "paths": {"home": "/preset", "temp": "/preset-temp"},
-            }
-            opts.add({"format": "direct", "paths": {"home": "/direct"}})
-
+    def test_accumulated_cli(self):
+        config = config_mock()
+        config.get_replacers.return_value = {"value": "enabled"}
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            opts = YTDLPOpts().add_cli("--format best").add_cli('--add-header "X-Test:%(value)s"')
             result = opts.get_all(keep=True)
 
-            assert result["format"] == "direct"
-            assert result["paths"] == {"home": "/direct", "temp": "/preset-temp"}
+        assert result["format"] is None
+        assert result["http_headers"] == {"x-test": "enabled"}
 
-    def test_get_processes_cli_arguments(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter,
-            patch("app.features.ytdlp.ytdlp_opts.merge_dict") as mock_merge,
-        ):
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = False
-            mock_config_instance.get_replacers.return_value = {"home": "/test"}
-            mock_config.get_instance.return_value = mock_config_instance
-
-            mock_converter.return_value = {"format": "best"}
-            mock_merge.return_value = {"format": "best"}
-
+    def test_invalid_accumulated(self):
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config_mock()):
             opts = YTDLPOpts()
-            opts._item_cli = ["--format best"]
-            opts._preset_cli = "--quality 720p"
+            opts._item_cli = ['--output "unterminated']
+            with pytest.raises(ValueError, match="Invalid command options"):
+                opts.get_all(keep=True)
 
-            opts.get_all(keep=True)
+    def test_preset_cookies(self, tmp_path):
+        config = config_mock()
+        config.download_path = str(tmp_path / "downloads")
+        config.config_path = str(tmp_path)
+        preset = Preset(name="custom", id=12, cookies=COOKIE_DATA, folder="media", template="%(id)s.%(ext)s")
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            with patch("app.features.presets.service.Presets.get_instance") as get_presets:
+                get_presets.return_value.get.return_value = preset
+                result = YTDLPOpts().preset("custom").get_all(keep=True)
 
-            expected_cli = "--quality 720p\n--format best"
-            mock_converter.assert_called_once_with(args=expected_cli, level=True)
+        cookie_file = tmp_path / "cookies" / "12.txt"
+        assert cookie_file.read_text() == COOKIE_DATA.rstrip()
+        assert result["cookiefile"] == str(cookie_file)
 
-    def test_get_all_format_cases(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.ytdlp.ytdlp_opts.merge_dict") as mock_merge,
-        ):
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = False
-            mock_config.get_instance.return_value = mock_config_instance
+    def test_invalid_preset_cli(self):
+        config = config_mock()
+        preset = Preset.model_construct(name="broken", cli='--output "unterminated')
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            with patch("app.features.presets.service.Presets.get_instance") as get_presets:
+                get_presets.return_value.get.return_value = preset
+                with pytest.raises(ValueError, match="Invalid preset 'broken'"):
+                    YTDLPOpts().preset("broken")
 
-            opts = YTDLPOpts()
+    def test_default_options(self):
+        config = config_mock()
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            result = YTDLPOpts().get_all(keep=True)
 
-            # Test "not_set" format
-            mock_merge.return_value = {"format": "not_set"}
-            result = opts.get_all(keep=True)
-            assert result["format"] is None
+        assert result["paths"] == {"home": "/downloads", "temp": "/temp"}
+        assert result["outtmpl"] == {"default": "%(title)s.%(ext)s", "chapter": "%(chapter)s"}
 
-            # Test "default" format
-            mock_merge.return_value = {"format": "default"}
-            result = opts.get_all(keep=True)
-            assert result["format"] is None
-
-            # Test "best" format
-            mock_merge.return_value = {"format": "best"}
-            result = opts.get_all(keep=True)
-            assert result["format"] is None
-
-            # Test "-best" format (should remove leading dash)
-            mock_merge.return_value = {"format": "-best"}
-            result = opts.get_all(keep=True)
-            assert result["format"] == "best"
-
-    def test_get_all_invalid_cli(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter,
-        ):
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = False
-            mock_config_instance.get_replacers.return_value = {}
-            mock_config.get_instance.return_value = mock_config_instance
-
-            mock_converter.side_effect = Exception("Invalid CLI")
-
-            opts = YTDLPOpts()
-            opts._item_cli = ["--invalid-arg"]
-
-            with pytest.raises(ValueError, match="Invalid command options for yt-dlp were given"):
-                opts.get_all()
-
-    def test_resets_unless_keep_true(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.ytdlp.ytdlp_opts.merge_dict") as mock_merge,
-        ):
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = False
-            mock_config_instance.get_replacers.return_value = {}  # Return empty dict
-            mock_config.get_instance.return_value = mock_config_instance
-
-            mock_merge.return_value = {}
-
-            opts = YTDLPOpts()
-            opts._item_opts = {"test": "value"}
-            opts._item_cli = ["--test"]
-
-            # Test with keep=False (default)
+    def test_keep_state(self):
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config_mock()):
+            opts = YTDLPOpts().add({"format": "-best"}).add_cli("--no-playlist")
             opts.get_all(keep=False)
             assert opts._item_opts == {}
             assert opts._item_cli == []
+            opts.add({"format": "-best"}).add_cli("--no-playlist").get_all(keep=True)
 
-            # Reset test data
-            opts._item_opts = {"test": "value"}
-            opts._item_cli = ["--test"]
+        assert opts._item_opts == {"format": "-best"}
+        assert opts._item_cli == ["--no-playlist"]
 
-            # Test with keep=True
-            opts.get_all(keep=True)
-            assert opts._item_opts == {"test": "value"}
-            assert opts._item_cli == ["--test"]
+    def test_absolute_folder(self, tmp_path):
+        config = config_mock()
+        config.download_path = str(tmp_path / "downloads")
+        preset = Preset(name="custom", folder="/nested/media")
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            with patch("app.features.presets.service.Presets.get_instance") as get_presets:
+                get_presets.return_value.get.return_value = preset
+                result = YTDLPOpts().preset("custom").get_all(keep=True)
 
-    def test_reset_clears_all_options(self):
-        with patch("app.features.ytdlp.ytdlp_opts.Config"):
-            opts = YTDLPOpts()
-
-            # Set some state
-            opts._item_opts = {"format": "best"}
-            opts._preset_opts = {"quality": "720p"}
-            opts._item_cli = ["--format best"]
-            opts._preset_cli = "--quality 720p"
-
-            result = opts.reset()
-
-            assert result is opts
-            assert opts._item_opts == {}
-            assert opts._preset_opts == {}
-            assert opts._item_cli == []
-            assert opts._preset_cli == ""
-
-    def test_cookie_loading_error_handling(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.presets.service.Presets") as mock_presets,
-            patch("app.features.ytdlp.ytdlp_opts.LOG") as mock_log,
-        ):
-            # Mock config
-            mock_config_instance = Mock()
-            mock_config_instance.config_path = "/test/config"
-            mock_config.get_instance.return_value = mock_config_instance
-
-            # Mock preset with cookies
-            mock_preset = Mock(spec=Preset)
-            mock_preset.id = "cookie_preset"
-            mock_preset.name = "Cookie Preset"
-            mock_preset.cli = None
-            mock_preset.cookies = "invalid_cookie_data"
-            mock_preset.template = None
-            mock_preset.folder = None
-
-            # Mock cookie loading failure
-            mock_preset.get_cookies_file.side_effect = ValueError("Invalid cookies")
-
-            mock_presets_instance = Mock()
-            mock_presets_instance.get.return_value = mock_preset
-            mock_presets.get_instance.return_value = mock_presets_instance
-
-            opts = YTDLPOpts()
-            opts.preset("cookie_preset")
-
-            mock_log.exception.assert_called_once()
-            error_fields = mock_log.exception.call_args.kwargs["extra"]
-            assert error_fields["preset"] == "Cookie Preset"
-            assert error_fields["has_cookies"] is True
-            assert error_fields["exception_type"] == "ValueError"
-
-            assert "cookiefile" not in opts._preset_opts, "cookiefile should not be set"
-
-    def test_replacer_substitution_in_cli(self):
-        with (
-            patch("app.features.ytdlp.ytdlp_opts.Config") as mock_config,
-            patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter,
-            patch("app.features.ytdlp.ytdlp_opts.merge_dict") as mock_merge,
-        ):
-            mock_config_instance = Mock()
-            mock_config_instance.download_path = "/downloads"
-            mock_config_instance.temp_path = "/temp"
-            mock_config_instance.output_template = "default_template"
-            mock_config_instance.output_template_chapter = "chapter_template"
-            mock_config_instance.debug = False
-            mock_config_instance.get_replacers.return_value = {"home": "/actual/home", "user": "testuser"}
-            mock_config.get_instance.return_value = mock_config_instance
-
-            mock_converter.return_value = {"output": "/actual/home/testuser"}
-            mock_merge.return_value = {}
-
-            opts = YTDLPOpts()
-            opts._item_cli = ["--output %(home)s/%(user)s"]
-
-            opts.get_all(keep=True)
-
-            expected_cli = "--output /actual/home/testuser"
-            mock_converter.assert_called_once_with(args=expected_cli, level=True)
+        assert result["paths"]["home"] == str(tmp_path / "downloads" / "nested/media")
 
 
 class TestARGSMerger:
-    def test_add_valid_args(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
+    def test_converts_arguments(self):
+        merger = ARGSMerger().add("--format best").add('--output "%(title)s.%(ext)s"')
 
-        merger = ARGSMerger()
-        result = merger.add("--format best")
+        assert merger.as_dict() == ["--format", "best", "--output", "%(title)s.%(ext)s"]
+        assert str(merger) == "--format best --output '%(title)s.%(ext)s'"
 
-        assert result is merger  # Returns self for chaining
-        assert merger.args == ["--format", "best"]
-
-    def test_add_filters_comment_lines(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        cli_with_comments = """--format best
-# This is a comment
---output test.mp4
-#Another comment without space
---no-playlist"""
-
-        merger.add(cli_with_comments)
-
-        assert "#" not in merger.as_string(), "Comments should be filtered out"
-        assert "This is a comment" not in merger.as_string()
-        assert "Another comment" not in merger.as_string()
-
-        assert "--format" in merger.args, "Valid options should remain"
-        assert "best" in merger.args
-        assert "--output" in merger.args
-        assert "test.mp4" in merger.args
-        assert "--no-playlist" in merger.args
-
-    def test_filters_indented_comment_lines(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        cli_with_indented_comments = """--format best
-    # Indented comment with spaces
-		# Indented comment with tabs
-  --output test.mp4
-    # Another indented comment
---socket-timeout 30"""
-
-        merger.add(cli_with_indented_comments)
-
-        result = merger.as_string()
-        assert "# Indented comment with spaces" not in result, "Comments should be filtered out"
-        assert "# Indented comment with tabs" not in result
-        assert "# Another indented comment" not in result
-
-        assert "--format" in merger.args, "Valid options should remain"
-        assert "--output" in merger.args
-        assert "--socket-timeout" in merger.args
-
-    def test_add_complex_comments(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        cli_with_complex_comments = """--extractor-args "youtube:player-client=default,tv,mweb,-web_safari;formats=incomplete"
-#--extractor-args "youtube:player-client=default,tv,mweb;-formats=incomplete;player_js_version=actual"
-#--extractor-args "youtube:player-client=default,tv,mweb,web_safari;formats=incomplete"
---socket-timeout 60"""
-
-        merger.add(cli_with_complex_comments)
-
-        result = merger.as_string()
-
-        assert "player_js_version=actual" not in result, "Commented lines should be filtered out completely"
-        assert "mweb,web_safari;formats=incomplete" not in result, (
-            "Check the specific commented variant (with comma before web_safari, not dash)"
+    def test_filters_comments(self):
+        merger = ARGSMerger().add(
+            '  # ignored\n--format "bv*[height<=1080]+ba/b"\n    # also ignored\n--output "name#part.%(ext)s"'
         )
 
-        assert "youtube:player-client=default,tv,mweb,-web_safari;formats=incomplete" in result, (
-            "Valid extractor-args should remain (with -web_safari, note the dash)"
-        )
-        assert "--socket-timeout" in merger.args
-        assert "60" in merger.args
+        assert merger.args == ["--format", "bv*[height<=1080]+ba/b", "--output", "name#part.%(ext)s"]
 
-    def test_add_multiple_args_chaining(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
+    def test_non_string_input(self):
+        assert ARGSMerger().add(42).args == []  # ty: ignore[invalid-argument-type]
 
-        merger = ARGSMerger()
-        merger.add("--format best").add("--output test.mp4").add("--no-playlist")
+    def test_special_options(self):
+        merger = ARGSMerger().add('--format "bv*[height<=1080]+ba/b" --postprocessor-args "ffmpeg:-vf scale=1280:720"')
 
-        assert merger.args == ["--format", "best", "--output", "test.mp4", "--no-playlist"]
+        assert merger.as_ytdlp() == {
+            "format": "bv*[height<=1080]+ba/b",
+            "postprocessor_args": {"ffmpeg": ["-vf", "scale=1280:720"]},
+        }
 
-    def test_add_args_with_quotes(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add('--output "%(title)s.%(ext)s"')
-
-        assert merger.args == ["--output", "%(title)s.%(ext)s"]
-
-    def test_add_complex_args(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add("--format 'bestvideo[height<=1080]+bestaudio/best'")
-
-        assert "--format" in merger.args
-        assert "bestvideo[height<=1080]+bestaudio/best" in merger.args
-
-    def test_add_empty(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        result = merger.add("")
-
-        assert result is merger
-        assert merger.args == []
-
-    def test_add_short(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        result = merger.add("a")
-
-        assert result is merger
-        assert merger.args == []
-
-    def test_add_non_string(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        result = merger.add(123)  # type: ignore
-
-        assert result is merger
-        assert merger.args == []
-
-    def test_as_string(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add("--format best").add("--output test.mp4")
-
-        result = merger.as_string()
-
-        assert result == "--format best --output test.mp4"
-
-    def test_str_method(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add("--format best").add("--output test.mp4")
-
-        result = str(merger)
-
-        assert result == "--format best --output test.mp4"
-
-    def test_as_dict(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add("--format best").add("--output test.mp4")
-
-        result = merger.as_dict()
-
-        assert isinstance(result, list)
-        assert result == ["--format", "best", "--output", "test.mp4"]
-
-    def test_as_ytdlp(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add("--format best")
-
-        with patch("app.features.ytdlp.ytdlp_opts.arg_converter") as mock_converter:
-            mock_converter.return_value = {"format": "best"}
-
-            result = merger.as_ytdlp()
-
-            assert result == {"format": "best"}
-            mock_converter.assert_called_once_with(args="--format best", level=False)
-
-    def test_reset(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add("--format best").add("--output test.mp4")
-
-        assert len(merger.args) > 0
-
-        result = merger.reset()
-
-        assert result is merger
-        assert merger.args == []
-
-    def test_args_with_special_characters(self):
-        from app.features.ytdlp.ytdlp_opts import ARGSMerger
-
-        merger = ARGSMerger()
-        merger.add('--postprocessor-args "-movflags +faststart"')
-
-        assert "--postprocessor-args" in merger.args
-        assert "-movflags +faststart" in merger.args
+    def test_reset_arguments(self):
+        assert ARGSMerger().add("--format best").reset().args == []
 
 
 class TestYTDLPCli:
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_constructor_with_valid_item(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        mock_presets.get_instance.return_value.get.return_value = None
-
-        item = Item(url="https://example.com/video")
-        cli = YTDLPCli(item=item)
-
-        assert cli.item is item
-        assert cli._config is mock_config_instance
-
-    def test_constructor_invalid_item(self):
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
+    def test_rejects_wrong_item(self):
         with pytest.raises(ValueError, match="Expected Item instance"):
             YTDLPCli(item="not an item")
 
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_user_fields_only(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
+    def test_default_fallback(self):
+        config = config_mock()
+        item = Item(url="https://example.com/video", preset="")
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            with patch("app.features.presets.service.Presets.get_instance") as get_presets:
+                get_presets.return_value.get.return_value = None
+                command, info = YTDLPCli(item=item).build()
 
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
+        assert info["merged"] == {"template": config.output_template, "save_path": "/downloads", "cookie_file": None}
+        assert "--output" in command
+        assert item.url in command
 
-        mock_presets.get_instance.return_value.get.return_value = None
+    def test_user_cookie_file(self, tmp_path):
+        config = config_mock()
+        config.temp_path = str(tmp_path)
+        item = Item(url="https://example.com/video", preset="", cookies=COOKIE_DATA)
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            with patch("app.features.presets.service.Presets.get_instance") as get_presets:
+                get_presets.return_value.get.return_value = None
+                command, info = YTDLPCli(item=item).build()
 
-        item = Item(
-            url="https://example.com/video",
-            folder="myfolder",
-            template="%(id)s.%(ext)s",
-            cli="--format best",
-        )
-
-        cli = YTDLPCli(item=item)
-        command, info = cli.build()
-
-        assert isinstance(command, str)
-        assert isinstance(info, dict)
-        assert "command" in info
-        assert "dict" in info
-        assert "ytdlp" in info
-        assert "merged" in info
-        assert info["merged"]["template"] == "%(id)s.%(ext)s"
-        assert info["merged"]["save_path"] == "/downloads/myfolder"
-        assert "--format best" in command
-
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_preset_fields_fallback(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.presets.schemas import Preset
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        # Create a preset with fields
-        preset = Preset(
-            name="test_preset",
-            folder="preset_folder",
-            template="%(channel)s/%(title)s.%(ext)s",
-            cli="--format 720p",
-        )
-
-        mock_presets.get_instance.return_value.get.return_value = preset
-
-        # Item without folder/template - should use preset's
-        item = Item(url="https://example.com/video", preset="test_preset")
-
-        cli = YTDLPCli(item=item)
-        command, info = cli.build()
-
-        assert info["merged"]["template"] == "%(channel)s/%(title)s.%(ext)s", "Should use preset values"
-        assert info["merged"]["save_path"] == "/downloads/preset_folder"
-        assert "--format 720p" in command
-
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_user_fields_override_preset(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.presets.schemas import Preset
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        preset = Preset(
-            name="test_preset",
-            folder="preset_folder",
-            template="%(channel)s/%(title)s.%(ext)s",
-            cli="--format 720p",
-        )
-
-        mock_presets.get_instance.return_value.get.return_value = preset
-
-        # Item with user fields - should override preset
-        item = Item(
-            url="https://example.com/video",
-            preset="test_preset",
-            folder="user_folder",
-            template="%(id)s.%(ext)s",
-            cli="--format best",
-        )
-
-        cli = YTDLPCli(item=item)
-        command, info = cli.build()
-
-        assert info["merged"]["template"] == "%(id)s.%(ext)s", "Should use user values, not preset"
-        assert info["merged"]["save_path"] == "/downloads/user_folder"
-        assert "--format best" in command, "User CLI should appear after preset CLI in command"
-
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_with_default_fallback(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/default/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        mock_presets.get_instance.return_value.get.return_value = None
-
-        # Item with minimal fields
-        item = Item(url="https://example.com/video")
-
-        cli = YTDLPCli(item=item)
-        _, info = cli.build()
-
-        assert info["merged"]["template"] == "%(title)s.%(ext)s"
-        assert info["merged"]["save_path"] == "/default/downloads"
-
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.create_cookies_file")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_cookies_user(self, mock_config, mock_create_cookies, mock_presets, tmp_path: Path):
-        from app.features.downloads.items import Item
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.temp_path = str(tmp_path)
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        mock_cookie_path = Mock()
-        cookie_path = tmp_path / "cookies.txt"
-        mock_cookie_path.__str__ = Mock(return_value=str(cookie_path))
-        mock_create_cookies.return_value = mock_cookie_path
-
-        mock_presets.get_instance.return_value.get.return_value = None
-
-        item = Item(url="https://example.com/video", cookies="session_id=abc123")
-
-        cli = YTDLPCli(item=item)
-        command, info = cli.build()
-
-        mock_create_cookies.assert_called_once_with("session_id=abc123")
+        cookie_file = info["merged"]["cookie_file"]
+        assert cookie_file is not None
+        assert (tmp_path / cookie_file.split("/")[-1]).read_text() == COOKIE_DATA
         assert "--cookies" in command
-        assert str(cookie_path) in command
-        assert info["merged"]["cookie_file"] == str(cookie_path)
 
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_cookies_preset(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.presets.schemas import Preset
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
+    def test_preset_cookie_file(self, tmp_path):
+        config = config_mock()
+        config.config_path = str(tmp_path)
+        preset = Preset(name="custom", id=4, cookies=COOKIE_DATA)
+        item = Item(url="https://example.com/video", preset="custom")
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            with patch("app.features.presets.service.Presets.get_instance") as get_presets:
+                get_presets.return_value.get.return_value = preset
+                command, info = YTDLPCli(item=item).build()
 
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.temp_path = "/tmp"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        mock_cookie_path = Mock()
-        mock_cookie_path.__str__ = Mock(return_value="/preset/cookies.txt")
-
-        preset = Mock(spec=Preset)
-        preset.name = "test_preset"
-        preset.cookies = "preset_cookies"
-        preset.get_cookies_file = Mock(return_value=mock_cookie_path)
-        preset.folder = None
-        preset.template = None
-        preset.cli = None
-
-        mock_presets.get_instance.return_value.get.return_value = preset
-
-        item = Item(url="https://example.com/video", preset="test_preset")
-
-        cli = YTDLPCli(item=item)
-        command, _ = cli.build()
-
-        preset.get_cookies_file.assert_called_once_with(config=mock_config_instance)
+        assert (tmp_path / "cookies" / "4.txt").read_text() == COOKIE_DATA.rstrip()
+        assert info["merged"]["cookie_file"] == str(tmp_path / "cookies" / "4.txt")
         assert "--cookies" in command
-        assert "/preset/cookies.txt" in command
 
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_absolute_folder_path(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
+    def test_absolute_item_folder(self):
+        config = config_mock()
+        item = Item(url="https://example.com/video", preset="", folder="/media/clips")
+        with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
+            with patch("app.features.presets.service.Presets.get_instance") as get_presets:
+                get_presets.return_value.get.return_value = None
+                _, info = YTDLPCli(item=item).build()
 
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        mock_presets.get_instance.return_value.get.return_value = None
-
-        # Absolute path gets leading slash stripped and joined with download_path
-        # This is the actual behavior: /absolute/path -> absolute/path -> /downloads/absolute/path
-        item = Item(url="https://example.com/video", folder="/absolute/path")
-
-        cli = YTDLPCli(item=item)
-        command, info = cli.build()
-
-        assert info["merged"]["save_path"] == "/downloads/absolute/path", (
-            "The implementation strips leading slash and joins with download_path"
-        )
-        assert "--paths" in command
-
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_build_includes_url_command(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        mock_presets.get_instance.return_value.get.return_value = None
-
-        item = Item(url="https://youtube.com/watch?v=test123")
-
-        cli = YTDLPCli(item=item)
-        command, _ = cli.build()
-
-        assert "https://youtube.com/watch?v=test123" in command
-
-    @patch("app.features.presets.service.Presets")
-    @patch("app.features.ytdlp.ytdlp_opts.Config")
-    def test_cli_args_priority_order(self, mock_config, mock_presets):
-        from app.features.downloads.items import Item
-        from app.features.presets.schemas import Preset
-        from app.features.ytdlp.ytdlp_opts import YTDLPCli
-
-        mock_config_instance = Mock()
-        mock_config_instance.download_path = "/downloads"
-        mock_config_instance.output_template = "%(title)s.%(ext)s"
-        mock_config_instance.get_replacers.return_value = {}
-        mock_config.get_instance.return_value = mock_config_instance
-
-        preset = Preset(name="test_preset", cli="--format 720p --extract-audio")
-
-        mock_presets.get_instance.return_value.get.return_value = preset
-
-        item = Item(url="https://example.com/video", preset="test_preset", cli="--format best --no-playlist")
-
-        cli = YTDLPCli(item=item)
-        _, info = cli.build()
-
-        # User args should come after preset args in the command
-        # This ensures user args can override preset args
-        args_list = info["dict"]
-        preset_format_idx = args_list.index("720p") if "720p" in args_list else -1
-        user_format_idx = args_list.index("best") if "best" in args_list else -1
-
-        assert user_format_idx > preset_format_idx, "User's 'best' should appear after preset's '720p'"
+        assert info["merged"]["save_path"] == "/downloads/media/clips"

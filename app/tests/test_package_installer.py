@@ -1,3 +1,4 @@
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -19,7 +20,7 @@ class TestParseVersion:
         assert parse_version("1.2.3") == (1, 2, 3)
         assert parse_version("01.002.0003") == (1, 2, 3)
 
-    def test_parse_version_with_chars(self) -> None:
+    def test_parse_chars(self) -> None:
         # Non-digits are stripped per part
         assert parse_version("1a.2b.3c") == (1, 2, 3)
         assert parse_version("2025.07.21") == (2025, 7, 21)
@@ -56,7 +57,7 @@ class TestPackageInstallerInit:
         assert sys.path[0] == str(p)
         assert len(sys.path) == original_len + 1
 
-    def test_init_with_env_var(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_init_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         set_test_env(monkeypatch, {"config_path": tmp_path})
         installer = PackageInstaller(pkg_path=None)
 
@@ -87,29 +88,20 @@ class TestVersionCompare:
 
 
 class TestInstalledAndLatest:
-    @patch.object(PackageInstaller, "_get_distribution")
-    def test_get_installed_version(self, mock_distribution, tmp_path: Path) -> None:
+    def test_get_installed_version(self, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
-        mock_distribution.return_value.version = "1.0.0"
+        write_metadata(tmp_path, "foo", "1.0.0")
         assert inst._get_installed_version("foo") == "1.0.0"
 
-    @patch.object(PackageInstaller, "_get_distribution")
-    def test_installed_version_not_found(self, mock_distribution, tmp_path: Path) -> None:
+    def test_installed_version_not_found(self, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
-        from importlib.metadata import PackageNotFoundError
-
-        mock_distribution.side_effect = PackageNotFoundError
         assert inst._get_installed_version("bar") is None
 
-    @patch("app.library.PackageInstaller.importlib.metadata.distributions")
-    def test_distribution_target(self, mock_distributions, tmp_path: Path) -> None:
+    def test_distribution_target(self, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
-        distribution = MagicMock()
-        distribution.metadata = {"Name": "yt-dlp"}
-        mock_distributions.return_value = [distribution]
+        write_metadata(tmp_path, "yt-dlp", "1.0.0")
 
-        assert inst._get_distribution("yt_dlp") is distribution
-        mock_distributions.assert_called_once_with(path=[str(tmp_path)])
+        assert inst._get_distribution("yt_dlp").version == "1.0.0"
 
     @patch("app.library.PackageInstaller.sync_client")
     def test_get_latest_version_success(self, mock_client, tmp_path: Path) -> None:
@@ -236,7 +228,7 @@ class TestInstallCmd:
         assert "pkg==1.2.3" in cmd
 
     @patch("app.library.PackageInstaller.subprocess.run")
-    def test_install_git_url_version(self, mock_run, tmp_path: Path) -> None:
+    def test_install_git(self, mock_run, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_run.return_value = SimpleNamespace(returncode=0, stdout=b"o", stderr=b"e")
 
@@ -246,7 +238,7 @@ class TestInstallCmd:
         assert "git+https://example/repo.git@abc" in cmd
 
     @patch("app.library.PackageInstaller.subprocess.run")
-    def test_install_yt_dlp_nightly(self, mock_run, tmp_path: Path) -> None:
+    def test_install_nightly(self, mock_run, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_run.return_value = SimpleNamespace(returncode=0, stdout=b"o", stderr=b"e")
 
@@ -258,7 +250,7 @@ class TestInstallCmd:
         assert "yt-dlp[default]" in cmd
 
     @patch("app.library.PackageInstaller.subprocess.run")
-    def test_install_yt_dlp_master(self, mock_run, tmp_path: Path) -> None:
+    def test_install_master(self, mock_run, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_run.return_value = SimpleNamespace(returncode=0, stdout=b"o", stderr=b"e")
 
@@ -268,241 +260,279 @@ class TestInstallCmd:
         assert "yt-dlp[default] @ git+https://github.com/yt-dlp/yt-dlp.git@master" in cmd
 
     @patch("app.library.PackageInstaller.subprocess.run")
-    def test_install_called_process_error(self, mock_run, tmp_path: Path) -> None:
+    def test_install_process_error(self, mock_run, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
 
-        err = SimpleNamespace(returncode=1, stdout=b"o", stderr=b"e")
+        error = subprocess.CalledProcessError(1, ["pip"], output=b"o", stderr=b"e")
+        mock_run.side_effect = error
 
-        class _CPEError(Exception):
-            def __init__(self) -> None:
-                self.returncode = err.returncode
-                self.stdout = err.stdout
-                self.stderr = err.stderr
-                super().__init__("fail")
-
-        mock_run.side_effect = _CPEError()
-
-        with pytest.raises(_CPEError, match="fail"):
+        with pytest.raises(subprocess.CalledProcessError):
             inst._install_pkg("pkg")
 
 
-class TestActionAndCheck:
-    @patch.object(PackageInstaller, "_install_pkg")
-    def test_ytdlp_invalid(self, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
+def write_metadata(path: Path, name: str, version: str) -> None:
+    dist_info = path / f"{name.replace('-', '_')}-{version}.dist-info"
+    dist_info.mkdir()
+    (dist_info / "METADATA").write_text(f"Metadata-Version: 2.1\nName: {name}\nVersion: {version}\n")
 
-        with pytest.raises(ValueError, match="Invalid yt-dlp version 'nighly'"):
-            inst.action("yt_dlp==nighly", upgrade=True)
 
-        mock_install.assert_not_called()
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_action_skip_pinned(self, mock_get_installed, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_get_installed.return_value = "1.2.3"
-        # compare_versions normal equality should hold
-        inst.action("pkg==1.2.3")
-        mock_install.assert_not_called()
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    @patch.object(PackageInstaller, "_get_latest_version")
-    def test_action_skip_latest(self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_get_installed.return_value = "2.0.0"
-        mock_get_latest.return_value = "2.0.0"
-        inst.action("pkg", upgrade=True)
-        mock_install.assert_not_called()
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    @patch.object(PackageInstaller, "_get_latest_version")
-    def test_action_upgrade_newer(self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_get_installed.return_value = "1.0.0"
-        mock_get_latest.return_value = "1.1.0"
-        inst.action("pkg", upgrade=True)
-        mock_install.assert_called_once_with("pkg", version=None)
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_action_install_missing(self, mock_get_installed, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_get_installed.return_value = None
-        inst.action("pkg")
-        mock_install.assert_called_once_with("pkg", version=None)
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_channel_state")
-    @patch.object(PackageInstaller, "_get_latest_version")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_nightly_current(self, mock_installed, mock_latest, mock_state, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_installed.return_value = "2025.6.2.2.dev0"
-        mock_latest.return_value = "2025.6.2.2.dev0"
-        mock_state.return_value = {"channel": "nightly", "version": "2025.6.2.2.dev0"}
-
-        inst.action("yt_dlp==nightly", upgrade=True)
-
-        mock_latest.assert_called_once_with("yt_dlp", prerelease=True)
-        mock_install.assert_not_called()
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_channel_state")
-    @patch.object(PackageInstaller, "_get_latest_version")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_nightly_newer(self, mock_installed, mock_latest, mock_state, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_installed.return_value = "2025.6.3.3.dev0"
-        mock_latest.return_value = "2025.6.2.2.dev0"
-        mock_state.return_value = {"channel": "nightly", "version": "2025.6.3.3.dev0"}
-
-        inst.action("yt_dlp==nightly", upgrade=True)
-
-        mock_install.assert_not_called()
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_latest_version")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_nightly_outdated(self, mock_installed, mock_latest, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_installed.return_value = "2025.6.1.1.dev0"
-        mock_latest.return_value = "2025.6.2.2.dev0"
-
-        inst.action("yt_dlp==nightly", upgrade=True)
-
-        mock_install.assert_called_once_with("yt_dlp", version="nightly")
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_latest_version")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_nightly_lookup_fails(self, mock_installed, mock_latest, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_installed.return_value = "2025.6.1.1.dev0"
-        mock_latest.return_value = None
-
-        inst.action("yt_dlp==nightly", upgrade=True)
-
-        mock_install.assert_called_once_with("yt_dlp", version="nightly")
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_channel_state")
-    @patch.object(PackageInstaller, "_get_latest_version")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_nightly_lookup_keeps(self, mock_installed, mock_latest, mock_state, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
-        mock_installed.return_value = "2025.6.1.1.dev0"
-        mock_latest.return_value = None
-        mock_state.return_value = {"channel": "nightly", "version": "2025.6.1.1.dev0"}
-
-        inst.action("yt_dlp==nightly", upgrade=True)
-
-        mock_install.assert_not_called()
-
-    @patch.object(PackageInstaller, "_install_pkg", return_value=True)
-    @patch.object(
-        PackageInstaller, "_get_channel_state", return_value={"channel": "nightly", "version": "2025.6.2.2.dev0"}
+def package_response(version: str) -> SimpleNamespace:
+    return SimpleNamespace(
+        status_code=200,
+        json=lambda: {"releases": {version: [{"yanked": False}]}},
     )
-    @patch.object(PackageInstaller, "_get_latest_version", return_value="2025.6.2.2.dev0")
-    @patch.object(PackageInstaller, "_get_installed_version", return_value=None)
-    def test_nightly_missing(self, _mock_version, _mock_latest, _mock_state, mock_install, tmp_path: Path) -> None:
+
+
+def master_response(revision: str) -> SimpleNamespace:
+    return SimpleNamespace(status_code=200, json=lambda: {"sha": revision})
+
+
+class TestActionAndCheck:
+    def test_ytdlp_invalid(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid yt-dlp version 'nighly'"):
+            PackageInstaller(pkg_path=tmp_path).action("yt_dlp==nighly")
+
+    def test_pinned_current(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "pkg", "1.2.3")
+        with patch("app.library.PackageInstaller.subprocess.run") as run:
+            PackageInstaller(pkg_path=tmp_path).action("pkg==1.2.3")
+        run.assert_not_called()
+
+    def test_upgrade_latest(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "pkg", "2.0.0")
+        response = SimpleNamespace(status_code=200, json=lambda: {"info": {"version": "2.0.0"}})
+        client = MagicMock()
+        client.get.return_value = response
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch("app.library.PackageInstaller.subprocess.run") as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            PackageInstaller(pkg_path=tmp_path).action("pkg", upgrade=True)
+        run.assert_not_called()
+
+    def test_upgrade_newer(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "pkg", "1.0.0")
+        response = SimpleNamespace(status_code=200, json=lambda: {"info": {"version": "1.1.0"}})
+        client = MagicMock()
+        client.get.return_value = response
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            PackageInstaller(pkg_path=tmp_path).action("pkg", upgrade=True)
+        assert run.call_args.args[0][-1] == "pkg"
+
+    def test_missing_package(self, tmp_path: Path) -> None:
+        with patch(
+            "app.library.PackageInstaller.subprocess.run",
+            return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+        ) as run:
+            PackageInstaller(pkg_path=tmp_path).action("pkg")
+        assert run.call_args.args[0][-1] == "pkg"
+
+    def test_nightly_current(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.2.2.dev0")
         inst = PackageInstaller(pkg_path=tmp_path)
+        inst._set_channel_state({"channel": "nightly", "version": "2025.6.2.2.dev0"})
+        response = SimpleNamespace(
+            status_code=200,
+            json=lambda: {"releases": {"2025.6.2.2.dev0": [{"yanked": False}]}},
+        )
+        client = MagicMock()
+        client.get.return_value = response
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch("app.library.PackageInstaller.subprocess.run") as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            inst.action("yt_dlp==nightly", upgrade=True)
+        run.assert_not_called()
 
-        inst.action("yt_dlp==nightly", upgrade=True)
+    def test_nightly_installs(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.1.1.dev0")
+        response = package_response("2025.6.2.2.dev0")
+        client = MagicMock()
+        client.get.return_value = response
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            inst = PackageInstaller(pkg_path=tmp_path)
+            inst.action("yt_dlp==nightly", upgrade=True)
+        assert "--pre" in run.call_args.args[0]
+        assert inst._get_channel_state() == {"channel": "nightly", "version": "2025.6.2.2.dev0"}
 
-        mock_install.assert_called_once_with("yt_dlp", version="nightly")
-
-    @patch.object(PackageInstaller, "_install_pkg", return_value=True)
-    @patch.object(PackageInstaller, "_get_latest_version", return_value="2025.6.2.2.dev0")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_nightly_restart(self, _mock_version, _mock_latest, mock_install, tmp_path: Path) -> None:
+    def test_nightly_newer(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.3.3.dev0")
         inst = PackageInstaller(pkg_path=tmp_path)
-        _mock_version.side_effect = ["2025.6.1", "2025.6.2.2.dev0"]
+        inst._set_channel_state({"channel": "nightly", "version": "2025.6.3.3.dev0"})
+        client = MagicMock()
+        client.get.return_value = package_response("2025.6.2.2.dev0")
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch("app.library.PackageInstaller.subprocess.run") as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            inst.action("yt_dlp==nightly", upgrade=True)
+        run.assert_not_called()
 
-        inst.action("yt_dlp==nightly", upgrade=True)
-        inst.action("yt_dlp==nightly", upgrade=True)
-
-        mock_install.assert_called_once_with("yt_dlp", version="nightly")
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_master_revision")
-    @patch.object(PackageInstaller, "_get_channel_state")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_master_current(self, mock_version, mock_installed, mock_latest, mock_install, tmp_path: Path) -> None:
+    def test_nightly_lookup_failure(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.2.2.dev0")
         inst = PackageInstaller(pkg_path=tmp_path)
-        mock_version.return_value = "2025.6.1"
-        mock_installed.return_value = {"channel": "master", "revision": "abc123"}
-        mock_latest.return_value = "abc123"
+        inst._set_channel_state({"channel": "nightly", "version": "2025.6.2.2.dev0"})
+        with (
+            patch("app.library.PackageInstaller.sync_client", side_effect=RuntimeError("offline")),
+            patch("app.library.PackageInstaller.subprocess.run") as run,
+        ):
+            inst.action("yt_dlp==nightly", upgrade=True)
+        run.assert_not_called()
 
-        inst.action("yt_dlp==master", upgrade=True)
+    def test_nightly_without_state(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.2.2.dev0")
+        with (
+            patch("app.library.PackageInstaller.sync_client", side_effect=RuntimeError("offline")),
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            PackageInstaller(pkg_path=tmp_path).action("yt_dlp==nightly", upgrade=True)
+        assert "--pre" in run.call_args.args[0]
 
-        mock_install.assert_not_called()
+    def test_nightly_missing(self, tmp_path: Path) -> None:
+        client = MagicMock()
+        client.get.return_value = package_response("2025.6.2.2.dev0")
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            inst = PackageInstaller(pkg_path=tmp_path)
+            inst.action("yt_dlp==nightly")
+        assert "--pre" in run.call_args.args[0]
+        assert inst._get_channel_state() == {"channel": "nightly", "version": "2025.6.2.2.dev0"}
 
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_master_revision")
-    @patch.object(PackageInstaller, "_get_channel_state")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_master_outdated(self, mock_version, mock_installed, mock_latest, mock_install, tmp_path: Path) -> None:
+    def test_nightly_restart(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.2.2.dev0")
+        client = MagicMock()
+        client.get.return_value = package_response("2025.6.2.2.dev0")
+
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            PackageInstaller(pkg_path=tmp_path).action("yt_dlp==nightly")
+            PackageInstaller(pkg_path=tmp_path).action("yt_dlp==nightly", upgrade=True)
+        run.assert_called_once()
+
+    def test_master_current(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.1")
         inst = PackageInstaller(pkg_path=tmp_path)
-        mock_version.return_value = "2025.6.1"
-        mock_installed.return_value = {"channel": "master", "revision": "abc123"}
-        mock_latest.return_value = "def456"
+        inst._set_channel_state({"channel": "master", "revision": "abc123"})
+        response = SimpleNamespace(status_code=200, json=lambda: {"sha": "abc123"})
+        client = MagicMock()
+        client.get.return_value = response
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch("app.library.PackageInstaller.subprocess.run") as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            inst.action("yt_dlp==master", upgrade=True)
+        run.assert_not_called()
 
-        inst.action("yt_dlp==master", upgrade=True)
-
-        mock_install.assert_called_once_with("yt_dlp", version="master")
-
-    @patch.object(PackageInstaller, "_install_pkg")
-    @patch.object(PackageInstaller, "_get_master_revision")
-    @patch.object(PackageInstaller, "_get_channel_state")
-    @patch.object(PackageInstaller, "_get_installed_version")
-    def test_master_lookup_fails(self, mock_version, mock_installed, mock_latest, mock_install, tmp_path: Path) -> None:
+    def test_master_installs(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.1")
         inst = PackageInstaller(pkg_path=tmp_path)
-        mock_version.return_value = "2025.6.1"
-        mock_installed.return_value = {"channel": "master", "revision": "abc123"}
-        mock_latest.return_value = None
+        inst._set_channel_state({"channel": "master", "revision": "abc123"})
+        response = master_response("def456")
+        client = MagicMock()
+        client.get.return_value = response
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            inst.action("yt_dlp==master", upgrade=True)
+        assert "@master" in run.call_args.args[0][-1]
+        assert inst._get_channel_state() == {"channel": "master", "revision": "def456"}
 
-        inst.action("yt_dlp==master", upgrade=True)
-
-        mock_install.assert_not_called()
-
-    @patch.object(PackageInstaller, "_install_pkg", return_value=True)
-    @patch.object(PackageInstaller, "_get_master_revision", return_value="abc123")
-    @patch.object(PackageInstaller, "_get_channel_state", return_value={"channel": "master", "revision": "abc123"})
-    @patch.object(PackageInstaller, "_get_installed_version", return_value=None)
-    def test_master_missing(self, _mock_version, _mock_state, _mock_latest, mock_install, tmp_path: Path) -> None:
+    def test_master_lookup_failure(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.1")
         inst = PackageInstaller(pkg_path=tmp_path)
+        inst._set_channel_state({"channel": "master", "revision": "abc123"})
+        with (
+            patch("app.library.PackageInstaller.sync_client", side_effect=RuntimeError("offline")),
+            patch("app.library.PackageInstaller.subprocess.run") as run,
+        ):
+            inst.action("yt_dlp==master", upgrade=True)
+        run.assert_not_called()
 
-        inst.action("yt_dlp==master", upgrade=True)
+    def test_master_missing(self, tmp_path: Path) -> None:
+        client = MagicMock()
+        client.get.return_value = master_response("def456")
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            inst = PackageInstaller(pkg_path=tmp_path)
+            inst.action("yt_dlp==master")
+        assert "@master" in run.call_args.args[0][-1]
+        assert inst._get_channel_state() == {"channel": "master", "revision": "def456"}
 
-        mock_install.assert_called_once_with("yt_dlp", version="master")
+    def test_master_restart(self, tmp_path: Path) -> None:
+        write_metadata(tmp_path, "yt-dlp", "2025.6.1")
+        client = MagicMock()
+        client.get.return_value = master_response("def456")
 
-    @patch.object(PackageInstaller, "_install_pkg", return_value=True)
-    @patch.object(PackageInstaller, "_get_master_revision", return_value="abc123")
-    @patch.object(PackageInstaller, "_get_installed_version", return_value="2025.6.1")
-    def test_master_restart(self, _mock_version, _mock_latest, mock_install, tmp_path: Path) -> None:
-        inst = PackageInstaller(pkg_path=tmp_path)
+        with (
+            patch("app.library.PackageInstaller.sync_client") as http,
+            patch(
+                "app.library.PackageInstaller.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ) as run,
+        ):
+            http.return_value.__enter__.return_value = client
+            installer = PackageInstaller(pkg_path=tmp_path)
+            installer.action("yt_dlp==master")
+            PackageInstaller(pkg_path=tmp_path).action("yt_dlp==master", upgrade=True)
+        run.assert_called_once()
 
-        inst.action("yt_dlp==master", upgrade=True)
-        inst.action("yt_dlp==master", upgrade=True)
-
-        mock_install.assert_called_once_with("yt_dlp", version="master")
-
-    @patch.object(PackageInstaller, "action")
-    def test_check_runs_all(self, mock_action, tmp_path: Path) -> None:
+    def test_check_runs_all(self, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         pkgs = Packages(env="foo bar", file=None, upgrade=True)
+        pkgs.packages = ["foo", "bar"]
 
-        # First call raises, second succeeds
-        def side_effect(pkg, upgrade=False):  # noqa: ARG001
-            if pkg == "foo":
-                msg = "boom"
-                raise RuntimeError(msg)
+        with patch(
+            "app.library.PackageInstaller.subprocess.run",
+            side_effect=[
+                subprocess.CalledProcessError(1, ["pip"], output=b"", stderr=b""),
+                SimpleNamespace(returncode=0, stdout=b"", stderr=b""),
+            ],
+        ) as run:
+            inst.check(pkgs)
 
-        mock_action.side_effect = side_effect
-
-        inst.check(pkgs)
-        assert mock_action.call_count == 2
-        mock_action.assert_any_call("foo", upgrade=True)
-        mock_action.assert_any_call("bar", upgrade=True)
+        assert run.call_count == 2
+        assert {call.args[0][-1] for call in run.call_args_list} == {"foo", "bar"}

@@ -1473,102 +1473,79 @@ class TestArgConverterAdvanced:
 
 
 class TestCreateCookiesFile:
-    def setup_method(self):
-        self.temp_dir = str(make_test_temp_dir("create-cookies-file"))
-        self.test_path = Path(self.temp_dir)
-
-    def teardown_method(self):
-        import shutil
-
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    @patch("app.library.Utils.load_cookies")
-    def test_create_cookies_file_path(self, mock_load_cookies):
+    def test_create_cookies_file_path(self, tmp_path: Path):
         from app.library.Utils import create_cookies_file
 
-        mock_load_cookies.return_value = (True, MagicMock())
-        cookie_path = self.test_path / "cookies" / "test_cookies.txt"
+        cookie_path = tmp_path / "cookies" / "test_cookies.txt"
+        cookie_data = "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tFALSE\t0\tsession\tabc123\n"
 
-        result = create_cookies_file("session=abc123", file=cookie_path)
+        result = create_cookies_file(cookie_data, file=cookie_path)
 
         assert result == cookie_path
         assert cookie_path.exists()
         assert cookie_path.is_file()
-        assert cookie_path.read_text() == "session=abc123"
-        mock_load_cookies.assert_called_once_with(cookie_path)
+        assert cookie_path.read_text() == cookie_data
 
     @patch("app.library.config.Config")
-    @patch("app.library.Utils.load_cookies")
-    def test_cookies_file_auto_path(self, mock_load_cookies, mock_config):
+    def test_cookies_file_auto_path(self, mock_config, tmp_path: Path):
         from app.library.Utils import create_cookies_file
 
         mock_config_inst = MagicMock()
-        mock_config_inst.temp_path = self.temp_dir
+        mock_config_inst.temp_path = str(tmp_path)
         mock_config.get_instance.return_value = mock_config_inst
 
-        mock_load_cookies.return_value = (True, MagicMock())
+        cookie_data = "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tFALSE\t0\tsession\tdef456\n"
 
-        result = create_cookies_file("session=def456")
+        result = create_cookies_file(cookie_data)
 
         assert result.exists()
         assert result.is_file()
-        assert result.read_text() == "session=def456"
-        assert result.parent == Path(self.temp_dir)
-        mock_load_cookies.assert_called_once()
+        assert result.read_text() == cookie_data
+        assert result.parent == tmp_path
 
-    @patch("app.library.Utils.load_cookies")
-    def test_cookies_file_invalid_cookies(self, mock_load_cookies):
+    def test_cookies_file_invalid_cookies(self, tmp_path: Path):
         from app.library.Utils import create_cookies_file
 
-        mock_load_cookies.side_effect = ValueError("Invalid cookies")
-        cookie_path = self.test_path / "bad_cookies.txt"
+        cookie_path = tmp_path / "bad_cookies.txt"
 
-        with pytest.raises(ValueError, match="Invalid cookies"):
+        with pytest.raises(ValueError, match="Invalid cookie file"):
             create_cookies_file("invalid_data", file=cookie_path)
 
-    @patch("app.library.Utils.load_cookies")
-    def test_create_cookies_parent_dir(self, mock_load_cookies):
+    def test_create_cookies_parent_dir(self, tmp_path: Path):
         from app.library.Utils import create_cookies_file
 
-        mock_load_cookies.return_value = (True, MagicMock())
-        # Use a deeply nested path that doesn't exist yet
-        cookie_path = self.test_path / "a" / "b" / "c" / "cookies.txt"
+        cookie_path = tmp_path / "a" / "b" / "c" / "cookies.txt"
+        cookie_data = "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tFALSE\t0\ttest\tdata\n"
 
-        result = create_cookies_file("test_data", file=cookie_path)
+        result = create_cookies_file(cookie_data, file=cookie_path)
 
         assert result == cookie_path
         assert cookie_path.exists()
-        assert cookie_path.parent == Path(self.test_path / "a" / "b" / "c")
+        assert cookie_path.parent == tmp_path / "a" / "b" / "c"
 
-    @patch("app.library.Utils.load_cookies")
-    def test_create_cookies_special_chars(self, mock_load_cookies):
+    def test_create_cookies_special_chars(self, tmp_path: Path):
         from app.library.Utils import create_cookies_file
 
-        mock_load_cookies.return_value = (True, MagicMock())
-        cookie_data = "session=abc123; path=/; domain=.example.com; secure; httponly"
-        cookie_path = self.test_path / "special_cookies.txt"
+        cookie_data = "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tTRUE\t0\tsession\tabc123%3Bsecure\n"
+        cookie_path = tmp_path / "special_cookies.txt"
 
         result = create_cookies_file(cookie_data, file=cookie_path)
 
         assert result == cookie_path
         assert cookie_path.read_text() == cookie_data
 
-    @patch("app.library.Utils.load_cookies")
-    def test_cookies_file_overwrites_existing(self, mock_load_cookies):
+    def test_cookies_file_overwrites_existing(self, tmp_path: Path):
         from app.library.Utils import create_cookies_file
 
-        mock_load_cookies.return_value = (True, MagicMock())
-        cookie_path = self.test_path / "cookies.txt"
+        cookie_path = tmp_path / "cookies.txt"
+        cookie_data = "# Netscape HTTP Cookie File\n.example.com\tTRUE\t/\tFALSE\t0\tsession\tnew_data\n"
 
-        # Create initial file
-        cookie_path.parent.mkdir(parents=True, exist_ok=True)
         cookie_path.write_text("old_data")
 
-        # Overwrite with new data
-        result = create_cookies_file("new_data", file=cookie_path)
+        result = create_cookies_file(cookie_data, file=cookie_path)
 
         assert result == cookie_path
-        assert cookie_path.read_text() == "new_data"
+        assert cookie_path.read_text() == cookie_data
 
 
 class TestRenameFile:

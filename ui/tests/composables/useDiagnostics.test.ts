@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test';
+import { createMockResponse } from '../helpers/mockResponse';
 
 const successMock = mock(() => {});
 const errorMock = mock(() => {});
@@ -6,36 +7,6 @@ const errorMock = mock(() => {});
 mock.module('~/composables/useNotification', () => ({
   useNotification: () => ({ success: successMock, error: errorMock }),
 }));
-
-type MockResponseInput = {
-  ok: boolean;
-  status: number;
-  jsonData: unknown;
-};
-
-const createMockResponse = ({ ok, status, jsonData }: MockResponseInput): Response => {
-  return {
-    ok,
-    status,
-    headers: new Headers({ 'Content-Type': 'application/json' }),
-    redirected: false,
-    statusText: ok ? 'OK' : 'Error',
-    type: 'basic',
-    url: '',
-    body: null,
-    bodyUsed: false,
-    clone() {
-      return this;
-    },
-    async json() {
-      return jsonData;
-    },
-    text: async () => JSON.stringify(jsonData),
-    arrayBuffer: async () => new ArrayBuffer(0),
-    blob: async () => new Blob(),
-    formData: async () => new FormData(),
-  } as Response;
-};
 
 let utils: Awaited<typeof import('~/utils/index')>;
 let useDiagnostics: typeof import('~/composables/useDiagnostics').useDiagnostics;

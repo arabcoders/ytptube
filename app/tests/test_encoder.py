@@ -1,10 +1,9 @@
 import json
 from datetime import date
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
+from yt_dlp.utils import DateRange
 
 from app.library.encoder import Encoder
 
@@ -99,31 +98,12 @@ class TestEncoder:
         assert parsed["nested"]["path"] == "/nested/path"
         assert parsed["nested"]["date"] == "2024-06-15"
 
-    def test_mock_daterange_serialization(self):
-        # Mock a DateRange-like object
-        mock_daterange = MagicMock()
-        mock_daterange.start = date(2024, 1, 15)
-        mock_daterange.end = date(2024, 12, 31)
+    def test_daterange_serialization(self):
+        daterange = DateRange("20240115", "20241231")
 
-        # Mock isinstance to return True for DateRange
-        import builtins
+        result = self.encoder.default(daterange)
 
-        original_isinstance = builtins.isinstance
-
-        def mock_isinstance(obj, cls):
-            if obj is mock_daterange and hasattr(cls, "__name__") and "DateRange" in str(cls):
-                return True
-            return original_isinstance(obj, cls)
-
-        builtins_any: Any = builtins
-        builtins_any.isinstance = mock_isinstance
-
-        try:
-            result = self.encoder.default(mock_daterange)
-            expected = {"start": "20240115", "end": "20241231"}
-            assert result == expected
-        finally:
-            builtins.isinstance = original_isinstance
+        assert result == {"start": "20240115", "end": "20241231"}
 
 
 if __name__ == "__main__":

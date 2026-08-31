@@ -1,25 +1,11 @@
 import { describe, it, expect, mock } from 'bun:test';
+import { computed, ref } from 'vue';
 
-let currentLocale = 'en';
-const localeItems: Array<{ code: string; name: string; dir: string }> = [
+const localeRef = ref('en');
+const localesRef = ref<Array<{ code: string; name: string; dir: string }>>([
   { code: 'en', name: 'English', dir: 'ltr' },
   { code: 'ar', name: 'العربية', dir: 'rtl' },
-];
-
-const createRef = <T>(initial: T) => {
-  let val = initial;
-  return {
-    get value() {
-      return val;
-    },
-    set value(v: T) {
-      val = v;
-    },
-  };
-};
-
-const localeRef = createRef(currentLocale);
-const localesRef = createRef(localeItems);
+]);
 
 const useHeadMock = mock(() => {});
 
@@ -28,25 +14,18 @@ mock.module('#imports', () => ({
     locale: localeRef,
     locales: localesRef,
     setLocale: async (code: string) => {
-      currentLocale = code;
       localeRef.value = code;
     },
     t: (key: string) => key,
     te: (_key: string) => false,
   }),
   useHead: useHeadMock,
-  computed: (fn: () => unknown) => ({
-    get value() {
-      return fn();
-    },
-  }),
 }));
 
 globalThis.useI18n = () => ({
   locale: localeRef,
   locales: localesRef,
   setLocale: async (code: string) => {
-    currentLocale = code;
     localeRef.value = code;
   },
   t: (key: string) => key,
@@ -54,17 +33,12 @@ globalThis.useI18n = () => ({
 });
 
 globalThis.useHead = useHeadMock;
-globalThis.computed = (fn: () => unknown) => ({
-  get value() {
-    return fn();
-  },
-});
+globalThis.computed = computed;
 
 const { useAppLocale } = await import('~/composables/useAppLocale');
 
 describe('useAppLocale', () => {
   it('direction is ltr for English', () => {
-    currentLocale = 'en';
     localeRef.value = 'en';
     const { direction, isRtl } = useAppLocale();
     expect(direction.value).toBe('ltr');
@@ -72,7 +46,6 @@ describe('useAppLocale', () => {
   });
 
   it('direction is rtl for Arabic', () => {
-    currentLocale = 'ar';
     localeRef.value = 'ar';
     const { direction, isRtl } = useAppLocale();
     expect(direction.value).toBe('rtl');
@@ -80,7 +53,6 @@ describe('useAppLocale', () => {
   });
 
   it('changeLocale updates locale', async () => {
-    currentLocale = 'en';
     localeRef.value = 'en';
     const { locale, changeLocale } = useAppLocale();
     await changeLocale('ar');

@@ -1,14 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test';
-import { ref } from 'vue';
-
-function getKeydownHandler(addEventListenerSpy: ReturnType<typeof spyOn>) {
-  const handler = addEventListenerSpy.mock.calls.find((call) => call[0] === 'keydown')?.[1];
-  if (!handler || typeof handler !== 'function') {
-    throw new Error('Expected keydown handler to be registered');
-  }
-
-  return handler;
-}
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
+import { effectScope, ref } from 'vue';
 
 describe('usePlayerShortcuts', () => {
   beforeEach(() => {
@@ -21,7 +12,7 @@ describe('usePlayerShortcuts', () => {
 
   it('toggle_subs_c', async () => {
     const { usePlayerShortcuts } = await import('~/composables/usePlayerShortcuts');
-    const addEventListenerSpy = spyOn(document, 'addEventListener');
+    const scope = effectScope();
 
     const subtitleTrack = { kind: 'subtitles', mode: 'showing' } as TextTrack;
     const videoElement = {
@@ -38,40 +29,30 @@ describe('usePlayerShortcuts', () => {
 
     const subtitleEnabled = ref(true);
 
-    usePlayerShortcuts({
-      enabled: ref(true),
-      media: ref(videoElement),
-      video: ref(videoElement),
-      canToggleSubs: ref(true),
-      toggleSubtitles: () => {
-        subtitleEnabled.value = !subtitleEnabled.value;
-      },
-      toggleFullscreen: () => {},
-    });
+    scope.run(() =>
+      usePlayerShortcuts({
+        enabled: ref(true),
+        media: ref(videoElement),
+        video: ref(videoElement),
+        canToggleSubs: ref(true),
+        toggleSubtitles: () => {
+          subtitleEnabled.value = !subtitleEnabled.value;
+        },
+        toggleFullscreen: () => {},
+      }),
+    );
 
-    const handler = getKeydownHandler(addEventListenerSpy);
-
-    const preventDefault = mock(() => {});
-    const stopPropagation = mock(() => {});
-    handler({
-      key: 'c',
-      target: document.body,
-      preventDefault,
-      stopPropagation,
-      ctrlKey: false,
-      metaKey: false,
-      altKey: false,
-    } as unknown as KeyboardEvent);
+    document.body.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'c', bubbles: true }));
 
     expect(subtitleTrack.mode).toBe('hidden');
     expect(subtitleEnabled.value).toBe(false);
 
-    addEventListenerSpy.mockRestore();
+    scope.stop();
   });
 
   it('volume_up_unmute', async () => {
     const { usePlayerShortcuts } = await import('~/composables/usePlayerShortcuts');
-    const addEventListenerSpy = spyOn(document, 'addEventListener');
+    const scope = effectScope();
 
     const media = {
       paused: true,
@@ -85,37 +66,30 @@ describe('usePlayerShortcuts', () => {
       textTracks: [],
     } as unknown as HTMLMediaElement;
 
-    usePlayerShortcuts({
-      enabled: ref(true),
-      media: ref(media),
-      video: ref(null),
-      canToggleSubs: ref(false),
-      toggleSubtitles: () => {},
-      toggleFullscreen: () => {},
-    });
+    scope.run(() =>
+      usePlayerShortcuts({
+        enabled: ref(true),
+        media: ref(media),
+        video: ref(null),
+        canToggleSubs: ref(false),
+        toggleSubtitles: () => {},
+        toggleFullscreen: () => {},
+      }),
+    );
 
-    const handler = getKeydownHandler(addEventListenerSpy);
-    const preventDefault = mock(() => {});
-    const stopPropagation = mock(() => {});
-
-    handler({
-      key: 'ArrowUp',
-      target: document.body,
-      preventDefault,
-      stopPropagation,
-      ctrlKey: false,
-      metaKey: false,
-      altKey: false,
-    } as unknown as KeyboardEvent);
+    document.body.dispatchEvent(
+      new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
+    );
 
     expect(media.volume).toBe(0.1);
     expect(media.muted).toBe(false);
 
-    addEventListenerSpy.mockRestore();
+    scope.stop();
   });
 
   it('close_help_first', async () => {
     const { usePlayerShortcuts } = await import('~/composables/usePlayerShortcuts');
+    const scope = effectScope();
 
     const media = {
       paused: true,
@@ -132,16 +106,18 @@ describe('usePlayerShortcuts', () => {
     const showHelp = ref(true);
     const closePlayer = mock(() => {});
 
-    usePlayerShortcuts({
-      enabled: ref(true),
-      media: ref(media),
-      video: ref(null),
-      canToggleSubs: ref(false),
-      helpOpen: showHelp,
-      toggleSubtitles: () => {},
-      toggleFullscreen: () => {},
-      closePlayer,
-    });
+    scope.run(() =>
+      usePlayerShortcuts({
+        enabled: ref(true),
+        media: ref(media),
+        video: ref(null),
+        canToggleSubs: ref(false),
+        helpOpen: showHelp,
+        toggleSubtitles: () => {},
+        toggleFullscreen: () => {},
+        closePlayer,
+      }),
+    );
 
     document.body.dispatchEvent(
       new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
@@ -153,5 +129,7 @@ describe('usePlayerShortcuts', () => {
       new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
     );
     expect(closePlayer).toHaveBeenCalledTimes(1);
+
+    scope.stop();
   });
 });
