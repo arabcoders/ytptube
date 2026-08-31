@@ -7,10 +7,19 @@
         </p>
         <UTooltip v-if="tooltip" :text="tooltip" :content="{ side: 'left' }">
           <div :class="valueWrap ? 'space-y-1' : 'flex items-baseline gap-1.5'">
-            <span class="text-sm font-semibold text-highlighted"
+            <span
+              :class="[
+                'text-sm font-semibold text-highlighted',
+                valueWrap ? 'block wrap-break-word' : '',
+              ]"
               ><bdi>{{ value }}</bdi></span
             >
-            <span v-if="hint" class="truncate text-xs text-toned"
+            <span
+              v-if="hint"
+              :class="[
+                'text-xs leading-5 text-toned',
+                valueWrap ? 'block wrap-break-word' : 'truncate',
+              ]"
               ><bdi>{{ hint }}</bdi></span
             >
           </div>
@@ -23,7 +32,12 @@
             ]"
             ><bdi>{{ value }}</bdi></span
           >
-          <span v-if="hint" class="truncate text-xs text-toned"
+          <span
+            v-if="hint"
+            :class="[
+              'text-xs leading-5 text-toned',
+              valueWrap ? 'block wrap-break-word' : 'truncate',
+            ]"
             ><bdi>{{ hint }}</bdi></span
           >
         </div>

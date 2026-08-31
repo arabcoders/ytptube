@@ -57,19 +57,6 @@
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
-          @click="toggleDisplayStyle"
-        >
-          <span class="hidden sm:inline">{{
-            display_style === 'list' ? t('common.list') : t('common.grid')
-          }}</span>
-        </UButton>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
@@ -134,141 +121,7 @@
       </div>
     </div>
 
-    <div
-      v-if="contentStyle === 'list' && filteredDefinitions.length > 0"
-      class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
-    >
-      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-255 w-full text-sm">
-          <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-            <tr
-              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-            >
-              <th class="w-12">
-                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
-                  <UIcon
-                    :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
-                    class="size-4"
-                  />
-                </button>
-              </th>
-              <th class="w-full text-start">{{ t('taskDefinitions.definition') }}</th>
-              <th class="w-28 whitespace-nowrap">{{ t('common.priority') }}</th>
-              <th class="w-36 whitespace-nowrap">{{ t('taskDefinitions.updated') }}</th>
-              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y divide-default">
-            <tr
-              v-for="definition in filteredDefinitions"
-              :key="definition.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-            >
-              <td class="px-3 py-3 text-center align-middle">
-                <label class="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    v-model="selectedIds"
-                    class="completed-checkbox size-4 rounded border-default"
-                    type="checkbox"
-                    :value="definition.id"
-                  />
-                </label>
-              </td>
-
-              <td class="px-3 py-3 align-middle">
-                <div class="space-y-1">
-                  <div class="font-semibold text-highlighted">
-                    {{ definition.name || t('taskDefinitions.unnamed') }}
-                  </div>
-
-                  <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
-                    <button
-                      type="button"
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
-                      @click="() => void toggle(definition)"
-                    >
-                      <UIcon
-                        name="i-lucide-power"
-                        class="size-3.5"
-                        :class="definition.enabled ? 'text-success' : 'text-error'"
-                      />
-                      <span>{{
-                        definition.enabled ? t('common.enabled') : t('common.disabled')
-                      }}</span>
-                    </button>
-
-                    <span
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon name="i-lucide-link" class="size-3.5" />
-                      <span>{{
-                        t('taskDefinitions.patterns', { count: definition.match_url.length })
-                      }}</span>
-                    </span>
-                  </div>
-                </div>
-              </td>
-
-              <td class="px-3 py-3 text-center align-middle">
-                {{ definition.priority }}
-              </td>
-
-              <td class="px-3 py-3 text-center align-middle whitespace-nowrap">
-                <UTooltip :text="formatDateTime(definition.updated_at, locale)">
-                  <span
-                    class="inline-flex"
-                    :date-datetime="toIsoString(definition.updated_at)"
-                    v-rtime="definition.updated_at"
-                  />
-                </UTooltip>
-              </td>
-
-              <td class="w-48 px-3 py-3 align-middle whitespace-nowrap">
-                <div class="flex items-center justify-end gap-2">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-pencil"
-                    @click="() => void openEdit(definition)"
-                  >
-                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
-                  </UButton>
-
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-trash"
-                    @click="() => void remove(definition)"
-                  >
-                    <span class="hidden sm:inline">{{ t('common.delete') }}</span>
-                  </UButton>
-
-                  <UDropdownMenu :items="itemActionGroups(definition)" :modal="false">
-                    <UButton
-                      color="neutral"
-                      variant="outline"
-                      size="xs"
-                      icon="i-lucide-settings-2"
-                      trailing-icon="i-lucide-chevron-down"
-                    >
-                      {{ t('common.actions') }}
-                    </UButton>
-                  </UDropdownMenu>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div
-      v-else-if="filteredDefinitions.length > 0"
-      class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-    >
+    <div v-if="filteredDefinitions.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div
         v-for="definition in filteredDefinitions"
         :key="definition.id"
@@ -644,15 +497,12 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { computed, onMounted, ref, watch } from 'vue';
-import { useStorage } from '@vueuse/core';
 
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
 import { useDialog } from '~/composables/useDialog';
-import { useMediaQuery } from '~/composables/useMediaQuery';
 import { copyText, encode } from '~/utils';
 import { getInspectUrl } from '~/utils/taskDefinitionEditor';
-import { formatDateTime, toIsoString } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 import type TaskDefinitionEditor from '~/components/TaskDefinitionEditor.vue';
 import type TaskInspect from '~/components/TaskInspect.vue';
@@ -662,7 +512,7 @@ import type {
   TaskDefinitionSummary,
 } from '~/types/task_definitions';
 
-const { locale, t } = useI18n();
+const { t } = useI18n();
 
 const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   name: 'New Definition',
@@ -723,8 +573,6 @@ const inspectTarget = ref<{
 const definitionInspect = computed(
   () => inspectTarget.value?.definitionId !== undefined || Boolean(inspectTarget.value?.document),
 );
-const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid');
-const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const query = ref('');
 const showFilter = ref(false);
@@ -766,9 +614,6 @@ const allSelected = computed(
 );
 
 const hasSelected = computed(() => selectedIds.value.length > 0);
-const contentStyle = computed<'list' | 'grid'>(() =>
-  isMobile.value ? 'grid' : display_style.value,
-);
 
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
@@ -843,10 +688,6 @@ const toggleFilterPanel = async (): Promise<void> => {
 
   await nextTick();
   filterInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
-};
-
-const toggleDisplayStyle = (): void => {
-  display_style.value = display_style.value === 'list' ? 'grid' : 'list';
 };
 
 const toggleMasterSelection = (): void => {

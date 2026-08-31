@@ -396,18 +396,6 @@
             :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
           />
 
-          <UModal
-            v-if="showLimits"
-            :open="showLimits"
-            :title="t('app.downloadLimits')"
-            :ui="{ content: 'sm:max-w-4xl', body: 'p-0' }"
-            @update:open="(open) => !open && (showLimits = false)"
-          >
-            <template #body>
-              <LazyLimitsPage />
-            </template>
-          </UModal>
-
           <AccountModal v-model:open="accountOpen" />
         </UDashboardGroup>
       </div>
@@ -520,7 +508,6 @@ const updateCheckMessageKey = ref('app.update.upToDate');
 const updateCheckMessage = computed(() => t(updateCheckMessageKey.value));
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
-const showLimits = ref(false);
 const accountOpen = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
@@ -770,21 +757,10 @@ const connectionStatusLabel = computed(() => {
 });
 
 const sidebarSections = computed<Array<SidebarSection>>(() =>
-  sidebarItems.value.map((section) => {
-    const items = section.items.map((group) => group.map((entry) => makeNavigationItem(entry)));
-    if ('tools' === section.id) {
-      items[0]?.push({
-        label: t('app.limits'),
-        icon: 'i-lucide-gauge',
-        onSelect: () => {
-          showLimits.value = true;
-          showSidebar.value = false;
-        },
-      });
-    }
-
-    return { ...section, items };
-  }),
+  sidebarItems.value.map((section) => ({
+    ...section,
+    items: section.items.map((group) => group.map((entry) => makeNavigationItem(entry))),
+  })),
 );
 
 const routeSearchGroups = computed(() => [

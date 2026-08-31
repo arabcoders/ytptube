@@ -697,19 +697,10 @@ const syncFromUrl = (): { page: number } => {
   const query = route.query;
   const page = parseInt(query.page as string, 10) || 1;
 
-  browser.setSortBy('name');
-  browser.setSortOrder('asc');
+  browser.restoreSort(query.sort_by, query.sort_order);
   browser.setSearchValue('');
   localSearch.value = '';
   show_filter.value = false;
-
-  if (query.sort_by && ['name', 'size', 'date', 'type'].includes(query.sort_by as string)) {
-    browser.setSortBy(query.sort_by as string);
-  }
-
-  if (query.sort_order && ['asc', 'desc'].includes(query.sort_order as string)) {
-    browser.setSortOrder(query.sort_order as string);
-  }
 
   if (query.search && typeof query.search === 'string') {
     browser.setSearchValue(query.search);

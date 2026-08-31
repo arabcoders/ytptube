@@ -44,20 +44,6 @@
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
-          @click="toggleDisplayStyle"
-        >
-          <span class="hidden sm:inline">{{
-            displayStyle === 'list' ? t('common.list') : t('common.grid')
-          }}</span>
-        </UButton>
-
-        <UButton
-          v-if="items.length > 0"
-          color="neutral"
-          variant="outline"
-          size="sm"
           icon="i-lucide-refresh-cw"
           :loading="isLoading"
           :disabled="isLoading"
@@ -125,115 +111,7 @@
       />
     </div>
 
-    <div
-      v-if="contentStyle === 'list' && filteredItems.length > 0"
-      class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
-    >
-      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-235 w-full text-sm">
-          <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-            <tr
-              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-            >
-              <th class="w-12">
-                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
-                  <UIcon
-                    :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
-                    class="size-4"
-                  />
-                </button>
-              </th>
-              <th class="w-full text-start">{{ t('customFields.field') }}</th>
-              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y divide-default">
-            <tr
-              v-for="field in filteredItems"
-              :key="field.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-            >
-              <td class="px-3 py-3 text-center align-middle">
-                <label class="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    v-model="selectedIds"
-                    class="completed-checkbox size-4 rounded border-default"
-                    type="checkbox"
-                    :value="field.id"
-                  />
-                </label>
-              </td>
-
-              <td class="px-3 py-3 align-middle">
-                <div class="space-y-2">
-                  <div class="font-semibold text-highlighted">{{ field.name }}</div>
-
-                  <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
-                    <span
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                      <span>{{ t('customFields.order', { order: field.order }) }}</span>
-                    </span>
-
-                    <span
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon name="i-lucide-shapes" class="size-3.5" />
-                      <span>{{ t('customFields.type', { type: field.kind }) }}</span>
-                    </span>
-
-                    <span
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon name="i-lucide-terminal" class="size-3.5" />
-                      <span dir="ltr">{{ t('customFields.option', { option: field.field }) }}</span>
-                    </span>
-                  </div>
-                </div>
-              </td>
-
-              <td class="w-48 px-3 py-3 align-middle whitespace-nowrap">
-                <div class="flex items-center justify-end gap-2">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-file-up"
-                    @click="exportItem(field)"
-                  >
-                    {{ t('common.exportItem') }}
-                  </UButton>
-
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-pencil"
-                    @click="editItem(field)"
-                  >
-                    {{ t('common.edit') }}
-                  </UButton>
-
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-trash"
-                    @click="() => void deleteItem(field)"
-                  >
-                    {{ t('common.delete') }}
-                  </UButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div v-else-if="filteredItems.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div v-if="filteredItems.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div v-for="field in filteredItems" :key="field.id" class="min-w-0 w-full max-w-full">
         <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
           <div class="p-4 pb-3 ytp-border-bottom-soft">
@@ -454,7 +332,6 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
-import { useStorage } from '@vueuse/core';
 import { useDialog } from '~/composables/useDialog';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useConfirm } from '~/composables/useConfirm';
@@ -467,8 +344,6 @@ const { t } = useI18n();
 const box = useConfirm();
 const { toggleExpand, expandClass } = useExpandableMeta();
 const pageShell = usePageShell('custom-fields');
-const displayStyle = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
-const isMobile = useMediaQuery({ maxWidth: 639 });
 const dlFields = useDlFields();
 const submission = useFormSubmit();
 const route = useRoute();
@@ -510,10 +385,6 @@ const allSelected = computed(
 );
 
 const hasSelected = computed(() => selectedIds.value.length > 0);
-const contentStyle = computed<'list' | 'grid'>(() =>
-  isMobile.value ? 'grid' : displayStyle.value,
-);
-
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
@@ -610,10 +481,6 @@ const closeEditor = (): void => {
 const openCreate = (): void => {
   resetEditor();
   editorOpen.value = true;
-};
-
-const toggleDisplayStyle = (): void => {
-  displayStyle.value = displayStyle.value === 'list' ? 'grid' : 'list';
 };
 
 const toggleMasterSelection = (): void => {
