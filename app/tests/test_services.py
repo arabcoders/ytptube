@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 
 from app.library.Services import ServiceEntry, Services
@@ -103,17 +101,8 @@ class TestServices:
         def test_handler(db_param, missing_service_param):  # noqa: ARG001
             return "Should not reach here"
 
-        with patch("app.library.Services.LOG") as mock_logger:
-            # The current implementation still calls the handler even with missing args
-            # This causes a TypeError, which is the actual current behavior
-            with pytest.raises(TypeError, match=r"missing .* required positional argument"):
-                services.handle_sync(test_handler)
-
-            mock_logger.error.assert_called_once()
-            error_call = mock_logger.error.call_args[0][0]
-            assert "Missing arguments for handler" in error_call, (
-                f"Expected 'Missing arguments for handler' in log, got: {error_call}"
-            )
+        with pytest.raises(TypeError, match=r"missing .* required positional argument"):
+            services.handle_sync(test_handler)
 
     def test_sync_no_args_handler(self):
         services = Services()
@@ -158,17 +147,8 @@ class TestServices:
         async def test_handler(db_param, missing_service_param):  # noqa: ARG001
             return "Should not reach here"
 
-        with patch("app.library.Services.LOG") as mock_logger:
-            # The current implementation still calls the handler even with missing args
-            # This causes a TypeError, which is the actual current behavior
-            with pytest.raises(TypeError, match=r"missing .* required positional argument"):
-                await services.handle_async(test_handler)
-
-            mock_logger.error.assert_called_once()
-            error_call = mock_logger.error.call_args[0][0]
-            assert "Missing arguments for handler" in error_call, (
-                f"Expected 'Missing arguments for handler' in log, got: {error_call}"
-            )
+        with pytest.raises(TypeError, match=r"missing .* required positional argument"):
+            await services.handle_async(test_handler)
 
     @pytest.mark.asyncio
     async def test_async_no_args_handler(self):

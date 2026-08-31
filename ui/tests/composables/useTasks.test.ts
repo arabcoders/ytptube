@@ -22,6 +22,8 @@ mock.module('~/stores/notification', () => ({
 }));
 
 // eslint-disable-next-line import/first
+import { createMockResponse } from '../helpers/mockResponse';
+// eslint-disable-next-line import/first
 import * as utils from '~/utils/index';
 // eslint-disable-next-line import/first
 import { useTasks } from '~/composables/useTasks';
@@ -52,38 +54,6 @@ const mockPagination: Pagination = {
   has_next: false,
   has_prev: false,
 };
-
-function createMockResponse({
-  ok,
-  status,
-  jsonData,
-}: {
-  ok: boolean;
-  status: number;
-  jsonData: any;
-}) {
-  return {
-    ok,
-    status,
-    headers: new Headers(),
-    redirected: false,
-    statusText: '',
-    type: 'basic',
-    url: '',
-    body: null,
-    bodyUsed: false,
-    clone() {
-      return this;
-    },
-    async json() {
-      return jsonData;
-    },
-    text: async () => JSON.stringify(jsonData),
-    arrayBuffer: async () => new ArrayBuffer(0),
-    blob: async () => new Blob(),
-    formData: async () => new FormData(),
-  } as Response;
-}
 
 describe('useTasks', () => {
   beforeEach(() => {

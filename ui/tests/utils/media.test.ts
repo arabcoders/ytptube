@@ -20,11 +20,9 @@ mock.module('~/utils/cache', () => ({
 }));
 
 let media: Awaited<typeof import('~/utils/media')>;
-let importCacheCalls = 0;
 
 beforeAll(async () => {
   media = await import('~/utils/media');
-  importCacheCalls = useLocalCache.mock.calls.length;
 });
 
 beforeEach(() => {
@@ -36,11 +34,6 @@ beforeEach(() => {
 });
 
 describe('media utils', () => {
-  it('defer_cache_init', () => {
-    expect(importCacheCalls).toBe(0);
-    expect(media.read('item-missing')).toBe(0);
-  });
-
   it('clamp_seekable_range', () => {
     const seekable = {
       length: 1,

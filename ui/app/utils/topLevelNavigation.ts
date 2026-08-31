@@ -211,6 +211,17 @@ const NavItems: Array<NavDefinition> = [
     to: '/diagnostics',
     matchPath: '/diagnostics',
   },
+  {
+    id: 'limits',
+    section: 'tools',
+    group: 'tools',
+    label: 'app.limits',
+    pageLabel: 'app.downloadLimits',
+    description: 'common.limitsDataDesc',
+    icon: 'i-lucide-gauge',
+    to: '/limits',
+    matchPath: '/limits',
+  },
   ...DOCS_ENTRIES.map<NavDefinition>((entry) => ({
     id: entry.id,
     section: 'docs',

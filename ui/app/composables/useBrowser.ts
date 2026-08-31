@@ -1,4 +1,5 @@
 import { ref, readonly, computed, toRaw } from 'vue';
+import { useStorage } from '@vueuse/core';
 
 import { useNotification } from '~/composables/useNotification';
 import { request, parse_api_error, sTrim, encodePath } from '~/utils';
@@ -21,11 +22,20 @@ const isLoading = ref<boolean>(false);
 const lastError = ref<string | null>(null);
 const selectedElms = ref<string[]>([]);
 const masterSelectAll = ref<boolean>(false);
-const sort_by = ref<string>('name');
-const sort_order = ref<string>('asc');
+type BrowserSortBy = 'name' | 'size' | 'date' | 'type';
+type BrowserSortOrder = 'asc' | 'desc';
+
+const sort_by = useStorage<BrowserSortBy>('browser_sort_by', 'name');
+const sort_order = useStorage<BrowserSortOrder>('browser_sort_order', 'asc');
 const search = ref<string>('');
 const throwInstead = ref(false);
 const notify = useNotification();
+
+const isSortBy = (value: unknown): value is BrowserSortBy =>
+  typeof value === 'string' && ['name', 'size', 'date', 'type'].includes(value);
+
+const isSortOrder = (value: unknown): value is BrowserSortOrder =>
+  typeof value === 'string' && ['asc', 'desc'].includes(value);
 
 const readJson = async (response: Response): Promise<unknown> => {
   try {
@@ -100,7 +110,7 @@ const loadContents = async (dir: string = '/', page: number = 1): Promise<boolea
 };
 
 const changeSort = async (by: string): Promise<void> => {
-  if (!['name', 'size', 'date', 'type'].includes(by)) {
+  if (!isSortBy(by)) {
     return;
   }
 
@@ -118,12 +128,13 @@ const setSearch = async (value: string): Promise<void> => {
   await loadContents(path.value, 1);
 };
 
-const setSortBy = (value: string): void => {
-  sort_by.value = value;
-};
-
-const setSortOrder = (value: string): void => {
-  sort_order.value = value;
+const restoreSort = (by: unknown, order: unknown): void => {
+  sort_by.value = isSortBy(by) ? by : isSortBy(sort_by.value) ? sort_by.value : 'name';
+  sort_order.value = isSortOrder(order)
+    ? order
+    : isSortOrder(sort_order.value)
+      ? sort_order.value
+      : 'asc';
 };
 
 const setSearchValue = (value: string): void => {
@@ -396,8 +407,7 @@ export const useBrowser = () => ({
   loadContents,
   changeSort,
   setSearch,
-  setSortBy,
-  setSortOrder,
+  restoreSort,
   setSearchValue,
   setPage,
   changePage,

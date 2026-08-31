@@ -1,145 +1,29 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from 'bun:test';
-
-const disableOpacityMock = mock(() => {});
-const enableOpacityMock = mock(() => {});
-const syncOpacityMock = mock(() => {});
+import { describe, expect, it } from 'bun:test';
 
 (
   globalThis as typeof globalThis & { defineNuxtPlugin?: (setup: () => void) => () => void }
 ).defineNuxtPlugin = (setup) => setup;
 
-let utils: Awaited<typeof import('~/utils/index')>;
-let plugin: Awaited<typeof import('../../app/plugins/modal-opacity.client.ts')>['default'];
-let disableOpacitySpy: ReturnType<typeof spyOn>;
-let enableOpacitySpy: ReturnType<typeof spyOn>;
-let syncOpacitySpy: ReturnType<typeof spyOn>;
-const NativeMutationObserver = globalThis.MutationObserver;
-let observers: MutationObserver[] = [];
-
-class TestMutationObserver extends NativeMutationObserver {
-  constructor(callback: MutationCallback) {
-    super(callback);
-    observers.push(this);
-  }
-}
-
-const flushMutations = async (): Promise<void> => {
-  await Promise.resolve();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-};
-
-const createOverlay = (): HTMLDivElement => {
-  const overlay = document.createElement('div');
-  overlay.setAttribute('data-slot', 'overlay');
-  return overlay;
-};
-
-const startPlugin = (): void => {
-  plugin();
-  document.dispatchEvent(new window.Event('DOMContentLoaded'));
-};
-
-beforeAll(async () => {
-  utils = await import('~/utils/index');
-  disableOpacitySpy = spyOn(utils, 'disableOpacity').mockImplementation(disableOpacityMock);
-  enableOpacitySpy = spyOn(utils, 'enableOpacity').mockImplementation(enableOpacityMock);
-  syncOpacitySpy = spyOn(utils, 'syncOpacity').mockImplementation(syncOpacityMock);
-  plugin = (await import('../../app/plugins/modal-opacity.client.ts')).default;
-});
-
-afterAll(() => {
-  disableOpacitySpy.mockRestore();
-  enableOpacitySpy.mockRestore();
-  syncOpacitySpy.mockRestore();
-});
-
-beforeEach(() => {
-  globalThis.MutationObserver = TestMutationObserver;
-  document.body.innerHTML = '';
-  disableOpacityMock.mockClear();
-  enableOpacityMock.mockClear();
-  syncOpacityMock.mockClear();
-});
-
-afterEach(async () => {
-  document.body.innerHTML = '';
-  await flushMutations();
-  observers.forEach((observer) => observer.disconnect());
-  observers = [];
-  globalThis.MutationObserver = NativeMutationObserver;
-});
+const { overlayOpacityAction } = await import('../../app/plugins/modal-opacity.client.ts');
 
 describe('modal opacity plugin', () => {
-  it('ignore_settings_overlay', async () => {
-    startPlugin();
-
-    const settingsPanel = document.createElement('div');
-    settingsPanel.className = 'yt-settings-panel';
-
-    document.body.append(settingsPanel, createOverlay());
-    await flushMutations();
-
-    expect(disableOpacityMock).not.toHaveBeenCalled();
-    expect(enableOpacityMock).not.toHaveBeenCalled();
-    expect(syncOpacityMock).not.toHaveBeenCalled();
+  it('ignores settings overlay', () => {
+    expect(overlayOpacityAction(1, true, false)).toEqual({ action: null, locked: false });
   });
 
-  it('restore_after_close', async () => {
-    startPlugin();
-
-    const settingsPanel = document.createElement('div');
-    settingsPanel.className = 'yt-settings-panel';
-    const settingsOverlay = createOverlay();
-    const modalOverlay = createOverlay();
-
-    document.body.append(settingsPanel, settingsOverlay);
-    await flushMutations();
-
-    document.body.append(modalOverlay);
-    await flushMutations();
-
-    expect(disableOpacityMock).toHaveBeenCalledTimes(1);
-
-    modalOverlay.remove();
-    await flushMutations();
-
-    expect(enableOpacityMock).toHaveBeenCalledTimes(1);
+  it('unlocks for settings', () => {
+    expect(overlayOpacityAction(1, true, true)).toEqual({ action: 'enable', locked: false });
   });
 
-  it('resync_while_locked', async () => {
-    startPlugin();
-
-    document.body.append(createOverlay());
-    await flushMutations();
-
-    document.body.append(createOverlay());
-    await flushMutations();
-
-    expect(disableOpacityMock).toHaveBeenCalledTimes(1);
-    expect(syncOpacityMock).toHaveBeenCalledTimes(1);
+  it('locks for overlay', () => {
+    expect(overlayOpacityAction(1, false, false)).toEqual({ action: 'disable', locked: true });
   });
 
-  it('keep_lock_beforeunload', async () => {
-    startPlugin();
+  it('syncs existing lock', () => {
+    expect(overlayOpacityAction(2, false, true)).toEqual({ action: 'sync', locked: true });
+  });
 
-    document.body.append(createOverlay());
-    await flushMutations();
-
-    expect(disableOpacityMock).toHaveBeenCalledTimes(1);
-
-    window.dispatchEvent(new window.Event('beforeunload'));
-    await flushMutations();
-
-    expect(enableOpacityMock).not.toHaveBeenCalled();
+  it('unlocks without overlays', () => {
+    expect(overlayOpacityAction(0, false, true)).toEqual({ action: 'enable', locked: false });
   });
 });

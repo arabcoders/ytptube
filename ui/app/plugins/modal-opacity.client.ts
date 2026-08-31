@@ -3,6 +3,25 @@ import { disableOpacity, enableOpacity, syncOpacity } from '~/utils';
 const OVERLAY_SELECTOR = '[data-slot="overlay"]';
 const SETTINGS_PANEL_SELECTOR = '.yt-settings-panel';
 
+type OpacityAction = 'disable' | 'enable' | 'sync' | null;
+
+export const overlayOpacityAction = (
+  overlayCount: number,
+  hasSettingsPanel: boolean,
+  isLocked: boolean,
+): { action: OpacityAction; locked: boolean } => {
+  if (overlayCount === 1 && hasSettingsPanel) {
+    return { action: isLocked ? 'enable' : null, locked: false };
+  }
+  if (overlayCount > 0 && !isLocked) {
+    return { action: 'disable', locked: true };
+  }
+  if (overlayCount > 0) {
+    return { action: 'sync', locked: true };
+  }
+  return { action: isLocked ? 'enable' : null, locked: false };
+};
+
 export default defineNuxtPlugin(() => {
   if (import.meta.server) {
     return;
@@ -13,33 +32,19 @@ export default defineNuxtPlugin(() => {
 
   const syncOverlayOpacity = (): void => {
     const overlays = Array.from(document.querySelectorAll(OVERLAY_SELECTOR));
-    const hasOverlay = overlays.length > 0;
-    const isSettingsOnlyOverlay =
-      overlays.length === 1 && document.querySelector(SETTINGS_PANEL_SELECTOR) !== null;
+    const state = overlayOpacityAction(
+      overlays.length,
+      document.querySelector(SETTINGS_PANEL_SELECTOR) !== null,
+      isLocked,
+    );
+    isLocked = state.locked;
 
-    if (isSettingsOnlyOverlay) {
-      if (isLocked) {
-        enableOpacity();
-        isLocked = false;
-      }
-
-      return;
-    }
-
-    if (hasOverlay && !isLocked) {
+    if (state.action === 'disable') {
       disableOpacity();
-      isLocked = true;
-      return;
-    }
-
-    if (hasOverlay) {
-      syncOpacity();
-      return;
-    }
-
-    if (!hasOverlay && isLocked) {
+    } else if (state.action === 'enable') {
       enableOpacity();
-      isLocked = false;
+    } else if (state.action === 'sync') {
+      syncOpacity();
     }
   };
 

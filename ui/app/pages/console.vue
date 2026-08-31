@@ -41,322 +41,315 @@
       </div>
     </div>
 
-    <div class="ytp-card flex min-h-0 flex-1 p-0 sm:p-0 flex-col">
-      <div class="flex min-h-0 flex-1 flex-col gap-4">
+    <div class="flex min-h-0 flex-1 flex-col gap-4">
+      <div
+        class="flex min-h-72 min-w-0 flex-1 overflow-hidden rounded-sm border border-default bg-neutral-950/95 shadow-sm"
+      >
         <div
-          class="flex min-h-72 min-w-0 flex-1 overflow-hidden rounded-sm border border-default bg-neutral-950/95 shadow-sm"
+          ref="terminal_window"
+          class="terminal-host h-full min-h-0 w-full overflow-hidden"
+          dir="ltr"
+        />
+      </div>
+
+      <div class="ytp-card shadow-sm" dir="ltr">
+        <div
+          class="flex flex-col gap-3 border-b border-default bg-muted/10 px-4 py-3 lg:flex-row lg:items-start lg:justify-between"
         >
-          <div
-            ref="terminal_window"
-            class="terminal-host h-full min-h-0 w-full overflow-hidden"
-            dir="ltr"
-          />
-        </div>
+          <div class="min-w-0 flex-1 space-y-1">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div
+                class="flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-highlighted"
+              >
+                <UIcon name="i-lucide-send" class="size-4 shrink-0 text-toned" />
+                <span>{{ t('console.command') }}</span>
 
-        <div class="ytp-card shadow-sm" dir="ltr">
-          <div
-            class="flex flex-col gap-3 border-b border-default bg-muted/10 px-4 py-3 lg:flex-row lg:items-start lg:justify-between"
-          >
-            <div class="min-w-0 flex-1 space-y-1">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div
-                  class="flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-highlighted"
-                >
-                  <UIcon name="i-lucide-send" class="size-4 shrink-0 text-toned" />
-                  <span>{{ t('console.command') }}</span>
-
-                  <UBadge :color="sessionStatusColor" variant="soft" size="sm">
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon
-                        :name="sessionStatusIcon"
-                        class="size-3.5"
-                        :class="sessionStatusSpinning ? 'animate-spin' : ''"
-                      />
-                      <span>{{ sessionStatusLabel }}</span>
-                    </span>
-                  </UBadge>
-                </div>
-
-                <UBadge :color="isMultiLineInput ? 'info' : 'neutral'" variant="soft" size="sm">
-                  {{ isMultiLineInput ? t('console.multiLine') : t('console.singleLine') }}
+                <UBadge :color="sessionStatusColor" variant="soft" size="sm">
+                  <span class="inline-flex items-center gap-1.5">
+                    <UIcon
+                      :name="sessionStatusIcon"
+                      class="size-3.5"
+                      :class="sessionStatusSpinning ? 'animate-spin' : ''"
+                    />
+                    <span>{{ sessionStatusLabel }}</span>
+                  </span>
                 </UBadge>
               </div>
 
-              <p class="text-xs text-toned">
-                {{ t('console.shiftEnterHint') }}
-              </p>
+              <UBadge :color="isMultiLineInput ? 'info' : 'neutral'" variant="soft" size="sm">
+                {{ isMultiLineInput ? t('console.multiLine') : t('console.singleLine') }}
+              </UBadge>
             </div>
+
+            <p class="text-xs text-toned">
+              {{ t('console.shiftEnterHint') }}
+            </p>
           </div>
+        </div>
 
-          <div class="space-y-3 px-4 py-4">
-            <UAlert
-              v-if="sessionError"
-              color="error"
-              variant="soft"
-              icon="i-lucide-triangle-alert"
-              :title="sessionErrorTitle"
-              :description="sessionError"
-            />
+        <div class="space-y-3 px-4 py-4">
+          <UAlert
+            v-if="sessionError"
+            color="error"
+            variant="soft"
+            icon="i-lucide-triangle-alert"
+            :title="sessionErrorTitle"
+            :description="sessionError"
+          />
 
-            <UAlert
-              v-if="sessionStatus === 'reconnecting'"
-              color="warning"
-              variant="soft"
-              icon="i-lucide-rotate-cw"
-              :title="t('console.reconnecting')"
-              :description="t('console.reconnectingDesc')"
-            />
+          <UAlert
+            v-if="sessionStatus === 'reconnecting'"
+            color="warning"
+            variant="soft"
+            icon="i-lucide-rotate-cw"
+            :title="t('console.reconnecting')"
+            :description="t('console.reconnectingDesc')"
+          />
 
-            <UAlert
-              v-if="sessionStatus === 'interrupted'"
-              color="warning"
-              variant="soft"
-              icon="i-lucide-circle-off"
-              :title="t('console.interrupted')"
-              :description="t('console.interruptedDesc')"
-            />
+          <UAlert
+            v-if="sessionStatus === 'interrupted'"
+            color="warning"
+            variant="soft"
+            icon="i-lucide-circle-off"
+            :title="t('console.interrupted')"
+            :description="t('console.interruptedDesc')"
+          />
 
-            <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-              <div class="space-y-3">
-                <TextareaAutocomplete
-                  v-if="isMultiLineInput"
-                  ref="commandTextarea"
-                  v-model="command"
-                  class="console-input"
-                  :options="ytDlpOptions"
-                  :disabled="isStartBlocked"
-                  :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-terminal'"
-                  :icon-class="isLoading ? 'animate-spin' : ''"
-                  placeholder="--help"
-                  :rows="5"
-                  dir="ltr"
-                  @keydown="handleKeyDown"
-                />
+          <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+            <div class="space-y-3">
+              <TextareaAutocomplete
+                v-if="isMultiLineInput"
+                ref="commandTextarea"
+                v-model="command"
+                class="console-input"
+                :options="ytDlpOptions"
+                :disabled="isStartBlocked"
+                :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-terminal'"
+                :icon-class="isLoading ? 'animate-spin' : ''"
+                placeholder="--help"
+                :rows="5"
+                dir="ltr"
+                @keydown="handleKeyDown"
+              />
 
-                <InputAutocomplete
-                  v-else
-                  ref="commandInput"
-                  v-model="command"
-                  class="console-input"
-                  :options="ytDlpOptions"
-                  :disabled="isStartBlocked"
-                  :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-terminal'"
-                  :icon-class="isLoading ? 'animate-spin' : ''"
-                  placeholder="--help"
-                  dir="ltr"
-                  :multiple="true"
-                  :allowShortFlags="true"
-                  @keydown="handleKeyDown"
-                  @paste="handlePaste"
-                />
-              </div>
+              <InputAutocomplete
+                v-else
+                ref="commandInput"
+                v-model="command"
+                class="console-input"
+                :options="ytDlpOptions"
+                :disabled="isStartBlocked"
+                :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-terminal'"
+                :icon-class="isLoading ? 'animate-spin' : ''"
+                placeholder="--help"
+                dir="ltr"
+                :multiple="true"
+                :allowShortFlags="true"
+                @keydown="handleKeyDown"
+                @paste="handlePaste"
+              />
+            </div>
 
-              <div class="flex flex-wrap items-center justify-end gap-2 xl:self-end">
-                <UPopover :content="{ side: 'top', align: 'end', sideOffset: 8 }">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="lg"
-                    icon="i-lucide-history"
-                    trailing-icon="i-lucide-chevron-up"
-                    class="flex-1 justify-center sm:flex-none sm:min-w-36"
+            <div class="flex flex-wrap items-center justify-end gap-2 xl:self-end">
+              <UPopover :content="{ side: 'top', align: 'end', sideOffset: 8 }">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  size="lg"
+                  icon="i-lucide-history"
+                  trailing-icon="i-lucide-chevron-up"
+                  class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                >
+                  {{ t('common.history') }}
+                </UButton>
+
+                <template #content>
+                  <UCard
+                    class="w-[min(92vw,42rem)] border border-default/70 shadow-sm"
+                    dir="ltr"
+                    :ui="historyCardUi"
                   >
-                    {{ t('common.history') }}
-                  </UButton>
-
-                  <template #content>
-                    <UCard
-                      class="w-[min(92vw,42rem)] border border-default/70 shadow-sm"
-                      dir="ltr"
-                      :ui="historyCardUi"
-                    >
-                      <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-                          <UIcon name="i-lucide-history" class="size-4 text-toned" />
-                          <span>{{ t('console.recentRuns') }}</span>
-                        </div>
-
-                        <UButton
-                          color="neutral"
-                          variant="outline"
-                          size="sm"
-                          icon="i-lucide-eye-off"
-                          :disabled="recentSessionEntries.length < 1"
-                          @click="() => void hideRecentSessions()"
-                        >
-                          {{ t('console.hideRecent') }}
-                        </UButton>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                      <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+                        <UIcon name="i-lucide-history" class="size-4 text-toned" />
+                        <span>{{ t('console.recentRuns') }}</span>
                       </div>
 
-                      <UAlert
-                        v-if="recentSessionEntries.length < 1"
-                        color="info"
-                        variant="soft"
-                        icon="i-lucide-clock-3"
-                        :title="t('console.noSessions')"
-                      />
-
-                      <div
-                        v-else
-                        class="max-h-96 w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
+                      <UButton
+                        color="neutral"
+                        variant="outline"
+                        size="sm"
+                        icon="i-lucide-eye-off"
+                        :disabled="recentSessionEntries.length < 1"
+                        @click="() => void hideRecentSessions()"
                       >
-                        <div class="w-full max-w-full overflow-auto overscroll-contain">
-                          <table class="w-full text-sm">
-                            <tbody class="divide-y divide-default">
-                              <tr
-                                v-for="item in recentSessionEntries"
-                                :key="item.sessionId"
-                                class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-                              >
-                                <td class="px-3 py-3 align-middle">
-                                  <div class="space-y-2">
-                                    <button
-                                      type="button"
-                                      class="block w-full text-start font-mono text-xs text-default hover:text-highlighted"
-                                      dir="ltr"
-                                      @click="() => void replayRecentSession(item)"
-                                    >
-                                      {{ item.command }}
-                                    </button>
+                        {{ t('console.hideRecent') }}
+                      </UButton>
+                    </div>
 
-                                    <div
-                                      class="flex flex-wrap items-center gap-2 text-[11px] text-toned"
+                    <UAlert
+                      v-if="recentSessionEntries.length < 1"
+                      color="info"
+                      variant="soft"
+                      icon="i-lucide-clock-3"
+                      :title="t('console.noSessions')"
+                    />
+
+                    <div
+                      v-else
+                      class="max-h-96 w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
+                    >
+                      <div class="w-full max-w-full overflow-auto overscroll-contain">
+                        <table class="w-full text-sm">
+                          <tbody class="divide-y divide-default">
+                            <tr
+                              v-for="item in recentSessionEntries"
+                              :key="item.sessionId"
+                              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
+                            >
+                              <td class="px-3 py-3 align-middle">
+                                <div class="space-y-2">
+                                  <button
+                                    type="button"
+                                    class="block w-full text-start font-mono text-xs text-default hover:text-highlighted"
+                                    dir="ltr"
+                                    @click="() => void replayRecentSession(item)"
+                                  >
+                                    {{ item.command }}
+                                  </button>
+
+                                  <div
+                                    class="flex flex-wrap items-center gap-2 text-[11px] text-toned"
+                                  >
+                                    <UBadge
+                                      :color="recentSessionStatusColor(item)"
+                                      variant="soft"
+                                      size="sm"
                                     >
-                                      <UBadge
-                                        :color="recentSessionStatusColor(item)"
-                                        variant="soft"
-                                        size="sm"
+                                      <span
+                                        v-if="recentSessionStatusSpinning(item)"
+                                        class="inline-flex items-center gap-1.5"
                                       >
-                                        <span
-                                          v-if="recentSessionStatusSpinning(item)"
-                                          class="inline-flex items-center gap-1.5"
+                                        <UIcon
+                                          :name="recentSessionStatusIcon(item)"
+                                          class="size-3.5 animate-spin"
+                                        />
+                                        <span>{{ recentSessionStatusLabel(item) }}</span>
+                                      </span>
+                                      <span v-else class="inline-flex items-center gap-1.5">
+                                        <UIcon
+                                          :name="recentSessionStatusIcon(item)"
+                                          class="size-3.5"
+                                        />
+                                        <span>{{ recentSessionStatusLabel(item) }}</span>
+                                      </span>
+                                    </UBadge>
+
+                                    <UTooltip
+                                      v-if="item.finishedAt || item.startedAt || item.createdAt"
+                                      :text="
+                                        formatDateTime(
+                                          item.finishedAt || item.startedAt || item.createdAt || 0,
+                                          locale,
+                                        )
+                                      "
+                                    >
+                                      <span class="inline-flex items-center gap-1.5 cursor-help">
+                                        <UIcon name="i-lucide-clock-3" class="size-3.5" />
+                                        <time
+                                          :datetime="
+                                            toIsoString(
+                                              item.finishedAt ||
+                                                item.startedAt ||
+                                                item.createdAt ||
+                                                0,
+                                            )
+                                          "
                                         >
-                                          <UIcon
-                                            :name="recentSessionStatusIcon(item)"
-                                            class="size-3.5 animate-spin"
-                                          />
-                                          <span>{{ recentSessionStatusLabel(item) }}</span>
-                                        </span>
-                                        <span v-else class="inline-flex items-center gap-1.5">
-                                          <UIcon
-                                            :name="recentSessionStatusIcon(item)"
-                                            class="size-3.5"
-                                          />
-                                          <span>{{ recentSessionStatusLabel(item) }}</span>
-                                        </span>
-                                      </UBadge>
-
-                                      <UTooltip
-                                        v-if="item.finishedAt || item.startedAt || item.createdAt"
-                                        :text="
-                                          formatDateTime(
-                                            item.finishedAt ||
-                                              item.startedAt ||
-                                              item.createdAt ||
-                                              0,
-                                            locale,
-                                          )
-                                        "
-                                      >
-                                        <span class="inline-flex items-center gap-1.5 cursor-help">
-                                          <UIcon name="i-lucide-clock-3" class="size-3.5" />
-                                          <time
-                                            :datetime="
-                                              toIsoString(
-                                                item.finishedAt ||
-                                                  item.startedAt ||
-                                                  item.createdAt ||
-                                                  0,
-                                              )
-                                            "
-                                          >
-                                            {{
-                                              relativeTime(
-                                                item.finishedAt ||
-                                                  item.startedAt ||
-                                                  item.createdAt ||
-                                                  0,
-                                              )
-                                            }}
-                                          </time>
-                                        </span>
-                                      </UTooltip>
-                                    </div>
+                                          {{
+                                            relativeTime(
+                                              item.finishedAt ||
+                                                item.startedAt ||
+                                                item.createdAt ||
+                                                0,
+                                            )
+                                          }}
+                                        </time>
+                                      </span>
+                                    </UTooltip>
                                   </div>
-                                </td>
+                                </div>
+                              </td>
 
-                                <td
-                                  class="w-28 px-3 py-3 text-center align-middle whitespace-nowrap"
-                                >
-                                  <div class="flex items-center justify-end gap-1">
-                                    <UButton
-                                      color="neutral"
-                                      variant="ghost"
-                                      size="xs"
-                                      icon="i-lucide-terminal"
-                                      @click="() => void loadCommand(item.command)"
-                                    >
-                                      {{ t('console.fill') }}
-                                    </UButton>
+                              <td class="w-28 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-1">
+                                  <UButton
+                                    color="neutral"
+                                    variant="ghost"
+                                    size="xs"
+                                    icon="i-lucide-terminal"
+                                    @click="() => void loadCommand(item.command)"
+                                  >
+                                    {{ t('console.fill') }}
+                                  </UButton>
 
-                                    <UButton
-                                      color="neutral"
-                                      variant="ghost"
-                                      size="xs"
-                                      icon="i-lucide-x"
-                                      square
-                                      @click="hideRecentSession(item.sessionId)"
-                                    />
-                                  </div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
+                                  <UButton
+                                    color="neutral"
+                                    variant="ghost"
+                                    size="xs"
+                                    icon="i-lucide-x"
+                                    square
+                                    @click="hideRecentSession(item.sessionId)"
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
-                    </UCard>
-                  </template>
-                </UPopover>
+                    </div>
+                  </UCard>
+                </template>
+              </UPopover>
 
-                <UButton
-                  v-if="showCancelButton"
-                  color="neutral"
-                  variant="outline"
-                  size="lg"
-                  icon="i-lucide-power"
-                  :loading="cancelPending"
-                  class="flex-1 justify-center sm:flex-none sm:min-w-36"
-                  @click="() => void cancelCommand()"
-                >
-                  {{ t('console.closeOutput') }}
-                </UButton>
+              <UButton
+                v-if="showCancelButton"
+                color="neutral"
+                variant="outline"
+                size="lg"
+                icon="i-lucide-power"
+                :loading="cancelPending"
+                class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                @click="() => void cancelCommand()"
+              >
+                {{ t('console.closeOutput') }}
+              </UButton>
 
-                <UButton
-                  v-else-if="canManualReconnect"
-                  color="neutral"
-                  variant="outline"
-                  size="lg"
-                  icon="i-lucide-rotate-cw"
-                  :loading="manualReconnectPending"
-                  class="flex-1 justify-center sm:flex-none sm:min-w-36"
-                  @click="() => void reconnectSession()"
-                >
-                  {{ t('common.reconnect') }}
-                </UButton>
+              <UButton
+                v-else-if="canManualReconnect"
+                color="neutral"
+                variant="outline"
+                size="lg"
+                icon="i-lucide-rotate-cw"
+                :loading="manualReconnectPending"
+                class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                @click="() => void reconnectSession()"
+              >
+                {{ t('common.reconnect') }}
+              </UButton>
 
-                <UButton
-                  v-else
-                  color="primary"
-                  size="lg"
-                  :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-send'"
-                  :loading="isLoading"
-                  :disabled="!canStartCommand"
-                  class="flex-1 justify-center sm:flex-none sm:min-w-36"
-                  @click="() => void runCommand()"
-                >
-                  {{ runButtonLabel }}
-                </UButton>
-              </div>
+              <UButton
+                v-else
+                color="primary"
+                size="lg"
+                :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-send'"
+                :loading="isLoading"
+                :disabled="!canStartCommand"
+                class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                @click="() => void runCommand()"
+              >
+                {{ runButtonLabel }}
+              </UButton>
             </div>
           </div>
         </div>

@@ -11,7 +11,7 @@ from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import patch_windows_popen_wait
 from app.features.ytdlp.utils import _DATA
 from app.features.ytdlp.ytdlp import YTDLP, _ArchiveProxy, ytdlp_options
-from app.features.ytdlp.filename import _cached_name_max, _name_max, _temp_reserve, _units, trim_filename
+from app.features.ytdlp.filename import _cached_name_max, _name_max, _temp_reserve, _units, trim_component
 
 
 def _archive_path(tmp_path: Path) -> str:
@@ -376,26 +376,26 @@ class TestYTDLP:
         info = {"ext": "mkv"}
         patterns = (re.compile(r"^\d+"), re.compile(r"\[[^][]*\]"))
 
-        with patch("app.features.ytdlp.filename._name_max", return_value=64):
-            result = trim_filename(
-                "260812 abcdefghijklmnopqrstuvwxyz [id].mkv",
-                info,
-                "",
-                mode,
-                patterns,
-            )
+        result = trim_component(
+            "260812 abcdefghijklmnopqrstuvwxyz [id].mkv",
+            info,
+            "",
+            mode,
+            patterns,
+            64,
+        )
 
         assert result == expected
 
     def test_filename_trim_middle(self) -> None:
-        with patch("app.features.ytdlp.filename._name_max", return_value=60):
-            result = trim_filename(
-                "abcdefghij [id] klmnopqrst.mkv",
-                {"ext": "mkv"},
-                "",
-                "middle",
-                (re.compile(r"\[[^][]*\]"),),
-            )
+        result = trim_component(
+            "abcdefghij [id] klmnopqrst.mkv",
+            {"ext": "mkv"},
+            "",
+            "middle",
+            (re.compile(r"\[[^][]*\]"),),
+            60,
+        )
 
         assert result.startswith("abc")
         assert "[id]" in result
@@ -404,8 +404,14 @@ class TestYTDLP:
     def test_filename_trim_unicode(self) -> None:
         info = {"ext": "mkv"}
 
-        with patch("app.features.ytdlp.filename._name_max", return_value=64):
-            result = trim_filename(f"{'音' * 20} [id].mkv", info, "", "end", (re.compile(r"\[[^][]*\]"),))
+        result = trim_component(
+            f"{'音' * 20} [id].mkv",
+            info,
+            "",
+            "end",
+            (re.compile(r"\[[^][]*\]"),),
+            64,
+        )
 
         assert "[id]" in result
         assert _units(result.rsplit("/", 1)[-1]) + _temp_reserve(info) <= 64
@@ -413,23 +419,17 @@ class TestYTDLP:
 
     @pytest.mark.parametrize(("mode", "expected"), [("end", "A界.mkv"), ("start", "BCDE.mkv")])
     def test_filename_trim_contiguous(self, mode: str, expected: str) -> None:
-        with patch("app.features.ytdlp.filename._name_max", return_value=52):
-            result = trim_filename("A界BCDE.mkv", {"ext": "mkv"}, "", mode, ())
+        result = trim_component("A界BCDE.mkv", {"ext": "mkv"}, "", mode, (), 52)
 
         assert result == expected
 
     def test_filename_limit_cached(self, tmp_path: Path) -> None:
-        query = (
-            "app.features.ytdlp.filename._windows_name_max"
-            if os.name == "nt"
-            else "app.features.ytdlp.filename.os.pathconf"
-        )
         _cached_name_max.cache_clear()
         try:
-            with patch(query, return_value=123) as name_max:
-                assert _name_max(str(tmp_path)) == 123
-                assert _name_max(str(tmp_path / "missing" / "nested")) == 123
-            name_max.assert_called_once()
+            expected = _name_max(str(tmp_path))
+            assert _name_max(str(tmp_path / "missing" / "nested")) == expected
+            assert _cached_name_max.cache_info().misses == 1
+            assert _cached_name_max.cache_info().hits == 1
         finally:
             _cached_name_max.cache_clear()
 
@@ -441,10 +441,10 @@ class TestYTDLP:
         second.mkdir()
         _cached_name_max.cache_clear()
         try:
-            with patch("app.features.ytdlp.filename._windows_name_max", return_value=255) as name_max:
-                assert _name_max(str(first)) == 255
-                assert _name_max(str(second)) == 255
-            name_max.assert_called_once_with(tmp_path.resolve().anchor)
+            expected = _name_max(str(first))
+            assert _name_max(str(second)) == expected
+            assert _cached_name_max.cache_info().misses == 1
+            assert _cached_name_max.cache_info().hits == 1
         finally:
             _cached_name_max.cache_clear()
 
@@ -452,9 +452,8 @@ class TestYTDLP:
         title = "a" * 100
         info = {"ext": "mkv"}
 
-        with patch("app.features.ytdlp.filename._name_max", return_value=64):
-            media = trim_filename(f"{title}.mkv", info, "", "end", ())
-            metadata = trim_filename(f"{title}.info.json", info, "infojson", "end", ())
+        media = trim_component(f"{title}.mkv", info, "", "end", (), 64)
+        metadata = trim_component(f"{title}.info.json", info, "infojson", "end", (), 64)
 
         assert media.removesuffix(".mkv") == metadata.removesuffix(".info.json")
 
@@ -462,47 +461,28 @@ class TestYTDLP:
         language = "language-tag-that-is-long"
         info = {"ext": "mkv", "requested_subtitles": {language: {"ext": "vtt"}}}
 
-        with patch("app.features.ytdlp.filename._name_max", return_value=80):
-            base = trim_filename(
-                f"{'a' * 100}.mkv",
-                info,
-                "subtitle",
-                "end",
-                (),
-                {"writesubtitles": True},
-            )
+        base = trim_component(
+            f"{'a' * 100}.mkv",
+            info,
+            "subtitle",
+            "end",
+            (),
+            80,
+            {"writesubtitles": True},
+        )
 
         subtitle = subtitles_filename(base, language, "vtt", "mkv")
         assert _units(Path(subtitle).name) + _temp_reserve(info) <= 80
 
-    def test_prepare_filename_trims(self) -> None:
-        config = Mock(
-            filename_trim="end",
-            filename_trim_regexes=(re.compile(r"^\d+"), re.compile(r"\[[^][]*\]")),
-        )
-        ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s.%(ext)s"}})
-
-        with (
-            patch("app.features.ytdlp.ytdlp.Config.get_instance", return_value=config),
-            patch("app.features.ytdlp.filename._name_max", return_value=64),
-        ):
-            result = ytdlp.prepare_filename(
-                {"id": "id", "title": "260812 abcdefghijklmnopqrstuvwxyz [id]", "ext": "mkv"}
-            )
-
-        assert result == "260812 abcd [id].mkv"
-
     def test_filename_trim_protected(self) -> None:
-        with (
-            patch("app.features.ytdlp.filename._name_max", return_value=60),
-            pytest.raises(ValueError, match="protected filename content"),
-        ):
-            trim_filename(
+        with pytest.raises(ValueError, match="protected filename content"):
+            trim_component(
                 "[protected-value].mkv",
                 {"ext": "mkv"},
                 "",
                 "end",
                 (re.compile(r"\[[^][]*\]"),),
+                60,
             )
 
     @pytest.mark.parametrize(

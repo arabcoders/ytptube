@@ -38,3 +38,20 @@ describe('documentation navigation', () => {
     });
   });
 });
+
+describe('tools navigation', () => {
+  it('routes limits page', () => {
+    const limits = getNavItems().find((entry) => entry.id === 'limits');
+
+    expect(limits).toMatchObject({
+      section: 'tools',
+      label: 'app.limits',
+      pageLabel: 'app.downloadLimits',
+      to: '/limits',
+      matchPath: '/limits',
+      sidebarVisible: true,
+      searchable: true,
+    });
+    expect(isNavItemActive(limits!, { path: '/limits' })).toBe(true);
+  });
+});

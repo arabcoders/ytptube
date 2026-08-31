@@ -200,13 +200,27 @@ def trim_filename(
     if not name:
         return path
 
+    trimmed = trim_component(name, info, dir_type, mode, patterns, _name_max(directory), params)
+    return os.path.join(directory, trimmed)
+
+
+def trim_component(
+    name: str,
+    info: dict[str, Any],
+    dir_type: str | None,
+    mode: str,
+    patterns: tuple[re.Pattern[str], ...],
+    name_max: int,
+    params: dict[str, Any] | None = None,
+) -> str:
+
     extension = _extension(name, info, dir_type)
     stem = name.removesuffix(extension) if extension else name
     reserve = _temp_reserve(info)
     artifact_reserve = _artifact_reserve(info, params or {}, extension)
-    stem_limit = _name_max(directory) - reserve - artifact_reserve
+    stem_limit = name_max - reserve - artifact_reserve
     if _units(stem) <= stem_limit:
-        return path
+        return name
     if stem_limit < 1:
         msg = "The filesystem filename limit leaves no space for a filename stem."
         raise ValueError(msg)
@@ -232,4 +246,4 @@ def trim_filename(
 
     if not result:
         result = "_"
-    return os.path.join(directory, f"{result}{extension}")
+    return f"{result}{extension}"

@@ -40,19 +40,6 @@
         </UButton>
 
         <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
-          @click="toggleDisplayStyle"
-        >
-          <span class="hidden sm:inline">{{
-            display_style === 'list' ? t('common.list') : t('common.grid')
-          }}</span>
-        </UButton>
-
-        <UButton
           v-if="presets.length > 0"
           color="neutral"
           variant="outline"
@@ -124,117 +111,7 @@
       />
     </div>
 
-    <div
-      v-if="contentStyle === 'list' && filteredPresets.length > 0"
-      class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
-    >
-      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-200 w-full text-sm">
-          <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-            <tr
-              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-            >
-              <th class="w-12">
-                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
-                  <UIcon
-                    :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
-                    class="size-4"
-                  />
-                </button>
-              </th>
-              <th class="w-full text-start">{{ t('common.presetLabel') }}</th>
-              <th class="w-48 whitespace-nowrap">{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y divide-default">
-            <tr
-              v-for="item in filteredPresets"
-              :key="item.id"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-            >
-              <td class="px-3 py-3 text-center align-middle">
-                <label class="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    v-model="selectedIds"
-                    class="completed-checkbox size-4 rounded border-default"
-                    type="checkbox"
-                    :value="item.id"
-                  />
-                </label>
-              </td>
-
-              <td class="px-3 py-3 align-middle">
-                <div class="space-y-1">
-                  <div class="font-semibold text-highlighted">
-                    {{ item.name }}
-                  </div>
-
-                  <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
-                    <span
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon
-                        name="i-lucide-cookie"
-                        class="size-3.5"
-                        :class="item.cookies ? 'text-success' : ''"
-                      />
-                      <span>{{
-                        item.cookies ? t('presets.cookiesConfigured') : t('presets.cookiesNotSet')
-                      }}</span>
-                    </span>
-
-                    <span
-                      v-if="item.priority > 0"
-                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                    >
-                      <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                      <span>{{ t('presets.priority', { priority: item.priority }) }}</span>
-                    </span>
-                  </div>
-                </div>
-              </td>
-
-              <td class="w-48 px-3 py-3 align-middle whitespace-nowrap">
-                <div class="flex items-center justify-end gap-2">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-file-up"
-                    @click="exportItem(item)"
-                  >
-                    <span class="hidden sm:inline">{{ t('common.exportItem') }}</span>
-                  </UButton>
-
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-pencil"
-                    @click="editor.openEdit(item)"
-                  >
-                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
-                  </UButton>
-
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-trash"
-                    @click="() => void deleteItem(item)"
-                  >
-                    <span class="hidden sm:inline">{{ t('common.delete') }}</span>
-                  </UButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div v-else-if="filteredPresets.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div v-if="filteredPresets.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div v-for="item in filteredPresets" :key="item.id" class="min-w-0 w-full max-w-full">
         <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
           <div class="p-4 pb-3 ytp-border-bottom-soft">
@@ -503,7 +380,6 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
-import { useStorage } from '@vueuse/core';
 import type { Preset } from '~/types/presets';
 import { useDialog } from '~/composables/useDialog';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
@@ -523,9 +399,6 @@ const route = useRoute();
 const router = useRouter();
 const { confirmDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
-
-const display_style = useStorage<string>('preset_display_style', 'grid');
-const isMobile = useMediaQuery({ maxWidth: 639 });
 
 const query = ref('');
 const showFilter = ref(false);
@@ -558,9 +431,6 @@ const allSelected = computed(
 );
 
 const hasSelected = computed(() => selectedIds.value.length > 0);
-const contentStyle = computed<'list' | 'grid'>(() =>
-  isMobile.value ? 'grid' : 'list' === display_style.value ? 'list' : 'grid',
-);
 
 const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
@@ -694,10 +564,6 @@ const deleteItem = async (item: Preset): Promise<void> => {
   if (item.id) {
     await presetsStore.deletePreset(item.id);
   }
-};
-
-const toggleDisplayStyle = (): void => {
-  display_style.value = display_style.value === 'list' ? 'grid' : 'list';
 };
 
 const exportItem = (item: Preset): void => {

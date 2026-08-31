@@ -139,142 +139,140 @@
       </div>
     </div>
 
-    <div class="ytp-card min-w-0 max-w-full p-4 sm:p-5 overflow-hidden">
-      <div class="ytp-frame overflow-hidden shadow-sm">
+    <div class="ytp-frame overflow-hidden rounded-none bg-elevated/20 shadow-sm">
+      <div
+        ref="logContainer"
+        class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden bg-transparent font-mono text-sm text-default overscroll-x-contain"
+        dir="ltr"
+        @scroll.passive="handleScroll"
+      >
         <div
-          ref="logContainer"
-          class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden bg-transparent font-mono text-sm text-default overscroll-x-contain"
-          dir="ltr"
-          @scroll.passive="handleScroll"
+          v-if="reachedEnd && !hasActiveFilter"
+          class="flex justify-center border-b border-default/40 px-4 py-3"
         >
           <div
-            v-if="reachedEnd && !hasActiveFilter"
-            class="flex justify-center border-b border-default/40 px-4 py-3"
+            class="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-[11px] font-medium text-warning"
+          >
+            <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />
+            {{ t('logs.emptyOlder') }}
+          </div>
+        </div>
+
+        <div
+          v-if="canLoadFilteredHistory"
+          class="flex justify-center border-b border-default/40 px-4 py-3"
+        >
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-full border border-default/60 bg-elevated/40 px-3 py-1 text-[11px] font-medium text-toned transition-colors hover:border-default hover:text-default disabled:opacity-60"
+            :disabled="loading"
+            @click="fetchLogs(true)"
+          >
+            <UIcon
+              :name="loading ? 'i-lucide-loader-circle' : 'i-lucide-history'"
+              :class="['size-3.5 shrink-0', loading ? 'animate-spin' : '']"
+            />
+            {{ t('logs.loadOlder') }}
+          </button>
+        </div>
+
+        <template v-if="filteredLogs.length > 0">
+          <article
+            v-for="(entry, index) in filteredLogs"
+            :key="entry.log.id"
+            :class="logRowClass(entry, index)"
           >
             <div
-              class="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-[11px] font-medium text-warning"
+              class="flex w-full min-w-0 flex-col gap-1 px-3 py-[0.65rem] leading-[1.6] md:flex-row md:items-start md:gap-2"
             >
-              <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />
-              {{ t('logs.emptyOlder') }}
-            </div>
-          </div>
-
-          <div
-            v-if="canLoadFilteredHistory"
-            class="flex justify-center border-b border-default/40 px-4 py-3"
-          >
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-full border border-default/60 bg-elevated/40 px-3 py-1 text-[11px] font-medium text-toned transition-colors hover:border-default hover:text-default disabled:opacity-60"
-              :disabled="loading"
-              @click="fetchLogs(true)"
-            >
-              <UIcon
-                :name="loading ? 'i-lucide-loader-circle' : 'i-lucide-history'"
-                :class="['size-3.5 shrink-0', loading ? 'animate-spin' : '']"
-              />
-              {{ t('logs.loadOlder') }}
-            </button>
-          </div>
-
-          <template v-if="filteredLogs.length > 0">
-            <article
-              v-for="(entry, index) in filteredLogs"
-              :key="entry.log.id"
-              :class="logRowClass(entry, index)"
-            >
-              <div
-                class="flex w-full min-w-0 flex-col gap-1 px-3 py-[0.65rem] leading-[1.6] md:flex-row md:items-start md:gap-2"
+              <span
+                class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle md:shrink-0 md:flex-nowrap"
               >
-                <span
-                  class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 align-middle md:shrink-0 md:flex-nowrap"
-                >
-                  <UTooltip :text="logTimeTitle(entry.log.datetime)">
-                    <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
-                      {{ logTimeLabel(entry.log.datetime) }}
-                    </span>
-                  </UTooltip>
-                  <UDropdownMenu
-                    :items="logMenuItems(entry.log)"
-                    :content="{ align: 'start' }"
-                    :modal="false"
-                  >
-                    <UButton
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      icon="i-lucide-ellipsis-vertical"
-                      trailing-icon="i-lucide-chevron-down"
-                      class="inline-flex h-5! align-[-0.2em] opacity-70 hover:opacity-100"
-                      :ui="{
-                        base: 'min-h-0 min-w-0',
-                        leadingIcon: 'size-3',
-                        trailingIcon: 'size-3',
-                      }"
-                    >
-                      <span class="text-[10px] font-medium">{{ t('common.actions') }}</span>
-                    </UButton>
-                  </UDropdownMenu>
-                  <span
-                    :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
-                    @click="openLogDetails(entry.log)"
-                  >
-                    <UIcon :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]" class="size-3" />
-                    {{ getLogLevel(entry.log.level) }}
+                <UTooltip :text="logTimeTitle(entry.log.datetime)">
+                  <span class="inline text-[11px] font-semibold text-toned cursor-pointer">
+                    {{ logTimeLabel(entry.log.datetime) }}
                   </span>
-                  <span
-                    v-if="entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)"
-                    :title="entry.log.logger"
-                    class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
-                    >[{{ entry.log.logger }}]</span
-                  >
-                </span>
-
-                <button
-                  type="button"
-                  class="block min-w-0 flex-1 cursor-pointer text-start"
-                  :aria-expanded="expandedRows.has(entry.log.id) || textWrap"
-                  @click="toggleRow(entry.log.id)"
+                </UTooltip>
+                <UDropdownMenu
+                  :items="logMenuItems(entry.log)"
+                  :content="{ align: 'start' }"
+                  :modal="false"
                 >
-                  <span :class="messageClass(entry.log.id)"
-                    >{{ entry.log.message
-                    }}<span v-if="exceptionSummary(entry.log)" class="text-error/90">
-                      : {{ exceptionSummary(entry.log) }}</span
-                    ></span
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    icon="i-lucide-ellipsis-vertical"
+                    trailing-icon="i-lucide-chevron-down"
+                    class="inline-flex h-5! align-[-0.2em] opacity-70 hover:opacity-100"
+                    :ui="{
+                      base: 'min-h-0 min-w-0',
+                      leadingIcon: 'size-3',
+                      trailingIcon: 'size-3',
+                    }"
                   >
-                </button>
-              </div>
-            </article>
+                    <span class="text-[10px] font-medium">{{ t('common.actions') }}</span>
+                  </UButton>
+                </UDropdownMenu>
+                <span
+                  :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
+                  @click="openLogDetails(entry.log)"
+                >
+                  <UIcon :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]" class="size-3" />
+                  {{ getLogLevel(entry.log.level) }}
+                </span>
+                <span
+                  v-if="entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)"
+                  :title="entry.log.logger"
+                  class="inline-block max-w-[46vw] truncate align-middle text-[11px] font-semibold text-toned sm:max-w-104"
+                  >[{{ entry.log.logger }}]</span
+                >
+              </span>
+
+              <button
+                type="button"
+                class="block min-w-0 flex-1 cursor-pointer text-start"
+                :aria-expanded="expandedRows.has(entry.log.id) || textWrap"
+                @click="toggleRow(entry.log.id)"
+              >
+                <span :class="messageClass(entry.log.id)"
+                  >{{ entry.log.message
+                  }}<span v-if="exceptionSummary(entry.log)" class="text-error/90">
+                    : {{ exceptionSummary(entry.log) }}</span
+                  ></span
+                >
+              </button>
+            </div>
+          </article>
+        </template>
+
+        <div
+          v-else
+          class="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 py-8 text-center font-sans"
+        >
+          <template v-if="loading">
+            <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-toned" />
+            <div class="space-y-1">
+              <p class="text-sm font-medium text-default">{{ t('logs.loadingLogs') }}</p>
+              <p class="text-sm text-toned">{{ t('logs.connectingStream') }}</p>
+            </div>
           </template>
 
-          <div
-            v-else
-            class="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 py-8 text-center font-sans"
-          >
-            <template v-if="loading">
-              <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-toned" />
-              <div class="space-y-1">
-                <p class="text-sm font-medium text-default">{{ t('logs.loadingLogs') }}</p>
-                <p class="text-sm text-toned">{{ t('logs.connectingStream') }}</p>
-              </div>
-            </template>
+          <template v-else-if="hasActiveFilter">
+            <UIcon name="i-lucide-filter-x" class="size-6 text-toned" />
+            <div class="space-y-1">
+              <p class="text-sm font-medium text-default">{{ t('logs.emptyFilter') }}</p>
+              <p class="text-sm text-toned">{{ t('logs.emptyFilterDesc') }}</p>
+            </div>
+          </template>
 
-            <template v-else-if="hasActiveFilter">
-              <UIcon name="i-lucide-filter-x" class="size-6 text-toned" />
-              <div class="space-y-1">
-                <p class="text-sm font-medium text-default">{{ t('logs.emptyFilter') }}</p>
-                <p class="text-sm text-toned">{{ t('logs.emptyFilterDesc') }}</p>
-              </div>
-            </template>
-
-            <template v-else>
-              <UIcon name="i-lucide-circle-off" class="size-6 text-toned" />
-              <div class="space-y-1">
-                <p class="text-sm font-medium text-default">{{ t('logs.emptyLines') }}</p>
-                <p class="text-sm text-toned">{{ t('logs.emptyLinesDesc') }}</p>
-              </div>
-            </template>
-          </div>
+          <template v-else>
+            <UIcon name="i-lucide-circle-off" class="size-6 text-toned" />
+            <div class="space-y-1">
+              <p class="text-sm font-medium text-default">{{ t('logs.emptyLines') }}</p>
+              <p class="text-sm text-toned">{{ t('logs.emptyLinesDesc') }}</p>
+            </div>
+          </template>
         </div>
       </div>
     </div>
