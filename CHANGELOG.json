@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "e5de247d0fddc7d44424db5b5f0a6390cc63d651",
-    "date": "2026-08-31T17:10:25+00:00",
+    "full_sha": "dca35adfff0baabda1c34174e8ab20f31acf22f8",
+    "date": "2026-09-05T17:24:15+00:00",
     "commits": [
+      {
+        "sha": "dca35adf",
+        "full_sha": "dca35adfff0baabda1c34174e8ab20f31acf22f8",
+        "message": "chore: update dependancies",
+        "author": "arabcoders",
+        "date": "2026-09-05T17:24:15+00:00"
+      },
+      {
+        "sha": "def2009e",
+        "full_sha": "def2009e5644ae760ffed446ffcaa9158d813f12",
+        "message": "fix: missing thumbnail/runtime for tv maker. Closes #676",
+        "author": "arabcoders",
+        "date": "2026-09-05T17:08:48+00:00"
+      },
       {
         "sha": "e5de247d",
         "full_sha": "e5de247d0fddc7d44424db5b5f0a6390cc63d651",
