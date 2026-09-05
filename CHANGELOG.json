@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "dca35adfff0baabda1c34174e8ab20f31acf22f8",
-    "date": "2026-09-05T17:24:15+00:00",
+    "full_sha": "c9da0f2face7a32a22db02b957a418fa57ed3752",
+    "date": "2026-09-05T19:26:31+00:00",
     "commits": [
+      {
+        "sha": "c9da0f2f",
+        "full_sha": "c9da0f2face7a32a22db02b957a418fa57ed3752",
+        "message": "feat: ios shortcut helper for direct download.",
+        "author": "arabcoders",
+        "date": "2026-09-05T19:26:31+00:00"
+      },
       {
         "sha": "dca35adf",
         "full_sha": "dca35adfff0baabda1c34174e8ab20f31acf22f8",
