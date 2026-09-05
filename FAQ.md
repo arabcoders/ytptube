@@ -47,6 +47,7 @@ additional application settings.
 | YTP_ACCESS_LOG                  | Whether to log access to the web server                             | `true`                |
 | YTP_DEBUG                       | Whether to turn on debug mode                                       | `false`               |
 | YTP_DEBUGPY_PORT                | The port to use for the debugpy debugger                            | `5678`                |
+| YTP_DEBUGPY_HOST                | The host to use for the debugpy debugger                            | `0.0.0.0`             |
 | YTP_EXTRACT_INFO_TIMEOUT        | The timeout for extracting video information                        | `70`                  |
 | YTP_EXTRACT_INFO_KEEP_ALIVE     | Keep extract info worker processes alive between requests           | `false`               |
 | YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |

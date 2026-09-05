@@ -37,6 +37,10 @@ Reports that only describe the following behavior will be closed:
   or `--netrc`. yt-dlp is not sandboxed and can execute arbitrary commands.
 - YTPTube does not sandbox outbound network access. Authenticated administrators can cause requests to internal services,
 including through redirects or yt-dlp behavior or even via dns rebinding.
+- Intentionally enabling the debugger and exposing it publicly. The debugger is intended for local development and 
+  should not be exposed to the public. The container intentionally does not expose the debugger port, and native builds 
+  listen on loopback address by default.
+
 
 A report about these areas must demonstrate a boundary bypass, such as access without valid authentication while auth is
 enabled.

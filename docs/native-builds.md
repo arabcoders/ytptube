@@ -55,6 +55,7 @@ Native builds use these defaults:
 - `YTP_CORS_ORIGINS=` is empty, so browser API requests are limited to the same origin.
 - `YTP_ACCESS_LOG=false` disables HTTP access logging.
 - `YTP_NO_BROWSER=false` opens the interface in the default browser after startup.
+- `YTP_DEBUGPY_HOST=127.0.0.1` in native builds the debugger listens on the loopback interface only.
 
 The configuration directory contains the database, logs, package overrides, and an optional `.env` file. Add persistent
 settings to `.env`, one per line:

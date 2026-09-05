@@ -42,6 +42,7 @@ def native_defaults() -> dict[str, Any]:
         "access_log": False,
         "disable_auth": True,
         "cors_origins": "",
+        "debugpy_host": "127.0.0.1",
     }
 
 
@@ -153,6 +154,9 @@ class Config(metaclass=Singleton):
 
     debugpy_port: int = 5678
     """The port to use for the debugpy server."""
+
+    debugpy_host: str = "0.0.0.0"
+    """The host to use for the debugpy server."""
 
     extract_info_timeout: int = 70
     """The timeout to use for extracting video information."""
@@ -532,18 +536,19 @@ class Config(metaclass=Singleton):
             try:
                 import debugpy
 
-                debugpy.listen(("0.0.0.0", self.debugpy_port), in_process_debug_adapter=True)
-                LOG.info(
-                    "Starting debugpy server on '0.0.0.0:%s'.",
+                debugpy.listen((self.debugpy_host, self.debugpy_port), in_process_debug_adapter=True)
+                LOG.warning(
+                    "Debugpy started on '%s:%s'. insecure debugger allows remote code execution, use only in a secure environment.",
+                    self.debugpy_host,
                     self.debugpy_port,
-                    extra={"host": "0.0.0.0", "port": self.debugpy_port},
+                    extra={"host": self.debugpy_host, "port": self.debugpy_port},
                 )
             except ImportError:
                 LOG.error("debugpy package not found; install it with 'uv sync'.")
             except Exception as e:
                 LOG.exception(
                     "Failed to start debugpy server.",
-                    extra={"host": "0.0.0.0", "port": self.debugpy_port, "exception_type": type(e).__name__},
+                    extra={"host": self.debugpy_host, "port": self.debugpy_port, "exception_type": type(e).__name__},
                 )
 
         if (Path(self.config_path) / "ytdlp.cli").exists():

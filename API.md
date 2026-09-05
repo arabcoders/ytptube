@@ -32,6 +32,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/yt-dlp/convert](#post-apiyt-dlpconvert)
     - [POST /api/yt-dlp/command/](#post-apiyt-dlpcommand)
     - [GET /api/yt-dlp/url/info](#get-apiyt-dlpurlinfo)
+    - [GET /api/yt-dlp/shortcut/info](#get-apiyt-dlpshortcutinfo)
+    - [GET /api/yt-dlp/shortcut/download/{token}](#get-apiyt-dlpshortcutdownloadtoken)
     - [GET /api/history/add](#get-apihistoryadd)
     - [POST /api/history](#post-apihistory)
     - [DELETE /api/history](#delete-apihistory)
@@ -663,6 +665,73 @@ or an error:
 ```
 - If the URL is invalid or missing, returns `400 Bad Request`.
 - If the preset is specified and not found, returns `404 Not Found`.
+
+---
+
+### GET /api/yt-dlp/shortcut/info
+**Purpose**: Extracts fresh metadata and prepares one automatic `best` single-file download.
+
+**Query Parameters**:
+- `url=<source-url>` (required): URL to extract.
+- `preset=<preset-name>` (optional): Preset used for cookies, and proxy configuration.
+
+**Response**:
+```json
+{
+  "id": "abc123",
+  "title": "Example",
+  "format": "18 - 640x360 (360p)",
+  "format_id": "18",
+  "ext": "mp4",
+  "format_note": "360p",
+  "width": 640,
+  "height": 360,
+  "resolution": "640x360",
+  "duration": 123,
+  "media_type": "video+audio",
+  "vcodec": "avc1.42001E",
+  "acodec": "mp4a.40.2",
+  "filename": "Example.mp4",
+  "filesize": 48234567,
+  "download_url": "/api/yt-dlp/shortcut/download/token"
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if the URL is missing or invalid, the source is a playlist or live item, or yt-dlp does not select a directly downloadable HTTP(S) format.
+- `404 Not Found` if the preset does not exist.
+- `500 Internal Server Error` if metadata extraction fails unexpectedly.
+
+**Notes**:
+- The endpoint always uses yt-dlp's `best` single-file selection. Users do not select a format.
+- Preset format and output rules are ignored. Presets contribute only access, network, and extraction settings.
+- HLS/DASH manifests and fragmented formats are not supported.
+- The response omits unavailable metadata fields.
+- The download token expires after 6 hours and is not persisted.
+
+---
+
+### GET /api/yt-dlp/shortcut/download/{token}
+**Purpose**: Stream the format prepared by `GET /api/yt-dlp/shortcut/info` through YTPTube.
+
+**Path Parameter**:
+- `token`: Token returned in the shortcut info response's `download_url`.
+
+**Request Headers**:
+- `Range` (optional): One byte range in the form `bytes=start-end`, `bytes=start-`, or `bytes=-suffix`.
+
+**Response**:
+- `200 OK` with the complete media stream.
+- `206 Partial Content` with the requested byte range.
+- The response includes `Content-Type`, `Content-Disposition: attachment`, `Cache-Control: no-store`, and available upstream range and length headers.
+
+**Error Responses**:
+- `400 Bad Request` if the token is invalid or expired, its cached target is invalid, or the `Range` header is malformed, multiple, reversed, or has a zero-length suffix.
+- `502 Bad Gateway` if the upstream media request fails or returns an unsupported status.
+
+**Notes**:
+- Responses are streamed without buffering the complete media file.
+- Preset and extractor headers, applicable cookies, and proxy settings are used for the upstream request.
 
 ---
 
