@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import inspect
 import sys
 import traceback
 from pathlib import Path
@@ -123,8 +124,7 @@ def run(argv: list[str]) -> int:
 
     try:
         func: Callable[[argparse.Namespace], None] = args.func
-        # Check if function is async
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             asyncio.run(func(args))
         else:
             func(args)
