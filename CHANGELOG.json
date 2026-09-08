@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "c9da0f2face7a32a22db02b957a418fa57ed3752",
-    "date": "2026-09-05T19:26:31+00:00",
+    "full_sha": "62e11c39db94067e9dd0ea81e2c30ace4600dee2",
+    "date": "2026-09-08T06:34:53+00:00",
     "commits": [
+      {
+        "sha": "62e11c39",
+        "full_sha": "62e11c39db94067e9dd0ea81e2c30ace4600dee2",
+        "message": "chore: add gihooks",
+        "author": "arabcoders",
+        "date": "2026-09-08T06:34:53+00:00"
+      },
+      {
+        "sha": "5f438d03",
+        "full_sha": "5f438d03c544aecae17cbbadb566d241b2b0b56d",
+        "message": "chore: update external packages",
+        "author": "arabcoders",
+        "date": "2026-09-08T06:13:56+00:00"
+      },
       {
         "sha": "c9da0f2f",
         "full_sha": "c9da0f2face7a32a22db02b957a418fa57ed3752",
