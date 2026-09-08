@@ -1,0 +1,112 @@
+#!/bin/sh
+set -eu
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 1
+
+PIDS_FILE=$(mktemp)
+trap 'rm -f "$PIDS_FILE"' EXIT
+
+export CI=1
+checks_started=0
+run_step() {
+  local label="$1"
+  shift
+  checks_started=1
+  echo "Starting $label..." >&2
+  (
+    if ! "$@"; then
+      echo "[$label] failed. Commit aborted." >&2
+      exit 1
+    else
+      echo "[$label] passed." >&2
+    fi
+  ) &
+  echo $! >>"$PIDS_FILE"
+}
+
+run_extra_dir() {
+  local scope="$1"
+  local dir="$2"
+  for step in "$dir"/*; do
+    [ -f "$step" ] && [ -x "$step" ] || continue
+    run_step "Extra ($scope): $(basename "$step")" "$step"
+  done
+}
+
+echo "Running pre-commit checks... ${REPO_ROOT}" >&2
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+python_changed=0
+frontend_changed=0
+
+while IFS= read -r path; do
+  [ -n "$path" ] || continue
+  case "$path" in
+    app/* | pyproject.toml | uv.lock | app.spec)
+      python_changed=1
+      ;;
+    .editorconfig)
+      python_changed=1
+      frontend_changed=1
+      ;;
+  esac
+  case "$path" in
+    ui/*)
+      frontend_changed=1
+      ;;
+  esac
+done <<EOF
+$staged_files
+EOF
+
+if [ "$frontend_changed" -eq 1 ]; then
+  echo "Preparing frontend..." >&2
+  (
+    cd "$REPO_ROOT/ui" && NODE_ENV=development ./node_modules/.bin/nuxt prepare --envName=development
+  )
+  echo "Frontend preparation passed." >&2
+fi
+
+if [ "$python_changed" -eq 1 ]; then
+  run_step "Python: Formatter" uv run ruff format --check app/
+  run_step "Python: Linter" uv run ruff check app/
+  run_step "Python: TY Linter" uv run ty check app/
+  run_step "Python: Tests" uv run pytest app/ -q
+fi
+
+if [ "$frontend_changed" -eq 1 ]; then
+  run_step "Frontend: Formatter" bun --cwd=./ui format:check
+  run_step "Frontend: i18n" bun --cwd=./ui i18n:check
+  run_step "Frontend: Linter" bun --cwd=./ui lint
+  run_step "Frontend: Tests" bun --cwd=./ui test:ci
+  run_step "Frontend: TSC" bun --cwd=./ui lint:tsc
+fi
+
+extra_dir=$(git rev-parse --git-path hooks)/pre-commit.d
+run_extra_dir "Global" "$extra_dir"
+if [ "$python_changed" -eq 1 ]; then
+  run_extra_dir "Backend" "$extra_dir/backend"
+fi
+if [ "$frontend_changed" -eq 1 ]; then
+  run_extra_dir "Frontend" "$extra_dir/frontend"
+fi
+
+if [ "$checks_started" -eq 0 ]; then
+  echo "No relevant checks for the staged files. Commit allowed."
+  exit 0
+fi
+
+fail=0
+while read -r pid; do
+  if ! wait "$pid"; then
+    fail=1
+  fi
+done <"$PIDS_FILE"
+
+if [ "$fail" -eq 1 ]; then
+  echo "One or more checks failed. Commit aborted." >&2
+  exit 1
+fi
+
+echo "All checks passed. Commit allowed."
+exit 0
