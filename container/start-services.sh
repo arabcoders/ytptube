@@ -34,7 +34,7 @@ trap 'wait_services; exit 0' TERM INT
   --allow-net \
   --allow-ffi=/opt/bgutil-provider/node_modules \
   --allow-read=/opt/bgutil-provider/node_modules \
-  /opt/bgutil-provider/src/main.ts &
+  /opt/bgutil-provider/src/main.ts --host 0.0.0.0 &
 pids+=("$!")
 
 "$@" &

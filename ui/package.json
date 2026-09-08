@@ -50,11 +50,11 @@
     "@parcel/watcher"
   ],
   "devDependencies": {
-    "@types/bun": "^1.4.0",
+    "@types/bun": "^1.4.1",
     "@types/node": "26.1.2",
     "@types/jsdom": "^28.0.3",
     "@typescript-eslint/parser": "^8.69.0",
-    "eslint": "^10.9.1",
+    "eslint": "^10.10.0",
     "jsdom": "^30.0.1",
     "oxfmt": "^0.62.0",
     "typescript": "^6.0.3",
