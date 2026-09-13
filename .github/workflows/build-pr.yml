@@ -12,6 +12,7 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/ISSUE_TEMPLATE/**"
+      - "webext/**"
 
 env:
   BUN_VERSION: latest

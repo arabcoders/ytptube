@@ -1,0 +1,203 @@
+{
+  "extension_name": {
+    "message": "YTPTube Extension"
+  },
+  "extension_description": {
+    "message": "Add URLs to a YTPTube instance"
+  },
+  "action_title": {
+    "message": "Add URL to YTPTube"
+  },
+  "popup_kicker": {
+    "message": "YTPTube / Quick add"
+  },
+  "popup_title": {
+    "message": "Send a URL"
+  },
+  "theme_button_system": {
+    "message": "Use dark mode"
+  },
+  "theme_button": {
+    "message": "Theme: $1"
+  },
+  "theme_title": {
+    "message": "Theme is set to $1. Click to change."
+  },
+  "theme_dark": {
+    "message": "Dark"
+  },
+  "theme_light": {
+    "message": "Light"
+  },
+  "theme_system": {
+    "message": "System"
+  },
+  "preset_label": {
+    "message": "Preset"
+  },
+  "custom_only": {
+    "message": "Custom only"
+  },
+  "show_all": {
+    "message": "Show all"
+  },
+  "refresh": {
+    "message": "Refresh"
+  },
+  "preset_help": {
+    "message": "Select the preset to use for this URL."
+  },
+  "url_label": {
+    "message": "URL"
+  },
+  "url_placeholder": {
+    "message": "https://.."
+  },
+  "url_help": {
+    "message": "The URL to add to your download queue."
+  },
+  "send_to_ytptube": {
+    "message": "Send to YTPTube"
+  },
+  "options": {
+    "message": "Options"
+  },
+  "url_required": {
+    "message": "URL is required."
+  },
+  "request_success": {
+    "message": "Request sent successfully!"
+  },
+  "request_failed": {
+    "message": "Failed to send request."
+  },
+  "error_sending": {
+    "message": "Error sending request."
+  },
+  "presets_refreshed": {
+    "message": "Presets refreshed."
+  },
+  "unable_refresh": {
+    "message": "Unable to refresh presets."
+  },
+  "custom_presets": {
+    "message": "Custom presets"
+  },
+  "default_presets": {
+    "message": "Default presets"
+  },
+  "options_menu_title": {
+    "message": "Options menu for YTPTube Extension"
+  },
+  "options_kicker": {
+    "message": "YTPTube / Extension"
+  },
+  "connection_options": {
+    "message": "Connection options"
+  },
+  "instance_url_label": {
+    "message": "YTPTube URL"
+  },
+  "instance_url_placeholder": {
+    "message": "https://ytptube.example.org"
+  },
+  "instance_url_help": {
+    "message": "URL to your YTPTube instance."
+  },
+  "authentication": {
+    "message": "Authentication"
+  },
+  "auth_placeholder": {
+    "message": "ytp_... or username:password"
+  },
+  "show_auth": {
+    "message": "Show authentication value"
+  },
+  "hide_auth": {
+    "message": "Hide authentication value"
+  },
+  "show": {
+    "message": "Show"
+  },
+  "hide": {
+    "message": "Hide"
+  },
+  "auth_help": {
+    "message": "API keys are recommended. Leave empty when authentication is disabled."
+  },
+  "show_random_background": {
+    "message": "Show random background"
+  },
+  "background_help": {
+    "message": "Use the background supplied by YTPTube behind the popup shell."
+  },
+  "background_visibility": {
+    "message": "Background visibility"
+  },
+  "background_opacity_help": {
+    "message": "Controls how much of the background shows through the shell."
+  },
+  "show_context_menu": {
+    "message": "Show context menu"
+  },
+  "context_menu_help": {
+    "message": "Offer Send to YTPTube on supported links."
+  },
+  "save_options": {
+    "message": "Save options"
+  },
+  "test_connection": {
+    "message": "Test connection"
+  },
+  "valid_instance_url": {
+    "message": "Please enter a valid YTPTube instance URL."
+  },
+  "permission_denied": {
+    "message": "Permission to access the YTPTube instance was denied."
+  },
+  "connection_success": {
+    "message": "Connection successful."
+  },
+  "setup_required": {
+    "message": "Authentication setup is required on the YTPTube server."
+  },
+  "invalid_credentials": {
+    "message": "Invalid or missing credentials."
+  },
+  "auth_check_failed": {
+    "message": "Authentication check failed."
+  },
+  "error_prefix": {
+    "message": "Error: $1"
+  },
+  "options_saved": {
+    "message": "Options saved."
+  },
+  "unable_save": {
+    "message": "Unable to save options: $1"
+  },
+  "auth_parse_error": {
+    "message": "Authentication must be an API key starting with ytp_ or username:password."
+  },
+  "context_menu_title": {
+    "message": "Send to YTPTube"
+  },
+  "context_menu_preset": {
+    "message": "Send to YTPTube ($1)"
+  },
+  "instance_not_configured": {
+    "message": "YTPTube instance URL is not configured."
+  },
+  "request_failed_status": {
+    "message": "Failed to send request. '$1: $2'."
+  },
+  "request_failed_error": {
+    "message": "Failed to send request. '$1'."
+  },
+  "no_link_url": {
+    "message": "No link URL found."
+  },
+  "no_url": {
+    "message": "No URL found."
+  }
+}

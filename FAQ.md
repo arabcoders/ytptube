@@ -148,7 +148,7 @@ Set `url`, `preset`, and `apiKey` for your YTPTube instance. Create the API key 
 
 ## Browser stores
 
-- For Firefox via [Firefox Store](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
+- For Firefox desktop and Android via [Firefox Store](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
 - For Chrome/Chromium Browsers via [Chrome Store](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
 
 ## iOS Shortcuts

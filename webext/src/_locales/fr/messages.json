@@ -1,0 +1,203 @@
+{
+  "extension_name": {
+    "message": "Extension YTPTube"
+  },
+  "extension_description": {
+    "message": "Ajouter des URL à une instance YTPTube"
+  },
+  "action_title": {
+    "message": "Ajouter une URL à YTPTube"
+  },
+  "popup_kicker": {
+    "message": "YTPTube / Ajout rapide"
+  },
+  "popup_title": {
+    "message": "Envoyer une URL"
+  },
+  "theme_button_system": {
+    "message": "Utiliser le mode sombre"
+  },
+  "theme_button": {
+    "message": "Thème : $1"
+  },
+  "theme_title": {
+    "message": "Le thème est réglé sur $1. Cliquez pour le modifier."
+  },
+  "theme_dark": {
+    "message": "Sombre"
+  },
+  "theme_light": {
+    "message": "Clair"
+  },
+  "theme_system": {
+    "message": "Système"
+  },
+  "preset_label": {
+    "message": "Préréglage"
+  },
+  "custom_only": {
+    "message": "Personnalisés uniquement"
+  },
+  "show_all": {
+    "message": "Tout afficher"
+  },
+  "refresh": {
+    "message": "Actualiser"
+  },
+  "preset_help": {
+    "message": "Sélectionnez le préréglage à utiliser pour cette URL."
+  },
+  "url_label": {
+    "message": "URL"
+  },
+  "url_placeholder": {
+    "message": "https://.."
+  },
+  "url_help": {
+    "message": "URL à ajouter à votre file de téléchargement."
+  },
+  "send_to_ytptube": {
+    "message": "Envoyer à YTPTube"
+  },
+  "options": {
+    "message": "Options"
+  },
+  "url_required": {
+    "message": "L’URL est requise."
+  },
+  "request_success": {
+    "message": "Requête envoyée avec succès !"
+  },
+  "request_failed": {
+    "message": "Échec de l’envoi de la requête."
+  },
+  "error_sending": {
+    "message": "Erreur lors de l’envoi de la requête."
+  },
+  "presets_refreshed": {
+    "message": "Préréglages actualisés."
+  },
+  "unable_refresh": {
+    "message": "Impossible d’actualiser les préréglages."
+  },
+  "custom_presets": {
+    "message": "Préréglages personnalisés"
+  },
+  "default_presets": {
+    "message": "Préréglages par défaut"
+  },
+  "options_menu_title": {
+    "message": "Menu des options de l’extension YTPTube"
+  },
+  "options_kicker": {
+    "message": "YTPTube / Extension"
+  },
+  "connection_options": {
+    "message": "Options de connexion"
+  },
+  "instance_url_label": {
+    "message": "URL YTPTube"
+  },
+  "instance_url_placeholder": {
+    "message": "https://ytptube.example.org"
+  },
+  "instance_url_help": {
+    "message": "URL de votre instance YTPTube."
+  },
+  "authentication": {
+    "message": "Authentification"
+  },
+  "auth_placeholder": {
+    "message": "ytp_... ou utilisateur:mot de passe"
+  },
+  "show_auth": {
+    "message": "Afficher la valeur d’authentification"
+  },
+  "show": {
+    "message": "Afficher"
+  },
+  "hide": {
+    "message": "Masquer"
+  },
+  "auth_help": {
+    "message": "Les clés API sont recommandées. Laissez vide si l’authentification est désactivée."
+  },
+  "show_random_background": {
+    "message": "Afficher un arrière-plan aléatoire"
+  },
+  "background_help": {
+    "message": "Utiliser l’arrière-plan fourni par YTPTube derrière la fenêtre."
+  },
+  "background_visibility": {
+    "message": "Visibilité de l’arrière-plan"
+  },
+  "background_opacity_help": {
+    "message": "Contrôle la visibilité de l’arrière-plan à travers la fenêtre."
+  },
+  "show_context_menu": {
+    "message": "Afficher le menu contextuel"
+  },
+  "context_menu_help": {
+    "message": "Proposer l’envoi à YTPTube pour les liens compatibles."
+  },
+  "save_options": {
+    "message": "Enregistrer les options"
+  },
+  "test_connection": {
+    "message": "Tester la connexion"
+  },
+  "valid_instance_url": {
+    "message": "Veuillez saisir une URL d’instance YTPTube valide."
+  },
+  "permission_denied": {
+    "message": "L’autorisation d’accéder à l’instance YTPTube a été refusée."
+  },
+  "connection_success": {
+    "message": "Connexion réussie."
+  },
+  "setup_required": {
+    "message": "La configuration de l’authentification est requise sur le serveur YTPTube."
+  },
+  "invalid_credentials": {
+    "message": "Identifiants invalides ou manquants."
+  },
+  "auth_check_failed": {
+    "message": "Échec de la vérification de l’authentification."
+  },
+  "error_prefix": {
+    "message": "Erreur : $1"
+  },
+  "options_saved": {
+    "message": "Options enregistrées."
+  },
+  "unable_save": {
+    "message": "Impossible d’enregistrer les options : $1"
+  },
+  "auth_parse_error": {
+    "message": "L’authentification doit être une clé API commençant par ytp_ ou au format utilisateur:mot de passe."
+  },
+  "context_menu_title": {
+    "message": "Envoyer à YTPTube"
+  },
+  "context_menu_preset": {
+    "message": "Envoyer à YTPTube ($1)"
+  },
+  "instance_not_configured": {
+    "message": "L’URL de l’instance YTPTube n’est pas configurée."
+  },
+  "request_failed_status": {
+    "message": "Échec de l’envoi. « $1 : $2 »."
+  },
+  "request_failed_error": {
+    "message": "Échec de l’envoi. « $1 »."
+  },
+  "no_link_url": {
+    "message": "Aucune URL de lien trouvée."
+  },
+  "no_url": {
+    "message": "Aucune URL trouvée."
+  },
+  "hide_auth": {
+    "message": "Masquer la valeur d’authentification"
+  }
+}

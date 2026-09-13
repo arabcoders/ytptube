@@ -37,7 +37,7 @@ The interface is available in English, العربية, Français, 中文, and �
 - Reusable default presets, including NFO Maker and media-server presets
 - Conditions that apply yt-dlp options from extracted metadata
 - Notifications for selected events through Apprise or direct HTTP webhooks
-- [Firefox](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/) and [Chrome/Chromium](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil) extensions
+- Browser extension ([source](webext/)) for [Firefox desktop and Android](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/) and [Chrome/Chromium](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
 - [iOS Shortcuts](docs/features.md#send-links-to-ytptube), a [bookmarklet](FAQ.md#simple-bookmarklet), and an [HTTP API](API.md)
 - A file browser and built-in player with external sidecar subtitle support and optional file action controls
 - Kodi-style TV and movie NFO sidecars, `.info.json` metadata, artwork, and media library naming

@@ -1,0 +1,203 @@
+{
+  "extension_name": {
+    "message": "YTPTube 扩展"
+  },
+  "extension_description": {
+    "message": "将 URL 添加到 YTPTube 实例"
+  },
+  "action_title": {
+    "message": "将 URL 添加到 YTPTube"
+  },
+  "popup_kicker": {
+    "message": "YTPTube / 快速添加"
+  },
+  "popup_title": {
+    "message": "发送 URL"
+  },
+  "theme_button_system": {
+    "message": "使用深色模式"
+  },
+  "theme_button": {
+    "message": "主题：$1"
+  },
+  "theme_title": {
+    "message": "主题已设为 $1。点击即可更改。"
+  },
+  "theme_dark": {
+    "message": "深色"
+  },
+  "theme_light": {
+    "message": "浅色"
+  },
+  "theme_system": {
+    "message": "跟随系统"
+  },
+  "preset_label": {
+    "message": "预设"
+  },
+  "custom_only": {
+    "message": "仅自定义"
+  },
+  "show_all": {
+    "message": "显示全部"
+  },
+  "refresh": {
+    "message": "刷新"
+  },
+  "preset_help": {
+    "message": "选择用于此 URL 的预设。"
+  },
+  "url_label": {
+    "message": "URL"
+  },
+  "url_placeholder": {
+    "message": "https://.."
+  },
+  "url_help": {
+    "message": "要添加到下载队列的 URL。"
+  },
+  "send_to_ytptube": {
+    "message": "发送到 YTPTube"
+  },
+  "options": {
+    "message": "选项"
+  },
+  "url_required": {
+    "message": "URL 为必填项。"
+  },
+  "request_success": {
+    "message": "请求发送成功！"
+  },
+  "request_failed": {
+    "message": "发送请求失败。"
+  },
+  "error_sending": {
+    "message": "发送请求时出错。"
+  },
+  "presets_refreshed": {
+    "message": "预设已刷新。"
+  },
+  "unable_refresh": {
+    "message": "无法刷新预设。"
+  },
+  "custom_presets": {
+    "message": "自定义预设"
+  },
+  "default_presets": {
+    "message": "默认预设"
+  },
+  "options_menu_title": {
+    "message": "YTPTube 扩展选项菜单"
+  },
+  "options_kicker": {
+    "message": "YTPTube / 扩展"
+  },
+  "connection_options": {
+    "message": "连接选项"
+  },
+  "instance_url_label": {
+    "message": "YTPTube URL"
+  },
+  "instance_url_placeholder": {
+    "message": "https://ytptube.example.org"
+  },
+  "instance_url_help": {
+    "message": "您的 YTPTube 实例 URL。"
+  },
+  "authentication": {
+    "message": "身份验证"
+  },
+  "auth_placeholder": {
+    "message": "ytp_... 或 用户名:密码"
+  },
+  "show_auth": {
+    "message": "显示身份验证值"
+  },
+  "show": {
+    "message": "显示"
+  },
+  "hide": {
+    "message": "隐藏"
+  },
+  "auth_help": {
+    "message": "建议使用 API 密钥。禁用身份验证时请留空。"
+  },
+  "show_random_background": {
+    "message": "显示随机背景"
+  },
+  "background_help": {
+    "message": "在弹窗背景中使用 YTPTube 提供的背景。"
+  },
+  "background_visibility": {
+    "message": "背景可见性"
+  },
+  "background_opacity_help": {
+    "message": "控制背景透过窗口显示的程度。"
+  },
+  "show_context_menu": {
+    "message": "显示上下文菜单"
+  },
+  "context_menu_help": {
+    "message": "为受支持的链接提供发送到 YTPTube 的选项。"
+  },
+  "save_options": {
+    "message": "保存选项"
+  },
+  "test_connection": {
+    "message": "测试连接"
+  },
+  "valid_instance_url": {
+    "message": "请输入有效的 YTPTube 实例 URL。"
+  },
+  "permission_denied": {
+    "message": "访问 YTPTube 实例的权限被拒绝。"
+  },
+  "connection_success": {
+    "message": "连接成功。"
+  },
+  "setup_required": {
+    "message": "需要在 YTPTube 服务器上设置身份验证。"
+  },
+  "invalid_credentials": {
+    "message": "凭据无效或缺失。"
+  },
+  "auth_check_failed": {
+    "message": "身份验证检查失败。"
+  },
+  "error_prefix": {
+    "message": "错误：$1"
+  },
+  "options_saved": {
+    "message": "选项已保存。"
+  },
+  "unable_save": {
+    "message": "无法保存选项：$1"
+  },
+  "auth_parse_error": {
+    "message": "身份验证必须是以 ytp_ 开头的 API 密钥，或 用户名:密码。"
+  },
+  "context_menu_title": {
+    "message": "发送到 YTPTube"
+  },
+  "context_menu_preset": {
+    "message": "发送到 YTPTube（$1）"
+  },
+  "instance_not_configured": {
+    "message": "尚未配置 YTPTube 实例 URL。"
+  },
+  "request_failed_status": {
+    "message": "发送请求失败。'$1: $2'。"
+  },
+  "request_failed_error": {
+    "message": "发送请求失败。'$1'。"
+  },
+  "no_link_url": {
+    "message": "未找到链接 URL。"
+  },
+  "no_url": {
+    "message": "未找到 URL。"
+  },
+  "hide_auth": {
+    "message": "隐藏身份验证值"
+  }
+}

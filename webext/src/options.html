@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title data-i18n="options_menu_title">Options menu for YTPTube Extension</title>
+    <link rel="stylesheet" href="css/ytp.css"/>
+</head>
+
+<body class="ytp-shell ytp-options-shell">
+<main class="ytp-shell-surface">
+    <header class="ytp-heading">
+        <span class="ytp-icon"><img src="icons/icon-48.png" alt=""></span>
+        <div>
+            <p class="ytp-kicker" data-i18n="options_kicker">YTPTube / Extension</p>
+            <h1 data-i18n="connection_options">Connection options</h1>
+        </div>
+        <button class="ytp-theme-toggle" type="button" id="theme-toggle" data-i18n="theme_button_system">Use dark mode</button>
+    </header>
+    <form id="ytptube_options">
+        <section class="ytp-section">
+            <div class="ytp-field">
+                <label for="instance_url" data-i18n="instance_url_label">YTPTube URL</label>
+                <input type="text" class="ytp-control" id="instance_url" data-i18n-placeholder="instance_url_placeholder" placeholder="https://ytptube.example.org">
+                <span class="ytp-help" data-i18n="instance_url_help">URL to your YTPTube instance.</span>
+            </div>
+            <div class="ytp-field">
+                <label for="auth" data-i18n="authentication">Authentication</label>
+                <div class="ytp-input-action">
+                    <input type="password" class="ytp-control" id="auth" data-i18n-placeholder="auth_placeholder" placeholder="ytp_... or username:password" autocomplete="off">
+                    <button class="ytp-button ytp-button-secondary" type="button" id="toggle_auth" aria-controls="auth" aria-pressed="false" data-i18n-aria-label="show_auth" data-i18n="show">Show</button>
+                </div>
+                <span class="ytp-help" data-i18n="auth_help">API keys are recommended. Leave empty when authentication is disabled.</span>
+            </div>
+        </section>
+        <section class="ytp-section ytp-settings-list">
+            <label class="ytp-check" for="showBackground">
+                <input type="checkbox" id="showBackground">
+                <span><strong data-i18n="show_random_background">Show random background</strong><small data-i18n="background_help">Use the background supplied by YTPTube behind the popup shell.</small></span>
+            </label>
+            <div class="ytp-range-field" id="backgroundOpacityField" hidden>
+                <label for="backgroundOpacity"><strong data-i18n="background_visibility">Background visibility</strong><output id="backgroundOpacityValue">5%</output></label>
+                <input id="backgroundOpacity" type="range" min="0" max="50" step="1" value="5">
+                <small data-i18n="background_opacity_help">Controls how much of the background shows through the shell.</small>
+            </div>
+            <label class="ytp-check" for="showContextMenu">
+                <input type="checkbox" id="showContextMenu">
+                <span><strong data-i18n="show_context_menu">Show context menu</strong><small data-i18n="context_menu_help">Offer Send to YTPTube on supported links.</small></span>
+            </label>
+        </section>
+        <p id="error_msg" class="ytp-error"></p>
+        <div class="ytp-actions">
+            <button class="ytp-button ytp-button-primary" type="submit" data-i18n="save_options">Save options</button>
+            <button class="ytp-button ytp-button-secondary" type="button" id="test_config" data-i18n="test_connection">Test connection</button>
+        </div>
+    </form>
+</main>
+
+<script src="i18n.js"></script>
+<script src="theme.js"></script>
+<script src="auth.js"></script>
+<script src="fanart.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

@@ -154,7 +154,7 @@ and delivered through [Apprise](https://github.com/caronc/apprise) or direct HTT
 
 ## Send Links to YTPTube
 
-- [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
+- [Firefox desktop and Android extension](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
 - [Chrome and Chromium extension](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
 - [Add To YTPTube iOS Shortcut](https://www.icloud.com/shortcuts/6df61c97d97b4e539c9100999ba39dd4)
 - [YTPTube To Media iOS Shortcut](https://www.icloud.com/shortcuts/4dc579382f254635ad5785424055f173)

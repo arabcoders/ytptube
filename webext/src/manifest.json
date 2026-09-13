@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js",
+    "scripts": [
+      "i18n.js",
+      "auth.js",
+      "background.js"
+    ]
+  },
+  "name": "__MSG_extension_name__",
+  "default_locale": "en",
+  "version": "1.5.1",
+  "description": "__MSG_extension_description__",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "notifications"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "homepage_url": "https://github.com/arabcoders/ytptube",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "action": {
+    "default_title": "__MSG_action_title__",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ytptube@arabcoders.org",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
+}
