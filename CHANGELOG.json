@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "62e11c39db94067e9dd0ea81e2c30ace4600dee2",
-    "date": "2026-09-08T06:34:53+00:00",
+    "full_sha": "34ba935e3882957aa36cb7a135abf9178f54ac02",
+    "date": "2026-09-13T15:21:44+00:00",
     "commits": [
+      {
+        "sha": "34ba935e",
+        "full_sha": "34ba935e3882957aa36cb7a135abf9178f54ac02",
+        "message": "refactor: move webext inhouse",
+        "author": "arabcoders",
+        "date": "2026-09-13T15:21:44+00:00"
+      },
       {
         "sha": "62e11c39",
         "full_sha": "62e11c39db94067e9dd0ea81e2c30ace4600dee2",
