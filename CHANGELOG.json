@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "34ba935e3882957aa36cb7a135abf9178f54ac02",
-    "date": "2026-09-13T15:21:44+00:00",
+    "full_sha": "83d9e32e6660498aaae110d4bcd628165ee3d0a7",
+    "date": "2026-09-13T15:32:54+00:00",
     "commits": [
+      {
+        "sha": "83d9e32e",
+        "full_sha": "83d9e32e6660498aaae110d4bcd628165ee3d0a7",
+        "message": "feat: firefox android support for webext",
+        "author": "arabcoders",
+        "date": "2026-09-13T15:32:54+00:00"
+      },
       {
         "sha": "34ba935e",
         "full_sha": "34ba935e3882957aa36cb7a135abf9178f54ac02",
