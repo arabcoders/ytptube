@@ -1,8 +1,12 @@
 # CHANGELOG
 
+## 1.5.2 - 2026-09-13
+
+- **Added**: Support for Firefox on Android 142 and newer.
+- **Changed**: Firefox desktop now requires version 140 or newer.
+
 ## 1.5.1 - 2026-08-23
 
-- **Added**: Support for Firefox on Android.
 - **Fixed**: Saving options in Firefox no longer closes the browser window.
 
 ## 1.5.0 - 2026-08-21
