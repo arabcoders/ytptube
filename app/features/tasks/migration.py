@@ -117,6 +117,7 @@ class Migration(FeatureMigration):
                 auto_start=auto_start,
                 handler_enabled=handler_enabled,
                 enabled=enabled,
+                ignore_conditions=item.get("ignore_conditions", []),
             )
             return validated.model_dump()
         except Exception as e:

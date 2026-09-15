@@ -365,6 +365,27 @@ async def test_patch_url(repo, test_client) -> None:
 
 
 @pytest.mark.asyncio
+async def test_patch_ignores(repo, test_client) -> None:
+    item = await repo.create({"name": "Patch ignores", "url": "https://example.com/task", "timer": "0 0 * * *"})
+
+    async def handler(request):
+        return await router.tasks_patch(request, repo, Encoder(), _Notify(), _Handler(matched=True))
+
+    client = await test_client({"tasks_patch": handler})
+    response = await client.patch(
+        url_for("tasks_patch", id=str(item.id)),
+        json={"ignore_conditions": [12, " Named ", "12"]},
+    )
+
+    assert response.status == 200
+    payload = await response.json()
+    assert payload["ignore_conditions"] == ["12", "Named"]
+    refreshed = await repo.get(item.id)
+    assert refreshed is not None
+    assert refreshed.ignore_conditions == ["12", "Named"]
+
+
+@pytest.mark.asyncio
 async def test_patch_requires_timer_disabled(repo, test_client) -> None:
     item = await repo.create({"name": "Disabled Handler", "url": "https://example.com/c", "timer": "0 0 * * *"})
 

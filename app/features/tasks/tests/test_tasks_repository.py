@@ -4,6 +4,7 @@ import pytest
 import pytest_asyncio
 
 from app.features.tasks.repository import TasksRepository
+from app.features.tasks.schemas import Task, TaskPatch
 from app.library.sqlite_store import SqliteStore
 from app.tests.helpers import make_in_memory_db_path
 
@@ -27,6 +28,13 @@ async def repo():
 
 
 class TestTasksRepository:
+    def test_schema_normalizes_conditions(self):
+        task = Task(name="Task", url="https://example.com", ignore_conditions=[" a ", 2, "a", ""])
+        patch = TaskPatch(ignore_conditions=[3, " 3 "])
+
+        assert task.ignore_conditions == ["a", "2"]
+        assert patch.ignore_conditions == ["3"]
+
     @pytest.mark.asyncio
     async def test_create_task(self, repo):
         data = {
@@ -40,6 +48,7 @@ class TestTasksRepository:
             "auto_start": True,
             "handler_enabled": True,
             "enabled": True,
+            "ignore_conditions": ["123", "456"],
         }
 
         model = await repo.create(data)
@@ -55,6 +64,7 @@ class TestTasksRepository:
         assert model.auto_start is True, "Should store auto_start correctly"
         assert model.handler_enabled is True, "Should store handler_enabled correctly"
         assert model.enabled is True, "Should store enabled correctly"
+        assert model.ignore_conditions == ["123", "456"], "Should store ignore conditions"
         assert model.created_at is not None, "Should have created_at timestamp"
         assert model.updated_at is not None, "Should have updated_at timestamp"
 
@@ -77,6 +87,7 @@ class TestTasksRepository:
         assert model.auto_start is True, "Should default auto_start to True"
         assert model.handler_enabled is True, "Should default handler_enabled to True"
         assert model.enabled is True, "Should default enabled to True"
+        assert model.ignore_conditions == [], "Should default ignore conditions to empty"
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
@@ -132,6 +143,7 @@ class TestTasksRepository:
                 "name": "Updated Name",
                 "preset": "audio",
                 "enabled": False,
+                "ignore_conditions": ["1", "2"],
             },
         )
 
@@ -139,6 +151,7 @@ class TestTasksRepository:
         assert updated.preset == "audio", "Should update preset"
         assert updated.enabled is False, "Should update enabled"
         assert updated.url == "https://example.com", "Should preserve unchanged URL"
+        assert updated.ignore_conditions == ["1", "2"], "Should update ignore conditions"
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_raises(self, repo):

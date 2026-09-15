@@ -441,7 +441,12 @@ class TaskHandle:
                 "template": task.template or "",
                 "cli": task.cli or "",
                 "auto_start": task.auto_start,
-                "extras": {"source_name": task.name, "source_id": task.id, "source_handler": handler.__name__},
+                "extras": {
+                    "source_name": task.name,
+                    "source_id": task.id,
+                    "source_handler": handler.__name__,
+                    "ignore_conditions": task.ignore_conditions,
+                },
             }
         )
 

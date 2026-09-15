@@ -4,15 +4,22 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from app.features.downloads.runtime.queue_manager import DownloadQueue
-from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskResult
+from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.definitions.service import TaskHandle
 from app.features.tasks.models import TaskModel
 from app.features.tasks.service import Tasks
 from app.library.Events import EventBus, Events
+from app.library.Services import Services
 
 
 def _task() -> HandleTask:
-    return HandleTask(id=7, name="Example", url="https://example.com", preset="default")
+    return HandleTask(
+        id=7,
+        name="Example",
+        url="https://example.com",
+        preset="default",
+        ignore_conditions=["12", "Named"],
+    )
 
 
 @pytest.mark.asyncio
@@ -100,6 +107,7 @@ def _scheduled_task() -> TaskModel:
         folder="",
         template="",
         cli="",
+        ignore_conditions=["12", "Named"],
         auto_start=True,
         enabled=True,
     )
@@ -135,5 +143,33 @@ async def test_runner_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
     await service._runner(_scheduled_task())
 
+    item = queue.add.await_args.kwargs["item"]
+    assert item.extras["ignore_conditions"] == ["12", "Named"]
     emitted = [call.args[0] for call in events.emit.call_args_list]
     assert emitted == [Events.TASK_FINISHED]
+
+
+@pytest.mark.asyncio
+async def test_handler_ignores(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = TaskHandle.__new__(TaskHandle)
+    service._config = MagicMock(default_preset="default")
+    service._queued = {}
+    service._failure_count = {}
+    queue = SimpleNamespace(
+        queue=SimpleNamespace(exists=AsyncMock(return_value=False)),
+        done=SimpleNamespace(get=AsyncMock(side_effect=KeyError)),
+    )
+    events = MagicMock()
+    services = MagicMock()
+    services.handle_async = AsyncMock(
+        return_value=TaskResult(items=[TaskItem(url="https://example.com/video", archive_id="video 1")])
+    )
+    services.get.side_effect = lambda name: {"queue": queue, "notify": events}.get(name)
+    monkeypatch.setattr(Services, "get_instance", staticmethod(lambda: services))
+
+    handler = MagicMock(__name__="ExampleHandler")
+    result = await service.dispatch(_task().model_copy(update={"preset": ""}), handler=handler)
+
+    assert isinstance(result, TaskResult)
+    payload = events.emit.call_args.kwargs["data"]
+    assert payload["extras"]["ignore_conditions"] == ["12", "Named"]

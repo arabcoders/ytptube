@@ -175,6 +175,7 @@ class Tasks(metaclass=Singleton):
                             "source_name": task.name,
                             "source_id": str(task.id),
                             "source_handler": "Tasks",
+                            "ignore_conditions": task.ignore_conditions,
                         },
                     }
                 )

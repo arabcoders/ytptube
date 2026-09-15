@@ -1489,6 +1489,7 @@ Notes:
       "template": "...",
       "folder": "...",
       "preset": "...",
+      "ignore_conditions": ["123", "My Condition"],
       "auto_start": true,
       "handler_enabled": true,
       "enabled": true
@@ -1522,6 +1523,7 @@ Notes:
   "folder": "",
   "template": "",
   "cli": "",
+  "ignore_conditions": ["123", "My Condition"],
   "auto_start": true,
   "handler_enabled": true,
   "enabled": true
@@ -1556,6 +1558,7 @@ When providing an array, the first task must include all required fields. Subseq
   "folder": "",
   "template": "",
   "cli": "",
+  "ignore_conditions": ["123", "My Condition"],
   "auto_start": true,
   "handler_enabled": true,
   "enabled": true
@@ -1594,6 +1597,7 @@ When providing an array, the first task must include all required fields. Subseq
   "template": "...",
   "folder": "...",
   "preset": "...",
+  "ignore_conditions": ["123", "My Condition"],
   "auto_start": true,
   "handler_enabled": true,
   "enabled": true
@@ -1647,7 +1651,8 @@ JSON object with fields to update:
 ```json
 {
   "enabled": false,
-  "timer": "0 */6 * * *"
+  "timer": "0 */6 * * *",
+  "ignore_conditions": ["*"]
 }
 ```
 
@@ -1681,6 +1686,7 @@ JSON object with fields to update:
   "template": "...",
   "folder": "...",
   "preset": "...",
+  "ignore_conditions": ["123", "My Condition"],
   "auto_start": true,
   "handler_enabled": true,
   "enabled": true
