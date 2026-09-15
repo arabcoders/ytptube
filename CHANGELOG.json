@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "83d9e32e6660498aaae110d4bcd628165ee3d0a7",
-    "date": "2026-09-13T15:32:54+00:00",
+    "full_sha": "e0ae460a935931a186baa83160117857ac5ba40f",
+    "date": "2026-09-15T16:53:26+00:00",
     "commits": [
+      {
+        "sha": "e0ae460a",
+        "full_sha": "e0ae460a935931a186baa83160117857ac5ba40f",
+        "message": "feat: the ability to ignore conditions in tasks.",
+        "author": "arabcoders",
+        "date": "2026-09-15T16:53:26+00:00"
+      },
       {
         "sha": "83d9e32e",
         "full_sha": "83d9e32e6660498aaae110d4bcd628165ee3d0a7",
