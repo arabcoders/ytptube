@@ -5,6 +5,7 @@ export type DocsFile =
   | 'SECURITY.md'
   | 'docs/README.md'
   | 'docs/features.md'
+  | 'docs/authentication.md'
   | 'docs/native-builds.md'
   | 'docs/task-definitions.md';
 
@@ -54,6 +55,17 @@ const DOCS_ENTRIES: DocsEntry[] = [
     slug: ['features'],
     icon: 'i-lucide-list-checks',
     navLabel: 'docs.entries.features.navLabel',
+    sidebarVisible: false,
+  },
+  {
+    id: 'docs-authentication',
+    title: 'docs.entries.authentication.title',
+    description: 'docs.entries.authentication.description',
+    file: 'docs/authentication.md',
+    route: '/docs/authentication',
+    slug: ['authentication'],
+    icon: 'i-lucide-lock-keyhole',
+    navLabel: 'docs.entries.authentication.navLabel',
     sidebarVisible: false,
   },
   {

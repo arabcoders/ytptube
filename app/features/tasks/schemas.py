@@ -19,6 +19,7 @@ class Task(BaseModel):
     timer: str = ""
     template: str = ""
     cli: str = ""
+    ignore_conditions: list[str] = Field(default_factory=list)
     auto_start: bool = True
     handler_enabled: bool = True
     enabled: bool = True
@@ -108,6 +109,24 @@ class Task(BaseModel):
 
         return value
 
+    @field_validator("ignore_conditions", mode="before")
+    @classmethod
+    def _normalize_ignore_conditions(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            msg = "Ignore conditions must be a list."
+            raise ValueError(msg)
+        normalized: list[str] = []
+        for identifier in value:
+            if isinstance(identifier, bool) or not isinstance(identifier, (str, int, float)):
+                msg = "Ignore conditions must contain only strings or numbers."
+                raise ValueError(msg)
+            identifier = str(identifier).strip()
+            if identifier and identifier not in normalized:
+                normalized.append(identifier)
+        return normalized
+
 
 class TaskPatch(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -119,6 +138,7 @@ class TaskPatch(BaseModel):
     timer: str | None = None
     template: str | None = None
     cli: str | None = None
+    ignore_conditions: list[str] | None = None
     auto_start: bool | None = None
     handler_enabled: bool | None = None
     enabled: bool | None = None
@@ -129,6 +149,13 @@ class TaskPatch(BaseModel):
         if value is None:
             return None
         return Task._normalize_url(value)
+
+    @field_validator("ignore_conditions", mode="before")
+    @classmethod
+    def _normalize_ignore_conditions(cls, value: Any) -> list[str] | None:
+        if value is None:
+            return None
+        return Task._normalize_ignore_conditions(value)
 
 
 class TaskList(BaseModel):

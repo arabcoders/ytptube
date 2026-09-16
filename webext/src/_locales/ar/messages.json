@@ -1,0 +1,203 @@
+{
+  "extension_name": {
+    "message": "إضافة YTPTube"
+  },
+  "extension_description": {
+    "message": "إضافة الروابط إلى نسخة YTPTube"
+  },
+  "action_title": {
+    "message": "إضافة رابط إلى YTPTube"
+  },
+  "popup_kicker": {
+    "message": "YTPTube / إضافة سريعة"
+  },
+  "popup_title": {
+    "message": "إرسال رابط"
+  },
+  "theme_button_system": {
+    "message": "استخدام الوضع الداكن"
+  },
+  "theme_button": {
+    "message": "السمة: $1"
+  },
+  "theme_title": {
+    "message": "السمة مضبوطة على $1. انقر للتغيير."
+  },
+  "theme_dark": {
+    "message": "داكن"
+  },
+  "theme_light": {
+    "message": "فاتح"
+  },
+  "theme_system": {
+    "message": "النظام"
+  },
+  "preset_label": {
+    "message": "إعداد مسبق"
+  },
+  "custom_only": {
+    "message": "المخصص فقط"
+  },
+  "show_all": {
+    "message": "إظهار الكل"
+  },
+  "refresh": {
+    "message": "تحديث"
+  },
+  "preset_help": {
+    "message": "حدد الإعداد المسبق المستخدم لهذا الرابط."
+  },
+  "url_label": {
+    "message": "الرابط"
+  },
+  "url_placeholder": {
+    "message": "https://.."
+  },
+  "url_help": {
+    "message": "الرابط المراد إضافته إلى قائمة التنزيل."
+  },
+  "send_to_ytptube": {
+    "message": "إرسال إلى YTPTube"
+  },
+  "options": {
+    "message": "الخيارات"
+  },
+  "url_required": {
+    "message": "الرابط مطلوب."
+  },
+  "request_success": {
+    "message": "تم إرسال الطلب بنجاح!"
+  },
+  "request_failed": {
+    "message": "فشل إرسال الطلب."
+  },
+  "error_sending": {
+    "message": "حدث خطأ أثناء إرسال الطلب."
+  },
+  "presets_refreshed": {
+    "message": "تم تحديث الإعدادات المسبقة."
+  },
+  "unable_refresh": {
+    "message": "تعذر تحديث الإعدادات المسبقة."
+  },
+  "custom_presets": {
+    "message": "إعدادات مسبقة مخصصة"
+  },
+  "default_presets": {
+    "message": "إعدادات مسبقة افتراضية"
+  },
+  "options_menu_title": {
+    "message": "قائمة خيارات إضافة YTPTube"
+  },
+  "options_kicker": {
+    "message": "YTPTube / الإضافة"
+  },
+  "connection_options": {
+    "message": "خيارات الاتصال"
+  },
+  "instance_url_label": {
+    "message": "رابط YTPTube"
+  },
+  "instance_url_placeholder": {
+    "message": "https://ytptube.example.org"
+  },
+  "instance_url_help": {
+    "message": "رابط نسخة YTPTube الخاصة بك."
+  },
+  "authentication": {
+    "message": "المصادقة"
+  },
+  "auth_placeholder": {
+    "message": "ytp_... أو اسم المستخدم:كلمة المرور"
+  },
+  "show_auth": {
+    "message": "إظهار قيمة المصادقة"
+  },
+  "show": {
+    "message": "إظهار"
+  },
+  "hide": {
+    "message": "إخفاء"
+  },
+  "auth_help": {
+    "message": "يوصى باستخدام مفاتيح API. اتركه فارغاً عند تعطيل المصادقة."
+  },
+  "show_random_background": {
+    "message": "إظهار خلفية عشوائية"
+  },
+  "background_help": {
+    "message": "استخدام الخلفية التي يوفرها YTPTube خلف النافذة."
+  },
+  "background_visibility": {
+    "message": "وضوح الخلفية"
+  },
+  "background_opacity_help": {
+    "message": "يتحكم في مقدار ظهور الخلفية عبر النافذة."
+  },
+  "show_context_menu": {
+    "message": "إظهار قائمة السياق"
+  },
+  "context_menu_help": {
+    "message": "إتاحة الإرسال إلى YTPTube للروابط المدعومة."
+  },
+  "save_options": {
+    "message": "حفظ الخيارات"
+  },
+  "test_connection": {
+    "message": "اختبار الاتصال"
+  },
+  "valid_instance_url": {
+    "message": "يرجى إدخال رابط صالح لنسخة YTPTube."
+  },
+  "permission_denied": {
+    "message": "تم رفض إذن الوصول إلى نسخة YTPTube."
+  },
+  "connection_success": {
+    "message": "تم الاتصال بنجاح."
+  },
+  "setup_required": {
+    "message": "يلزم إعداد المصادقة على خادم YTPTube."
+  },
+  "invalid_credentials": {
+    "message": "بيانات الاعتماد غير صالحة أو مفقودة."
+  },
+  "auth_check_failed": {
+    "message": "فشل التحقق من المصادقة."
+  },
+  "error_prefix": {
+    "message": "خطأ: $1"
+  },
+  "options_saved": {
+    "message": "تم حفظ الخيارات."
+  },
+  "unable_save": {
+    "message": "تعذر حفظ الخيارات: $1"
+  },
+  "auth_parse_error": {
+    "message": "يجب أن تكون المصادقة مفتاح API يبدأ بـ ytp_ أو بصيغة اسم المستخدم:كلمة المرور."
+  },
+  "context_menu_title": {
+    "message": "إرسال إلى YTPTube"
+  },
+  "context_menu_preset": {
+    "message": "إرسال إلى YTPTube ($1)"
+  },
+  "instance_not_configured": {
+    "message": "لم يتم إعداد رابط نسخة YTPTube."
+  },
+  "request_failed_status": {
+    "message": "فشل إرسال الطلب. '$1: $2'."
+  },
+  "request_failed_error": {
+    "message": "فشل إرسال الطلب. '$1'."
+  },
+  "no_link_url": {
+    "message": "لم يتم العثور على رابط."
+  },
+  "no_url": {
+    "message": "لم يتم العثور على رابط."
+  },
+  "hide_auth": {
+    "message": "إخفاء قيمة المصادقة"
+  }
+}

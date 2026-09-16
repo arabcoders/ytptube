@@ -58,6 +58,8 @@ AUTH_ROUTE_NAMES = (
     "auth_api_keys",
     "auth_api_keys_create",
     "auth_api_keys_delete",
+    "auth_oidc_login",
+    "auth_oidc_callback",
 )
 
 

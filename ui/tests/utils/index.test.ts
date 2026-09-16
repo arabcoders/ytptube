@@ -343,6 +343,7 @@ describe('data conversion helpers', () => {
   it('prefix_runtime_base', () => {
     runtimeConfig.app.baseURL = '/base-path';
     expect(utils.uri('/api/test')).toBe('/base-path/api/test');
+    expect(utils.uri('/api/auth/oidc/login')).toBe('/base-path/api/auth/oidc/login');
     runtimeConfig.app.baseURL = '/';
     expect(utils.uri('/api/test')).toBe('/api/test');
   });

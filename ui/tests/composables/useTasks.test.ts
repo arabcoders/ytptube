@@ -39,6 +39,7 @@ const mockTask: Task = {
   timer: '0 12 * * *',
   template: '%(title)s.%(ext)s',
   cli: '--format best',
+  ignore_conditions: ['12', 'Named'],
   auto_start: true,
   handler_enabled: true,
   enabled: true,
@@ -70,6 +71,7 @@ describe('useTasks', () => {
       folder: 'channels',
       template: '%(title)s.%(ext)s',
       cli: '--embed-metadata',
+      ignore_conditions: ['12', 'Named'],
     };
 
     it('checks source type', () => {

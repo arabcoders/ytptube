@@ -15,6 +15,8 @@ def sample_info_tv(path: Path) -> dict:
         "season_number": 1,
         "episode_number": 2,
         "description": "First line.\n#tag\n00:01:23 Intro",
+        "duration": 3600,
+        "thumbnail": "http://example.com/episode.jpg",
         "extractor": "YouTube",
         "filename": str(path),
     }
@@ -51,6 +53,11 @@ def test_generate_nfo_tv_mode(tmp_path: Path) -> None:
     assert "<episodedetails>" in content
     assert '<uniqueid type="youtube">abc123</uniqueid>' in content
     assert "<title>Test Show - S01E02</title>" in content
+    assert "<runtime>3600</runtime>" in content
+    assert (
+        '<thumb aspect="poster" preview="http://example.com/episode.jpg">http://example.com/episode.jpg</thumb>'
+        in content
+    )
     assert "Intro" not in content
     assert "#tag" not in content
 

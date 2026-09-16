@@ -335,6 +335,44 @@
               :ui="inputUi"
             />
           </UFormField>
+
+          <UFormField v-if="hasIgnoreConditionOptions" class="w-full" :ui="fieldUi">
+            <template #label>
+              <div class="flex flex-wrap items-center gap-2">
+                <UIcon name="i-lucide-list-minus" class="size-4 text-toned" />
+                <span class="font-semibold text-default">{{ t('common.ignoreConditions') }}</span>
+              </div>
+            </template>
+
+            <template #description>
+              <span>{{ t('common.ignoreConditionsDesc') }}</span>
+            </template>
+
+            <template #hint>
+              <button
+                v-if="form.ignore_conditions.length > 0"
+                type="button"
+                class="font-medium text-primary hover:underline"
+                @click="form.ignore_conditions = []"
+              >
+                {{ t('common.clearSelection') }}
+              </button>
+            </template>
+
+            <USelectMenu
+              v-model="form.ignore_conditions"
+              :items="ignoreConditionOptions"
+              value-key="value"
+              label-key="label"
+              multiple
+              :placeholder="t('common.selectConditions')"
+              class="w-full"
+              size="lg"
+              :disabled="addInProgress || conditions.isLoading.value"
+              :search-input="{ placeholder: t('common.searchConditions') }"
+              :ui="{ base: 'w-full', content: 'min-w-[18rem]' }"
+            />
+          </UFormField>
         </div>
       </div>
 
@@ -477,6 +515,7 @@ import { useStorage } from '@vueuse/core';
 import { CronExpressionParser } from 'cron-parser';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
+import type { Condition } from '~/types/conditions';
 import type { ExportedTask, Task } from '~/types/tasks';
 import { ensure_api_success, shortPath } from '~/utils';
 
@@ -499,10 +538,25 @@ const config = useYtpConfig();
 const dialog = useDialog();
 const { t } = useI18n();
 const tasksComposable = useTasks();
+const conditions = useConditions();
 const { findPreset, getPresetDefault, selectItems } = usePresetOptions();
 const showImport = useStorage('showTaskImport', false);
 
-const createDefaultTask = (source?: Partial<Task>): Task => ({
+type TaskFormData = Omit<Task, 'ignore_conditions'> & { ignore_conditions: string[] };
+
+const normalizeIgnoreConditions = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) =>
+      typeof entry === 'string' || typeof entry === 'number' ? String(entry).trim() : '',
+    )
+    .filter((entry, index, items) => !!entry && items.indexOf(entry) === index);
+};
+
+const createDefaultTask = (source?: Partial<Task>): TaskFormData => ({
   name: '',
   url: '',
   folder: '',
@@ -514,6 +568,7 @@ const createDefaultTask = (source?: Partial<Task>): Task => ({
   handler_enabled: true,
   enabled: true,
   ...(JSON.parse(JSON.stringify(source || {})) as Partial<Task>),
+  ignore_conditions: normalizeIgnoreConditions(source?.ignore_conditions),
 });
 
 const convertInProgress = ref(false);
@@ -531,7 +586,7 @@ const CHANNEL_REGEX =
   /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/;
 const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i;
 
-const form = reactive<Task>(createDefaultTask(props.task));
+const form = reactive<TaskFormData>(createDefaultTask(props.task));
 const timerError = ref('');
 const action = useFormSubmit();
 
@@ -576,6 +631,22 @@ const isMultiLineInput = computed(
 );
 const urlCount = computed(() => splitUrls(form.url || '').length);
 const presetItems = computed(() => selectItems.value);
+const ignoreConditionOptions = computed(() => {
+  const options = conditions.conditions.value
+    .filter((condition: Condition) => condition.enabled)
+    .map((condition: Condition) => ({
+      value: condition.id == null ? condition.name : String(condition.id),
+      label: condition.name,
+    }));
+  const missing = form.ignore_conditions
+    .filter((value) => value !== '*' && !options.some((option) => option.value === value))
+    .map((value) => ({ value, label: value }));
+
+  return [{ value: '*', label: t('common.allConditions') }, ...options, ...missing];
+});
+const hasIgnoreConditionOptions = computed(() =>
+  ignoreConditionOptions.value.some((option) => option.value !== '*'),
+);
 const presetDescription = computed(() => {
   return hasFormatInConfig.value ? t('common.presetDisabled') : t('common.presetDescription');
 });
@@ -702,6 +773,7 @@ const hasFormContent = computed(() => {
     form.template ||
     form.folder ||
     form.cli ||
+    form.ignore_conditions.length > 0 ||
     (form.preset && form.preset !== config.app.default_preset) ||
     form.auto_start === false ||
     form.handler_enabled === false ||
@@ -811,6 +883,7 @@ const checkInfo = async (): Promise<void> => {
         timer: form.timer,
         template: form.template,
         cli: form.cli,
+        ignore_conditions: [...form.ignore_conditions],
         auto_start: form.auto_start,
         handler_enabled: form.handler_enabled,
         enabled: form.enabled,
@@ -818,10 +891,12 @@ const checkInfo = async (): Promise<void> => {
     }
 
     return {
+      name: form.name,
       url,
       preset: form.preset,
       timer: form.timer,
       handler_enabled: form.handler_enabled,
+      ignore_conditions: [...form.ignore_conditions],
     } as Task;
   });
 
@@ -881,6 +956,7 @@ const importItem = async (): Promise<void> => {
     form.timer = item.timer ?? form.timer;
     form.folder = item.folder ?? form.folder;
     form.cli = item.cli ?? form.cli;
+    form.ignore_conditions = normalizeIgnoreConditions(item.ignore_conditions);
     form.auto_start = item.auto_start ?? true;
     form.handler_enabled = item.handler_enabled ?? true;
     form.enabled = item.enabled ?? true;
@@ -1025,6 +1101,7 @@ const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string
 };
 
 onMounted(() => {
+  void conditions.loadConditions(1, 1000);
   markClean();
   emitter('dirty-change', false);
 });

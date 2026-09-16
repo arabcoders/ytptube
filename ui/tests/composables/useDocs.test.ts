@@ -7,6 +7,8 @@ describe('docs resolver', () => {
     expect(getDocsEntryBySlug()?.file).toBe('docs/README.md');
     expect(getDocsEntryBySlug('readme')?.file).toBe('README.md');
     expect(getDocsEntryBySlug('native-builds')?.file).toBe('docs/native-builds.md');
+    expect(getDocsEntryBySlug('authentication')?.file).toBe('docs/authentication.md');
+    expect(getDocsEntryBySlug('authentication')?.sidebarVisible).toBe(false);
   });
 
   it('resolves relative docs links', () => {
@@ -21,6 +23,12 @@ describe('docs resolver', () => {
     );
     expect(resolveDocsLink('native-builds.md', '/api/docs/docs/README.md').docRoute).toBe(
       '/docs/native-builds',
+    );
+    expect(resolveDocsLink('docs/authentication.md', '/api/docs/FAQ.md').docRoute).toBe(
+      '/docs/authentication',
+    );
+    expect(resolveDocsLink('docs/authentication.md', '/api/docs/API.md').docRoute).toBe(
+      '/docs/authentication',
     );
   });
 

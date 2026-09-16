@@ -8,6 +8,8 @@ const state = (values: Partial<Parameters<typeof authRedirect>[0]> = {}) => ({
   setup_required: false,
   authenticated: false,
   user: null,
+  oidc_available: false,
+  auth_method: null,
   ...values,
 });
 
@@ -24,6 +26,10 @@ describe('authRedirect', () => {
     expect(authRedirect(state({ disabled: true }), '/setup')).toBe('/');
     expect(authRedirect(state({ disabled: true }), '/login')).toBe('/');
   });
+  it('allows_remote_user', () =>
+    expect(authRedirect(state({ authenticated: true, auth_method: 'remote_user' }), '/login')).toBe(
+      '/',
+    ));
 });
 
 describe('useAuth', () => {
@@ -75,5 +81,16 @@ describe('useAuth', () => {
     await auth.probe(true);
 
     expect(requestSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('retains_auth_options', async () => {
+    requestSpy.mockResolvedValue({
+      json: async () => state({ oidc_available: true, auth_method: 'remote_user' }),
+    } as Response);
+
+    const result = await useAuth().probe();
+
+    expect(result.oidc_available).toBe(true);
+    expect(result.auth_method).toBe('remote_user');
   });
 });

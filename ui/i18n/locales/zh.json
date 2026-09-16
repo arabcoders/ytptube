@@ -6,6 +6,7 @@
     "loginHeading": "欢迎回来",
     "loginSubtitle": "登录以继续使用 YTPTube。",
     "loginAction": "登录",
+    "oidcLogin": "使用 OIDC 登录",
     "forgotPassword": "忘记密码？",
     "recoveryGuidance": "恢复密码需要访问 YTPTube 安装所在的本地环境。请使用 FAQ 中的重置命令。",
     "recoveryInstructions": "打开密码重置说明",
@@ -1281,6 +1282,11 @@
         "title": "原生版本",
         "navLabel": "原生版本",
         "description": "安装和运行 Windows、macOS 和 Linux 版本。"
+      },
+      "authentication": {
+        "title": "身份验证",
+        "navLabel": "身份验证",
+        "description": "配置本地、OIDC 和受信任代理身份验证。"
       },
       "faq": {
         "title": "FAQ",

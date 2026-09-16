@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import logging
 import os
@@ -5,6 +6,8 @@ import re
 import shutil
 import sys
 import time
+import tomllib
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -28,7 +31,114 @@ if TYPE_CHECKING:
     from subprocess import CompletedProcess
 
 SUPPORTED_CODECS: tuple[str, ...] = ("h264_qsv", "h264_nvenc", "h264_amf", "h264_videotoolbox", "h264_vaapi", "libx264")
-"Supported encoder names in order of preference."
+
+_HTTP_TOKEN: re.Pattern[str] = re.compile(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$")
+
+
+@dataclass(frozen=True, kw_only=True)
+class OidcConfig:
+    issuer: str
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class RemoteUserConfig:
+    enabled: bool
+    header: str
+    trusted_proxies: tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]
+
+
+@dataclass(frozen=True, kw_only=True)
+class ExternalAuthConfig:
+    external_user: str | None
+    oidc: OidcConfig | None
+    remote_user: RemoteUserConfig
+
+
+def _external_auth_config(config_path: str) -> ExternalAuthConfig:
+    path = Path(config_path) / "config.toml"
+    if not path.exists():
+        data: dict[str, object] = {}
+    else:
+        try:
+            with path.open("rb") as file:
+                data = tomllib.load(file)
+        except tomllib.TOMLDecodeError as exc:
+            msg = "Invalid config.toml TOML"
+            raise ValueError(msg) from exc
+
+    auth = data.get("auth", {})
+    if not isinstance(auth, dict):
+        msg = "auth must be a table"
+        raise ValueError(msg)
+
+    external_user = auth.get("external_user")
+    if external_user is not None and (not isinstance(external_user, str) or not external_user.strip()):
+        msg = "auth.external_user must be a non-empty string"
+        raise ValueError(msg)
+
+    if isinstance(external_user, str):
+        external_user = external_user.strip()
+
+    oidc_data = auth.get("oidc")
+    oidc = None
+    if oidc_data is not None:
+        if not isinstance(oidc_data, dict):
+            msg = "auth.oidc must be a table"
+            raise ValueError(msg)
+
+        values = {
+            key: value.strip() if isinstance(value := oidc_data.get(key), str) else value
+            for key in ("issuer", "client_id", "client_secret", "redirect_uri")
+        }
+
+        if any(not isinstance(value, str) or not value for value in values.values()):
+            msg = "auth.oidc requires non-empty issuer, client_id, client_secret, and redirect_uri"
+            raise ValueError(msg)
+
+        oidc = OidcConfig(**values)
+
+    remote_data = auth.get("remote_user", {})
+    if not isinstance(remote_data, dict):
+        msg = "auth.remote_user must be a table"
+        raise ValueError(msg)
+
+    enabled = remote_data.get("enabled", False)
+    if not isinstance(enabled, bool):
+        msg = "auth.remote_user.enabled must be a boolean"
+        raise ValueError(msg)
+
+    header = remote_data.get("header", "Remote-User")
+    if not isinstance(header, str) or not (header := header.strip()) or not _HTTP_TOKEN.fullmatch(header):
+        msg = "auth.remote_user.header must be a valid HTTP token"
+        raise ValueError(msg)
+
+    proxies = remote_data.get("trusted_proxies", [])
+    if not isinstance(proxies, list) or not all(isinstance(proxy, str) for proxy in proxies):
+        msg = "auth.remote_user.trusted_proxies must be an array"
+        raise ValueError(msg)
+
+    try:
+        trusted_proxies = tuple(ipaddress.ip_network(value) for value in proxies)
+    except (ValueError, TypeError):
+        msg = "auth.remote_user.trusted_proxies must contain valid CIDRs"
+        raise ValueError(msg) from None
+
+    if enabled and not trusted_proxies:
+        msg = "enabled auth.remote_user requires trusted_proxies"
+        raise ValueError(msg)
+
+    if (oidc is not None or enabled) and not external_user:
+        msg = "auth.external_user is required when external authentication is enabled"
+        raise ValueError(msg)
+
+    return ExternalAuthConfig(
+        external_user=external_user,
+        oidc=oidc,
+        remote_user=RemoteUserConfig(enabled=enabled, header=header, trusted_proxies=trusted_proxies),
+    )
 
 
 def native_defaults() -> dict[str, Any]:
@@ -42,10 +152,13 @@ def native_defaults() -> dict[str, Any]:
         "access_log": False,
         "disable_auth": True,
         "cors_origins": "",
+        "debugpy_host": "127.0.0.1",
     }
 
 
 class Config(metaclass=Singleton):
+    external_auth: ExternalAuthConfig
+
     app_env: str = "production"
     """The application environment, can be 'production' or 'development'."""
 
@@ -153,6 +266,9 @@ class Config(metaclass=Singleton):
 
     debugpy_port: int = 5678
     """The port to use for the debugpy server."""
+
+    debugpy_host: str = "0.0.0.0"
+    """The host to use for the debugpy server."""
 
     extract_info_timeout: int = 70
     """The timeout to use for extracting video information."""
@@ -301,6 +417,7 @@ class Config(metaclass=Singleton):
         "config_path",
         "download_path",
         "app_path",
+        "external_auth",
     )
     "The variables that are set manually."
 
@@ -423,6 +540,7 @@ class Config(metaclass=Singleton):
         self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or runtime_defaults.get(
             "config_path", str(Path(baseDefaultPath) / "var" / "config")
         )
+        self.external_auth = _external_auth_config(self.config_path)
         envFile: Path = Path(self.config_path) / ".env"
 
         if envFile.exists():
@@ -532,18 +650,19 @@ class Config(metaclass=Singleton):
             try:
                 import debugpy
 
-                debugpy.listen(("0.0.0.0", self.debugpy_port), in_process_debug_adapter=True)
-                LOG.info(
-                    "Starting debugpy server on '0.0.0.0:%s'.",
+                debugpy.listen((self.debugpy_host, self.debugpy_port), in_process_debug_adapter=True)
+                LOG.warning(
+                    "Debugpy started on '%s:%s'. insecure debugger allows remote code execution, use only in a secure environment.",
+                    self.debugpy_host,
                     self.debugpy_port,
-                    extra={"host": "0.0.0.0", "port": self.debugpy_port},
+                    extra={"host": self.debugpy_host, "port": self.debugpy_port},
                 )
             except ImportError:
                 LOG.error("debugpy package not found; install it with 'uv sync'.")
             except Exception as e:
                 LOG.exception(
                     "Failed to start debugpy server.",
-                    extra={"host": "0.0.0.0", "port": self.debugpy_port, "exception_type": type(e).__name__},
+                    extra={"host": self.debugpy_host, "port": self.debugpy_port, "exception_type": type(e).__name__},
                 )
 
         if (Path(self.config_path) / "ytdlp.cli").exists():

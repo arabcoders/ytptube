@@ -1453,6 +1453,7 @@ const scheduleDownload = async (): Promise<void> => {
       folder: form.value.folder || '',
       template: form.value.template || '',
       cli: form.value.cli || '',
+      ignore_conditions: normalizeIgnoreConditionValues(form.value.extras?.ignore_conditions),
     }),
   );
   await navigateTo('/tasks');

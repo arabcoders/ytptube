@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from aiohttp.web_response import StreamResponse
 
 AUTH_USER_KEY: web.RequestKey[dict] = web.RequestKey("auth_user", dict)
+AUTH_METHOD_KEY: web.RequestKey[str] = web.RequestKey("auth_method", str)
 
 
 def decode_basic_credentials(value: str) -> tuple[str, str] | None:
@@ -127,7 +128,8 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
         auth_only = registered_route.auth_only if registered_route is not None else False
         public = registered_route.public if registered_route is not None else False
         allowed_origins: set[str] = {item.strip() for item in config.cors_origins.split(",") if item.strip()}
-        if cross_origin and origin not in allowed_origins and config.cors_origins.strip() != "*":
+        oidc_callback = route_name == "auth_oidc_callback"
+        if cross_origin and not oidc_callback and origin not in allowed_origins and config.cors_origins.strip() != "*":
             return api_error_response("Origin is not allowed.", code="FORBIDDEN", status=web.HTTPForbidden.status_code)
 
         if request.method == "OPTIONS":
@@ -166,6 +168,26 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
                 auth.clear_attempts(request.remote)
             return user
 
+        async def remote_user() -> dict | None:
+            remote_config = config.external_auth.remote_user
+            if (
+                not remote_config.enabled
+                or cross_origin
+                or not config.external_auth.external_user
+                or not request.remote
+            ):
+                return None
+            try:
+                remote_ip = ipaddress.ip_address(request.remote)
+            except ValueError:
+                return None
+            if not any(remote_ip in network for network in remote_config.trusted_proxies):
+                return None
+            values = request.headers.getall(remote_config.header, [])
+            if len(values) != 1 or not values[0].strip() or "," in values[0]:
+                return None
+            return await auth.find_user(config.external_auth.external_user)
+
         ticket: str | None = request.query.get("ticket") if route_name == "ws" else None
 
         if config.disable_auth:
@@ -181,18 +203,34 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
         if public and not cookie_only:
             if optional_auth:
                 user = await explicit_user()
+                method: str | None = None
                 if user is None and not cross_origin and request.cookies.get("ytp_session"):
                     user = await auth.session_user(request.cookies["ytp_session"])
+                    if user is not None:
+                        method = "session"
+                if user is None:
+                    user = await remote_user()
+                    if user is not None:
+                        method = "remote_user"
                 if user is not None:
                     request[AUTH_USER_KEY] = user
+                    if method is not None:
+                        request[AUTH_METHOD_KEY] = method
             return await handler(request)
 
+        method: str | None = None
         user = (
             None if cookie_only else (auth.consume_ws_ticket(ticket) if ticket is not None else await explicit_user())
         )
+        if user is None and not cookie_only:
+            user = await remote_user()
+            if user is not None:
+                method = "remote_user"
         cookie = request.cookies.get("ytp_session")
         if user is None and ticket is None and not cross_origin and cookie:
             user = await auth.session_user(cookie)
+            if user is not None:
+                method = "session"
 
         if user is None:
             if cookie_only:
@@ -205,6 +243,8 @@ def auth_middleware(auth: AuthService, config: Config) -> Middleware:
                 status=web.HTTPUnauthorized.status_code,
             )
         request[AUTH_USER_KEY] = user
+        if method is not None:
+            request[AUTH_METHOD_KEY] = method
         return await handler(request)
 
     return auth_handler

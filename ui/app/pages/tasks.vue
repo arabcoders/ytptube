@@ -1124,6 +1124,7 @@ const runNow = async (item: Task, mass: boolean = false) => {
       source_name: item.name,
       source_id: item.id,
       source_handler: 'web',
+      ...(item.ignore_conditions?.length ? { ignore_conditions: [...item.ignore_conditions] } : {}),
     },
   };
 
@@ -1174,6 +1175,7 @@ const exportItem = async (item: Task) => {
     auto_start: info?.auto_start ?? true,
     handler_enabled: info?.handler_enabled ?? true,
     enabled: info?.enabled ?? true,
+    ignore_conditions: info?.ignore_conditions ?? [],
   } as ExportedTask;
 
   if (info.template) {

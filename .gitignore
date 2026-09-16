@@ -2,6 +2,7 @@
 /frontend/dist
 /ui/dist
 /ui/exported/CHANGELOG.json
+/webext/ytptube-extension.zip
 
 # dependencies
 **/node_modules/*

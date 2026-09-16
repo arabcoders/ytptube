@@ -1,0 +1,203 @@
+{
+  "extension_name": {
+    "message": "YTPTube 拡張機能"
+  },
+  "extension_description": {
+    "message": "YTPTube インスタンスに URL を追加します"
+  },
+  "action_title": {
+    "message": "YTPTube に URL を追加"
+  },
+  "popup_kicker": {
+    "message": "YTPTube / クイック追加"
+  },
+  "popup_title": {
+    "message": "URL を送信"
+  },
+  "theme_button_system": {
+    "message": "ダークモードを使用"
+  },
+  "theme_button": {
+    "message": "テーマ: $1"
+  },
+  "theme_title": {
+    "message": "テーマは $1 に設定されています。クリックして変更します。"
+  },
+  "theme_dark": {
+    "message": "ダーク"
+  },
+  "theme_light": {
+    "message": "ライト"
+  },
+  "theme_system": {
+    "message": "システム"
+  },
+  "preset_label": {
+    "message": "プリセット"
+  },
+  "custom_only": {
+    "message": "カスタムのみ"
+  },
+  "show_all": {
+    "message": "すべて表示"
+  },
+  "refresh": {
+    "message": "更新"
+  },
+  "preset_help": {
+    "message": "この URL に使用するプリセットを選択してください。"
+  },
+  "url_label": {
+    "message": "URL"
+  },
+  "url_placeholder": {
+    "message": "https://.."
+  },
+  "url_help": {
+    "message": "ダウンロードキューに追加する URL。"
+  },
+  "send_to_ytptube": {
+    "message": "YTPTube に送信"
+  },
+  "options": {
+    "message": "オプション"
+  },
+  "url_required": {
+    "message": "URL は必須です。"
+  },
+  "request_success": {
+    "message": "リクエストを送信しました！"
+  },
+  "request_failed": {
+    "message": "リクエストの送信に失敗しました。"
+  },
+  "error_sending": {
+    "message": "リクエストの送信中にエラーが発生しました。"
+  },
+  "presets_refreshed": {
+    "message": "プリセットを更新しました。"
+  },
+  "unable_refresh": {
+    "message": "プリセットを更新できません。"
+  },
+  "custom_presets": {
+    "message": "カスタムプリセット"
+  },
+  "default_presets": {
+    "message": "デフォルトプリセット"
+  },
+  "options_menu_title": {
+    "message": "YTPTube 拡張機能のオプション"
+  },
+  "options_kicker": {
+    "message": "YTPTube / 拡張機能"
+  },
+  "connection_options": {
+    "message": "接続オプション"
+  },
+  "instance_url_label": {
+    "message": "YTPTube URL"
+  },
+  "instance_url_placeholder": {
+    "message": "https://ytptube.example.org"
+  },
+  "instance_url_help": {
+    "message": "YTPTube インスタンスの URL。"
+  },
+  "authentication": {
+    "message": "認証"
+  },
+  "auth_placeholder": {
+    "message": "ytp_... またはユーザー名:パスワード"
+  },
+  "show_auth": {
+    "message": "認証情報を表示"
+  },
+  "show": {
+    "message": "表示"
+  },
+  "hide": {
+    "message": "非表示"
+  },
+  "auth_help": {
+    "message": "API キーを推奨します。認証を無効にする場合は空欄にしてください。"
+  },
+  "show_random_background": {
+    "message": "ランダムな背景を表示"
+  },
+  "background_help": {
+    "message": "ポップアップの背景に YTPTube が提供する画像を使用します。"
+  },
+  "background_visibility": {
+    "message": "背景の表示設定"
+  },
+  "background_opacity_help": {
+    "message": "背景をどの程度表示するかを調整します。"
+  },
+  "show_context_menu": {
+    "message": "コンテキストメニューを表示"
+  },
+  "context_menu_help": {
+    "message": "対応するリンクに「YTPTube に送信」を表示します。"
+  },
+  "save_options": {
+    "message": "オプションを保存"
+  },
+  "test_connection": {
+    "message": "接続をテスト"
+  },
+  "valid_instance_url": {
+    "message": "有効な YTPTube インスタンス URL を入力してください。"
+  },
+  "permission_denied": {
+    "message": "YTPTube インスタンスへのアクセス許可が拒否されました。"
+  },
+  "connection_success": {
+    "message": "接続に成功しました。"
+  },
+  "setup_required": {
+    "message": "YTPTube サーバーで認証の設定が必要です。"
+  },
+  "invalid_credentials": {
+    "message": "認証情報が無効か、入力されていません。"
+  },
+  "auth_check_failed": {
+    "message": "認証の確認に失敗しました。"
+  },
+  "error_prefix": {
+    "message": "エラー: $1"
+  },
+  "options_saved": {
+    "message": "オプションを保存しました。"
+  },
+  "unable_save": {
+    "message": "オプションを保存できません: $1"
+  },
+  "auth_parse_error": {
+    "message": "認証には ytp_ で始まる API キー、またはユーザー名:パスワードを指定してください。"
+  },
+  "context_menu_title": {
+    "message": "YTPTube に送信"
+  },
+  "context_menu_preset": {
+    "message": "YTPTube に送信 ($1)"
+  },
+  "instance_not_configured": {
+    "message": "YTPTube インスタンス URL が設定されていません。"
+  },
+  "request_failed_status": {
+    "message": "リクエストの送信に失敗しました。'$1: $2'。"
+  },
+  "request_failed_error": {
+    "message": "リクエストの送信に失敗しました。'$1'。"
+  },
+  "no_link_url": {
+    "message": "リンク URL が見つかりません。"
+  },
+  "no_url": {
+    "message": "URL が見つかりません。"
+  },
+  "hide_auth": {
+    "message": "認証情報を非表示"
+  }
+}

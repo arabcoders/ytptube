@@ -133,6 +133,130 @@ def test_filename_trim_mode(config_env, monkeypatch) -> None:
         Config.get_instance()
 
 
+def test_external_auth(config_env: Path, monkeypatch) -> None:
+    (config_env / "config.toml").write_text(
+        """[auth]
+external_user = 'owner'
+[auth.oidc]
+issuer = 'https://issuer.example'
+client_id = 'client'
+client_secret = 'secret'
+redirect_uri = 'https://app.example/callback'
+[auth.remote_user]
+enabled = true
+trusted_proxies = ['10.0.0.0/24']
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("YTP_EXTERNAL_AUTH", "ignored")
+
+    config = Config.get_instance()
+
+    assert config.external_auth.external_user == "owner"
+    assert config.external_auth.oidc is not None
+    assert config.external_auth.oidc.client_id == "client"
+    assert config.external_auth.remote_user.header == "Remote-User"
+    assert str(config.external_auth.remote_user.trusted_proxies[0]) == "10.0.0.0/24"
+
+
+def test_external_auth_custom(config_env: Path) -> None:
+    (config_env / "config.toml").write_text(
+        """[auth]
+external_user = ' owner '
+[auth.remote_user]
+enabled = true
+header = 'X-Remote_User'
+trusted_proxies = ['192.0.2.0/24', '2001:db8::/32']
+""",
+        encoding="utf-8",
+    )
+
+    remote = Config.get_instance().external_auth
+
+    assert remote.external_user == "owner"
+    assert remote.remote_user.header == "X-Remote_User"
+    assert tuple(str(proxy) for proxy in remote.remote_user.trusted_proxies) == ("192.0.2.0/24", "2001:db8::/32")
+
+
+def test_external_auth_disabled(config_env) -> None:
+    config = Config.get_instance()
+
+    assert config.external_auth.external_user is None
+    assert config.external_auth.oidc is None
+    assert not config.external_auth.remote_user.enabled
+
+
+@pytest.mark.parametrize(
+    "content, message",
+    [
+        ("[auth.oidc]\nissuer = 'x'\n", "auth.oidc"),
+        ("[auth.remote_user]\nenabled = true\n", "trusted_proxies"),
+        ("[auth.remote_user]\nheader = 'Bad Header'\n", "HTTP token"),
+        ("[auth.remote_user]\nenabled = true\ntrusted_proxies = ['bad']\n", "valid CIDRs"),
+        ("[auth.remote_user]\nenabled = true\ntrusted_proxies = ['10.0.0.0/24']\n", "external_user"),
+    ],
+)
+def test_external_auth_invalid(config_env: Path, content: str, message: str) -> None:
+    (config_env / "config.toml").write_text(content, encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        Config.get_instance()
+
+
+def test_external_auth_toml(config_env: Path) -> None:
+    (config_env / "config.toml").write_text("[auth\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="TOML"):
+        Config.get_instance()
+
+
+@pytest.mark.parametrize(
+    "content, message",
+    [
+        ("auth = 'value'\n", "auth must be a table"),
+        ("[auth]\nexternal_user = true\n", "external_user"),
+        ("[auth.oidc]\nissuer = []\n", "auth.oidc"),
+        ("[auth.remote_user]\nenabled = 'yes'\n", "enabled"),
+        ("[auth.remote_user]\ntrusted_proxies = ['10.0.0.0/24', 1]\n", "trusted_proxies"),
+    ],
+)
+def test_external_auth_types(config_env: Path, content: str, message: str) -> None:
+    (config_env / "config.toml").write_text(content, encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        Config.get_instance()
+
+
+@pytest.mark.parametrize("field", ["external_user", "issuer", "client_id", "client_secret", "redirect_uri"])
+def test_external_auth_blank(config_env: Path, field: str) -> None:
+    content = "[auth]\nexternal_user = 'owner'\n[auth.oidc]\n"
+    values = {"issuer": "x", "client_id": "x", "client_secret": "x", "redirect_uri": "x"}
+    values[field] = "   "
+    if field == "external_user":
+        content = "[auth]\nexternal_user = '   '\n[auth.oidc]\n"
+    else:
+        content += "\n".join(f"{key} = '{value}'" for key, value in values.items()) + "\n"
+    (config_env / "config.toml").write_text(content, encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        Config.get_instance()
+
+
+def test_external_auth_env(config_env: Path, monkeypatch) -> None:
+    for key, value in {
+        "YTP_OIDC_ISSUER": "https://env.example",
+        "YTP_REMOTE_USER_HEADER": "X-Env",
+        "YTP_EXTERNAL_USER": "env-user",
+    }.items():
+        monkeypatch.setenv(key, value)
+
+    auth = Config.get_instance().external_auth
+
+    assert auth.external_user is None
+    assert auth.oidc is None
+    assert auth.remote_user.header == "Remote-User"
+
+
 @pytest.mark.parametrize("value", ['["("]', '"^x"', '["x", 1]'])
 def test_filename_trim_regex(config_env, monkeypatch, value: str) -> None:
     monkeypatch.setenv("YTP_FILENAME_TRIM_REGEXES", value)

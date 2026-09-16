@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title data-i18n="extension_name">YTPTube Extension</title>
+    <link rel="stylesheet" href="css/ytp.css"/>
+    <link rel="stylesheet" href="css/popup.css"/>
+</head>
+<body class="ytp-shell ytp-popup-shell">
+
+<main class="ytp-shell-surface">
+    <header class="ytp-heading">
+        <span class="ytp-icon"><img src="icons/icon-48.png" alt=""></span>
+        <div>
+            <p class="ytp-kicker" data-i18n="popup_kicker">YTPTube / Quick add</p>
+            <h1 data-i18n="popup_title">Send a URL</h1>
+        </div>
+        <button class="ytp-theme-toggle" type="button" id="theme-toggle" data-i18n="theme_button_system">Use dark mode</button>
+    </header>
+    <form id="ytptube_popup">
+        <div class="ytp-field">
+            <div class="ytp-field-heading">
+                <label for="preset" data-i18n="preset_label">Preset</label>
+                <div class="ytp-inline-actions">
+                    <button class="ytp-mini-button" type="button" id="toggle-presets" data-i18n="custom_only">Custom only</button>
+                    <button class="ytp-mini-button" type="button" id="refresh-presets" data-i18n="refresh">Refresh</button>
+                </div>
+            </div>
+            <div class="ytp-select-wrap">
+                <select id="preset" class="ytp-control">
+                    <option value="default">default</option>
+                </select>
+            </div>
+            <span class="ytp-help" data-i18n="preset_help">Select the preset to use for this URL.</span>
+        </div>
+        <div class="ytp-field">
+            <label for="user_url" data-i18n="url_label">URL</label>
+            <input id="user_url" class="ytp-control" type="text" data-i18n-placeholder="url_placeholder" placeholder="https://..">
+            <span class="ytp-help" data-i18n="url_help">The URL to add to your download queue.</span>
+        </div>
+        <div class="ytp-actions">
+            <button id="submit-btn" class="ytp-button ytp-button-primary" type="submit" data-i18n="send_to_ytptube">Send to YTPTube</button>
+            <button class="ytp-button ytp-button-secondary" type="button" id="go-to-options" data-i18n="options">Options</button>
+        </div>
+        <div id="status-message" class="ytp-status is-hidden" role="status"></div>
+    </form>
+</main>
+
+<script src="i18n.js"></script>
+<script src="theme.js"></script>
+<script src="auth.js"></script>
+<script src="fanart.js"></script>
+<script src="popup.js"></script>
+
+</body>
+</html>

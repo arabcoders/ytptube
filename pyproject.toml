@@ -35,7 +35,7 @@ dependencies = [
   "defusedxml>=0.7.1",
   "zipstream-ng>=1.8.0",
   "apprise>=1.9.3",
-  "bgutil-ytdlp-pot-provider>=1.2.1",
+  "bgutil-ytdlp-pot-provider>=2.0.0",
   "pycryptodome>=3.23.0",
   "httpx-curl-cffi>=0.1.4",
   "parsel>=1.10.0",
@@ -46,6 +46,7 @@ dependencies = [
   "pydantic>=2.12.5",
   "playwright>=1.58.0",
   "psutil>=7.1.3",
+  "joserfc>=1.7.5",
 ]
 
 [tool.ruff]
@@ -197,7 +198,7 @@ link-mode = "copy"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["app/tests", "app/features"]
-addopts = "-v --tb=short"
+addopts = "-q --tb=short"
 required_plugins = ["pytest-timeout>=2.4.0"]
 timeout = 30
 session_timeout = 300

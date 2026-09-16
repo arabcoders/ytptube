@@ -58,6 +58,8 @@ class NFOMakerPP(PostProcessor):
                 "aired": ("release_date", "upload_date"),
                 "author": "uploader",
                 "plot": "description",
+                "runtime": "duration",
+                "thumb": "thumbnail",
                 "id": "id",
                 "extractor": "extractor",
             },
@@ -70,6 +72,8 @@ class NFOMakerPP(PostProcessor):
   <uniqueid type="cmdb">{unique_id}</uniqueid>
   <uniqueid type="{extractor}">{id}</uniqueid>
   <plot>{plot}</plot>
+  <runtime>{runtime}</runtime>
+  <thumb aspect="poster" preview="{thumb}">{thumb}</thumb>
 </episodedetails>
 """.strip("\n"),
         },

@@ -21,6 +21,7 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/ISSUE_TEMPLATE/**"
+      - "webext/**"
 
 env:
   REGISTRY: ${{ vars.REGISTRY != '' && vars.REGISTRY || '' }}

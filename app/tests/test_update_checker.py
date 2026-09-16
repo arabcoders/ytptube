@@ -42,8 +42,7 @@ class TestUpdateChecker:
                 assert checker._job_id is not None, "Should have scheduled a job"
                 assert "UpdateChecker.check_for_updates" == checker._job_id, "Job ID should be 'update_checker'"
             finally:
-                if checker._job_id:
-                    scheduler.remove(checker._job_id)
+                scheduler.remove(checker._job_id)
                 loop.close()
 
     def test_attach_disabled(self):

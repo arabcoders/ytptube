@@ -9,6 +9,7 @@ export interface Task {
   timer?: string;
   template?: string;
   cli?: string;
+  ignore_conditions?: readonly string[];
   auto_start?: boolean;
   handler_enabled?: boolean;
   enabled?: boolean;
@@ -28,7 +29,10 @@ export type TaskScheduleMetadata = {
 };
 
 export type TaskScheduleDraft = Required<
-  Pick<Task, 'name' | 'url' | 'preset' | 'folder' | 'template' | 'cli' | 'timer'>
+  Pick<
+    Task,
+    'name' | 'url' | 'preset' | 'folder' | 'template' | 'cli' | 'ignore_conditions' | 'timer'
+  >
 >;
 
 export type TaskList = Paginated<Task>;

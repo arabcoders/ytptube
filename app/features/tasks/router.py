@@ -273,7 +273,17 @@ async def tasks_add(
             counter += 1
 
         item_settings = base_settings.copy()
-        for key in ["timer", "preset", "folder", "template", "cli", "auto_start", "handler_enabled", "enabled"]:
+        for key in [
+            "timer",
+            "preset",
+            "folder",
+            "template",
+            "cli",
+            "ignore_conditions",
+            "auto_start",
+            "handler_enabled",
+            "enabled",
+        ]:
             if key in item and item[key] is not None:
                 item_settings[key] = item[key]
 
