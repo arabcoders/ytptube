@@ -1290,14 +1290,13 @@ def get_channel_images(thumbnails: list[dict]) -> dict:
         elif 0.9 <= ratio <= 1.1:  # square → thumb
             artwork.setdefault("thumb", url)
         elif ratio >= 5:  # very wide
-            if width >= 1920:
-                artwork["fanart"] = url
-            else:
-                artwork["banner"] = url
+            artwork["banner"] = url
         elif 1.6 <= ratio <= 1.8:  # landscape
             artwork["landscape"] = url
 
-    if "fanart" not in artwork and "banner" in artwork:
+    if "landscape" in artwork:
+        artwork["fanart"] = artwork["landscape"]
+    elif "fanart" not in artwork and "banner" in artwork:
         artwork["fanart"] = artwork["banner"]
 
     if "banner" not in artwork and "fanart" in artwork:
