@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "c1ec09faee02108d7c80bea27f2700a13b9d25af",
-    "date": "2026-09-16T19:13:41+00:00",
+    "full_sha": "48e1597200c2694db98c1b5148bc964c6d08ebcb",
+    "date": "2026-09-16T20:02:28+00:00",
     "commits": [
+      {
+        "sha": "48e15972",
+        "full_sha": "48e1597200c2694db98c1b5148bc964c6d08ebcb",
+        "message": "feat: update get_channel_images to prefer landscape for fanart. Closes #679",
+        "author": "arabcoders",
+        "date": "2026-09-16T20:02:28+00:00"
+      },
       {
         "sha": "c1ec09fa",
         "full_sha": "c1ec09faee02108d7c80bea27f2700a13b9d25af",
