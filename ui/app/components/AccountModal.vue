@@ -144,7 +144,10 @@
           </div>
         </section>
 
-        <section class="space-y-3 border-t border-default pt-5">
+        <section
+          v-if="auth.status?.value?.auth_method !== 'remote_user'"
+          class="space-y-3 border-t border-default pt-5"
+        >
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
               <span class="ytp-detail-icon">
@@ -225,6 +228,7 @@
     <template #footer>
       <div class="flex w-full flex-wrap items-center justify-between gap-2">
         <UButton
+          v-if="auth.status?.value?.auth_method !== 'remote_user'"
           color="error"
           variant="soft"
           icon="i-lucide-log-out"
@@ -500,9 +504,13 @@ const load = async (): Promise<void> => {
     const response = await request('/api/auth/api-keys');
     await ensure_api_success(response);
     keys.value = ((await response.json()) as { items: ApiKey[] }).items;
-    const sessionResponse = await request('/api/auth/sessions');
-    await ensure_api_success(sessionResponse);
-    sessions.value = ((await sessionResponse.json()) as { items: AuthSession[] }).items;
+    if (auth.status.value?.auth_method !== 'remote_user') {
+      const sessionResponse = await request('/api/auth/sessions');
+      await ensure_api_success(sessionResponse);
+      sessions.value = ((await sessionResponse.json()) as { items: AuthSession[] }).items;
+    } else {
+      sessions.value = [];
+    }
   } catch (error) {
     loadFailed.value = true;
     await report(error);

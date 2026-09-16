@@ -16,6 +16,8 @@ This document describes the available endpoints and their usage. All endpoints r
   - [Global Notes](#global-notes)
   - [Endpoints](#endpoints)
     - [GET /api/auth/status](#get-apiauthstatus)
+    - [GET /api/auth/oidc/login](#get-apiauthoidclogin)
+    - [GET /api/auth/oidc/callback](#get-apiauthoidccallback)
     - [POST /api/auth/setup](#post-apiauthsetup)
     - [POST /api/auth/login](#post-apiauthlogin)
     - [POST /api/auth/logout](#post-apiauthlogout)
@@ -203,6 +205,11 @@ Use an authorization header when possible. URLs can appear in browser history an
 return `FEATURE_DISABLED`. `YTP_CORS_ORIGINS` accepts a comma-separated origin allowlist; `*` allows requests 
 without cookie credentials from any origin.
 
+External authentication is configured in `{YTP_CONFIG_PATH}/config.toml`, normally `/config/config.toml`, See the
+[Authentication guide](docs/authentication.md) for the OIDC and trusted reverse-proxy configuration and its security
+requirements. `YTP_TRUSTED_PROXIES` only controls client IP metadata resolution from `X-Forwarded-For`; it is separate
+from `auth.remote_user.trusted_proxies`.
+
 ---
 
 ## Global Notes
@@ -281,13 +288,32 @@ without cookie credentials from any origin.
   "disabled": false,
   "setup_required": true,
   "authenticated": false,
-  "user": null
+  "user": null,
+  "oidc_available": false,
+  "auth_method": null
 }
 ```
 
 **Notes**:
 - This endpoint is public.
 - When authenticated, `user` is `{ "id": 1, "username": "name" }`.
+- `oidc_available` indicates whether OIDC login is configured and available.
+- `auth_method` is `"remote_user"`, `"session"`, or `null`.
+
+---
+
+### GET /api/auth/oidc/login
+**Purpose**: Start OIDC login.
+
+The endpoint redirects the browser to the configured OIDC provider.
+
+---
+
+### GET /api/auth/oidc/callback
+**Purpose**: Complete OIDC login after the provider redirects the browser back to YTPTube.
+
+On success, YTPTube creates a normal local session for the configured `external_user` account. The endpoint returns an
+error response when the callback cannot be completed.
 
 ---
 

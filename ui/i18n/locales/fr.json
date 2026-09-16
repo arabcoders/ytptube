@@ -6,6 +6,7 @@
     "loginHeading": "Bon retour",
     "loginSubtitle": "Connectez-vous pour continuer sur YTPTube.",
     "loginAction": "Se connecter",
+    "oidcLogin": "Se connecter avec OIDC",
     "forgotPassword": "Mot de passe oublié ?",
     "recoveryGuidance": "La récupération du mot de passe nécessite un accès local à l’installation YTPTube. Utilisez la commande indiquée dans la FAQ.",
     "recoveryInstructions": "Ouvrir les instructions de réinitialisation",
@@ -1285,6 +1286,11 @@
         "title": "Versions natives",
         "navLabel": "Versions natives",
         "description": "Installer et utiliser les versions Windows, macOS et Linux."
+      },
+      "authentication": {
+        "title": "Authentification",
+        "navLabel": "Authentification",
+        "description": "Configurer l’authentification locale, OIDC et par proxy de confiance."
       },
       "faq": {
         "title": "FAQ",

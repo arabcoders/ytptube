@@ -22,6 +22,18 @@ required authentication boundary.
 Only the latest release is supported. Update to the current Docker image or latest native release before reporting.
 Reports that cannot be reproduced on the latest release will be closed.
 
+## OIDC security boundaries
+
+All accepted OIDC identities map to the configured existing `auth.external_user`, which has full administrator
+permissions. YTPTube doesn't provision separate OIDC users or use provider roles, groups, or claims for authorization.
+Operators must restrict client access at the identity provider.
+
+OIDC creates an independent local YTPTube session. Disabling the identity at the provider or ending a provider session
+doesn't revoke an existing YTPTube session. YTPTube logout revokes only its local session and doesn't perform provider
+or federated logout. When immediate access removal is required, revoke YTPTube sessions separately.
+
+These documented boundaries alone aren't vulnerabilities and they are intentionally designed this way.
+
 ## Reports we close
 
 YTPTube is an administrative application, not a sandbox for untrusted users. Anyone with valid application credentials

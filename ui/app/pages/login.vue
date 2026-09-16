@@ -49,6 +49,16 @@
         {{ t('auth.loginAction') }}
       </UButton>
     </form>
+    <UButton
+      v-if="auth.status?.value?.oidc_available"
+      type="button"
+      @click="oidcLogin"
+      variant="outline"
+      block
+      icon="i-lucide-key-round"
+    >
+      {{ t('auth.oidcLogin') }}
+    </UButton>
     <UButton variant="link" color="neutral" class="w-full" @click="recoveryOpen = true">
       {{ t('auth.forgotPassword') }}
     </UButton>
@@ -72,6 +82,8 @@
 </template>
 
 <script setup lang="ts">
+import { uri } from '~/utils';
+
 definePageMeta({ layout: 'auth' });
 
 const { t } = useI18n();
@@ -82,6 +94,8 @@ const error = ref('');
 const busy = ref(false);
 const showPassword = ref(false);
 const recoveryOpen = ref(false);
+
+const oidcLogin = (): void => window.location.assign(uri('/api/auth/oidc/login'));
 
 const submit = async (): Promise<void> => {
   if (busy.value) return;

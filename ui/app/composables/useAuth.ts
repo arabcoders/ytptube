@@ -7,6 +7,8 @@ export type AuthStatus = {
   setup_required: boolean;
   authenticated: boolean;
   user: User | null;
+  oidc_available?: boolean;
+  auth_method?: 'remote_user' | 'session' | null;
 };
 
 export const authRedirect = (state: AuthStatus, path: string): string | null => {

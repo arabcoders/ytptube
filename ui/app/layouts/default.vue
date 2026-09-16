@@ -470,7 +470,7 @@ const accountMenu = computed<DropdownMenuItem[][]>(() => {
   ];
 
   const actions: DropdownMenuItem[] = [
-    ...(authVisible.value
+    ...(authVisible.value && auth.status.value?.auth_method !== 'remote_user'
       ? [
           {
             label: t('auth.logout'),

@@ -186,6 +186,11 @@ When YTPTube is behind a reverse proxy, session details use the transport peer a
 actual client address from `X-Forwarded-For`, set `YTP_TRUSTED_PROXIES` to the proxy's exact IP address or CIDR (for
 example, `10.0.0.10,10.0.0.0/24`).
 
+## Authentication
+
+Configure local, OIDC, and trusted reverse-proxy authentication with the [Authentication guide](docs/authentication.md).
+External authentication requires an existing local account, and local login remains available as a fallback.
+
 ## How do I reset a forgotten password?
 
 You need shell access to the machine running YTPTube. Replace `USERNAME` with the account username.

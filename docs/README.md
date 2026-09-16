@@ -8,6 +8,7 @@
 ## Guides
 
 - [Native builds](native-builds.md): Install and operate the Windows, macOS, and Linux releases.
+- [Authentication](authentication.md): Configure local, OIDC, and trusted proxy authentication.
 - [Generic Task Definitions](task-definitions.md): Add recurring sources for sites without built-in handlers.
 - [FAQ](../FAQ.md): Resolve setup, integration, and runtime issues.
 

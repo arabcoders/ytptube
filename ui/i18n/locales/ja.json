@@ -6,6 +6,7 @@
     "loginHeading": "おかえりなさい",
     "loginSubtitle": "ログインしてYTPTubeを続けます。",
     "loginAction": "ログイン",
+    "oidcLogin": "OIDCでログイン",
     "forgotPassword": "パスワードをお忘れですか？",
     "recoveryGuidance": "パスワードの復旧には、YTPTubeのインストール先へのローカルアクセスが必要です。FAQに記載されたリセットコマンドを使用してください。",
     "recoveryInstructions": "パスワードリセット手順を開く",
@@ -1285,6 +1286,11 @@
         "title": "ネイティブビルド",
         "navLabel": "ネイティブビルド",
         "description": "Windows、macOS、Linux 版のインストールと実行。"
+      },
+      "authentication": {
+        "title": "認証",
+        "navLabel": "認証",
+        "description": "ローカル、OIDC、信頼済みプロキシ認証を設定します。"
       },
       "faq": {
         "title": "FAQ",
