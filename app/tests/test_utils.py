@@ -1356,6 +1356,19 @@ class TestGetChannelImages:
         assert "landscape" in result
         assert result["landscape"] == "http://example.com/landscape.jpg"
 
+    def test_fanart_prefers_landscape(self):
+        from app.library.Utils import get_channel_images
+
+        thumbnails = [
+            {"url": "http://example.com/banner.jpg", "width": 1920, "height": 200, "id": "banner"},
+            {"url": "http://example.com/landscape.jpg", "width": 1920, "height": 1080, "id": "landscape"},
+        ]
+
+        result = get_channel_images(thumbnails)
+
+        assert result["banner"] == "http://example.com/banner.jpg"
+        assert result["fanart"] == "http://example.com/landscape.jpg"
+
     def test_channel_images_empty_list(self):
         from app.library.Utils import get_channel_images
 
