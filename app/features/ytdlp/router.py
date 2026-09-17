@@ -7,6 +7,7 @@ import secrets
 import time
 from collections import OrderedDict
 from collections.abc import Iterable
+from functools import cache
 from typing import Any
 from urllib.parse import urlparse
 
@@ -42,6 +43,45 @@ ENTRIES_BROWSER_WAIT = 10
 SHORTCUT_TTL = 21600
 SHORTCUT_RANGE = re.compile(r"^bytes=(?:\d+-\d*|-\d+)$")
 SHORTCUT_TOKEN = re.compile(r"^[A-Za-z0-9_-]+$")
+SEARCH_TARGET = re.compile(r"^(?P<head>[^:]+):(?P<query>.*)$")
+
+
+@cache
+def _search_keys() -> frozenset[str]:
+    from yt_dlp.extractor import gen_extractor_classes
+
+    return frozenset(key for cls in gen_extractor_classes() if (key := getattr(cls, "SEARCH_KEY", None)))
+
+
+def _validate_search_target(url: str) -> None:
+    match = SEARCH_TARGET.fullmatch(url)
+    if not match:
+        message = "URL must be HTTP/HTTPS or a valid yt-dlp search target."
+        raise ValueError(message)
+
+    head = match.group("head")
+    key = next((key for key in sorted(_search_keys(), key=len, reverse=True) if head.startswith(key)), None)
+    if key is None:
+        message = f"Unknown yt-dlp search target '{head}'."
+        raise ValueError(message)
+
+    query = match.group("query").strip()
+    if not query:
+        message = "Search target query must not be empty."
+        raise ValueError(message)
+
+    count = head.removeprefix(key)
+    if count and count != "all" and not re.fullmatch(r"[1-9][0-9]*", count):
+        message = "Search target result count must be a positive integer."
+        raise ValueError(message)
+
+    if count == "all":
+        message = "Search target 'all' is not supported for previews."
+        raise ValueError(message)
+
+    if count and int(count) > 100:
+        message = "Search target result count must be between 1 and 100."
+        raise ValueError(message)
 
 
 def _valid_shortcut_range(value: str) -> bool:
@@ -470,15 +510,23 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
     try:
         validate_url(url)
     except ValueError as e:
-        return api_error_response(
-            str(e),
-            code="INVALID",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.url"},
-            message=str(e),
-            detail=str(e),
-            extra={"status": False},
-        )
+        try:
+            _validate_search_target(url)
+        except ValueError as search_error:
+            message = (
+                str(search_error)
+                if SEARCH_TARGET.match(url) and not re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", url)
+                else str(e)
+            )
+            return api_error_response(
+                message,
+                code="INVALID",
+                status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.url"},
+                message=message,
+                detail=message,
+                extra={"status": False},
+            )
 
     opts: YTDLPOpts = YTDLPOpts.get_instance()
 

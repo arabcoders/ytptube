@@ -295,7 +295,7 @@
     "dialog": "对话框",
     "downloadUrlHint": "使用 Shift+Enter 切换到多行输入模式。",
     "urlsSeparatedBy": "URL 用换行符或 {separator} 分隔",
-    "urlsPlaceholder": "要下载的 URL",
+    "urlsPlaceholder": "URL 或 yt-dlp 搜索，例如 ytsearch10:query",
     "presetLabel": "预设",
     "presetDisabled": "预设已禁用。命令选项中已包含 yt-dlp 的 format 键。",
     "presetDesc": "要应用的已保存 yt-dlp 选项。",

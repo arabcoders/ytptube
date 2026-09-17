@@ -648,7 +648,7 @@ will be added to the command.
 **Purpose**: Retrieves metadata (info) for a provided URL without adding it to the download queue.
 
 **Query Parameters**:
-- `url=<video-url>` (required)
+- `url=<video-url>` (required) - URL, or a yt-dlp search target such as `ytsearch:query` or `ytsearch10:query`.
 - `preset=<preset-name>` (optional) - The preset to use for extracting info.
 - `force=true` (optional) - Force fetch new info instead of using cache.
 - `args=<yt-dlp-command-opts>` (optional) - The yt-dlp command options to apply to the info extraction.
@@ -690,6 +690,8 @@ or an error:
 }
 ```
 - If the URL is invalid or missing, returns `400 Bad Request`.
+- Search previews accept a bare prefix (one result) or a positive numeric suffix from 1 through 100. Empty queries,
+  unknown prefixes, counts above 100, and the `all` suffix are rejected with `400 Bad Request`.
 - If the preset is specified and not found, returns `404 Not Found`.
 
 ---

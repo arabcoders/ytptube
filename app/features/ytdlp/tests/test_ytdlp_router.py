@@ -51,6 +51,30 @@ class _Options:
         return opts
 
 
+@pytest.mark.parametrize(
+    ("target", "valid"),
+    [
+        ("ytsearch:cats", True),
+        ("scsearch10:foo, bar", True),
+        ("ytsearch:   ", False),
+        ("ytsearch01:cats", False),
+        ("ytsearch0:cats", False),
+        ("ytsearch100:cats", True),
+        ("ytsearch101:cats", False),
+        ("ytsearchall:cats", False),
+        ("unknownsearch:cats", False),
+    ],
+)
+def test_search_target_validation(monkeypatch: pytest.MonkeyPatch, target: str, valid: bool) -> None:
+    monkeypatch.setattr(router, "_search_keys", lambda: frozenset({"ytsearch", "scsearch"}))
+
+    if valid:
+        router._validate_search_target(target)
+    else:
+        with pytest.raises(ValueError):
+            router._validate_search_target(target)
+
+
 @pytest.mark.asyncio
 async def test_info_preserves_entries(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
     info = {
@@ -85,6 +109,31 @@ async def test_info_preserves_entries(monkeypatch: pytest.MonkeyPatch, test_clie
     assert call.kwargs["config"]["skip_download"] is True
     assert call.kwargs["config"]["extractor_args"]["generic"]["wait"] == ["10"]
     assert cache.keys[0].endswith(":entries")
+
+
+@pytest.mark.asyncio
+async def test_info_accepts_search(monkeypatch: pytest.MonkeyPatch, test_client) -> None:
+    fetch = AsyncMock(return_value=({"title": "Search result"}, []))
+    config = SimpleNamespace(default_preset="default")
+
+    def reject_http(url: str) -> None:
+        raise ValueError(f"invalid URL: {url}")
+
+    monkeypatch.setattr(router, "validate_url", reject_http)
+    monkeypatch.setattr(router, "_search_keys", lambda: frozenset({"pluginsearch"}))
+    monkeypatch.setattr(router.Presets, "get_instance", lambda: _Presets())
+    monkeypatch.setattr(router.YTDLPOpts, "get_instance", lambda: _Options())
+    monkeypatch.setattr(router, "fetch_info", fetch)
+
+    async def handler(request):
+        return await router.get_info(request, _Cache(), config)
+
+    client = await test_client({"get_info": handler})
+    response = await client.get(url_for("get_info", query={"url": "pluginsearch2:cats"}))
+
+    assert response.status == 200
+    assert fetch.await_args is not None
+    assert fetch.await_args.kwargs["url"] == "pluginsearch2:cats"
 
 
 @pytest.mark.asyncio

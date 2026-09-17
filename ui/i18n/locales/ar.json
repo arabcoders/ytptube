@@ -295,7 +295,7 @@
     "dialog": "حوار",
     "downloadUrlHint": "استخدم Shift+Enter للتبديل إلى وضع الإدخال متعدد الأسطر.",
     "urlsSeparatedBy": "الروابط مفصولة بأسطر جديدة أو {separator}",
-    "urlsPlaceholder": "روابط للتنزيل",
+    "urlsPlaceholder": "روابط أو عمليات بحث yt-dlp، مثل ytsearch10:query",
     "presetLabel": "إعداد مسبق",
     "presetDisabled": "الإعدادات المسبقة معطلة. مفتاح التنسيق موجود في خيارات أوامر yt-dlp.",
     "presetDesc": "خيارات yt-dlp محفوظة لتطبيقها.",

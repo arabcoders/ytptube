@@ -162,6 +162,20 @@ describe('object access helpers', () => {
   });
 });
 
+describe('source splitting', () => {
+  it('preserves search target separator', () => {
+    expect(utils.isSearchSource('ytsearch:foo')).toBe(true);
+    expect(utils.isSearchSource('scsearch10: foo, bar')).toBe(true);
+    expect(utils.isSearchSource('https://example.com/search?q=foo')).toBe(false);
+    expect(utils.splitSources('scsearch10:foo, bar', ',')).toEqual(['scsearch10:foo, bar']);
+    expect(utils.splitSources('scsearch10: foo, bar', ',')).toEqual(['scsearch10: foo, bar']);
+    expect(utils.splitSources('https://example.com/a, https://example.com/b', ',')).toEqual([
+      'https://example.com/a',
+      'https://example.com/b',
+    ]);
+  });
+});
+
 describe('string manipulation helpers', () => {
   it('normalizes_preset_names', () => {
     expect(utils.normalizePresetName('  My Preset  ')).toBe('my_preset');

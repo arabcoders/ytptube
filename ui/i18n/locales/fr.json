@@ -295,7 +295,7 @@
     "dialog": "Boîte de dialogue",
     "downloadUrlHint": "Utilisez Maj+Entrée pour basculer en mode de saisie multiligne.",
     "urlsSeparatedBy": "URL séparées par des sauts de ligne ou {separator}",
-    "urlsPlaceholder": "URL à télécharger",
+    "urlsPlaceholder": "URL ou recherches yt-dlp, par exemple ytsearch10:requête",
     "presetLabel": "Préréglage",
     "presetDisabled": "Les préréglages sont désactivés. La clé de format est présente dans les options de commande pour yt-dlp.",
     "presetDesc": "Options yt-dlp enregistrées à appliquer.",

@@ -295,7 +295,7 @@
     "dialog": "Dialog",
     "downloadUrlHint": "Use Shift+Enter to switch to multiline input mode.",
     "urlsSeparatedBy": "URLs separated by newlines or {separator}",
-    "urlsPlaceholder": "URLs to download",
+    "urlsPlaceholder": "URLs or yt-dlp searches, for example ytsearch10:query",
     "presetLabel": "Preset",
     "presetDisabled": "Presets are disabled. Format key is present in the command options for yt-dlp.",
     "presetDesc": "Saved yt-dlp options to apply.",

@@ -295,7 +295,7 @@
     "dialog": "ダイアログ",
     "downloadUrlHint": "Shift+Enter で複数行入力モードに切り替えます。",
     "urlsSeparatedBy": "URL は改行または {separator} で区切ってください",
-    "urlsPlaceholder": "ダウンロードする URL",
+    "urlsPlaceholder": "URL または yt-dlp 検索（例: ytsearch10:query）",
     "presetLabel": "プリセット",
     "presetDisabled": "プリセットは無効です。フォーマットキーが yt-dlp のコマンドオプションに存在します。",
     "presetDesc": "適用する保存済みの yt-dlp オプション。",

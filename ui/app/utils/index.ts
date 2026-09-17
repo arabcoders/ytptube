@@ -13,6 +13,23 @@ const separators = [
   { name: 'common.sepSpace', value: ' ' },
 ];
 
+const isSearchSource = (value: string): boolean => {
+  const source = value.trim();
+  return /^[^\s:/]+(?:all|[1-9][0-9]*)?:\s*\S/.test(source) && !/^https?:\/\//i.test(source);
+};
+
+const splitSources = (value: string, separator: string): string[] =>
+  value.split('\n').flatMap((line) => {
+    const trimmed = line.trim();
+    if (isSearchSource(trimmed)) {
+      return [trimmed];
+    }
+    return line
+      .split(separator)
+      .map((source) => source.trim())
+      .filter(Boolean);
+  });
+
 const getValue = <T>(obj: (() => T) | T): T => {
   return 'function' === typeof obj ? (obj as () => T)() : obj;
 };
@@ -901,6 +918,8 @@ const formatPageTitle = (title?: string | null): string => {
 };
 
 export {
+  isSearchSource,
+  splitSources,
   APP_TITLE,
   separators,
   convertCliOptions,

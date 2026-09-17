@@ -596,7 +596,7 @@ import type { TaskScheduleDraft, TaskScheduleMetadata } from '~/types/tasks';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
 import { useDialog } from '~/composables/useDialog';
-import { getSeparatorsName, parse_api_error, shortPath } from '~/utils';
+import { getSeparatorsName, parse_api_error, shortPath, splitSources } from '~/utils';
 import { useFormHandoff } from '~/composables/useFormHandoff';
 
 const { t } = useI18n();
@@ -959,19 +959,7 @@ const handlePaste = async (event: ClipboardEvent): Promise<void> => {
 };
 
 const splitUrls = (urlString: string): Array<string> => {
-  const lines = urlString.split('\n');
-  const urls: string[] = [];
-
-  lines.forEach((line) =>
-    line.split(separator.value).forEach((url) => {
-      const trimmed = url.trim();
-      if (trimmed) {
-        urls.push(trimmed);
-      }
-    }),
-  );
-
-  return urls;
+  return splitSources(urlString, separator.value);
 };
 
 const addDownload = async () => {

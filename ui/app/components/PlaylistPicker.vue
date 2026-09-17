@@ -203,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { formatTime, parse_api_error, request } from '~/utils';
+import { formatTime, isSearchSource, parse_api_error, request } from '~/utils';
 import { formatDateOnly, formatDateTime, parseDate } from '~/utils/date';
 import { playlistExtras } from '~/utils/playlist';
 
@@ -529,7 +529,7 @@ const loadEntries = async (): Promise<void> => {
         extractionErrors.push(error instanceof Error ? error.message : t('common.failedFetch'));
       }
 
-      if (normalizedEntries.length === 0) {
+      if (normalizedEntries.length === 0 && !isSearchSource(props.link)) {
         await inspect();
       }
     }
