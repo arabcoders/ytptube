@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "33bb0d60e7f5b2c546674779b0a13b41caffac2d",
+    "date": "2026-09-17T22:07:18+00:00",
+    "commits": [
+      {
+        "sha": "33bb0d60",
+        "full_sha": "33bb0d60e7f5b2c546674779b0a13b41caffac2d",
+        "message": "feat: support yt-dlp search query to playlist picker",
+        "author": "arabcoders",
+        "date": "2026-09-17T22:07:18+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.7.3",
     "full_sha": "ee130004a13c499a4e7fbea02984c8ae41071126",
     "date": "2026-09-16T20:12:21+00:00",
