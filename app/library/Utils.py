@@ -1,6 +1,8 @@
 import copy
 import glob
 import re
+import shutil
+import subprocess
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -867,6 +869,8 @@ def get_files(
         OSError: If the directory is invalid or not a directory.
 
     """
+    search = search.strip() if search else search
+
     if not isinstance(base_path, Path):
         base_path = Path(base_path)
 
@@ -916,8 +920,31 @@ def get_files(
         )
         return [], 0
 
+    files: list[Path]
+    if search:
+        search_lower: str = search.lower()
+        if fd := shutil.which("fd"):
+            try:
+                result = subprocess.run(
+                    [fd, "--fixed-strings", "--ignore-case", "--print0", "--max-results", "100", search, "."],
+                    cwd=dir_path,
+                    check=True,
+                    capture_output=True,
+                    timeout=30,
+                )
+                files = [dir_path / Path(value.decode()) for value in result.stdout.split(b"\0") if value][:100]
+            except (OSError, subprocess.SubprocessError):
+                files = [file for file in dir_path.iterdir() if search_lower in file.name.lower()][:100]
+        else:
+            files = [file for file in dir_path.iterdir() if search_lower in file.name.lower()][:100]
+    else:
+        files = list(dir_path.iterdir())
+
     contents: list = []
-    for file in dir_path.iterdir():
+    for file in files:
+        if search and any(part.startswith((".", "_")) for part in file.relative_to(dir_path).parts):
+            continue
+
         if file.name.startswith(".") or file.name.startswith("_"):
             continue
 
@@ -983,10 +1010,6 @@ def get_files(
         )
 
     total: int = len(contents)
-
-    if search:
-        search_lower: str = search.lower()
-        contents = [c for c in contents if search_lower in c["name"].lower()]
 
     if sort_by == "name":
         contents.sort(key=lambda x: x["name"].lower(), reverse=(sort_order.lower() == "desc"))

@@ -24,7 +24,7 @@
               <button
                 type="button"
                 class="max-w-full truncate normal-case tracking-normal transition hover:text-highlighted"
-                @click="() => void reloadContent(item.path)"
+                @click="() => void handleBreadcrumbClick(item.path)"
               >
                 {{ item.name }}
               </button>
@@ -757,7 +757,13 @@ const { handleOpenChange: handlePreviewOpenChange, requestClose: requestClosePre
 
 const clearFilter = (): void => {
   localSearch.value = '';
+  browser.setSearchValue('');
   show_filter.value = false;
+};
+
+const handleBreadcrumbClick = async (path: string): Promise<void> => {
+  clearFilter();
+  await reloadContent(path);
 };
 
 const itemHref = (item: FileItem): string => {
