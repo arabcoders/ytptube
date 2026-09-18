@@ -1020,6 +1020,7 @@
     "noteCron": "<strong>Timer Requirement:</strong> Tasks must have either a valid timer or a supported handler. If the URL does not match a handler, set a CRON timer.",
     "noteMetadata": "<strong>Generate metadata:</strong> will attempt first to save metadata based on the task <code>Download path</code> if not set, it will fallback to the <code>Output template</code> with the priority of <code>task</code>, <code>preset</code> and then finally to <code>YTP_OUTPUT_TEMPLATE</code>. The final path must resolve inside <code>{path}</code>.",
     "noteYoutubeRss": "It's pretty normal for youtube rss feeds to return 404 from around <code class=\"text-error\">00:00 UTC</code> to around <code class=\"text-error\">06:00 UTC</code>. This is because youtube updates the feeds around that time The tasks will automatically recover once the feeds are available again.",
+    "noteLiveActivity": "Queue and history entries are live references. They are not stored with this task and may disappear when the queue or history is cleared.",
     "inspectHandlerTitle": "Inspect Task Handler",
     "inspectHandlerDesc": "Inspect how the current task URL maps to a handler.",
     "archivingItems": "Archiving existing items for '{count}' tasks. This will take a while...",

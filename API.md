@@ -1054,6 +1054,7 @@ or an error:
   - Use status value to include only items with that status (e.g., `status=finished`)
   - Prefix with `!` to exclude items with that status (e.g., `status=!finished`)
   - Common status values: `finished`, `downloading`, `pending`, `error`
+- `source_id` (optional): Positive task source ID. Filters records by numeric `extras.source_id`.
 
 **Response (when `type=all` or no type set)** - Legacy format:
 ```json

@@ -207,11 +207,16 @@ class DataStore:
                 return ref
         return None
 
-    async def get_total_count(self, status_filter: str | None = None) -> int:
-        return await self._connection.count(str(self._type), status_filter=status_filter)
+    async def get_total_count(self, status_filter: str | None = None, source_id: int | None = None) -> int:
+        return await self._connection.count(str(self._type), status_filter=status_filter, source_id=source_id)
 
     async def get_items_paginated(
-        self, page: int = 1, per_page: int = 50, order: str = "DESC", status_filter: str | None = None
+        self,
+        page: int = 1,
+        per_page: int = 50,
+        order: str = "DESC",
+        status_filter: str | None = None,
+        source_id: int | None = None,
     ) -> tuple[list[tuple[str, Download]], int, int, int]:
         if page < 1:
             msg = "page must be >= 1"
@@ -228,7 +233,7 @@ class DataStore:
 
         await self._connection.flush()
         items, total_items, current_page, total_pages = await self._connection.paginate(
-            str(self._type), page, per_page, order, status_filter
+            str(self._type), page, per_page, order, status_filter, source_id
         )
 
         return [(item_id, Download(info=item)) for item_id, item in items], total_items, current_page, total_pages

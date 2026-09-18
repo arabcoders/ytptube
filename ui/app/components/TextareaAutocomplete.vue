@@ -84,7 +84,7 @@ const props = withDefaults(
   },
 );
 
-const model = defineModel<string>();
+const model = defineModel<string>({ default: '' });
 const localValue = ref(model.value || '');
 const textareaRef = ref<{ textareaRef?: HTMLTextAreaElement | null } | null>(null);
 const caretIndex = ref(0);

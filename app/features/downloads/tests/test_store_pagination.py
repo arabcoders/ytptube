@@ -79,6 +79,32 @@ class TestDataStorePagination:
         finally:
             await db.close()
 
+    async def test_source_filter(self):
+        db = await make_db(data=0)
+        try:
+            for index, source_id in enumerate((7, "7", 8)):
+                item_data = {
+                    "url": f"https://example.com/source{index}",
+                    "title": f"Source Video {index}",
+                    "id": f"source{index}",
+                    "folder": "/downloads",
+                    "extras": {"source_id": source_id},
+                    "status": "finished",
+                }
+                await db.execute_raw(
+                    'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+                    (f"source-id-{index}", "done", item_data["url"], json.dumps(item_data), "2026-01-01 00:00:00"),
+                )
+
+            datastore = DataStore(type=StoreType.HISTORY, connection=db)
+            items, total, _, pages = await datastore.get_items_paginated(per_page=2, source_id=7)
+            assert len(items) == 2
+            assert total == 2
+            assert pages == 1
+            assert {download.info.extras["source_id"] for _, download in items} == {7, "7"}
+        finally:
+            await db.close()
+
     async def test_pagination_basic(self):
         db = await make_db(data=100)
         try:

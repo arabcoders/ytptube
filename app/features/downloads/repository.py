@@ -40,6 +40,12 @@ def _status_clause(status_filter: str | None) -> ColumnElement[bool] | None:
     return path.in_(values) if values else None
 
 
+def _source_clause(source_id: int | None) -> ColumnElement[bool] | None:
+    if source_id is None:
+        return None
+    return func.json_extract(DownloadModel.data, "$.extras.source_id").cast(Integer) == source_id
+
+
 class _Operation:
     def __init__(self, kind: str, type_value: str, model: DownloadModel | None = None, key: str | None = None) -> None:
         self.kind, self.type_value, self.model, self.key = kind, type_value, model, key
@@ -180,22 +186,32 @@ class DownloadsRepository(metaclass=Singleton):
         item = model.to_item()
         return item if any(matches_condition(key, value, item.__dict__) for key, value in kwargs.items()) else None
 
-    async def count(self, type_value: str, status_filter: str | None = None) -> int:
+    async def count(self, type_value: str, status_filter: str | None = None, source_id: int | None = None) -> int:
         async with self.session() as session:
             query = select(func.count()).select_from(DownloadModel).where(DownloadModel.type == type_value)
             if (clause := _status_clause(status_filter)) is not None:
                 query = query.where(clause)
+            if (clause := _source_clause(source_id)) is not None:
+                query = query.where(clause)
             return int((await session.execute(query)).scalar_one())
 
     async def paginate(
-        self, type_value: str, page: int, per_page: int, order: str, status_filter: str | None = None
+        self,
+        type_value: str,
+        page: int,
+        per_page: int,
+        order: str,
+        status_filter: str | None = None,
+        source_id: int | None = None,
     ) -> tuple[list[tuple[str, ItemDTO]], int, int, int]:
-        total = await self.count(type_value, status_filter)
+        total = await self.count(type_value, status_filter, source_id)
         pages = (total + per_page - 1) // per_page if total else 1
         page = min(page, pages) if total else page
         async with self.session() as session:
             query = select(DownloadModel).where(DownloadModel.type == type_value)
             if (clause := _status_clause(status_filter)) is not None:
+                query = query.where(clause)
+            if (clause := _source_clause(source_id)) is not None:
                 query = query.where(clause)
             query = (
                 query.order_by(DownloadModel.created_at.asc() if order == "ASC" else DownloadModel.created_at.desc())

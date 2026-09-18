@@ -774,7 +774,7 @@ import { useConfirm } from '~/composables/useConfirm';
 import { useDialog } from '~/composables/useDialog';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useMediaQuery } from '~/composables/useMediaQuery';
-import type { item_request } from '~/types/item';
+import type { download_form_item } from '~/types/item';
 import type { StoreItem } from '~/types/store';
 import {
   ag,
@@ -801,7 +801,7 @@ const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
-const downloadFormHandoff = useFormHandoff<item_request>('download');
+const downloadFormHandoff = useFormHandoff<download_form_item>('download');
 
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
@@ -822,7 +822,7 @@ const info_view = ref<{ url: string; preset: string; cli: string; useUrl: boolea
   cli: '',
   useUrl: false,
 });
-const item_form = ref<item_request | object>({});
+const item_form = ref<download_form_item | object>({});
 const query = ref('');
 const toggleFilter = ref(false);
 const selectedElms = ref<string[]>([]);
@@ -1093,7 +1093,7 @@ const changeDisplay = (): void => {
   display_style.value = display_style.value === 'grid' ? 'list' : 'grid';
 };
 
-const toNewDownload = async (item: item_request | Partial<StoreItem>): Promise<void> => {
+const toNewDownload = async (item: download_form_item | Partial<StoreItem>): Promise<void> => {
   if (!item) {
     return;
   }
@@ -1628,43 +1628,5 @@ const onImgError = (event: Event): void => {
 <style scoped>
 .page-form-wrap {
   max-width: 100%;
-}
-
-.queue-progress {
-  position: relative;
-  min-height: 2.25rem;
-  overflow: hidden;
-}
-
-.queue-progress__bar {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-}
-
-.queue-progress__label {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-height: 2.25rem;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: nowrap;
-  padding: 0.5rem 0.75rem;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--ui-text-highlighted);
-  white-space: nowrap;
-}
-
-.queue-progress--compact {
-  min-height: 1.875rem;
-}
-
-.queue-progress--compact .queue-progress__label {
-  min-height: 1.875rem;
-  padding: 0.375rem 0.75rem;
 }
 </style>

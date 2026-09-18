@@ -129,15 +129,15 @@
                   >
                     <UIcon name="i-lucide-external-link" class="size-4" />
                   </NuxtLink>
-                  <button
-                    type="button"
-                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
-                    @click="toggleExpand(item.id, 'title')"
-                  >
-                    <span :class="['block', expandClass(item.id, 'title')]">
+                  <UTooltip :text="remove_tags(item.name)">
+                    <NuxtLink
+                      :to="item.id ? `/tasks/${item.id}` : '/tasks'"
+                      class="block min-w-0 flex-1 truncate text-start text-sm font-semibold text-highlighted hover:underline"
+                      :aria-label="t('common.details')"
+                    >
                       {{ remove_tags(item.name) }}
-                    </span>
-                  </button>
+                    </NuxtLink>
+                  </UTooltip>
 
                   <UIcon
                     v-if="item.id && isTaskInProgress(item.id)"

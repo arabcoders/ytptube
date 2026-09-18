@@ -6,7 +6,7 @@ from datetime import datetime  # noqa: TC003
 from email.utils import formatdate
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Index, String, column, func
+from sqlalchemy import JSON, Index, Integer, String, column, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.features.core.models import Base, UTCDateTime, utcnow
@@ -25,6 +25,11 @@ class DownloadModel(Base):
         Index("history_type", "type"),
         Index("history_url", "url", unique=True),
         Index("history_status", func.json_extract(column("data"), "$.status")),
+        Index(
+            "history_type_source_id",
+            "type",
+            func.json_extract(column("data"), "$.extras.source_id").cast(Integer),
+        ),
     )
 
     id: Mapped[str] = mapped_column(String, primary_key=True)

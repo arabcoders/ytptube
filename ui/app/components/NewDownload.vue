@@ -591,7 +591,7 @@ import PlaylistPicker from '~/components/PlaylistPicker.vue';
 import { useConditions } from '~/composables/useConditions';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { Condition } from '~/types/conditions';
-import type { item_request } from '~/types/item';
+import type { download_form_item, item_request, picked_entry } from '~/types/item';
 import type { TaskScheduleDraft, TaskScheduleMetadata } from '~/types/tasks';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
@@ -601,7 +601,7 @@ import { useFormHandoff } from '~/composables/useFormHandoff';
 
 const { t } = useI18n();
 
-const props = defineProps<{ item?: Partial<item_request> }>();
+const props = defineProps<{ item?: Partial<download_form_item> }>();
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string | undefined, cli: string | undefined): void;
   (e: 'clear_form'): void;
@@ -628,16 +628,14 @@ const showOptions = ref<boolean>(false);
 const showTestResults = ref<boolean>(false);
 const showPlaylistPicker = ref<boolean>(false);
 const playlistPickerDirty = ref<boolean>(false);
-const pickedEntries = ref<Array<{ url: string; extras: Record<string, unknown> }>>([]);
+const pickedEntries = ref<picked_entry[]>([]);
 const applyingPickedEntries = ref(false);
 
 const openPlaylistPicker = (): void => {
   showPlaylistPicker.value = true;
 };
 
-const setPickedEntries = (
-  entries: Array<{ url: string; extras: Record<string, unknown> }>,
-): void => {
+const setPickedEntries = (entries: picked_entry[]): void => {
   pickedEntries.value = entries;
   applyingPickedEntries.value = true;
   form.value.url = entries.map((entry) => entry.url).join('\n');
@@ -1177,8 +1175,14 @@ onMounted(async () => {
   }
 
   if (props?.item) {
+    pickedEntries.value = props.item.picked_entries
+      ? JSON.parse(JSON.stringify(props.item.picked_entries))
+      : [];
+    if (typeof props.item.auto_start === 'boolean') auto_start.value = props.item.auto_start;
     const updates: Partial<item_request> = {};
-    const keys = Object.keys(props.item) as (keyof item_request)[];
+    const keys = Object.keys(props.item).filter(
+      (key) => key !== 'picked_entries',
+    ) as (keyof item_request)[];
     for (const key of keys) {
       const value = props.item[key];
       updates[key] = key === 'extras' ? JSON.parse(JSON.stringify(value)) : value!;

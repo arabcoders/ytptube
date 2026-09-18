@@ -17,10 +17,13 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from app.library.logging import get_logger
+
 if TYPE_CHECKING:
     from types import ModuleType
 
 UTC_LENGTH = 14
+LOG = get_logger()
 
 __version__ = "1.0.0"
 
@@ -172,6 +175,12 @@ class Database:
                 continue
             if target_version and current_version > target_version:
                 break
+            LOG.info(
+                "Applying database migration '%s' (%s).",
+                migration.name,
+                current_version,
+                extra={"migration_name": migration.name, "migration_version": current_version},
+            )
             await migration.upgrade(self.conn)
             new_version: str = migration.get_version()
             await self.update_version(new_version)
@@ -192,6 +201,12 @@ class Database:
                 continue
             if current_version <= target:
                 break
+            LOG.info(
+                "Reverting database migration '%s' (%s).",
+                migration.name,
+                current_version,
+                extra={"migration_name": migration.name, "migration_version": current_version},
+            )
             await migration.downgrade(self.conn)
             next_version: str | int = 0
             if i < len(migrations) - 1:

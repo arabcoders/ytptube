@@ -1020,6 +1020,7 @@
     "noteCron": "<strong>Exigence de minuteur :</strong> Les tâches doivent avoir soit un minuteur valide, soit un gestionnaire pris en charge. Si l'URL ne correspond à aucun gestionnaire, définissez un minuteur CRON.",
     "noteMetadata": "<strong>Générer les métadonnées :</strong> tentera d'abord d'enregistrer les métadonnées en fonction du <code>Chemin de téléchargement</code> de la tâche, si non défini, il utilisera le <code>Modèle de sortie</code> avec la priorité <code>tâche</code>, <code>préréglage</code> puis enfin <code>YTP_OUTPUT_TEMPLATE</code>. Le chemin final doit se résoudre dans <code>{path}</code>.",
     "noteYoutubeRss": "Il est assez normal que les flux RSS YouTube renvoient 404 d'environ <code class=\"text-error\">00:00 UTC</code> à environ <code class=\"text-error\">06:00 UTC</code>. Cela est dû au fait que YouTube met à jour les flux autour de cette période. Les tâches se rétabliront automatiquement une fois que les flux seront à nouveau disponibles.",
+    "noteLiveActivity": "Les entrées de la file d'attente et de l'historique sont des références en direct. Elles ne sont pas stockées avec cette tâche et peuvent disparaître lorsque la file d'attente ou l'historique est vidé.",
     "inspectHandlerTitle": "Inspecter le gestionnaire de tâche",
     "inspectHandlerDesc": "Inspectez comment l'URL de la tâche actuelle correspond à un gestionnaire.",
     "archivingItems": "Archivage des éléments existants pour « {count} » tâches. Cela prendra un certain temps...",
