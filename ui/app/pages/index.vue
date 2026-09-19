@@ -303,7 +303,14 @@
                                   <span class="font-semibold text-default">{{
                                     t('queue.path')
                                   }}</span>
-                                  {{ getItemPath(item) }}
+                                  <NuxtLink
+                                    v-if="getItemBrowserUrl(item)"
+                                    :to="getItemBrowserUrl(item)"
+                                    class="hover:text-highlighted hover:underline"
+                                  >
+                                    {{ getItemPath(item) }}
+                                  </NuxtLink>
+                                  <template v-else>{{ getItemPath(item) }}</template>
                                 </p>
                               </div>
 
@@ -486,7 +493,14 @@
 
                             <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
                               <span class="font-semibold text-default">{{ t('queue.path') }}</span>
-                              {{ getItemPath(item) }}
+                              <NuxtLink
+                                v-if="getItemBrowserUrl(item)"
+                                :to="getItemBrowserUrl(item)"
+                                class="hover:text-highlighted hover:underline"
+                              >
+                                {{ getItemPath(item) }}
+                              </NuxtLink>
+                              <template v-else>{{ getItemPath(item) }}</template>
                             </p>
                           </div>
 
@@ -781,6 +795,7 @@ import {
   deepIncludes,
   formatBytes,
   formatTime,
+  getBrowserUrl,
   getImage,
   getPath,
   request,
@@ -1112,6 +1127,8 @@ const toNewDownload = async (item: download_form_item | Partial<StoreItem>): Pro
 };
 
 const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
+const getItemBrowserUrl = (item: StoreItem): string =>
+  getBrowserUrl(config.app.download_path, item);
 const getListImage = (item: StoreItem): string =>
   getImage(config.app.download_path, item, false) || '';
 const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';

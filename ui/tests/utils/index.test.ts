@@ -160,6 +160,33 @@ describe('object access helpers', () => {
     expect(utils.stripPath('/data/downloads', '/data/downloads/video.mp4')).toBe('video.mp4');
     expect(utils.stripPath('', '/var/files/test.txt')).toBe('/var/files/test.txt');
   });
+
+  it('builds_browser_urls', () => {
+    expect(
+      utils.getBrowserUrl('/downloads', {
+        download_dir: '/downloads/shows',
+        filename: 'Episode #1.mp4',
+        folder: 'shows',
+      }),
+    ).toBe('/browser/shows?search=Episode%20%231.mp4');
+    expect(
+      utils.getBrowserUrl('/downloads', {
+        download_dir: '/downloads',
+        filename: null,
+        folder: '',
+      }),
+    ).toBe('/browser');
+  });
+
+  it('rejects_template_urls', () => {
+    expect(
+      utils.getBrowserUrl('/downloads', {
+        download_dir: '/downloads/%(channel)s',
+        filename: null,
+        folder: '%(channel)s',
+      }),
+    ).toBe('');
+  });
 });
 
 describe('source splitting', () => {

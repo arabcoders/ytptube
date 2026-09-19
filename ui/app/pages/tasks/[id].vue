@@ -166,7 +166,7 @@
 import type { Task } from '~/types/tasks';
 import { formatDateTime } from '~/utils/date';
 import { formatRelativeTime } from '~/utils/relativeTime';
-import { encodePath, eTrim, parse_list_response, request, sTrim, shortPath } from '~/utils';
+import { eTrim, getBrowserUrl, parse_list_response, request, sTrim, shortPath } from '~/utils';
 import type { Pagination } from '~/types/responses';
 import type { StoreItem } from '~/types/store';
 import { taskHistoryUrl } from '~/utils/taskDetails';
@@ -330,6 +330,11 @@ const metadata = computed<DetailCard[]>(() => {
   const downloadPath = task.value.folder
     ? `${eTrim(path, '/')}/${sTrim(task.value.folder, '/')}`
     : path;
+  const browserUrl = getBrowserUrl(config.app.download_path, {
+    download_dir: '',
+    filename: null,
+    folder: task.value.folder || '',
+  });
   const items: DetailCard[] = [
     {
       label: t('common.url'),
@@ -344,7 +349,7 @@ const metadata = computed<DetailCard[]>(() => {
       value: downloadPath,
       icon: 'i-lucide-folder-output',
       tooltip: downloadPath,
-      to: task.value.folder ? `/browser/${encodePath(sTrim(task.value.folder, '/'))}` : '/browser',
+      to: browserUrl || undefined,
       valueWrap: false,
     },
   ];
