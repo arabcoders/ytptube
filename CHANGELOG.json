@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "bcd2dd974e548f472d5f81e4b46c66b8482f12f0",
-    "date": "2026-09-18T17:16:38+00:00",
+    "full_sha": "ad87e1c52a4e55204e478a07ad2c60d8c7c893ec",
+    "date": "2026-09-19T16:26:34+00:00",
     "commits": [
+      {
+        "sha": "ad87e1c5",
+        "full_sha": "ad87e1c52a4e55204e478a07ad2c60d8c7c893ec",
+        "message": "refactor(ci): improve gitea CI",
+        "author": "arabcoders",
+        "date": "2026-09-19T16:26:34+00:00"
+      },
+      {
+        "sha": "c00249ff",
+        "full_sha": "c00249ff5d9e2b465be15c6599b4f6671a088914",
+        "message": "refactor: add direct path to browser",
+        "author": "arabcoders",
+        "date": "2026-09-19T16:25:09+00:00"
+      },
       {
         "sha": "bcd2dd97",
         "full_sha": "bcd2dd974e548f472d5f81e4b46c66b8482f12f0",
