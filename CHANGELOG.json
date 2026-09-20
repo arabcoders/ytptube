@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "ad87e1c52a4e55204e478a07ad2c60d8c7c893ec",
-    "date": "2026-09-19T16:26:34+00:00",
+    "full_sha": "f2b053dc575c040ff1eedc3d9d9b304992bab18a",
+    "date": "2026-09-20T19:55:17+00:00",
     "commits": [
+      {
+        "sha": "f2b053dc",
+        "full_sha": "f2b053dc575c040ff1eedc3d9d9b304992bab18a",
+        "message": "refactor: show task in item details",
+        "author": "arabcoders",
+        "date": "2026-09-20T19:55:17+00:00"
+      },
       {
         "sha": "ad87e1c5",
         "full_sha": "ad87e1c52a4e55204e478a07ad2c60d8c7c893ec",
