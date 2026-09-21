@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "f2b053dc575c040ff1eedc3d9d9b304992bab18a",
-    "date": "2026-09-20T19:55:17+00:00",
+    "full_sha": "77d75cc47bb1254427f4a86195ac440053e760a5",
+    "date": "2026-09-21T08:44:08+00:00",
     "commits": [
+      {
+        "sha": "77d75cc4",
+        "full_sha": "77d75cc47bb1254427f4a86195ac440053e760a5",
+        "message": "fix: taskSourceUrl was too strict",
+        "author": "arabcoders",
+        "date": "2026-09-21T08:44:08+00:00"
+      },
       {
         "sha": "f2b053dc",
         "full_sha": "f2b053dc575c040ff1eedc3d9d9b304992bab18a",
