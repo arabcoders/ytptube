@@ -299,10 +299,13 @@
                                   {{ formatTime(item.extras.duration) }}
                                 </p>
 
-                                <p v-if="getItemTaskUrl(item)" class="text-xs text-toned">
-                                  <span class="font-semibold text-default">{{
-                                    t('tasks.task')
-                                  }}</span>
+                                <p
+                                  v-if="getItemTaskUrl(item)"
+                                  class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                                >
+                                  <span class="font-semibold text-default"
+                                    >{{ t('tasks.task') }}:</span
+                                  >
                                   <NuxtLink
                                     :to="getItemTaskUrl(item)"
                                     class="hover:text-highlighted hover:underline"
@@ -311,7 +314,11 @@
                                   </NuxtLink>
                                 </p>
 
-                                <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                                <p
+                                  v-if="getItemPath(item)"
+                                  class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                                  dir="ltr"
+                                >
                                   <span class="font-semibold text-default">{{
                                     t('queue.path')
                                   }}</span>
@@ -322,7 +329,7 @@
                                   >
                                     {{ getItemPath(item) }}
                                   </NuxtLink>
-                                  <template v-else>{{ getItemPath(item) }}</template>
+                                  <span v-else>{{ getItemPath(item) }}</span>
                                 </p>
                               </div>
 
@@ -503,8 +510,11 @@
                               }}</UBadge>
                             </div>
 
-                            <p v-if="getItemTaskUrl(item)" class="text-xs text-toned">
-                              <span class="font-semibold text-default">{{ t('tasks.task') }}</span>
+                            <p
+                              v-if="getItemTaskUrl(item)"
+                              class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                            >
+                              <span class="font-semibold text-default">{{ t('tasks.task') }}:</span>
                               <NuxtLink
                                 :to="getItemTaskUrl(item)"
                                 class="hover:text-highlighted hover:underline"
@@ -513,7 +523,11 @@
                               </NuxtLink>
                             </p>
 
-                            <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                            <p
+                              v-if="getItemPath(item)"
+                              class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                              dir="ltr"
+                            >
                               <span class="font-semibold text-default">{{ t('queue.path') }}</span>
                               <NuxtLink
                                 v-if="getItemBrowserUrl(item)"
@@ -522,7 +536,7 @@
                               >
                                 {{ getItemPath(item) }}
                               </NuxtLink>
-                              <template v-else>{{ getItemPath(item) }}</template>
+                              <span v-else>{{ getItemPath(item) }}</span>
                             </p>
                           </div>
 
