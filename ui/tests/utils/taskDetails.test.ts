@@ -16,13 +16,13 @@ describe('task details helpers', () => {
   });
 
   it('links task sources', () => {
-    expect(taskSourceUrl({ source_handler: 'Tasks', source_id: '12' })).toBe('/tasks/12');
-    expect(taskSourceUrl({ source_handler: ' web ', source_id: 4 })).toBe('/tasks/4');
+    expect(taskSourceUrl({ source_id: '12' })).toBe('/tasks/12');
+    expect(taskSourceUrl({ source_id: 4 })).toBe('/tasks/4');
   });
 
-  it('rejects other sources', () => {
-    expect(taskSourceUrl({ source_handler: 'YoutubeHandler', source_id: 12 })).toBe('');
-    expect(taskSourceUrl({ source_handler: 'Tasks', source_id: 'invalid' })).toBe('');
-    expect(taskSourceUrl({ source_handler: 'Tasks', source_id: 0 })).toBe('');
+  it('rejects invalid sources', () => {
+    expect(taskSourceUrl({ source_id: 'invalid' })).toBe('');
+    expect(taskSourceUrl({ source_id: 0 })).toBe('');
+    expect(taskSourceUrl(undefined)).toBe('');
   });
 });

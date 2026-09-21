@@ -1,11 +1,8 @@
 import type { StoreItem } from '~/types/store';
 
-type TaskSource = Pick<StoreItem['extras'], 'source_handler' | 'source_id'>;
+type TaskSource = Pick<StoreItem['extras'], 'source_id'>;
 
 export const taskSourceUrl = (source: TaskSource | null | undefined): string => {
-  const handler = source?.source_handler?.trim().toLowerCase();
-  if (handler !== 'tasks' && handler !== 'web') return '';
-
   const id = Number(source?.source_id);
   return Number.isSafeInteger(id) && id > 0 ? `/tasks/${id}` : '';
 };
