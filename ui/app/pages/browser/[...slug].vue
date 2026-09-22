@@ -24,7 +24,7 @@
               <button
                 type="button"
                 class="max-w-full truncate normal-case tracking-normal transition hover:text-highlighted"
-                @click="() => void reloadContent(item.path)"
+                @click="() => void handleBreadcrumbClick(item.path)"
               >
                 {{ item.name }}
               </button>
@@ -689,7 +689,7 @@ const buildStateUrl = (dir: string, page?: number): string => {
 
   const queryString = params.toString();
   const normalizedDir = dir.replace(/^\/+/, '').replace(/\/+$/, '');
-  const basePath = normalizedDir ? `/browser/${normalizedDir}` : '/browser';
+  const basePath = normalizedDir ? `/browser/${encodePath(normalizedDir)}` : '/browser';
   return queryString ? `${basePath}?${queryString}` : basePath;
 };
 
@@ -757,11 +757,19 @@ const { handleOpenChange: handlePreviewOpenChange, requestClose: requestClosePre
 
 const clearFilter = (): void => {
   localSearch.value = '';
+  browser.setSearchValue('');
   show_filter.value = false;
 };
 
+const handleBreadcrumbClick = async (path: string): Promise<void> => {
+  clearFilter();
+  await reloadContent(path);
+};
+
 const itemHref = (item: FileItem): string => {
-  return item.content_type === 'dir' ? uri(`/browser/${item.path}`) : downloadHref(item);
+  return item.content_type === 'dir'
+    ? uri(`/browser/${encodePath(item.path)}`)
+    : downloadHref(item);
 };
 
 const downloadHref = (item: FileItem): string => {

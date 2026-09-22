@@ -66,6 +66,9 @@ type StoreItem = {
   };
   download_skipped?: boolean;
   extras: {
+    source_id?: number | string;
+    source_name?: string;
+    source_handler?: string;
     channel?: string;
     duration?: number | null;
     release_in?: string;
@@ -77,6 +80,7 @@ type StoreItem = {
     live_in?: string;
     is_premiere?: boolean;
     retry_attempt?: number;
+    metadata?: Record<string, unknown>;
   };
   tmpfilename?: string | null;
   filename?: string | null;

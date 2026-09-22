@@ -54,6 +54,8 @@ export interface TaskInspectSuccess {
     title?: string | null;
     archive_id?: string | null;
     thumbnail?: string | null;
+    description?: string | null;
+    is_archived?: boolean;
     metadata?: Record<string, unknown>;
   }>;
   metadata?: Record<string, unknown> | null;

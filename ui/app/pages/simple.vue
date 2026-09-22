@@ -1689,34 +1689,6 @@ watch(
   position: absolute;
 }
 
-.queue-progress {
-  position: relative;
-  min-height: 2.25rem;
-  overflow: hidden;
-}
-
-.queue-progress__bar {
-  position: absolute;
-  inset: 0 auto 0 0;
-}
-
-.queue-progress__label {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-height: 2.25rem;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: nowrap;
-  padding: 0.5rem 0.75rem;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--ui-text-highlighted);
-  white-space: nowrap;
-}
-
 @media (max-width: 768px) {
   .simple-form-center {
     transform: translateY(16vh);

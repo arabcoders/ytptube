@@ -85,7 +85,7 @@ type ClipRect = {
   left: number;
 };
 
-const model = defineModel<string>();
+const model = defineModel<string>({ default: '' });
 const search = ref(model.value ?? '');
 const showList = ref(false);
 const focused = ref(false);

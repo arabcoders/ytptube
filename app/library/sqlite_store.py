@@ -112,8 +112,8 @@ class SqliteStore(metaclass=ThreadSafe):
             db_url, echo=False, connect_args={"check_same_thread": False, "uri": self._db_path.startswith(":memory")}
         )
         self._conn = await self._engine.connect()
-        version = await migrate.get_version(self._conn)
         await migrate.upgrade(self._conn, ROOT_PATH / "migrations")
+        version = await migrate.get_version(self._conn)
         if version:
             LOG.debug("Database schema version is '%s'.", version)
         await self._conn.execute(text("PRAGMA journal_mode=wal"))

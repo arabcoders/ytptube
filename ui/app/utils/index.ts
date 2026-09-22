@@ -2,6 +2,8 @@ import { useStorage } from '@vueuse/core';
 import type { ApiErrorPayload, convert_args_response, Paginated } from '~/types/responses';
 import type { StoreItem } from '~/types/store';
 
+type StorePath = Pick<StoreItem, 'download_dir' | 'filename' | 'folder'>;
+
 const AG_SEPARATOR = '.';
 const APP_TITLE = 'YTPTube';
 
@@ -12,6 +14,23 @@ const separators = [
   { name: 'common.sepPipe', value: '|' },
   { name: 'common.sepSpace', value: ' ' },
 ];
+
+const isSearchSource = (value: string): boolean => {
+  const source = value.trim();
+  return /^[^\s:/]+(?:all|[1-9][0-9]*)?:\s*\S/.test(source) && !/^https?:\/\//i.test(source);
+};
+
+const splitSources = (value: string, separator: string): string[] =>
+  value.split('\n').flatMap((line) => {
+    const trimmed = line.trim();
+    if (isSearchSource(trimmed)) {
+      return [trimmed];
+    }
+    return line
+      .split(separator)
+      .map((source) => source.trim())
+      .filter(Boolean);
+  });
 
 const getValue = <T>(obj: (() => T) | T): T => {
   return 'function' === typeof obj ? (obj as () => T)() : obj;
@@ -666,7 +685,7 @@ const deepIncludes = (
   return false;
 };
 
-const getPath = (basePath: string, item: StoreItem): string => {
+const getPath = (basePath: string, item: StorePath): string => {
   if (!item.folder && ((!item.filename && item.download_dir === basePath) || !item.download_dir)) {
     return shortPath(basePath);
   }
@@ -682,6 +701,23 @@ const getPath = (basePath: string, item: StoreItem): string => {
     eTrim(basePath, '/'),
     '/' + eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/'),
   );
+};
+
+const getBrowserUrl = (basePath: string, item: StorePath): string => {
+  const path = getPath(basePath, item);
+  if (!path || path.includes('%(')) {
+    return '';
+  }
+
+  if (item.filename) {
+    const folder = dirname(path);
+    const url = folder === '.' ? '/browser' : `/browser/${encodePath(sTrim(folder, '/'))}`;
+    return `${url}?search=${encodeURIComponent(basename(path))}`;
+  }
+
+  const isRoot =
+    !item.folder && (!item.download_dir || eTrim(item.download_dir, '/') === eTrim(basePath, '/'));
+  return isRoot ? '/browser' : `/browser/${encodePath(sTrim(path, '/'))}`;
 };
 
 const getRemoteImage = (item: StoreItem, fallback: boolean = true): string => {
@@ -901,6 +937,8 @@ const formatPageTitle = (title?: string | null): string => {
 };
 
 export {
+  isSearchSource,
+  splitSources,
   APP_TITLE,
   separators,
   convertCliOptions,
@@ -942,6 +980,7 @@ export {
   isDownloadSkipped,
   deepIncludes,
   getPath,
+  getBrowserUrl,
   getImage,
   getHistoryImage,
   getRemoteImage,

@@ -9,3 +9,12 @@ export type item_request = {
   auto_start?: boolean;
   extras?: Record<string, any>;
 };
+
+export type picked_entry = {
+  url: string;
+  extras: Record<string, unknown>;
+};
+
+export type download_form_item = item_request & {
+  picked_entries?: picked_entry[];
+};

@@ -70,6 +70,14 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: Cache uv dependencies
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-${{ runner.arch }}-python-${{ env.PYTHON_VERSION }}-uv-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-python-${{ env.PYTHON_VERSION }}-uv-
+
       - name: Install Python dependencies
         run: uv sync --dev
 
@@ -148,9 +156,17 @@ jobs:
         run: |
           python3 .github/scripts/generate_changelog.py -p . -f ./ui/exported/CHANGELOG.json
 
-      - name: Upload frontend build
-        uses: actions/upload-artifact@v7
+      - name: Upload frontend build (GitHub)
         if: env.REGISTRY == ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-build
+          path: ui/exported/
+          retention-days: 1
+
+      - name: Upload frontend build (Gitea)
+        if: env.REGISTRY != ''
+        uses: ChristopherHX/gitea-upload-artifact@v4
         with:
           name: frontend-build
           path: ui/exported/
@@ -172,9 +188,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download frontend build
-        uses: actions/download-artifact@v8
+      - name: Download frontend build (GitHub)
         if: env.REGISTRY == ''
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-build
+          path: ui/exported/
+
+      - name: Download frontend build (Gitea)
+        if: env.REGISTRY != ''
+        uses: ChristopherHX/gitea-download-artifact@v4
         with:
           name: frontend-build
           path: ui/exported/
@@ -185,6 +208,7 @@ jobs:
           SHA=$(git rev-parse HEAD)
           DATE=$(date -u +"%Y%m%d")
           BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')
+          BRANCH_ESCAPED=$(printf '%s' "${BRANCH}" | sed 's/[\/&]/\\&/g')
 
           echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
@@ -195,7 +219,7 @@ jobs:
             -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
             -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
             -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
-            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
+            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH_ESCAPED}\"/" \
             app/library/version.py
 
           echo "Updated version info:"
@@ -251,8 +275,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
-          cache-from: type=gha,scope=${{ github.workflow }}
+          cache-from: type=gha,scope=container-${{ github.ref_name }}-${{ env.ARCH }}
+          cache-to: type=gha,mode=max,scope=container-${{ github.ref_name }}-${{ env.ARCH }}
           provenance: true
 
   docker-build-arm64:
@@ -271,9 +295,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download frontend build
-        uses: actions/download-artifact@v8
+      - name: Download frontend build (GitHub)
         if: env.REGISTRY == ''
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-build
+          path: ui/exported/
+
+      - name: Download frontend build (Gitea)
+        if: env.REGISTRY != ''
+        uses: ChristopherHX/gitea-download-artifact@v4
         with:
           name: frontend-build
           path: ui/exported/
@@ -284,6 +315,7 @@ jobs:
           SHA=$(git rev-parse HEAD)
           DATE=$(date -u +"%Y%m%d")
           BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')
+          BRANCH_ESCAPED=$(printf '%s' "${BRANCH}" | sed 's/[\/&]/\\&/g')
 
           echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
@@ -294,7 +326,7 @@ jobs:
             -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
             -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
             -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
-            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
+            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH_ESCAPED}\"/" \
             app/library/version.py
 
           echo "Updated version info:"
@@ -350,8 +382,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
-          cache-from: type=gha,scope=${{ github.workflow }}
+          cache-from: type=gha,scope=container-${{ github.ref_name }}-${{ env.ARCH }}
+          cache-to: type=gha,mode=max,scope=container-${{ github.ref_name }}-${{ env.ARCH }}
           provenance: true
 
   docker-publish-manifest:

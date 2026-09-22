@@ -10,7 +10,7 @@ from app.library.cache import Cache
 from app.features.downloads.items import ItemDTO
 from app.library.encoder import Encoder
 from app.routes.api import history
-from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_live, items_retry
+from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_list, items_live, items_retry
 from app.tests.helpers import temporary_test_dir, url_for
 
 
@@ -91,6 +91,43 @@ async def test_items_delete_ids(test_client) -> None:
     queue.clear_bulk.assert_awaited_once_with(["a", "b"], remove_file=False)
     body = await response.json()
     assert body == {"items": {}, "deleted": 2}
+
+
+@pytest.mark.asyncio
+async def test_items_source_filter(test_client) -> None:
+    store = Mock(get_items_paginated=AsyncMock(return_value=([], 0, 1, 1)))
+    queue = SimpleNamespace(queue=store, done=store)
+    config = SimpleNamespace(default_pagination=50)
+
+    async def handler(request):
+        return await items_list(request, queue, Encoder(), config)
+
+    response = await _request(test_client, "items_list", handler, query={"type": "done", "source_id": "7"})
+
+    assert response.status == 200
+    store.get_items_paginated.assert_awaited_once_with(
+        page=1,
+        per_page=50,
+        order="DESC",
+        status_filter=None,
+        source_id=7,
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("source_id", ["invalid", "0", "-1"])
+async def test_items_source_invalid(source_id: str, test_client) -> None:
+    store = Mock(get_items_paginated=AsyncMock())
+    queue = SimpleNamespace(queue=store, done=store)
+    config = SimpleNamespace(default_pagination=50)
+
+    async def handler(request):
+        return await items_list(request, queue, Encoder(), config)
+
+    response = await _request(test_client, "items_list", handler, query={"type": "done", "source_id": source_id})
+
+    assert response.status == 400
+    store.get_items_paginated.assert_not_awaited()
 
 
 @pytest.mark.asyncio

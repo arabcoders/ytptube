@@ -299,11 +299,37 @@
                                   {{ formatTime(item.extras.duration) }}
                                 </p>
 
-                                <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                                <p
+                                  v-if="getItemTaskUrl(item)"
+                                  class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                                >
+                                  <span class="font-semibold text-default"
+                                    >{{ t('tasks.task') }}:</span
+                                  >
+                                  <NuxtLink
+                                    :to="getItemTaskUrl(item)"
+                                    class="hover:text-highlighted hover:underline"
+                                  >
+                                    {{ item.extras.source_name || `#${item.extras.source_id}` }}
+                                  </NuxtLink>
+                                </p>
+
+                                <p
+                                  v-if="getItemPath(item)"
+                                  class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                                  dir="ltr"
+                                >
                                   <span class="font-semibold text-default">{{
                                     t('queue.path')
                                   }}</span>
-                                  {{ getItemPath(item) }}
+                                  <NuxtLink
+                                    v-if="getItemBrowserUrl(item)"
+                                    :to="getItemBrowserUrl(item)"
+                                    class="hover:text-highlighted hover:underline"
+                                  >
+                                    {{ getItemPath(item) }}
+                                  </NuxtLink>
+                                  <span v-else>{{ getItemPath(item) }}</span>
                                 </p>
                               </div>
 
@@ -484,9 +510,33 @@
                               }}</UBadge>
                             </div>
 
-                            <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                            <p
+                              v-if="getItemTaskUrl(item)"
+                              class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                            >
+                              <span class="font-semibold text-default">{{ t('tasks.task') }}:</span>
+                              <NuxtLink
+                                :to="getItemTaskUrl(item)"
+                                class="hover:text-highlighted hover:underline"
+                              >
+                                {{ item.extras.source_name || `#${item.extras.source_id}` }}
+                              </NuxtLink>
+                            </p>
+
+                            <p
+                              v-if="getItemPath(item)"
+                              class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                              dir="ltr"
+                            >
                               <span class="font-semibold text-default">{{ t('queue.path') }}</span>
-                              {{ getItemPath(item) }}
+                              <NuxtLink
+                                v-if="getItemBrowserUrl(item)"
+                                :to="getItemBrowserUrl(item)"
+                                class="hover:text-highlighted hover:underline"
+                              >
+                                {{ getItemPath(item) }}
+                              </NuxtLink>
+                              <span v-else>{{ getItemPath(item) }}</span>
                             </p>
                           </div>
 
@@ -774,13 +824,14 @@ import { useConfirm } from '~/composables/useConfirm';
 import { useDialog } from '~/composables/useDialog';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useMediaQuery } from '~/composables/useMediaQuery';
-import type { item_request } from '~/types/item';
+import type { download_form_item } from '~/types/item';
 import type { StoreItem } from '~/types/store';
 import {
   ag,
   deepIncludes,
   formatBytes,
   formatTime,
+  getBrowserUrl,
   getImage,
   getPath,
   request,
@@ -792,6 +843,7 @@ import { usePageShell } from '~/composables/usePageShell';
 import { useFormHandoff } from '~/composables/useFormHandoff';
 import { isShareTarget, parseShareUrls, removeShareQuery } from '~/composables/useShareTarget';
 import { useRangeSelection } from '~/composables/useRangeSelection';
+import { taskSourceUrl } from '~/utils/taskDetails';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -801,7 +853,7 @@ const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
 const { toggleExpand, expandClass } = useExpandableMeta();
-const downloadFormHandoff = useFormHandoff<item_request>('download');
+const downloadFormHandoff = useFormHandoff<download_form_item>('download');
 
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
@@ -822,7 +874,7 @@ const info_view = ref<{ url: string; preset: string; cli: string; useUrl: boolea
   cli: '',
   useUrl: false,
 });
-const item_form = ref<item_request | object>({});
+const item_form = ref<download_form_item | object>({});
 const query = ref('');
 const toggleFilter = ref(false);
 const selectedElms = ref<string[]>([]);
@@ -1093,7 +1145,7 @@ const changeDisplay = (): void => {
   display_style.value = display_style.value === 'grid' ? 'list' : 'grid';
 };
 
-const toNewDownload = async (item: item_request | Partial<StoreItem>): Promise<void> => {
+const toNewDownload = async (item: download_form_item | Partial<StoreItem>): Promise<void> => {
   if (!item) {
     return;
   }
@@ -1112,6 +1164,9 @@ const toNewDownload = async (item: item_request | Partial<StoreItem>): Promise<v
 };
 
 const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
+const getItemBrowserUrl = (item: StoreItem): string =>
+  getBrowserUrl(config.app.download_path, item);
+const getItemTaskUrl = (item: StoreItem): string => taskSourceUrl(item.extras);
 const getListImage = (item: StoreItem): string =>
   getImage(config.app.download_path, item, false) || '';
 const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';
@@ -1628,43 +1683,5 @@ const onImgError = (event: Event): void => {
 <style scoped>
 .page-form-wrap {
   max-width: 100%;
-}
-
-.queue-progress {
-  position: relative;
-  min-height: 2.25rem;
-  overflow: hidden;
-}
-
-.queue-progress__bar {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-}
-
-.queue-progress__label {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-height: 2.25rem;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: nowrap;
-  padding: 0.5rem 0.75rem;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--ui-text-highlighted);
-  white-space: nowrap;
-}
-
-.queue-progress--compact {
-  min-height: 1.875rem;
-}
-
-.queue-progress--compact .queue-progress__label {
-  min-height: 1.875rem;
-  padding: 0.375rem 0.75rem;
 }
 </style>

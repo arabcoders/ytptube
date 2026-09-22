@@ -99,7 +99,7 @@ const {
   preferUp,
 } = toRefs(props);
 
-const model = defineModel<string>();
+const model = defineModel<string>({ default: '' });
 
 const showList = ref(false);
 const highlightedIndex = ref(-1);

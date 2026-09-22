@@ -269,11 +269,37 @@
                                 }}</UBadge>
                               </div>
 
-                              <p v-if="getItemPath(item)" class="text-xs text-toned" dir="ltr">
+                              <p
+                                v-if="getItemTaskUrl(item)"
+                                class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                              >
+                                <span class="font-semibold text-default"
+                                  >{{ t('tasks.task') }}:</span
+                                >
+                                <NuxtLink
+                                  :to="getItemTaskUrl(item)"
+                                  class="hover:text-highlighted hover:underline"
+                                >
+                                  {{ item.extras.source_name || `#${item.extras.source_id}` }}
+                                </NuxtLink>
+                              </p>
+
+                              <p
+                                v-if="getItemPath(item)"
+                                class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                                dir="ltr"
+                              >
                                 <span class="font-semibold text-default">{{
                                   t('queue.path')
                                 }}</span>
-                                {{ getItemPath(item) }}
+                                <NuxtLink
+                                  v-if="getItemBrowserUrl(item)"
+                                  :to="getItemBrowserUrl(item)"
+                                  class="hover:text-highlighted hover:underline"
+                                >
+                                  {{ getItemPath(item) }}
+                                </NuxtLink>
+                                <span v-else>{{ getItemPath(item) }}</span>
                               </p>
                             </div>
 
@@ -448,7 +474,7 @@
 
                 <div class="flex max-w-full flex-wrap items-center justify-end gap-1 sm:shrink-0">
                   <UPopover
-                    v-if="show_popover && getItemPath(item)"
+                    v-if="show_popover && (getItemPath(item) || getItemTaskUrl(item))"
                     :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
                   >
                     <UButton
@@ -463,9 +489,32 @@
                       <UCard class="max-w-137.5" :ui="{ body: 'space-y-3 p-4' }">
                         <div class="space-y-2">
                           <p class="text-sm font-semibold text-highlighted">{{ item.title }}</p>
-                          <p class="text-xs text-toned" dir="ltr">
+                          <p
+                            v-if="getItemTaskUrl(item)"
+                            class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                          >
+                            <span class="font-semibold text-default">{{ t('tasks.task') }}:</span>
+                            <NuxtLink
+                              :to="getItemTaskUrl(item)"
+                              class="hover:text-highlighted hover:underline"
+                            >
+                              {{ item.extras.source_name || `#${item.extras.source_id}` }}
+                            </NuxtLink>
+                          </p>
+                          <p
+                            v-if="getItemPath(item)"
+                            class="flex flex-wrap items-baseline gap-x-1 text-xs text-toned"
+                            dir="ltr"
+                          >
                             <span class="font-semibold text-default">{{ t('queue.path') }}</span>
-                            {{ getItemPath(item) }}
+                            <NuxtLink
+                              v-if="getItemBrowserUrl(item)"
+                              :to="getItemBrowserUrl(item)"
+                              class="hover:text-highlighted hover:underline"
+                            >
+                              {{ getItemPath(item) }}
+                            </NuxtLink>
+                            <span v-else>{{ getItemPath(item) }}</span>
                           </p>
                         </div>
 
@@ -889,6 +938,7 @@ import {
   deepIncludes,
   formatBytes,
   formatTime,
+  getBrowserUrl,
   getHistoryImage,
   getRemoteImage,
   getPath,
@@ -904,6 +954,7 @@ import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 import { useFormHandoff } from '~/composables/useFormHandoff';
 import { useRangeSelection } from '~/composables/useRangeSelection';
+import { taskSourceUrl } from '~/utils/taskDetails';
 const { locale, t } = useI18n();
 
 const config = useYtpConfig();
@@ -1139,6 +1190,9 @@ const toggleMasterSelection = (): void => {
 };
 
 const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
+const getItemBrowserUrl = (item: StoreItem): string =>
+  getBrowserUrl(config.app.download_path, item);
+const getItemTaskUrl = (item: StoreItem): string => taskSourceUrl(item.extras);
 const getListImage = (item: StoreItem): string => getHistoryImage(item, false) || '';
 const getGridImage = (item: StoreItem): string => getHistoryImage(item) || '';
 const showRetryAction = (item: StoreItem): boolean =>

@@ -47,6 +47,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
         order (str): Sort order - "ASC" or "DESC". Default: "DESC". Only used when type != "all"
         status (str): Filter by status. Use "!status" to exclude a status. Only used when type != "all"
                       Examples: "?status=finished" or "?status=!finished"
+        source_id (int): Filter task downloads by the source ID stored in extras.
 
     """
     from app.features.downloads.store import StoreType
@@ -101,9 +102,27 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
         )
 
     status_filter = request.query.get("status", None)
+    source_id: int | None = None
+    if "source_id" in request.query:
+        try:
+            source_id = int(request.query["source_id"])
+        except (TypeError, ValueError):
+            return api_error_response(
+                "source_id must be a valid integer.",
+                code="INVALID",
+                status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.source_id"},
+            )
+        if source_id <= 0:
+            return api_error_response(
+                "source_id must be a positive integer.",
+                code="INVALID",
+                status=web.HTTPBadRequest.status_code,
+                params={"field": "api.fields.source_id"},
+            )
 
     items, total, current_page, total_pages = await ds.get_items_paginated(
-        page=page, per_page=per_page, order=order, status_filter=status_filter
+        page=page, per_page=per_page, order=order, status_filter=status_filter, source_id=source_id
     )
 
     if store_type == StoreType.HISTORY:

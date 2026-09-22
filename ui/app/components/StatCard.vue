@@ -7,11 +7,19 @@
         </p>
         <UTooltip v-if="tooltip" :text="tooltip" :content="{ side: 'left' }">
           <div :class="valueWrap ? 'space-y-1' : 'flex items-baseline gap-1.5'">
-            <span
-              :class="[
-                'text-sm font-semibold text-highlighted',
-                valueWrap ? 'block wrap-break-word' : '',
-              ]"
+            <NuxtLink v-if="to" :to="to" :class="[valueClass, 'hover:underline']">
+              <bdi>{{ value }}</bdi>
+            </NuxtLink>
+            <a
+              v-else-if="href"
+              :href="href"
+              target="_blank"
+              rel="noreferrer"
+              :class="[valueClass, 'hover:underline']"
+            >
+              <bdi>{{ value }}</bdi>
+            </a>
+            <span v-else :class="valueClass"
               ><bdi>{{ value }}</bdi></span
             >
             <span
@@ -25,11 +33,19 @@
           </div>
         </UTooltip>
         <div v-else :class="valueWrap ? 'space-y-1' : 'flex items-baseline gap-1.5'">
-          <span
-            :class="[
-              'text-sm font-semibold text-highlighted',
-              valueWrap ? 'block wrap-break-word' : '',
-            ]"
+          <NuxtLink v-if="to" :to="to" :class="[valueClass, 'hover:underline']">
+            <bdi>{{ value }}</bdi>
+          </NuxtLink>
+          <a
+            v-else-if="href"
+            :href="href"
+            target="_blank"
+            rel="noreferrer"
+            :class="[valueClass, 'hover:underline']"
+          >
+            <bdi>{{ value }}</bdi>
+          </a>
+          <span v-else :class="valueClass"
             ><bdi>{{ value }}</bdi></span
           >
           <span
@@ -64,10 +80,12 @@ const props = withDefaults(
     icon: string;
     hint?: string;
     tooltip?: string;
+    href?: string;
+    to?: string;
     color?: Color;
     valueWrap?: boolean;
   }>(),
-  { color: 'primary', hint: '', tooltip: '', valueWrap: false },
+  { color: 'primary', hint: '', tooltip: '', href: '', to: '', valueWrap: false },
 );
 
 const TILE_BG: Record<Color, string> = {
@@ -99,4 +117,8 @@ const TILE_TEXT: Record<Color, string> = {
 
 const iconTileClass = computed(() => `${TILE_BG[props.color]} ${TILE_RING[props.color]}`);
 const iconTextClass = computed(() => TILE_TEXT[props.color]);
+const valueClass = computed(() => [
+  'block text-sm font-semibold text-highlighted',
+  props.valueWrap ? 'wrap-break-word' : 'truncate',
+]);
 </script>

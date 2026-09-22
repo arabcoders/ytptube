@@ -131,7 +131,7 @@ const props = defineProps<{
   compact?: boolean;
 }>();
 
-const model = defineModel<string | boolean>();
+const model = defineModel<string | boolean>({ default: '' });
 
 const iconName = computed(() => {
   if (!props.icon) {
