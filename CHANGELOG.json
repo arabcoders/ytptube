@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "77d75cc47bb1254427f4a86195ac440053e760a5",
-    "date": "2026-09-21T08:44:08+00:00",
+    "full_sha": "e2c8bc713d7b5835a00621c881bd18e1dcfd9a2f",
+    "date": "2026-09-22T08:12:51+00:00",
     "commits": [
+      {
+        "sha": "e2c8bc71",
+        "full_sha": "e2c8bc713d7b5835a00621c881bd18e1dcfd9a2f",
+        "message": "fix(build): bundle joserfc submodules. Closes #682",
+        "author": "arabcoders",
+        "date": "2026-09-22T08:12:51+00:00"
+      },
+      {
+        "sha": "d5f46f2f",
+        "full_sha": "d5f46f2f5745ff5b256060525ede4485170dbb4b",
+        "message": "fix: spacing between path/task and their value in open details",
+        "author": "arabcoders",
+        "date": "2026-09-21T09:34:44+00:00"
+      },
       {
         "sha": "77d75cc4",
         "full_sha": "77d75cc47bb1254427f4a86195ac440053e760a5",
