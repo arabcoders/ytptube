@@ -4,6 +4,8 @@ import re
 import sys
 import tomllib
 
+from PyInstaller.utils.hooks import collect_submodules
+
 block_cipher = None
 
 MANUAL_MAP = {
@@ -70,6 +72,7 @@ hidden += [
     "dotenv",
     "app",
 ]
+hidden.extend(collect_submodules("joserfc"))
 
 hidden = sorted(set(hidden))
 
