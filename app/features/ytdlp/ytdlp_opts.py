@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from app.features.presets.schemas import Preset
-from app.features.ytdlp.utils import arg_converter
+from app.features.ytdlp.utils import arg_converter, split_args
 from app.library.config import Config
 from app.library.logging import get_logger
 from app.library.Utils import calc_download_path, create_cookies_file, merge_dict
@@ -19,7 +19,7 @@ class ARGSMerger:
         if not args or not isinstance(args, str) or len(args) < 2:
             return self
 
-        _args: list[str] = shlex.split(
+        _args: list[str] = split_args(
             # Filter out comment lines.
             "\n".join([line for line in args.split("\n") if not line.lstrip().startswith("#")])
         )
@@ -33,10 +33,10 @@ class ARGSMerger:
         return str(self)
 
     def as_dict(self) -> list[str]:
-        return shlex.split(shlex.join(self.args))
+        return self.args.copy()
 
     def as_ytdlp(self) -> dict:
-        return arg_converter(args=shlex.join(self.args), level=False)
+        return arg_converter(args=self.args, level=False)
 
     def __str__(self) -> str:
         return shlex.join(self.args)

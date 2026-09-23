@@ -16,6 +16,8 @@ from app.features.ytdlp.utils import (
     archive_delete,
     archive_add,
     archive_read,
+    arg_converter,
+    split_args,
 )
 from app.tests.helpers import make_test_temp_dir
 
@@ -112,6 +114,28 @@ class TestLogWrapper:
         assert any(r.levelno == logging.CRITICAL for r in cap.records)
         assert any(c[0] == logging.ERROR for c in calls)
         assert any(c[0] == logging.CRITICAL for c in calls)
+
+
+class TestYtdlpArgs:
+    def test_issue_arguments(self):
+        result = arg_converter('--referer "https://www.patreon.com/" --use-extractors "generic"')
+        assert result["http_headers"]["Referer"] == "https://www.patreon.com/"
+        assert result["allowed_extractors"] == ["generic"]
+
+    def test_quoted_paths(self):
+        assert split_args('--paths "C:\\Users\\name\\Videos\\file name"') == [
+            "--paths",
+            r"C:\Users\name\Videos\file name",
+        ]
+
+    def test_malformed_quotes(self):
+        with pytest.raises(ValueError):
+            split_args('--output "unterminated')
+
+    def test_list_arguments(self):
+        args = ["--referer", "https://example.com/"]
+        arg_converter(args)
+        assert args == ["--referer", "https://example.com/"]
 
 
 class TestYtdlpReject:

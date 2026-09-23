@@ -114,6 +114,9 @@ class TestARGSMerger:
 
         assert merger.args == ["--format", "bv*[height<=1080]+ba/b", "--output", "name#part.%(ext)s"]
 
+    def test_keeps_inline_hash(self):
+        assert ARGSMerger().add("--output name#part").args == ["--output", "name#part"]
+
     def test_non_string_input(self):
         assert ARGSMerger().add(42).args == []  # ty: ignore[invalid-argument-type]
 
@@ -127,6 +130,12 @@ class TestARGSMerger:
 
     def test_reset_arguments(self):
         assert ARGSMerger().add("--format best").reset().args == []
+
+    def test_dict_copy(self):
+        merger = ARGSMerger().add("--format best")
+        result = merger.as_dict()
+        result.append("--quiet")
+        assert merger.args == ["--format", "best"]
 
 
 class TestYTDLPCli:
