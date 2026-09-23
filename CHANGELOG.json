@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Untagged",
+    "full_sha": "4e7df16f794dc7a2eab5afa3388ee907cbd08118",
+    "date": "2026-09-23T07:08:14+00:00",
+    "commits": [
+      {
+        "sha": "4e7df16f",
+        "full_sha": "4e7df16f794dc7a2eab5afa3388ee907cbd08118",
+        "message": "fix: incorrect args splitting on windows. Closes #684",
+        "author": "arabcoders",
+        "date": "2026-09-23T07:08:14+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.7.4",
     "full_sha": "8b29e6dab189bb65443b21a73b1242f0077c3a65",
     "date": "2026-09-22T13:55:33+00:00",
