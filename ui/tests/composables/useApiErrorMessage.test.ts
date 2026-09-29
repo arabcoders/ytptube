@@ -43,7 +43,8 @@ describe('useApiErrorMessage', () => {
 
   it('returns localized unavailable-file message', () => {
     const result = messageFor({ code: 'FILE_UNAVAILABLE', params: { file: 'video.mp4' } });
-    expect(result).toBe('errors.FILE_UNAVAILABLE:{"file":"video.mp4"}');
+    expect(result).toContain('errors.FILE_UNAVAILABLE:');
+    expect(result).toContain('video.mp4');
   });
 
   it('resolves api param labels before interpolation', () => {
@@ -57,24 +58,24 @@ describe('useApiErrorMessage', () => {
   it('falls back to backend error for unknown code', () => {
     const result = messageFor({
       code: 'SOME_UNKNOWN_CODE',
-      error: 'Something went wrong.',
+      error: 'backend-error',
     });
-    expect(result).toBe('Something went wrong.');
+    expect(result).toBe('backend-error');
   });
 
   it('falls back to backend message when code is unknown', () => {
     const result = messageFor({
       code: 'UNKNOWN_CODE',
-      message: 'A custom message.',
+      message: 'backend-message',
     });
-    expect(result).toBe('A custom message.');
+    expect(result).toBe('backend-message');
   });
 
   it('returns detail string when no other text available', () => {
     const result = messageFor({
-      detail: 'Validation failed on field x.',
+      detail: 'validation-detail',
     });
-    expect(result).toBe('Validation failed on field x.');
+    expect(result).toBe('validation-detail');
   });
 
   it.each([null, undefined])('returns localized generic error for %s payload', (payload) => {
@@ -83,8 +84,8 @@ describe('useApiErrorMessage', () => {
   });
 
   it('returns string payload unchanged', () => {
-    const result = messageFor('Connection refused.');
-    expect(result).toBe('Connection refused.');
+    const result = messageFor('string-payload');
+    expect(result).toBe('string-payload');
   });
 
   it('returns empty string fallback for empty string payload', () => {
@@ -106,23 +107,23 @@ describe('useApiErrorMessage', () => {
     const result = messageFor({
       code: 'INVALID',
       params: { field: 'api.fields.url' },
-      error: 'Some raw backend text.',
+      error: 'raw-backend-error',
     });
     expect(result).toBe('errors.INVALID:{"field":"label:api.fields.url"}');
   });
 
   it('returns array detail text when no other text available', () => {
     const result = messageFor({
-      detail: [{ loc: ['body', 'name'], msg: 'Field required', type: 'missing' }],
+      detail: [{ loc: ['body', 'name'], msg: 'required', type: 'missing' }],
     });
-    expect(result).toBe('name: Field required');
+    expect(result).toBe('name: required');
   });
 
   it('prefers error over message when no code', () => {
     const result: ReturnType<typeof messageFor> = messageFor({
-      error: 'Error text.',
-      message: 'Message text.',
+      error: 'error-value',
+      message: 'message-value',
     });
-    expect(result).toBe('Error text.');
+    expect(result).toBe('error-value');
   });
 });

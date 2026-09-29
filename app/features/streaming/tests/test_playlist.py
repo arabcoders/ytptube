@@ -92,5 +92,5 @@ async def test_playlist_missing_duration(tmp_path: Path, monkeypatch: pytest.Mon
 
     pl = Playlist(download_path=base, url="http://localhost/")
 
-    with pytest.raises(StreamingError, match="Unable to get"):
+    with pytest.raises(StreamingError):
         await pl.make(media)

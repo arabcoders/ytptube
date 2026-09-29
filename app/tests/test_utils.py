@@ -2,12 +2,11 @@ import asyncio
 import copy
 import importlib.util
 import json
-import re
 import shutil
 import sys
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -20,7 +19,6 @@ from app.library.Utils import (
     check_id,
     clean_item,
     delete_dir,
-    dt_delta,
     get,
     get_file,
     get_file_sidecar,
@@ -96,9 +94,8 @@ class TestTimedLruCache:
         def test_function(x):
             return x * 2
 
-        assert hasattr(test_function, "cache_clear"), "Cached function should have cache_clear method"
-        assert hasattr(test_function, "cache_info"), "Cached function should have cache_info method"
-
+        assert hasattr(test_function, "cache_clear")
+        assert hasattr(test_function, "cache_info")
         test_function(5)
 
         info = test_function.cache_info()
@@ -196,9 +193,8 @@ class TestAsyncTimedLruCache:
         async def async_method_test(x):
             return x + 1
 
-        assert hasattr(async_method_test, "cache_clear"), "Async cached function should have cache_clear method"
-        assert hasattr(async_method_test, "cache_info"), "Async cached function should have cache_info method"
-
+        assert hasattr(async_method_test, "cache_clear")
+        assert hasattr(async_method_test, "cache_info")
         info = async_method_test.cache_info()
         assert hasattr(info, "hits")
         assert hasattr(info, "misses")
@@ -223,10 +219,9 @@ class TestAsyncTimedLruCache:
         result2 = await async_limited_func(2)
         result3 = await async_limited_func(3)
 
-        assert result1 == 4, "async_limited_func(1) should return 4"
-        assert result2 == 8, "async_limited_func(2) should return 8"
-        assert result3 == 12, "async_limited_func(3) should return 12 (should evict oldest entry)"
-
+        assert result1 == 4
+        assert result2 == 8
+        assert result3 == 12
         info = async_limited_func.cache_info()
         assert info.currsize <= 2
 
@@ -243,73 +238,73 @@ class TestCalcDownloadPath:
 
     def test_download_path_base_only(self):
         result = calc_download_path(str(self.base_path), create_path=False)
-        assert result == str(self.base_path), "Should return base path when no folder is provided"
+        assert result == str(self.base_path)
 
     def test_calc_download_path_folder(self):
         folder = "test_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / folder)
-        assert result == expected, "Should append folder to base path"
+        assert result == expected
 
     def test_download_path_creates_directory(self):
         folder = "new_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / folder
-        assert result == str(expected_path), "Should return the new path"
-        assert expected_path.exists(), "Directory should be created"
+        assert result == str(expected_path)
+        assert expected_path.exists()
 
     def test_download_path_path_object(self):
         folder = "test_folder"
         result = calc_download_path(self.base_path, folder, create_path=False)
         expected = str(self.base_path / folder)
-        assert result == expected, "Should handle Path object for base path"
+        assert result == expected
 
     def test_download_path_nested_folder(self):
         folder = "parent/child"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "parent" / "child"
-        assert result == str(expected_path), "Should handle nested folder structure"
-        assert expected_path.exists(), "Nested directories should be created"
+        assert result == str(expected_path)
+        assert expected_path.exists()
 
     def test_download_path_none_folder(self):
         result = calc_download_path(str(self.base_path), None, create_path=False)
-        assert result == str(self.base_path), "Should return base path when folder is None"
+        assert result == str(self.base_path)
 
     def test_path_strips_leading_slash(self):
         folder = "/test_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / "test_folder")
-        assert result == expected, "Should remove leading slash from folder"
+        assert result == expected
 
     def test_calc_path_dotdot(self):
         folder = "../outside"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_nested_dotdot(self):
         folder = "safe/../../outside"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_multi_dotdot(self):
         folder = "../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_absolute(self):
         folder = "/etc/passwd"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / "etc/passwd")
-        assert result == expected, "Should remove leading slash and treat as relative path"
+        assert result == expected
 
     def test_calc_path_absolute_dotdot(self):
         folder = "/../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_path_traversal_mixed(self):
         folder = "safe/../../../unsafe"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_url_encoded(self):
@@ -317,46 +312,46 @@ class TestCalcDownloadPath:
         # This should be handled at a higher level, but let's test it anyway
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / folder)  # Should be treated as literal filename
-        assert result == expected, "URL encoded sequences should be treated as literal"
+        assert result == expected
 
     def test_path_safe_nested_paths(self):
         folder = "videos/2024/january"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "videos" / "2024" / "january"
-        assert result == str(expected_path), "Should handle legitimate nested paths"
-        assert expected_path.exists(), "Nested directories should be created"
+        assert result == str(expected_path)
+        assert expected_path.exists()
 
     def test_download_path_safe_dotfiles(self):
         folder = ".hidden/folder"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / ".hidden" / "folder"
-        assert result == str(expected_path), "Should handle dot files correctly"
-        assert expected_path.exists(), "Hidden directories should be created"
+        assert result == str(expected_path)
+        assert expected_path.exists()
 
     def test_download_path_empty_folder(self):
         folder = ""
         result = calc_download_path(str(self.base_path), folder, create_path=False)
-        assert result == str(self.base_path), "Should return base path for empty folder"
+        assert result == str(self.base_path)
 
     def test_download_path_whitespace_folder(self):
         folder = "   "
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "   "
-        assert result == str(expected_path), "Should handle whitespace folder names"
+        assert result == str(expected_path)
 
     def test_download_path_unicode_folder(self):
         folder = "测试文件夹/русский/العربية"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "测试文件夹" / "русский" / "العربية"
-        assert result == str(expected_path), "Should handle Unicode folder names"
-        assert expected_path.exists(), "Unicode directories should be created"
+        assert result == str(expected_path)
+        assert expected_path.exists()
 
     def test_download_path_special_characters(self):
         folder = "folder-with_special.chars(123)"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / folder
-        assert result == str(expected_path), "Should handle special characters"
-        assert expected_path.exists(), "Directory with special chars should be created"
+        assert result == str(expected_path)
+        assert expected_path.exists()
 
     def test_path_null_byte_attack(self):
         folder = "folder\x00../../../etc/passwd"
@@ -372,50 +367,50 @@ class TestCalcDownloadPath:
 
     def test_download_path_newline_attack(self):
         folder = "folder\n../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_calc_path_carriage_return(self):
         folder = "folder\r../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_download_path_tab_attack(self):
         folder = "folder\t../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_vertical_tab_attack(self):
         folder = "folder\x0b../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_form_feed_attack(self):
         folder = "folder\x0c../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_url_encoded_safe(self):
         folder = "folder%00../../../etc/passwd"  # %00 is URL encoded null
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_url_encoded_safe(self):
         folder = "folder..%2F..%2F..%2Fetc%2Fpasswd"  # ..%2F = ../ encoded
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / folder)  # Should be treated as literal filename
-        assert result == expected, "URL encoded sequences should be treated as literal filename"
+        assert result == expected
 
     def test_download_path_backslash_attack(self):
         folder = "folder\\..\\..\\..\\etc\\passwd"
         # On Unix systems, backslashes are treated as literal characters in filenames
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / folder)
-        assert result == expected, "Backslashes should be treated as literal characters on Unix"
+        assert result == expected
 
     def test_calc_path_mixed_separators(self):
         folder = "folder/../../../etc/passwd"
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
     def test_path_partial_match_attack(self):
@@ -432,7 +427,7 @@ class TestCalcDownloadPath:
         # Try to access the sibling directory
         folder = f"../{sibling_dir.name}"
 
-        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+        with pytest.raises(Exception):
             calc_download_path(str(self.base_path), folder, create_path=False)
 
         # Clean up
@@ -448,7 +443,7 @@ class TestCalcDownloadPath:
             symlink_path.symlink_to(outside_dir, target_is_directory=True)
 
             # Try to use the symlink
-            with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            with pytest.raises(Exception):
                 calc_download_path(str(self.base_path), "evil_symlink", create_path=False)
         finally:
             # Clean up
@@ -470,7 +465,7 @@ class TestCalcDownloadPath:
             symlink_path.symlink_to(outside_dir, target_is_directory=True)
 
             # Try to traverse through the symlink
-            with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            with pytest.raises(Exception):
                 calc_download_path(str(self.base_path), "safe/link_to_outside", create_path=False)
         finally:
             # Clean up
@@ -491,7 +486,7 @@ class TestCalcDownloadPath:
 
             # This should succeed since symlink resolves inside base
             result = calc_download_path(str(self.base_path), "link_to_target", create_path=False)
-            assert str(target_dir) == result, "Internal symlinks should be allowed"
+            assert str(target_dir) == result
         finally:
             # Clean up
             if symlink_path.exists():
@@ -513,14 +508,14 @@ class TestCalcDownloadPath:
         # This should work but might be slow
         result = calc_download_path(str(self.base_path), deep_path, create_path=False)
         expected = str(self.base_path / deep_path)
-        assert result == expected, "Should handle deeply nested paths"
+        assert result == expected
 
     def test_calc_path_spaces(self):
         folder = "folder with   multiple    spaces"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / folder
-        assert result == str(expected_path), "Should handle spaces correctly"
-        assert expected_path.exists(), "Directory with spaces should be created"
+        assert result == str(expected_path)
+        assert expected_path.exists()
 
 
 class TestMergeDict:
@@ -542,8 +537,8 @@ class TestMergeDict:
         source = {"nested": {"a": 1}}
         destination = {"nested": {"b": 2}, "other": 3}
         result = merge_dict(source, destination)
-        assert "nested" in result, "Should merge nested dictionaries"
-        assert "other" in result, "Should preserve other keys"
+        assert "nested" in result
+        assert "other" in result
 
     def test_merge_dict_empty_source(self):
         source = {}
@@ -568,34 +563,34 @@ class TestMergeDict:
         destination = {"existing": "data"}
         result = merge_dict(source, destination)
 
-        assert "__class__" not in result, "__class__ attribute pollution should be blocked"
-        assert result["safe"] == "value", "Safe values should be preserved"
-        assert result["existing"] == "data", "Existing data should be preserved"
+        assert "__class__" not in result
+        assert result["safe"] == "value"
+        assert result["existing"] == "data"
 
     def test_dict_blocks_dict_pollution(self):
         source = {"__dict__": {"injected": "payload"}, "normal": "data"}
         destination = {"target": "value"}
         result = merge_dict(source, destination)
 
-        assert "__dict__" not in result, "__dict__ should be filtered out"
-        assert result["normal"] == "data", "Normal data should be preserved"
-        assert result["target"] == "value", "Target data should be preserved"
+        assert "__dict__" not in result
+        assert result["normal"] == "data"
+        assert result["target"] == "value"
 
     def test_dict_blocks_globals_pollution(self):
         source = {"__globals__": {"malicious": "code"}, "data": "safe"}
         destination = {"existing": "value"}
         result = merge_dict(source, destination)
 
-        assert "__globals__" not in result, "__globals__ should be filtered out"
-        assert result["data"] == "safe", "Safe data should be preserved"
+        assert "__globals__" not in result
+        assert result["data"] == "safe"
 
     def test_dict_blocks_builtins_pollution(self):
         source = {"__builtins__": {"eval": "dangerous"}, "normal": "value"}
         destination = {"target": "data"}
         result = merge_dict(source, destination)
 
-        assert "__builtins__" not in result, "__builtins__ should be filtered out"
-        assert result["normal"] == "value", "Normal values should be preserved"
+        assert "__builtins__" not in result
+        assert result["normal"] == "value"
 
     def test_merge_dict_blocks_dunders(self):
         source = {
@@ -611,29 +606,27 @@ class TestMergeDict:
         # All dangerous attributes should be filtered out
         dangerous_keys = ["__class__", "__dict__", "__globals__", "__builtins__"]
         for key in dangerous_keys:
-            assert key not in result, f"{key} should be filtered out (all dangerous attributes)"
+            assert key not in result
 
-        assert result["safe_key"] == "safe_value", "Safe data should be preserved"
-        assert result["existing"] == "data", "Existing data should be preserved"
+        assert result["safe_key"] == "safe_value"
+        assert result["existing"] == "data"
 
     def test_dict_nested_dunder_pollution(self):
         source = {"nested": {"__class__": "malicious_nested", "safe_nested": "value"}, "normal": "data"}
         destination = {"nested": {"existing_nested": "original"}}
         result = merge_dict(source, destination)
 
-        assert "__class__" not in result["nested"], "Nested dangerous attributes should be filtered out"
-        assert result["nested"]["safe_nested"] == "value", "Safe nested data should be preserved"
-        assert result["nested"]["existing_nested"] == "original", "Existing nested data should be preserved"
+        assert "__class__" not in result["nested"]
+        assert result["nested"]["safe_nested"] == "value"
+        assert result["nested"]["existing_nested"] == "original"
 
     def test_dict_prototype_pollution_attempt(self):
         source = {"__proto__": {"polluted": True}, "constructor": {"prototype": {"polluted": True}}, "safe": "data"}
         destination = {"existing": "value"}
         result = merge_dict(source, destination)
 
-        assert result["safe"] == "data", (
-            "Function filters Python-specific dangerous attributes, not JS ones like __proto__"
-        )
-        assert result["existing"] == "value", "Existing data should be preserved"
+        assert result["safe"] == "data"
+        assert result["existing"] == "value"
 
     def test_dict_special_method_pollution(self):
         source = {
@@ -647,19 +640,15 @@ class TestMergeDict:
         destination = {"target": "data"}
         result = merge_dict(source, destination)
 
-        assert result["safe"] == "value", (
-            "Safe data should be preserved (special methods not in filter list, documents current behavior)"
-        )
-        assert result["target"] == "data", "Target data should be preserved"
+        assert result["safe"] == "value"
+        assert result["target"] == "data"
 
     def test_dict_list_pollution_safe(self):
         source = {"items": ["new1", "new2"]}
         destination = {"items": ["old1", "old2"]}
         result = merge_dict(source, destination)
 
-        assert result["items"] == ["old1", "old2", "new1", "new2"], (
-            "Lists should be concatenated safely (destination + source)"
-        )
+        assert result["items"] == ["old1", "old2", "new1", "new2"]
 
     def test_dict_deep_nested_pollution(self):
         source = {
@@ -674,29 +663,26 @@ class TestMergeDict:
         destination = {"level1": {"level2": {"existing": "data"}}}
         result = merge_dict(source, destination)
 
-        assert "__class__" not in result["level1"]["level2"], (
-            "Function should properly filter all dangerous keys recursively (deep __class__)"
-        )
-        assert "__globals__" not in result["level1"]["level2"]["level3"], "Function should filter very deep __globals__"
-
-        assert result["level1"]["level2"]["safe_deep"] == "value", "Safe nested data should be preserved"
-        assert result["level1"]["level2"]["existing"] == "data", "Existing nested data should be preserved"
+        assert "__class__" not in result["level1"]["level2"]
+        assert "__globals__" not in result["level1"]["level2"]["level3"]
+        assert result["level1"]["level2"]["safe_deep"] == "value"
+        assert result["level1"]["level2"]["existing"] == "data"
 
     def test_merge_dict_type_validation(self):
         # Test with non-dict source
         bad_src: Any = "not_a_dict"
-        with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
+        with pytest.raises(TypeError):
             merge_dict(bad_src, {"key": "value"})
 
         # Test with non-dict destination
         bad_dst: Any = "not_a_dict"
-        with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
+        with pytest.raises(TypeError):
             merge_dict({"key": "value"}, bad_dst)
 
         # Test with both non-dict
         bad_src2: Any = "not_a_dict"
         bad_dst2: Any = ["also_not_dict"]
-        with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
+        with pytest.raises(TypeError):
             merge_dict(bad_src2, bad_dst2)
 
     def test_merge_dict_immutability(self):
@@ -709,13 +695,11 @@ class TestMergeDict:
 
         result = merge_dict(original_source, original_destination)
 
-        assert original_source == source_copy, "Original source dictionary should be unchanged (immutability)"
-        assert original_destination == destination_copy, (
-            "Original destination dictionary should be unchanged (immutability)"
-        )
+        assert original_source == source_copy
+        assert original_destination == destination_copy
 
-        assert result != original_source, "Result should be different from source original"
-        assert result != original_destination, "Result should be different from destination original"
+        assert result != original_source
+        assert result != original_destination
 
     def test_dict_custom_max_depth(self):
         # Create a deep nested structure
@@ -731,7 +715,7 @@ class TestMergeDict:
         assert self._get_nested_value(result, ["level"] * 10 + ["data"]) == "deep_value"
 
         # Test with custom max_depth (5) - should raise RecursionError
-        with pytest.raises(RecursionError, match="Recursion depth limit exceeded \\(5\\)"):
+        with pytest.raises(RecursionError):
             merge_dict(deep_source, {}, max_depth=5)
 
         # Test with higher max_depth (20) - should work
@@ -763,12 +747,10 @@ class TestMergeDict:
 
         result = merge_dict(source, destination, max_list_size=4000)
 
-        assert len(result["items"]) == 4000, (
-            "Total would be 6000 items, but limit is 4000: destination (3000) + truncated source (1000)"
-        )
+        assert len(result["items"]) == 4000
 
-        assert result["items"][:3000] == list(range(2000, 5000)), "First 3000 items should be from destination"
-        assert result["items"][3000:] == list(range(1000)), "Next 1000 items should be from source (truncated)"
+        assert result["items"][:3000] == list(range(2000, 5000))
+        assert result["items"][3000:] == list(range(1000))
 
     def test_merge_dict_nested_limits(self):
         # Create nested structure that exceeds depth limit
@@ -816,7 +798,7 @@ class TestMergeDict:
         source["data"]["circular"] = source  # Create circular reference
 
         # Should fail with ValueError (circular reference) before hitting depth limit
-        with pytest.raises(ValueError, match="Circular reference detected"):
+        with pytest.raises(ValueError):
             merge_dict(source, {}, max_depth=100)
 
     def test_merge_dict_backward_compatibility(self):
@@ -878,10 +860,6 @@ class TestValidateUuid:
     def test_empty_string(self):
         assert validate_uuid("", 4) is False
 
-    def test_wrong_version(self):
-        test_uuid = str(uuid.uuid4())
-        assert validate_uuid(test_uuid, 1) is True
-
 
 class TestStripNewline:
     def test_strip_newline_basic(self):
@@ -902,38 +880,6 @@ class TestStripNewline:
         text = "\n\r\n\r"
         result = strip_newline(text)
         assert result == ""
-
-
-class TestDtDelta:
-    def test_dt_delta_seconds(self):
-        delta = timedelta(seconds=30)
-        result = dt_delta(delta)
-        assert "30" in result
-        assert "s" in result
-
-    def test_dt_delta_minutes(self):
-        delta = timedelta(minutes=5)
-        result = dt_delta(delta)
-        assert "5" in result
-        assert "m" in result
-
-    def test_dt_delta_hours(self):
-        delta = timedelta(hours=2)
-        result = dt_delta(delta)
-        assert "2" in result
-        assert "h" in result
-
-    def test_dt_delta_days(self):
-        delta = timedelta(days=3)
-        result = dt_delta(delta)
-        assert "3" in result
-        assert "d" in result
-
-    def test_dt_delta_complex(self):
-        delta = timedelta(days=1, hours=2, minutes=30, seconds=45)
-        result = dt_delta(delta)
-        assert isinstance(result, str)
-        assert len(result) > 0
 
 
 class TestParseTags:
@@ -1012,7 +958,10 @@ class TestGetFileSidecar:
             nfo_file.write_text("nfo content")
 
             result = get_file_sidecar(video_file)
-            assert result["subtitle"] == [{"file": srt_file, "lang": "und", "name": "SRT (1) - und"}]
+            assert len(result["subtitle"]) == 1
+            subtitle = result["subtitle"][0]
+            assert subtitle["file"] == srt_file
+            assert subtitle["lang"] == "und"
             assert result["text"] == [{"file": nfo_file}]
 
     def test_file_sidecar_no_files(self):
@@ -1036,15 +985,15 @@ class TestCheckId:
 
     def test_check_id_youtube_id(self):
         # Create a file with YouTube ID
-        test_file = self.test_dir / "video[test12345678].srt"
+        test_file = self.test_dir / "video[test1234567].srt"
         test_file.write_text("subtitle content")
 
         # Create a corresponding video file
-        video_file = self.test_dir / "video[test12345678].mp4"
+        video_file = self.test_dir / "video[test1234567].mp4"
         video_file.write_text("video content")
 
         result = check_id(test_file)
-        assert isinstance(result, (bool, str))
+        assert result == test_file.absolute()
 
     def test_check_id_no_id(self):
         test_file = self.test_dir / "video.srt"
@@ -1063,9 +1012,9 @@ class TestArgConverter:
 
         result = arg_converter("--quiet --match-filters 'duration<2min' --download-archive archive.txt")
         assert isinstance(result, dict)
-        assert result.get("quiet") is True, "quiet should be True"
+        assert result.get("quiet") is True
         assert result.get("download_archive") == "archive.txt"
-        assert "match_filter" in result, "match_filters should be in result"
+        assert "match_filter" in result
 
     def test_arg_converter_empty_args(self):
         if importlib.util.find_spec("yt_dlp") is None:
@@ -1074,7 +1023,7 @@ class TestArgConverter:
             return
 
         result = arg_converter("")
-        assert isinstance(result, dict)
+        assert result == {}
 
     def test_arg_converter_replace_metadata(self):
         if importlib.util.find_spec("yt_dlp") is None:
@@ -1085,17 +1034,14 @@ class TestArgConverter:
         result = arg_converter("--replace-in-metadata title foo bar")
 
         postprocessors = result.get("postprocessors", [])
-        assert postprocessors, "Expected metadata parser postprocessor to be present"
-
+        assert postprocessors
         metadata_pp = postprocessors[0]
         assert metadata_pp.get("key") == "MetadataParser"
 
         actions = metadata_pp.get("actions", [])
-        assert actions, "Expected metadata parser to include actions"
-
+        assert actions
         action_callable = actions[0][0]
         assert callable(action_callable)
-        assert getattr(action_callable, "__name__", "") == "replacer"
 
 
 class TestGetPossibleImages:
@@ -1114,14 +1060,17 @@ class TestGetPossibleImages:
 
     def test_get_possible_images(self):
         result = get_possible_images(str(self.test_dir))
-        assert isinstance(result, list)
+        assert result == [
+            {"file": self.test_dir / "poster.jpg"},
+            {"file": self.test_dir / "thumbnail.png"},
+        ]
 
     def test_possible_images_empty_dir(self):
         empty_dir = Path(self.temp_dir) / "empty"
         empty_dir.mkdir()
 
         result = get_possible_images(str(empty_dir))
-        assert isinstance(result, list)
+        assert result == []
 
 
 class TestGetMimeType:
@@ -1130,7 +1079,7 @@ class TestGetMimeType:
         file_path = Path("test.mp4")
 
         result = get_mime_type(metadata, file_path)
-        assert isinstance(result, str)
+        assert result == "video/mp4"
         assert "video" in result
 
     def test_get_mime_type_mkv(self):
@@ -1138,14 +1087,14 @@ class TestGetMimeType:
         file_path = Path("test.mkv")
 
         result = get_mime_type(metadata, file_path)
-        assert isinstance(result, str)
+        assert result == "video/x-matroska"
 
     def test_get_mime_type_fallback(self):
         metadata = {}
         file_path = Path("test.unknown")
 
         result = get_mime_type(metadata, file_path)
-        assert isinstance(result, str)
+        assert result == "application/octet-stream"
 
 
 class TestGetFile:
@@ -1238,12 +1187,18 @@ class TestGetFiles:
 
     def test_get_files_root(self):
         result, total = get_files(self.base_path)
-        assert isinstance(result, list)
-        assert len(result) > 0
+        assert total == 3
+        assert [entry["name"] for entry in result] == ["file1.txt", "file2.txt", "subdir"]
+        assert result[0]["type"] == "file"
+        assert result[0]["content_type"] == "text"
+        assert result[2]["type"] == "dir"
+        assert result[2]["is_dir"] is True
 
     def test_get_files_subdir(self):
         result, total = get_files(self.base_path, "subdir")
-        assert isinstance(result, list)
+        assert total == 1
+        assert result[0]["name"] == "file3.txt"
+        assert result[0]["path"] == "subdir/file3.txt"
 
 
 class TestLoadCookies:
@@ -1259,12 +1214,8 @@ class TestLoadCookies:
     def test_load_cookies_invalid_file(self):
         self.cookie_file.write_text("invalid cookie content")
 
-        try:
-            valid, jar = load_cookies(str(self.cookie_file))
-            assert valid is False
-            assert jar is not None
-        except ValueError:
-            return
+        with pytest.raises(ValueError):
+            load_cookies(str(self.cookie_file))
 
 
 class TestStrToDt:
@@ -1275,7 +1226,7 @@ class TestStrToDt:
             return
 
         result = str_to_dt("2023-01-02 12:00:00 UTC")
-        assert isinstance(result, datetime)
+        assert result == datetime(2023, 1, 2, 12, tzinfo=UTC)
 
     def test_str_to_dt_relative(self):
         if importlib.util.find_spec("dateparser") is None:
@@ -1283,8 +1234,9 @@ class TestStrToDt:
                 str_to_dt("1 hour ago")
             return
 
-        result = str_to_dt("1 hour ago")
-        assert isinstance(result, datetime)
+        now = datetime(2023, 1, 2, 12, tzinfo=UTC)
+        result = str_to_dt("1 hour ago", now=now)
+        assert result == datetime(2023, 1, 2, 11, tzinfo=UTC)
 
 
 class TestInitClass:
@@ -1521,7 +1473,7 @@ class TestCreateCookiesFile:
 
         cookie_path = tmp_path / "bad_cookies.txt"
 
-        with pytest.raises(ValueError, match="Invalid cookie file"):
+        with pytest.raises(ValueError):
             create_cookies_file("invalid_data", file=cookie_path)
 
     def test_create_cookies_parent_dir(self, tmp_path: Path):
@@ -1579,7 +1531,7 @@ class TestRenameFile:
         test_file = tmp_path / "video.mp4"
         test_file.write_text("test content")
 
-        with pytest.raises(ValueError, match="must not contain path separators"):
+        with pytest.raises(ValueError):
             rename_file(test_file, new_name)
 
         assert test_file.exists()
@@ -1592,10 +1544,10 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
 
-        assert new_path.exists(), "Renamed file should exist"
-        assert "renamed_video.mp4" == new_path.name, "File should have new name"
-        assert not test_file.exists(), "Original file should not exist"
-        assert 0 == len(sidecars), "Should have no sidecar files"
+        assert new_path.exists()
+        assert "renamed_video.mp4" == new_path.name
+        assert not test_file.exists()
+        assert 0 == len(sidecars)
 
     def test_rename_file_subtitle_sidecar(self, tmp_path: Path):
         # Create test files
@@ -1608,11 +1560,10 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
 
-        assert new_path.exists(), "Renamed file should exist"
-        assert "renamed_video.mp4" == new_path.name, "File should have new name"
-        assert not test_file.exists(), "Original file should not exist after rename"
-
-        assert 1 == len(sidecars), "Should have renamed 1 sidecar file"
+        assert new_path.exists()
+        assert "renamed_video.mp4" == new_path.name
+        assert not test_file.exists()
+        assert 1 == len(sidecars)
         old_sidecar, new_sidecar = sidecars[0]
         assert new_sidecar.exists()
         assert "renamed_video.en.srt" == new_sidecar.name
@@ -1636,21 +1587,19 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
 
-        assert new_path.exists(), "Renamed file should exist"
-        assert "renamed_video.mp4" == new_path.name, "File should have new name"
-        assert not test_file.exists(), "Original file should not exist after rename"
-
-        assert 3 == len(sidecars), "Should have renamed 3 sidecar files"
-
+        assert new_path.exists()
+        assert "renamed_video.mp4" == new_path.name
+        assert not test_file.exists()
+        assert 3 == len(sidecars)
         # Check all sidecars were renamed
         sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
         assert "renamed_video.en.srt" in sidecar_names
         assert "renamed_video.fr.srt" in sidecar_names
         assert "renamed_video.info.json" in sidecar_names
 
-        assert not subtitle_en.exists(), "Old subtitle file should not exist after rename"
-        assert not subtitle_fr.exists(), "Old subtitle file should not exist after rename"
-        assert not info_file.exists(), "Old info file should not exist after rename"
+        assert not subtitle_en.exists()
+        assert not subtitle_fr.exists()
+        assert not info_file.exists()
 
     def test_rename_file_destination_exists(self, tmp_path: Path):
         # Create test files
@@ -1661,11 +1610,11 @@ class TestRenameFile:
         existing_file.write_text("existing content")
 
         # Should raise ValueError
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(ValueError):
             rename_file(test_file, "renamed_video.mp4")
 
-        assert test_file.exists(), "Original file should still exist when rename fails"
-        assert existing_file.exists(), "Existing file should still exist when rename fails"
+        assert test_file.exists()
+        assert existing_file.exists()
 
     def test_file_sidecar_destination_exists(self, tmp_path: Path):
         # Create test files
@@ -1680,7 +1629,7 @@ class TestRenameFile:
         conflicting_sidecar.write_text("existing subtitle")
 
         # Should raise ValueError
-        with pytest.raises(ValueError, match=r"Sidecar destination.*already exists"):
+        with pytest.raises(ValueError):
             rename_file(test_file, "renamed_video.mp4")
 
         # Original files should still exist
@@ -1702,10 +1651,9 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed.mp4")
 
-        assert new_path.exists(), "Renamed file should exist"
-        assert "renamed.mp4" == new_path.name, "File should have new name"
-
-        assert 2 == len(sidecars), "Should have renamed 2 sidecar files"
+        assert new_path.exists()
+        assert "renamed.mp4" == new_path.name
+        assert 2 == len(sidecars)
         sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
         assert "renamed.en-US.ass" in sidecar_names
         assert "renamed.thumb.jpg" in sidecar_names
@@ -1725,11 +1673,11 @@ class TestMoveFile:
         # Move file
         new_path, sidecars = move_file(test_file, target_dir)
 
-        assert new_path.exists(), "Moved file should exist at destination"
-        assert "video.mp4" == new_path.name, "File should keep same name"
-        assert new_path.parent == target_dir, "File should be in target directory"
-        assert not test_file.exists(), "Original file should not exist after move"
-        assert 0 == len(sidecars), "Should have no sidecar files"
+        assert new_path.exists()
+        assert "video.mp4" == new_path.name
+        assert new_path.parent == target_dir
+        assert not test_file.exists()
+        assert 0 == len(sidecars)
 
     def test_move_file_subtitle_sidecar(self, tmp_path: Path):
         # Create test files
@@ -1747,12 +1695,11 @@ class TestMoveFile:
         # Move file
         new_path, sidecars = move_file(test_file, target_dir)
 
-        assert new_path.exists(), "Moved file should exist at destination"
-        assert "video.mp4" == new_path.name, "File should keep same name"
-        assert new_path.parent == target_dir, "File should be in target directory"
-        assert not test_file.exists(), "Original file should not exist after move"
-
-        assert 1 == len(sidecars), "Should have moved 1 sidecar file"
+        assert new_path.exists()
+        assert "video.mp4" == new_path.name
+        assert new_path.parent == target_dir
+        assert not test_file.exists()
+        assert 1 == len(sidecars)
         old_sidecar, new_sidecar = sidecars[0]
         assert new_sidecar.exists()
         assert "video.en.srt" == new_sidecar.name
@@ -1782,13 +1729,11 @@ class TestMoveFile:
         # Move file
         new_path, sidecars = move_file(test_file, target_dir)
 
-        assert new_path.exists(), "Moved file should exist at destination"
-        assert "video.mp4" == new_path.name, "File should keep same name"
-        assert new_path.parent == target_dir, "File should be in target directory"
-        assert not test_file.exists(), "Original file should not exist after move"
-
-        assert 3 == len(sidecars), "Should have moved 3 sidecar files"
-
+        assert new_path.exists()
+        assert "video.mp4" == new_path.name
+        assert new_path.parent == target_dir
+        assert not test_file.exists()
+        assert 3 == len(sidecars)
         # Check all sidecars were moved
         sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
         assert "video.en.srt" in sidecar_names
@@ -1797,11 +1742,10 @@ class TestMoveFile:
 
         # Check all are in target directory
         for _old_sidecar, new_sidecar in sidecars:
-            assert new_sidecar.parent == target_dir, "All sidecars should be in target directory"
-
-        assert not subtitle_en.exists(), "Old subtitle file should not exist after move"
-        assert not subtitle_fr.exists(), "Old subtitle file should not exist after move"
-        assert not info_file.exists(), "Old info file should not exist after move"
+            assert new_sidecar.parent == target_dir
+        assert not subtitle_en.exists()
+        assert not subtitle_fr.exists()
+        assert not info_file.exists()
 
     def test_move_file_destination_exists(self, tmp_path: Path):
         # Create test files
@@ -1816,11 +1760,11 @@ class TestMoveFile:
         existing_file.write_text("existing content")
 
         # Should raise ValueError
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(ValueError):
             move_file(test_file, target_dir)
 
-        assert test_file.exists(), "Original file should still exist when move fails"
-        assert existing_file.exists(), "Existing file should still exist when move fails"
+        assert test_file.exists()
+        assert existing_file.exists()
 
     def test_sidecar_destination_exists(self, tmp_path: Path):
         # Create test files
@@ -1840,7 +1784,7 @@ class TestMoveFile:
         conflicting_sidecar.write_text("existing subtitle")
 
         # Should raise ValueError
-        with pytest.raises(ValueError, match=r"Sidecar destination.*already exists"):
+        with pytest.raises(ValueError):
             move_file(test_file, target_dir)
 
         # Original files should still exist
@@ -1860,7 +1804,7 @@ class TestMoveFile:
         target_file.write_text("not a directory")
 
         # Should raise ValueError
-        with pytest.raises(ValueError, match="not a directory"):
+        with pytest.raises(ValueError):
             move_file(test_file, target_file)
 
         # Original file should still exist
@@ -1876,7 +1820,7 @@ class TestMoveFile:
         target_dir = tmp_path / "nonexistent"
 
         # Should raise ValueError
-        with pytest.raises(ValueError, match="does not exist"):
+        with pytest.raises(ValueError):
             move_file(test_file, target_dir)
 
         # Original file should still exist

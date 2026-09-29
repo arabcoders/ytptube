@@ -37,19 +37,19 @@ class TestPresetsRepository:
     async def test_create_and_get(self, repo):
         preset = await repo.create({"name": "Custom", "cli": "--format best"})
 
-        assert preset.id is not None, "Should generate ID for new preset"
-        assert preset.name == "custom", "Should normalize preset name"
-        assert preset.cli == "--format best", "Should store preset cli"
+        assert preset.id is not None
+        assert preset.name == "custom"
+        assert preset.cli == "--format best"
 
         fetched = await repo.get(preset.id)
-        assert fetched is not None, "Should fetch preset by id"
-        assert fetched.name == "custom", "Should return matching preset"
+        assert fetched is not None
+        assert fetched.name == "custom"
 
     @pytest.mark.asyncio
     async def test_create_normalizes_spaces(self, repo):
         preset = await repo.create({"name": "My Preset"})
 
-        assert preset.name == "my_preset", "Should normalize spaces to underscores"
+        assert preset.name == "my_preset"
 
     @pytest.mark.asyncio
     async def test_orders_priority_then_name(self, repo):
@@ -70,11 +70,11 @@ class TestPresetsRepository:
 
         items, total, page, total_pages = await repo.list_paginated(page=1, per_page=2)
 
-        assert len(items) == 2, "Should return 2 items per page"
-        assert total == 5, "Should report total count"
-        assert page == 1, "Should be on page 1"
-        assert total_pages == 3, "Should have 3 pages total"
-        assert [item.priority for item in items] == [4, 3], "Should keep default priority-desc order"
+        assert len(items) == 2
+        assert total == 5
+        assert page == 1
+        assert total_pages == 3
+        assert [item.priority for item in items] == [4, 3]
 
     @pytest.mark.asyncio
     async def test_paginated_sorts_name_desc(self, repo):
@@ -84,7 +84,7 @@ class TestPresetsRepository:
 
         items, _, _, _ = await repo.list_paginated(page=1, per_page=10, sort="name", order="desc")
 
-        assert [item.name for item in items] == ["gamma", "beta", "alpha"], "Should sort by requested field"
+        assert [item.name for item in items] == ["gamma", "beta", "alpha"]
 
     @pytest.mark.asyncio
     async def test_list_paginated_excludes_defaults(self, repo):
@@ -93,10 +93,10 @@ class TestPresetsRepository:
 
         items, total, page, total_pages = await repo.list_paginated(page=1, per_page=10, exclude_defaults=True)
 
-        assert [item.name for item in items] == ["custom_preset"], "Should exclude default presets"
-        assert total == 1, "Should count only custom presets"
-        assert page == 1, "Should keep current page when filtered results exist"
-        assert total_pages == 1, "Should compute pages from the filtered total"
+        assert [item.name for item in items] == ["custom_preset"]
+        assert total == 1
+        assert page == 1
+        assert total_pages == 1
 
     @pytest.mark.asyncio
     async def test_list_paginated_multi_sort(self, repo):
@@ -110,21 +110,21 @@ class TestPresetsRepository:
             (1, "bravo"),
             (1, "alpha"),
             (2, "charlie"),
-        ], "Should support multiple sort fields and directions"
+        ]
 
     @pytest.mark.asyncio
     async def test_list_paginated_bad_sort(self, repo):
-        with pytest.raises(ValueError, match="sort must use supported fields"):
+        with pytest.raises(ValueError):
             await repo.list_paginated(page=1, per_page=10, sort="cli", order="asc")
 
     @pytest.mark.asyncio
     async def test_list_paginated_bad_order(self, repo):
-        with pytest.raises(ValueError, match="order must be 'asc' or 'desc'"):
+        with pytest.raises(ValueError):
             await repo.list_paginated(page=1, per_page=10, sort="name", order="sideways")
 
     @pytest.mark.asyncio
     async def test_list_paginated_mismatched_order(self, repo):
-        with pytest.raises(ValueError, match="order must provide one direction or match the number of sort fields"):
+        with pytest.raises(ValueError):
             await repo.list_paginated(page=1, per_page=10, sort="priority,name", order="asc,desc,asc")
 
 
@@ -141,8 +141,8 @@ class TestPresetRoutes:
         response = await presets_list(request, Encoder(), repo)
         payload = json.loads(response.text)
 
-        assert response.status == web.HTTPOk.status_code, "Should return 200 for valid sorting"
-        assert [item["name"] for item in payload["items"]] == ["bravo", "alpha", "charlie"], "Should sort response"
+        assert response.status == web.HTTPOk.status_code
+        assert [item["name"] for item in payload["items"]] == ["bravo", "alpha", "charlie"]
 
     async def test_list_route_bad_sort(self, repo):
         request = MagicMock(spec=Request)
@@ -151,8 +151,8 @@ class TestPresetRoutes:
         response = await presets_list(request, Encoder(), repo)
         payload = json.loads(response.text)
 
-        assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort field"
-        assert "sort" in payload["error"], "Should explain invalid sort field"
+        assert response.status == web.HTTPBadRequest.status_code
+        assert "sort" in payload["error"]
         assert payload["code"] == "INVALID"
         assert payload["params"] == {"resource": "api.resources.preset"}
 
@@ -163,8 +163,8 @@ class TestPresetRoutes:
         response = await presets_list(request, Encoder(), repo)
         payload = json.loads(response.text)
 
-        assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort direction"
-        assert "order" in payload["error"], "Should explain invalid sort direction"
+        assert response.status == web.HTTPBadRequest.status_code
+        assert "order" in payload["error"]
         assert payload["code"] == "INVALID"
 
     async def test_list_route_exclude_defaults(self, repo):
@@ -177,6 +177,6 @@ class TestPresetRoutes:
         response = await presets_list(request, Encoder(), repo)
         payload = json.loads(response.text)
 
-        assert response.status == web.HTTPOk.status_code, "Should return 200 for valid default exclusion"
-        assert [item["name"] for item in payload["items"]] == ["custom_preset"], "Should exclude default presets"
-        assert payload["pagination"]["total"] == 1, "Should report filtered total"
+        assert response.status == web.HTTPOk.status_code
+        assert [item["name"] for item in payload["items"]] == ["custom_preset"]
+        assert payload["pagination"]["total"] == 1

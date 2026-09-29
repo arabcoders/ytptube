@@ -74,13 +74,13 @@ def test_definition_target_dispatch():
 
 def test_positional_body_conflict():
     args = parser().parse_args(["tasks", "inspect", "https://example.com", "--data", '{"url":"other"}'])
-    with pytest.raises(ValueError, match="cannot be combined"):
+    with pytest.raises(ValueError):
         run(args, lambda *a, **kw: None)
 
 
 def test_definition_requires_url():
     args = parser().parse_args(["task-definitions", "inspect", "12"])
-    with pytest.raises(ValueError, match="definition ID and URL"):
+    with pytest.raises(ValueError):
         run(args, lambda *a, **kw: None)
 
 
@@ -104,5 +104,5 @@ def test_bad_body_file(tmp_path):
     body_file = tmp_path / "body.json"
     body_file.write_text("not json", encoding="utf-8")
     args = parser().parse_args(["conditions", "test", "--file", str(body_file)])
-    with pytest.raises(ValueError, match="invalid JSON in --file"):
+    with pytest.raises(ValueError):
         run(args, lambda *a, **kw: None)

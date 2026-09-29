@@ -108,9 +108,9 @@ class TestCheckUpdatesEndpoint:
         client = await test_client({"system.check_updates": handler})
         response = await client.post(url_for("system.check_updates"))
 
-        assert 200 == response.status, "Should work even if disabled as it's manual check."
+        assert 200 == response.status
         body = await response.read()
-        assert b"disabled" in body.lower(), "Response should mention update checking is disabled"
+        assert b"disabled" in body.lower()
 
     @pytest.mark.asyncio
     async def test_updates_current(self, test_client):
@@ -129,10 +129,10 @@ class TestCheckUpdatesEndpoint:
             client = await test_client({"system.check_updates": handler})
             response = await client.post(url_for("system.check_updates"))
 
-            assert 200 == response.status, "Should return 200"
+            assert 200 == response.status
             body = await response.text()
-            assert "up_to_date" in body, "Response should include up_to_date status"
-            assert mock_check.called, "Should have called check_for_updates"
+            assert "up_to_date" in body
+            assert mock_check.called
 
     @pytest.mark.asyncio
     async def test_check_updates_update_available(self, test_client):
@@ -151,10 +151,10 @@ class TestCheckUpdatesEndpoint:
             client = await test_client({"system.check_updates": handler})
             response = await client.post(url_for("system.check_updates"))
 
-            assert 200 == response.status, "Should return 200"
+            assert 200 == response.status
             body = await response.text()
-            assert "v1.0.5" in body, "Response should include new version"
-            assert "update_available" in body, "Response should include update_available status"
+            assert "v1.0.5" in body
+            assert "update_available" in body
 
 
 class TestSystemConfigEndpoint:
@@ -687,4 +687,4 @@ class TestSystemFoldersEndpoint:
         response = await client.get(url_for("system.folders"))
 
         data = await response.json()
-        assert "b" not in data["folders"], "Should serve cached result"
+        assert "b" not in data["folders"]

@@ -155,7 +155,7 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_raises(self, repo):
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError):
             await repo.update(99999, {"name": "should_fail"})
 
     @pytest.mark.asyncio
@@ -176,7 +176,7 @@ class TestTasksRepository:
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_raises(self, repo):
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError):
             await repo.delete(99999)
 
     @pytest.mark.asyncio

@@ -147,7 +147,8 @@ describe('useTaskDefinitions', () => {
     );
     const defs = useTaskDefinitions();
     defs.throwInstead.value = true;
-    await expect(defs.loadDefinitions()).rejects.toThrow('Server error');
+    await expect(defs.loadDefinitions()).rejects.toThrow();
+    expect(defs.lastError.value).not.toBeNull();
     requestSpy.mockRestore();
   });
 

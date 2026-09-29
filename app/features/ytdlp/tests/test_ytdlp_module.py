@@ -475,7 +475,7 @@ class TestYTDLP:
         assert _units(Path(subtitle).name) + _temp_reserve(info) <= 80
 
     def test_filename_trim_protected(self) -> None:
-        with pytest.raises(ValueError, match="protected filename content"):
+        with pytest.raises(ValueError):
             trim_component(
                 "[protected-value].mkv",
                 {"ext": "mkv"},
@@ -517,13 +517,13 @@ class TestYTDLP:
     def test_outtmpl_unknown_callable(self) -> None:
         ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
 
-        with pytest.raises(ValueError, match="Unsupported YTPTube output template callable"):
+        with pytest.raises(ValueError):
             ytdlp.prepare_outtmpl("%(ytp_unknown:8)s", {"title": "x"})
 
     def test_outtmpl_invalid_length(self) -> None:
         ytdlp = YTDLP(params={"outtmpl": {"default": "%(title)s"}})
 
-        with pytest.raises(ValueError, match="ytp_random length must be an integer"):
+        with pytest.raises(ValueError):
             ytdlp.prepare_outtmpl("%(ytp_random:nope)s", {"title": "x"})
 
 

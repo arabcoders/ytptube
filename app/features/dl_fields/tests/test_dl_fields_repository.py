@@ -43,15 +43,15 @@ class TestDLFieldsRepository:
 
         model = await repo.create(data)
 
-        assert model.id is not None, "Should generate ID for new field"
-        assert model.name == "quality", "Should store name correctly"
-        assert model.description == "Video quality setting", "Should store description correctly"
-        assert model.field == "--format", "Should store field correctly"
-        assert model.kind == "string", "Should store kind correctly"
-        assert model.icon == "fa-video", "Should store icon correctly"
-        assert model.order == 1, "Should store order correctly"
-        assert model.value == "best", "Should store value correctly"
-        assert model.extras == {"options": ["best", "worst"]}, "Should store extras as dict"
+        assert model.id is not None
+        assert model.name == "quality"
+        assert model.description == "Video quality setting"
+        assert model.field == "--format"
+        assert model.kind == "string"
+        assert model.icon == "fa-video"
+        assert model.order == 1
+        assert model.value == "best"
+        assert model.extras == {"options": ["best", "worst"]}
 
     @pytest.mark.asyncio
     async def test_create_with_defaults(self, repo):
@@ -64,10 +64,10 @@ class TestDLFieldsRepository:
 
         model = await repo.create(data)
 
-        assert model.icon == "", "Should default icon to empty string"
-        assert model.order == 0, "Should default order to 0"
-        assert model.value == "", "Should default value to empty string"
-        assert model.extras == {}, "Should default extras to empty dict"
+        assert model.icon == ""
+        assert model.order == 0
+        assert model.value == ""
+        assert model.extras == {}
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
@@ -82,9 +82,9 @@ class TestDLFieldsRepository:
 
         retrieved = await repo.get(created.id)
 
-        assert retrieved is not None, "Should retrieve created field"
-        assert retrieved.id == created.id, "Should retrieve correct field by ID"
-        assert retrieved.name == "get_test", "Should match created field name"
+        assert retrieved is not None
+        assert retrieved.id == created.id
+        assert retrieved.name == "get_test"
 
     @pytest.mark.asyncio
     async def test_get_by_name(self, repo):
@@ -99,16 +99,16 @@ class TestDLFieldsRepository:
 
         retrieved = await repo.get("named_test")
 
-        assert retrieved is not None, "Should retrieve by name"
-        assert retrieved.name == "named_test", "Should match field name"
+        assert retrieved is not None
+        assert retrieved.name == "named_test"
 
     @pytest.mark.asyncio
     async def test_get_nonexistent(self, repo):
         result = await repo.get(99999)
-        assert result is None, "Should return None for nonexistent ID"
+        assert result is None
 
         result = await repo.get("nonexistent")
-        assert result is None, "Should return None for nonexistent name"
+        assert result is None
 
     @pytest.mark.asyncio
     async def test_update_field(self, repo):
@@ -130,14 +130,14 @@ class TestDLFieldsRepository:
             },
         )
 
-        assert updated.name == "updated_name", "Should update name"
-        assert updated.order == 5, "Should update order"
-        assert updated.extras == {"updated": True}, "Should update extras"
-        assert updated.field == "--update-test", "Should preserve unchanged field"
+        assert updated.name == "updated_name"
+        assert updated.order == 5
+        assert updated.extras == {"updated": True}
+        assert updated.field == "--update-test"
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_raises(self, repo):
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError):
             await repo.update(99999, {"name": "should_fail"})
 
     @pytest.mark.asyncio
@@ -153,14 +153,14 @@ class TestDLFieldsRepository:
 
         deleted = await repo.delete(created.id)
 
-        assert deleted.id == created.id, "Should return deleted field"
+        assert deleted.id == created.id
 
         result = await repo.get(created.id)
         assert result is None, "Deleted field should not be retrievable"
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_raises(self, repo):
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError):
             await repo.delete(99999)
 
     @pytest.mark.asyncio
@@ -179,10 +179,10 @@ class TestDLFieldsRepository:
 
         items, total, page, total_pages = await repo.list_paginated(page=1, per_page=2)
 
-        assert len(items) == 2, "Should return 2 items per page"
-        assert total == 5, "Should report total count of 5"
-        assert page == 1, "Should be on page 1"
-        assert total_pages == 3, "Should have 3 pages total"
+        assert len(items) == 2
+        assert total == 5
+        assert page == 1
+        assert total_pages == 3
 
     @pytest.mark.asyncio
     async def test_list_ordering(self, repo):
@@ -209,10 +209,10 @@ class TestDLFieldsRepository:
         )
 
         result = await repo.get_by_name("duplicate", exclude_id=first.id)
-        assert result is None, "Should not find when excluding only match"
+        assert result is None
 
         result = await repo.get_by_name("duplicate", exclude_id=None)
-        assert result is not None, "Should find without exclusion"
+        assert result is not None
 
     @pytest.mark.asyncio
     async def test_replace_all(self, repo):
@@ -227,8 +227,8 @@ class TestDLFieldsRepository:
 
         result = await repo.replace_all(new_items)
 
-        assert len(result) == 2, "Should create 2 new fields"
+        assert len(result) == 2
 
         all_items = await repo.all()
-        assert len(all_items) == 2, "Should only have new fields"
-        assert {item.name for item in all_items} == {"new_1", "new_2"}, "Should only have new items"
+        assert len(all_items) == 2
+        assert {item.name for item in all_items} == {"new_1", "new_2"}

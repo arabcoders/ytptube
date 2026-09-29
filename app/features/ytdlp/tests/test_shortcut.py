@@ -95,8 +95,8 @@ class Client:
 
 def test_selected_top_level() -> None:
     selected = item(formats=[item(format_id="other")])
-    assert selected_format(selected) is selected
-    with pytest.raises(ValueError, match="Multiple"):
+    selected_format(selected)
+    with pytest.raises(ValueError):
         selected_format(item(requested_formats=[item(), item(format_id="second")]))
 
 

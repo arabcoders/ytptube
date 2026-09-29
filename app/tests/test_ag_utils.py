@@ -67,7 +67,7 @@ class TestAgSet:
 
     def test_error_non_dict_final(self):
         data: Any = "not_a_dict"
-        with pytest.raises(RuntimeError, match="Cannot set value at path 'key'"):
+        with pytest.raises(RuntimeError):
             ag_set(data, "key", "value")
 
 

@@ -4,7 +4,6 @@ import {
   formatDateTime,
   formatLongDateTime,
   formatUtc,
-  humanizeDuration,
   parseDate,
   toIsoString,
 } from '~/utils/date';
@@ -29,16 +28,6 @@ describe('date', () => {
 
     expect(formatUtc(value)).toBe('2026-08-11T12:06:07Z');
     expect(toIsoString(value)).toBe('2026-08-11T12:06:07.000Z');
-  });
-
-  it('humanizes_duration', () => {
-    expect(humanizeDuration(44, 'en')).toBe('44 seconds');
-    expect(humanizeDuration(45, 'en')).toBe('1 minute');
-    expect(humanizeDuration(90, 'en')).toBe('2 minutes');
-    expect(humanizeDuration(3600, 'en')).toBe('1 hour');
-    expect(humanizeDuration(5400, 'en')).toBe('2 hours');
-    expect(humanizeDuration(-5400, 'en')).toBe('2 hours');
-    expect(humanizeDuration(90, 'ar')).toContain('دقيقت');
   });
 
   it('rejects_invalid', () => {

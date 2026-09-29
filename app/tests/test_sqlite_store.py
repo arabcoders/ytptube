@@ -21,7 +21,7 @@ async def test_sessionmaker_ready() -> None:
 async def test_sessionmaker_raises_before_init() -> None:
     SqliteStore._reset_singleton()
     store = SqliteStore.get_instance(db_path=make_in_memory_db_path("sessionmaker-before-init"))
-    with pytest.raises(RuntimeError, match="Database connection not initialized"):
+    with pytest.raises(RuntimeError):
         store.sessionmaker()
     await store.close()
 

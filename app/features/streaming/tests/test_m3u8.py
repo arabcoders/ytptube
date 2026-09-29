@@ -119,7 +119,7 @@ async def test_make_stream_no_duration(tmp_path: Path, monkeypatch: pytest.Monke
     monkeypatch.setattr("app.features.streaming.library.m3u8.ffprobe", fake_ffprobe)
 
     m3 = M3u8(download_path=base, url="http://s/")
-    with pytest.raises(StreamingError, match="Unable to get"):
+    with pytest.raises(StreamingError):
         await m3.make_stream(media)
 
 

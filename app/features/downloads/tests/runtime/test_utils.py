@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import time
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -25,51 +24,51 @@ class TestPathUtilities:
         base = Path("/downloads")
         file = Path("/downloads/video.mp4")
         result = safe_relative_path(file, base)
-        assert "video.mp4" == result, "Should return relative path"
+        assert "video.mp4" == result
 
     def test_safe_relative_path_nested(self) -> None:
         base = Path("/downloads")
         file = Path("/downloads/folder/subfolder/video.mp4")
         result = safe_relative_path(file, base)
-        assert "folder/subfolder/video.mp4" == result, "Should return nested relative path"
+        assert "folder/subfolder/video.mp4" == result
 
     def test_safe_relative_path_fallback(self) -> None:
         base = Path("/wrong/path")
         fallback = Path("/temp")
         file = Path("/temp/video.mp4")
         result = safe_relative_path(file, base, fallback)
-        assert "video.mp4" == result, "Should use fallback path"
+        assert "video.mp4" == result
 
     def test_safe_rel_no_fallback(self) -> None:
         base = Path("/wrong/path")
         file = Path("/downloads/video.mp4")
         result = safe_relative_path(file, base)
-        assert "/downloads/video.mp4" == result, "Should return absolute path when both fail"
+        assert "/downloads/video.mp4" == result
 
     def test_relative_path_fallback_fails(self) -> None:
         base = Path("/wrong/path")
         fallback = Path("/also/wrong")
         file = Path("/downloads/video.mp4")
         result = safe_relative_path(file, base, fallback)
-        assert "/downloads/video.mp4" == result, "Should return absolute when both fail"
+        assert "/downloads/video.mp4" == result
 
     def test_delete_dir_root_protection(self) -> None:
         path = Path("/tmp/downloads")
         root = Path("/tmp/downloads")
         result = is_safe_to_delete_dir(path, root)
-        assert result is False, "Should refuse to delete root directory"
+        assert result is False
 
     def test_delete_dir_safe_path(self) -> None:
         path = Path("/tmp/downloads/subfolder")
         root = Path("/tmp/downloads")
         result = is_safe_to_delete_dir(path, root)
-        assert result is True, "Should allow deleting subdirectory"
+        assert result is True
 
     def test_delete_dir_string_comparison(self) -> None:
         path = Path("/tmp/downloads")
         root = "/tmp/downloads"
         result = is_safe_to_delete_dir(path, root)
-        assert result is False, "Should handle string root path"
+        assert result is False
 
 
 class TestProcessUtilities:
@@ -77,7 +76,7 @@ class TestProcessUtilities:
         proc = Mock()
         proc.is_alive = Mock(return_value=False)
         result = wait_for_process_with_timeout(proc, timeout=1.0)
-        assert result is True, "Should return True when process terminates immediately"
+        assert result is True
 
     def test_wait_timeout_delay(self) -> None:
         proc = Mock()
@@ -92,8 +91,8 @@ class TestProcessUtilities:
         with patch("time.sleep"):
             result = wait_for_process_with_timeout(proc, timeout=1.0, check_interval=0.1)
 
-        assert result is True, "Should return True when process terminates during wait"
-        assert proc.is_alive.call_count >= 3, "Should check process multiple times"
+        assert result is True
+        assert proc.is_alive.call_count >= 3
 
     def test_wait_process_timeout_expires(self) -> None:
         proc = Mock()
@@ -103,72 +102,72 @@ class TestProcessUtilities:
             mock_time.side_effect = [0, 0.5, 1.0, 1.5]
             result = wait_for_process_with_timeout(proc, timeout=1.0, check_interval=0.1)
 
-        assert result is False, "Should return False when timeout reached"
+        assert result is False
 
     def test_wait_process_custom_interval(self) -> None:
         proc = Mock()
         proc.is_alive = Mock(return_value=False)
         result = wait_for_process_with_timeout(proc, timeout=5.0, check_interval=0.5)
-        assert result is True, "Should respect custom check interval"
+        assert result is True
 
 
 class TestConfigUtilities:
     def test_extractor_limit_valid_env(self) -> None:
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "3"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
-            assert 3 == result, "Should use environment variable value"
+            assert 3 == result
 
     def test_limit_env_exceeds_max(self) -> None:
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "15"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
-            assert 10 == result, "Should cap at max_workers"
+            assert 10 == result
 
     def test_parse_limit_nondigit(self) -> None:
         logger = logging.getLogger("test")
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "abc"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10, logger=logger)
-            assert 5 == result, "Should use default when env var is invalid"
+            assert 5 == result
 
     def test_limit_invalid_env_zero(self) -> None:
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "0"}):
             result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
-            assert 5 == result, "Should use default when env var is zero"
+            assert 5 == result
 
     def test_extractor_limit_no_env(self) -> None:
         result = parse_extractor_limit("youtube", default_limit=5, max_workers=10)
-        assert 5 == result, "Should use default when no env var set"
+        assert 5 == result
 
     def test_parse_limit_default_max(self) -> None:
         result = parse_extractor_limit("youtube", default_limit=15, max_workers=10)
-        assert 10 == result, "Should cap default at max_workers"
+        assert 10 == result
 
     def test_parse_limit_warns(self) -> None:
         logger = Mock()
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_YOUTUBE": "invalid"}):
             parse_extractor_limit("youtube", default_limit=5, max_workers=10, logger=logger)
             logger.warning.assert_called_once()
-            assert "Invalid extractor limit" in logger.warning.call_args[0][0], "Should log warning"
+            assert "Invalid extractor limit" in logger.warning.call_args[0][0]
 
     def test_extractor_limit_creates_new(self) -> None:
         LIMITS.clear()
         logger = logging.getLogger("test")
         semaphore = get_extractor_limit("youtube", max_workers=10, max_workers_per_extractor=5, logger=logger)
-        assert isinstance(semaphore, asyncio.Semaphore), "Should return semaphore"
-        assert "youtube" in LIMITS, "Should store in LIMITS dict"
+        assert isinstance(semaphore, asyncio.Semaphore)
+        assert "youtube" in LIMITS
 
     def test_extractor_limit_reuses_existing(self) -> None:
         LIMITS.clear()
         logger = logging.getLogger("test")
         sem1 = get_extractor_limit("youtube", max_workers=10, max_workers_per_extractor=5, logger=logger)
         sem2 = get_extractor_limit("youtube", max_workers=10, max_workers_per_extractor=5, logger=logger)
-        assert sem1 is sem2, "Should reuse existing semaphore"
+        assert sem1 is sem2
 
     def test_limit_respects_env_var(self) -> None:
         LIMITS.clear()
         logger = logging.getLogger("test")
         with patch.dict(os.environ, {"YTP_MAX_WORKERS_FOR_TWITCH": "2"}):
             semaphore = get_extractor_limit("twitch", max_workers=10, max_workers_per_extractor=5, logger=logger)
-            assert semaphore._value == 2, "Should respect environment variable"
+            assert semaphore._value == 2
 
 
 class TestDataUtilities:
@@ -179,11 +178,11 @@ class TestDataUtilities:
             "info_dict": {"id": "123", "title": "Video", "formats": [{"format_id": "1"}], "description": "Long text"},
         }
         result = create_debug_safe_dict(data)
-        assert "downloading" == result["status"], "Should include status"
-        assert "video.mp4" == result["filename"], "Should include filename"
-        assert "formats" not in result["info_dict"], "Should exclude formats"
-        assert "description" not in result["info_dict"], "Should exclude description"
-        assert "123" == result["info_dict"]["id"], "Should include id"
+        assert "downloading" == result["status"]
+        assert "video.mp4" == result["filename"]
+        assert "formats" not in result["info_dict"]
+        assert "description" not in result["info_dict"]
+        assert "123" == result["info_dict"]["id"]
 
     def test_safe_dict_custom_exclude(self) -> None:
         data = {
@@ -192,8 +191,8 @@ class TestDataUtilities:
             "info_dict": {"id": "123", "title": "Video", "custom_field": "value"},
         }
         result = create_debug_safe_dict(data, exclude_keys=["custom_field"])
-        assert "custom_field" not in result["info_dict"], "Should exclude custom field"
-        assert "123" == result["info_dict"]["id"], "Should include id"
+        assert "custom_field" not in result["info_dict"]
+        assert "123" == result["info_dict"]["id"]
 
     def test_debug_safe_filters_none(self) -> None:
         data = {
@@ -201,65 +200,65 @@ class TestDataUtilities:
             "info_dict": {"id": "123", "none_value": None, "lambda_value": lambda: None, "title": "Video"},
         }
         result = create_debug_safe_dict(data)
-        assert "none_value" not in result["info_dict"], "Should filter None values"
-        assert "lambda_value" not in result["info_dict"], "Should filter lambda functions"
-        assert "Video" == result["info_dict"]["title"], "Should include regular values"
+        assert "none_value" not in result["info_dict"]
+        assert "lambda_value" not in result["info_dict"]
+        assert "Video" == result["info_dict"]["title"]
 
     def test_dict_empty_info_dict(self) -> None:
         data = {"status": "downloading", "filename": "video.mp4"}
         result = create_debug_safe_dict(data)
-        assert {} == result["info_dict"], "Should handle missing info_dict"
+        assert {} == result["info_dict"]
 
 
 class TestStateUtilities:
     @pytest.mark.parametrize("status", ["finished", "error", "cancelled", "downloading", "postprocessing"])
-    def test_stale_status(self, status: str) -> None:
-        result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status=status, is_running=False, auto_start=True
-        )
+    def test_stale_status(self, status: str, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.downloads.runtime.utils.time.time", lambda: 1_000)
+        result = is_download_stale(started_time=500, current_status=status, is_running=False, auto_start=True)
         assert result is False, f"{status} downloads are never stale"
 
-    def test_stale_not_auto_start(self) -> None:
-        result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status="pending", is_running=False, auto_start=False
-        )
+    def test_stale_not_auto_start(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.downloads.runtime.utils.time.time", lambda: 1_000)
+        result = is_download_stale(started_time=500, current_status="pending", is_running=False, auto_start=False)
         assert result is False, "Non-auto-start downloads are never stale"
 
-    def test_download_stale_still_running(self) -> None:
-        result = is_download_stale(
-            started_time=int(time.time()) - 500, current_status="pending", is_running=True, auto_start=True
-        )
+    def test_download_stale_still_running(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.downloads.runtime.utils.time.time", lambda: 1_000)
+        result = is_download_stale(started_time=500, current_status="pending", is_running=True, auto_start=True)
         assert result is False, "Running downloads are never stale"
 
-    def test_stale_not_enough_time(self) -> None:
+    def test_stale_not_enough_time(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.downloads.runtime.utils.time.time", lambda: 1_000)
         result = is_download_stale(
-            started_time=int(time.time()) - 100,
+            started_time=900,
             current_status="pending",
             is_running=False,
             auto_start=True,
             min_elapsed=300,
         )
-        assert result is False, "Should not be stale before timeout"
+        assert result is False
 
-    def test_download_stale_timeout_reached(self) -> None:
+    def test_download_stale_timeout_reached(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.downloads.runtime.utils.time.time", lambda: 1_000)
         result = is_download_stale(
-            started_time=int(time.time()) - 400,
+            started_time=600,
             current_status="pending",
             is_running=False,
             auto_start=True,
             min_elapsed=300,
         )
-        assert result is True, "Should be stale after timeout"
+        assert result is True
 
-    def test_download_stale_custom_timeout(self) -> None:
+    def test_download_stale_custom_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.downloads.runtime.utils.time.time", lambda: 1_000)
         result = is_download_stale(
-            started_time=int(time.time()) - 150,
+            started_time=850,
             current_status="pending",
             is_running=False,
             auto_start=True,
             min_elapsed=100,
         )
-        assert result is True, "Should respect custom timeout"
+        assert result is True
 
 
 class TestTaskExceptionHandling:
@@ -308,8 +307,8 @@ class TestTaskExceptionHandling:
         handle_task_exception(task, logger)
         logger.error.assert_called_once()
         error_msg = logger.error.call_args[0][0] % logger.error.call_args[0][1:]
-        assert "test_task" in error_msg, "Should include task name"
-        assert "Test error" in error_msg, "Should include exception message"
+        assert "test_task" in error_msg
+        assert "Test error" in error_msg
 
     @pytest.mark.asyncio
     async def test_exception_unknown_task_name(self) -> None:
@@ -327,4 +326,4 @@ class TestTaskExceptionHandling:
         handle_task_exception(task, logger)
         logger.error.assert_called_once()
         error_msg = logger.error.call_args[0][0] % logger.error.call_args[0][1:]
-        assert "unknown_task" in error_msg or "Task" in error_msg, "Should handle unknown task name"
+        assert "unknown_task" in error_msg or "Task" in error_msg
