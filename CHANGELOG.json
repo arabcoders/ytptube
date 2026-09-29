@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "4e7df16f794dc7a2eab5afa3388ee907cbd08118",
-    "date": "2026-09-23T07:08:14+00:00",
+    "full_sha": "0670a765f85b310b6ca3b16db4b8a7f4e8500fdc",
+    "date": "2026-09-29T19:58:05+00:00",
     "commits": [
+      {
+        "sha": "0670a765",
+        "full_sha": "0670a765f85b310b6ca3b16db4b8a7f4e8500fdc",
+        "message": "feat: add cli interface to the API",
+        "author": "arabcoders",
+        "date": "2026-09-29T19:58:05+00:00"
+      },
       {
         "sha": "4e7df16f",
         "full_sha": "4e7df16f794dc7a2eab5afa3388ee907cbd08118",
