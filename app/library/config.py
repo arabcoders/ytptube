@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 from dotenv import load_dotenv
 
 from app.library.logging import get_logger, get_runtime_log_level, setup_logging
+from app.library.Utils import resolve_secret
 
 from .Singleton import Singleton
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
@@ -97,6 +98,9 @@ def _external_auth_config(config_path: str) -> ExternalAuthConfig:
         if any(not isinstance(value, str) or not value for value in values.values()):
             msg = "auth.oidc requires non-empty issuer, client_id, client_secret, and redirect_uri"
             raise ValueError(msg)
+
+        for key in ("client_id", "client_secret"):
+            values[key] = resolve_secret(values[key], base_dir=path.parent)
 
         oidc = OidcConfig(**values)
 
@@ -829,12 +833,5 @@ class Config(metaclass=Singleton):
             self.app_branch = branch_name
             self.app_commit_sha = commit_sha
             self.app_build_date = commit_date
-            version_data = {
-                "version": self.app_version,
-                "branch": self.app_branch,
-                "commit": self.app_commit_sha,
-                "build_date": self.app_build_date,
-            }
-            LOG.info("Application version info set to '%s'", version_data)
         except Exception as e:
             LOG.error("Error while getting git version: %s", e)

@@ -159,6 +159,45 @@ trusted_proxies = ['10.0.0.0/24']
     assert str(config.external_auth.remote_user.trusted_proxies[0]) == "10.0.0.0/24"
 
 
+def test_oidc_file_secrets(config_env: Path) -> None:
+    secrets = config_env / "secrets"
+    secrets.mkdir()
+    (secrets / "client_id").write_text("client\n", encoding="utf-8")
+    (secrets / "client_secret").write_text(" secret \n", encoding="utf-8")
+    (config_env / "config.toml").write_text(
+        """[auth]
+external_user = 'owner'
+[auth.oidc]
+issuer = 'https://issuer.example'
+client_id = 'file:secrets/client_id'
+client_secret = 'file:secrets/client_secret'
+redirect_uri = 'https://app.example/callback'
+""",
+        encoding="utf-8",
+    )
+
+    oidc = Config.get_instance().external_auth.oidc
+    assert oidc is not None
+    assert (oidc.client_id, oidc.client_secret) == ("client", "secret")
+
+
+def test_oidc_missing_secret(config_env: Path) -> None:
+    (config_env / "config.toml").write_text(
+        """[auth]
+external_user = 'owner'
+[auth.oidc]
+issuer = 'https://issuer.example'
+client_id = 'client'
+client_secret = 'file:secrets/client_secret'
+redirect_uri = 'https://app.example/callback'
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="secret file .* is unreadable"):
+        Config.get_instance()
+
+
 def test_external_auth_custom(config_env: Path) -> None:
     (config_env / "config.toml").write_text(
         """[auth]

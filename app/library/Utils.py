@@ -32,6 +32,23 @@ TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 "Regex to find tags in templates."
 
 
+def resolve_secret(value: str, *, base_dir: Path | None = None) -> str:
+    if not value.startswith("file:"):
+        return value
+    path = Path(value[5:])
+    if base_dir is not None and not path.is_absolute():
+        path = base_dir / path
+    try:
+        content = path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        msg = f"secret file {str(path)!r} is unreadable: {exc}"
+        raise ValueError(msg) from exc
+    if not content:
+        msg = f"secret file {str(path)!r} is empty"
+        raise ValueError(msg)
+    return content
+
+
 def timed_lru_cache(ttl_seconds: float, max_size: int = 128):
     """
     Decorator that applies an LRU cache with a time-to-live (TTL) to a function.
