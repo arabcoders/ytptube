@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "7f2f1f195d339e6735ced376813527723705f0c2",
-    "date": "2026-09-29T20:48:17+00:00",
+    "full_sha": "047cc6f789cc2179305d7f92a34eb94715709162",
+    "date": "2026-10-02T20:06:41+00:00",
     "commits": [
+      {
+        "sha": "047cc6f7",
+        "full_sha": "047cc6f789cc2179305d7f92a34eb94715709162",
+        "message": "fix: typechecks",
+        "author": "arabcoders",
+        "date": "2026-10-02T20:06:41+00:00"
+      },
+      {
+        "sha": "d7f742ca",
+        "full_sha": "d7f742ca24de9c0e631ab87b3598bcd7eb3b2cb4",
+        "message": "feat: save playback position server side",
+        "author": "arabcoders",
+        "date": "2026-10-02T20:04:43+00:00"
+      },
       {
         "sha": "7f2f1f19",
         "full_sha": "7f2f1f195d339e6735ced376813527723705f0c2",
