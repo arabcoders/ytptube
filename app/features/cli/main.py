@@ -10,6 +10,7 @@ import stat
 import sys
 import tempfile
 import tomllib
+from contextlib import closing
 from getpass import getpass
 from pathlib import Path
 from urllib.parse import quote
@@ -256,7 +257,10 @@ def _db(args: argparse.Namespace, db_file: str) -> int:
     write = args.db_command == "query" and args.write
     try:
         safe_path = quote(path.resolve().as_posix(), safe="/:")
-        with sqlite3.connect(f"file:{safe_path}?mode={'rw' if write else 'ro'}", uri=True) as connection:
+        with (
+            closing(sqlite3.connect(f"file:{safe_path}?mode={'rw' if write else 'ro'}", uri=True)) as connection,
+            connection,
+        ):
             connection.row_factory = sqlite3.Row
             cursor = connection.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"

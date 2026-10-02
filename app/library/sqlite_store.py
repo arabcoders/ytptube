@@ -4,6 +4,7 @@ from urllib.parse import quote_plus
 from aiohttp import web
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from app.library.Events import EventBus, Events
 from app.library.logging import get_logger
@@ -108,9 +109,13 @@ class SqliteStore(metaclass=ThreadSafe):
         else:
             os.makedirs(os.path.dirname(self._db_path) or ".", exist_ok=True)
             db_url = f"sqlite+aiosqlite:///{self._db_path}"
-        self._engine = create_async_engine(
-            db_url, echo=False, connect_args={"check_same_thread": False, "uri": self._db_path.startswith(":memory")}
-        )
+        engine_options = {
+            "echo": False,
+            "connect_args": {"check_same_thread": False, "uri": self._db_path.startswith(":memory")},
+        }
+        if self._db_path.startswith(":memory"):
+            engine_options["poolclass"] = StaticPool
+        self._engine = create_async_engine(db_url, **engine_options)
         self._conn = await self._engine.connect()
         await migrate.upgrade(self._conn, ROOT_PATH / "migrations")
         version = await migrate.get_version(self._conn)

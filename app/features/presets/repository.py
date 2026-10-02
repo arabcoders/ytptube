@@ -20,10 +20,8 @@ if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
 
     from aiohttp import web
-    from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
-    from sqlalchemy.sql.selectable import Select
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
@@ -123,7 +121,7 @@ class PresetsRepository(metaclass=Singleton):
 
     async def all(self) -> list[PresetModel]:
         async with self.session() as session:
-            result: Result[tuple[PresetModel]] = await session.execute(
+            result = await session.execute(
                 select(PresetModel).order_by(PresetModel.priority.desc(), PresetModel.name.asc())
             )
             return list(result.scalars().all())
@@ -215,12 +213,12 @@ class PresetsRepository(metaclass=Singleton):
             if page > total_pages and total > 0:
                 page = total_pages
 
-            query: Select[tuple[PresetModel]] = select(PresetModel)
+            query = select(PresetModel)
             if exclude_defaults:
                 query = query.where(PresetModel.default.is_(False))
 
             query = query.order_by(*order_by).limit(per_page).offset((page - 1) * per_page)
-            result: Result[tuple[PresetModel]] = await session.execute(query)
+            result = await session.execute(query)
             return list(result.scalars().all()), total, page, total_pages
 
     async def count(self, exclude_defaults: bool = False) -> int:
@@ -229,7 +227,7 @@ class PresetsRepository(metaclass=Singleton):
             if exclude_defaults:
                 query = query.where(PresetModel.default.is_(False))
 
-            result: Result[tuple[int]] = await session.execute(query)
+            result = await session.execute(query)
             return int(result.scalar_one())
 
     async def get(self, identifier: int | str) -> PresetModel | None:
@@ -247,7 +245,7 @@ class PresetsRepository(metaclass=Singleton):
                     return None
                 clause = PresetModel.name == name
 
-            result: Result[tuple[PresetModel]] = await session.execute(select(PresetModel).where(clause).limit(1))
+            result = await session.execute(select(PresetModel).where(clause).limit(1))
             return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str, exclude_id: int | None = None) -> PresetModel | None:
@@ -255,11 +253,11 @@ class PresetsRepository(metaclass=Singleton):
             if not (name := preset_name(name)):
                 return None
 
-            query: Select[tuple[PresetModel]] = select(PresetModel).where(PresetModel.name == name)
+            query = select(PresetModel).where(PresetModel.name == name)
             if None is not exclude_id:
                 query = query.where(PresetModel.id != exclude_id)
 
-            result: Result[tuple[PresetModel]] = await session.execute(query.limit(1))
+            result = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
     async def create(self, payload: PresetModel | dict[str, Any]) -> PresetModel:
@@ -289,7 +287,7 @@ class PresetsRepository(metaclass=Singleton):
             else:
                 clause = PresetModel.name == identifier
 
-            result: Result[tuple[PresetModel]] = await session.execute(select(PresetModel).where(clause).limit(1))
+            result = await session.execute(select(PresetModel).where(clause).limit(1))
             model: PresetModel | None = result.scalar_one_or_none()
 
             if model is None:
@@ -323,7 +321,7 @@ class PresetsRepository(metaclass=Singleton):
             else:
                 clause = PresetModel.name == preset_name(identifier)
 
-            result: Result[tuple[PresetModel]] = await session.execute(select(PresetModel).where(clause).limit(1))
+            result = await session.execute(select(PresetModel).where(clause).limit(1))
             model: PresetModel | None = result.scalar_one_or_none()
             if model is None:
                 msg: str = f"Preset '{identifier}' not found."

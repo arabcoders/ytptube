@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 import urllib.parse
+from contextlib import closing
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -440,7 +441,7 @@ def _probe_db_file(path: Path) -> tuple[CheckStatus, str]:
 
     try:
         uri = f"file:{urllib.parse.quote(str(path))}?mode=ro"
-        with sqlite3.connect(uri, timeout=3, uri=True) as conn:
+        with closing(sqlite3.connect(uri, timeout=3, uri=True)) as conn, conn:
             conn.execute("SELECT name FROM sqlite_master LIMIT 1")
     except sqlite3.Error as exc:
         return "fail", f"SQLite error. {exc!s}"

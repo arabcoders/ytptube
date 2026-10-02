@@ -1,6 +1,8 @@
 import json
 import sqlite3
 import stat
+from contextlib import closing
+from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
@@ -299,7 +301,7 @@ def test_auth_failure(tmp_path, monkeypatch, capsys):
 
 def test_db_readonly(tmp_path, monkeypatch):
     db = tmp_path / "db.sqlite"
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         connection.execute("create table data (value text)")
     cfg = config(tmp_path)
     cfg.db_file = str(db)
@@ -307,27 +309,54 @@ def test_db_readonly(tmp_path, monkeypatch):
     assert cli.main(["db", "query", "insert into data values ('x')"]) == 1
 
 
+@pytest.mark.parametrize("sql", ["select 1", "select from data"])
+def test_db_closes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sql: str) -> None:
+    db = tmp_path / "db.sqlite"
+    original_connect = sqlite3.connect
+    with closing(original_connect(db)) as connection, connection:
+        connection.execute("create table data (value text)")
+    connections: list[sqlite3.Connection] = []
+
+    def connect(database: str, *, uri: bool = False) -> sqlite3.Connection:
+        connection = original_connect(database, uri=uri)
+        connections.append(connection)
+        return connection
+
+    cfg = config(tmp_path)
+    cfg.db_file = str(db)
+    monkeypatch.setattr(cli.Config, "get_instance", lambda: cfg)
+    monkeypatch.setattr(cli.sqlite3, "connect", connect)
+
+    try:
+        assert cli.main(["db", "query", sql]) == (0 if sql == "select 1" else 1)
+        with pytest.raises(sqlite3.ProgrammingError):
+            connections[0].execute("select 1")
+    finally:
+        for connection in connections:
+            connection.close()
+
+
 def test_db_write(tmp_path, monkeypatch, capsys):
     db = tmp_path / "db.sqlite"
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         connection.execute("create table data (value text)")
     cfg = config(tmp_path)
     cfg.db_file = str(db)
     monkeypatch.setattr(cli.Config, "get_instance", lambda: cfg)
     assert cli.main(["db", "query", "insert into data values ('x')", "--write"]) == 0
     capsys.readouterr()
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         assert connection.execute("select value from data").fetchone() == ("x",)
 
     assert cli.main(["db", "query", "update data set value = 'y'", "--write", "--json"]) == 0
     assert json.loads(capsys.readouterr().out) == {"affected": 1}
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         assert connection.execute("select value from data").fetchone() == ("y",)
 
 
 def test_db_tables(tmp_path, monkeypatch, capsys):
     db = tmp_path / "db.sqlite"
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         connection.execute("create table data (value text)")
     cfg = config(tmp_path)
     cfg.db_file = str(db)
@@ -338,7 +367,7 @@ def test_db_tables(tmp_path, monkeypatch, capsys):
 
 def test_db_blob(tmp_path, monkeypatch, capsys):
     db = tmp_path / "db.sqlite"
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         connection.execute("create table data (value blob)")
         connection.execute("insert into data values (?)", (b"\x00\xff",))
     monkeypatch.setattr(cli.Config, "get_instance", lambda: config(tmp_path))

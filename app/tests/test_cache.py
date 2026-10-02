@@ -1,7 +1,7 @@
 import asyncio
 import json
 import threading
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -41,7 +41,8 @@ class TestCache:
 
         Cache._reset_singleton()
         restored = Cache(persistence)
-        restored.attach(MagicMock(on_shutdown=[]))
+        with patch("app.library.cache.Scheduler.add"):
+            restored.attach(MagicMock(on_shutdown=[]))
         assert restored.get("key") == {"value": 1}
 
     def test_nonpersistent_not_saved(self, tmp_path):
@@ -73,7 +74,8 @@ class TestCache:
 
         Cache._reset_singleton()
         restored = Cache(persistence)
-        restored.attach(MagicMock(on_shutdown=[]))
+        with patch("app.library.cache.Scheduler.add"):
+            restored.attach(MagicMock(on_shutdown=[]))
         assert not restored.has("expired")
 
     def test_json_rejection(self):

@@ -94,19 +94,24 @@ class TestScheduler:
             loop.close()
 
     @patch("app.library.Scheduler.Cron", new=DummyCron)
-    def test_add_replaces_existing_job(self) -> None:
-        sched = Scheduler()
+    def test_replace_job(self) -> None:
+        loop = asyncio.new_event_loop()
+        sched = Scheduler(loop=loop)
 
-        old = DummyCron(spec="* * * * *", func=lambda: None, uuid="job1", start=True, loop=sched._loop)
-        sched._jobs["job1"] = old
+        try:
+            old = DummyCron(spec="* * * * *", func=lambda: None, uuid="job1", start=True, loop=loop)
+            sched._jobs["job1"] = old
 
-        new_id = sched.add(timer="*/2 * * * *", func=lambda: None, id="job1")
+            new_id = sched.add(timer="*/2 * * * *", func=lambda: None, id="job1")
 
-        assert new_id == "job1"
-        assert sched.has("job1") is True
-        new_job = sched.get("job1")
-        assert new_job is not old
-        assert old.stopped is True, "Old job should have been stopped via remove()"
+            assert new_id == "job1"
+            assert sched.has("job1") is True
+            new_job = sched.get("job1")
+            assert new_job is not old
+            assert old.stopped is True, "Old job should have been stopped via remove()"
+        finally:
+            sched.remove(list(sched.get_all()))
+            loop.close()
 
     @patch("app.library.Scheduler.Cron", new=DummyCron)
     def test_remove_single_job_success(self) -> None:
@@ -204,7 +209,7 @@ class TestScheduler:
         assert kwargs["id"] == "evt-job"
 
     @patch("app.library.Scheduler.Cron")
-    def test_add_executes_on_start(self, cron_patch) -> None:
+    def test_runs_start(self, cron_patch) -> None:
         class AutoRunCron(DummyCron):
             def __init__(
                 self,
@@ -223,17 +228,22 @@ class TestScheduler:
 
         cron_patch.side_effect = AutoRunCron
 
-        sched = Scheduler()
+        loop = asyncio.new_event_loop()
+        sched = Scheduler(loop=loop)
         ran: dict[str, Any] = {"count": 0, "last": None}
 
         def job_func(x: int, y: int, label: str = "") -> None:
             ran["count"] += 1
             ran["last"] = (x, y, label)
 
-        _ = sched.add(timer="*/1 * * * *", func=job_func, args=(2, 3), kwargs={"label": "ok"}, id="run1")
+        try:
+            _ = sched.add(timer="*/1 * * * *", func=job_func, args=(2, 3), kwargs={"label": "ok"}, id="run1")
 
-        assert ran["count"] == 1
-        assert ran["last"] == (2, 3, "ok")
+            assert ran["count"] == 1
+            assert ran["last"] == (2, 3, "ok")
+        finally:
+            sched.remove(list(sched.get_all()))
+            loop.close()
 
     @pytest.mark.asyncio
     @patch("app.library.Scheduler.Cron")
