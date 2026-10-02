@@ -73,6 +73,7 @@
         @timeupdate="handleVideoTimeUpdate"
         @play="handleVideoPlay"
         @pause="handleVideoPause"
+        @ended="flushProgress"
         @click="handleVideoClick"
         @dblclick="handleVideoDoubleClick"
         @pointermove="handlePointerMove"
@@ -366,6 +367,7 @@ import { usePlayerShortcutHelp } from '~/composables/usePlayerShortcutHelp';
 import { usePlayerShortcuts } from '~/composables/usePlayerShortcuts';
 import { usePlayerSubtitles } from '~/composables/usePlayerSubtitles';
 import { useApiErrorMessage } from '~/composables/useApiErrorMessage';
+import { useAuth } from '~/composables/useAuth';
 import {
   canRequestFullscreen,
   exitDocumentFullscreen,
@@ -373,7 +375,7 @@ import {
   requestElementFullscreen,
 } from '~/utils/fullscreen';
 import { clampMediaVolume } from '~/utils/keyboard';
-import { clear, clampResumeTime, nearEnd, read, save } from '~/utils/media';
+import { clear, clampResumeTime, nearEnd, read, readRemote, save, saveRemote } from '~/utils/media';
 import { nextTapVisible } from '~/utils/playerControls';
 
 import type { StoreItem } from '~/types/store';
@@ -382,6 +384,11 @@ import type { ApiErrorPayload } from '~/types/responses';
 
 const { t } = useI18n();
 const config = useYtpConfig();
+const { status: auth } = useAuth();
+const scope = computed(() => {
+  if (auth.value?.disabled) return 'shared';
+  return auth.value?.user ? `user:${auth.value.user.id}` : null;
+});
 
 const props = defineProps<{ item: StoreItem }>();
 const emitter = defineEmits<{
@@ -440,6 +447,9 @@ let hls: Hls | null = null;
 let pendingSeek: number | null = null;
 let pendingPlay = false;
 let lastSaveAt = 0;
+let resumeVersion = 0;
+let lastRemote: number | null | undefined;
+let remoteWrite = Promise.resolve();
 
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
 const mediaFile = computed(() => props.item.filename || '');
@@ -573,6 +583,7 @@ function currentPlaybackUrl(base: string, playlist: boolean = false): string {
 }
 
 function activatePlayer() {
+  resumeVersion += 1;
   active.value = true;
   void nextTick(async () => {
     applyMediaState(videoElement.value);
@@ -589,6 +600,7 @@ function handleVideoLoadedData() {
 }
 
 function handleVideoLoadedMetadata() {
+  resumeVersion += 1;
   loadingError.value = '';
   syncVideoState();
   showControls();
@@ -607,11 +619,7 @@ function handleVideoLoadedMetadata() {
       showControls();
     });
   } else {
-    const shouldResume = id.value !== '' && read(id.value) > 0;
-    if (shouldResume) {
-      active.value = true;
-    }
-    void restoreStoredProgress(shouldResume);
+    void restoreStoredProgress();
   }
 }
 
@@ -625,6 +633,7 @@ function handleVideoTimeUpdate() {
 }
 
 function handleVideoPlay() {
+  resumeVersion += 1;
   loadingError.value = '';
   syncVideoState();
   showControls();
@@ -638,6 +647,10 @@ function handleVideoPause() {
   persistProgress(true);
   emitter('playback-state-change', false);
 }
+
+const flushProgress = () => persistProgress(true);
+const handleVisibilityChange = () =>
+  document.visibilityState === 'hidden' ? persistProgress(true) : undefined;
 
 function handleVideoClick() {
   if (isTouchDevice.value) {
@@ -708,26 +721,46 @@ function handleMediaVolumeChange(event: Event) {
   updateMediaSessionPosition(target);
 }
 
-async function restoreStoredProgress(autoPlay = false) {
-  if (!id.value || !videoElement.value) {
+async function restoreStoredProgress() {
+  const mediaId = id.value;
+  const video = videoElement.value;
+  const localScope = scope.value;
+  const version = resumeVersion;
+  if (!mediaId || !video) {
     return;
   }
 
-  const saved = read(id.value);
+  const remoteTime = await readRemote(mediaId);
+  if (
+    destroyed.value ||
+    version !== resumeVersion ||
+    video !== videoElement.value ||
+    mediaId !== id.value ||
+    localScope !== scope.value ||
+    !video.paused ||
+    video.currentTime > 0
+  ) {
+    return;
+  }
+
+  const saved = remoteTime === undefined ? read(mediaId, localScope) : (remoteTime ?? 0);
+  if (remoteTime !== undefined) {
+    lastRemote = remoteTime;
+    if (saved > 0) save(mediaId, saved, localScope);
+    else clear(mediaId, localScope);
+  }
   if (saved <= 0) {
     return;
   }
 
+  active.value = true;
   await seekTo(saved);
-  if (autoPlay) {
-    try {
-      await videoElement.value.play();
-    } catch {}
-  }
+  if (destroyed.value || video !== videoElement.value || version !== resumeVersion) return;
+  try {
+    await video.play();
+  } catch {}
   syncVideoState();
-  if (autoPlay) {
-    showControls();
-  }
+  showControls();
 }
 
 function readSwitchTime() {
@@ -768,14 +801,26 @@ async function restoreSwitch(time: number, play: boolean) {
   }
 }
 
+function syncProgress(position: number | null) {
+  if (lastRemote === position) return;
+  lastRemote = position;
+  const mediaId = id.value;
+  const localScope = scope.value;
+  remoteWrite = remoteWrite.then(async () => {
+    if (localScope !== scope.value) return;
+    if (!(await saveRemote(mediaId, position)) && lastRemote === position) lastRemote = undefined;
+  });
+}
+
 function persistProgress(force: boolean) {
   const video = videoElement.value;
-  if (!id.value || !video) {
+  if (!id.value || !video || destroyed.value) {
     return;
   }
 
   if (nearEnd(video)) {
-    clear(id.value);
+    clear(id.value, scope.value);
+    syncProgress(null);
     lastSaveAt = 0;
     return;
   }
@@ -790,7 +835,8 @@ function persistProgress(force: boolean) {
     return;
   }
 
-  save(id.value, time);
+  save(id.value, time, scope.value);
+  if (force) syncProgress(time);
   lastSaveAt = now;
 }
 
@@ -809,6 +855,7 @@ function handlePointerMove(event: PointerEvent) {
 }
 
 function handleSeekInput(event: Event) {
+  resumeVersion += 1;
   const target = event.target as HTMLInputElement | null;
   if (!target || !videoElement.value || !duration.value) return;
 
@@ -821,6 +868,7 @@ function handleSeekInput(event: Event) {
 }
 
 function handleSeekTouch(event: TouchEvent) {
+  resumeVersion += 1;
   const target = event.currentTarget as HTMLInputElement | null;
   const touch = event.touches[0];
   if (!target || !touch || !videoElement.value || !duration.value) return;
@@ -905,7 +953,7 @@ function syncVideoState() {
   paused.value = video.paused;
 
   if (video.ended || nearEnd(video)) {
-    clear(id.value);
+    clear(id.value, scope.value);
     lastSaveAt = 0;
   }
 
@@ -1326,16 +1374,23 @@ onMounted(async () => {
   document.addEventListener('webkitfullscreenchange', syncFullscreenState as EventListener);
   window.addEventListener('resize', scheduleAssLayoutRefresh);
   window.addEventListener('orientationchange', scheduleAssLayoutRefresh);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('pagehide', flushProgress);
   syncFullscreenState();
   await loadPlayerInfo();
 });
 
 onBeforeUnmount(() => {
+  resumeVersion += 1;
   enableOpacity();
   document.removeEventListener('fullscreenchange', syncFullscreenState);
   document.removeEventListener('webkitfullscreenchange', syncFullscreenState as EventListener);
   window.removeEventListener('resize', scheduleAssLayoutRefresh);
   window.removeEventListener('orientationchange', scheduleAssLayoutRefresh);
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('pagehide', flushProgress);
+
+  persistProgress(true);
 
   if (assLayoutRefreshFrame) {
     window.cancelAnimationFrame(assLayoutRefreshFrame);
@@ -1355,8 +1410,6 @@ onBeforeUnmount(() => {
   }
 
   if (videoElement.value) {
-    persistProgress(true);
-    destroyed.value = true;
     try {
       videoElement.value.pause();
       videoElement.value
@@ -1367,6 +1420,7 @@ onBeforeUnmount(() => {
       console.error(error);
     }
   }
+  destroyed.value = true;
 });
 </script>
 

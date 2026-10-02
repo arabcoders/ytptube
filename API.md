@@ -2210,6 +2210,57 @@ When supplied, `definition` is a complete nested Definition object rather than a
 
 ---
 
+### GET /api/playback/{media_id}
+**Purpose**: Get the saved playback position for a download.
+
+**Path Parameter**:
+- `media_id` = The download's `_id`.
+
+**Response**:
+```json
+{
+  "position": 42.5
+}
+```
+
+**Notes**:
+- `position` is measured in seconds. Missing, expired, or cleared positions return `{"position": null}`.
+- Positions are scoped to the authenticated user, or shared when authentication is disabled.
+
+**Errors**:
+- `401 UNAUTHORIZED` if authentication is enabled and no valid credentials are provided.
+
+---
+
+### PUT /api/playback/{media_id}
+**Purpose**: Save or clear the current user's playback position.
+
+**Path Parameter**:
+- `media_id` = The download's `_id`.
+
+**Body**:
+```json
+{
+  "position": 42.5
+}
+```
+
+**Response**:
+```json
+{
+  "position": 42.5
+}
+```
+
+**Notes**:
+- `position` must be a finite nonnegative number of seconds, or `null` to clear progress after playback completes.
+- Saved positions expire 24 hours after the last save.
+
+**Errors**:
+- `400 BAD_REQUEST` if the body is not a JSON object, `position` is missing, or its value is invalid.
+
+---
+
 ### GET /api/player/playlist/{file:.*}.m3u8
 **Purpose**: Generate a playlist for a given local media file.
 
