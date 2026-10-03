@@ -20,6 +20,7 @@ import httpx
 from app.features.cli import downloads, operations, resources
 from app.library.config import Config
 from app.library.Utils import resolve_secret
+from app.library.version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 
 
 def _settings(config: Config) -> tuple[dict[str, str], Path]:
@@ -58,6 +59,34 @@ def _token_input(value: str | None) -> str | None:
         message = "API token is required"
         raise ValueError(message)
     return token
+
+
+def _version(*, json_output: bool) -> int:
+    values = {
+        "version": APP_VERSION,
+        "branch": APP_BRANCH,
+        "build": APP_BUILD_DATE,
+        "sha": APP_COMMIT_SHA,
+    }
+    if json_output:
+        _display(values, json_output=True)
+        return 0
+
+    if sys.stdout.isatty():
+        info = "\033[32m"
+        comment = "\033[33m"
+        reset = "\033[0m"
+        sha = f"\033]8;;https://github.com/ArabCoders/ytptube/commit/{APP_COMMIT_SHA}\033\\{info}{APP_COMMIT_SHA}{reset}\033]8;;\033\\"
+        print(f"{info}YTPTube {APP_VERSION}{reset}")  # noqa: T201
+        print(f"{comment}Branch:{reset} {info}{APP_BRANCH}{reset}")  # noqa: T201
+        print(f"{comment}Build:{reset} {info}{APP_BUILD_DATE}{reset}")  # noqa: T201
+        print(f"{comment}SHA:{reset} {sha}")  # noqa: T201
+    else:
+        print(f"YTPTube {APP_VERSION}")  # noqa: T201
+        print(f"Branch: {APP_BRANCH}")  # noqa: T201
+        print(f"Build: {APP_BUILD_DATE}")  # noqa: T201
+        print(f"SHA: {APP_COMMIT_SHA}")  # noqa: T201
+    return 0
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -155,6 +184,10 @@ def _parser() -> argparse.ArgumentParser:
         "info", help="Show local paths and server URL.", description="Show local paths and the server URL in use."
     )
     output(info)
+    version = sub.add_parser(
+        "version", help="Show application version information.", description="Show application version information."
+    )
+    version.add_argument("--json", dest="json_output", action="store_true", help="Print the version as JSON")
     return parser
 
 
@@ -416,6 +449,8 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         config = Config.get_instance()
+        if args.command == "version":
+            return _version(json_output=args.json_output)
         toml, config_file = _settings(config)
         _warn_secrets(config_file)
         url = args.url or os.environ.get("YTP_API_URL") or toml.get("url") or _default_url(config)

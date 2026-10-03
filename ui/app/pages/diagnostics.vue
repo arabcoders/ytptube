@@ -104,6 +104,8 @@
             :value="row.value"
             :hint="row.description"
             :icon="row.icon"
+            :href="row.href"
+            :tooltip="row.tooltip"
             color="neutral"
             value-wrap
           />
@@ -187,6 +189,8 @@ type DetailRow = {
   description: string;
   value: string;
   icon: string;
+  href?: string;
+  tooltip?: string;
 };
 
 type FeatureMeta = {
@@ -304,6 +308,28 @@ const runtimeRows = computed<Array<DetailRow>>(() => {
       icon: 'i-lucide-package',
     },
     {
+      label: 'Branch',
+      description: 'Build branch.',
+      value: runtime.app_branch || 'Unknown',
+      icon: 'i-lucide-git-branch',
+    },
+    {
+      label: 'Build date',
+      description: 'Build timestamp.',
+      value: runtime.app_build_date || 'Unknown',
+      icon: 'i-lucide-calendar',
+    },
+    {
+      label: 'Commit SHA',
+      description: 'Build commit.',
+      value: runtime.app_commit_sha ? runtime.app_commit_sha.slice(0, 7) : 'Unknown',
+      icon: 'i-lucide-git-commit-horizontal',
+      href: runtime.app_commit_sha
+        ? `https://github.com/ArabCoders/ytptube/commit/${runtime.app_commit_sha}`
+        : undefined,
+      tooltip: runtime.app_commit_sha || undefined,
+    },
+    {
       label: t('diagnostics.host'),
       description: t('diagnostics.hostDesc'),
       value: `${runtime.platform} ${runtime.platform_release} (${runtime.platform_machine})`,
@@ -337,6 +363,9 @@ const shareText = computed(() => {
     '',
     'Runtime',
     `- App: ${current.runtime.app_version || 'Unknown'}`,
+    `- Branch: ${current.runtime.app_branch || 'Unknown'}`,
+    `- Build: ${current.runtime.app_build_date || 'Unknown'}`,
+    `- SHA: ${current.runtime.app_commit_sha || 'Unknown'}`,
     `- Host: ${current.runtime.platform} ${current.runtime.platform_release} (${current.runtime.platform_machine})`,
     `- Python: ${current.requirements.python.current}`,
     `- Started: ${formatIsoTimestamp(current.runtime.started)}`,
