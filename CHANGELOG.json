@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "047cc6f789cc2179305d7f92a34eb94715709162",
-    "date": "2026-10-02T20:06:41+00:00",
+    "full_sha": "abeff268634cfb5c6962a7183bb579e404aee962",
+    "date": "2026-10-03T13:45:07+00:00",
     "commits": [
+      {
+        "sha": "abeff268",
+        "full_sha": "abeff268634cfb5c6962a7183bb579e404aee962",
+        "message": "fix: restore packaging dependancy",
+        "author": "arabcoders",
+        "date": "2026-10-03T13:45:07+00:00"
+      },
       {
         "sha": "047cc6f7",
         "full_sha": "047cc6f789cc2179305d7f92a34eb94715709162",
