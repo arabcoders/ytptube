@@ -9,10 +9,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from contextlib import AbstractAsyncContextManager
 
-    from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
-    from sqlalchemy.sql.selectable import Select
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
@@ -59,7 +57,7 @@ class ConditionsRepository(metaclass=Singleton):
 
     async def all(self) -> list[ConditionModel]:
         async with self.session() as session:
-            result: Result[tuple[ConditionModel]] = await session.execute(
+            result = await session.execute(
                 select(ConditionModel).order_by(ConditionModel.priority.desc(), ConditionModel.name.asc())
             )
             return list(result.scalars().all())
@@ -72,18 +70,18 @@ class ConditionsRepository(metaclass=Singleton):
             if page > total_pages and total > 0:
                 page = total_pages
 
-            query: Select[tuple[ConditionModel]] = (
+            query = (
                 select(ConditionModel)
                 .order_by(ConditionModel.priority.desc(), ConditionModel.name.asc())
                 .limit(per_page)
                 .offset((page - 1) * per_page)
             )
-            result: Result[tuple[ConditionModel]] = await session.execute(query)
+            result = await session.execute(query)
             return list(result.scalars().all()), total, page, total_pages
 
     async def count(self) -> int:
         async with self.session() as session:
-            result: Result[tuple[int]] = await session.execute(select(func.count()).select_from(ConditionModel))
+            result = await session.execute(select(func.count()).select_from(ConditionModel))
             return int(result.scalar_one())
 
     async def get(self, identifier: int | str) -> ConditionModel | None:
@@ -100,16 +98,16 @@ class ConditionsRepository(metaclass=Singleton):
             else:
                 clause: ColumnElement[bool] = ConditionModel.name == identifier
 
-            result: Result[tuple[ConditionModel]] = await session.execute(select(ConditionModel).where(clause).limit(1))
+            result = await session.execute(select(ConditionModel).where(clause).limit(1))
             return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str, exclude_id: int | None = None) -> ConditionModel | None:
         async with self.session() as session:
-            query: Select[tuple[ConditionModel]] = select(ConditionModel).where(ConditionModel.name == name)
+            query = select(ConditionModel).where(ConditionModel.name == name)
             if exclude_id is not None:
                 query = query.where(ConditionModel.id != exclude_id)
 
-            result: Result[tuple[ConditionModel]] = await session.execute(query.limit(1))
+            result = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
     async def create(self, payload: ConditionModel | dict[str, Any]) -> ConditionModel:
@@ -138,7 +136,7 @@ class ConditionsRepository(metaclass=Singleton):
             else:
                 clause: ColumnElement[bool] = ConditionModel.name == identifier
 
-            result: Result[tuple[ConditionModel]] = await session.execute(select(ConditionModel).where(clause).limit(1))
+            result = await session.execute(select(ConditionModel).where(clause).limit(1))
             if not (model := result.scalar_one_or_none()):
                 msg: str = f"Condition '{identifier}' not found."
                 raise KeyError(msg)
@@ -170,7 +168,7 @@ class ConditionsRepository(metaclass=Singleton):
             else:
                 clause: ColumnElement[bool] = ConditionModel.name == identifier
 
-            result: Result[tuple[ConditionModel]] = await session.execute(select(ConditionModel).where(clause).limit(1))
+            result = await session.execute(select(ConditionModel).where(clause).limit(1))
             if not (model := result.scalar_one_or_none()):
                 msg: str = f"Condition '{identifier}' not found."
                 raise KeyError(msg)

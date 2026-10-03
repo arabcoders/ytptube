@@ -659,7 +659,6 @@
     "ytdlpOption": "Option yt-dlp : {field}",
     "playing": "Lecture : {title}",
     "started": "Démarré : {time}",
-    "buildInfo": "Build : {date}, Branche : {branch}, SHA : {sha}",
     "breadcrumb": "Fil d'Ariane",
     "showControls": "Afficher les contrôles",
     "sepComma": "Virgule",

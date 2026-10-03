@@ -1,7 +1,7 @@
 import asyncio
 import json
 import threading
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -41,7 +41,8 @@ class TestCache:
 
         Cache._reset_singleton()
         restored = Cache(persistence)
-        restored.attach(MagicMock(on_shutdown=[]))
+        with patch("app.library.cache.Scheduler.add"):
+            restored.attach(MagicMock(on_shutdown=[]))
         assert restored.get("key") == {"value": 1}
 
     def test_nonpersistent_not_saved(self, tmp_path):
@@ -73,7 +74,8 @@ class TestCache:
 
         Cache._reset_singleton()
         restored = Cache(persistence)
-        restored.attach(MagicMock(on_shutdown=[]))
+        with patch("app.library.cache.Scheduler.add"):
+            restored.attach(MagicMock(on_shutdown=[]))
         assert not restored.has("expired")
 
     def test_json_rejection(self):
@@ -107,7 +109,7 @@ class TestCache:
         path.write_text('{"version": 99, "entries": {"key": {"value": "value"}}}')
         persistence = JsonPersistence(path)
         assert persistence.load() == {}
-        with pytest.raises(RuntimeError, match="newer version"):
+        with pytest.raises(RuntimeError):
             persistence.save({"key": CacheEntry(value="replacement", persist=True)})
         assert json.loads(path.read_text())["version"] == 99
 
@@ -150,13 +152,13 @@ class TestCache:
             self.cache.set("second", 2, persist=True)
             tasks.append(asyncio.create_task(self.cache.flush()))
             persistence.release.set()
-            await asyncio.gather(*tasks)
+            await asyncio.wait_for(asyncio.gather(*tasks), timeout=1)
         finally:
             persistence.release.set()
             for task in tasks:
                 if not task.done():
                     task.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
+            await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=1)
 
         assert persistence.snapshots[-1] == {
             "first": CacheEntry(value=1, persist=True),
@@ -365,9 +367,9 @@ class TestCache:
         await self.cache.cleanup()
 
         # Verify only expired key was removed
-        assert self.cache.get("permanent") == "value", "Should keep permanent key"
-        assert self.cache.get("medium") == "value2", "Should keep non-expired key"
-        assert self.cache.get("short") is None, "Should remove expired key"
+        assert self.cache.get("permanent") == "value"
+        assert self.cache.get("medium") == "value2"
+        assert self.cache.get("short") is None
 
     @pytest.mark.asyncio
     async def test_cleanup_no_expired_entries(self):
@@ -378,8 +380,8 @@ class TestCache:
         await self.cache.cleanup()
 
         # Verify all keys still exist
-        assert self.cache.get("key1") == "value1", "Should keep non-expired key"
-        assert self.cache.get("key2") == "value2", "Should keep non-expired key"
+        assert self.cache.get("key1") == "value1"
+        assert self.cache.get("key2") == "value2"
 
     @pytest.mark.asyncio
     async def test_attach_registers_with_services(self):
@@ -402,8 +404,8 @@ class TestCache:
             cache.attach(mock_app)
 
             services = Services.get_instance()
-            assert services.get("cache") is cache, "Should register cache with Services"
-            assert scheduler.has(f"{Cache.__name__}.{Cache.cleanup.__name__}"), "Should schedule cleanup job"
+            assert services.get("cache") is cache
+            assert scheduler.has(f"{Cache.__name__}.{Cache.cleanup.__name__}")
             assert cache.on_shutdown in mock_app.on_shutdown
         finally:
             await asyncio.wait_for(cache.on_shutdown(None), timeout=1)

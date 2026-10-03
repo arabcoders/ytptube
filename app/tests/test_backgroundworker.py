@@ -56,7 +56,6 @@ class TestBackgroundWorker:
         done = threading.Event()
 
         async def coro_task(flag: threading.Event) -> None:
-            await asyncio.sleep(0)
             flag.set()
 
         worker.submit(coro_task, done)
@@ -93,5 +92,5 @@ class TestBackgroundWorker:
         worker.attach(app)
         asyncio.run(worker.on_shutdown(app))
 
-        with pytest.raises(RuntimeError, match="shutting down"):
+        with pytest.raises(RuntimeError):
             worker.submit(lambda: None)

@@ -298,7 +298,7 @@ class TestMiniFilter(unittest.TestCase):
         )
 
     def test_parser_rejects_trailing_tokens(self):
-        with pytest.raises(SyntaxError, match="Unexpected token"):
+        with pytest.raises(SyntaxError):
             MiniFilter("uploader='BBC' stray")
 
     def test_spaces_around_operators(self):

@@ -284,11 +284,25 @@
                             <span>YTPTube</span>
                           </NuxtLink>
 
-                          <UTooltip :text="buildTooltip">
-                            <span class="text-xs has-tooltip">
-                              {{ config?.app?.app_version || t('app.footer.versionUnknown') }}
-                            </span>
-                          </UTooltip>
+                          <span class="text-xs has-tooltip">
+                            {{ config?.app?.app_version || t('app.footer.versionUnknown') }}
+                            · {{ config?.app?.app_build_date || 'unknown' }} ·
+                            <UTooltip
+                              :text="config?.app?.app_commit_sha"
+                              v-if="config?.app?.app_commit_sha"
+                            >
+                              <NuxtLink
+                                :href="`https://github.com/ArabCoders/ytptube/commit/${config.app.app_commit_sha}`"
+                                target="_blank"
+                                class="hover:text-primary hover:underline"
+                                @click.stop
+                              >
+                                {{ config.app.app_commit_sha.slice(0, 7) }}
+                              </NuxtLink>
+                            </UTooltip>
+                            <span v-else>unknown</span>
+                            · {{ config?.app?.app_branch || 'unknown' }}
+                          </span>
                         </div>
 
                         <p
@@ -711,14 +725,6 @@ const documentTitle = computed(() => {
 useHead(() => ({
   title: formatPageTitle(documentTitle.value),
 }));
-
-const buildTooltip = computed(() =>
-  t('common.buildInfo', {
-    date: config.app?.app_build_date,
-    branch: config.app?.app_branch,
-    sha: config.app?.app_commit_sha,
-  }),
-);
 
 const connectionStatusColor = computed(() => {
   if (socket.connectionStatus === 'connected') {

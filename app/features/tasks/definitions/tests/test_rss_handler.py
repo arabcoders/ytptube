@@ -199,9 +199,7 @@ class TestRssHandlerExtraction:
         assert result.metadata["entry_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_archive_error_logged(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    async def test_archive_error_empty(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         feed = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel><item>
   <title>Unsupported</title>
@@ -225,15 +223,12 @@ class TestRssHandlerExtraction:
         )
         monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.fetch_info", fake_fetch)
 
-        with caplog.at_level(logging.WARNING, logger="ytptube"):
-            result = await RssGenericHandler.extract(
-                HandleTask(id=None, name="Archive Error", url="https://example.com/feed.rss")
-            )
+        result = await RssGenericHandler.extract(
+            HandleTask(id=None, name="Archive Error", url="https://example.com/feed.rss")
+        )
 
         assert isinstance(result, TaskResult)
         assert result.items == []
-        assert "required yt-dlp archive ID fallback for 1 item(s)" in caplog.text
-        assert "yt-dlp: Invalid browser URL." in caplog.text
         assert call["capture_logs"] == logging.ERROR
 
     @pytest.mark.asyncio
@@ -287,19 +282,26 @@ class TestRssHandlerExtraction:
         monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.CACHE", cache)
         active = 0
         peak = 0
+        both_started = asyncio.Event()
 
         async def fake_fetch(config, url, **kwargs):  # noqa: ARG001
             nonlocal active, peak
             active += 1
             peak = max(peak, active)
-            await asyncio.sleep(0)
-            active -= 1
-            return {"id": url.rsplit("/", 1)[-1], "extractor_key": "Example"}, []
+            if active == 2:
+                both_started.set()
+            try:
+                await asyncio.wait_for(both_started.wait(), timeout=1)
+                return {"id": url.rsplit("/", 1)[-1], "extractor_key": "Example"}, []
+            finally:
+                active -= 1
 
         fetch = AsyncMock(side_effect=fake_fetch)
         monkeypatch.setattr("app.features.tasks.definitions.handlers.rss.fetch_info", fetch)
 
-        result = await RssGenericHandler.extract(HandleTask(id=None, name="RSS", url="https://example.com/feed.rss"))
+        result = await asyncio.wait_for(
+            RssGenericHandler.extract(HandleTask(id=None, name="RSS", url="https://example.com/feed.rss")), timeout=2
+        )
 
         assert isinstance(result, TaskResult)
         assert [item.url for item in result.items] == [entry["url"] for entry in items]

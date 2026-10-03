@@ -14,10 +14,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from contextlib import AbstractAsyncContextManager
 
-    from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
-    from sqlalchemy.sql.selectable import Select
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
@@ -58,7 +56,7 @@ class DLFieldsRepository(metaclass=Singleton):
 
     async def all(self) -> list[DLFieldModel]:
         async with self.session() as session:
-            result: Result[tuple[DLFieldModel]] = await session.execute(
+            result = await session.execute(
                 select(DLFieldModel).order_by(DLFieldModel.order.asc(), DLFieldModel.name.asc())
             )
             return list(result.scalars().all())
@@ -71,18 +69,18 @@ class DLFieldsRepository(metaclass=Singleton):
             if page > total_pages and total > 0:
                 page = total_pages
 
-            query: Select[tuple[DLFieldModel]] = (
+            query = (
                 select(DLFieldModel)
                 .order_by(DLFieldModel.order.asc(), DLFieldModel.name.asc())
                 .limit(per_page)
                 .offset((page - 1) * per_page)
             )
-            result: Result[tuple[DLFieldModel]] = await session.execute(query)
+            result = await session.execute(query)
             return list(result.scalars().all()), total, page, total_pages
 
     async def count(self) -> int:
         async with self.session() as session:
-            result: Result[tuple[int]] = await session.execute(select(func.count()).select_from(DLFieldModel))
+            result = await session.execute(select(func.count()).select_from(DLFieldModel))
             return int(result.scalar_one())
 
     async def get(self, identifier: int | str) -> DLFieldModel | None:
@@ -97,16 +95,16 @@ class DLFieldsRepository(metaclass=Singleton):
             else:
                 clause = DLFieldModel.name == identifier
 
-            result: Result[tuple[DLFieldModel]] = await session.execute(select(DLFieldModel).where(clause).limit(1))
+            result = await session.execute(select(DLFieldModel).where(clause).limit(1))
             return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str, exclude_id: int | None = None) -> DLFieldModel | None:
         async with self.session() as session:
-            query: Select[tuple[DLFieldModel]] = select(DLFieldModel).where(DLFieldModel.name == name)
+            query = select(DLFieldModel).where(DLFieldModel.name == name)
             if exclude_id is not None:
                 query = query.where(DLFieldModel.id != exclude_id)
 
-            result: Result[tuple[DLFieldModel]] = await session.execute(query.limit(1))
+            result = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
     async def create(self, payload: DLFieldModel | dict[str, Any]) -> DLFieldModel:
@@ -131,7 +129,7 @@ class DLFieldsRepository(metaclass=Singleton):
             else:
                 clause = DLFieldModel.name == identifier
 
-            result: Result[tuple[DLFieldModel]] = await session.execute(select(DLFieldModel).where(clause).limit(1))
+            result = await session.execute(select(DLFieldModel).where(clause).limit(1))
             model: DLFieldModel | None = result.scalar_one_or_none()
 
             if not model:
@@ -161,7 +159,7 @@ class DLFieldsRepository(metaclass=Singleton):
             else:
                 clause = DLFieldModel.name == identifier
 
-            result: Result[tuple[DLFieldModel]] = await session.execute(select(DLFieldModel).where(clause).limit(1))
+            result = await session.execute(select(DLFieldModel).where(clause).limit(1))
             model = result.scalar_one_or_none()
 
             if not model:

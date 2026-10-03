@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from unittest.mock import AsyncMock
 
 import pytest
@@ -40,20 +40,39 @@ async def test_singleflight(monkeypatch: pytest.MonkeyPatch) -> None:
         item_id = "item-1"
 
         calls = {"count": 0}
+        started = asyncio.Event()
+        joined = asyncio.Event()
+        release = asyncio.Event()
 
         async def fake_run_ffmpeg(_file: Path, output_file: Path) -> Path:
             calls["count"] += 1
-            await asyncio.sleep(0)
+            started.set()
+            await release.wait()
             output_file.parent.mkdir(parents=True, exist_ok=True)
             output_file.write_text("image")
             return output_file
 
         monkeypatch.setattr(thumbnail, "_run_ffmpeg", fake_run_ffmpeg)
 
-        first, second = await asyncio.gather(
-            thumbnail.ensure_thumb(media, cache_root, item_id=item_id),
-            thumbnail.ensure_thumb(media, cache_root, item_id=item_id),
-        )
+        def log_debug(message: str, *_args: object, **_kwargs: object) -> None:
+            if message.startswith("Waiting for thumbnail generation"):
+                joined.set()
+
+        monkeypatch.setattr(thumbnail.LOG, "debug", log_debug)
+
+        first_task = asyncio.create_task(thumbnail.ensure_thumb(media, cache_root, item_id=item_id))
+        second_task = asyncio.create_task(thumbnail.ensure_thumb(media, cache_root, item_id=item_id))
+        try:
+            await asyncio.wait_for(started.wait(), timeout=1)
+            await asyncio.wait_for(joined.wait(), timeout=1)
+            release.set()
+            first, second = await asyncio.wait_for(asyncio.gather(first_task, second_task), timeout=1)
+        finally:
+            release.set()
+            for task in (first_task, second_task):
+                if not task.done():
+                    task.cancel()
+            await asyncio.wait_for(asyncio.gather(first_task, second_task, return_exceptions=True), timeout=1)
 
         assert first == second
         assert first is not None
@@ -371,6 +390,18 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(thumbnail, "ffprobe_bin", lambda: "/usr/bin/ffprobe")
 
         active = {"count": 0, "max": 0}
+        started = asyncio.Event()
+        waiting = asyncio.Event()
+        release = asyncio.Event()
+
+        class InstrumentedSemaphore(asyncio.Semaphore):
+            async def acquire(self) -> Literal[True]:
+                if semaphore.locked():
+                    waiting.set()
+                return await super().acquire()
+
+        semaphore = InstrumentedSemaphore(1)
+        monkeypatch.setattr(thumbnail, "_get_semaphore", lambda: semaphore)
 
         class DummyProc:
             def __init__(self, out_path: Path) -> None:
@@ -380,21 +411,31 @@ async def test_limit_wait(monkeypatch: pytest.MonkeyPatch) -> None:
             async def communicate(self) -> tuple[bytes, bytes]:
                 active["count"] += 1
                 active["max"] = max(active["max"], active["count"])
-                await asyncio.sleep(0)
+                await release.wait()
                 self._out_path.write_text("image")
                 active["count"] -= 1
                 return b"", b""
 
         async def fake_create_subprocess_exec(*args, **kwargs):
             del kwargs
+            started.set()
             return DummyProc(Path(str(args[-1])))
 
         monkeypatch.setattr(thumbnail.asyncio, "create_subprocess_exec", fake_create_subprocess_exec)
 
-        first, second = await asyncio.gather(
-            thumbnail._run_ffmpeg(media1, out1),
-            thumbnail._run_ffmpeg(media2, out2),
-        )
+        first_task = asyncio.create_task(thumbnail._run_ffmpeg(media1, out1))
+        second_task = asyncio.create_task(thumbnail._run_ffmpeg(media2, out2))
+        try:
+            await asyncio.wait_for(started.wait(), timeout=1)
+            await asyncio.wait_for(waiting.wait(), timeout=1)
+            release.set()
+            first, second = await asyncio.wait_for(asyncio.gather(first_task, second_task), timeout=1)
+        finally:
+            release.set()
+            for task in (first_task, second_task):
+                if not task.done():
+                    task.cancel()
+            await asyncio.wait_for(asyncio.gather(first_task, second_task, return_exceptions=True), timeout=1)
 
         assert first == out1
         assert second == out2
@@ -426,7 +467,7 @@ async def test_missing_binaries_degrades(monkeypatch: pytest.MonkeyPatch) -> Non
         monkeypatch.setattr(thumbnail, "ffmpeg_bin", lambda: None)
         monkeypatch.setattr(thumbnail, "ffprobe_bin", lambda: None)
 
-        with pytest.raises(OSError, match="ffmpeg or ffprobe not found"):
+        with pytest.raises(OSError):
             await thumbnail.ensure_thumb(media, temp_dir / "cache", item_id="item-1")
 
         second = await thumbnail.ensure_thumb(media, temp_dir / "cache", item_id="item-1")

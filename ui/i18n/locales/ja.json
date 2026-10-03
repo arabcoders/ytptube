@@ -659,7 +659,6 @@
     "ytdlpOption": "yt-dlp オプション: {field}",
     "playing": "再生中: {title}",
     "started": "開始: {time}",
-    "buildInfo": "ビルド: {date}, ブランチ: {branch}, SHA: {sha}",
     "breadcrumb": "パンくずリスト",
     "showControls": "コントロールを表示",
     "sepComma": "カンマ",

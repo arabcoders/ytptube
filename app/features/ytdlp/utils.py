@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import re
 import shlex
 from collections.abc import Callable
@@ -15,6 +14,10 @@ from app.library.logging import get_logger
 from app.library.Utils import merge_dict, timed_lru_cache
 
 LOG = get_logger()
+
+
+def split_args(args: str) -> list[str]:
+    return shlex.split(args, posix=True)
 
 
 class _DATA:
@@ -155,7 +158,7 @@ class LogWrapper:
 
 
 def arg_converter(
-    args: str,
+    args: str | list[str],
     level: int | bool | None = None,
     dumps: bool = False,
     removed_options: list | None = None,
@@ -165,7 +168,7 @@ def arg_converter(
     Convert yt-dlp options to a dictionary.
 
     Args:
-        args (str): yt-dlp options string.
+        args (str|list[str]): yt-dlp options string or already-tokenized arguments.
         level (int|bool|None): Level of options to remove, True for all.
         dumps (bool): Dump options as JSON.
         removed_options (list|None): List of removed options.
@@ -195,11 +198,14 @@ def arg_converter(
 
     default_opts = _default_opts([]).ydl_opts
 
+    if isinstance(args, str):
+        args = split_args(args)
+
     if args:
         # important to ignore external config files.
-        args = "--ignore-config " + args
+        args = ["--ignore-config", *args]
 
-    opts = yt_dlp.parse_options(shlex.split(args, posix=os.name != "nt")).ydl_opts
+    opts = yt_dlp.parse_options(args).ydl_opts
     diff = {k: v for k, v in opts.items() if default_opts[k] != v} if not keep_defaults else opts.items()
     if "postprocessors" in diff:
         diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]

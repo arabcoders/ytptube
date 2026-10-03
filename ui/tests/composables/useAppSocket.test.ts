@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 
 import {
   createConnectionAttempt,
@@ -18,6 +18,28 @@ const event = (message: string): EventPayload<Record<string, unknown>> => ({
 });
 
 describe('createConnectionDeadline', () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  let timers: Map<number, () => void>;
+  let nextTimer = 0;
+
+  beforeEach(() => {
+    timers = new Map();
+    globalThis.setTimeout = ((callback: TimerHandler) => {
+      const id = ++nextTimer;
+      timers.set(id, callback as () => void);
+      return id as unknown as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout;
+    globalThis.clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
+      timers.delete(id as unknown as number);
+    }) as typeof clearTimeout;
+  });
+
+  afterEach(() => {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  });
+
   it('keeps total deadline', () => {
     let now = 100;
     const deadline = createConnectionDeadline(() => now);
@@ -28,18 +50,18 @@ describe('createConnectionDeadline', () => {
     expect(deadline.remaining()).toBe(0);
   });
 
-  it('expires pending timer', async () => {
+  it('expires pending timer', () => {
     let called = false;
     const deadline = createConnectionDeadline(() => 0);
     deadline.arm(() => {
       called = true;
     }, 1);
 
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    for (const callback of timers.values()) callback();
     expect(called).toBe(true);
   });
 
-  it('clears pending timer', async () => {
+  it('clears pending timer', () => {
     let called = false;
     const deadline = createConnectionDeadline(() => 0);
     deadline.arm(() => {
@@ -47,11 +69,11 @@ describe('createConnectionDeadline', () => {
     }, 1);
     deadline.clear();
 
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    for (const callback of timers.values()) callback();
     expect(called).toBe(false);
   });
 
-  it('replaces pending timer', async () => {
+  it('replaces pending timer', () => {
     let first = false;
     let second = false;
     const deadline = createConnectionDeadline(() => 0);
@@ -62,7 +84,7 @@ describe('createConnectionDeadline', () => {
       second = true;
     }, 1);
 
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    for (const callback of timers.values()) callback();
     expect(first).toBe(false);
     expect(second).toBe(true);
   });

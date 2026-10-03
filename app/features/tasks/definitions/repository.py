@@ -17,10 +17,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from contextlib import AbstractAsyncContextManager
 
-    from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
-    from sqlalchemy.sql.selectable import Select
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
@@ -61,7 +59,7 @@ class TaskDefinitionsRepository(metaclass=Singleton):
 
     async def all(self) -> list[TaskDefinitionModel]:
         async with self.session() as session:
-            result: Result[tuple[TaskDefinitionModel]] = await session.execute(
+            result = await session.execute(
                 select(TaskDefinitionModel).order_by(TaskDefinitionModel.priority.asc(), TaskDefinitionModel.name.asc())
             )
             return list(result.scalars().all())
@@ -74,18 +72,18 @@ class TaskDefinitionsRepository(metaclass=Singleton):
             if page > total_pages and total > 0:
                 page = total_pages
 
-            query: Select[tuple[TaskDefinitionModel]] = (
+            query = (
                 select(TaskDefinitionModel)
                 .order_by(TaskDefinitionModel.priority.asc(), TaskDefinitionModel.name.asc())
                 .limit(per_page)
                 .offset((page - 1) * per_page)
             )
-            result: Result[tuple[TaskDefinitionModel]] = await session.execute(query)
+            result = await session.execute(query)
             return list(result.scalars().all()), total, page, total_pages
 
     async def count(self) -> int:
         async with self.session() as session:
-            result: Result[tuple[int]] = await session.execute(select(func.count()).select_from(TaskDefinitionModel))
+            result = await session.execute(select(func.count()).select_from(TaskDefinitionModel))
             return int(result.scalar_one())
 
     async def get(self, identifier: int | str) -> TaskDefinitionModel | None:
@@ -100,20 +98,16 @@ class TaskDefinitionsRepository(metaclass=Singleton):
             else:
                 clause = TaskDefinitionModel.name == identifier
 
-            result: Result[tuple[TaskDefinitionModel]] = await session.execute(
-                select(TaskDefinitionModel).where(clause).limit(1)
-            )
+            result = await session.execute(select(TaskDefinitionModel).where(clause).limit(1))
             return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str, exclude_id: int | None = None) -> TaskDefinitionModel | None:
         async with self.session() as session:
-            query: Select[tuple[TaskDefinitionModel]] = select(TaskDefinitionModel).where(
-                TaskDefinitionModel.name == name
-            )
+            query = select(TaskDefinitionModel).where(TaskDefinitionModel.name == name)
             if exclude_id is not None:
                 query = query.where(TaskDefinitionModel.id != exclude_id)
 
-            result: Result[tuple[TaskDefinitionModel]] = await session.execute(query.limit(1))
+            result = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
     async def create(self, payload: dict[str, Any]) -> TaskDefinitionModel:
@@ -140,9 +134,7 @@ class TaskDefinitionsRepository(metaclass=Singleton):
             else:
                 clause = TaskDefinitionModel.name == identifier
 
-            result: Result[tuple[TaskDefinitionModel]] = await session.execute(
-                select(TaskDefinitionModel).where(clause).limit(1)
-            )
+            result = await session.execute(select(TaskDefinitionModel).where(clause).limit(1))
             model: TaskDefinitionModel | None = result.scalar_one_or_none()
 
             if not model:
@@ -174,9 +166,7 @@ class TaskDefinitionsRepository(metaclass=Singleton):
             else:
                 clause = TaskDefinitionModel.name == identifier
 
-            result: Result[tuple[TaskDefinitionModel]] = await session.execute(
-                select(TaskDefinitionModel).where(clause).limit(1)
-            )
+            result = await session.execute(select(TaskDefinitionModel).where(clause).limit(1))
 
             if not (model := result.scalar_one_or_none()):
                 msg: str = f"Task definition '{identifier}' not found."

@@ -13,10 +13,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from contextlib import AbstractAsyncContextManager
 
-    from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.sql.elements import ColumnElement
-    from sqlalchemy.sql.selectable import Select
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
@@ -59,7 +57,7 @@ class TasksRepository(metaclass=Singleton):
 
     async def all(self) -> list[TaskModel]:
         async with self.session() as session:
-            result: Result[tuple[TaskModel]] = await session.execute(select(TaskModel).order_by(TaskModel.name.asc()))
+            result = await session.execute(select(TaskModel).order_by(TaskModel.name.asc()))
             return list(result.scalars().all())
 
     async def list_paginated(self, page: int, per_page: int) -> tuple[list[TaskModel], int, int, int]:
@@ -70,15 +68,13 @@ class TasksRepository(metaclass=Singleton):
             if page > total_pages and total > 0:
                 page = total_pages
 
-            query: Select[tuple[TaskModel]] = (
-                select(TaskModel).order_by(TaskModel.name.asc()).limit(per_page).offset((page - 1) * per_page)
-            )
-            result: Result[tuple[TaskModel]] = await session.execute(query)
+            query = select(TaskModel).order_by(TaskModel.name.asc()).limit(per_page).offset((page - 1) * per_page)
+            result = await session.execute(query)
             return list(result.scalars().all()), total, page, total_pages
 
     async def count(self) -> int:
         async with self.session() as session:
-            result: Result[tuple[int]] = await session.execute(select(func.count()).select_from(TaskModel))
+            result = await session.execute(select(func.count()).select_from(TaskModel))
             return int(result.scalar_one())
 
     async def get(self, identifier: int | str) -> TaskModel | None:
@@ -93,28 +89,26 @@ class TasksRepository(metaclass=Singleton):
             else:
                 clause = TaskModel.name == identifier
 
-            result: Result[tuple[TaskModel]] = await session.execute(select(TaskModel).where(clause).limit(1))
+            result = await session.execute(select(TaskModel).where(clause).limit(1))
             return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str, exclude_id: int | None = None) -> TaskModel | None:
         async with self.session() as session:
-            query: Select[tuple[TaskModel]] = select(TaskModel).where(TaskModel.name == name)
+            query = select(TaskModel).where(TaskModel.name == name)
             if exclude_id is not None:
                 query = query.where(TaskModel.id != exclude_id)
 
-            result: Result[tuple[TaskModel]] = await session.execute(query.limit(1))
+            result = await session.execute(query.limit(1))
             return result.scalar_one_or_none()
 
     async def get_all_enabled(self) -> list[TaskModel]:
         async with self.session() as session:
-            result: Result[tuple[TaskModel]] = await session.execute(
-                select(TaskModel).where(TaskModel.enabled).order_by(TaskModel.name.asc())
-            )
+            result = await session.execute(select(TaskModel).where(TaskModel.enabled).order_by(TaskModel.name.asc()))
             return list(result.scalars().all())
 
     async def get_all_with_timer(self) -> list[TaskModel]:
         async with self.session() as session:
-            result: Result[tuple[TaskModel]] = await session.execute(
+            result = await session.execute(
                 select(TaskModel).where(TaskModel.timer != "").order_by(TaskModel.name.asc())
             )
             return list(result.scalars().all())
@@ -144,7 +138,7 @@ class TasksRepository(metaclass=Singleton):
             else:
                 clause = TaskModel.name == identifier
 
-            result: Result[tuple[TaskModel]] = await session.execute(select(TaskModel).where(clause).limit(1))
+            result = await session.execute(select(TaskModel).where(clause).limit(1))
             model: TaskModel | None = result.scalar_one_or_none()
 
             if model is None:
@@ -174,7 +168,7 @@ class TasksRepository(metaclass=Singleton):
             else:
                 clause = TaskModel.name == identifier
 
-            result: Result[tuple[TaskModel]] = await session.execute(select(TaskModel).where(clause).limit(1))
+            result = await session.execute(select(TaskModel).where(clause).limit(1))
             model: TaskModel | None = result.scalar_one_or_none()
 
             if model is None:

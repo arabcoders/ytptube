@@ -183,7 +183,7 @@ async def test_tail_records(tmp_path, monkeypatch):
         if not task.done():
             task.cancel()
             with pytest.raises(asyncio.CancelledError):
-                await task
+                await asyncio.wait_for(task, timeout=1)
     assert emitted[0]["message"] == "live"
     assert emitted[0]["id"] == "tail-1"
 

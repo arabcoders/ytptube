@@ -659,7 +659,6 @@
     "ytdlpOption": "خيار yt-dlp: {field}",
     "playing": "تشغيل: {title}",
     "started": "بدأ: {time}",
-    "buildInfo": "البناء: {date}، الفرع: {branch}، SHA: {sha}",
     "breadcrumb": "مسار التنقل",
     "showControls": "إظهار عناصر التحكم",
     "sepComma": "فاصلة",

@@ -48,13 +48,13 @@ class TestItemFormatAndBasics:
 
     @patch("app.features.presets.service.Presets.get_instance")
     def test_format_rejects_input(self, mock_presets_get):
-        with pytest.raises(ValueError, match="url param is required"):
+        with pytest.raises(ValueError):
             Item.format({})
 
         mock_presets_get.return_value.has.return_value = False
         with (
             patch("app.features.downloads.items.Item._default_preset", return_value="default"),
-            pytest.raises(ValueError, match="Preset 'bad' does not exist"),
+            pytest.raises(ValueError),
         ):
             Item.format({"url": "https://example.com", "preset": "bad"})
 

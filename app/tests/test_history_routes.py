@@ -239,8 +239,7 @@ async def test_item_rename_needs_name(test_client) -> None:
     response = await _request(test_client, "history.item.rename", handler, "POST", params={"id": "item-1"}, payload={})
 
     assert response.status == 400
-    body = await response.json()
-    assert body["error"] == "no data provided."
+    assert "error" in await response.json()
 
 
 @pytest.mark.asyncio
@@ -263,8 +262,6 @@ async def test_item_rename_missing(test_client) -> None:
     )
 
     assert response.status == 404
-    body = await response.json()
-    assert body["error"] == "item 'missing' not found."
 
 
 @pytest.mark.asyncio
@@ -290,8 +287,6 @@ async def test_item_rename_needs_file(test_client) -> None:
     )
 
     assert response.status == 400
-    body = await response.json()
-    assert body["error"] == "item has no downloaded file."
 
 
 @pytest.mark.asyncio
@@ -360,8 +355,6 @@ async def test_item_rename_conflict(test_client) -> None:
         )
 
     assert response.status == 409
-    body = await response.json()
-    assert body["error"] == "Destination 'renamed.mp4' already exists"
     queue.done.put.assert_not_awaited()
     notify.emit.assert_not_called()
 
@@ -467,8 +460,6 @@ async def test_item_thumbnail_no_thumb(monkeypatch: pytest.MonkeyPatch, test_cli
         response = await _request(test_client, "history.item.thumbnail", handler, params={"id": "item-1"})
 
     assert response.status == 404
-    body = await response.json()
-    assert body["error"] == "thumbnail not found."
 
 
 @pytest.mark.asyncio

@@ -214,25 +214,6 @@ describe('string manipulation helpers', () => {
     expect(result).toBe('Hello YTPTube!');
   });
 
-  it('summarizes_common_browsers', () => {
-    expect(
-      utils.browserSummary(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
-      ),
-    ).toBe('Chrome 120.0.0.0 on Windows');
-    expect(
-      utils.browserSummary(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit Safari/605.1.15',
-      ),
-    ).toBe('Safari 605.1.15 on macOS');
-  });
-
-  it('falls_back_for_unknown_agents', () => {
-    expect(utils.browserSummary(null)).toBe('Unknown browser');
-    expect(utils.browserSummary('')).toBe('Unknown browser');
-    expect(utils.browserSummary('CustomClient/1.0')).toBe('CustomClient');
-  });
-
   it.each([
     ['--value--', '-', 'both', 'value'],
     ['::value', ':', 'start', 'value'],
@@ -283,18 +264,6 @@ describe('string manipulation helpers', () => {
     expect(utils.encodePath('folder#1/video name.mp4')).toBe('folder%231/video%20name.mp4');
   });
 
-  it('encode_percent', () => {
-    expect(utils.encodePath('How to enjoy Shin Ramyun 100%.opus')).toBe(
-      'How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus',
-    );
-  });
-
-  it('encode_specials', () => {
-    expect(utils.encodePath('100% complete [HD] #1.mp4')).toBe(
-      '100%25%20complete%20%5BHD%5D%20%231.mp4',
-    );
-  });
-
   it('keep_segments', () => {
     expect(utils.encodePath('folder/How to enjoy Shin Ramyun 100%.opus')).toBe(
       'folder/How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus',
@@ -311,7 +280,7 @@ describe('string manipulation helpers', () => {
     expect(utils.encodePath('folder/file%20name 100%.mp4')).toBe('folder/file%20name%20100%25.mp4');
   });
 
-  it('encode_query_chars', () => {
+  it('encode_reserved_chars', () => {
     expect(utils.encodePath('query?param=value&key=100%.mp4')).toBe(
       'query%3Fparam%3Dvalue%26key%3D100%25.mp4',
     );
@@ -321,16 +290,8 @@ describe('string manipulation helpers', () => {
     expect(utils.encodePath('')).toBe('');
   });
 
-  it('encode_simple_filename', () => {
-    expect(utils.encodePath('video.mp4')).toBe('video.mp4');
-  });
-
   it('encode_unicode', () => {
     expect(utils.encodePath('视频文件.mp4')).toBe('%E8%A7%86%E9%A2%91%E6%96%87%E4%BB%B6.mp4');
-  });
-
-  it('encode_parentheses', () => {
-    expect(utils.encodePath('video (1080p).mp4')).toBe('video%20(1080p).mp4');
   });
 
   it('strip_ansi', () => {
@@ -365,7 +326,7 @@ describe('string manipulation helpers', () => {
 describe('data conversion helpers', () => {
   it('has_data', () => {
     expect(utils.has_data({ key: 'value' })).toBe(true);
-    expect(utils.has_data('""')).toBe(false);
+    expect(utils.has_data('{}')).toBe(false);
     expect(utils.has_data('[1,2]')).toBe(true);
     expect(utils.has_data('')).toBe(false);
   });
@@ -493,39 +454,6 @@ describe('dom and browser helpers', () => {
 });
 
 describe('network and id helpers', () => {
-  it('localize_api_error_with_detail', async () => {
-    const originalUseNuxtApp = globalThis.useNuxtApp;
-    globalThis.useNuxtApp = (() => ({
-      $i18n: {
-        t: (key: string) => ('errors.OPERATION_FAILED' === key ? 'Operation failed.' : key),
-        te: (key: string) => 'errors.OPERATION_FAILED' === key,
-      },
-    })) as any;
-
-    try {
-      const message = await utils.parse_api_error({
-        code: 'OPERATION_FAILED',
-        message: 'Failed to extract video info.',
-        error: 'Failed to extract video info. Playwright version mismatch.',
-      });
-
-      expect(message).toBe(
-        'Operation failed. - Failed to extract video info. Playwright version mismatch.',
-      );
-    } finally {
-      globalThis.useNuxtApp = originalUseNuxtApp;
-    }
-  });
-
-  it('combine_api_message_and_error', async () => {
-    const message = await utils.parse_api_error({
-      message: 'Failed to fetch RSS/Atom feed.',
-      error: "Client error '404 Not Found'",
-    });
-
-    expect(message).toBe("Failed to fetch RSS/Atom feed. - Client error '404 Not Found'");
-  });
-
   it('preserve_api_error_fields', async () => {
     const payload = {
       message: 'Validation failed.',

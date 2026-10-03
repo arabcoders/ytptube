@@ -139,24 +139,24 @@ describe('task definition visual analysis', () => {
     document.definition.request.method = 'POST';
     document.definition.response = { type: 'bad', extra: true };
     const paths = analyzeTaskDefinition(document).map(({ path }) => path);
-    expect(paths).toEqual(
-      expect.arrayContaining([
-        '$.extra',
-        '$.definition.extra',
-        '$.definition.engine.options.extra',
-        '$.definition.parse.items.type',
-        '$.definition.parse.items.fields.url.type',
-        '$.definition.parse.items.fields.url.extra',
-        '$.definition.parse.items.fields.url.post_filter.filter',
-        '$.definition.parse.items.fields.url.post_filter.extra',
-        '$.definition.request.headers.X',
-        '$.definition.request.params.page',
-        '$.definition.request.body.extra',
-        '$.definition.request.body.value.page',
-        '$.definition.response.type',
-        '$.definition.response.extra',
-      ]),
-    );
+    const expected = [
+      '$.extra',
+      '$.definition.extra',
+      '$.definition.engine.options.extra',
+      '$.definition.parse.items.type',
+      '$.definition.parse.items.fields.url.type',
+      '$.definition.parse.items.fields.url.extra',
+      '$.definition.parse.items.fields.url.post_filter.filter',
+      '$.definition.parse.items.fields.url.post_filter.extra',
+      '$.definition.request.headers.X',
+      '$.definition.request.params.page',
+      '$.definition.request.body.extra',
+      '$.definition.request.body.value.page',
+      '$.definition.response.type',
+      '$.definition.response.extra',
+    ];
+    expect(paths).toHaveLength(expected.length);
+    expect(new Set(paths)).toEqual(new Set(expected));
   });
 
   it('reports_conversion_mismatches', () => {
@@ -166,13 +166,14 @@ describe('task definition visual analysis', () => {
     document.definition.request.body = { type: 'json' };
     document.definition.request.method = 'GET';
     const diagnostics = analyzeTaskDefinition(document);
-    expect(diagnostics.map(({ path }) => path)).toEqual(
-      expect.arrayContaining([
-        '$.definition.parse.items.fields.url',
-        '$.definition.request.body.value',
-        '$.definition.request.body',
-      ]),
-    );
+    const paths = diagnostics.map(({ path }) => path);
+    const expected = [
+      '$.definition.parse.items.fields.url',
+      '$.definition.request.body.value',
+      '$.definition.request.body',
+    ];
+    expect(paths).toHaveLength(expected.length);
+    expect(new Set(paths)).toEqual(new Set(expected));
   });
 
   it('accepts_json_values', () => {

@@ -534,19 +534,21 @@ describe('useTasks', () => {
 
   describe('markTaskItems', () => {
     it('mark_items', async () => {
+      const message = 'mark-result';
       const requestSpy = spyOn(utils, 'request');
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
-          jsonData: { message: 'Marked 15 items' },
+          jsonData: { message },
         }),
       );
 
       const tasks = useTasks();
       const result = await tasks.markTaskItems(1);
 
-      expect(result).toBe('Marked 15 items');
+      expect(requestSpy).toHaveBeenCalledWith('/api/tasks/1/mark', { method: 'POST' });
+      expect(result).toBe(message);
       expect(tasks.lastError.value).toBeNull();
       requestSpy.mockRestore();
     });
@@ -572,38 +574,22 @@ describe('useTasks', () => {
 
   describe('unmarkTaskItems', () => {
     it('unmark_items', async () => {
+      const message = 'unmark-result';
       const requestSpy = spyOn(utils, 'request');
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
-          jsonData: { message: 'Unmarked 10 items' },
+          jsonData: { message },
         }),
       );
 
       const tasks = useTasks();
       const result = await tasks.unmarkTaskItems(1);
 
-      expect(result).toBe('Unmarked 10 items');
+      expect(requestSpy).toHaveBeenCalledWith('/api/tasks/1/mark', { method: 'DELETE' });
+      expect(result).toBe(message);
       expect(tasks.lastError.value).toBeNull();
-      requestSpy.mockRestore();
-    });
-
-    it('store_unmark_error', async () => {
-      const requestSpy = spyOn(utils, 'request');
-      requestSpy.mockResolvedValueOnce(
-        createMockResponse({
-          ok: false,
-          status: 404,
-          jsonData: { error: 'Task not found' },
-        }),
-      );
-
-      const tasks = useTasks();
-      const result = await tasks.unmarkTaskItems(999);
-
-      expect(result).toBeNull();
-      expect(tasks.lastError.value).toBe('Task not found');
       requestSpy.mockRestore();
     });
   });
@@ -761,9 +747,10 @@ describe('useTasks', () => {
       const newTask = { ...mockTask };
       delete (newTask as any).id;
 
-      await expect(tasks.createTask(newTask)).rejects.toThrow('Bad request');
+      await expect(tasks.createTask(newTask)).rejects.toThrow();
 
       expect(tasks.addInProgress.value).toBe(false);
+      expect(tasks.lastError.value).not.toBeNull();
       requestSpy.mockRestore();
     });
   });

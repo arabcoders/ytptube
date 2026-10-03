@@ -32,7 +32,7 @@ class TestNotificationsRepository:
     async def test_list_empty(self, repo):
         """List returns empty when no notifications exist."""
         notifications = await repo.all()
-        assert notifications == [], "Should return empty list when no notifications exist"
+        assert notifications == []
 
     @pytest.mark.asyncio
     async def test_create_notification(self, repo):
@@ -50,10 +50,10 @@ class TestNotificationsRepository:
 
         model = await repo.create(payload)
 
-        assert model.id is not None, "Should generate ID for new notification"
-        assert model.name == "Webhook", "Should store name correctly"
-        assert model.request_url == "https://example.com/webhook", "Should store request url"
-        assert model.request_method == "POST", "Should store request method"
+        assert model.id is not None
+        assert model.name == "Webhook"
+        assert model.request_url == "https://example.com/webhook"
+        assert model.request_method == "POST"
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
@@ -73,8 +73,8 @@ class TestNotificationsRepository:
 
         retrieved = await repo.get(created.id)
 
-        assert retrieved is not None, "Should retrieve created notification"
-        assert retrieved.id == created.id, "Should match created notification id"
+        assert retrieved is not None
+        assert retrieved.id == created.id
 
     @pytest.mark.asyncio
     async def test_update_notification(self, repo):
@@ -94,8 +94,8 @@ class TestNotificationsRepository:
 
         updated = await repo.update(created.id, {"name": "Updated Name", "enabled": False})
 
-        assert updated.name == "Updated Name", "Should update name"
-        assert updated.enabled is False, "Should update enabled flag"
+        assert updated.name == "Updated Name"
+        assert updated.enabled is False
 
     @pytest.mark.asyncio
     async def test_delete_notification(self, repo):
@@ -115,7 +115,7 @@ class TestNotificationsRepository:
 
         deleted = await repo.delete(created.id)
 
-        assert deleted.id == created.id, "Should return deleted notification"
+        assert deleted.id == created.id
         assert await repo.get(created.id) is None, "Deleted notification should not be retrievable"
 
     @pytest.mark.asyncio
@@ -138,7 +138,7 @@ class TestNotificationsRepository:
 
         items, total, page, total_pages = await repo.list_paginated(page=1, per_page=2)
 
-        assert len(items) == 2, "Should return 2 items per page"
-        assert total == 4, "Should report total count of 4"
-        assert page == 1, "Should be on page 1"
-        assert total_pages == 2, "Should have 2 pages total"
+        assert len(items) == 2
+        assert total == 4
+        assert page == 1
+        assert total_pages == 2

@@ -156,13 +156,14 @@ and delivered through [Apprise](https://github.com/caronc/apprise) or direct HTT
 
 - [Firefox desktop and Android extension](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
 - [Chrome and Chromium extension](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
-- [Add To YTPTube iOS Shortcut](https://www.icloud.com/shortcuts/6df61c97d97b4e539c9100999ba39dd4)
-- [YTPTube To Media iOS Shortcut](https://www.icloud.com/shortcuts/4dc579382f254635ad5785424055f173)
+- [Add To YTPTube iOS Shortcut](https://www.icloud.com/shortcuts/d69215cb46944cb99197c64c1a277fa3)
+- [Save To Media iOS Shortcut](https://www.icloud.com/shortcuts/30cff5a4f55548a6ba8481a6b3331fd2)
 - [Bookmarklet](../FAQ.md#simple-bookmarklet)
 - [HTTP API](../API.md)
 
-The **Add To YTPTube** Shortcut sends a page to your instance and lets you choose a Preset. **YTPTube To Media** attempts 
-to download media directly to the iOS device. The latter is provided without support and does not fully handle HTTP headers.
+The **Add To YTPTube** Shortcut sends a page to your instance and lets you choose a preset, while **Save To Media** will
+attempts to download pre-merged format directly to to the iOS device, this doesnt always work as many website dont offer
+pre-merged formats.
 
 ## Security Boundary
 

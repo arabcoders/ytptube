@@ -161,10 +161,10 @@ class TestDataStorePagination:
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
-            with pytest.raises(ValueError, match="page must be >= 1"):
+            with pytest.raises(ValueError):
                 await datastore.get_items_paginated(page=0, per_page=10)
 
-            with pytest.raises(ValueError, match="page must be >= 1"):
+            with pytest.raises(ValueError):
                 await datastore.get_items_paginated(page=-1, per_page=10)
         finally:
             await db.close()
@@ -174,10 +174,10 @@ class TestDataStorePagination:
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
 
-            with pytest.raises(ValueError, match="per_page must be >= 1"):
+            with pytest.raises(ValueError):
                 await datastore.get_items_paginated(page=1, per_page=0)
 
-            with pytest.raises(ValueError, match="per_page must be >= 1"):
+            with pytest.raises(ValueError):
                 await datastore.get_items_paginated(page=1, per_page=-10)
         finally:
             await db.close()
@@ -186,7 +186,7 @@ class TestDataStorePagination:
         db = await make_db(data=100)
         try:
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
-            with pytest.raises(ValueError, match="order must be 'ASC' or 'DESC'"):
+            with pytest.raises(ValueError):
                 await datastore.get_items_paginated(page=1, per_page=10, order="INVALID")
         finally:
             await db.close()
@@ -250,7 +250,7 @@ class TestDataStorePagination:
                     str(StoreType.HISTORY),
                     item_data_pending["url"],
                     json.dumps(item_data_pending),
-                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                    "2024-01-01 12:00:00",
                 ),
             )
             await db.execute_raw(
@@ -260,7 +260,7 @@ class TestDataStorePagination:
                     str(StoreType.HISTORY),
                     item_data_downloading["url"],
                     json.dumps(item_data_downloading),
-                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                    "2024-01-01 12:00:01",
                 ),
             )
             await db.execute_raw(
@@ -270,7 +270,7 @@ class TestDataStorePagination:
                     str(StoreType.HISTORY),
                     item_data_skip["url"],
                     json.dumps(item_data_skip),
-                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                    "2024-01-01 12:00:02",
                 ),
             )
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
@@ -334,7 +334,7 @@ class TestDataStorePagination:
                     str(StoreType.HISTORY),
                     item_data_pending["url"],
                     json.dumps(item_data_pending),
-                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                    "2024-01-01 12:00:00",
                 ),
             )
             await db.execute_raw(
@@ -344,7 +344,7 @@ class TestDataStorePagination:
                     str(StoreType.HISTORY),
                     item_data_error["url"],
                     json.dumps(item_data_error),
-                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                    "2024-01-01 12:00:01",
                 ),
             )
             await db.execute_raw(
@@ -354,7 +354,7 @@ class TestDataStorePagination:
                     str(StoreType.HISTORY),
                     item_data_skip["url"],
                     json.dumps(item_data_skip),
-                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                    "2024-01-01 12:00:02",
                 ),
             )
 

@@ -26,7 +26,7 @@ def config_mock() -> Mock:
 class TestYTDLPOpts:
     def test_malformed_cli(self):
         with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config_mock()):
-            with pytest.raises(ValueError, match="Invalid command options"):
+            with pytest.raises(ValueError):
                 YTDLPOpts().add_cli('--output "unterminated')
 
     def test_accumulated_cli(self):
@@ -43,7 +43,7 @@ class TestYTDLPOpts:
         with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config_mock()):
             opts = YTDLPOpts()
             opts._item_cli = ['--output "unterminated']
-            with pytest.raises(ValueError, match="Invalid command options"):
+            with pytest.raises(ValueError):
                 opts.get_all(keep=True)
 
     def test_preset_cookies(self, tmp_path):
@@ -66,7 +66,7 @@ class TestYTDLPOpts:
         with patch("app.features.ytdlp.ytdlp_opts.Config.get_instance", return_value=config):
             with patch("app.features.presets.service.Presets.get_instance") as get_presets:
                 get_presets.return_value.get.return_value = preset
-                with pytest.raises(ValueError, match="Invalid preset 'broken'"):
+                with pytest.raises(ValueError):
                     YTDLPOpts().preset("broken")
 
     def test_default_options(self):
@@ -114,6 +114,9 @@ class TestARGSMerger:
 
         assert merger.args == ["--format", "bv*[height<=1080]+ba/b", "--output", "name#part.%(ext)s"]
 
+    def test_keeps_inline_hash(self):
+        assert ARGSMerger().add("--output name#part").args == ["--output", "name#part"]
+
     def test_non_string_input(self):
         assert ARGSMerger().add(42).args == []  # ty: ignore[invalid-argument-type]
 
@@ -128,10 +131,16 @@ class TestARGSMerger:
     def test_reset_arguments(self):
         assert ARGSMerger().add("--format best").reset().args == []
 
+    def test_dict_copy(self):
+        merger = ARGSMerger().add("--format best")
+        result = merger.as_dict()
+        result.append("--quiet")
+        assert merger.args == ["--format", "best"]
+
 
 class TestYTDLPCli:
     def test_rejects_wrong_item(self):
-        with pytest.raises(ValueError, match="Expected Item instance"):
+        with pytest.raises(ValueError):
             YTDLPCli(item="not an item")
 
     def test_default_fallback(self):

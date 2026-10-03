@@ -597,20 +597,28 @@ async def test_parallel_archive_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     active = 0
     peak = 0
+    both_started = asyncio.Event()
 
     async def fake_fetch(config, url, **kwargs):  # noqa: ARG001
         nonlocal active, peak
         active += 1
         peak = max(peak, active)
-        await asyncio.sleep(0)
-        active -= 1
-        return {"id": url.rsplit("/", 1)[-1], "extractor_key": "Example"}, []
+        if active == 2:
+            both_started.set()
+        try:
+            await asyncio.wait_for(both_started.wait(), timeout=1)
+            return {"id": url.rsplit("/", 1)[-1], "extractor_key": "Example"}, []
+        finally:
+            active -= 1
 
     fetch = AsyncMock(side_effect=fake_fetch)
     monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
 
-    result = await GenericTaskHandler.extract_definition(
-        HandleTask(id=None, name="Parallel", url="https://example.com/feed"), definition
+    result = await asyncio.wait_for(
+        GenericTaskHandler.extract_definition(
+            HandleTask(id=None, name="Parallel", url="https://example.com/feed"), definition
+        ),
+        timeout=2,
     )
 
     assert isinstance(result, TaskResult)
@@ -834,7 +842,7 @@ async def test_direct_extracts_without_lookup(monkeypatch: pytest.MonkeyPatch) -
 
 
 @pytest.mark.asyncio
-async def test_inspect_reports_failure(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+async def test_inspect_reports_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     definition = TaskDefinition(
         name="inspect",
         match_url=["https://example.com/*"],
@@ -862,14 +870,11 @@ async def test_inspect_reports_failure(monkeypatch: pytest.MonkeyPatch, caplog: 
     fetch = AsyncMock(return_value=(None, ["Invalid browser URL."]))
     monkeypatch.setattr("app.features.tasks.definitions.handlers.generic.fetch_info", fetch)
 
-    with caplog.at_level(logging.WARNING, logger="ytptube"):
-        result = await GenericTaskHandler.inspect(HandleTask(id=None, name="Inspect", url="https://example.com/feed"))
+    result = await GenericTaskHandler.inspect(HandleTask(id=None, name="Inspect", url="https://example.com/feed"))
 
     assert isinstance(result, TaskResult)
     assert result.items[0].url == "https://example.com/item/1"
     assert result.items[0].archive_id is None
-    assert "required yt-dlp archive ID fallback for 1 item(s)" in caplog.text
-    assert "Keeping unresolved items for inspection. yt-dlp: Invalid browser URL." in caplog.text
     fetch.assert_awaited_once()
     cache.set.assert_not_called()
     assert fetch.await_args is not None

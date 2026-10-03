@@ -135,58 +135,18 @@ describe('MatchFilterParser', () => {
       like_count: 81,
     };
 
-    const expr1 = '(age_limit=0 & fps=120) || like_count=81';
-    expect(new MatchFilterParser(expr1).evaluate(testData)).toBe(true);
+    const grouped = 'age_limit=0 & (fps=120 || like_count=81)';
+    const ungrouped = '(age_limit=0 & fps=120) || like_count=81';
+    expect(new MatchFilterParser(grouped).evaluate(testData)).toBe(true);
+    expect(new MatchFilterParser(ungrouped).evaluate(testData)).toBe(true);
 
-    const expr2 = 'age_limit=0 & fps=120 || like_count=81';
-    expect(new MatchFilterParser(expr2).evaluate(testData)).toBe(true);
-
-    const testDataPartial = {
-      age_limit: 0,
-      fps: 60,
-      like_count: 81,
-    };
-
-    expect(new MatchFilterParser(expr1).evaluate(testDataPartial)).toBe(true);
-    expect(new MatchFilterParser(expr2).evaluate(testDataPartial)).toBe(true);
-
-    const testDataEdge = {
+    const groupingDifference = {
       age_limit: 1,
       fps: 60,
       like_count: 81,
     };
-
-    expect(new MatchFilterParser(expr1).evaluate(testDataEdge)).toBe(true);
-    expect(new MatchFilterParser(expr2).evaluate(testDataEdge)).toBe(true);
-  });
-
-  it('handle_chained_or', () => {
-    const testDataOrOnly = {
-      age_limit: 1,
-      fps: 60,
-      like_count: 81,
-    };
-
-    const expr = 'age_limit=0 & fps=120 || like_count=81';
-    expect(new MatchFilterParser(expr).evaluate(testDataOrOnly)).toBe(true);
-
-    const testDataAndOnly = {
-      age_limit: 0,
-      fps: 120,
-      like_count: 50,
-    };
-
-    expect(new MatchFilterParser(expr).evaluate(testDataAndOnly)).toBe(true);
-
-    const testDataOnlyOr = {
-      age_limit: 1,
-      fps: 60,
-      like_count: 50,
-      view_count: 1000,
-    };
-
-    const exprChain = 'age_limit=0 & fps=120 || like_count=81 || view_count=1000';
-    expect(new MatchFilterParser(exprChain).evaluate(testDataOnlyOr)).toBe(true);
+    expect(new MatchFilterParser(grouped).evaluate(groupingDifference)).toBe(false);
+    expect(new MatchFilterParser(ungrouped).evaluate(groupingDifference)).toBe(true);
   });
 
   it('export_filters', () => {

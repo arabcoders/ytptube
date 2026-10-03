@@ -659,7 +659,6 @@
     "ytdlpOption": "yt-dlp 选项：{field}",
     "playing": "播放中：{title}",
     "started": "已启动：{time}",
-    "buildInfo": "构建：{date}，分支：{branch}，SHA：{sha}",
     "breadcrumb": "面包屑导航",
     "showControls": "显示控件",
     "sepComma": "逗号",

@@ -39,10 +39,8 @@ if [ "${YTP_DOWNLOAD_PATH}" != "/" ] && [ ! -w "${YTP_DOWNLOAD_PATH}" ]; then
   exit 1
 fi
 
-###########
-# Run yt-dlp upgrader
-# This will update yt-dlp to the latest version
-###########
-/opt/python/bin/python /app/app/upgrader.py
+if ! /opt/python/bin/python /app/app/upgrader.py; then
+  echo_err "WARNING: Package update failed; continuing startup."
+fi
 
 exec /usr/local/bin/start-services "${@}"

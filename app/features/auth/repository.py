@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
     from datetime import datetime
 
-    from sqlalchemy.engine.result import Result
     from sqlalchemy.ext.asyncio import AsyncSession
 
     SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
@@ -31,7 +30,7 @@ class AuthRepository(metaclass=Singleton):
 
     async def count_users(self) -> int:
         async with self.session() as session:
-            result: Result[tuple[int]] = await session.execute(select(func.count()).select_from(UserModel))
+            result = await session.execute(select(func.count()).select_from(UserModel))
             return int(result.scalar_one())
 
     async def get_user(self, user_id: int) -> UserModel | None:

@@ -75,8 +75,10 @@ RUN sed -i -E '/^Suites:[[:space:]]*trixie[[:space:]]+trixie-updates$/ {n; s/^(C
 
 COPY container/entrypoint.sh /
 COPY container/start-services.sh /usr/local/bin/start-services
+COPY container/cli /usr/local/bin/cli
 COPY --chown=app:app yt-dlp /opt/bin/yt-dlp
 COPY --chown=app:app ./app /app/app
+COPY --chown=app:app ./cli.py /app/cli.py
 COPY --chown=app:app ./docs /app/docs
 COPY --chown=app:app ./README.md ./FAQ.md ./API.md ./SECURITY.md ./sc_short.jpg ./sc_simple.jpg /app/
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
@@ -98,7 +100,8 @@ ENV LC_ALL=en_US.UTF-8
 
 RUN sed -i 's/\r$//g' /entrypoint.sh /usr/local/bin/start-services && chmod +x /entrypoint.sh && \
   chown -R app:app /config /downloads && \
-  chmod +x /usr/local/bin/healthcheck /usr/local/bin/start-services /usr/bin/mp4box /usr/bin/ffmpeg \
+  chmod +x /usr/local/bin/healthcheck /usr/local/bin/start-services /usr/local/bin/cli \
+  /usr/bin/mp4box /usr/bin/ffmpeg \
   /usr/bin/ffprobe /usr/bin/deno /opt/bin/yt-dlp
 
 VOLUME /config

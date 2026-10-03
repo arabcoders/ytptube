@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /opt/python/bin/python /app/cli.py "$@"

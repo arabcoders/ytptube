@@ -46,8 +46,8 @@ class TestDLFieldsService:
 
         model = await service.save(payload)
 
-        assert model.id is not None, "Should create new dl field"
-        assert model.name == "quality", "Should store name correctly"
+        assert model.id is not None
+        assert model.name == "quality"
 
     @pytest.mark.asyncio
     async def test_get_all_serialized(self, repo):
@@ -64,6 +64,6 @@ class TestDLFieldsService:
 
         items = await service.get_all_serialized()
 
-        assert len(items) == 1, "Should return one dl field"
-        assert items[0]["name"] == "audio_only", "Should serialize name"
-        assert isinstance(items[0]["id"], int), "Should serialize integer ID"
+        assert len(items) == 1
+        assert items[0]["name"] == "audio_only"
+        assert isinstance(items[0]["id"], int)

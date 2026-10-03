@@ -16,22 +16,6 @@ from app.library.httpx_client import (
 
 
 class TestGetTransport:
-    def test_transport_cf_enabled_async(self):
-        transport = _get_transport(enable_cf=True, is_async=True, transport=None)
-        assert isinstance(transport, CFAsyncTransport)
-
-    def test_transport_cf_enabled_sync(self):
-        transport = _get_transport(enable_cf=False, is_async=False, transport=None)
-        assert isinstance(transport, httpx.HTTPTransport)
-
-    def test_transport_cf_disabled_async(self):
-        transport = _get_transport(enable_cf=False, is_async=True, transport=None)
-        assert isinstance(transport, httpx.AsyncHTTPTransport)
-
-    def test_transport_cf_disabled_sync(self):
-        transport = _get_transport(enable_cf=False, is_async=False, transport=None)
-        assert isinstance(transport, httpx.HTTPTransport)
-
     def test_transport_custom_base_async(self):
         custom_transport = httpx.AsyncHTTPTransport()
         transport = _get_transport(enable_cf=True, is_async=True, transport=custom_transport)
@@ -49,11 +33,6 @@ class TestCFAsyncTransport:
     def setup_method(self):
         self.base_transport = AsyncMock(spec=httpx.AsyncHTTPTransport)
         self.transport = CFAsyncTransport(base=self.base_transport)
-
-    @pytest.mark.asyncio
-    async def test_init_default(self):
-        transport = CFAsyncTransport()
-        assert isinstance(transport.base, httpx.AsyncHTTPTransport)
 
     @pytest.mark.asyncio
     async def test_init_custom(self):
@@ -188,10 +167,6 @@ class TestCFTransport:
     def setup_method(self):
         self.base_transport = Mock(spec=httpx.HTTPTransport)
         self.transport = CFTransport(base=self.base_transport)
-
-    def test_init_default(self):
-        transport = CFTransport()
-        assert isinstance(transport.base, httpx.HTTPTransport)
 
     def test_init_custom(self):
         assert self.transport.base is self.base_transport

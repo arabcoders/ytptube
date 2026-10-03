@@ -659,7 +659,6 @@
     "ytdlpOption": "yt-dlp option: {field}",
     "playing": "Playing: {title}",
     "started": "Started: {time}",
-    "buildInfo": "Build: {date}, Branch: {branch}, SHA: {sha}",
     "breadcrumb": "Breadcrumb",
     "showControls": "Show controls",
     "sepComma": "Comma",

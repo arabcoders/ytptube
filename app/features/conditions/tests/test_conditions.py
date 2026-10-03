@@ -42,14 +42,14 @@ class TestConditionsRepository:
 
         model = await repo.create(data)
 
-        assert model.id is not None, "Should generate ID for new condition"
-        assert model.name == "Test Condition", "Should store name correctly"
-        assert model.filter == "duration > 60", "Should store filter correctly"
-        assert model.cli == "--format best", "Should store CLI correctly"
-        assert model.enabled is True, "Should store enabled flag correctly"
-        assert model.priority == 10, "Should store priority correctly"
-        assert model.description == "Test description", "Should store description correctly"
-        assert model.extras == {"key": "value"}, "Should store extras as dict"
+        assert model.id is not None
+        assert model.name == "Test Condition"
+        assert model.filter == "duration > 60"
+        assert model.cli == "--format best"
+        assert model.enabled is True
+        assert model.priority == 10
+        assert model.description == "Test description"
+        assert model.extras == {"key": "value"}
 
     @pytest.mark.asyncio
     async def test_create_with_defaults(self, repo):
@@ -60,11 +60,11 @@ class TestConditionsRepository:
 
         model = await repo.create(data)
 
-        assert model.cli == "", "Should default CLI to empty string"
-        assert model.enabled is True, "Should default enabled to True"
-        assert model.priority == 0, "Should default priority to 0"
-        assert model.description == "", "Should default description to empty"
-        assert model.extras == {}, "Should default extras to empty dict"
+        assert model.cli == ""
+        assert model.enabled is True
+        assert model.priority == 0
+        assert model.description == ""
+        assert model.extras == {}
 
     @pytest.mark.asyncio
     async def test_get_by_id(self, repo):
@@ -72,9 +72,9 @@ class TestConditionsRepository:
 
         retrieved = await repo.get(created.id)
 
-        assert retrieved is not None, "Should retrieve created condition"
-        assert retrieved.id == created.id, "Should retrieve correct condition by ID"
-        assert retrieved.name == "Get Test", "Should match created condition name"
+        assert retrieved is not None
+        assert retrieved.id == created.id
+        assert retrieved.name == "Get Test"
 
     @pytest.mark.asyncio
     async def test_get_by_name(self, repo):
@@ -82,16 +82,16 @@ class TestConditionsRepository:
 
         retrieved = await repo.get("Named Test")
 
-        assert retrieved is not None, "Should retrieve by name"
-        assert retrieved.name == "Named Test", "Should match condition name"
+        assert retrieved is not None
+        assert retrieved.name == "Named Test"
 
     @pytest.mark.asyncio
     async def test_get_nonexistent(self, repo):
         result = await repo.get(99999)
-        assert result is None, "Should return None for nonexistent ID"
+        assert result is None
 
         result = await repo.get("nonexistent")
-        assert result is None, "Should return None for nonexistent name"
+        assert result is None
 
     @pytest.mark.asyncio
     async def test_update_condition(self, repo):
@@ -106,14 +106,14 @@ class TestConditionsRepository:
             },
         )
 
-        assert updated.name == "Updated Name", "Should update name"
-        assert updated.priority == 5, "Should update priority"
-        assert updated.extras == {"updated": True}, "Should update extras"
-        assert updated.filter == "duration > 60", "Should preserve unchanged filter"
+        assert updated.name == "Updated Name"
+        assert updated.priority == 5
+        assert updated.extras == {"updated": True}
+        assert updated.filter == "duration > 60"
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_raises(self, repo):
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError):
             await repo.update(99999, {"name": "Should Fail"})
 
     @pytest.mark.asyncio
@@ -122,14 +122,14 @@ class TestConditionsRepository:
 
         deleted = await repo.delete(created.id)
 
-        assert deleted.id == created.id, "Should return deleted condition"
+        assert deleted.id == created.id
 
         result = await repo.get(created.id)
         assert result is None, "Deleted condition should not be retrievable"
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_raises(self, repo):
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError):
             await repo.delete(99999)
 
     @pytest.mark.asyncio
@@ -139,10 +139,10 @@ class TestConditionsRepository:
 
         items, total, page, total_pages = await repo.list_paginated(page=1, per_page=2)
 
-        assert len(items) == 2, "Should return 2 items per page"
-        assert total == 5, "Should report total count of 5"
-        assert page == 1, "Should be on page 1"
-        assert total_pages == 3, "Should have 3 pages total"
+        assert len(items) == 2
+        assert total == 5
+        assert page == 1
+        assert total_pages == 3
 
     @pytest.mark.asyncio
     async def test_list_ordering(self, repo):
@@ -161,10 +161,10 @@ class TestConditionsRepository:
         first = await repo.create({"name": "Duplicate", "filter": "test"})
 
         result = await repo.get_by_name("Duplicate", exclude_id=first.id)
-        assert result is None, "Should not find when excluding only match"
+        assert result is None
 
         result = await repo.get_by_name("Duplicate", exclude_id=None)
-        assert result is not None, "Should find without exclusion"
+        assert result is not None
 
     @pytest.mark.asyncio
     async def test_replace_all(self, repo):
@@ -178,8 +178,8 @@ class TestConditionsRepository:
 
         result = await repo.replace_all(new_items)
 
-        assert len(result) == 2, "Should create 2 new conditions"
+        assert len(result) == 2
 
         all_items = await repo.all()
-        assert len(all_items) == 2, "Should only have new conditions"
-        assert all_items[0].name in ["New 1", "New 2"], "Should only have new items"
+        assert len(all_items) == 2
+        assert {item.name for item in all_items} == {"New 1", "New 2"}

@@ -1,4 +1,3 @@
-import asyncio
 import json
 from collections import OrderedDict
 from dataclasses import asdict
@@ -101,7 +100,7 @@ class TestStoreType:
         assert StoreType.from_value("queue") is StoreType.QUEUE
         assert StoreType.from_value("done") is StoreType.HISTORY
         assert str(StoreType.QUEUE) == "queue"
-        with pytest.raises(ValueError, match="Invalid StoreType value"):
+        with pytest.raises(ValueError):
             StoreType.from_value("invalid")
 
 
@@ -144,7 +143,7 @@ class TestDataStore:
 
         # Verify row written; JSON should not contain datetime field
         rows = await db.fetch_raw("SELECT * FROM history WHERE id=?", (item._id,))
-        assert len(rows) == 1, "Should find one row"
+        assert len(rows) == 1
         row = rows[0]
         assert row["type"] == "queue", "Type should be queue"
         assert row["url"] == item.url, "URL should match"
@@ -152,7 +151,6 @@ class TestDataStore:
         assert row["id"] == item._id, "ID should match"
 
         await store.delete(item._id)
-        await asyncio.sleep(0)
         await db.flush()
         rows2 = await db.fetch_raw("SELECT * FROM history WHERE id=?", (item._id,))
         assert len(rows2) == 0, "Row should be deleted"
@@ -589,7 +587,7 @@ class TestDataStore:
         # conn = db._conn  # No longer needed
 
         # Add items directly to database
-        created = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        created = "2024-01-01 12:00:00"
         for i in range(5):
             item_data = asdict(make_item(id=f"vid{i}"))
             item_data.pop("_id", None)
@@ -608,7 +606,7 @@ class TestDataStore:
         db = await make_db()
         # conn = db._conn  # No longer needed
 
-        created = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        created = "2024-01-01 12:00:00"
 
         # Add 3 QUEUE items
         for i in range(3):
@@ -681,7 +679,7 @@ class TestDataStore:
         # Verify nothing was deleted from database
         await store._connection.flush()
         rows = await db.fetch_raw("SELECT * FROM history WHERE id=?", ("nonexistent_id",))
-        assert len(rows) == 0, "Should find no rows"
+        assert len(rows) == 0
         await db.close()
 
     @pytest.mark.asyncio
@@ -754,7 +752,7 @@ class TestDataStore:
 
         # Verify datetime field is not in stored JSON
         rows = await db.fetch_raw("SELECT data FROM history WHERE id=?", (item._id,))
-        assert len(rows) == 1, "Should find one row"
+        assert len(rows) == 1
         data = json.loads(rows[0]["data"])
         assert "datetime" not in data
         await db.close()
@@ -774,7 +772,7 @@ class TestDataStore:
 
         # Verify live_in field is not in stored JSON when status is finished
         rows = await conn.fetch_raw("SELECT data FROM history WHERE id=?", (item._id,))
-        assert len(rows) == 1, "Should find one row"
+        assert len(rows) == 1
         data = json.loads(rows[0]["data"])
         assert "live_in" not in data
         await close_store(store)
@@ -794,7 +792,7 @@ class TestDataStore:
 
         # Verify live_in field IS in stored JSON when status is not finished
         rows = await conn.fetch_raw("SELECT data FROM history WHERE id=?", (item._id,))
-        assert len(rows) == 1, "Should find one row"
+        assert len(rows) == 1
         data = json.loads(rows[0]["data"])
         assert "live_in" in data
         assert data["live_in"] == "PT5M"

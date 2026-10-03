@@ -4,7 +4,6 @@ import asyncio
 import errno
 import json
 import os
-import shlex
 import shutil
 import time
 import uuid
@@ -14,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
 
+from app.features.ytdlp.utils import split_args
 from app.library.config import Config
 from app.library.logging import get_logger
 from app.library.Scheduler import Scheduler
@@ -297,7 +297,7 @@ class TerminalSessionManager(metaclass=Singleton):
 
         try:
             LOG.info("Starting terminal session '%s' command.", session_id, extra={"session_id": session_id})
-            args = ["yt-dlp", *shlex.split(command, posix=os.name != "nt")]
+            args = ["yt-dlp", *split_args(command)]
             env_vars = self._build_env()
 
             pty_handles = self._open_pty()

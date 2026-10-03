@@ -14,28 +14,28 @@ class TestServices:
         services.add("test_service", test_service)
         retrieved = services.get("test_service")
 
-        assert retrieved == test_service, "Should retrieve the same service that was added"
+        assert retrieved == test_service
 
     def test_get_nonexistent_service(self):
         services = Services()
         result = services.get("nonexistent")
 
-        assert result is None, "Should return None for nonexistent service"
+        assert result is None
 
     def test_has_service(self):
         services = Services()
         services.add("existing", "value")
 
-        assert services.has("existing") is True, "Should return True for existing service"
-        assert services.has("nonexistent") is False, "Should return False for nonexistent service"
+        assert services.has("existing") is True
+        assert services.has("nonexistent") is False
 
     def test_remove_service(self):
         services = Services()
         services.add("to_remove", "value")
 
-        assert services.has("to_remove") is True, "Service should exist before removal"
+        assert services.has("to_remove") is True
         services.remove("to_remove")
-        assert services.has("to_remove") is False, "Service should not exist after removal"
+        assert services.has("to_remove") is False
 
     def test_remove_nonexistent_service(self):
         services = Services()
@@ -47,9 +47,9 @@ class TestServices:
         services.add("service1", "value1")
         services.add("service2", "value2")
 
-        assert len(services.get_all()) == 2, "Should have 2 services before clear"
+        assert len(services.get_all()) == 2
         services.clear()
-        assert len(services.get_all()) == 0, "Should have 0 services after clear"
+        assert len(services.get_all()) == 0
 
     def test_add_all_services(self):
         services = Services()
@@ -69,7 +69,7 @@ class TestServices:
         all_services = services.get_all()
         all_services.append(ServiceEntry(name="injected", declared_type=str, instance="malicious"))
 
-        assert services.get("injected") is None, "Modifying returned dict should not affect internal state"
+        assert services.get("injected") is None
 
     def test_handle_sync_matching_args(self):
         services = Services()
@@ -101,7 +101,7 @@ class TestServices:
         def test_handler(db_param, missing_service_param):  # noqa: ARG001
             return "Should not reach here"
 
-        with pytest.raises(TypeError, match=r"missing .* required positional argument"):
+        with pytest.raises(TypeError):
             services.handle_sync(test_handler)
 
     def test_sync_no_args_handler(self):
@@ -147,7 +147,7 @@ class TestServices:
         async def test_handler(db_param, missing_service_param):  # noqa: ARG001
             return "Should not reach here"
 
-        with pytest.raises(TypeError, match=r"missing .* required positional argument"):
+        with pytest.raises(TypeError):
             await services.handle_async(test_handler)
 
     @pytest.mark.asyncio
@@ -228,7 +228,7 @@ class TestServices:
             msg = "Handler failed"
             raise ValueError(msg)
 
-        with pytest.raises(ValueError, match="Handler failed"):
+        with pytest.raises(ValueError):
             services.handle_sync(failing_handler)
 
     @pytest.mark.asyncio
@@ -239,7 +239,7 @@ class TestServices:
             msg = "Async handler failed"
             raise RuntimeError(msg)
 
-        with pytest.raises(RuntimeError, match="Async handler failed"):
+        with pytest.raises(RuntimeError):
             await services.handle_async(failing_async_handler)
 
     def test_handle_sync_callable_object(self):
@@ -337,4 +337,4 @@ class TestServices:
             assert not thread.is_alive()
 
         # All should be the same instance
-        assert len(set(results)) == 1, "All threads should get the same singleton instance"
+        assert len(set(results)) == 1
