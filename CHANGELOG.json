@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "abeff268634cfb5c6962a7183bb579e404aee962",
-    "date": "2026-10-03T13:45:07+00:00",
+    "full_sha": "bd7b65b0cd58ffca3acef0f1fb82b4fe90611fa4",
+    "date": "2026-10-03T15:27:01+00:00",
     "commits": [
+      {
+        "sha": "bd7b65b0",
+        "full_sha": "bd7b65b0cd58ffca3acef0f1fb82b4fe90611fa4",
+        "message": "refactor: make commit sha clickable",
+        "author": "arabcoders",
+        "date": "2026-10-03T15:27:01+00:00"
+      },
       {
         "sha": "abeff268",
         "full_sha": "abeff268634cfb5c6962a7183bb579e404aee962",
