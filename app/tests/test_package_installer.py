@@ -1,10 +1,12 @@
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+from packaging.requirements import Requirement
 
 from app.library.PackageInstaller import PackageInstaller, Packages, parse_version
 from app.tests.helpers import set_test_env
@@ -13,6 +15,17 @@ from app.tests.helpers import set_test_env
 @pytest.fixture(autouse=True)
 def restore_sys_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys, "path", sys.path.copy())
+
+
+def test_runtime_dependency() -> None:
+    with (Path(__file__).resolve().parents[2] / "pyproject.toml").open("rb") as file:
+        project = tomllib.load(file)["project"]
+
+    dependencies = [Requirement(value) for value in project["dependencies"]]
+
+    assert any(dep.name == "packaging" and dep.marker is None for dep in dependencies), (
+        "Startup requires packaging even without development or installer dependencies."
+    )
 
 
 class TestParseVersion:
