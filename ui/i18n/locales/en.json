@@ -1292,6 +1292,11 @@
         "navLabel": "Authentication",
         "description": "Configure local, OIDC, and trusted proxy authentication."
       },
+      "mediaHandlers": {
+        "title": "Media handlers",
+        "navLabel": "Media handlers",
+        "description": "Select and configure a handler for each download."
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

@@ -6,6 +6,7 @@ import yt_dlp
 from yt_dlp.globals import extractors as ytdlp_extractors
 from yt_dlp.utils import make_archive_id
 
+from app.features.media.service import MediaHandler
 from app.features.ytdlp.filename import trim_filename
 from app.features.ytdlp.outtmpl import rewrite_outtmpl
 from app.features.ytdlp.patches import apply_ytdlp_patches
@@ -86,6 +87,7 @@ class YTDLP(yt_dlp.YoutubeDL):
         self._ytptube_outtmpl_cache: dict[str, Any] = {}
 
         super().__init__(params=patched_params, auto_init=auto_init)
+        self._media = MediaHandler(self)
 
         # Restore param and replace upstream archive set with our proxy
         if orig_file is not None:
@@ -132,9 +134,13 @@ class YTDLP(yt_dlp.YoutubeDL):
 
     def process_info(self, info_dict):
         try:
-            return super().process_info(info_dict)
+            with self._media.process(info_dict):
+                return super().process_info(info_dict)
         finally:
             self._reset_outtmpl_cache()
+
+    def dl(self, name: str, info: dict[str, Any], subtitle: bool = False, test: bool = False) -> tuple[bool, bool]:
+        return self._media.download(super().dl, name, info, subtitle=subtitle, test=test)
 
     def record_download_archive(self, info_dict) -> None:
         if not self.params.get("download_archive"):

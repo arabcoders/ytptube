@@ -659,6 +659,11 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
         source_counts = {}
         has_manifest_formats = False
 
+        def extract_mpd(url: str, headers: dict[str, str] | None) -> list[dict[str, Any]]:
+            tracks, subs = self._extract_mpd_formats_and_subtitles(url, video_id, headers=headers, fatal=False)
+            self._merge_subtitles(subs, target=subtitles)
+            return tracks
+
         manifest_extractors = {
             "m3u8": lambda url, hdrs: self._extract_m3u8_formats(
                 url,
@@ -669,7 +674,7 @@ class GenericBrowserIE(GenericIE, plugin_name="browser"):
                 headers=hdrs,
                 fatal=False,
             ),
-            "mpd": lambda url, hdrs: self._extract_mpd_formats(url, video_id, headers=hdrs, fatal=False),
+            "mpd": extract_mpd,
             "f4m": lambda url, hdrs: self._extract_f4m_formats(url, video_id, headers=hdrs, fatal=False),
             "ism": lambda url, hdrs: self._extract_ism_formats(url, video_id, headers=hdrs, fatal=False),
         }

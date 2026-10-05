@@ -9,6 +9,7 @@ describe('docs resolver', () => {
     expect(getDocsEntryBySlug('native-builds')?.file).toBe('docs/native-builds.md');
     expect(getDocsEntryBySlug('authentication')?.file).toBe('docs/authentication.md');
     expect(getDocsEntryBySlug('authentication')?.sidebarVisible).toBe(false);
+    expect(getDocsEntryBySlug('media-handlers')?.file).toBe('docs/media-handlers.md');
   });
 
   it('resolves relative docs links', () => {
@@ -20,6 +21,15 @@ describe('docs resolver', () => {
     );
     expect(resolveDocsLink('features.md', '/api/docs/docs/README.md').docRoute).toBe(
       '/docs/features',
+    );
+    expect(resolveDocsLink('media-handlers.md', '/api/docs/docs/README.md').docRoute).toBe(
+      '/docs/media-handlers',
+    );
+    expect(resolveDocsLink('docs/media-handlers.md', '/api/docs/FAQ.md').docRoute).toBe(
+      '/docs/media-handlers',
+    );
+    expect(resolveDocsLink('docs/media-handlers.md#setup', '/api/docs/README.md').docRoute).toBe(
+      '/docs/media-handlers#setup',
     );
     expect(resolveDocsLink('native-builds.md', '/api/docs/docs/README.md').docRoute).toBe(
       '/docs/native-builds',

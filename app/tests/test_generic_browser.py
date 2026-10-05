@@ -401,6 +401,31 @@ def test_manifest_keeps_headers() -> None:
     assert result["formats"][0]["http_headers"] == headers
 
 
+def test_dash_subtitles() -> None:
+    ie = _make_ie()
+    ie._extract_network_formats = generic_browser.GenericBrowserIE._extract_network_formats.__get__(
+        ie, generic_browser.GenericBrowserIE
+    )
+    tracks = [{"format_id": "dash", "url": "https://media.example/video.mp4"}]
+    subtitles = {"en": [{"url": "https://media.example/subtitles.vtt", "ext": "vtt"}]}
+    ie._extract_mpd_formats_and_subtitles = Mock(return_value=(tracks, subtitles))
+    headers = {"Referer": "https://player.example/"}
+
+    result = ie._extract_network_formats(
+        [{"url": "https://media.example/master.mpd", "method": "GET", "headers": headers}],
+        "vid",
+        {"title": "title"},
+    )
+
+    assert result is not None
+    assert result["subtitles"] == subtitles
+    assert result["formats"][0]["http_headers"] == headers
+    ie._extract_mpd_formats_and_subtitles.assert_called_once_with(
+        "https://media.example/master.mpd", "vid", headers=headers, fatal=False
+    )
+    ie.report_warning.assert_not_called()
+
+
 def test_media_fallback_outside_session(monkeypatch: pytest.MonkeyPatch) -> None:
     ie = _make_ie()
     ie.__wrapped__ = Mock()

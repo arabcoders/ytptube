@@ -11,6 +11,8 @@ RUN if [ ! -f "/app/exported/index.html" ]; then \
 
 FROM brainicism/bgutil-ytdlp-pot-provider:deno AS bgutil_provider
 
+FROM ghcr.io/arabcoders/alpine-mp4box AS mp4_tools
+
 FROM python:3.13-bookworm AS python_builder
 
 ENV LANG=C.UTF-8
@@ -83,7 +85,8 @@ COPY --chown=app:app ./docs /app/docs
 COPY --chown=app:app ./README.md ./FAQ.md ./API.md ./SECURITY.md ./sc_short.jpg ./sc_simple.jpg /app/
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
 COPY --chown=app:app --from=python_builder /opt/python /opt/python
-COPY --from=ghcr.io/arabcoders/alpine-mp4box /usr/bin/mp4box /usr/bin/mp4box
+COPY --from=mp4_tools /usr/bin/mp4box /usr/bin/mp4decrypt /usr/bin/
+COPY --from=mp4_tools /usr/share/doc/bento4/ /usr/share/doc/bento4/
 COPY --from=ghcr.io/arabcoders/jellyfin-ffmpeg /usr/bin/ffmpeg /usr/bin/ffmpeg
 COPY --from=ghcr.io/arabcoders/jellyfin-ffmpeg /usr/bin/ffprobe /usr/bin/ffprobe
 COPY --from=bgutil_provider /usr/bin/deno /usr/bin/deno
@@ -101,7 +104,7 @@ ENV LC_ALL=en_US.UTF-8
 RUN sed -i 's/\r$//g' /entrypoint.sh /usr/local/bin/start-services && chmod +x /entrypoint.sh && \
   chown -R app:app /config /downloads && \
   chmod +x /usr/local/bin/healthcheck /usr/local/bin/start-services /usr/local/bin/cli \
-  /usr/bin/mp4box /usr/bin/ffmpeg \
+  /usr/bin/mp4box /usr/bin/mp4decrypt /usr/bin/ffmpeg \
   /usr/bin/ffprobe /usr/bin/deno /opt/bin/yt-dlp
 
 VOLUME /config

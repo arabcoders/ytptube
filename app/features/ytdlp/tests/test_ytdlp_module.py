@@ -96,6 +96,10 @@ class TestYtDlpOptions:
 
 
 class TestYTDLP:
+    @pytest.fixture(autouse=True)
+    def mock_media(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.features.ytdlp.ytdlp.MediaHandler", Mock())
+
     def _create_ytdlp(self, params=None):
         with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params=params)

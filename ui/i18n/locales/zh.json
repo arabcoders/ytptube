@@ -1288,6 +1288,11 @@
         "navLabel": "身份验证",
         "description": "配置本地、OIDC 和受信任代理身份验证。"
       },
+      "mediaHandlers": {
+        "title": "媒体处理器",
+        "navLabel": "媒体处理器",
+        "description": "为每次下载选择并配置处理器。"
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

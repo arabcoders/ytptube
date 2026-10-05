@@ -1292,6 +1292,11 @@
         "navLabel": "Authentification",
         "description": "Configurer l’authentification locale, OIDC et par proxy de confiance."
       },
+      "mediaHandlers": {
+        "title": "Gestionnaires de médias",
+        "navLabel": "Gestionnaires de médias",
+        "description": "Choisir et configurer un gestionnaire pour chaque téléchargement."
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",
