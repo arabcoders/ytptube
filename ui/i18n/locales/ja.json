@@ -1292,6 +1292,11 @@
         "navLabel": "認証",
         "description": "ローカル、OIDC、信頼済みプロキシ認証を設定します。"
       },
+      "mediaHandlers": {
+        "title": "メディアハンドラー",
+        "navLabel": "メディアハンドラー",
+        "description": "ダウンロードごとにハンドラーを選択して設定します。"
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",

@@ -73,6 +73,7 @@ hidden += [
     "app",
 ]
 hidden.extend(collect_submodules("joserfc"))
+hidden.extend(collect_submodules("app.features.media.handlers"))
 
 hidden = sorted(set(hidden))
 

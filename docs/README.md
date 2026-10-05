@@ -9,6 +9,7 @@
 
 - [Native builds](native-builds.md): Install and operate the Windows, macOS, and Linux releases.
 - [Authentication](authentication.md): Configure local, OIDC, and trusted proxy authentication.
+- [Media handlers](media-handlers.md): Select and configure a handler for each download.
 - [Generic Task Definitions](task-definitions.md): Add recurring sources for sites without built-in handlers.
 - [FAQ](../FAQ.md): Resolve setup, integration, and runtime issues.
 

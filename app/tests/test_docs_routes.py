@@ -7,18 +7,19 @@ from app.routes.api import docs
 
 
 @pytest.mark.asyncio
-async def test_serves_nested_doc(tmp_path: Path) -> None:
+@pytest.mark.parametrize("name", ["authentication", "media-handlers"])
+async def test_serves_nested_doc(tmp_path: Path, name: str) -> None:
     (tmp_path / "README.md").write_text("root", encoding="utf-8")
     (tmp_path / "docs").mkdir()
-    (tmp_path / "docs" / "authentication.md").write_text("authentication", encoding="utf-8")
+    (tmp_path / "docs" / f"{name}.md").write_text(name, encoding="utf-8")
     config = SimpleNamespace(app_path=str(tmp_path / "app"))
-    request = SimpleNamespace(match_info={"file": "docs/authentication.md"}, path="/api/docs/docs/authentication.md")
+    request = SimpleNamespace(match_info={"file": f"docs/{name}.md"}, path=f"/api/docs/docs/{name}.md")
 
     response = await docs.get_doc(request, config)
 
     assert response.status == 200
     assert response.content_type == "text/markdown"
-    assert response.body == b"authentication"
+    assert response.body == name.encode()
 
 
 @pytest.mark.asyncio

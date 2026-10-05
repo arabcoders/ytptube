@@ -23,6 +23,7 @@ STATIC_FILES: set[str] = {
     "docs/authentication.md",
     "docs/native-builds.md",
     "docs/task-definitions.md",
+    "docs/media-handlers.md",
 }
 
 

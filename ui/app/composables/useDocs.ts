@@ -7,6 +7,7 @@ export type DocsFile =
   | 'docs/features.md'
   | 'docs/authentication.md'
   | 'docs/native-builds.md'
+  | 'docs/media-handlers.md'
   | 'docs/task-definitions.md';
 
 export type DocsEntry = {
@@ -89,6 +90,17 @@ const DOCS_ENTRIES: DocsEntry[] = [
     icon: 'i-lucide-circle-help',
     navLabel: 'docs.entries.faq.navLabel',
     sidebarVisible: true,
+  },
+  {
+    id: 'docs-media-handlers',
+    title: 'docs.entries.mediaHandlers.title',
+    description: 'docs.entries.mediaHandlers.description',
+    file: 'docs/media-handlers.md',
+    route: '/docs/media-handlers',
+    slug: ['media-handlers'],
+    icon: 'i-lucide-lock-keyhole',
+    navLabel: 'docs.entries.mediaHandlers.navLabel',
+    sidebarVisible: false,
   },
   {
     id: 'docs-api',

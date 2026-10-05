@@ -1292,6 +1292,11 @@
         "navLabel": "المصادقة",
         "description": "تهيئة مصادقة الحساب المحلي وOIDC والوكيل الموثوق."
       },
+      "mediaHandlers": {
+        "title": "معالجات الوسائط",
+        "navLabel": "معالجات الوسائط",
+        "description": "اختيار معالج وتهيئته لكل تنزيل."
+      },
       "faq": {
         "title": "FAQ",
         "navLabel": "FAQ",
