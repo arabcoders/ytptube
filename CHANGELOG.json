@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "bd7b65b0cd58ffca3acef0f1fb82b4fe90611fa4",
-    "date": "2026-10-03T15:27:01+00:00",
+    "full_sha": "cbe6b98f2820d1c195720e1e96d49a6086b4c96a",
+    "date": "2026-10-05T04:57:15+00:00",
     "commits": [
+      {
+        "sha": "cbe6b98f",
+        "full_sha": "cbe6b98f2820d1c195720e1e96d49a6086b4c96a",
+        "message": "feat: add media handlers",
+        "author": "arabcoders",
+        "date": "2026-10-05T04:57:15+00:00"
+      },
       {
         "sha": "bd7b65b0",
         "full_sha": "bd7b65b0cd58ffca3acef0f1fb82b4fe90611fa4",
