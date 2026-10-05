@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "cbe6b98f2820d1c195720e1e96d49a6086b4c96a",
-    "date": "2026-10-05T04:57:15+00:00",
+    "full_sha": "a3e30a5b5f75222afd606383b705658ef2abb667",
+    "date": "2026-10-05T05:06:44+00:00",
     "commits": [
+      {
+        "sha": "a3e30a5b",
+        "full_sha": "a3e30a5b5f75222afd606383b705658ef2abb667",
+        "message": "fix(tests): mock ffmpeg",
+        "author": "arabcoders",
+        "date": "2026-10-05T05:06:44+00:00"
+      },
       {
         "sha": "cbe6b98f",
         "full_sha": "cbe6b98f2820d1c195720e1e96d49a6086b4c96a",
