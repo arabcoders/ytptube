@@ -691,9 +691,10 @@ def test_reject_external_merge(setup, exchange, monkeypatch, protocol):
     params["external_downloader"] = "ffmpeg"
     params["format"] = "video+audio"
     paths = _download(monkeypatch)
+    monkeypatch.setattr(FFmpegFD, "available", classmethod(lambda cls, path=None: True))
 
     with YTDLP(params, auto_init=False) as ydl:
-        with pytest.raises(DownloadError):
+        with pytest.raises(DownloadError, match="requires native DASH or fragmented MP4 HLS"):
             ydl.process_ie_result(
                 _info([_format(protocol=protocol), _format("audio", protocol=protocol)]), download=True
             )
