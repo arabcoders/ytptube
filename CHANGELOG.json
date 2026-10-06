@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "a3e30a5b5f75222afd606383b705658ef2abb667",
-    "date": "2026-10-05T05:06:44+00:00",
+    "full_sha": "80d9a8f395bcbfa163e2b5675a4d9a50de64d8e2",
+    "date": "2026-10-06T15:38:38+00:00",
     "commits": [
+      {
+        "sha": "80d9a8f3",
+        "full_sha": "80d9a8f395bcbfa163e2b5675a4d9a50de64d8e2",
+        "message": "refactor: update the docs to drop misleding /ytptube/ prefix in auth example",
+        "author": "arabcoders",
+        "date": "2026-10-06T15:38:38+00:00"
+      },
       {
         "sha": "a3e30a5b",
         "full_sha": "a3e30a5b5f75222afd606383b705658ef2abb667",
