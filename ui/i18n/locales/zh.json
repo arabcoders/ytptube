@@ -64,7 +64,7 @@
     "reset": "重置",
     "retry": "重试",
     "retryCount": "已重试 {count} 次",
-    "loading": "加载中…",
+    "loading": "加载中...",
     "unknownError": "发生未知错误。",
     "unknown": "未知",
     "noResults": "无结果",
@@ -1316,6 +1316,15 @@
     }
   },
   "player": {
+    "audio": "音频",
+    "browserAudio": "浏览器选择的音频（直接播放）",
+    "burnIn": "烧录字幕",
+    "preparing": "正在准备播放...",
+    "preparationFailed": "无法准备播放。请重新打开播放器重试。",
+    "playFailed": "播放未开始。请点击播放重试。",
+    "playbackFailed": "播放失败。",
+    "hlsUnsupported": "此浏览器不支持 HLS 播放。",
+    "sessionExpired": "无法刷新播放器会话。请重新打开播放器。",
     "subtitleLoadFailed": "加载此视频的字幕失败。",
     "subtitleRenderFailed": "在浏览器中渲染 ASS 字幕失败。"
   }

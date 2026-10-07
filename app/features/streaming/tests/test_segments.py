@@ -1,441 +1,109 @@
-import asyncio
-import logging
 from pathlib import Path
-from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
-from aiohttp import web
 
-from app.features.streaming.library.segments import Segments
-from app.tests.helpers import get_test_system_temp_root
-
-
-class DummyFF:
-    def __init__(self, v: bool, a: bool) -> None:
-        self._v: bool = v
-        self._a: bool = a
-
-    def has_video(self) -> bool:
-        return self._v
-
-    def has_audio(self) -> bool:
-        return self._a
+from app.features.streaming.library.ffprobe import FFProbeResult
+from app.features.streaming.types import StreamingError
+from app.features.streaming.utils import Segments, segment_window
 
 
-def _ffmpeg_input_path(args: list[str]) -> Path:
-    return Path(args[args.index("-i") + 1].removeprefix("file:"))
-
-
-@pytest.fixture(autouse=True)
-def _patch_ffmpeg_bin(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.features.streaming.library.segments.ffmpeg_bin", lambda: "/usr/bin/ffmpeg")
+@pytest.fixture
+def probe() -> FFProbeResult:
+    result = FFProbeResult()
+    result.deserialize(
+        {
+            "metadata": {"duration": "13"},
+            "video": [{"index": 1, "codec_type": "video", "codec_name": "h264"}],
+            "audio": [
+                {"index": 0, "codec_type": "audio", "codec_name": "aac"},
+                {"index": 4, "codec_type": "audio", "codec_name": "aac", "disposition": {"default": 1}},
+            ],
+        }
+    )
+    return result
 
 
 @pytest.mark.asyncio
-async def test_stream_without_ffmpeg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from app.features.streaming.library.segments import Segments
-    from app.features.streaming.types import StreamingError
+async def test_final_segment(tmp_path: Path, probe: FFProbeResult) -> None:
+    segment = Segments(2, probe=probe, audio=4)
+    args = await segment.build_ffmpeg_args(tmp_path / "video.mp4", "libx264")
+    assert args[args.index("-ss") + 1] == "12.000000"
+    assert args[args.index("-t") + 1] == "1.000000"
+    assert "0:4" in args
+    assert "0:1" in args, "video must use its absolute stream index when audio is the first source stream"
+    assert segment_window(1, 13) == (6, 6)
 
-    media = tmp_path / "file.mp4"
-    media.write_bytes(b"data")
-    monkeypatch.setattr("app.features.streaming.library.segments.ffmpeg_bin", lambda: None)
 
-    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
+@pytest.mark.parametrize(
+    "index,duration", [(-1, 13), (3, 13), (True, 13), (0, float("nan")), (0, float("inf")), (0, 0)]
+)
+def test_invalid_windows(index: int, duration: float) -> None:
     with pytest.raises(StreamingError):
-        await seg.stream(media, _FakeResp())
+        segment_window(index, duration)
 
 
 @pytest.mark.asyncio
-async def test_ffmpeg_args_video_audio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    # Create a dummy media file
-    media = tmp_path / "file.mp4"
-    media.write_bytes(b"data")
-
-    # Patch ffprobe to report both video and audio
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=True, a=True)
-
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-
-    seg = Segments(download_path=str(tmp_path), index=2, duration=5.5, vconvert=False, aconvert=False)
-
-    captured_args: list[list[str]] = []
-
-    class _EmptyProc(_FakeProc):
-        def __init__(self) -> None:
-            super().__init__([b""])
-
-    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
-        captured_args.append(list(args[1:]))
-        return _EmptyProc()
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
-
-    await seg.stream(media, _FakeResp())
-
-    assert captured_args, "ffmpeg was not invoked"
-    args = captured_args[0]
-
-    tmp_file = _ffmpeg_input_path(args)
-
-    # Start time is duration * index with 6 decimals for non-zero index
-    assert "-ss" in args
-    assert args[args.index("-ss") + 1] == f"{5.5 * 2:.6f}"
-    # Duration formatting
-    assert "-t" in args
-    assert args[args.index("-t") + 1] == f"{5.5:.6f}"
-    # Input uses file:<symlink>
-    assert "-i" in args
-    assert tmp_file.parent == get_test_system_temp_root()
-    assert tmp_file.name.startswith("ytptube_stream.")
-    assert not tmp_file.exists()
-    # Includes video and audio mapping and codecs
-    assert "-map" in args
-    assert "0:v:0" in args
-    assert "-codec:v" in args
-    assert "-codec:a" in args
-    # Output format: ensure -f mpegts and pipe:1 present
-    assert args[-1] == "pipe:1"
-    assert "-f" in args
-    assert args[args.index("-f") + 1] == "mpegts"
+async def test_validated_audio(tmp_path: Path, probe: FFProbeResult) -> None:
+    segment = Segments(0, probe=probe, audio=2)
+    with pytest.raises(StreamingError, match="Unknown audio"):
+        await segment.build_ffmpeg_args(tmp_path / "video.mp4", "libx264")
 
 
 @pytest.mark.asyncio
-async def test_ffmpeg_args_audio_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    media = tmp_path / "file.mp3"
-    media.write_bytes(b"data")
+async def test_prepared_fallback(tmp_path: Path, probe: FFProbeResult, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.features.streaming.utils.ffmpeg_bin", lambda: "fake-ffmpeg")
+    monkeypatch.setattr("app.features.streaming.utils.select_encoder", AsyncMock(return_value="h264_nvenc"))
+    Segments._encoders.clear()
+    artifacts = []
+    attempts = []
 
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=False, a=True)
+    async def run(_binary: str, args: list[str], *, output: Path, **_kwargs) -> tuple[int, bytes, str]:
+        if artifacts:
+            assert not artifacts[-1].exists(), "failed bytes must be discarded before fallback"
+        artifacts.append(output)
+        attempts.append(args[args.index("-codec:v") + 1])
+        output.write_bytes(b"failed-prefix" if len(artifacts) == 1 else b"complete-segment")
+        return (1, b"", "hardware unavailable") if len(artifacts) == 1 else (0, b"", "")
 
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-
-    seg = Segments(download_path=str(tmp_path), index=0, duration=9.0, vconvert=False, aconvert=False)
-
-    captured_args: list[list[str]] = []
-
-    class _EmptyProc2(_FakeProc):
-        def __init__(self) -> None:
-            super().__init__([b""])
-
-    async def fake_create_subprocess_exec2(*args: Any, **_kwargs: Any):
-        captured_args.append(list(args[1:]))
-        return _EmptyProc2()
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec2)
-
-    await seg.stream(media, _FakeResp())
-
-    assert captured_args, "ffmpeg was not invoked"
-    args = captured_args[0]
-
-    # Start at 0 for index 0
-    assert "-ss" in args
-    assert args[args.index("-ss") + 1] == f"{0:.6f}"
-    # Should not include video mapping for audio-only file
-    assert "0:v:0" not in args
-    # Should include audio mapping and codec
-    assert "-map" in args
-    assert "0:a:0" in args
-    assert "-codec:a" in args
-
-
-class _FakeStdout:
-    def __init__(self, chunks: list[bytes]) -> None:
-        self._chunks = chunks
-
-    async def read(self, _size: int) -> bytes:
-        if not self._chunks:
-            return b""
-        return self._chunks.pop(0)
-
-
-class _FakeProc:
-    def __init__(self, chunks: list[bytes]) -> None:
-        self.stdout = _FakeStdout(chunks)
-        self.stderr = _FakeStdout([])
-        self.terminated = False
-        self.killed = False
-        self._rc = 0
-
-    async def wait(self) -> int:
-        return self._rc
-
-    def terminate(self) -> None:
-        self.terminated = True
-
-    def kill(self) -> None:
-        self.killed = True
-
-
-class _FakeResp(web.StreamResponse):
-    def __init__(self, fail_with: BaseException | None = None) -> None:
-        self.data: bytearray = bytearray()
-        self.eof = False
-        self._exc = fail_with
-
-    async def write(self, data: bytes | bytearray | memoryview, *_args: Any, **_kwargs: Any) -> None:
-        if self._exc:
-            raise self._exc
-        self.data.extend(data)
-
-    async def write_eof(self, *_args: Any, **_kwargs: Any) -> None:
-        self.eof = True
-
-
-class _FakeProcFail(_FakeProc):
-    def __init__(self, err: bytes = b"") -> None:
-        # no stdout data, immediate failure
-        super().__init__([b""])
-        self.stderr = _FakeStdout([err, b""])
-        self._rc = 1
+    monkeypatch.setattr("app.features.streaming.utils.run", run)
+    segment = Segments(0, probe=probe)
+    artifact = await segment.prepare(tmp_path / "video.mp4", tmp_path)
+    assert artifact.read_bytes() == b"complete-segment"
+    assert artifacts[0] != artifacts[1]
+    assert attempts == ["h264_nvenc", "libx264"]
 
 
 @pytest.mark.asyncio
-async def test_ffmpeg_args_no_dri(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    media = tmp_path / "file.mp4"
-    media.write_bytes(b"data")
-
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=True, a=True)
-
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-    # Simulate no /dev/dri present but GPU encoders otherwise available
-    monkeypatch.setattr("app.features.streaming.library.segment_encoders.has_dri_devices", lambda: False)
-    monkeypatch.setattr(
-        "app.features.streaming.library.segment_encoders.ffmpeg_encoders",
-        lambda: {"h264_nvenc", "h264_qsv", "h264_amf"},
-    )
-
-    # reset encoder cache to ensure clean selection in this test
-    from app.features.streaming.library.segments import Segments as _Seg
-
-    _Seg._cached_vcodec = None
-    _Seg._cache_initialized = False
-
-    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
-    # Make preferred list try GPUs first
-    seg.vcodec = ""  # empty configured value triggers GPU->software preference
-
-    captured_args: list[list[str]] = []
-
-    class _EmptyProc3(_FakeProc):
-        def __init__(self) -> None:
-            super().__init__([b""])
-
-    async def fake_create_subprocess_exec3(*args: Any, **_kwargs: Any):
-        captured_args.append(list(args[1:]))
-        return _EmptyProc3()
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec3)
-
-    await seg.stream(media, _FakeResp())
-
-    assert captured_args, "ffmpeg was not invoked"
-    args = captured_args[0]
-    # Expect software encoder selected
-    # Expect that a software attempt occurs eventually; initial selection may be HW
-    assert "-codec:v" in args
+async def test_empty_output(tmp_path: Path, probe: FFProbeResult, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.features.streaming.utils.ffmpeg_bin", lambda: "fake-ffmpeg")
+    monkeypatch.setattr("app.features.streaming.utils.select_encoder", AsyncMock(return_value="libx264"))
+    monkeypatch.setattr("app.features.streaming.utils.run", AsyncMock(return_value=(0, b"", "")))
+    Segments._encoders.clear()
+    segment = Segments(0, probe=probe)
+    with pytest.raises(StreamingError, match="Unable to prepare"):
+        await segment.prepare(tmp_path / "video.mp4", tmp_path)
+    assert list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.asyncio
-async def test_stream_gpu_fallback(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
-) -> None:
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=True, a=True)
+async def test_cached_encoder_failure(tmp_path: Path, probe: FFProbeResult, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.features.streaming.utils.ffmpeg_bin", lambda: "fake-ffmpeg")
+    select = AsyncMock(return_value="h264_nvenc")
+    monkeypatch.setattr("app.features.streaming.utils.select_encoder", select)
+    Segments._encoders.clear()
+    attempts = []
 
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-    # Allow GPU usage and advertise an NVENC encoder so first pick is GPU
-    monkeypatch.setattr("app.features.streaming.library.segment_encoders.has_dri_devices", lambda: True)
-    monkeypatch.setattr("app.features.streaming.library.segment_encoders.ffmpeg_encoders", lambda: {"h264_nvenc"})
+    async def run(_binary: str, args: list[str], *, output: Path, **_kwargs) -> tuple[int, bytes, str]:
+        codec = args[args.index("-codec:v") + 1]
+        attempts.append(codec)
+        output.write_bytes(b"prepared")
+        return (1 if len(attempts) == 2 else 0), b"", "runtime hardware failure"
 
-    # First process fails (no data, rc=1), second succeeds and outputs bytes
-    proc_fail = _FakeProcFail(err=b"nvenc failure: encoder not available")
-    proc_ok = _FakeProc([b"gpu-fallback-", b"ok"])  # after fallback we stream this
-
-    calls: list[int] = []
-    captured_args: list[list[str]] = []
-
-    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
-        # args[1:] is the argv for ffmpeg (first element is 'ffmpeg')
-        captured_args.append(list(args[1:]))
-        calls.append(1)
-        return proc_fail if len(calls) == 1 else proc_ok
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
-
-    # reset encoder cache to ensure we try GPU first
-    from app.features.streaming.library.segments import Segments as _Seg
-
-    _Seg._cached_vcodec = None
-    _Seg._cache_initialized = False
-
-    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
-    # Encourage GPU preference
-    seg.vcodec = ""  # empty -> try GPUs first
-    resp = _FakeResp()
-    with caplog.at_level(logging.WARNING, logger="ytptube"):
-        await seg.stream(tmp_path / "file.mp4", resp)
-
-    # Ensure fallback path streamed data
-    assert len(resp.data) > 0
-    # Ensure we logged the reason for GPU failure (message text may vary)
-    assert any(
-        ("hardware encoder" in r.message.lower()) or ("transcoding has failed" in r.message) for r in caplog.records
-    )
-    assert any("nvenc failure" in r.message for r in caplog.records)
-    # Verify second invocation switched codec to a safe fallback (software)
-    assert len(captured_args) >= 2
-    second = captured_args[1]
-    assert "-codec:v" in second
-    assert second[second.index("-codec:v") + 1] == "libx264"
-
-
-@pytest.mark.asyncio
-async def test_gpu_fallback_switches_codec(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=True, a=True)
-
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-    # Only QSV advertised so initial build sets QSV
-    # Patch both where it's defined AND where it's imported/used
-    monkeypatch.setattr("app.features.streaming.library.segment_encoders.has_dri_devices", lambda: True)
-    monkeypatch.setattr("app.features.streaming.library.segments.has_dri_devices", lambda: True)
-    monkeypatch.setattr("app.features.streaming.library.segment_encoders.ffmpeg_encoders", lambda: {"h264_qsv"})
-
-    # Fail first, succeed second
-    proc_fail = _FakeProcFail(err=b"qsv failure")
-    proc_ok = _FakeProc([b"ok"])  # after fallback we stream this
-
-    captured_args: list[list[str]] = []
-
-    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
-        captured_args.append(list(args[1:]))
-        return proc_fail if len(captured_args) == 1 else proc_ok
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
-
-    # reset cache
-    from app.features.streaming.library.segments import Segments as _Seg
-
-    _Seg._cached_vcodec = None
-    _Seg._cache_initialized = False
-
-    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
-    seg.vcodec = "intel"
-    resp = _FakeResp()
-    await seg.stream(tmp_path / "file.mp4", resp)
-
-    # First call had QSV codec and QSV flags
-    first = captured_args[0]
-    assert "-codec:v" in first
-    assert first[first.index("-codec:v") + 1] == "h264_qsv"
-    assert "-init_hw_device" in first
-    assert "qsv=hw:/dev/dri/renderD128" in first
-    assert "-filter_hw_device" in first
-    assert first[first.index("-filter_hw_device") + 1] == "hw"
-    assert "-vf" in first
-    assert "vpp_qsv" in first[first.index("-vf") + 1]
-
-    # Second call (fallback) must switch codec to a safe fallback
-    second = captured_args[1]
-    assert "-codec:v" in second
-    fallback_codec = second[second.index("-codec:v") + 1]
-    assert fallback_codec in {"h264_vaapi", "libx264"}
-    if fallback_codec == "libx264":
-        # No HW flags for software, ensure pix_fmt is set
-        assert "-init_hw_device" not in second
-        assert "-filter_hw_device" not in second
-        if "-vf" in second:
-            vf_val = second[second.index("-vf") + 1]
-            assert "scale_qsv" not in vf_val
-            assert "hwupload" not in vf_val
-        assert "-pix_fmt" in second
-        assert second[second.index("-pix_fmt") + 1] == "yuv420p"
-    else:
-        # VAAPI path: should include vaapi flags
-        assert "-vaapi_device" in second
-        assert "-hwaccel" in second
-        assert "vaapi" in second
-
-
-@pytest.mark.asyncio
-async def test_stream_normal_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    media = tmp_path / "file.mp4"
-    media.write_bytes(b"data")
-
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=True, a=True)
-
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-
-    # Process that yields two chunks and then EOF
-    proc = _FakeProc([b"abc", b"def", b""])
-
-    captured_args: list[list[str]] = []
-
-    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
-        captured_args.append(list(args[1:]))
-        return proc
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
-
-    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
-    resp = _FakeResp()
-    await seg.stream(media, resp)
-
-    assert bytes(resp.data) == b"abcdef"
-    assert not _ffmpeg_input_path(captured_args[0]).exists()
-    assert media.exists()
-    # The response implementation may or may not receive EOF after streaming.
-
-
-@pytest.mark.asyncio
-async def test_stream_client_reset(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=True, a=True)
-
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-
-    proc = _FakeProc([b"abc", b"def"])  # will attempt to write and fail
-
-    captured_args: list[list[str]] = []
-
-    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
-        captured_args.append(list(args[1:]))
-        return proc
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
-
-    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
-    resp = _FakeResp(fail_with=ConnectionResetError())
-
-    await seg.stream(tmp_path / "file.mp4", resp)
-
-    # Should not write EOF due to client disconnect
-    assert resp.eof is False
-    assert not _ffmpeg_input_path(captured_args[0]).exists()
-
-
-@pytest.mark.asyncio
-async def test_stream_cancelled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    async def fake_ffprobe(_file: Path):
-        return DummyFF(v=True, a=True)
-
-    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
-
-    proc = _FakeProc([b"abc"])  # only one chunk
-
-    async def fake_create_subprocess_exec(*_args: Any, **_kwargs: Any):
-        return proc
-
-    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
-
-    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
-    # Fail with CancelledError on write to hit inner disconnection branch
-    resp = _FakeResp(fail_with=asyncio.CancelledError())
-    await seg.stream(tmp_path / "file.mp4", resp)
-    # Inner branch treats it as client disconnected; no EOF and we terminate ffmpeg
-    assert resp.eof is False
-    assert proc.terminated is True
+    monkeypatch.setattr("app.features.streaming.utils.run", run)
+    for _ in range(2):
+        segment = Segments(0, probe=probe)
+        artifact = await segment.prepare(tmp_path / "video.mp4", tmp_path)
+        artifact.unlink()
+    assert attempts == ["h264_nvenc", "h264_nvenc", "libx264"]
+    assert select.await_count == 1

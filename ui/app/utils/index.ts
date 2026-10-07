@@ -352,12 +352,8 @@ const makeDownload = (
   config: any,
   item: StoreItem | { folder?: string; filename: string },
   base: string = 'api/download',
-  playlist: boolean = false,
 ): string => {
-  let baseDir = 'api/player/m3u8/video/';
-  if ('m3u8' !== base) {
-    baseDir = `${base}/`;
-  }
+  let baseDir = `${base}/`;
 
   if (item.folder) {
     baseDir += item.folder.replace(/#/g, '%23') + '/';
@@ -368,7 +364,7 @@ const makeDownload = (
   }
 
   const url = `/${sTrim(baseDir, '/')}${encodePath(item.filename)}`;
-  return uri('m3u8' === base || true === playlist ? `${url}.m3u8` : url);
+  return uri(url);
 };
 
 const SIZE_UNIT_KEYS = [

@@ -64,7 +64,7 @@
     "reset": "Réinitialiser",
     "retry": "Réessayer",
     "retryCount": "Réessayé {count} fois",
-    "loading": "Chargement…",
+    "loading": "Chargement...",
     "unknownError": "Une erreur inconnue s'est produite.",
     "unknown": "Inconnu",
     "noResults": "Aucun résultat",
@@ -1320,6 +1320,15 @@
     }
   },
   "player": {
+    "audio": "Audio",
+    "browserAudio": "Audio choisi par le navigateur (Direct)",
+    "burnIn": "Incrustation",
+    "preparing": "Préparation de la lecture...",
+    "preparationFailed": "Impossible de préparer la lecture. Rouvrez le lecteur pour réessayer.",
+    "playFailed": "La lecture n'a pas démarré. Appuyez sur Lecture pour réessayer.",
+    "playbackFailed": "La lecture a échoué.",
+    "hlsUnsupported": "Ce navigateur ne prend pas en charge la lecture HLS.",
+    "sessionExpired": "Impossible de renouveler la session du lecteur. Rouvrez le lecteur.",
     "subtitleLoadFailed": "Échec du chargement des sous-titres pour cette vidéo.",
     "subtitleRenderFailed": "Échec du rendu des sous-titres ASS dans le navigateur."
   }

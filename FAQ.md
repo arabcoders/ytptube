@@ -440,15 +440,10 @@ render:x:105:your_docker_username
 In my docker host the group id for `video` is `44` and for `render` is `105`. change what needed in the `compose.yaml`
 file to match your setup.
 
-If for some reason the initial test for GPU encoding fails, YTPTube will fallback to software encoding. You can force
-software encoding by setting the `YTP_STREAMER_VCODEC` environment variable to `libx264`. If you want to force GPU 
-encoding, set the `YTP_STREAMER_VCODEC` environment variable to one of the supported GPU codecs, for 
-example `h264_vaapi` or `h264_nvenc` depending on your GPU. For the supported codec implementations, 
-see [segment_encoders.py](app/features/streaming/library/segment_encoders.py).
-
-> [!NOTE]
-> If GPU encoding fails and software encoding is used, restart the container before trying GPU encoding again. YTPTube
-> tests GPU encoding only once, when the first video stream starts.
+YTPTube falls back to software encoding if hardware encoding fails. Set `YTP_STREAMER_VCODEC=libx264` to use
+software encoding, or choose a supported hardware encoder such as `h264_vaapi` or `h264_nvenc` for your GPU.
+Set `YTP_STREAMER_ACODEC` to choose the audio codec and `YTP_VAAPI_DEVICE` to select the VAAPI/QSV device.
+See [utils.py](app/features/streaming/utils.py) for supported encoders.
 
 # How to setup CI on Gitea?
 

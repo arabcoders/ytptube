@@ -1,563 +1,271 @@
-import time
-from datetime import UTC, datetime
+from __future__ import annotations
+
+import json
+import math
+from functools import wraps
 from pathlib import Path
+from typing import TYPE_CHECKING
+from urllib.parse import urlencode
 
+import anyio
 from aiohttp import web
-from aiohttp.web import Request, Response
-from aiohttp.web_response import StreamResponse
 
+from app.features.auth.middleware import AUTH_USER_KEY
 from app.features.core.utils import api_error_response
-from app.features.streaming.library.ffprobe import ffmpeg_bin, ffprobe_bin
-from app.features.streaming.library.m3u8 import M3u8
-from app.features.streaming.library.playlist import Playlist
-from app.features.streaming.library.segments import Segments
-from app.features.streaming.library.subtitle import Subtitle, get_subtitle_tracks
+from app.features.streaming.service import Player, PlayerError, PlayerManager
 from app.features.streaming.types import FFProbeError, StreamingError
-from app.library.config import Config
+from app.features.streaming.utils import SEGMENT_DURATION, PreparationBusyError, SegmentIndexError, segment_window
+from app.library.cache import Cache
 from app.library.logging import get_logger
 from app.library.router import route
-from app.library.Utils import get_file
+from app.library.Utils import get_file_sidecar, get_mime_type
+from app.routes.api.download import file_response
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 LOG = get_logger()
 
 
-@route("GET", "api/player/playlist/{file:.*}.m3u8", "playlist_create")
-async def playlist_create(request: Request, config: Config, app: web.Application) -> Response:
-    """
-    Get the playlist.
+def _key(request: web.Request, cache: Cache) -> str:
+    user = request.get(AUTH_USER_KEY)
+    identity = str(user["id"]) if isinstance(user, dict) and "id" in user else "shared"
+    return cache.hash(f"playback:{identity}:{request.match_info['media_id']}")
 
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration instance.
-        app (web.Application): The aiohttp application instance.
 
-    Returns:
-        Response: The response object.
+@route("GET", "api/playback/{media_id}", "playback_get", same_origin=True)
+async def playback_get(request: web.Request, cache: Cache) -> web.Response:
+    key = _key(request, cache)
+    return web.json_response({"position": cache.get(key)}, headers={"Cache-Control": "no-store"})
 
-    """
-    file: str | None = request.match_info.get("file")
 
-    if not file:
-        return api_error_response(
-            "file is required",
-            code="REQUIRED",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.file"},
-        )
-
-    base_path: str = config.base_path.rstrip("/")
-
-    if ffprobe_bin() is None:
-        return api_error_response(
-            "ffprobe is not available on this system.",
-            code="FFPROBE_UNAVAILABLE",
-            status=web.HTTPServiceUnavailable.status_code,
-        )
-
+@route("PUT", "api/playback/{media_id}", "playback_put", same_origin=True)
+async def playback_put(request: web.Request, cache: Cache) -> web.Response:
     try:
-        realFile, status = get_file(download_path=config.download_path, file=file)
-        if web.HTTPFound.status_code == status:
-            return Response(
-                status=web.HTTPFound.status_code,
-                headers={
-                    "Location": str(
-                        app.router["playlist_create"].url_for(
-                            file=str(realFile).replace(config.download_path, "").strip("/")
-                        )
-                    ),
-                },
-            )
-
-        if web.HTTPNotFound.status_code == status:
-            return api_error_response(
-                f"File '{file}' does not exist.",
-                code="NOT_FOUND",
-                status=status,
-                params={"resource": "api.resources.file"},
-            )
-
-        return web.Response(
-            text=await Playlist(download_path=Path(config.download_path), url=f"{base_path}/").make(file=realFile),
-            headers={
-                "Content-Type": "application/x-mpegURL",
-                "Cache-Control": "no-cache",
-                "Access-Control-Max-Age": "300",
-            },
-            status=web.HTTPOk.status_code,
-        )
-    except StreamingError as e:
-        return api_error_response(
-            str(e),
-            code="NOT_FOUND",
-            status=web.HTTPNotFound.status_code,
-            params={"resource": "api.resources.file"},
-            detail=str(e),
-        )
-    except FFProbeError:
-        return api_error_response(
-            "Unable to read media metadata.",
-            code="INTERNAL_ERROR",
-            status=web.HTTPInternalServerError.status_code,
-        )
+        payload = await request.json()
+        if not isinstance(payload, dict) or "position" not in payload:
+            return api_error_response("Invalid position.", code="BAD_REQUEST", status=400)
+        position = payload["position"]
+        if position is not None and (
+            not isinstance(position, (int, float))
+            or isinstance(position, bool)
+            or not math.isfinite(position)
+            or position < 0
+        ):
+            return api_error_response("Invalid position.", code="BAD_REQUEST", status=400)
+    except (ValueError, TypeError, OverflowError):
+        return api_error_response("Invalid position.", code="BAD_REQUEST", status=400)
+    key = _key(request, cache)
+    if position is None:
+        cache.delete(key)
+    else:
+        cache.set(key, float(position), ttl=24 * 60 * 60, persist=True)
+    return web.json_response({"position": position})
 
 
-@route("GET", "api/player/m3u8/{mode}/{file:.*}.m3u8", "m3u8_create")
-async def m3u8_create(request: Request, config: Config, app: web.Application) -> Response:
-    """
-    Get the m3u8 file.
-
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration instance.
-        app (web.Application): The aiohttp application instance.
-
-    Returns:
-        Response: The response object.
-
-    """
-    file: str | None = request.match_info.get("file")
-    mode: str | None = request.match_info.get("mode")
-
-    if mode not in ["video", "subtitle"]:
-        return api_error_response(
-            "Only video and subtitle modes are supported.",
-            code="INVALID",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.mode"},
-        )
-
-    if not file:
-        return api_error_response(
-            "file is required",
-            code="REQUIRED",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.file"},
-        )
-
-    duration: float | None = None
-    duration_arg = request.query.get("duration", None)
-
-    if "subtitle" in mode:
-        if not duration_arg:
-            return api_error_response(
-                "duration is required.",
-                code="REQUIRED",
-                status=web.HTTPBadRequest.status_code,
-                params={"field": "api.fields.duration"},
-            )
-
-        duration = float(duration_arg)
-
-    base_path: str = config.base_path.rstrip("/")
-
-    if "video" in mode and ffprobe_bin() is None:
-        return api_error_response(
-            "ffprobe is not available on this system.",
-            code="FFPROBE_UNAVAILABLE",
-            status=web.HTTPServiceUnavailable.status_code,
-        )
-
-    try:
-        cls = M3u8(download_path=Path(config.download_path), url=f"{base_path}/")
-
-        realFile, status = get_file(download_path=config.download_path, file=file)
-        if web.HTTPFound.status_code == status:
-            return Response(
-                status=status,
-                headers={
-                    "Location": str(
-                        app.router["m3u8_create"].url_for(
-                            mode=mode, file=str(realFile).replace(config.download_path, "").strip("/")
-                        )
-                    ),
-                },
-            )
-
-        if web.HTTPNotFound.status_code == status:
-            return api_error_response(
-                f"File '{file}' does not exist.",
-                code="NOT_FOUND",
-                status=status,
-                params={"resource": "api.resources.file"},
-            )
-
-        if "subtitle" in mode:
-            if duration is None:
-                return api_error_response(
-                    "duration is required.",
-                    code="REQUIRED",
-                    status=web.HTTPBadRequest.status_code,
-                    params={"field": "api.fields.duration"},
-                )
-            text = await cls.make_subtitle(file=realFile, duration=duration)
-        else:
-            text = await cls.make_stream(file=realFile)
-    except StreamingError as e:
-        LOG.exception(
-            "Failed to create %s streaming playlist for '%s': %s.",
-            mode,
-            file,
-            e,
-            extra={"route": "streaming.playlist", "file_path": file, "mode": mode, "exception_type": type(e).__name__},
-        )
-        return api_error_response(
-            str(e),
-            code="NOT_FOUND",
-            status=web.HTTPNotFound.status_code,
-            params={"resource": "api.resources.file"},
-            detail=str(e),
-        )
-    except FFProbeError:
-        return api_error_response(
-            "Unable to read media metadata.",
-            code="INTERNAL_ERROR",
-            status=web.HTTPInternalServerError.status_code,
-        )
-
-    return web.Response(
-        text=text,
-        headers={
-            "Content-Type": "application/x-mpegURL",
-            "Cache-Control": "no-cache",
-            "Access-Control-Max-Age": "300",
-        },
-        status=web.HTTPOk.status_code,
-    )
+def owner(request: web.Request) -> str:
+    user = request.get(AUTH_USER_KEY)
+    return str(user["id"]) if isinstance(user, dict) and "id" in user else "shared"
 
 
-@route("GET", r"api/player/segments/{segment:\d+}/{file:.*}.ts", "segments_stream")
-async def segments_stream(request: Request, config: Config, app: web.Application) -> StreamResponse:
-    """
-    Get the segments.
-
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration instance.
-        app (web.Application): The aiohttp application instance.
-
-    Returns:
-        Response: The response object.
-
-    """
-    file: str | None = request.match_info.get("file")
-    segment: str | None = request.match_info.get("segment")
-    sd: str | None = request.query.get("sd")
-    vc: int = int(request.query.get("vc", 0))
-    ac: int = int(request.query.get("ac", 0))
-
-    if not file:
-        return api_error_response(
-            "file is required",
-            code="REQUIRED",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.file"},
-        )
-
-    if not segment:
-        return api_error_response(
-            "segment id is required.",
-            code="REQUIRED",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.segmentId"},
-        )
-
-    realFile, status = get_file(download_path=config.download_path, file=file)
-    if web.HTTPFound.status_code == status:
-        return Response(
-            status=status,
-            headers={
-                "Location": str(
-                    app.router["segments_stream"].url_for(
-                        segment=segment,
-                        file=str(realFile).replace(config.download_path, "").strip("/"),
-                    )
-                ),
-            },
-        )
-
-    if web.HTTPNotFound.status_code == status:
-        return api_error_response(
-            f"File '{file}' does not exist.",
-            code="NOT_FOUND",
-            status=status,
-            params={"resource": "api.resources.file"},
-        )
-
-    mtime = realFile.stat().st_mtime
-
-    if request.if_modified_since and request.if_modified_since.timestamp() == mtime:
-        lastMod = time.strftime("%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple())
-        return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
-
-    if ffmpeg_bin() is None:
-        return api_error_response(
-            "ffmpeg is not available on this system.",
-            code="FFMPEG_UNAVAILABLE",
-            status=web.HTTPServiceUnavailable.status_code,
-        )
-
-    resp = web.StreamResponse(
-        status=web.HTTPOk.status_code,
-        headers={
-            "Content-Type": "video/mpegts",
-            "X-Accel-Buffering": "no",
-            "Access-Control-Allow-Origin": "*",
-            "Pragma": "public",
-            "Cache-Control": f"public, max-age={time.time() + 31536000}",
-            "Last-Modified": time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple()
-            ),
-            "Expires": time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
-            ),
-        },
-    )
-
-    await resp.prepare(request)
-
-    try:
-        await Segments(
-            download_path=config.download_path,
-            index=int(segment),
-            duration=float(f"{float(sd or M3u8.duration):.6f}"),
-            vconvert=vc == 1,
-            aconvert=ac == 1,
-        ).stream(realFile, resp)
-    except StreamingError as e:
-        LOG.warning(
-            "Failed to stream segment %s for '%s': %s.",
-            segment,
-            file,
-            e,
-            extra={"route": "streaming.segments", "file_path": file, "segment": segment, "error": str(e)},
-        )
+def player_errors[**P](
+    handler: Callable[P, Awaitable[web.StreamResponse]],
+) -> Callable[P, Awaitable[web.StreamResponse]]:
+    @wraps(handler)
+    async def wrapped(*args: P.args, **kwargs: P.kwargs) -> web.StreamResponse:
         try:
-            await resp.write_eof()
-        except (ConnectionResetError, BrokenPipeError, RuntimeError):
-            pass
-        return resp
+            return await handler(*args, **kwargs)
+        except web.HTTPException:
+            raise
+        except SegmentIndexError:
+            return api_error_response("Segment index is outside the media duration.", code="NOT_FOUND", status=404)
+        except PreparationBusyError:
+            return api_error_response("Media preparation is busy.", code="UNAVAILABLE", status=503)
+        except PlayerError as exc:
+            code = {404: "NOT_FOUND", 409: "CONFLICT", 410: "EXPIRED", 503: "UNAVAILABLE"}.get(exc.status, "INVALID")
+            return api_error_response(str(exc), code=code, status=exc.status)
+        except (ValueError, TypeError, OverflowError):
+            return api_error_response("Invalid player options.", code="INVALID", status=400)
+        except (FFProbeError, StreamingError, TimeoutError, OSError):
+            LOG.exception("Player preparation failed.")
+            return api_error_response("Unable to prepare playback.", code="INTERNAL_ERROR", status=502)
 
-    return resp
+    return wrapped
 
 
-@route("GET", "api/player/subtitle/{file:.*}.vtt", "subtitles_get")
-async def subtitles_get(request: Request, config: Config, app: web.Application) -> Response:
-    """
-    Get the subtitles.
-
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration instance.
-        app (web.Application): The aiohttp application instance.
-
-    Returns:
-        Response: The response object.
-
-    """
-    file: str | None = request.match_info.get("file")
-
-    if not file:
-        return api_error_response(
-            "file is required",
-            code="REQUIRED",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.file"},
-        )
-
-    realFile, status = get_file(download_path=config.download_path, file=file)
-    if web.HTTPFound.status_code == status:
-        return Response(
-            status=status,
-            headers={
-                "Location": str(
-                    app.router["subtitles_get"].url_for(file=str(realFile).replace(config.download_path, "").strip("/"))
-                ),
-            },
-        )
-
-    if web.HTTPNotFound.status_code == status:
-        return api_error_response(
-            f"File '{file}' does not exist.",
-            code="NOT_FOUND",
-            status=status,
-            params={"resource": "api.resources.file"},
-        )
-
-    mtime = realFile.stat().st_mtime
-
-    if request.if_modified_since and request.if_modified_since.timestamp() == mtime:
-        lastMod = time.strftime("%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple())
-        return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
-
-    return web.Response(
-        body=await Subtitle().make(file=realFile),
-        headers={
-            "Content-Type": "text/vtt; charset=UTF-8",
-            "X-Accel-Buffering": "no",
-            "Access-Control-Allow-Origin": "*",
-            "Pragma": "public",
-            "Cache-Control": f"public, max-age={time.time() + 31536000}",
-            "Last-Modified": time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple()
-            ),
-            "Expires": time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
-            ),
-        },
-        status=web.HTTPOk.status_code,
+def payload(player: Player, players: PlayerManager) -> dict:
+    probe = player.resource.probe
+    assert probe is not None
+    file = player.resource.file
+    images = get_file_sidecar(file).get("image", [])
+    poster = (
+        file.with_name(images[0]["file"].name).relative_to(Path(players.config.download_path).resolve()).as_posix()
+        if images
+        else None
     )
+    base = f"{players.config.base_path.rstrip('/')}/api/player/media/{player.resource.id}"
+    tracks = players.tracks(player)
+    subtitles = []
+    for id, track in tracks.items():
+        entry = dict(track)
+        entry["url"] = f"{base}/subtitles/{id}" if track["renderer"] in {"native", "assjs"} else ""
+        subtitles.append(entry)
+    return {
+        "player_id": player.id,
+        "media_url": f"{base}/file",
+        "generation": list(player.resource.identity),
+        "expires_in": 900,
+        "audio_stream_index": player.audio,
+        "subtitle_track_id": player.subtitle,
+        "ffprobe": probe.serialize(),
+        "title": file.stem,
+        "mimetype": get_mime_type(probe.metadata, file),
+        "poster": poster,
+        "audio_tracks": [
+            {
+                "stream_index": s.index,
+                "lang": getattr(s, "tags", {}).get("language", "und"),
+                "name": getattr(s, "tags", {}).get("title", ""),
+                "codec": s.codec() or "unknown",
+                "channels": getattr(s, "channels", None),
+                "channel_layout": getattr(s, "channel_layout", ""),
+                "default": bool(getattr(s, "disposition", {}).get("default", 0)),
+            }
+            for s in probe.audio
+        ],
+        "subtitles": subtitles,
+        "fonts": [{"id": f"f{s.index}", "url": f"{base}/fonts/f{s.index}"} for s in players.fonts(player)],
+        "stream_url": f"{base}/stream.m3u8?{urlencode({'audio': player.audio if player.audio is not None else 'auto', 'subtitle': player.subtitle or 'off'})}",
+    }
 
 
-@route("GET", "api/player/subtitles/manifest/{file:.*}", "subtitles_manifest_get")
-async def subtitles_manifest_get(request: Request, config: Config, app: web.Application) -> Response:
-    """
-    Get subtitle track metadata for a media file.
-
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration instance.
-        app (web.Application): The aiohttp application instance.
-
-    Returns:
-        Response: The response object.
-
-    """
-    file: str | None = request.match_info.get("file")
-
+@route("POST", "api/player/open/{file:.*}", "player_open")
+@player_errors
+async def player_open(request: web.Request, players: PlayerManager) -> web.Response:
+    file = request.match_info["file"]
     if not file:
-        return api_error_response(
-            "file is required",
-            code="REQUIRED",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.file"},
-        )
+        msg = "Media filename is required."
+        raise PlayerError(msg)
+    player = await players.open(owner(request), file)
+    return web.json_response(payload(player, players), headers={"Cache-Control": "private, no-store"})
 
-    realFile, status = get_file(download_path=config.download_path, file=file)
-    if web.HTTPFound.status_code == status:
-        return Response(
-            status=status,
-            headers={
-                "Location": str(
-                    app.router["subtitles_manifest_get"].url_for(
-                        file=str(realFile).replace(config.download_path, "").strip("/")
-                    )
-                ),
-            },
-        )
 
-    if web.HTTPNotFound.status_code == status:
-        return api_error_response(
-            f"File '{file}' does not exist.",
-            code="NOT_FOUND",
-            status=status,
-            params={"resource": "api.resources.file"},
-        )
+@route("PUT", "api/player/leases/{id}", "player_refresh")
+@player_errors
+async def player_refresh(request: web.Request, players: PlayerManager) -> web.Response:
+    body = await request.json()
+    if not isinstance(body, dict) or set(body) - {"audio_stream_index", "subtitle_track_id"}:
+        msg = "Invalid player options."
+        raise PlayerError(msg)
+    player = await players.get(request.match_info["id"], owner(request))
+    players.select(player, body.get("audio_stream_index", player.audio), body.get("subtitle_track_id", player.subtitle))
+    return web.json_response(payload(player, players), headers={"Cache-Control": "private, no-store"})
 
-    tracks = [
-        {
-            "lang": track.lang,
-            "name": track.name,
-            "source_format": track.source_format,
-            "delivery_format": track.delivery_format,
-            "renderer": track.renderer,
-            "url": str(
-                app.router["subtitles_track_get"].url_for(
-                    source_format=track.source_format,
-                    file=str(track.file).replace(config.download_path, "").strip("/"),
-                )
-            ),
-        }
-        for track in get_subtitle_tracks(realFile)
+
+@route("DELETE", "api/player/leases/{id}", "player_close")
+@player_errors
+async def player_close(request: web.Request, players: PlayerManager) -> web.Response:
+    await players.close(request.match_info["id"], owner(request))
+    return web.Response(status=204, headers={"Cache-Control": "private, no-store"})
+
+
+def selection(request: web.Request, player: Player, players: PlayerManager) -> tuple[int | None, int | None]:
+    audio_arg = request.query.get("audio", "auto")
+    audio = None if audio_arg == "auto" else int(audio_arg)
+    subtitle = request.query.get("subtitle", "off")
+    probe = player.resource.probe
+    assert probe is not None
+    if audio is not None and not any(s.index == audio for s in probe.audio):
+        msg = "Unknown audio track."
+        raise PlayerError(msg)
+    track = players.tracks(player).get(subtitle) if subtitle != "off" else None
+    if subtitle != "off" and track is None:
+        msg = "Unknown subtitle track."
+        raise PlayerError(msg)
+    if track and track["renderer"] == "unsupported":
+        msg = "This subtitle format is not supported."
+        raise PlayerError(msg)
+    bitmap = int(subtitle[1:]) if track and track["renderer"] == "bitmap" else None
+    return audio, bitmap
+
+
+@route("GET", "api/player/media/{media}/stream.m3u8", "player_stream")
+@player_errors
+async def player_stream(request: web.Request, players: PlayerManager) -> web.Response:
+    player = await players.media(request.match_info["media"], owner(request))
+    selection(request, player, players)
+    probe = player.resource.probe
+    assert probe is not None
+    duration = float(probe.metadata["duration"])
+    query = urlencode({"audio": request.query.get("audio", "auto"), "subtitle": request.query.get("subtitle", "off")})
+    lines = [
+        "#EXTM3U",
+        "#EXT-X-VERSION:3",
+        f"#EXT-X-TARGETDURATION:{math.ceil(SEGMENT_DURATION)}",
+        "#EXT-X-MEDIA-SEQUENCE:0",
+        "#EXT-X-PLAYLIST-TYPE:VOD",
     ]
-
-    return web.json_response(data={"subtitles": tracks}, status=web.HTTPOk.status_code)
-
-
-@route("GET", "api/player/subtitles/{source_format}/{file:.*}", "subtitles_track_get")
-async def subtitles_track_get(request: Request, config: Config, app: web.Application) -> Response:
-    """
-    Get a subtitle file using its preferred delivery format.
-
-    Args:
-        request (Request): The request object.
-        config (Config): The configuration instance.
-        app (web.Application): The aiohttp application instance.
-
-    Returns:
-        Response: The response object.
-
-    """
-    file: str | None = request.match_info.get("file")
-    source_format: str | None = request.match_info.get("source_format")
-
-    if not file:
-        return api_error_response(
-            "file is required",
-            code="REQUIRED",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.file"},
-        )
-
-    fmt = Subtitle.normalize_format(source_format or "")
-    if fmt is None:
-        return api_error_response(
-            "Only vtt, srt, and ass subtitle formats are supported.",
-            code="INVALID",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.type"},
-        )
-
-    realFile, status = get_file(download_path=config.download_path, file=file)
-    if web.HTTPFound.status_code == status:
-        return Response(
-            status=status,
-            headers={
-                "Location": str(
-                    app.router["subtitles_track_get"].url_for(
-                        source_format=fmt,
-                        file=str(realFile).replace(config.download_path, "").strip("/"),
-                    )
-                ),
-            },
-        )
-
-    if web.HTTPNotFound.status_code == status:
-        return api_error_response(
-            f"File '{file}' does not exist.",
-            code="NOT_FOUND",
-            status=status,
-            params={"resource": "api.resources.file"},
-        )
-
-    if Subtitle.normalize_format(realFile.suffix) != fmt:
-        return api_error_response(
-            f"Subtitle file '{file}' does not match requested source format '{fmt}'.",
-            code="INVALID",
-            status=web.HTTPBadRequest.status_code,
-            params={"field": "api.fields.type"},
-        )
-
-    mtime = realFile.stat().st_mtime
-
-    if request.if_modified_since and request.if_modified_since.timestamp() == mtime:
-        lastMod = time.strftime("%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple())
-        return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
-
-    body, content_type = await Subtitle().make_delivery(file=realFile)
+    for index in range(math.ceil(duration / SEGMENT_DURATION)):
+        _, length = segment_window(index, duration)
+        lines += [f"#EXTINF:{length:.6f},", f"segments/{index}.ts?{query}"]
+    lines.append("#EXT-X-ENDLIST")
     return web.Response(
-        body=body,
-        headers={
-            "Content-Type": content_type,
-            "X-Accel-Buffering": "no",
-            "Access-Control-Allow-Origin": "*",
-            "Pragma": "public",
-            "Cache-Control": f"public, max-age={time.time() + 31536000}",
-            "Last-Modified": time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple()
-            ),
-            "Expires": time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
-            ),
-        },
-        status=web.HTTPOk.status_code,
+        text="\n".join(lines),
+        content_type="application/vnd.apple.mpegurl",
+        headers={"Cache-Control": "private, max-age=300"},
     )
+
+
+@route("GET", "api/player/media/{media}/file", "player_media")
+@route("HEAD", "api/player/media/{media}/file", "player_media_head")
+@player_errors
+async def player_media(request: web.Request, players: PlayerManager) -> web.FileResponse:
+    player = await players.media(request.match_info["media"], owner(request))
+    response = file_response(player.resource.file)
+    response.headers["Cache-Control"] = "private, max-age=300"
+    return response
+
+
+@route("GET", r"api/player/media/{media}/segments/{index:\d+}.ts", "player_segment")
+@route("GET", "api/player/media/{media}/subtitles/{track}", "player_subtitle")
+@route("GET", "api/player/media/{media}/fonts/{font}", "player_font")
+@player_errors
+async def player_artifact(request: web.Request, players: PlayerManager) -> web.StreamResponse:
+    player = await players.media(request.match_info["media"], owner(request))
+    if "index" in request.match_info:
+        audio, bitmap = selection(request, player, players)
+        index = int(request.match_info["index"])
+        assert player.resource.probe is not None
+        segment_window(index, float(player.resource.probe.metadata["duration"]))
+        key = ("segment", index, audio, bitmap)
+    elif "track" in request.match_info:
+        track = request.match_info["track"]
+        if track not in players.tracks(player):
+            msg = "Unknown subtitle track."
+            raise PlayerError(msg, 404)
+        key = ("subtitle", track)
+    else:
+        key = ("font", request.match_info["font"])
+    async with players.artifact(player, key, shared=True) as artifact:
+        headers = {
+            "Content-Type": artifact.content_type,
+            "Content-Length": str(artifact.size),
+            "Cache-Control": "private, max-age=300",
+        }
+        if artifact.metadata is not None:
+            headers["X-YTP-Font"] = json.dumps(artifact.metadata, ensure_ascii=True)
+        response = web.StreamResponse(headers=headers)
+        await players.check(player, shared=True)
+        try:
+            await response.prepare(request)
+            async with await anyio.open_file(artifact.file, "rb") as output:
+                while chunk := await output.read(65536):
+                    await players.check(player, shared=True)
+                    await response.write(chunk)
+            await players.check(player, shared=True)
+            await response.write_eof()
+        except (PlayerError, ConnectionError):
+            response.force_close()
+            if request.transport is not None:
+                request.transport.close()
+        return response

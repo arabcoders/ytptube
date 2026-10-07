@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from aiohttp import web
 from aiohttp.web import Request, Response, StreamResponse
 
@@ -8,6 +10,20 @@ from app.library.router import route
 from app.library.Utils import get_file
 
 LOG = get_logger()
+
+
+def file_response(file: Path) -> web.FileResponse:
+    from app.routes.api._static import EXT_TO_MIME
+
+    content_type = EXT_TO_MIME.get(file.suffix)
+    if not content_type:
+        import mimetypes
+
+        content_type, _ = mimetypes.guess_type(str(file))
+        if not content_type:
+            content_type = "application/octet-stream"
+
+    return web.FileResponse(path=str(file), headers={"Content-Type": content_type})
 
 
 @route(["GET", "HEAD"], "/api/download/{filename:.+}", "download_static")
@@ -71,14 +87,4 @@ async def download_file(request: Request, config: Config, app: web.Application) 
             params={"resource": "api.resources.file"},
         )
 
-    from app.routes.api._static import EXT_TO_MIME
-
-    content_type = EXT_TO_MIME.get(realFile.suffix)
-    if not content_type:
-        import mimetypes
-
-        content_type, _ = mimetypes.guess_type(str(realFile))
-        if not content_type:
-            content_type = "application/octet-stream"
-
-    return web.FileResponse(path=str(realFile), headers={"Content-Type": content_type})
+    return file_response(realFile)

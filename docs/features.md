@@ -139,7 +139,8 @@ See [WAF challenge setup](../FAQ.md#how-to-bypass-some-waf-challenges) and
 ## Files and Playback
 
 The file browser can search, sort, preview, and download files under the configured download directory. It detects 
-related subtitles and metadata sidecars. The built-in player supports compatible local media and external subtitles.
+related subtitles and metadata sidecars. The built-in player supports local media, audio-track selection, external and
+embedded text subtitles, ASS fonts and bitmap subtitle burn-in.
 
 Optional file controls add directory creation, rename, move, and delete actions. They are disabled by default because 
 they modify files on disk.

@@ -75,12 +75,16 @@ This document describes the available endpoints and their usage. All endpoints r
     - [PUT /api/tasks/definitions/{id}](#put-apitasksdefinitionsid)
     - [PATCH /api/tasks/definitions/{id}](#patch-apitasksdefinitionsid)
     - [DELETE /api/tasks/definitions/{id}](#delete-apitasksdefinitionsid)
-    - [GET /api/player/playlist/{file:.\*}.m3u8](#get-apiplayerplaylistfilem3u8)
-    - [GET /api/player/m3u8/{mode}/{file:.\*}.m3u8](#get-apiplayerm3u8modefilem3u8)
-    - [GET /api/player/segments/{segment}/{file:.\*}.ts](#get-apiplayersegmentssegmentfilets)
-    - [GET /api/player/subtitle/{file:.\*}.vtt](#get-apiplayersubtitlefilevtt)
-    - [GET /api/player/subtitles/manifest/{file:.\*}](#get-apiplayersubtitlesmanifestfile)
-    - [GET /api/player/subtitles/{source\_format}/{file:.\*}](#get-apiplayersubtitlessource_formatfile)
+    - [GET /api/playback/{media\_id}](#get-apiplaybackmedia_id)
+    - [PUT /api/playback/{media\_id}](#put-apiplaybackmedia_id)
+    - [POST /api/player/open/{file}](#post-apiplayeropenfile)
+    - [PUT /api/player/leases/{id}](#put-apiplayerleasesid)
+    - [DELETE /api/player/leases/{id}](#delete-apiplayerleasesid)
+    - [GET/HEAD /api/player/media/{resource}/file](#gethead-apiplayermediaresourcefile)
+    - [GET /api/player/media/{resource}/stream.m3u8](#get-apiplayermediaresourcestreamm3u8)
+    - [GET /api/player/media/{resource}/segments/{index}.ts](#get-apiplayermediaresourcesegmentsindexts)
+    - [GET /api/player/media/{resource}/subtitles/{track}](#get-apiplayermediaresourcesubtitlestrack)
+    - [GET /api/player/media/{resource}/fonts/{font}](#get-apiplayermediaresourcefontsfont)
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
     - [GET /api/file/browser/{path:.\*}](#get-apifilebrowserpath)
@@ -2261,111 +2265,250 @@ When supplied, `definition` is a complete nested Definition object rather than a
 
 ---
 
-### GET /api/player/playlist/{file:.*}.m3u8
-**Purpose**: Generate a playlist for a given local media file.
+### POST /api/player/open/{file}
+**Purpose**: Open a local media file for playback.
 
 **Path Parameter**:
-- `file` = Relative path of the media file within the `download_path`.
-
-**Response**:  
-An `.m3u8` playlist.
-
-**Errors**:
-- `503 FFPROBE_UNAVAILABLE` if `ffprobe` is not available on the system.
-
----
-
-### GET /api/player/m3u8/{mode}/{file:.*}.m3u8
-**Purpose**: Dynamically generate an M3U8 playlist for video or subtitles.  
-
-**Path Parameters**:
-- `mode`: either `video` or `subtitle`.
-- `file`: relative path of the file.
-
-**Query Parameters (when `mode=subtitle`)**:
-- `duration`: The total duration of the subtitle track
-
-**Response**:
-- `Content-Type: application/x-mpegURL` containing the `.m3u8` text.
-
-**Errors**:
-- `503 FFPROBE_UNAVAILABLE` (when `mode=video`) if `ffprobe` is not available on the system.
-
----
-
-### GET /api/player/segments/{segment}/{file:.*}.ts
-**Purpose**: Streams a single TS segment for adaptive HLS playback.  
-
-**Path Parameters**:
-- `segment` = Numeric segment index.
-- `file` = Relative file path.
-
-**Query Parameters**:
-- `sd` = The segment duration (float).  
-- `vc` = `1` or `0` (whether to convert video).  
-- `ac` = `1` or `0` (whether to convert audio).
-
-**Response**:  
-Binary TS data (`Content-Type: video/mpegts`).
-
-**Errors**:
-- `503 FFMPEG_UNAVAILABLE` if `ffmpeg` is not available on the system.
-
----
-
-### GET /api/player/subtitle/{file:.*}.vtt
-**Purpose**: Provides a `.vtt` (WebVTT) subtitle file for playback.  
-
-**Path Parameter**:
-- `file` = Relative path of the subtitle file.
-
-**Response**:  
-`Content-Type: text/vtt; charset=UTF-8`.
-
----
-
-### GET /api/player/subtitles/manifest/{file:.*}
-**Purpose**: Returns subtitle track metadata for a local media file.  
-
-**Path Parameter**:
-- `file` = Relative path of the media file within the `download_path`.
+- `file` = Relative path of the media file within `download_path`.
 
 **Response**:
 ```json
 {
+  "player_id": "player-id",
+  "media_url": "/api/player/media/resource-id/file",
+  "generation": [2049, 12345, 1048576, 1700000000000000000, 1700000000000000000],
+  "expires_in": 900,
+  "title": "video",
+  "mimetype": "video/x-matroska",
+  "poster": "movies/video.jpg",
+  "ffprobe": {
+    "metadata": {"duration": "13", "format_name": "matroska"},
+    "video": [{"index": 0, "codec_type": "video", "codec_name": "h264"}],
+    "audio": [{"index": 4, "codec_type": "audio", "codec_name": "aac", "channels": 2, "channel_layout": "stereo", "tags": {"language": "en", "title": "English"}, "disposition": {"default": 1}}],
+    "subtitle": [{"index": 7, "codec_type": "subtitle", "codec_name": "ass", "tags": {"language": "en", "title": "English"}}],
+    "attachment": [{"index": 8, "codec_type": "attachment", "tags": {"mimetype": "font/ttf"}}],
+    "is_video": true,
+    "is_audio": true
+  },
+  "audio_stream_index": null,
+  "subtitle_track_id": null,
+  "audio_tracks": [
+    {
+      "stream_index": 4,
+      "lang": "en",
+      "name": "English",
+      "codec": "aac",
+      "channels": 2,
+      "channel_layout": "stereo",
+      "default": true
+    }
+  ],
   "subtitles": [
     {
+      "id": "e7",
       "lang": "en",
-      "name": "VTT (0) - en",
-      "source_format": "vtt",
-      "delivery_format": "vtt",
-      "renderer": "native",
-      "url": "/api/player/subtitles/vtt/path/to/video.en.vtt"
-    },
-    {
-      "lang": "en",
-      "name": "ASS (1) - en",
+      "name": "English",
       "source_format": "ass",
       "delivery_format": "ass",
       "renderer": "assjs",
-      "url": "/api/player/subtitles/ass/path/to/video.en.ass"
+      "url": "/api/player/media/resource-id/subtitles/e7"
     }
-  ]
+  ],
+  "fonts": [
+    {"id": "f8", "url": "/api/player/media/resource-id/fonts/f8"}
+  ],
+  "stream_url": "/api/player/media/resource-id/stream.m3u8?audio=auto&subtitle=off"
 }
 ```
 
+**Notes**:
+- Media requests require an active player.
+- `expires_in` is measured in seconds. Requests and refreshes extend this lifetime.
+- `poster` is relative to `download_path`, or `null` when artwork is unavailable.
+- Subtitle renderers are `native`, `assjs`, `bitmap` or `unsupported`. Bitmap and unsupported tracks have an empty `url`.
+- Saved playback positions use `GET/PUT /api/playback/{media_id}`.
+
+**Errors**:
+- `400 INVALID` if the filename is invalid.
+- `404 NOT_FOUND` if the file is missing.
+- `409 CONFLICT` if the media changes during preparation.
+- `410 EXPIRED` if the player expires during preparation.
+- `503 UNAVAILABLE` if the service is unavailable or busy.
+- `502 INTERNAL_ERROR` if metadata or playback preparation fails.
+
 ---
 
-### GET /api/player/subtitles/{source_format}/{file:.*}
-**Purpose**: Delivers a subtitle file using its preferred playback format.  
+### PUT /api/player/leases/{id}
+**Purpose**: Refresh a player and optionally change its audio and subtitle selections.
 
-**Path Parameters**:
-- `source_format` = `vtt`, `srt`, or `ass`.
-- `file` = Relative path of the subtitle file.
+**Path Parameter**:
+- `id` = The `player_id` returned by the open response.
+
+**Body**:
+```json
+{
+  "audio_stream_index": 4,
+  "subtitle_track_id": "e7"
+}
+```
+
+**Body Parameters**:
+- `audio_stream_index` = Absolute source audio stream index, or `null` to use the source's default audio.
+- `subtitle_track_id` = Subtitle ID from the open response, or `null` to disable subtitles.
 
 **Response**:
-- `text/vtt; charset=UTF-8` for `vtt` and `srt` sources.
-- `text/x-ssa; charset=UTF-8` for `ass` sources.
+- Save shape as returned by the open response.
+
+**Notes**:
+- Omitted fields retain their values. Send `{}` to refresh the lifetime without changing selections.
+
+**Errors**:
+- `400 INVALID` if the body, fields or tracks are invalid.
+- `404 NOT_FOUND` if the player is missing or inaccessible.
+- `409 CONFLICT` if the source generation changed.
+- `410 EXPIRED` if the player expired.
+- `503 UNAVAILABLE` if the player service is unavailable.
+
+---
+
+### DELETE /api/player/leases/{id}
+**Purpose**: Close a player.
+
+**Path Parameter**:
+- `id` = The `player_id` returned by the open response.
+
+**Response**:
+- `204 No Content`.
+
+**Notes**:
+- Missing or inaccessible IDs return `204`.
+
+---
+
+### GET/HEAD /api/player/media/{resource}/file
+**Purpose**: Deliver the original media file for direct playback.
+
+**Path Parameter**:
+- `resource` = Playback resource ID.
+
+**Response**:
+Original media bytes with the file's MIME type. Supports range, HEAD and conditional requests.
+
+**Notes**:
+- `Cache-Control: private, max-age=300`.
+
+**Errors**:
+- `404 NOT_FOUND` if the resource is missing or inaccessible.
+- `409 CONFLICT` if the source generation changed.
+- `410 EXPIRED` if the player expired.
+- `503 UNAVAILABLE` if the player service is unavailable.
+
+---
+
+### GET /api/player/media/{resource}/stream.m3u8
+**Purpose**: Generate a VOD HLS playlist for the selected audio and subtitle tracks.
+
+**Path Parameter**:
+- `resource` = Playback resource ID.
+
+**Query Parameters**:
+- `audio` = Absolute audio stream index, or `auto` to use the source's default audio (default: `auto`).
+- `subtitle` = Subtitle ID from the open response, or `off` to disable subtitles (default: `off`).
+
+**Response**:
+M3U8 text (`Content-Type: application/vnd.apple.mpegurl`).
+
+**Notes**:
+- Bitmap tracks use HLS burn-in; text tracks use their subtitle URLs.
+- `Cache-Control: private, max-age=300`.
+
+**Errors**:
+- `400 INVALID` if a track selection is invalid or unsupported.
+- `404 NOT_FOUND` if the resource is missing or inaccessible.
+- `409 CONFLICT` if the source generation changed.
+- `410 EXPIRED` if the player expired.
+- `503 UNAVAILABLE` if the player service is unavailable.
+
+---
+
+### GET /api/player/media/{resource}/segments/{index}.ts
+**Purpose**: Deliver an MPEG-TS segment for the selected tracks.
+
+**Path Parameters**:
+- `resource` = Playback resource ID.
+- `index` = Zero-based index of a six-second segment.
+
+**Query Parameters**:
+- `audio` = Absolute audio stream index, or `auto` (default: `auto`).
+- `subtitle` = Subtitle ID from the open response, or `off` (default: `off`).
+
+**Response**:
+MPEG-TS bytes (`Content-Type: video/mpegts`).
+
+**Notes**:
+- `Cache-Control: private, max-age=300`.
+
+**Errors**:
+- `400 INVALID` if a track selection is invalid or unsupported.
+- `404 NOT_FOUND` if the resource is missing, inaccessible or the index is outside the media duration.
+- `409 CONFLICT` if the source generation changed.
+- `410 EXPIRED` if the player expired.
+- `503 UNAVAILABLE` if FFmpeg or the service is unavailable, or the server is busy.
+- `502 INTERNAL_ERROR` if encoding fails.
+
+---
+
+### GET /api/player/media/{resource}/subtitles/{track}
+**Purpose**: Deliver an external or embedded text subtitle track.
+
+**Path Parameters**:
+- `resource` = Playback resource ID.
+- `track` = Subtitle ID from the open response.
+
+**Response**:
+- `text/vtt` for native text tracks.
+- `text/x-ssa` for ASS tracks.
+
+**Notes**:
+- SRT tracks are delivered as WebVTT.
+- `Cache-Control: private, max-age=300`.
+
+**Errors**:
+- `400 INVALID` if the track cannot be delivered as text or exceeds the size limit.
+- `404 NOT_FOUND` if the resource or track is missing or inaccessible.
+- `409 CONFLICT` if the source generation changed.
+- `410 EXPIRED` if the player expired.
+- `503 UNAVAILABLE` if FFmpeg or the service is unavailable, or the server is busy.
+- `502 INTERNAL_ERROR` if extraction fails.
+
+---
+
+### GET /api/player/media/{resource}/fonts/{font}
+**Purpose**: Deliver an embedded font for ASS subtitle rendering.
+
+**Path Parameters**:
+- `resource` = Playback resource ID.
+- `font` = Font ID from the open response.
+
+**Response**:
+Font bytes (`Content-Type: font/ttf`). The `X-YTP-Font` response header contains:
+```json
+{
+  "families": ["Example Font"],
+  "weight": "400",
+  "style": "normal"
+}
+```
+
+**Notes**:
+- `Cache-Control: private, max-age=300`.
+
+**Errors**:
+- `404 NOT_FOUND` if the resource or font is missing or inaccessible.
+- `409 CONFLICT` if the source generation changed.
+- `410 EXPIRED` if the player expired.
+- `503 UNAVAILABLE` if FFmpeg or the service is unavailable, or the server is busy.
+- `502 INTERNAL_ERROR` if extraction or font metadata parsing fails.
 
 ---
 

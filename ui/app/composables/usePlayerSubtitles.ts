@@ -7,8 +7,9 @@ import {
   type MaybeRefOrGetter,
   toValue,
 } from 'vue';
-import type { SubtitleManifestResponse, SubtitleTrack } from '~/types/subtitles';
-import { parse_api_error, request } from '~/utils';
+import type { SubtitleTrack } from '~/types/subtitles';
+import { request } from '~/utils';
+import { loadPlayerFonts, type PlayerFont } from '~/utils/playback';
 
 type AssRendererInstance = {
   destroy(): unknown;
@@ -22,19 +23,22 @@ type AssRendererConstructor = new (
 ) => AssRendererInstance;
 
 type UsePlayerSubtitlesOptions = {
-  manifestUrl: MaybeRefOrGetter<string>;
-  isVideo: MaybeRefOrGetter<boolean>;
   canPlay: MaybeRefOrGetter<boolean>;
   shouldRender: MaybeRefOrGetter<boolean>;
   assLayoutVersion?: MaybeRefOrGetter<number>;
   video: MaybeRefOrGetter<HTMLVideoElement | null>;
   overlay: MaybeRefOrGetter<HTMLElement | null>;
-  fetchText?: (url: string) => Promise<string>;
+  tracks: MaybeRefOrGetter<SubtitleTrack[]>;
+  fonts?: MaybeRefOrGetter<PlayerFont[]>;
+  fetchText?: (url: string, signal?: AbortSignal) => Promise<string>;
   loadRenderer?: () => Promise<AssRendererConstructor>;
 };
 
-async function defaultFetchSubtitleText(url: string): Promise<string> {
-  const res = await request(url, { headers: { Accept: 'text/plain, text/vtt, text/x-ssa' } });
+async function defaultFetchSubtitleText(url: string, signal?: AbortSignal): Promise<string> {
+  const res = await request(url, {
+    signal,
+    headers: { Accept: 'text/plain, text/vtt, text/x-ssa' },
+  });
   if (!res.ok) {
     throw new Error('Subtitle fetch failed');
   }
@@ -51,12 +55,11 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
   const fetchText = options.fetchText || defaultFetchSubtitleText;
   const loadRenderer = options.loadRenderer || defaultLoadAssRenderer;
   const tracks = ref<SubtitleTrack[]>([]);
-  const subtitleLoading = ref(false);
   const subtitleLoadError = ref('');
   const subtitleEnabled = ref(true);
   const selectedTrackId = ref<string | null>(null);
   const selectedTrack = computed(
-    () => tracks.value.find((track) => track.url === selectedTrackId.value) || null,
+    () => tracks.value.find((track) => track.id === selectedTrackId.value) || null,
   );
   const nativeSubtitleTrack = computed(() => {
     const track = selectedTrack.value;
@@ -66,63 +69,27 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
   const hasSubtitles = computed(() => tracks.value.length > 0);
 
   let assRenderer: AssRendererInstance | null = null;
-  let subtitleRequestId = 0;
   let assRequestId = 0;
   let cachedAssSubtitleUrl = '';
   let cachedAssSubtitleContent = '';
+  let assAbort: AbortController | null = null;
+  let releaseFonts: (() => void) | null = null;
 
   function destroyAssRenderer() {
     assRenderer?.destroy();
     assRenderer = null;
+    releaseFonts?.();
+    releaseFonts = null;
   }
 
-  async function loadTracks() {
-    const manifestUrl = toValue(options.manifestUrl);
-    const isVideo = toValue(options.isVideo);
-    const canPlay = toValue(options.canPlay);
-    const requestId = ++subtitleRequestId;
-
+  function syncTracks() {
     assRequestId += 1;
+    assAbort?.abort();
     destroyAssRenderer();
-    tracks.value = [];
-    selectedTrackId.value = null;
+    tracks.value = toValue(options.canPlay) ? toValue(options.tracks) : [];
+    selectedTrackId.value =
+      tracks.value.find((track) => track.renderer !== 'unsupported')?.id || null;
     subtitleLoadError.value = '';
-
-    if (!manifestUrl || !isVideo || !canPlay) {
-      subtitleLoading.value = false;
-      return;
-    }
-
-    subtitleLoading.value = true;
-
-    try {
-      const res = await request(manifestUrl);
-      const payload = (await res.json()) as SubtitleManifestResponse | { error?: string };
-      if (!res.ok) {
-        throw new Error(await parse_api_error(payload));
-      }
-
-      if (requestId !== subtitleRequestId) {
-        return;
-      }
-
-      tracks.value = (payload as SubtitleManifestResponse).subtitles || [];
-      if (tracks.value.length > 0) {
-        selectedTrackId.value = tracks.value[0]?.url || null;
-        subtitleEnabled.value = true;
-      }
-    } catch {
-      if (requestId !== subtitleRequestId) {
-        return;
-      }
-
-      subtitleLoadError.value =
-        useNuxtApp().$i18n?.t('player.subtitleLoadFailed') ?? 'player.subtitleLoadFailed';
-    } finally {
-      if (requestId === subtitleRequestId) {
-        subtitleLoading.value = false;
-      }
-    }
   }
 
   async function syncAssRenderer() {
@@ -131,6 +98,9 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
     const video = toValue(options.video);
     const overlay = toValue(options.overlay);
     const requestId = ++assRequestId;
+    assAbort?.abort();
+    const abort = new AbortController();
+    assAbort = abort;
 
     destroyAssRenderer();
 
@@ -147,7 +117,9 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
 
     try {
       const subtitleContent =
-        cachedAssSubtitleUrl === track.url ? cachedAssSubtitleContent : await fetchText(track.url);
+        cachedAssSubtitleUrl === track.url
+          ? cachedAssSubtitleContent
+          : await fetchText(track.url, abort.signal);
       if (requestId !== assRequestId) {
         return;
       }
@@ -161,6 +133,15 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
       if (requestId !== assRequestId) {
         return;
       }
+      const release = await loadPlayerFonts(
+        options.fonts ? toValue(options.fonts) : [],
+        abort.signal,
+      );
+      if (requestId !== assRequestId) {
+        release();
+        return;
+      }
+      releaseFonts = release;
 
       assRenderer = new Ass(subtitleContent, video, {
         container: overlay,
@@ -176,19 +157,12 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
       if (requestId === assRequestId) {
         subtitleLoadError.value =
           useNuxtApp().$i18n?.t('player.subtitleRenderFailed') ?? 'player.subtitleRenderFailed';
+        destroyAssRenderer();
       }
-
-      destroyAssRenderer();
     }
   }
 
-  watch(
-    () => [toValue(options.manifestUrl), toValue(options.isVideo), toValue(options.canPlay)],
-    () => {
-      void loadTracks();
-    },
-    { immediate: true },
-  );
+  watch(() => [toValue(options.canPlay), toValue(options.tracks)], syncTracks, { immediate: true });
 
   watch(
     () => [
@@ -209,13 +183,13 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
   if (getCurrentScope()) {
     onScopeDispose(() => {
       assRequestId += 1;
+      assAbort?.abort();
       destroyAssRenderer();
     });
   }
 
   return {
     subtitleTracks: tracks,
-    subtitleLoading,
     subtitleLoadError,
     subtitleEnabled,
     selectedSubtitleTrack: selectedTrack,
@@ -223,6 +197,5 @@ export function usePlayerSubtitles(options: UsePlayerSubtitlesOptions) {
     nativeSubtitleTrack,
     usesAssSubtitleTrack: usesAssTrack,
     hasSubtitles,
-    loadSelectedSubtitles: loadTracks,
   };
 }

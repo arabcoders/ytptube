@@ -37,15 +37,35 @@ type UsePlayerShortcutsOptions = {
   toggleFullscreen: () => Promise<void> | void;
   toggleMute?: () => void;
   closePlayer?: () => void;
+  container?: MaybeRefOrGetter<HTMLElement | null>;
 };
+
+const owners = new Set<symbol>();
 
 export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
   const showHelp = options.helpOpen || ref(false);
+  const owner = Symbol('player');
 
   async function handleKeyDown(event: KeyboardEvent) {
-    if (!toValue(options.enabled) || !shouldHandleKeyboardShortcut(event)) {
+    if (
+      !toValue(options.enabled) ||
+      Array.from(owners).at(-1) !== owner ||
+      document.visibilityState === 'hidden' ||
+      !shouldHandleKeyboardShortcut(event)
+    ) {
       return;
     }
+    const container = options.container ? toValue(options.container) : null;
+    if (
+      container &&
+      (!container.isConnected ||
+        !container.getClientRects().length ||
+        container.closest('[hidden],[inert],[aria-hidden="true"]'))
+    )
+      return;
+    const focus = document.activeElement;
+    if (container && focus && focus !== document.body && !container.contains(focus)) return;
+    if (showHelp.value && event.key.toLowerCase() !== 'escape') return;
 
     const media = toValue(options.media);
     if (!media) {
@@ -205,14 +225,18 @@ export function usePlayerShortcuts(options: UsePlayerShortcutsOptions) {
   watch(
     () => toValue(options.enabled),
     (enabled) => {
+      if (enabled) owners.add(owner);
+      else owners.delete(owner);
       if (!enabled) {
         showHelp.value = false;
       }
     },
+    { immediate: true },
   );
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
+      owners.delete(owner);
       document.removeEventListener('keydown', handleKeyDown, { capture: true });
     });
   }
