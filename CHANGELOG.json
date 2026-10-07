@@ -1,9 +1,23 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "80d9a8f395bcbfa163e2b5675a4d9a50de64d8e2",
-    "date": "2026-10-06T15:38:38+00:00",
+    "full_sha": "f71bb235b56f4062e995d2233d130110990b659d",
+    "date": "2026-10-07T20:19:35+00:00",
     "commits": [
+      {
+        "sha": "f71bb235",
+        "full_sha": "f71bb235b56f4062e995d2233d130110990b659d",
+        "message": "refactor: improve the video player.",
+        "author": "arabcoders",
+        "date": "2026-10-07T20:19:35+00:00"
+      },
+      {
+        "sha": "dfd45aaf",
+        "full_sha": "dfd45aaf0de51f9dce2ff371098835f6e3c1720e",
+        "message": "refactor: glassify some elements",
+        "author": "arabcoders",
+        "date": "2026-10-07T16:29:08+00:00"
+      },
       {
         "sha": "80d9a8f3",
         "full_sha": "80d9a8f395bcbfa163e2b5675a4d9a50de64d8e2",
