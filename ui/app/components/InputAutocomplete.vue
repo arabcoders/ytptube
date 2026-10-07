@@ -26,7 +26,7 @@
     <div
       v-if="showList && filteredOptions.length"
       ref="dropdownRef"
-      class="absolute inset-x-0 z-20 max-h-40 overflow-y-auto rounded-md ytp-floating-surface"
+      class="absolute inset-x-0 z-20 max-h-40 overflow-y-auto rounded-md bg-elevated/80 dark:bg-elevated/30 ytp-floating-surface"
       :class="preferUp ? 'bottom-full mb-1' : 'top-full mt-1'"
       dir="ltr"
       role="menu"
@@ -60,6 +60,8 @@
 import { ref, watch, computed, nextTick, toRefs } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
+
+const OPTION_LIMIT = 10;
 
 const props = withDefaults(
   defineProps<{
@@ -150,12 +152,12 @@ const updateCaretFromInput = () => {
 const filteredOptions = computed(() => {
   const value = model.value || '';
   if (!value) {
-    return props.options;
+    return props.options.slice(0, OPTION_LIMIT);
   }
 
   const { token } = getCurrentToken(value);
   if (openOnFocus.value && !token) {
-    return props.options;
+    return props.options.slice(0, OPTION_LIMIT);
   }
   if (!token || token.includes('=')) {
     return [];
@@ -202,7 +204,7 @@ const filteredOptions = computed(() => {
     }
   }
 
-  return [...startsWithFlag, ...includesFlag, ...includesDesc];
+  return [...startsWithFlag, ...includesFlag, ...includesDesc].slice(0, OPTION_LIMIT);
 });
 
 const isFlagTrigger = computed(() => {

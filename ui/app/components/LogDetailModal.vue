@@ -3,7 +3,7 @@
     :open="open"
     :title="t('common.logDetails')"
     :ui="{
-      content: 'max-w-5xl',
+      content: 'max-w-5xl bg-default/80 dark:bg-default/80 backdrop-blur-md',
       body: 'max-h-[75vh] overflow-y-auto',
     }"
     @update:open="emit('update:modelValue', $event)"

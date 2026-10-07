@@ -1,10 +1,19 @@
 <template>
-  <UPopover :content="{ align: 'end', side: 'bottom', sideOffset: 8 }">
-    <UButton color="neutral" variant="ghost" size="sm">
+  <UPopover
+    :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
+    :ui="{ content: 'bg-elevated/80 dark:bg-elevated/30 backdrop-blur-md ring-0' }"
+  >
+    <UButton
+      color="neutral"
+      variant="ghost"
+      size="sm"
+      :aria-label="t('common.notifications')"
+      :title="t('common.notifications')"
+    >
       <template #leading>
         <UIcon name="i-lucide-bell" class="size-4" />
       </template>
-      <span class="hidden sm:inline">{{ t('common.notifications') }}</span>
+      <span class="hidden xl:inline">{{ t('common.notifications') }}</span>
       <template #trailing>
         <UBadge :color="severityTone" variant="soft" size="sm"
           >{{ store.unreadCount }}/{{ store.notifications.length }}</UBadge
@@ -16,6 +25,7 @@
       <UCard
         class="w-md max-w-[calc(100vw-1rem)]"
         :ui="{
+          root: 'bg-transparent shadow-none ring-0',
           header: 'flex items-center justify-between gap-3',
           body: 'sm:p-2 p-0',
           footer: 'flex justify-end gap-2',
@@ -69,7 +79,7 @@
                   :icon="notificationIcon(item.level)"
                   :title="item.message"
                   :ui="{
-                    root: 'select-none rounded-none border border-default border-s-4 bg-default px-3 py-2 transition-colors hover:bg-muted/40',
+                    root: 'select-none rounded-none border border-default border-s-4 bg-transparent px-3 py-2 text-default ring-0 transition-colors hover:bg-elevated/20',
                     icon: 'size-4 mt-0.5',
                     title:
                       expandedId === item.id
@@ -213,7 +223,7 @@ const notificationIcon = (level: notificationType): string => {
 };
 
 const notificationAlertClass = (level: notificationType, id: string): string => {
-  const selectedClass = expandedId.value === id ? 'bg-muted/55 ring-1 ring-inset ring-default' : '';
+  const selectedClass = expandedId.value === id ? 'bg-elevated/20' : '';
 
   switch (level) {
     case 'error':

@@ -248,6 +248,9 @@
                       <UPopover
                         v-if="show_popover"
                         :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
+                        :ui="{
+                          content: 'bg-default/80 dark:bg-default/80 backdrop-blur-md ring-0',
+                        }"
                       >
                         <UButton
                           color="neutral"
@@ -258,7 +261,13 @@
                         />
 
                         <template #content>
-                          <UCard class="max-w-112.5" :ui="{ body: 'space-y-3 p-4' }">
+                          <UCard
+                            class="max-w-112.5"
+                            :ui="{
+                              root: 'bg-transparent ring-0 shadow-none',
+                              body: 'space-y-3 p-4',
+                            }"
+                          >
                             <div class="space-y-2">
                               <div class="flex flex-wrap items-center gap-2">
                                 <p class="text-sm font-semibold text-highlighted">
@@ -476,6 +485,7 @@
                   <UPopover
                     v-if="show_popover && (getItemPath(item) || getItemTaskUrl(item))"
                     :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
+                    :ui="{ content: 'bg-default/80 dark:bg-default/80 backdrop-blur-md ring-0' }"
                   >
                     <UButton
                       color="neutral"
@@ -486,7 +496,10 @@
                     />
 
                     <template #content>
-                      <UCard class="max-w-137.5" :ui="{ body: 'space-y-3 p-4' }">
+                      <UCard
+                        class="max-w-137.5"
+                        :ui="{ root: 'bg-transparent ring-0 shadow-none', body: 'space-y-3 p-4' }"
+                      >
                         <div class="space-y-2">
                           <p class="text-sm font-semibold text-highlighted">{{ item.title }}</p>
                           <p
