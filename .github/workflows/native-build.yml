@@ -38,7 +38,7 @@ jobs:
 
     env:
       PYTHON_VERSION: "3.13"
-      BUN_VERSION: latest
+      BUN_VERSION: "1.4.2"
       NODE_VERSION: 22
       TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
 

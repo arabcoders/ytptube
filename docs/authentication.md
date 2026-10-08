@@ -21,7 +21,7 @@ external_user = "owner"
 issuer = "https://id.example.org"
 client_id = "ytptube"
 client_secret = "client-secret"
-redirect_uri = "https://ytp.example.org/ytptube/api/auth/oidc/callback"
+redirect_uri = "https://ytp.example.org/api/auth/oidc/callback"
 
 [auth.remote_user]
 enabled = true
@@ -32,6 +32,9 @@ trusted_proxies = ["10.0.0.10", "2001:db8::10/128"]
 > [!IMPORTANT]
 > The redirect URI must exactly match the URI registered with the OIDC provider, including its scheme, host, port where
 > applicable, path, and deployment prefix or base path.
+
+For a deployment under a URL prefix, add that prefix before `/api/auth/oidc/callback`. For example, an instance served at
+`https://foo.example.org/ytptube/` uses `https://foo.example.org/ytptube/api/auth/oidc/callback`.
 
 Register the redirect URI with the OIDC provider. OIDC uses provider discovery, authorization code flow, and PKCE. Start at
 `GET /api/auth/oidc/login`; the provider returns to `GET /api/auth/oidc/callback`.

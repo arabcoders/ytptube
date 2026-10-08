@@ -29,7 +29,7 @@ env:
   BUILD_ARM64: ${{ vars.BUILD_ARM64 != 'false' && 'true' || 'false' }}
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
-  BUN_VERSION: latest
+  BUN_VERSION: "1.4.2"
   NODE_VERSION: 22
   PYTHON_VERSION: "3.13"
 

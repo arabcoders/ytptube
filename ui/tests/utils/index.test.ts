@@ -356,11 +356,6 @@ describe('data conversion helpers', () => {
     expect(url).toBe('/base-path/api/download/music/song.mp3');
   });
 
-  it('build_m3u8_url', () => {
-    const url = utils.makeDownload({}, { filename: 'playlist' }, 'm3u8');
-    expect(url).toBe('/base-path/api/player/m3u8/video/playlist.m3u8');
-  });
-
   it('detect_download_skipped', () => {
     expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: true } as any)).toBe(
       true,

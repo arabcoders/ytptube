@@ -1,59 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
-import { nextTick, ref } from 'vue';
-
-type MockResponseInput = {
-  ok: boolean;
-  status: number;
-  jsonData?: unknown;
-  textData?: string;
-};
-
-const runtimeConfig = {
-  app: {
-    baseURL: '/',
-  },
-};
-
-const testGlobals = globalThis as typeof globalThis & {
-  useRuntimeConfig?: () => typeof runtimeConfig;
-  useNotification?: () => { error: ReturnType<typeof mock> };
-};
-
-const notificationErrorMock = mock(() => {});
-
-testGlobals.useRuntimeConfig = () => runtimeConfig;
-testGlobals.useNotification = () => ({ error: notificationErrorMock });
-
-mock.module('#imports', () => ({
-  useRuntimeConfig: () => runtimeConfig,
-  useNotification: () => ({ error: notificationErrorMock }),
-}));
-
-function createMockResponse({ ok, status, jsonData, textData }: MockResponseInput): Response {
-  return {
-    ok,
-    status,
-    headers: new Headers({ 'Content-Type': 'application/json' }),
-    redirected: false,
-    statusText: ok ? 'OK' : 'Error',
-    type: 'basic',
-    url: '',
-    body: null,
-    bodyUsed: false,
-    clone() {
-      return this;
-    },
-    async json() {
-      return jsonData;
-    },
-    async text() {
-      return textData ?? JSON.stringify(jsonData ?? {});
-    },
-    arrayBuffer: async () => new ArrayBuffer(0),
-    blob: async () => new Blob(),
-    formData: async () => new FormData(),
-  } as Response;
-}
+import { effectScope, nextTick, ref } from 'vue';
+import type { SubtitleTrack } from '~/types/subtitles';
 
 async function flushPromises(times = 4) {
   for (let index = 0; index < times; index += 1) {
@@ -63,234 +10,189 @@ async function flushPromises(times = 4) {
 }
 
 describe('usePlayerSubtitles', () => {
-  const fetchMock = mock(async (_input: RequestInfo | URL) =>
-    createMockResponse({ ok: true, status: 200, jsonData: {} }),
-  );
+  const originalEvent = globalThis.Event;
   const assShowMock = mock(() => {});
   const assDestroyMock = mock(() => {});
-  const assConstructorMock = mock(() => ({
-    show: assShowMock,
-    destroy: assDestroyMock,
-  }));
+  const assConstructorMock = mock(() => {});
+  const styled: SubtitleTrack = {
+    id: 'e8',
+    lang: 'en',
+    name: 'Styled',
+    source_format: 'ass',
+    delivery_format: 'ass',
+    renderer: 'assjs',
+    url: '/api/player/media/resource/subtitles/e8',
+  };
+
+  class AssRenderer {
+    constructor() {
+      assConstructorMock();
+    }
+
+    show() {
+      assShowMock();
+    }
+
+    destroy() {
+      assDestroyMock();
+    }
+  }
 
   beforeEach(() => {
-    runtimeConfig.app.baseURL = '/';
-    fetchMock.mockClear();
+    globalThis.Event = window.Event;
     assShowMock.mockClear();
     assDestroyMock.mockClear();
     assConstructorMock.mockClear();
-    notificationErrorMock.mockClear();
-    globalThis.fetch = fetchMock as typeof fetch;
   });
 
   afterEach(() => {
-    delete (globalThis as { fetch?: typeof fetch }).fetch;
+    globalThis.Event = originalEvent;
+  });
+
+  it('ignore_stale_ass_error', async () => {
+    const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
+    const scope = effectScope();
+    let rejectFirst: (error: Error) => void = () => {};
+    const first = new Promise<string>((_resolve, reject) => {
+      rejectFirst = reject;
+    });
+    let firstSignal: AbortSignal | undefined;
+    const subtitles = scope.run(() =>
+      usePlayerSubtitles({
+        canPlay: true,
+        shouldRender: true,
+        tracks: [styled, { ...styled, id: 'e9', url: '/second.ass' }],
+        video: ref(document.createElement('video')),
+        overlay: ref(document.createElement('div')),
+        fetchText: (url, signal) => {
+          if (url === styled.url) {
+            firstSignal = signal;
+            return first;
+          }
+          return Promise.resolve('[Script Info]\nTitle: Second\n');
+        },
+        loadRenderer: async () => AssRenderer,
+      }),
+    )!;
+    try {
+      await flushPromises();
+      subtitles.selectedSubtitleTrackId.value = 'e9';
+      await flushPromises(8);
+      expect(firstSignal?.aborted).toBe(true);
+      expect(assShowMock).toHaveBeenCalledTimes(1);
+      const destroyed = assDestroyMock.mock.calls.length;
+      rejectFirst(new Error('stale request'));
+      await flushPromises();
+      expect(assDestroyMock.mock.calls.length).toBe(destroyed);
+      expect(subtitles.subtitleLoadError.value).toBe('');
+    } finally {
+      rejectFirst(new Error('cleanup'));
+      scope.stop();
+      await flushPromises();
+    }
   });
 
   it('load_native_track', async () => {
-    fetchMock.mockResolvedValueOnce(
-      createMockResponse({
-        ok: true,
-        status: 200,
-        jsonData: {
-          subtitles: [
-            {
-              lang: 'en',
-              name: 'English',
-              source_format: 'vtt',
-              delivery_format: 'vtt',
-              renderer: 'native',
-              url: '/api/player/subtitles/vtt/video.vtt',
-            },
-            {
-              lang: 'en',
-              name: 'Styled',
-              source_format: 'ass',
-              delivery_format: 'ass',
-              renderer: 'assjs',
-              url: '/api/player/subtitles/ass/video.ass',
-            },
-          ],
-        },
-      }),
-    );
-
     const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
-    const manifestUrl = ref('/api/player/subtitles/manifest/video%20file.mkv');
-    const isVideo = ref(true);
-    const canPlay = ref(true);
-    const shouldRender = ref(false);
-    const video = ref<HTMLVideoElement | null>(document.createElement('video'));
-    const overlay = ref<HTMLElement | null>(document.createElement('div'));
-
-    const { hasSubtitles, nativeSubtitleTrack, selectedSubtitleTrack, usesAssSubtitleTrack } =
+    const scope = effectScope();
+    const native: SubtitleTrack = {
+      id: 'x0',
+      lang: 'en',
+      name: 'English',
+      source_format: 'vtt',
+      delivery_format: 'vtt',
+      renderer: 'native',
+      url: '/api/player/media/resource/subtitles/x0',
+    };
+    const tracks = ref<SubtitleTrack[]>([]);
+    const subtitles = scope.run(() =>
       usePlayerSubtitles({
-        manifestUrl,
-        isVideo,
-        canPlay,
-        shouldRender,
-        video,
-        overlay,
-      });
-
-    await flushPromises();
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/player/subtitles/manifest/video%20file.mkv',
-      expect.anything(),
-    );
-    expect(hasSubtitles.value).toBe(true);
-    expect(selectedSubtitleTrack.value?.source_format).toBe('vtt');
-    expect(nativeSubtitleTrack.value?.url).toBe('/api/player/subtitles/vtt/video.vtt');
-    expect(usesAssSubtitleTrack.value).toBe(false);
-  });
-
-  it('keep_manifest_path', async () => {
-    fetchMock.mockResolvedValueOnce(
-      createMockResponse({
-        ok: true,
-        status: 200,
-        jsonData: { subtitles: [] },
+        tracks,
+        canPlay: true,
+        shouldRender: false,
+        video: ref(document.createElement('video')),
+        overlay: ref(document.createElement('div')),
       }),
-    );
-
-    const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
-
-    usePlayerSubtitles({
-      manifestUrl: ref(
-        '/api/player/subtitles/manifest/youtube/Channel%20Name/Season%202026/video%20file.mkv',
-      ),
-      isVideo: ref(true),
-      canPlay: ref(true),
-      shouldRender: ref(false),
-      video: ref<HTMLVideoElement | null>(document.createElement('video')),
-      overlay: ref<HTMLElement | null>(document.createElement('div')),
-    });
-
-    await flushPromises();
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/player/subtitles/manifest/youtube/Channel%20Name/Season%202026/video%20file.mkv',
-      expect.anything(),
-    );
+    )!;
+    try {
+      expect(subtitles.hasSubtitles.value).toBe(false);
+      tracks.value = [native, styled];
+      await flushPromises();
+      expect(subtitles.hasSubtitles.value).toBe(true);
+      expect(subtitles.selectedSubtitleTrack.value?.source_format).toBe('vtt');
+      expect(subtitles.nativeSubtitleTrack.value?.url).toBe(native.url);
+      expect(subtitles.usesAssSubtitleTrack.value).toBe(false);
+    } finally {
+      scope.stop();
+    }
   });
 
   it('mount_ass_renderer', async () => {
-    fetchMock.mockResolvedValueOnce(
-      createMockResponse({
-        ok: true,
-        status: 200,
-        jsonData: {
-          subtitles: [
-            {
-              lang: 'en',
-              name: 'Styled',
-              source_format: 'ass',
-              delivery_format: 'ass',
-              renderer: 'assjs',
-              url: '/api/player/subtitles/ass/video.ass',
-            },
-          ],
-        },
-      }),
-    );
-
-    const fetchText = mock(async () => '[Script Info]\nTitle: Demo\n');
-    const loadRenderer = mock(async () => assConstructorMock as any);
-
     const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
-    const manifestUrl = ref('/api/player/subtitles/manifest/video.mkv');
-    const isVideo = ref(true);
-    const canPlay = ref(true);
+    const scope = effectScope();
+    const tracks = ref<SubtitleTrack[]>([styled]);
     const shouldRender = ref(false);
-    const video = ref<HTMLVideoElement | null>(document.createElement('video'));
-    const overlay = ref<HTMLElement | null>(document.createElement('div'));
-
-    const { usesAssSubtitleTrack } = usePlayerSubtitles({
-      manifestUrl,
-      isVideo,
-      canPlay,
-      shouldRender,
-      video,
-      overlay,
-      fetchText,
-      loadRenderer,
-    });
-
-    await flushPromises();
-
-    expect(usesAssSubtitleTrack.value).toBe(true);
-    expect(assConstructorMock).not.toHaveBeenCalled();
-
-    shouldRender.value = true;
-    await flushPromises(5);
-
-    expect(fetchText).toHaveBeenCalledWith('/api/player/subtitles/ass/video.ass');
-    expect(loadRenderer).toHaveBeenCalledTimes(1);
-    expect(assConstructorMock).toHaveBeenCalledTimes(1);
-    expect(assShowMock).toHaveBeenCalledTimes(1);
-
-    manifestUrl.value = '/api/player/subtitles/manifest/second.mkv';
-    fetchMock.mockResolvedValueOnce(
-      createMockResponse({
-        ok: true,
-        status: 200,
-        jsonData: { subtitles: [] },
+    const fetchText = mock(async () => '[Script Info]\nTitle: Demo\n');
+    const loadRenderer = mock(async () => AssRenderer);
+    const subtitles = scope.run(() =>
+      usePlayerSubtitles({
+        tracks,
+        canPlay: true,
+        shouldRender,
+        video: ref(document.createElement('video')),
+        overlay: ref(document.createElement('div')),
+        fetchText,
+        loadRenderer,
       }),
-    );
-    await flushPromises();
-
-    expect(assDestroyMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+    )!;
+    try {
+      await flushPromises();
+      expect(subtitles.usesAssSubtitleTrack.value).toBe(true);
+      expect(assConstructorMock).not.toHaveBeenCalled();
+      shouldRender.value = true;
+      await flushPromises(5);
+      expect(fetchText).toHaveBeenCalledWith(styled.url, expect.any(AbortSignal));
+      expect(loadRenderer).toHaveBeenCalledTimes(1);
+      expect(assConstructorMock).toHaveBeenCalledTimes(1);
+      expect(assShowMock).toHaveBeenCalledTimes(1);
+      tracks.value = [];
+      await flushPromises();
+      expect(assDestroyMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+      expect(subtitles.hasSubtitles.value).toBe(false);
+    } finally {
+      scope.stop();
+    }
   });
 
   it('remount_on_layout_change', async () => {
-    fetchMock.mockResolvedValueOnce(
-      createMockResponse({
-        ok: true,
-        status: 200,
-        jsonData: {
-          subtitles: [
-            {
-              lang: 'en',
-              name: 'Styled',
-              source_format: 'ass',
-              delivery_format: 'ass',
-              renderer: 'assjs',
-              url: '/api/player/subtitles/ass/video.ass',
-            },
-          ],
-        },
+    const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
+    const scope = effectScope();
+    const fetchText = mock(async () => '[Script Info]\nTitle: Demo\n');
+    const loadRenderer = mock(async () => AssRenderer);
+    const assLayoutVersion = ref(0);
+    scope.run(() =>
+      usePlayerSubtitles({
+        tracks: [styled],
+        canPlay: true,
+        shouldRender: true,
+        assLayoutVersion,
+        video: ref(document.createElement('video')),
+        overlay: ref(document.createElement('div')),
+        fetchText,
+        loadRenderer,
       }),
     );
-
-    const fetchText = mock(async () => '[Script Info]\nTitle: Demo\n');
-    const loadRenderer = mock(async () => assConstructorMock as any);
-
-    const { usePlayerSubtitles } = await import('~/composables/usePlayerSubtitles');
-    const assLayoutVersion = ref(0);
-
-    usePlayerSubtitles({
-      manifestUrl: ref('/api/player/subtitles/manifest/video.mkv'),
-      isVideo: ref(true),
-      canPlay: ref(true),
-      shouldRender: ref(true),
-      assLayoutVersion,
-      video: ref<HTMLVideoElement | null>(document.createElement('video')),
-      overlay: ref<HTMLElement | null>(document.createElement('div')),
-      fetchText,
-      loadRenderer,
-    });
-
-    await flushPromises(5);
-
-    expect(fetchText).toHaveBeenCalledTimes(1);
-    expect(assConstructorMock).toHaveBeenCalledTimes(1);
-
-    assLayoutVersion.value += 1;
-    await flushPromises(5);
-
-    expect(fetchText).toHaveBeenCalledTimes(1);
-    expect(assDestroyMock.mock.calls.length).toBeGreaterThanOrEqual(1);
-    expect(assConstructorMock).toHaveBeenCalledTimes(2);
+    try {
+      await flushPromises(5);
+      expect(fetchText).toHaveBeenCalledTimes(1);
+      expect(assConstructorMock).toHaveBeenCalledTimes(1);
+      assLayoutVersion.value += 1;
+      await flushPromises(5);
+      expect(fetchText).toHaveBeenCalledTimes(1);
+      expect(assDestroyMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+      expect(assConstructorMock).toHaveBeenCalledTimes(2);
+    } finally {
+      scope.stop();
+    }
   });
 });

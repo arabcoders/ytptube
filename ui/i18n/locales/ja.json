@@ -64,7 +64,7 @@
     "reset": "リセット",
     "retry": "再試行",
     "retryCount": "{count}回再試行",
-    "loading": "読み込み中…",
+    "loading": "読み込み中...",
     "unknownError": "不明なエラーが発生しました。",
     "unknown": "不明",
     "noResults": "結果なし",
@@ -1320,6 +1320,15 @@
     }
   },
   "player": {
+    "audio": "音声",
+    "browserAudio": "ブラウザーが選択した音声（直接再生）",
+    "burnIn": "焼き込み",
+    "preparing": "再生を準備中...",
+    "preparationFailed": "再生を準備できませんでした。プレーヤーを開き直してください。",
+    "playFailed": "再生が開始されませんでした。再生ボタンを押して再試行してください。",
+    "playbackFailed": "再生に失敗しました。",
+    "hlsUnsupported": "このブラウザーはHLS再生をサポートしていません。",
+    "sessionExpired": "プレーヤーのセッションを更新できませんでした。プレーヤーを開き直してください。",
     "subtitleLoadFailed": "この動画の字幕の読み込みに失敗しました。",
     "subtitleRenderFailed": "ブラウザで ASS 字幕のレンダリングに失敗しました。"
   }

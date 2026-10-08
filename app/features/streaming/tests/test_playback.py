@@ -12,7 +12,7 @@ from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
 
 from app.features.auth.middleware import AUTH_USER_KEY, auth_middleware
 from app.features.auth.service import AuthService
-from app.features.streaming.playback import playback_get, playback_put
+from app.features.streaming.router import playback_get, playback_put
 from app.library.cache import Cache, JsonPersistence
 from app.library.config import Config, ExternalAuthConfig, RemoteUserConfig
 from app.library.router import RouteType, get_routes

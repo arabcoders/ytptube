@@ -151,7 +151,10 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-end gap-2 xl:self-end">
-              <UPopover :content="{ side: 'top', align: 'end', sideOffset: 8 }">
+              <UPopover
+                :content="{ side: 'top', align: 'end', sideOffset: 8 }"
+                :ui="{ content: 'bg-elevated/80 dark:bg-elevated/30 backdrop-blur-md ring-0' }"
+              >
                 <UButton
                   color="neutral"
                   variant="outline"
@@ -164,11 +167,7 @@
                 </UButton>
 
                 <template #content>
-                  <UCard
-                    class="w-[min(92vw,42rem)] border border-default/70 shadow-sm"
-                    dir="ltr"
-                    :ui="historyCardUi"
-                  >
+                  <UCard class="w-[min(92vw,42rem)]" dir="ltr" :ui="historyCardUi">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                       <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
                         <UIcon name="i-lucide-history" class="size-4 text-toned" />
@@ -197,7 +196,7 @@
 
                     <div
                       v-else
-                      class="max-h-96 w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
+                      class="max-h-96 w-full min-w-0 max-w-full overflow-hidden ytp-table-surface bg-transparent"
                     >
                       <div class="w-full max-w-full overflow-auto overscroll-contain">
                         <table class="w-full text-sm">
@@ -205,7 +204,7 @@
                             <tr
                               v-for="item in recentSessionEntries"
                               :key="item.sessionId"
-                              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
+                              class="transition-colors hover:bg-elevated/20 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
                             >
                               <td class="px-3 py-3 align-middle">
                                 <div class="space-y-2">
@@ -423,6 +422,7 @@ const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(nu
 const storedCommand = useStorage<string>('console_command', '');
 
 const historyCardUi = {
+  root: 'bg-transparent ring-0 shadow-none',
   body: 'space-y-3 p-4',
 };
 

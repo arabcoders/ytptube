@@ -35,7 +35,7 @@
 
     <div
       v-if="showList && filteredOptions.length"
-      class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md ytp-floating-surface"
+      class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md bg-elevated/80 dark:bg-elevated/30 ytp-floating-surface"
       dir="ltr"
       role="menu"
     >
@@ -63,6 +63,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
+
+const OPTION_LIMIT = 10;
 
 const props = withDefaults(
   defineProps<{
@@ -134,7 +136,7 @@ const filteredOptions = computed(() => {
       includesDesc.push(opt);
     }
   }
-  return [...startsWithFlag, ...includesFlag, ...includesDesc];
+  return [...startsWithFlag, ...includesFlag, ...includesDesc].slice(0, OPTION_LIMIT);
 });
 
 const appendFlag = (flag: string) => {

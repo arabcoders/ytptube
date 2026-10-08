@@ -152,6 +152,7 @@
                       <span class="hidden xl:inline">{{ t('common.reconnect') }}</span>
                     </UButton>
                     <NotifyDropdown />
+                    <ThemeButton square :show-label="false" />
 
                     <UButton
                       color="neutral"
@@ -407,7 +408,10 @@
             :groups="routeSearchGroups"
             shortcut="meta_k"
             :placeholder="t('app.search')"
-            :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
+            :ui="{
+              modal:
+                'sm:max-w-3xl h-full sm:h-[28rem] bg-elevated/80 dark:bg-elevated/30 backdrop-blur-md',
+            }"
           />
 
           <AccountModal v-model:open="accountOpen" />
@@ -441,7 +445,7 @@ import {
 } from '~/utils/topLevelNavigation';
 
 const { t } = useI18n();
-const { isRtl, locale, locales, changeLocale } = useAppLocale();
+const { isRtl, locale } = useAppLocale();
 
 type SidebarSection = {
   id: string;
@@ -816,20 +820,6 @@ const routeSearchGroups = computed(() => [
       },
     ],
   },
-  {
-    id: 'language',
-    label: t('common.language'),
-    items: locales.value
-      .filter((entry) => typeof entry !== 'string')
-      .map((entry) => {
-        const obj = entry as { name: string; code: string };
-        return {
-          label: `(${String(obj.code).toUpperCase()}) ${obj.name}`,
-          icon: obj.code === locale.value ? 'i-lucide-check' : 'i-lucide-globe',
-          onSelect: () => void switchLanguage(obj.code),
-        };
-      }),
-  },
 ]);
 
 const closeRouteSearch = async (): Promise<void> => {
@@ -854,11 +844,6 @@ const resumeDownloads = async (): Promise<void> => {
 const openSettings = async (): Promise<void> => {
   await closeRouteSearch();
   root.value?.open();
-};
-
-const switchLanguage = async (code: string): Promise<void> => {
-  await closeRouteSearch();
-  await changeLocale(code);
 };
 
 const handleRouteSelect = async (item: NavItem) => {

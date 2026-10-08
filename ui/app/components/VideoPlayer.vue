@@ -4,8 +4,12 @@
   </div>
 
   <div v-else class="space-y-4">
+    <div v-if="loadingError || playbackError" class="ytp-card p-4 text-error" role="alert">
+      {{ loadingError || playbackError }}
+    </div>
     <div
       ref="playerContainer"
+      tabindex="-1"
       class="relative flex w-full overflow-hidden rounded-sm bg-black"
       :class="
         isFullscreen
@@ -15,6 +19,7 @@
     >
       <button
         v-if="!active"
+        :disabled="!canPlay || switching"
         type="button"
         class="group absolute inset-0 z-40 block overflow-hidden bg-black text-start"
         @click="activatePlayer"
@@ -35,9 +40,48 @@
         <div
           class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-black/20"
         />
+      </button>
+
+      <div
+        v-if="!active"
+        class="pointer-events-none absolute inset-0 z-50 flex min-h-0 flex-col justify-end gap-3 overflow-y-auto p-4 sm:p-6"
+      >
         <div
-          class="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-4 px-4 py-4 sm:px-6"
+          v-if="canPlay && ((session?.audio_tracks.length || 0) > 0 || hasSubtitles)"
+          class="ytp-card pointer-events-auto grid gap-3 p-4 backdrop-blur-xl sm:grid-cols-2"
         >
+          <UFormField
+            v-if="session?.audio_tracks.length"
+            :label="t('player.audio')"
+            class="min-w-0"
+          >
+            <USelect
+              v-model="audioValue"
+              :items="audioItems"
+              :disabled="switching"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-languages"
+              class="w-full"
+              :portal="helpPortal"
+              :ui="{ content: 'z-[70]' }"
+            />
+          </UFormField>
+          <UFormField v-if="hasSubtitles" :label="t('common.subtitles')" class="min-w-0">
+            <USelect
+              v-model="subtitleSelectValue"
+              :items="subtitleSelectItems"
+              :disabled="switching"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-captions"
+              class="w-full"
+              :portal="helpPortal"
+              :ui="{ content: 'z-[70]' }"
+            />
+          </UFormField>
+        </div>
+        <div class="flex items-center justify-between gap-4">
           <div class="min-w-0">
             <div class="text-xs uppercase tracking-[0.2em] text-white/70">
               {{ t('common.clickToPlay') }}
@@ -46,13 +90,19 @@
               {{ title || t('common.untitledMedia') }}
             </div>
           </div>
-          <div
-            class="flex size-16 shrink-0 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur ring-1 ring-white/25"
-          >
-            <UIcon name="i-lucide-play" class="ms-1 size-8" />
-          </div>
+          <UButton
+            color="neutral"
+            variant="soft"
+            size="xl"
+            icon="i-lucide-play"
+            class="pointer-events-auto shrink-0"
+            :loading="switching"
+            :disabled="!canPlay || switching"
+            :aria-label="t('common.playVideo')"
+            @click="activatePlayer"
+          />
         </div>
-      </button>
+      </div>
 
       <video
         ref="videoElement"
@@ -70,6 +120,11 @@
         @error="handleMediaError"
         @loadeddata="handleVideoLoadedData"
         @loadedmetadata="handleVideoLoadedMetadata"
+        @canplay="recordEvent('canplay')"
+        @waiting="recordEvent('waiting')"
+        @stalled="recordEvent('stalled')"
+        @seeking="recordEvent('seeking')"
+        @seeked="recordEvent('seeked')"
         @timeupdate="handleVideoTimeUpdate"
         @play="handleVideoPlay"
         @pause="handleVideoPause"
@@ -91,6 +146,7 @@
         />
         <track
           v-if="nativeSubtitleTrack && subtitleEnabled"
+          ref="nativeTrackElement"
           :key="nativeSubtitleTrack.url"
           kind="subtitles"
           :srclang="nativeSubtitleTrack.lang || 'und'"
@@ -174,7 +230,32 @@
                   />
                 </UTooltip>
                 <USelect
+                  v-if="(session?.audio_tracks.length || 0) > 1"
+                  v-model="audioValue"
+                  :items="audioItems"
+                  :disabled="switching"
+                  :portal="helpPortal"
+                  :aria-label="audioButtonLabel"
+                  size="sm"
+                  color="neutral"
+                  variant="soft"
+                  trailing-icon=""
+                  :content="subtitleSelectContent"
+                  :ui="subtitleSelectUi"
+                  class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+                >
+                  <template #default>
+                    <span class="sr-only">{{ audioButtonLabel }}</span>
+                    <UIcon
+                      :name="switching ? 'i-lucide-loader-circle' : 'i-lucide-languages'"
+                      class="size-4 shrink-0"
+                      :class="{ 'animate-spin': switching }"
+                    />
+                  </template>
+                </USelect>
+                <USelect
                   v-if="hasSubtitles"
+                  :disabled="switching"
                   v-model="subtitleSelectValue"
                   :items="subtitleSelectItems"
                   value-key="value"
@@ -236,7 +317,7 @@
                     variant="soft"
                     size="sm"
                     class="opacity-65 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-                    icon="i-lucide-circle-help"
+                    icon="i-lucide-keyboard"
                     :aria-label="t('common.shortcutsAria')"
                     @click="
                       () => {
@@ -245,108 +326,154 @@
                     "
                   />
                 </UTooltip>
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  icon="i-lucide-bug"
+                  aria-label="Playback diagnostics"
+                  @click="openDiagnostics"
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
+      <div
+        v-if="switching"
+        class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/40 text-white"
+        role="status"
+      >
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
+        <span class="ms-3">{{ t('player.preparing') }}</span>
+      </div>
     </div>
 
-    <div
-      v-if="subtitleLoading || subtitleLoadError"
-      class="flex flex-wrap items-center gap-3 text-sm"
-    >
-      <span v-if="subtitleLoading" class="text-toned">{{ t('common.lookingForSubtitles') }}</span>
-      <span v-else-if="subtitleLoadError" class="text-warning">{{ subtitleLoadError }}</span>
+    <div v-if="subtitleLoadError" class="flex flex-wrap items-center gap-3 text-sm">
+      <span class="text-warning">{{ subtitleLoadError }}</span>
     </div>
 
-    <UModal
-      v-model:open="showHelp"
-      :title="t('common.keyboardShortcuts')"
-      :portal="helpPortal"
-      :ui="{ content: 'sm:max-w-3xl' }"
-    >
-      <template #body>
-        <div class="grid gap-5 text-sm sm:grid-cols-2">
-          <div class="space-y-3">
-            <div class="font-semibold text-highlighted">{{ t('common.playbackHelp') }}</div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.playOrPause') }}</span>
-              <span class="text-muted">Space, K</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.back10Seconds') }}</span>
-              <span class="text-muted">J</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.forward10Seconds') }}</span>
-              <span class="text-muted">L</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.muteHelp') }}</span>
-              <span class="text-muted">M</span>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="font-semibold text-highlighted">{{ t('common.navigationHelp') }}</div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.back5Seconds') }}</span>
-              <span class="text-muted">Left</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.forward5Seconds') }}</span>
-              <span class="text-muted">Right</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.goToStartOrEnd') }}</span>
-              <span class="text-muted">Home, End</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.jumpThroughTimeline') }}</span>
-              <span class="text-muted">0-9</span>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="font-semibold text-highlighted">{{ t('common.volumeAndSpeedHelp') }}</div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.volumeUpOrDown') }}</span>
-              <span class="text-muted">Up, Down</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.fasterHelp') }}</span>
-              <span class="text-muted">'</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.slowerHelp') }}</span>
-              <span class="text-muted">;</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.stepFrameByFrame') }}</span>
-              <span class="text-muted">, .</span>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="font-semibold text-highlighted">{{ t('common.displayHelp') }}</div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.fullscreenHelp') }}</span>
-              <span class="text-muted">F</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.showOrHideSubtitles') }}</span>
-              <span class="text-muted">C</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.openThisHelp') }}</span>
-              <span class="text-muted">?, /</span>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ t('common.closeHelpOrPlayer') }}</span>
-              <span class="text-muted">Esc</span>
-            </div>
+    <Teleport :to="playerContainer || 'body'" :disabled="!playerContainer">
+      <section
+        v-if="showHelp"
+        tabindex="-1"
+        data-player-help
+        role="dialog"
+        :aria-label="t('common.keyboardShortcuts')"
+        class="ytp-card player-panel absolute inset-3 z-50 overflow-y-auto p-4 sm:inset-6"
+        @keydown.esc.stop="showHelp = false"
+      >
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <h3 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-keyboard" class="size-4" />
+            {{ t('common.keyboardShortcuts') }}
+          </h3>
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            :aria-label="t('common.close')"
+            @click="showHelp = false"
+          />
+        </div>
+        <div class="grid gap-x-8 gap-y-6 text-sm sm:grid-cols-2">
+          <section v-for="group in shortcutGroups" :key="group.title">
+            <h4 class="font-semibold text-highlighted">{{ group.title }}</h4>
+            <dl class="mt-3 space-y-2">
+              <div
+                v-for="shortcut in group.items"
+                :key="shortcut.label"
+                class="flex min-h-7 items-center justify-between gap-4"
+              >
+                <dt class="text-toned">{{ shortcut.label }}</dt>
+                <dd class="flex shrink-0 items-center gap-1.5">
+                  <template v-for="(key, index) in shortcut.keys" :key="key">
+                    <span v-if="index" class="text-dimmed">/</span>
+                    <UKbd size="lg" class="h-auto min-h-8 min-w-8 px-2 py-1 text-sm font-bold">{{
+                      key
+                    }}</UKbd>
+                  </template>
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      </section>
+      <section
+        v-if="diagnosticsOpen"
+        tabindex="-1"
+        data-player-diagnostics
+        role="dialog"
+        aria-label="Playback diagnostics"
+        class="ytp-card player-panel absolute inset-3 z-50 overflow-y-auto p-4 sm:inset-6"
+        @keydown.esc.stop="diagnosticsOpen = false"
+      >
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 class="flex items-center gap-2 font-semibold">
+            <UIcon name="i-lucide-bug" class="size-4" />Playback diagnostics
+          </h3>
+          <div class="flex gap-2">
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-refresh-cw"
+              :label="t('common.refresh')"
+              @click="openDiagnostics"
+            />
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-copy"
+              :label="t('common.copy')"
+              @click="copyDiagnostics"
+            />
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              :aria-label="t('common.close')"
+              @click="diagnosticsOpen = false"
+            />
           </div>
         </div>
-      </template>
-    </UModal>
+        <div class="space-y-4">
+          <UAlert
+            v-if="loadingError || playbackError || subtitleLoadError"
+            color="error"
+            variant="soft"
+            :description="loadingError || playbackError || subtitleLoadError"
+          />
+          <section v-for="section in diagnosticSections" :key="section.title" class="ytp-card p-3">
+            <h4 class="font-semibold text-highlighted">{{ section.title }}</h4>
+            <dl class="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <div v-for="row in section.rows" :key="row.label">
+                <dt class="text-xs text-toned">{{ row.label }}</dt>
+                <dd class="mt-1 wrap-break-word text-sm font-medium">{{ row.value }}</dd>
+              </div>
+            </dl>
+          </section>
+          <section v-if="diagnosticEvents.length" class="ytp-card p-3">
+            <h4 class="font-semibold text-highlighted">Recent events</h4>
+            <ol class="mt-2 divide-y divide-default">
+              <li
+                v-for="(event, index) in diagnosticEvents"
+                :key="index"
+                class="flex items-start gap-3 py-2 text-sm"
+              >
+                <span class="shrink-0 text-xs tabular-nums text-toned">{{
+                  new Date(event.time).toLocaleTimeString()
+                }}</span>
+                <code class="min-w-0 wrap-break-word">
+                  {{ event.event }} {{ event.message || '' }}
+                </code>
+              </li>
+            </ol>
+          </section>
+        </div>
+      </section>
+    </Teleport>
   </div>
 </template>
 
@@ -377,9 +504,11 @@ import {
 import { clampMediaVolume } from '~/utils/keyboard';
 import { clear, clampResumeTime, nearEnd, read, readRemote, save, saveRemote } from '~/utils/media';
 import { nextTapVisible } from '~/utils/playerControls';
+import { playbackMediaHasNoVideo, playbackMediaSnapshot } from '~/utils/playback';
 
 import type { StoreItem } from '~/types/store';
-import type { FileInfo, PlayerSourceElement } from '~/types/video';
+import type { PlayerSourceElement, PlayerSession } from '~/types/video';
+import type { SubtitleTrack } from '~/types/subtitles';
 import type { ApiErrorPayload } from '~/types/responses';
 
 const { t } = useI18n();
@@ -399,14 +528,64 @@ const emitter = defineEmits<{
 
 const showShortcutHelp = usePlayerShortcutHelp();
 const { messageFor } = useApiErrorMessage();
+const shortcutGroups = computed(() => [
+  {
+    title: t('common.playbackHelp'),
+    items: [
+      { label: t('common.playOrPause'), keys: ['Space', 'K'] },
+      { label: t('common.back10Seconds'), keys: ['J'] },
+      { label: t('common.forward10Seconds'), keys: ['L'] },
+      { label: t('common.muteHelp'), keys: ['M'] },
+    ],
+  },
+  {
+    title: t('common.navigationHelp'),
+    items: [
+      { label: t('common.back5Seconds'), keys: ['←'] },
+      { label: t('common.forward5Seconds'), keys: ['→'] },
+      { label: t('common.goToStartOrEnd'), keys: ['Home', 'End'] },
+      { label: t('common.jumpThroughTimeline'), keys: ['0–9'] },
+    ],
+  },
+  {
+    title: t('common.volumeAndSpeedHelp'),
+    items: [
+      { label: t('common.volumeUpOrDown'), keys: ['↑', '↓'] },
+      { label: t('common.fasterHelp'), keys: ["'"] },
+      { label: t('common.slowerHelp'), keys: [';'] },
+      { label: t('common.stepFrameByFrame'), keys: [',', '.'] },
+    ],
+  },
+  {
+    title: t('common.displayHelp'),
+    items: [
+      { label: t('common.fullscreenHelp'), keys: ['F'] },
+      { label: t('common.showOrHideSubtitles'), keys: ['C'] },
+      { label: t('common.openThisHelp'), keys: ['?', '/'] },
+      { label: t('common.closeHelpOrPlayer'), keys: ['Esc'] },
+    ],
+  },
+]);
 
 const playerContainer = ref<HTMLElement | null>(null);
 const videoElement = ref<HTMLVideoElement | null>(null);
+const nativeTrackElement = ref<HTMLTrackElement | null>(null);
 const assOverlayElement = ref<HTMLElement | null>(null);
-const playerInfo = ref<FileInfo | null>(null);
 const sources = ref<Array<PlayerSourceElement>>([]);
 const loading = ref(true);
 const loadingError = ref('');
+const playbackError = ref('');
+const switching = ref(false);
+const session = ref<PlayerSession | null>(null);
+const sessionTracks = ref<SubtitleTrack[]>([]);
+const selectedAudio = ref<number | null>(null);
+const diagnosticsOpen = ref(false);
+const diagnosticsReport = ref('');
+const diagnosticSections = ref<
+  Array<{ title: string; rows: Array<{ label: string; value: string }> }>
+>([]);
+const diagnosticEvents = ref<Array<{ time: number; event: string; message?: string }>>([]);
+const recentEvents: Array<{ time: number; event: string; message?: string }> = [];
 const active = ref(false);
 const isFullscreen = ref(false);
 const assLayoutVersion = ref(0);
@@ -422,6 +601,7 @@ const hasPoster = ref(false);
 const isAudio = ref(false);
 const hasVideo = ref(false);
 const usingHls = ref(false);
+const preferHls = ref(false);
 const destroyed = ref(false);
 const mediaVol = useStorage<number>('player_volume', 1);
 const muted = useStorage<boolean>('player_muted', false);
@@ -450,11 +630,22 @@ let lastSaveAt = 0;
 let resumeVersion = 0;
 let lastRemote: number | null | undefined;
 let remoteWrite = Promise.resolve();
+let savedProgress: Promise<number> = Promise.resolve(0);
+let switchVersion = 0;
+let attachedSwitch = 0;
+let pendingRate = 1;
+let automaticFallback = false;
+let nativeHls = false;
+let nativeFallback = false;
+let hlsEngine: 'native-hls' | 'hls.js' | null = null;
+let switchTimeout = 0;
+let refreshTimer = 0;
+let switchAbort: AbortController | null = null;
+const initAbort = new AbortController();
 
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
 const mediaFile = computed(() => props.item.filename || '');
 const id = computed(() => props.item._id || '');
-const subtitleManifestUrl = computed(() => currentPlaybackUrl('api/player/subtitles/manifest'));
 const canPlay = computed(() => Boolean(mediaFile.value && !loadingError.value));
 const shouldRender = computed(() => active.value && !loading.value);
 const progress = computed(() => {
@@ -468,7 +659,6 @@ const timeLabel = computed(() => {
 });
 const {
   subtitleTracks,
-  subtitleLoading,
   subtitleLoadError,
   subtitleEnabled,
   selectedSubtitleTrack,
@@ -477,13 +667,13 @@ const {
   usesAssSubtitleTrack,
   hasSubtitles,
 } = usePlayerSubtitles({
-  manifestUrl: subtitleManifestUrl,
-  isVideo: computed(() => !isAudio.value),
   canPlay,
   shouldRender,
   assLayoutVersion,
   video: videoElement,
   overlay: assOverlayElement,
+  tracks: sessionTracks,
+  fonts: computed(() => session.value?.fonts || []),
 });
 
 const SUBTITLE_OFF_VALUE = '__off__';
@@ -497,7 +687,11 @@ const subtitleSelectUi = {
 } as const;
 const subtitleSelectItems = computed(() => [
   { label: t('common.subtitlesOff'), value: SUBTITLE_OFF_VALUE },
-  ...subtitleTracks.value.map((track) => ({ label: track.name, value: track.url })),
+  ...subtitleTracks.value.map((track) => ({
+    label: track.renderer === 'bitmap' ? `${track.name} (${t('player.burnIn')})` : track.name,
+    value: track.id,
+    disabled: track.renderer === 'unsupported',
+  })),
 ]);
 const subtitleButtonLabel = computed(() => {
   if (!subtitleEnabled.value || !selectedSubtitleTrack.value) {
@@ -505,6 +699,148 @@ const subtitleButtonLabel = computed(() => {
   }
   return selectedSubtitleTrack.value.name || t('common.subtitles');
 });
+
+const audioItems = computed(() => [
+  ...(!usingHls.value ? [{ label: t('player.browserAudio'), value: 'browser' }] : []),
+  ...(session.value?.audio_tracks || []).map((track, index) => ({
+    label: [
+      track.name || `${t('player.audio')} ${index + 1}`,
+      track.lang,
+      track.codec.toUpperCase(),
+      track.channel_layout || track.channels,
+      track.default ? t('common.defaultSource') : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    value: String(track.stream_index),
+  })),
+]);
+const audioValue = computed({
+  get: () => {
+    if (!active.value && selectedAudio.value !== null) return String(selectedAudio.value);
+    if (!usingHls.value) return 'browser';
+    return String(
+      selectedAudio.value ??
+        session.value?.audio_tracks.find((track) => track.default)?.stream_index ??
+        session.value?.audio_tracks[0]?.stream_index ??
+        '',
+    );
+  },
+  set: (value: string) => {
+    selectedAudio.value = value === 'browser' ? null : Number(value);
+    if (active.value) void switchSelection(true);
+  },
+});
+const audioButtonLabel = computed(
+  () =>
+    audioItems.value.find((track) => track.value === audioValue.value)?.label || t('player.audio'),
+);
+
+function recordEvent(event: string, message?: string) {
+  recentEvents.push({ time: Date.now(), event, message });
+  if (recentEvents.length > 30) recentEvents.shift();
+}
+
+function openDiagnostics() {
+  const probe = session.value?.ffprobe;
+  const media = playbackMediaSnapshot(videoElement.value);
+  const row = (label: string, value: unknown) => ({
+    label,
+    value:
+      value === undefined || value === null || value === ''
+        ? 'Not reported'
+        : typeof value === 'object'
+          ? JSON.stringify(value)
+          : String(value),
+  });
+  diagnosticSections.value = [
+    {
+      title: 'Playback',
+      rows: [
+        row(
+          'Delivery',
+          usingHls.value ? (hlsEngine === 'hls.js' ? 'HLS (hls.js)' : 'HLS (browser)') : 'Direct',
+        ),
+        row(
+          'Position (seconds)',
+          media ? `${media.current_time.toFixed(1)} / ${media.duration?.toFixed(1) || '?'}` : null,
+        ),
+        row('Speed', media?.rate),
+        row(
+          'Audio track',
+          usingHls.value ? (selectedAudio.value ?? 'Default') : 'Browser-selected (Direct)',
+        ),
+        row('Buffered ranges', media?.buffered),
+        row('Seekable ranges', media?.seekable),
+        row(
+          'Frames processed / dropped',
+          media?.frames ? `${media.frames.total} / ${media.frames.dropped}` : null,
+        ),
+        row(
+          'Ready / network state',
+          media ? `${media.ready_state} / ${media.network_state}` : null,
+        ),
+      ],
+    },
+    {
+      title: 'Source',
+      rows: [
+        row('Video codec', probe?.video[0]?.codec_name),
+        row('Container', probe?.metadata.format_name),
+        row(
+          'Source resolution',
+          probe?.video[0] ? `${probe.video[0].width} × ${probe.video[0].height}` : null,
+        ),
+        row('Browser video size', media ? `${media.width} × ${media.height}` : null),
+      ],
+    },
+    {
+      title: 'Browser',
+      rows: [
+        row('User agent', navigator.userAgent),
+        row('Tab visibility', document.visibilityState),
+        row('Secure context', window.isSecureContext),
+      ],
+    },
+  ];
+  diagnosticEvents.value = [...recentEvents].reverse();
+  const report = {
+    transport: usingHls.value ? hlsEngine : 'direct',
+    source: {
+      file: currentPlaybackUrl('api/download'),
+      video: probe?.video,
+      audio: session.value?.audio_tracks,
+      duration: probe?.metadata.duration,
+      container: probe?.metadata.format_name,
+    },
+    selected_audio: selectedAudio.value,
+    selected_subtitle: selectedSubtitleTrackId.value,
+    browser: {
+      user_agent: navigator.userAgent,
+      vendor: navigator.vendor,
+      secure_context: window.isSecureContext,
+      visibility: document.visibilityState,
+    },
+    media,
+    errors: {
+      initialization: loadingError.value ? 'Initialization failed' : null,
+      playback: playbackError.value ? 'Playback failed' : null,
+      subtitles: subtitleLoadError.value ? 'Subtitle loading or rendering failed' : null,
+    },
+    recent_events: recentEvents,
+  };
+  diagnosticsReport.value = JSON.stringify(report, null, 2);
+  diagnosticsOpen.value = true;
+}
+
+async function copyDiagnostics() {
+  openDiagnostics();
+  try {
+    await navigator.clipboard.writeText(diagnosticsReport.value);
+  } catch {
+    useNotification().error(t('common.copyFailed'));
+  }
+}
 const subtitleSelectValue = computed<string>({
   get: () =>
     subtitleEnabled.value
@@ -570,37 +906,64 @@ function formatDuration(totalSeconds: number): string {
   return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
 }
 
-function currentPlaybackUrl(base: string, playlist: boolean = false): string {
+function currentPlaybackUrl(base: string): string {
   if (!props.item.filename) {
     return '';
   }
 
-  if (base === 'm3u8') {
-    return makeDownload(config, props.item, base, true);
-  }
-
-  return makeDownload(config, props.item, base, playlist);
+  return makeDownload(config, props.item, base);
 }
 
-function activatePlayer() {
-  resumeVersion += 1;
+async function activatePlayer() {
+  if (!canPlay.value || switching.value || active.value) return;
+  const resume = ++resumeVersion;
   active.value = true;
-  void nextTick(async () => {
+  await nextTick();
+  try {
+    const time = await savedProgress;
+    if (destroyed.value || resume !== resumeVersion) return;
+    if (
+      selectedAudio.value !== null ||
+      (subtitleEnabled.value && selectedSubtitleTrack.value?.renderer === 'bitmap') ||
+      usingHls.value ||
+      preferHls.value
+    ) {
+      await switchSelection(true, time, true);
+      return;
+    }
     applyMediaState(videoElement.value);
-    try {
-      await videoElement.value?.play();
-    } catch {}
+    pendingSeek = time;
+    pendingPlay = true;
+    pendingRate = videoElement.value?.playbackRate || 1;
+    const version = switchVersion;
+    window.clearTimeout(switchTimeout);
+    switchTimeout = window.setTimeout(
+      () => failPlayback(t('player.preparationFailed'), version),
+      300000,
+    );
+    if (videoElement.value && videoElement.value.readyState >= 1) {
+      pendingSeek = null;
+      await restoreSwitch(time, true, version);
+      if (destroyed.value || version !== switchVersion) return;
+      pendingPlay = isPlaying();
+      window.clearTimeout(switchTimeout);
+    }
+  } catch {
+    playbackError.value = t('player.playFailed');
+  } finally {
     syncVideoState();
     showControls();
-  });
+  }
 }
 
 function handleVideoLoadedData() {
+  recordEvent('loadeddata');
   syncVideoState();
 }
 
 function handleVideoLoadedMetadata() {
-  resumeVersion += 1;
+  if (switching.value && attachedSwitch !== switchVersion) return;
+  recordEvent('loadedmetadata');
   loadingError.value = '';
   syncVideoState();
   showControls();
@@ -612,18 +975,28 @@ function handleVideoLoadedMetadata() {
   if (pendingSeek !== null) {
     const time = pendingSeek;
     const play = pendingPlay;
+    const version = switchVersion;
     pendingSeek = null;
-    pendingPlay = false;
-    void restoreSwitch(time, play).finally(() => {
+    void restoreSwitch(time, play, version).finally(() => {
+      if (destroyed.value || version !== switchVersion) return;
+      pendingPlay = isPlaying();
+      switching.value = false;
+      window.clearTimeout(switchTimeout);
       syncVideoState();
       showControls();
     });
-  } else {
-    void restoreStoredProgress();
   }
 }
 
 function handleVideoTimeUpdate() {
+  if (
+    !usingHls.value &&
+    !automaticFallback &&
+    playbackMediaHasNoVideo(videoElement.value, hasVideo.value)
+  ) {
+    recordEvent('missing-video');
+    void src_error(new Event('missing-video'));
+  }
   syncVideoState();
   if (videoElement.value) {
     updateMediaSessionPosition(videoElement.value);
@@ -633,6 +1006,8 @@ function handleVideoTimeUpdate() {
 }
 
 function handleVideoPlay() {
+  recordEvent('play');
+  pendingPlay = true;
   resumeVersion += 1;
   loadingError.value = '';
   syncVideoState();
@@ -641,11 +1016,13 @@ function handleVideoPlay() {
 }
 
 function handleVideoPause() {
+  recordEvent('pause');
+  if (!switching.value && !videoElement.value?.error) pendingPlay = false;
   syncVideoState();
   clearControlsHideTimeout();
   controlsVisible.value = true;
   persistProgress(true);
-  emitter('playback-state-change', false);
+  emitter('playback-state-change', switching.value ? pendingPlay : false);
 }
 
 const flushProgress = () => persistProgress(true);
@@ -721,48 +1098,6 @@ function handleMediaVolumeChange(event: Event) {
   updateMediaSessionPosition(target);
 }
 
-async function restoreStoredProgress() {
-  const mediaId = id.value;
-  const video = videoElement.value;
-  const localScope = scope.value;
-  const version = resumeVersion;
-  if (!mediaId || !video) {
-    return;
-  }
-
-  const remoteTime = await readRemote(mediaId);
-  if (
-    destroyed.value ||
-    version !== resumeVersion ||
-    video !== videoElement.value ||
-    mediaId !== id.value ||
-    localScope !== scope.value ||
-    !video.paused ||
-    video.currentTime > 0
-  ) {
-    return;
-  }
-
-  const saved = remoteTime === undefined ? read(mediaId, localScope) : (remoteTime ?? 0);
-  if (remoteTime !== undefined) {
-    lastRemote = remoteTime;
-    if (saved > 0) save(mediaId, saved, localScope);
-    else clear(mediaId, localScope);
-  }
-  if (saved <= 0) {
-    return;
-  }
-
-  active.value = true;
-  await seekTo(saved);
-  if (destroyed.value || video !== videoElement.value || version !== resumeVersion) return;
-  try {
-    await video.play();
-  } catch {}
-  syncVideoState();
-  showControls();
-}
-
 function readSwitchTime() {
   const video = videoElement.value;
   if (!video) {
@@ -791,13 +1126,19 @@ async function seekTo(time: number) {
   }
 }
 
-async function restoreSwitch(time: number, play: boolean) {
+async function restoreSwitch(time: number, play: boolean, version = switchVersion) {
   await seekTo(time);
+  if (destroyed.value || version !== switchVersion) return;
+  if (videoElement.value) videoElement.value.playbackRate = pendingRate;
 
   if (play) {
     try {
       await videoElement.value?.play();
-    } catch {}
+    } catch {
+      if (destroyed.value || version !== switchVersion) return;
+      if (videoElement.value?.error) await src_error(new Event('error'));
+      else if (pendingPlay) playbackError.value = t('player.playFailed');
+    }
   }
 }
 
@@ -814,7 +1155,7 @@ function syncProgress(position: number | null) {
 
 function persistProgress(force: boolean) {
   const video = videoElement.value;
-  if (!id.value || !video || destroyed.value) {
+  if (!id.value || !video || destroyed.value || switching.value) {
     return;
   }
 
@@ -957,7 +1298,7 @@ function syncVideoState() {
     lastSaveAt = 0;
   }
 
-  emitter('playback-state-change', !video.paused);
+  emitter('playback-state-change', switching.value ? pendingPlay : !video.paused);
 }
 
 function scheduleAssLayoutRefresh() {
@@ -1085,53 +1426,21 @@ function updateMediaSessionPosition(target: EventTarget | null) {
   } catch {}
 }
 
-async function restoreDefaultTextTrack() {
-  if (true === destroyed.value) {
-    return;
-  }
-
+function restoreDefaultTextTrack() {
+  if (destroyed.value) return;
   const el = videoElement.value;
-  if (!el) {
-    return;
-  }
-
-  try {
-    const tracksList = el.textTracks;
-    if (!tracksList || tracksList.length === 0) {
-      return;
-    }
-
-    for (let i = 0; i < tracksList.length; i += 1) {
-      const track = tracksList[i] as TextTrack | undefined;
-      if (track) {
-        track.mode = 'disabled';
-      }
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    if (el !== videoElement.value) {
-      return;
-    }
-
-    if (false === subtitleEnabled.value || null === nativeSubtitleTrack.value) {
-      return;
-    }
-
-    const activeTracksList = el.textTracks;
-    for (let i = 0; i < activeTracksList.length; i += 1) {
-      const track = activeTracksList[i] as TextTrack | undefined;
-      if (!track) {
-        continue;
-      }
-      track.mode = i === 0 ? 'showing' : 'disabled';
-    }
-  } catch (error) {
-    console.warn('Failed to restore subtitle track state', error);
+  if (!el) return;
+  const selected = nativeTrackElement.value?.track;
+  for (const track of Array.from(el.textTracks)) {
+    track.mode =
+      subtitleEnabled.value && nativeSubtitleTrack.value && track === selected
+        ? 'showing'
+        : 'disabled';
   }
 }
 
-function handleNativeTrackLoad() {
+function handleNativeTrackLoad(event: Event) {
+  if (event.currentTarget !== nativeTrackElement.value) return;
   if (true === destroyed.value) {
     return;
   }
@@ -1159,25 +1468,44 @@ async function loadPlayerInfo() {
     loading.value = false;
     loadingError.value = t('common.noMediaFile');
     emitter('error', loadingError.value);
-    emitter('closeModel');
     return;
   }
 
   loading.value = true;
   loadingError.value = '';
 
-  const req = await request(currentPlaybackUrl('api/file/info'));
-  const response = (await req.json()) as FileInfo & ApiErrorPayload;
-
-  if (!req.ok) {
+  const opened = await request(currentPlaybackUrl('api/player/open'), {
+    method: 'POST',
+    signal: initAbort.signal,
+  });
+  const response = (await opened.json()) as PlayerSession & ApiErrorPayload;
+  if (!opened.ok) {
+    recordEvent('open-error', response.code);
     loading.value = false;
     loadingError.value = messageFor(response, 'common.failedFetch');
     emitter('error', loadingError.value);
-    emitter('closeModel');
     return;
   }
-
-  playerInfo.value = response;
+  if (destroyed.value) {
+    void request(`/api/player/leases/${encodeURIComponent(response.player_id)}`, {
+      method: 'DELETE',
+    }).catch(() => {});
+    return;
+  }
+  session.value = response;
+  sessionTracks.value = response.subtitles;
+  const mediaId = id.value;
+  const localScope = scope.value;
+  savedProgress = readRemote(mediaId).then((remoteTime) => {
+    if (destroyed.value || mediaId !== id.value || localScope !== scope.value) return 0;
+    const time = remoteTime === undefined ? read(mediaId, localScope) : (remoteTime ?? 0);
+    if (remoteTime !== undefined) {
+      lastRemote = remoteTime;
+      if (time > 0) save(mediaId, time, localScope);
+      else clear(mediaId, localScope);
+    }
+    return time;
+  });
 
   poster.value = '/images/placeholder.png';
   hasPoster.value = false;
@@ -1185,8 +1513,8 @@ async function loadPlayerInfo() {
   if (props.item._id && props.item.filename) {
     poster.value = `/api/history/${encodeURIComponent(props.item._id)}/thumbnail`;
     hasPoster.value = true;
-  } else if (response.sidecar?.image?.[0]?.file) {
-    poster.value = makeDownload(config, { filename: response.sidecar.image[0].file });
+  } else if (response.poster) {
+    poster.value = makeDownload(config, { filename: response.poster });
     hasPoster.value = true;
   } else if (props.item.extras?.thumbnail) {
     poster.value = getRemoteImage(props.item);
@@ -1206,16 +1534,17 @@ async function loadPlayerInfo() {
   sources.value = [];
   if (isApple) {
     const allowedCodec = response.mimetype && response.mimetype.includes('video/mp4');
-    const src = currentPlaybackUrl(allowedCodec ? 'api/download' : 'm3u8', !allowedCodec);
+    const src = uri(response.media_url);
     sources.value.push({
       src,
-      type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
+      type: response.mimetype,
       onerror: (err: Event) => void src_error(err),
     });
-    usingHls.value = !allowedCodec;
+    preferHls.value = !allowedCodec;
+    usingHls.value = false;
   } else {
     sources.value.push({
-      src: currentPlaybackUrl('api/download'),
+      src: uri(response.media_url),
       type: response.mimetype,
       onerror: (err: Event) => void src_error(err),
     });
@@ -1234,10 +1563,6 @@ async function loadPlayerInfo() {
     title.value = response.title;
   } else if (response.ffprobe?.metadata?.tags?.title) {
     title.value = response.ffprobe.metadata.tags.title;
-  }
-
-  if (isApple) {
-    document.documentElement.style.setProperty('--webkit-text-track-display', 'block');
   }
 
   loading.value = false;
@@ -1266,79 +1591,168 @@ function prepareVideoPlayer() {
 }
 
 async function src_error(event: Event) {
-  if (hls) {
+  recordEvent('source-error', event.type);
+  if (destroyed.value || (switching.value && attachedSwitch !== switchVersion)) return;
+  if (!active.value) {
+    preferHls.value = true;
     return;
   }
-
-  await nextTick();
-  if (destroyed.value) {
+  if (usingHls.value) {
+    if (!videoElement.value?.error) return;
+    if (nativeHls && !nativeFallback) {
+      const time = pendingSeek ?? readSwitchTime();
+      const play = pendingPlay || isPlaying();
+      nativeFallback = true;
+      recordEvent('native-hls-fallback');
+      await switchSelection(true, time, play, true);
+    } else if (!playbackError.value) {
+      failPlayback(t('player.playbackFailed'));
+    }
     return;
   }
-
-  console.warn('Source failed to load, attempting HLS fallback via hls.js...', event);
-  await attach_hls(currentPlaybackUrl('m3u8', true));
+  if (automaticFallback) return;
+  if (switching.value || destroyed.value) {
+    return;
+  }
+  automaticFallback = true;
+  await switchSelection(true, pendingSeek ?? readSwitchTime(), pendingPlay || isPlaying());
 }
 
-async function attach_hls(
-  link: string,
-  time = pendingSeek ?? readSwitchTime(),
-  play = pendingPlay || isPlaying(),
-): Promise<void> {
-  if (!videoElement.value) {
+async function attach_hls(link: string, version: number): Promise<void> {
+  const video = videoElement.value;
+  if (!video || destroyed.value || version !== switchVersion) return;
+  hls?.destroy();
+  hls = null;
+  sources.value = [];
+  video.removeAttribute('src');
+  video.querySelectorAll('source').forEach((source) => source.removeAttribute('src'));
+  usingHls.value = true;
+  nativeHls = false;
+  if (!nativeFallback && video.canPlayType('application/vnd.apple.mpegurl')) {
+    nativeHls = true;
+    hlsEngine = 'native-hls';
+    attachedSwitch = version;
+    video.src = uri(link);
+    video.load();
     return;
   }
-
-  pendingSeek = time;
-  pendingPlay = play;
-
-  if (hls) {
-    hls.destroy();
-  }
-
   const { default: Hls } = await import('hls.js');
-  if (!videoElement.value || destroyed.value) {
-    return;
-  }
-
+  if (destroyed.value || version !== switchVersion || video !== videoElement.value) return;
+  if (!Hls.isSupported()) throw new Error(t('player.hlsUnsupported'));
+  hlsEngine = 'hls.js';
   hls = new Hls({
     debug: false,
     enableWorker: true,
-    lowLatencyMode: true,
+    startPosition: pendingSeek ?? -1,
     backBufferLength: 120,
-    fragLoadingTimeOut: 200000,
+    fragLoadingTimeOut: 300000,
   });
-
-  hls.on(Hls.Events.MANIFEST_PARSED, () => applyMediaSessionMetadata());
-  hls.on(Hls.Events.MANIFEST_PARSED, async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    await restoreDefaultTextTrack();
+  const instance = hls;
+  hls.on(Hls.Events.ERROR, (_event, data) => {
+    if (destroyed.value || version !== switchVersion || hls !== instance) return;
+    recordEvent('hls-error', data.details);
+    if (!data.fatal) return;
+    failPlayback(t('player.playbackFailed'), version);
   });
-
-  hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await restoreDefaultTextTrack();
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    if (version === switchVersion) applyMediaSessionMetadata();
   });
+  hls.loadSource(uri(link));
+  attachedSwitch = version;
+  hls.attachMedia(video);
+}
 
-  hls.loadSource(link);
-  hls.attachMedia(videoElement.value);
-  usingHls.value = true;
+function failPlayback(message: string, version = switchVersion) {
+  if (destroyed.value || version !== switchVersion) return;
+  switchAbort?.abort();
+  switchVersion += 1;
+  hls?.destroy();
+  hls = null;
+  nativeHls = false;
+  pendingSeek = null;
+  pendingPlay = false;
+  switching.value = false;
+  window.clearTimeout(switchTimeout);
+  playbackError.value = message;
+  videoElement.value?.pause();
+}
+
+async function switchSelection(
+  forceHls = false,
+  time = readSwitchTime(),
+  play = isPlaying(),
+  nativeRetry = false,
+) {
+  if ((switching.value && !nativeRetry) || destroyed.value || !session.value) return;
+  const rate = nativeRetry && switching.value ? pendingRate : videoElement.value?.playbackRate || 1;
+  persistProgress(true);
+  switching.value = true;
+  playbackError.value = '';
+  const version = ++switchVersion;
+  switchAbort?.abort();
+  switchAbort = new AbortController();
+  pendingSeek = time;
+  pendingPlay = play;
+  pendingRate = rate;
+  videoElement.value?.pause();
+  window.clearTimeout(switchTimeout);
+  switchTimeout = window.setTimeout(() => {
+    if (version !== switchVersion || destroyed.value) return;
+    failPlayback(t('player.preparationFailed'), version);
+  }, 300000);
+  try {
+    const response = await request(
+      `/api/player/leases/${encodeURIComponent(session.value.player_id)}`,
+      {
+        method: 'PUT',
+        signal: switchAbort.signal,
+        body: JSON.stringify({
+          audio_stream_index: selectedAudio.value,
+          subtitle_track_id: subtitleEnabled.value ? selectedSubtitleTrackId.value : null,
+        }),
+      },
+    );
+    const body = (await response.json()) as PlayerSession & ApiErrorPayload;
+    if (destroyed.value || version !== switchVersion) return;
+    if (!response.ok) {
+      recordEvent('selection-error', body.code);
+      throw new Error(messageFor(body, 'player.preparationFailed'));
+    }
+    session.value = body;
+    if (
+      forceHls ||
+      usingHls.value ||
+      selectedAudio.value !== null ||
+      (subtitleEnabled.value && selectedSubtitleTrack.value?.renderer === 'bitmap')
+    ) {
+      recordEvent('hls-switch');
+      await attach_hls(body.stream_url, version);
+    } else {
+      await restoreSwitch(time, play);
+      switching.value = false;
+      window.clearTimeout(switchTimeout);
+    }
+  } catch (error) {
+    if (destroyed.value || version !== switchVersion) return;
+    failPlayback(error instanceof Error ? error.message : t('player.preparationFailed'), version);
+  }
 }
 
 function forceSwitchToHls() {
-  if (usingHls.value) {
-    return;
-  }
-
+  if (usingHls.value || switching.value) return;
   if (!hasVideo.value) {
     useNotification().error(t('common.switchToHlsFailed'));
     return;
   }
 
-  void attach_hls(currentPlaybackUrl('m3u8', true));
+  void switchSelection(true);
 }
 
 usePlayerShortcuts({
-  enabled: computed(() => active.value && Boolean(videoElement.value)),
+  enabled: computed(
+    () => active.value && !switching.value && !diagnosticsOpen.value && Boolean(videoElement.value),
+  ),
+  container: playerContainer,
   media: videoElement,
   video: videoElement,
   adjustVolume: (delta) => {
@@ -1367,6 +1781,28 @@ watch(selectedSubtitleTrack, () => {
   void nextTick(() => restoreDefaultTextTrack());
 });
 
+watch([showHelp, diagnosticsOpen], () => {
+  void nextTick(() => {
+    const selector = diagnosticsOpen.value
+      ? '[data-player-diagnostics]'
+      : showHelp.value
+        ? '[data-player-help]'
+        : '';
+    if (selector) playerContainer.value?.querySelector<HTMLElement>(selector)?.focus();
+    else if (active.value) playerContainer.value?.focus();
+  });
+});
+
+watch(
+  () =>
+    subtitleEnabled.value && selectedSubtitleTrack.value?.renderer === 'bitmap'
+      ? selectedSubtitleTrackId.value
+      : null,
+  (next, previous) => {
+    if (active.value && next !== previous) void switchSelection(true);
+  },
+);
+
 onMounted(async () => {
   disableOpacity();
   isTouchDevice.value = window.matchMedia('(pointer: coarse)').matches;
@@ -1377,10 +1813,40 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('pagehide', flushProgress);
   syncFullscreenState();
-  await loadPlayerInfo();
+  try {
+    await loadPlayerInfo();
+  } catch {
+    if (!destroyed.value) {
+      loading.value = false;
+      loadingError.value = t('player.preparationFailed');
+      emitter('error', loadingError.value);
+    }
+  }
+  refreshTimer = window.setInterval(() => {
+    if (!session.value || destroyed.value || switching.value) return;
+    void request(`/api/player/leases/${encodeURIComponent(session.value.player_id)}`, {
+      method: 'PUT',
+      body: '{}',
+    })
+      .then((response) => {
+        if (!response.ok) playbackError.value = t('player.sessionExpired');
+      })
+      .catch(() => {
+        if (!destroyed.value) playbackError.value = t('player.sessionExpired');
+      });
+  }, 240000);
 });
 
 onBeforeUnmount(() => {
+  initAbort.abort();
+  switchAbort?.abort();
+  switchVersion += 1;
+  window.clearTimeout(switchTimeout);
+  window.clearInterval(refreshTimer);
+  if (session.value)
+    void request(`/api/player/leases/${encodeURIComponent(session.value.player_id)}`, {
+      method: 'DELETE',
+    }).catch(() => {});
   resumeVersion += 1;
   enableOpacity();
   document.removeEventListener('fullscreenchange', syncFullscreenState);
@@ -1425,6 +1891,13 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.player-panel {
+  background-color: color-mix(in oklab, var(--ui-bg) 90%, transparent);
+  backdrop-filter: blur(12px);
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+}
+
 .share-video-element::-webkit-media-controls {
   display: none;
 }

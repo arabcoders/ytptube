@@ -2,13 +2,10 @@
 Python wrapper for ffprobe command line tool. ffprobe must exist in the path.
 """
 
-import asyncio
 import functools
 import json
 import operator
-import os
 import shutil
-import subprocess  # qa: ignore
 from functools import lru_cache
 from pathlib import Path
 
@@ -38,6 +35,8 @@ def ffmpeg_bin() -> str | None:
 
 
 class FFStream:
+    index: int
+
     def __init__(self, json_data: dict):
         for key, val in json_data.items():
             setattr(self, key, val)
@@ -79,6 +78,8 @@ class FFStream:
 
     def is_video(self):
         if self.__dict__.get("codec_type", None) != "video":
+            return False
+        if self.__dict__.get("disposition", {}).get("attached_pic"):
             return False
 
         return self.__dict__.get("codec_name", None) not in ["png", "mjpeg", "gif", "bmp", "tiff", "webp"]
@@ -224,7 +225,6 @@ class FFProbeResult:
         }
 
 
-@timed_lru_cache(ttl_seconds=300, max_size=128)
 async def ffprobe(file: Path | str) -> FFProbeResult:
     """
     Run ffprobe on a file and return the parsed data as a dictionary.
@@ -247,33 +247,23 @@ async def ffprobe(file: Path | str) -> FFProbeResult:
         msg = "ffprobe not found."
         raise FFProbeError(msg)
 
-    args: list[str] = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", str(f)]
-
-    p = await asyncio.create_subprocess_exec(
-        binary,
-        *args,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+    info = f.stat()
+    binary_info = Path(binary).stat() if Path(binary).exists() else None
+    return await _probe(
+        f, info.st_mtime_ns, info.st_ctime_ns, info.st_size, binary, binary_info.st_mtime_ns if binary_info else 0
     )
 
-    try:
-        data, err = await asyncio.wait_for(p.communicate(), timeout=FFPROBE_TIMEOUT)
-    except (TimeoutError, asyncio.CancelledError):
-        p.kill()
-        try:
-            await asyncio.wait_for(asyncio.shield(p.communicate()), timeout=PROCESS_CLEANUP_TIMEOUT)
-        except (TimeoutError, asyncio.CancelledError, OSError):
-            LOG.warning("ffprobe did not finish cleanup.")
-        raise
-    if not isinstance(p.returncode, int):
-        msg = "ffprobe exited without a return code."
-        raise FFProbeError(msg)
-    exitCode: int = p.returncode
-    if 0 == exitCode:
+
+@timed_lru_cache(ttl_seconds=300, max_size=128)
+async def _probe(file: Path, _mtime: int, _ctime: int, _size: int, binary: str, _binary_mtime: int) -> FFProbeResult:
+    from app.features.streaming.utils import run
+
+    args = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", str(file)]
+    code, data, err = await run(binary, args, deadline=FFPROBE_TIMEOUT, max_bytes=4 * 1024 * 1024)
+    if 0 == code:
         parsed: dict = json.loads(data.decode("utf-8"))
     else:
-        msg: str = f"ffprobe returned with non-0 exit code. '{err.decode('utf-8')}'"
+        msg: str = f"ffprobe returned with non-0 exit code. '{err[-500:]}'"
         raise FFProbeError(msg)
 
     result = FFProbeResult()

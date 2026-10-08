@@ -15,7 +15,7 @@ on:
       - "webext/**"
 
 env:
-  BUN_VERSION: latest
+  BUN_VERSION: "1.4.2"
   NODE_VERSION: 22
   PYTHON_VERSION: "3.13"
 

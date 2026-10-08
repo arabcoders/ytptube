@@ -1,12 +1,9 @@
 export type SubtitleTrack = {
+  id: string;
   lang: string;
   name: string;
-  source_format: 'vtt' | 'srt' | 'ass';
+  source_format: string;
   delivery_format: 'vtt' | 'ass';
-  renderer: 'native' | 'assjs';
+  renderer: 'native' | 'assjs' | 'bitmap' | 'unsupported';
   url: string;
-};
-
-export type SubtitleManifestResponse = {
-  subtitles: SubtitleTrack[];
 };

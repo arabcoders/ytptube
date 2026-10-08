@@ -4,7 +4,7 @@
     :title="`${t('tasks.inspectHandlerTitle')}: ${task.name}`"
     :dismissible="!busy"
     :ui="{
-      content: 'w-full sm:max-w-5xl',
+      content: 'w-full sm:max-w-5xl bg-default/80 dark:bg-default/80 backdrop-blur-md',
       body: 'max-h-[75vh] overflow-y-auto p-4 sm:p-5',
       footer: 'px-4 pb-4 sm:px-5 sm:pb-5',
     }"

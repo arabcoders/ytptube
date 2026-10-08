@@ -55,6 +55,8 @@ type FFProbeStream = {
     handler_name?: string;
   };
   channels?: number;
+  channel_layout?: string;
+  disposition?: { default?: number; attached_pic?: number };
   sample_rate?: string;
   bit_rate?: string;
 };
@@ -87,10 +89,36 @@ type PlayerSourceElement = {
   onerror?: (e: Event) => void;
 };
 
+type PlayerSession = {
+  player_id: string;
+  title: string;
+  mimetype: string;
+  poster: string | null;
+  media_url: string;
+  generation: number[];
+  expires_in: number;
+  ffprobe: FFProbeResult;
+  audio_stream_index: number | null;
+  subtitle_track_id: string | null;
+  audio_tracks: Array<{
+    stream_index: number;
+    lang: string;
+    name: string;
+    codec: string;
+    channels: number | null;
+    channel_layout: string;
+    default: boolean;
+  }>;
+  subtitles: import('./subtitles').SubtitleTrack[];
+  fonts: import('../utils/playback').PlayerFont[];
+  stream_url: string;
+};
+
 export type {
   VideoTrackElement,
   VideoSourceElement,
   PlayerSourceElement,
+  PlayerSession,
   FFProbeResult,
   FileInfo,
   KeyboardShortcutContext,

@@ -122,18 +122,14 @@ export const toggleCaptions = (video: HTMLVideoElement) => {
 };
 
 export const shouldHandleKeyboardShortcut = (event: KeyboardEvent): boolean => {
-  const target = event.target as HTMLElement;
-  const tagName = target?.tagName?.toLowerCase();
-  if (
-    'input' === tagName ||
-    'textarea' === tagName ||
-    'true' === target?.contentEditable ||
-    'true' === target?.getAttribute('contenteditable')
-  ) {
-    return false;
-  }
-
-  return true;
+  if (event.defaultPrevented) return false;
+  const target = event.target;
+  return !(
+    target instanceof window.Element &&
+    target.closest(
+      'input,textarea,select,button,a,[contenteditable=""],[contenteditable="true"],[role="menu"],[role="menuitem"],[role="listbox"],[role="combobox"],[data-player-help],[data-player-diagnostics],[data-player-overlay]',
+    )
+  );
 };
 
 export const modifierKey = (event: KeyboardEvent): boolean => hasModifierKey(event);

@@ -27,6 +27,7 @@ from app.features.downloads.repository import DownloadsRepository
 from app.features.downloads.runtime.queue_manager import DownloadQueue
 from app.features.notifications.service import Notifications
 from app.features.presets.deps import get_presets_repo
+from app.features.streaming.service import PlayerManager
 from app.features.tasks.definitions.deps import get_task_definitions_repo
 from app.features.tasks.service import Tasks
 from app.features.ytdlp.extractor import ExtractorPool
@@ -132,6 +133,7 @@ class Main:
         AuthService.get_instance().attach(self._app)
         BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
+        PlayerManager(self._config).attach(self._app)
         Cache.get_instance().attach(self._app)
         TerminalSessionManager.get_instance().attach(self._app)
 

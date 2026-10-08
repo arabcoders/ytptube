@@ -64,7 +64,7 @@
     "reset": "Reset",
     "retry": "Retry",
     "retryCount": "Retried {count} times",
-    "loading": "Loading…",
+    "loading": "Loading...",
     "unknownError": "An unknown error occurred.",
     "unknown": "Unknown",
     "noResults": "No Results",
@@ -1320,6 +1320,15 @@
     }
   },
   "player": {
+    "audio": "Audio",
+    "browserAudio": "Browser-selected audio (Direct)",
+    "burnIn": "Burn-in",
+    "preparing": "Preparing playback...",
+    "preparationFailed": "Playback could not be prepared. Reopen the player to try again.",
+    "playFailed": "Playback did not start. Press Play to try again.",
+    "playbackFailed": "Playback failed.",
+    "hlsUnsupported": "This browser does not support HLS playback.",
+    "sessionExpired": "The player session could not be refreshed. Reopen the player.",
     "subtitleLoadFailed": "Failed to load subtitles for this video.",
     "subtitleRenderFailed": "Failed to render ASS subtitles in the browser."
   }

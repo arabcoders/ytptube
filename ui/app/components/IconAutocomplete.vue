@@ -23,7 +23,7 @@
       <div
         v-if="showList && filteredOptions.length"
         ref="dropdownRef"
-        class="fixed z-50 overflow-y-auto rounded-md ytp-floating-surface"
+        class="fixed z-50 overflow-y-auto rounded-md bg-elevated/80 dark:bg-elevated/30 ytp-floating-surface"
         :style="dropdownStyle"
         dir="ltr"
         role="menu"
@@ -61,6 +61,8 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
 import type { AutoCompleteOptions, Option } from '~/types/autocomplete';
+
+const OPTION_LIMIT = 10;
 
 const props = withDefaults(
   defineProps<{
@@ -199,7 +201,7 @@ const filteredOptions = computed<Option[]>(() => {
   const token = normalize(search.value);
 
   if (!token) {
-    return props.options;
+    return props.options.slice(0, OPTION_LIMIT);
   }
 
   const exact = props.options.find((option) => option.value === search.value);
@@ -224,7 +226,7 @@ const filteredOptions = computed<Option[]>(() => {
     }
   }
 
-  return [...startsWith, ...includes, ...desc];
+  return [...startsWith, ...includes, ...desc].slice(0, OPTION_LIMIT);
 });
 
 const updateList = () => {
