@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import pytest
+
 from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
 
 
@@ -36,7 +38,7 @@ def sample_info_movie(path: Path) -> dict:
     }
 
 
-def test_generate_nfo_tv_mode(tmp_path: Path) -> None:
+def test_tv_nfo(tmp_path: Path) -> None:
     media_file = tmp_path / "test_show_s01e02.mkv"
     info = sample_info_tv(media_file)
     media_file.write_text("dummy", encoding="utf-8")
@@ -53,9 +55,9 @@ def test_generate_nfo_tv_mode(tmp_path: Path) -> None:
     assert "<episodedetails>" in content
     assert '<uniqueid type="youtube">abc123</uniqueid>' in content
     assert "<title>Test Show - S01E02</title>" in content
-    assert "<runtime>3600</runtime>" in content
+    assert "<runtime>60</runtime>" in content
     assert (
-        '<thumb aspect="poster" preview="http://example.com/episode.jpg">http://example.com/episode.jpg</thumb>'
+        '<thumb aspect="thumb" preview="http://example.com/episode.jpg">http://example.com/episode.jpg</thumb>'
         in content
     )
     assert "Intro" not in content
@@ -70,7 +72,7 @@ def test_generate_nfo_tv_mode(tmp_path: Path) -> None:
     assert nfo_path.stat().st_mtime == media_mtime
 
 
-def test_movie_mode_run_wrapper(tmp_path: Path) -> None:
+def test_movie_nfo(tmp_path: Path) -> None:
     media_file = tmp_path / "test_movie.mp4"
     info = sample_info_movie(media_file)
     media_file.write_text("dummy-movie", encoding="utf-8")
@@ -86,7 +88,10 @@ def test_movie_mode_run_wrapper(tmp_path: Path) -> None:
     assert "<movie>" in content
     assert '<uniqueid type="themoviedb" default="true">mov001</uniqueid>' in content
     assert "<title>Test Movie</title>" in content
-    assert "<runtime>7200</runtime>" in content or "<runtime>7200" in content
+    assert "<runtime>120</runtime>" in content
+    assert (
+        '<thumb aspect="poster" preview="http://example.com/thumb.jpg">http://example.com/thumb.jpg</thumb>' in content
+    )
 
     nfo_path.unlink()
 
@@ -101,6 +106,21 @@ def test_movie_mode_run_wrapper(tmp_path: Path) -> None:
     assert nfo_path.exists()
 
     assert nfo_path.stat().st_mtime == media_mtime
+
+
+@pytest.mark.parametrize("mode", ["tv", "movie"])
+@pytest.mark.parametrize("duration,minutes", [(0, 0), (59.9, 0), (60, 1), (3610, 60), (3659.9, 60)])
+def test_runtime_minutes(tmp_path: Path, mode: str, duration: int | float, minutes: int) -> None:
+    media_file = tmp_path / "video.mkv"
+    info = sample_info_tv(media_file) if "tv" == mode else sample_info_movie(media_file)
+    info["duration"] = duration
+
+    result = NFOMakerPP.generate_nfo(info_dict=info, filepath=media_file, mode=mode)
+
+    assert result["success"] is True
+    content = media_file.with_suffix(".nfo").read_text(encoding="utf-8")
+    assert f"<runtime>{minutes}</runtime>" in content
+    assert info["duration"] == duration
 
 
 def test_nfo_no_xml(tmp_path: Path) -> None:
