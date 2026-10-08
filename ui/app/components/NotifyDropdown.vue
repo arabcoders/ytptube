@@ -1,8 +1,5 @@
 <template>
-  <UPopover
-    :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
-    :ui="{ content: 'bg-elevated/80 dark:bg-elevated/30 backdrop-blur-md ring-0' }"
-  >
+  <UPopover :content="{ align: 'end', side: 'bottom', sideOffset: 8 }">
     <UButton
       color="neutral"
       variant="ghost"
@@ -138,6 +135,7 @@
 
           <UEmpty
             v-else
+            variant="naked"
             icon="i-lucide-inbox"
             :title="t('app.notifications.noNotifications')"
             :description="t('app.notifications.noNotificationsDesc')"
