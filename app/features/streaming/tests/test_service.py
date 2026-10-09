@@ -49,6 +49,7 @@ async def manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, probe: AsyncM
     (tmp_path / "video.mkv").write_bytes(b"source")
     monkeypatch.setattr(service, "ffprobe", probe)
     monkeypatch.setattr(service, "ffmpeg_bin", lambda: sys.executable)
+    monkeypatch.setattr(encoding, "ffmpeg_bin", lambda: sys.executable)
     manager = service.PlayerManager(config)
     manager.root = tmp_path / "scratch"
     manager.root.mkdir()
@@ -244,7 +245,6 @@ async def test_encoder_fallback(manager: service.PlayerManager, monkeypatch: pyt
     player = await manager.open("one", "video.mkv")
     stream = service.Encoding(manager, player.resource, None, None)
     player.resource.encodings[(None, None)] = stream
-    monkeypatch.setattr(encoding, "ffmpeg_bin", lambda: sys.executable)
     monkeypatch.setattr(encoding, "select_encoder", AsyncMock(return_value="h264_nvenc"))
     monkeypatch.setattr(encoding.Segments, "_encoders", {})
     monkeypatch.setattr(service, "MAX_JOBS", 1)
