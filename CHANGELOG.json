@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "6e5d79595538e4da60d33f6ec1ac0d5d459abcbb",
-    "date": "2026-10-08T22:47:40+00:00",
+    "full_sha": "6a468620ef302493a1342a3c3144316a74ba8945",
+    "date": "2026-10-09T17:11:47+00:00",
     "commits": [
+      {
+        "sha": "6a468620",
+        "full_sha": "6a468620ef302493a1342a3c3144316a74ba8945",
+        "message": "refactor: update hls segmenting",
+        "author": "arabcoders",
+        "date": "2026-10-09T17:11:47+00:00"
+      },
       {
         "sha": "6e5d7959",
         "full_sha": "6e5d79595538e4da60d33f6ec1ac0d5d459abcbb",
