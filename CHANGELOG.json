@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "2758dd2eea6365bc448ca3eaba0a70af794ead8c",
-    "date": "2026-10-08T04:36:18+00:00",
+    "full_sha": "6e5d79595538e4da60d33f6ec1ac0d5d459abcbb",
+    "date": "2026-10-08T22:47:40+00:00",
     "commits": [
+      {
+        "sha": "6e5d7959",
+        "full_sha": "6e5d79595538e4da60d33f6ec1ac0d5d459abcbb",
+        "message": "fix: nfo runtime and poster vs thumb. Closes #690",
+        "author": "arabcoders",
+        "date": "2026-10-08T22:47:40+00:00"
+      },
       {
         "sha": "2758dd2e",
         "full_sha": "2758dd2eea6365bc448ca3eaba0a70af794ead8c",
