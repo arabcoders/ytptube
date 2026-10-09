@@ -12,7 +12,7 @@ import pytest_asyncio
 from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionResetError
 from aiohttp.test_utils import make_mocked_request
-from app.features.streaming import router, service
+from app.features.streaming import encoding, router, service
 from app.features.streaming.library.ffprobe import FFProbeResult
 from app.library.config import Config
 from app.library.router import RouteType, get_routes
@@ -220,6 +220,100 @@ async def test_close_cancels(manager: service.PlayerManager, monkeypatch: pytest
 
 
 @pytest.mark.asyncio
+async def test_unstarted_close(manager: service.PlayerManager) -> None:
+    player = await manager.open("one", "video.mkv")
+    encoding = service.Encoding(manager, player.resource, None, None)
+
+    async def pending() -> None:
+        await asyncio.wait_for(asyncio.Event().wait(), 5)
+
+    task = encoding.task = asyncio.create_task(pending())
+    try:
+        async with asyncio.timeout(1):
+            await encoding.close()
+        assert task.cancelled() and encoding.task is None
+        await asyncio.wait_for(encoding.close(), 1)
+    finally:
+        task.cancel()
+        await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), 2)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["empty", "spawn"])
+async def test_encoder_fallback(manager: service.PlayerManager, monkeypatch: pytest.MonkeyPatch, failure: str) -> None:
+    player = await manager.open("one", "video.mkv")
+    stream = service.Encoding(manager, player.resource, None, None)
+    player.resource.encodings[(None, None)] = stream
+    monkeypatch.setattr(encoding, "ffmpeg_bin", lambda: sys.executable)
+    monkeypatch.setattr(encoding, "select_encoder", AsyncMock(return_value="h264_nvenc"))
+    monkeypatch.setattr(encoding.Segments, "_encoders", {})
+    monkeypatch.setattr(service, "MAX_JOBS", 1)
+    attempts = []
+
+    async def encode(_binary: str, codec: str, _validate) -> None:
+        attempts.append(codec)
+        if codec == "h264_nvenc":
+            if failure == "spawn":
+                raise OSError("encoder unavailable")
+            return
+        file = manager._root() / "fallback.ts"
+        file.write_bytes(b"complete")
+        player.resource.artifacts[("segment", 0, None, None)] = service.Artifact(
+            file=file, content_type="video/mpegts", size=8, touched=0
+        )
+        stream.next_index += 1
+
+    monkeypatch.setattr(stream, "encode", encode)
+    async with asyncio.timeout(2), manager.artifact(player, ("segment", 0, None, None)) as artifact:
+        assert artifact.file.read_bytes() == b"complete"
+    assert attempts == ["h264_nvenc", "libx264"]
+    assert manager.jobs == 0 and manager.pending == 0
+
+
+@pytest.mark.asyncio
+async def test_shutdown_encoders(manager: service.PlayerManager) -> None:
+    first = await manager.open("one", "video.mkv")
+    second = await manager.open("two", "video.mkv")
+    failed = AsyncMock(spec=service.Encoding)
+    failed.close.side_effect = service.ProcessExitError("Child exit was not confirmed.")
+    sibling = AsyncMock(spec=service.Encoding)
+    other = AsyncMock(spec=service.Encoding)
+    first.resource.encodings.update({(None, None): failed, (4, None): sibling})
+    second.resource.encodings[(None, None)] = other
+    try:
+        with pytest.raises(service.ProcessExitError):
+            await asyncio.wait_for(manager.shutdown(web.Application()), 2)
+        sibling.close.assert_awaited_once()
+        other.close.assert_awaited_once()
+        assert manager.closed and first.resource.encodings == {(None, None): failed}
+        assert not second.resource.encodings
+    finally:
+        first.resource.encodings.clear()
+
+
+@pytest.mark.asyncio
+async def test_truncated_segment(manager: service.PlayerManager, monkeypatch: pytest.MonkeyPatch) -> None:
+    player = await manager.open("one", "video.mkv")
+    stdout, stderr = asyncio.StreamReader(), asyncio.StreamReader()
+    stdout.feed_data(b"short")
+    stdout.feed_eof()
+    stderr.feed_data(b"#EXTM3U\n#EXTINF:6,\n#EXT-X-BYTERANGE:9@0\npipe:1\n")
+    stderr.feed_eof()
+    child = SimpleNamespace(stdout=stdout, stderr=stderr, returncode=0)
+    release = AsyncMock()
+    monkeypatch.setattr(encoding, "spawn", AsyncMock(return_value=child))
+    monkeypatch.setattr(encoding, "release", release)
+    monkeypatch.setattr(encoding, "select_encoder", AsyncMock(return_value="libx264"))
+    monkeypatch.setattr(encoding.Segments, "_encoders", {})
+    async with asyncio.timeout(2):
+        with pytest.raises(service.StreamingError, match="Unable to prepare"):
+            async with manager.artifact(player, ("segment", 0, None, None)):
+                raise AssertionError("truncated muxer output must not be delivered")
+    release.assert_awaited_once_with(child)
+    assert manager.jobs == 0 and not player.resource.artifacts
+
+
+@pytest.mark.asyncio
 async def test_expiry_generation(manager: service.PlayerManager, monkeypatch: pytest.MonkeyPatch) -> None:
     clock = [100.0]
     monkeypatch.setattr(service, "time", SimpleNamespace(monotonic=lambda: clock[0]))
@@ -422,9 +516,18 @@ async def test_sidecar_delivery(manager: service.PlayerManager, test_client) -> 
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("change", ["close", "expiry", "generation", "disconnect"])
-async def test_delivery_guard(manager: service.PlayerManager, monkeypatch: pytest.MonkeyPatch, change: str) -> None:
+@pytest.mark.parametrize(
+    "change,shared",
+    [("close", False), ("expiry", False), ("generation", False), ("disconnect", False), ("disconnect", True)],
+)
+async def test_delivery_guard(
+    manager: service.PlayerManager, monkeypatch: pytest.MonkeyPatch, change: str, shared: bool
+) -> None:
     player = await manager.open("shared", "video.mkv")
+    if shared:
+        await manager.open("shared", "video.mkv")
+    encoding = AsyncMock(spec=service.Encoding)
+    player.resource.encodings[(None, None)] = encoding
     file = manager._root() / "prepared.ts"
     file.write_bytes(b"x" * 131072)
     monkeypatch.setattr(manager, "_prepare", AsyncMock(return_value=file))
@@ -460,6 +563,10 @@ async def test_delivery_guard(manager: service.PlayerManager, monkeypatch: pytes
     assert response.closed
     assert len(chunks) == (0 if change == "disconnect" else 1)
     assert all(artifact.pins == 0 for artifact in player.resource.artifacts.values())
+    if shared:
+        encoding.close.assert_not_awaited()
+    else:
+        encoding.close.assert_awaited_once()
 
 
 @pytest.mark.asyncio

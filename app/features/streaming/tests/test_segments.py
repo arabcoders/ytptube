@@ -1,5 +1,4 @@
 from pathlib import Path
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -51,59 +50,21 @@ async def test_validated_audio(tmp_path: Path, probe: FFProbeResult) -> None:
 
 
 @pytest.mark.asyncio
-async def test_prepared_fallback(tmp_path: Path, probe: FFProbeResult, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.features.streaming.utils.ffmpeg_bin", lambda: "fake-ffmpeg")
-    monkeypatch.setattr("app.features.streaming.utils.select_encoder", AsyncMock(return_value="h264_nvenc"))
-    Segments._encoders.clear()
-    artifacts = []
-    attempts = []
-
-    async def run(_binary: str, args: list[str], *, output: Path, **_kwargs) -> tuple[int, bytes, str]:
-        if artifacts:
-            assert not artifacts[-1].exists(), "failed bytes must be discarded before fallback"
-        artifacts.append(output)
-        attempts.append(args[args.index("-codec:v") + 1])
-        output.write_bytes(b"failed-prefix" if len(artifacts) == 1 else b"complete-segment")
-        return (1, b"", "hardware unavailable") if len(artifacts) == 1 else (0, b"", "")
-
-    monkeypatch.setattr("app.features.streaming.utils.run", run)
-    segment = Segments(0, probe=probe)
-    artifact = await segment.prepare(tmp_path / "video.mp4", tmp_path)
-    assert artifact.read_bytes() == b"complete-segment"
-    assert artifacts[0] != artifacts[1]
-    assert attempts == ["h264_nvenc", "libx264"]
+async def test_continuous_args(tmp_path: Path, probe: FFProbeResult) -> None:
+    args = await Segments(1, probe=probe).build_ffmpeg_args(tmp_path / "video.mp4", "libx264")
+    assert args[args.index("-ss") + 1] == "6.000000"
+    assert args[args.index("-t") + 1] == "7.000000", "the encoder must continue beyond the requested segment"
+    assert args[args.index("-output_ts_offset") + 1] == "6.000000"
+    assert args[args.index("-force_key_frames") + 1] == "expr:gte(t,n_forced*6.000000)"
+    assert args[args.index("-bf") + 1] == "0"
+    assert args[args.index("-readrate_initial_burst") + 1] == "18.000000"
+    assert args[args.index("-hls_flags") + 1] == "single_file+independent_segments"
+    assert args[-3:] == ["-hls_segment_filename", "pipe:1", "pipe:2"]
 
 
 @pytest.mark.asyncio
-async def test_empty_output(tmp_path: Path, probe: FFProbeResult, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.features.streaming.utils.ffmpeg_bin", lambda: "fake-ffmpeg")
-    monkeypatch.setattr("app.features.streaming.utils.select_encoder", AsyncMock(return_value="libx264"))
-    monkeypatch.setattr("app.features.streaming.utils.run", AsyncMock(return_value=(0, b"", "")))
-    Segments._encoders.clear()
-    segment = Segments(0, probe=probe)
-    with pytest.raises(StreamingError, match="Unable to prepare"):
-        await segment.prepare(tmp_path / "video.mp4", tmp_path)
-    assert list(tmp_path.iterdir()) == []
-
-
-@pytest.mark.asyncio
-async def test_cached_encoder_failure(tmp_path: Path, probe: FFProbeResult, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.features.streaming.utils.ffmpeg_bin", lambda: "fake-ffmpeg")
-    select = AsyncMock(return_value="h264_nvenc")
-    monkeypatch.setattr("app.features.streaming.utils.select_encoder", select)
-    Segments._encoders.clear()
-    attempts = []
-
-    async def run(_binary: str, args: list[str], *, output: Path, **_kwargs) -> tuple[int, bytes, str]:
-        codec = args[args.index("-codec:v") + 1]
-        attempts.append(codec)
-        output.write_bytes(b"prepared")
-        return (1 if len(attempts) == 2 else 0), b"", "runtime hardware failure"
-
-    monkeypatch.setattr("app.features.streaming.utils.run", run)
-    for _ in range(2):
-        segment = Segments(0, probe=probe)
-        artifact = await segment.prepare(tmp_path / "video.mp4", tmp_path)
-        artifact.unlink()
-    assert attempts == ["h264_nvenc", "h264_nvenc", "libx264"]
-    assert select.await_count == 1
+async def test_bitmap_args(tmp_path: Path, probe: FFProbeResult) -> None:
+    probe.deserialize({**probe.serialize(), "subtitle": [{"index": 7, "codec_type": "subtitle"}]})
+    args = await Segments(0, probe=probe, subtitle=7).build_ffmpeg_args(tmp_path / "video.mkv", "libx264")
+    assert args[args.index("-filter_complex") + 1] == "[0:1][0:7]overlay[v]"
+    assert args[args.index("-force_key_frames") + 1] == "expr:gte(t,n_forced*6.000000)"
