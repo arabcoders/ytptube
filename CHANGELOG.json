@@ -1,9 +1,16 @@
 [
   {
     "tag": "Untagged",
-    "full_sha": "82c9bf2b2efe111df772929874e2dbe67050129e",
-    "date": "2026-10-09T17:29:50+00:00",
+    "full_sha": "bce2a930c5e6ea9b09bd9eea06eacaf300281a9d",
+    "date": "2026-10-10T16:47:09+00:00",
     "commits": [
+      {
+        "sha": "bce2a930",
+        "full_sha": "bce2a930c5e6ea9b09bd9eea06eacaf300281a9d",
+        "message": "fix: restore closing player automaticly if file no longer exists.",
+        "author": "arabcoders",
+        "date": "2026-10-10T16:47:09+00:00"
+      },
       {
         "sha": "82c9bf2b",
         "full_sha": "82c9bf2b2efe111df772929874e2dbe67050129e",
