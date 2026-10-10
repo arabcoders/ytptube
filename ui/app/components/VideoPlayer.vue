@@ -1468,6 +1468,7 @@ async function loadPlayerInfo() {
     loading.value = false;
     loadingError.value = t('common.noMediaFile');
     emitter('error', loadingError.value);
+    emitter('closeModel');
     return;
   }
 
@@ -1482,8 +1483,12 @@ async function loadPlayerInfo() {
   if (!opened.ok) {
     recordEvent('open-error', response.code);
     loading.value = false;
-    loadingError.value = messageFor(response, 'common.failedFetch');
+    loadingError.value =
+      opened.status === 404
+        ? t('errors.FILE_UNAVAILABLE', { file: props.item.filename })
+        : messageFor(response, 'common.failedFetch');
     emitter('error', loadingError.value);
+    emitter('closeModel');
     return;
   }
   if (destroyed.value) {
@@ -1820,8 +1825,11 @@ onMounted(async () => {
       loading.value = false;
       loadingError.value = t('player.preparationFailed');
       emitter('error', loadingError.value);
+      emitter('closeModel');
     }
+    return;
   }
+  if (!session.value || destroyed.value) return;
   refreshTimer = window.setInterval(() => {
     if (!session.value || destroyed.value || switching.value) return;
     void request(`/api/player/leases/${encodeURIComponent(session.value.player_id)}`, {
