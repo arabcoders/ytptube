@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING
 
 import anyio
 
+from app.features.streaming.encoding import Encoding
 from app.features.streaming.library.ffprobe import FFProbeResult, ffmpeg_bin, ffprobe
 from app.features.streaming.library.subtitle import SOURCE_FORMATS, Subtitle, get_subtitle_tracks
 from app.features.streaming.types import StreamingError
 from app.features.streaming.utils import (
     SEGMENT_MAX_BYTES,
     ProcessExitError,
-    Segments,
     binary_key,
     font_metadata,
     run,
@@ -90,6 +90,7 @@ class Resource:
     players: set[str] = field(default_factory=set)
     flights: dict[tuple, Flight] = field(default_factory=dict)
     artifacts: dict[tuple, Artifact] = field(default_factory=dict)
+    encodings: dict[tuple[int | None, int | None], Encoding] = field(default_factory=dict)
     stale: bool = False
 
 
@@ -110,6 +111,7 @@ class PlayerManager:
         self.resources: dict[tuple, Resource] = {}
         self.players: dict[str, Player] = {}
         self.jobs = 0
+        self.pending = 0
         self.closed = False
 
     def attach(self, app: web.Application) -> None:
@@ -363,13 +365,17 @@ class PlayerManager:
         self, player: Player, key: tuple, prepare: Callable[[], Awaitable[T]], *, shared: bool = False
     ) -> T:
         resource = player.resource
+        segment = key[0] == "segment"
         flight = resource.flights.get(key)
         if flight is None:
-            if self.jobs >= MAX_JOBS:
+            if (self.pending if segment else self.jobs) >= MAX_JOBS:
                 msg = "Player preparation is busy."
                 raise PlayerError(msg, 503)
             self._evict(SEGMENT_MAX_BYTES)
-            self.jobs += 1
+            if segment:
+                self.pending += 1
+            else:
+                self.jobs += 1
 
             async def work() -> T:
                 try:
@@ -378,10 +384,15 @@ class PlayerManager:
                 except ProcessExitError:
                     self.closed = True
                     raise
-                finally:
+
+            def finished(_: asyncio.Task) -> None:
+                if segment:
+                    self.pending -= 1
+                else:
                     self.jobs -= 1
 
             flight = Flight(task=asyncio.create_task(work()))
+            flight.task.add_done_callback(finished)
             resource.flights[key] = flight
         owner = (player.owner, None if shared else player.id)
         flight.owners[owner] = flight.owners.get(owner, 0) + 1
@@ -411,6 +422,8 @@ class PlayerManager:
 
             async def prepare() -> Artifact:
                 file = await self._prepare(player, key)
+                if key[0] == "segment" and key in resource.artifacts:
+                    return resource.artifacts[key]
                 published = False
                 try:
                     if not self._valid(resource):
@@ -458,12 +471,18 @@ class PlayerManager:
         resource = player.resource
         if key[0] == "segment":
             _, index, audio, subtitle = key
-            return await Segments(
-                index,
-                probe=resource.probe,
-                audio=audio,
-                subtitle=subtitle,
-            ).prepare(resource.file, self._root())
+            selection = (audio, subtitle)
+            encoding = resource.encodings.get(selection)
+            if encoding is None:
+                encoding = Encoding(self, resource, audio, subtitle)
+                resource.encodings[selection] = encoding
+
+            async def validate() -> None:
+                if self.closed or not resource.players or not self._valid(resource):
+                    msg = "Media changed or playback was closed."
+                    raise PlayerError(msg, 409)
+
+            return (await encoding.get(index, validate)).file
         binary = ffmpeg_bin()
         if binary is None:
             msg = "ffmpeg is unavailable."
@@ -562,12 +581,28 @@ class PlayerManager:
                 tasks.append(flight.task)
         if tasks:
             await settle(asyncio.create_task(self._drain(tasks)))
+        if not resource.players:
+            await self._stop_encodings(resource)
+
+    async def _stop_encodings(self, resource: Resource) -> None:
+        error = None
+        for selection, encoding in list(resource.encodings.items()):
+            try:
+                await settle(asyncio.create_task(encoding.close()))
+            except ProcessExitError as exc:
+                self.closed = True
+                error = exc
+            else:
+                if resource.encodings.get(selection) is encoding:
+                    del resource.encodings[selection]
+        if error is not None:
+            raise error
 
     async def _drain(self, tasks: list[asyncio.Task]) -> None:
         await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), 25)
 
     def _drop(self, resource: Resource) -> None:
-        if resource.flights or any(a.pins for a in resource.artifacts.values()):
+        if resource.flights or resource.encodings or any(a.pins for a in resource.artifacts.values()):
             return
         for artifact in resource.artifacts.values():
             artifact.file.unlink(missing_ok=True)
@@ -596,8 +631,15 @@ class PlayerManager:
                 tasks.append(flight.task)
         if tasks:
             await settle(asyncio.create_task(self._drain(tasks)))
+        error = None
         for resource in self.resources.values():
             resource.flights.clear()
+            try:
+                await self._stop_encodings(resource)
+            except ProcessExitError as exc:
+                error = exc
+        if error is not None:
+            raise error
         await self.cleanup(_)
 
     async def cleanup(self, _: web.Application) -> None:

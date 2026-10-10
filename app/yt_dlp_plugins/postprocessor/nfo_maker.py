@@ -73,7 +73,7 @@ class NFOMakerPP(PostProcessor):
   <uniqueid type="{extractor}">{id}</uniqueid>
   <plot>{plot}</plot>
   <runtime>{runtime}</runtime>
-  <thumb aspect="poster" preview="{thumb}">{thumb}</thumb>
+  <thumb aspect="thumb" preview="{thumb}">{thumb}</thumb>
 </episodedetails>
 """.strip("\n"),
         },
@@ -279,6 +279,9 @@ class NFOMakerPP(PostProcessor):
 
                 if "extractor" == nfo_name and isinstance(resolved_val, str):
                     resolved_val = resolved_val.lower()
+
+                if "runtime" == nfo_name:
+                    resolved_val = int(float(resolved_val) / 60)
 
                 if resolved_val not in (None, ""):
                     data[nfo_name] = resolved_val

@@ -7,8 +7,6 @@ import shutil
 import struct
 import subprocess
 import sys
-import tempfile
-import time
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
@@ -30,7 +28,7 @@ CLEANUP_TIMEOUT = 5.0
 MAX_PROCESSES = 8
 SEGMENT_DURATION = 6.0
 SEGMENT_MAX_BYTES = 16 * 1024 * 1024
-ATTEMPT_TIMEOUT = 90.0
+ENCODE_AHEAD = 2
 _running: set[object] = set()
 _pending: set[asyncio.Task] = set()
 LOG = get_logger()
@@ -183,6 +181,38 @@ async def _abort_spawn(task: asyncio.Task[Process]) -> None:
     except (Exception, asyncio.CancelledError):
         return
     await _stop_acquired(proc)
+
+
+async def spawn(binary: str, args: list[str]) -> Process:
+    if len(_running) >= MAX_PROCESSES:
+        msg = "Media preparation is busy."
+        raise PreparationBusyError(msg)
+    lease = object()
+    _running.add(lease)
+    task = asyncio.create_task(
+        asyncio.create_subprocess_exec(
+            binary,
+            *args,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+    )
+    try:
+        proc = await asyncio.wait_for(asyncio.shield(task), SPAWN_TIMEOUT)
+    except BaseException:
+        await settle(asyncio.create_task(_abort_spawn(task)))
+        _running.remove(lease)
+        raise
+    _running.remove(lease)
+    _running.add(proc)
+    return proc
+
+
+async def release(proc: Process) -> None:
+    await settle(asyncio.create_task(_stop_acquired(proc)))
+    _running.discard(proc)
 
 
 async def run(
@@ -575,12 +605,12 @@ class Segments:
         self.probe = probe
         self.audio = audio
         self.subtitle = subtitle
-        self.vcodec = config.streamer_vcodec
         self.acodec = config.streamer_acodec
 
     async def build_ffmpeg_args(self, file: Path, s_codec: str) -> list[str]:
         ff = self.probe or await ffprobe(file)
-        start, length = segment_window(self.index, float(ff.metadata["duration"]))
+        duration = float(ff.metadata["duration"])
+        start, _ = segment_window(self.index, duration)
         if self.audio is not None and not any(stream.index == self.audio for stream in ff.audio):
             msg = "Unknown audio stream."
             raise StreamingError(msg)
@@ -609,8 +639,11 @@ class Segments:
             "-ss",
             f"{start:.6f}",
             "-t",
-            f"{length:.6f}",
-            "-copyts",
+            f"{duration - start:.6f}",
+            "-readrate",
+            "1",
+            "-readrate_initial_burst",
+            f"{SEGMENT_DURATION * (ENCODE_AHEAD + 1):.6f}",
             *input_args,
             "-i",
             f"file:{file}",
@@ -618,8 +651,20 @@ class Segments:
             "-1",
         ]
         if builder:
+            video = [
+                "-flags",
+                "+cgop",
+                "-bf",
+                "0",
+                "-force_key_frames",
+                f"expr:gte(t,n_forced*{SEGMENT_DURATION:.6f})",
+            ]
+            if s_codec == "libx264":
+                video += ["-x264-params", "open-gop=0:scenecut=0"]
+            elif s_codec == "h264_nvenc":
+                video += ["-forced-idr", "1"]
             if bitmap:
-                video_args = builder.add_video_args(["-g", "52"], ctx)
+                video_args = builder.add_video_args(video, ctx)
                 filters = "overlay"
                 if "-vf" in video_args:
                     offset = video_args.index("-vf")
@@ -636,54 +681,27 @@ class Segments:
                     *video_args,
                 ]
             else:
-                args += builder.add_video_args(["-g", "52", "-map", f"0:{video_index}", "-strict", "-2"], ctx)
+                args += builder.add_video_args([*video, "-map", f"0:{video_index}", "-strict", "-2"], ctx)
         if ff.has_audio():
             default = next(
                 (stream for stream in ff.audio if getattr(stream, "disposition", {}).get("default")), ff.audio[0]
             )
             args += ["-map", f"0:{self.audio if self.audio is not None else default.index}", "-codec:a", self.acodec]
-        return [*args, "-sn", "-muxdelay", "0", "-f", "mpegts", "pipe:1"]
-
-    async def prepare(self, file: Path, directory: Path) -> Path:
-        self.probe = self.probe or await ffprobe(file)
-        segment_window(self.index, float(self.probe.metadata["duration"]))
-        binary = ffmpeg_bin()
-        if binary is None:
-            msg = "ffmpeg is unavailable."
-            raise StreamingError(msg)
-        config = Config.get_instance()
-        key = (binary_key(binary) if Path(binary).exists() else (binary,), self.vcodec, config.vaapi_device)
-        cached = self._encoders.get(key)
-        codec = cached[0] if cached and cached[1] > time.monotonic() else await select_encoder(self.vcodec)
-        codecs = list(dict.fromkeys([codec, *encoder_fallback_chain(codec)]))
-        for codec in codecs:
-            with tempfile.NamedTemporaryFile(prefix="segment-", suffix=".ts", dir=directory, delete=False) as output:
-                artifact = Path(output.name)
-            try:
-                args = await self.build_ffmpeg_args(file, codec)
-                code, _, error = await run(
-                    binary,
-                    args,
-                    deadline=ATTEMPT_TIMEOUT,
-                    max_bytes=SEGMENT_MAX_BYTES,
-                    output=artifact,
-                )
-                if code == 0 and artifact.stat().st_size > 0:
-                    if len(self._encoders) >= 16:
-                        self._encoders.clear()
-                    self._encoders[key] = (codec, time.monotonic() + 300)
-                    return artifact
-                LOG.warning("Segment hardware encoder '%s' failed: %s", codec, error[-500:])
-            except ProcessExitError:
-                raise
-            except PreparationBusyError:
-                artifact.unlink(missing_ok=True)
-                raise
-            except (TimeoutError, StreamingError) as exc:
-                LOG.warning("Segment encoder '%s' failed: %s", codec, exc)
-            except BaseException:
-                artifact.unlink(missing_ok=True)
-                raise
-            artifact.unlink(missing_ok=True)
-        msg = "Unable to prepare the media segment."
-        raise StreamingError(msg)
+        return [
+            *args,
+            "-sn",
+            "-dn",
+            "-output_ts_offset",
+            f"{start:.6f}",
+            "-f",
+            "hls",
+            "-hls_time",
+            f"{SEGMENT_DURATION:.6f}",
+            "-hls_list_size",
+            "2",
+            "-hls_flags",
+            "single_file+independent_segments",
+            "-hls_segment_filename",
+            "pipe:1",
+            "pipe:2",
+        ]

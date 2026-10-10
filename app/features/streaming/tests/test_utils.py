@@ -102,6 +102,26 @@ async def test_admission_bound(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_continuous_admission(monkeypatch: pytest.MonkeyPatch) -> None:
+    child = Child([])
+
+    async def spawn(*_args, **_kwargs) -> Child:
+        return child
+
+    monkeypatch.setattr(utils.asyncio, "create_subprocess_exec", spawn)
+    monkeypatch.setattr(utils, "MAX_PROCESSES", 1)
+    proc = await asyncio.wait_for(utils.spawn("fake-ffmpeg", []), 1)
+    try:
+        with pytest.raises(utils.PreparationBusyError):
+            await asyncio.wait_for(utils.run("fake-ffmpeg", [], deadline=1, max_bytes=64), 1)
+        with pytest.raises(utils.PreparationBusyError):
+            await asyncio.wait_for(utils.spawn("fake-ffmpeg", []), 1)
+    finally:
+        await asyncio.wait_for(utils.release(proc), 2)
+    assert child.terminated and not utils._running
+
+
+@pytest.mark.asyncio
 async def test_whole_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
     child = Child([], asyncio.Event())
     timeout_at = utils.asyncio.timeout_at
@@ -118,7 +138,8 @@ async def test_whole_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cancel", [True, False])
-async def test_spawn_cleanup(monkeypatch: pytest.MonkeyPatch, cancel: bool) -> None:
+@pytest.mark.parametrize("continuous", [True, False])
+async def test_spawn_cleanup(monkeypatch: pytest.MonkeyPatch, cancel: bool, continuous: bool) -> None:
     started, draining, release = asyncio.Event(), asyncio.Event(), asyncio.Event()
     child = Child([b"discarded"])
     abort_spawn = utils._abort_spawn
@@ -133,7 +154,10 @@ async def test_spawn_cleanup(monkeypatch: pytest.MonkeyPatch, cancel: bool) -> N
         await abort_spawn(task)
 
     async def use() -> None:
-        await utils.run("fake-ffmpeg", [], deadline=5, max_bytes=64)
+        if continuous:
+            await utils.spawn("fake-ffmpeg", [])
+        else:
+            await utils.run("fake-ffmpeg", [], deadline=5, max_bytes=64)
 
     monkeypatch.setattr(utils.asyncio, "create_subprocess_exec", spawn)
     monkeypatch.setattr(utils, "_abort_spawn", abort)
@@ -160,7 +184,8 @@ async def test_spawn_cleanup(monkeypatch: pytest.MonkeyPatch, cancel: bool) -> N
 
 
 @pytest.mark.asyncio
-async def test_spawn_unconfirmed(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("continuous", [True, False])
+async def test_spawn_unconfirmed(monkeypatch: pytest.MonkeyPatch, continuous: bool) -> None:
     started, release, cleaned = asyncio.Event(), asyncio.Event(), asyncio.Event()
     child = Child([])
     stop_acquired = utils._stop_acquired
@@ -178,7 +203,10 @@ async def test_spawn_unconfirmed(monkeypatch: pytest.MonkeyPatch) -> None:
             cleaned.set()
 
     async def use() -> None:
-        await utils.run("fake-ffmpeg", [], deadline=5, max_bytes=64)
+        if continuous:
+            await utils.spawn("fake-ffmpeg", [])
+        else:
+            await utils.run("fake-ffmpeg", [], deadline=5, max_bytes=64)
 
     monkeypatch.setattr(utils.asyncio, "create_subprocess_exec", spawn)
     monkeypatch.setattr(utils, "_stop_acquired", stop)

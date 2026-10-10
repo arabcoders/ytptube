@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import math
 from functools import wraps
@@ -14,7 +15,13 @@ from app.features.auth.middleware import AUTH_USER_KEY
 from app.features.core.utils import api_error_response
 from app.features.streaming.service import Player, PlayerError, PlayerManager
 from app.features.streaming.types import FFProbeError, StreamingError
-from app.features.streaming.utils import SEGMENT_DURATION, PreparationBusyError, SegmentIndexError, segment_window
+from app.features.streaming.utils import (
+    SEGMENT_DURATION,
+    PreparationBusyError,
+    SegmentIndexError,
+    segment_window,
+    settle,
+)
 from app.library.cache import Cache
 from app.library.logging import get_logger
 from app.library.router import route
@@ -256,6 +263,7 @@ async def player_artifact(request: web.Request, players: PlayerManager) -> web.S
             headers["X-YTP-Font"] = json.dumps(artifact.metadata, ensure_ascii=True)
         response = web.StreamResponse(headers=headers)
         await players.check(player, shared=True)
+        completed = False
         try:
             await response.prepare(request)
             async with await anyio.open_file(artifact.file, "rb") as output:
@@ -264,8 +272,26 @@ async def player_artifact(request: web.Request, players: PlayerManager) -> web.S
                     await response.write(chunk)
             await players.check(player, shared=True)
             await response.write_eof()
+            completed = True
         except (PlayerError, ConnectionError):
             response.force_close()
             if request.transport is not None:
                 request.transport.close()
+        finally:
+            if not completed and key[0] == "segment":
+                resource = player.resource
+                active = sum(
+                    cached.pins
+                    for cached_key, cached in resource.artifacts.items()
+                    if cached_key[0] == "segment" and cached_key[2:] == key[2:]
+                )
+                pending = any(
+                    flight_key[0] == "segment" and flight_key[2:] == key[2:] for flight_key in resource.flights
+                )
+                if len(resource.players) <= 1 and active <= 1 and not pending:
+                    encoding = resource.encodings.get((key[2], key[3]))
+                    if encoding is not None:
+                        await settle(asyncio.create_task(encoding.close()))
+                        if resource.encodings.get((key[2], key[3])) is encoding:
+                            del resource.encodings[(key[2], key[3])]
         return response
