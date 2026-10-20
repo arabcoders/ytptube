@@ -325,13 +325,19 @@ class TaskDefinitionInspectRequest(BaseModel):
         return self
 
 
-class TaskDefinitionPatch(TaskDefinition):
-    model_config = ConfigDict(str_strip_whitespace=True)
+class TaskDefinitionPatch(BaseModel):
+    model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True)
+    id: int | None = None
     name: str | None = None
     priority: int | None = None
     match_url: list[str] | None = None
     definition: Definition | None = None
     enabled: bool | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    _normalize_priority = field_validator("priority", mode="before")(TaskDefinition._normalize_priority)
+    _validate_match_url = field_validator("match_url", mode="before")(TaskDefinition._validate_match_url)
 
 
 class TaskDefinitionList(BaseModel):

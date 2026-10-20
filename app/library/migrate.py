@@ -4,11 +4,11 @@ This module is a fork of the Caribou library
 """
 
 import contextlib
-import datetime
+import datetime as dt
 import glob
 import os.path
 import traceback
-from collections.abc import AsyncIterator, Iterable, Mapping, Sequence
+from collections.abc import AsyncGenerator, Iterable, Mapping, Sequence
 from importlib.machinery import ModuleSpec, SourceFileLoader
 from importlib.util import module_from_spec, spec_from_loader
 from pathlib import Path
@@ -49,7 +49,7 @@ class InvalidNameError(Error):
 @contextlib.asynccontextmanager
 async def execute(
     conn: AsyncConnection, sql: str, params: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None
-) -> AsyncIterator:
+) -> AsyncGenerator:
     params = {} if params is None else params
     result = await conn.execute(text(sql), params)
     try:
@@ -59,7 +59,7 @@ async def execute(
 
 
 @contextlib.asynccontextmanager
-async def transaction(conn: AsyncConnection) -> AsyncIterator[None]:
+async def transaction(conn: AsyncConnection) -> AsyncGenerator[None]:
     try:
         yield
         await conn.commit()
@@ -283,7 +283,7 @@ def create_migration(name: str, directory: str | None = None) -> str:
         msg: str = f"{directory} is not a directory."
         raise Error(msg)
 
-    now: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
+    now: dt.datetime = dt.datetime.now(tz=dt.UTC)
     version: str = now.strftime("%Y%m%d%H%M%S")
 
     contents: str = MIGRATION_TEMPLATE % {"name": name, "version": version}
