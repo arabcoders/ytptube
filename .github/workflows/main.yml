@@ -149,12 +149,8 @@ jobs:
           NODE_ENV: production
         run: bun run generate
 
-      - name: Install GitPython
-        run: pip install gitpython
-
       - name: Generate CHANGELOG.json
-        run: |
-          python3 .github/scripts/generate_changelog.py -p . -f ./ui/exported/CHANGELOG.json
+        run: python3 .github/scripts/generate_changelog.py --output ./ui/exported/CHANGELOG.json
 
       - name: Upload frontend build (GitHub)
         if: env.REGISTRY == ''
