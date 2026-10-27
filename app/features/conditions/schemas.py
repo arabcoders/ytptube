@@ -68,11 +68,14 @@ class Condition(BaseModel):
         return self
 
 
-class ConditionPatch(Condition):
+class ConditionPatch(BaseModel):
     """
     Model for patching Condition fields. All fields are optional.
     """
 
+    model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
+
+    id: int | None = None
     name: str | None = None
     filter: str | None = None
     cli: str | None = None
@@ -81,9 +84,10 @@ class ConditionPatch(Condition):
     priority: int | None = None
     description: str | None = None
 
-    @model_validator(mode="after")
-    def _validate_cli_or_extras(self) -> ConditionPatch:
-        return self
+    _validate_filter = field_validator("filter")(Condition._validate_filter)
+    _validate_cli = field_validator("cli")(Condition._validate_cli)
+    _normalize_priority = field_validator("priority", mode="before")(Condition._normalize_priority)
+    _validate_enabled = field_validator("enabled", mode="before")(Condition._validate_enabled)
 
 
 class ConditionList(BaseModel):

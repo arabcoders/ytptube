@@ -1,5 +1,5 @@
 import asyncio
-import datetime
+import datetime as dt
 import inspect
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -90,7 +90,7 @@ class Events:
 @dataclass(kw_only=True)
 class Event:
     id: str = field(default_factory=lambda: str(gen_random(16)), init=False)
-    created_at: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.UTC).isoformat()))
+    created_at: str = field(default_factory=lambda: str(dt.datetime.now(tz=dt.UTC).isoformat()))
     event: str
     title: str | None = None
     message: str | None = None

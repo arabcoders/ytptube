@@ -17,6 +17,11 @@ YTPTube's automation tools can be used separately or together:
 
 See [Features](docs/features.md) for the full workflow.
 
+### If you like my work, you might also like my other projects:
+
+* [WatchState](https://github.com/arabcoders/watchstate): Self-hosted service to sync your media servers without relying on 3rd-party external services.
+* [Millwright](https://github.com/arabcoders/millwright): is a self-hosted automation interface for FFmpeg.
+
 ## Screenshots
 
 Standard interface:

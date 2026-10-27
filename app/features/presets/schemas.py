@@ -78,16 +78,22 @@ class Preset(BaseModel):
         return self._cookies_file
 
 
-class PresetPatch(Preset):
+class PresetPatch(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
 
+    id: int | None = None
     name: str | None = None
     description: str | None = None
     folder: str | None = None
     template: str | None = None
     cookies: str | None = None
     cli: str | None = None
+    default: bool = False
     priority: int | None = None
+
+    _normalize_name = field_validator("name", mode="before")(Preset._normalize_name)
+    _normalize_priority = field_validator("priority", mode="before")(Preset._normalize_priority)
+    _validate_cli = field_validator("cli", mode="before")(Preset._validate_cli)
 
 
 class PresetList(BaseModel):
