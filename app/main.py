@@ -178,6 +178,10 @@ class Main:
                 self._config.download_path,
                 extra={"download_path": self._config.download_path},
             )
+
+            if self._config.temp_keep:
+                LOG.warning("Keep temp files option is enabled.")
+
             if self._config.is_native:
                 LOG.info("Running in native mode.")
 

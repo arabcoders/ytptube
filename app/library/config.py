@@ -548,7 +548,6 @@ class Config(metaclass=Singleton):
         envFile: Path = Path(self.config_path) / ".env"
 
         if envFile.exists():
-            LOG.info("Loading environment variables from '%s'.", envFile)
             load_dotenv(envFile)
 
         self.is_native = is_native
@@ -668,12 +667,6 @@ class Config(metaclass=Singleton):
                     "Failed to start debugpy server.",
                     extra={"host": self.debugpy_host, "port": self.debugpy_port, "exception_type": type(e).__name__},
                 )
-
-        if (Path(self.config_path) / "ytdlp.cli").exists():
-            LOG.error("Support for ./ytdlp.cli file is removed, migrate to presets and remove the file.")
-
-        if self.temp_keep:
-            LOG.warning("Keep temp files option is enabled.")
 
         self.started = int(time.time())
 
