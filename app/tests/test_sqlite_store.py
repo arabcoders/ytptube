@@ -1,9 +1,15 @@
 import asyncio
+import sqlite3
+from contextlib import closing
+from unittest.mock import AsyncMock
 
 import pytest
+import pytest_asyncio
 from sqlalchemy.pool import StaticPool
 
+from app.library import migrate
 from app.library.sqlite_store import SqliteStore
+from app.main import ROOT_PATH
 from app.tests.helpers import make_in_memory_db_path
 
 
@@ -83,3 +89,88 @@ async def test_memory_pool(db_path: str) -> None:
                 await store.close()
         finally:
             SqliteStore._reset_singleton()
+
+
+@pytest_asyncio.fixture
+async def revision_store(tmp_path):
+    SqliteStore._reset_singleton()
+    store = SqliteStore.get_instance(db_path=str(tmp_path / "database.db"), no_auto_migration=True)
+    try:
+        async with asyncio.timeout(10):
+            yield store
+    finally:
+        try:
+            async with asyncio.timeout(5):
+                await store.close()
+        finally:
+            SqliteStore._reset_singleton()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("no_auto_migration", "empty"), [(False, False), (True, False), (True, True)])
+async def test_database_bootstrap(tmp_path, no_auto_migration, empty):
+    SqliteStore._reset_singleton()
+    db_path = tmp_path / "database.db"
+    if empty:
+        db_path.touch()
+    store = SqliteStore.get_instance(db_path=str(db_path), no_auto_migration=no_auto_migration)
+    try:
+        async with asyncio.timeout(10):
+            conn = await store.get_connection()
+            latest = max(m.get_version() for m in migrate.load_migrations(ROOT_PATH / "migrations"))
+            assert await migrate.get_version(conn) == latest
+            assert await store.fetch_raw("SELECT name FROM sqlite_master WHERE name = 'history'")
+    finally:
+        try:
+            async with asyncio.timeout(5):
+                await store.close()
+        finally:
+            SqliteStore._reset_singleton()
+
+
+@pytest.mark.asyncio
+async def test_current_revision(revision_store, monkeypatch):
+    latest = max(m.get_version() for m in migrate.load_migrations(ROOT_PATH / "migrations"))
+    with closing(sqlite3.connect(revision_store._db_path)) as db, db:
+        db.execute("CREATE TABLE migration_version (version TEXT)")
+        db.execute("INSERT INTO migration_version VALUES (?)", (latest,))
+        for operation in ("INSERT", "UPDATE", "DELETE"):
+            db.execute(
+                f"CREATE TRIGGER block_{operation} BEFORE {operation} ON migration_version "
+                "BEGIN SELECT RAISE(ABORT, 'migration revision is read-only'); END"
+            )
+    upgrade = AsyncMock(side_effect=AssertionError("Unexpected migration"))
+    monkeypatch.setattr(migrate, "upgrade", upgrade)
+
+    conn = await revision_store.get_connection()
+
+    assert await migrate.get_version(conn) == latest
+    assert revision_store.sessionmaker() is not None
+    await revision_store.execute_raw("CREATE TABLE usable (id INTEGER)")
+    await revision_store.execute_raw("INSERT INTO usable VALUES (1)")
+    assert await revision_store.fetch_raw("SELECT id FROM usable") == [{"id": 1}]
+    upgrade.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("version", ["0", "20000101000000", "99991231235959"])
+async def test_refuses_revision(revision_store, monkeypatch, version):
+    with closing(sqlite3.connect(revision_store._db_path)) as db, db:
+        db.execute("CREATE TABLE migration_version (version TEXT)")
+        db.execute("INSERT INTO migration_version VALUES (?)", (version,))
+    upgrade = AsyncMock(side_effect=AssertionError("Unexpected migration"))
+    monkeypatch.setattr(migrate, "upgrade", upgrade)
+
+    for _ in range(2):
+        with pytest.raises(RuntimeError, match="expected .*Start without --no-auto-migration"):
+            await revision_store.get_connection()
+        assert revision_store._conn is None
+        assert revision_store._engine is None
+        with pytest.raises(RuntimeError, match="not initialized"):
+            revision_store.sessionmaker()
+
+    with closing(sqlite3.connect(revision_store._db_path)) as db:
+        tables = db.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
+        assert tables == [("migration_version",)]
+        assert db.execute("SELECT version FROM migration_version").fetchall() == [(version,)]
+    upgrade.assert_not_awaited()
