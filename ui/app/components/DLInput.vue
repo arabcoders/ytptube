@@ -1,5 +1,5 @@
 <template>
-  <div v-if="'bool' === type && compact" class="w-full space-y-1.5">
+  <div v-if="'bool' === type && compact && !required && !error" class="w-full space-y-1.5">
     <div
       class="flex min-h-11 items-start justify-between gap-3 rounded-md border border-default bg-elevated/20 px-3 py-2"
     >
@@ -43,6 +43,8 @@
     v-else
     :name="String(id)"
     :description="$slots.description ? undefined : description"
+    :required="required"
+    :error="error"
     class="w-full"
     :ui="fieldUi"
   >
@@ -91,6 +93,37 @@
       }"
     />
 
+    <UInput
+      v-else-if="'number' === type"
+      :id="`dlf-${id}`"
+      v-model.number.optional="numberModel"
+      type="number"
+      :min="min"
+      :max="max"
+      :step="step"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      size="lg"
+      class="w-full"
+      :ui="{ root: 'w-full', base: 'w-full bg-elevated/60' }"
+    />
+
+    <USelectMenu
+      v-else-if="'select' === type"
+      :id="`dlf-${id}`"
+      v-model="selectModel"
+      :items="items"
+      value-key="value"
+      label-key="label"
+      :search-input="{ placeholder: t('common.search') }"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      clear
+      size="lg"
+      class="w-full"
+      :ui="{ base: 'w-full bg-elevated/60' }"
+    />
+
     <USwitch
       v-else-if="'bool' === type"
       :id="`dlf-${id}`"
@@ -123,15 +156,22 @@ const props = defineProps<{
   id: number | string;
   label: string;
   field?: string;
-  type: DLFieldType;
+  type: DLFieldType | 'number' | 'select';
   description?: string;
   icon?: string;
   placeholder?: string;
   disabled?: boolean;
   compact?: boolean;
+  required?: boolean;
+  error?: string;
+  nullable?: boolean;
+  min?: number;
+  max?: number;
+  step?: number | 'any';
+  items?: { label: string; value: string | number | boolean | null }[];
 }>();
 
-const model = defineModel<string | boolean>({ default: '' });
+const model = defineModel<string | boolean | number | null>();
 
 const iconName = computed(() => {
   if (!props.icon) {
@@ -152,6 +192,21 @@ const boolModel = computed({
   get: () => Boolean(model.value),
   set: (value: boolean) => {
     model.value = value;
+  },
+});
+
+const numberModel = computed<number | undefined>({
+  get: () => (typeof model.value === 'number' ? model.value : undefined),
+  set: (value) => {
+    model.value =
+      value !== undefined && Number.isFinite(value) ? value : props.nullable ? null : undefined;
+  },
+});
+
+const selectModel = computed({
+  get: () => model.value,
+  set: (value: string | number | boolean | null | undefined) => {
+    model.value = value ?? (props.nullable ? null : undefined);
   },
 });
 

@@ -30,6 +30,7 @@ from app.features.presets.deps import get_presets_repo
 from app.features.streaming.service import PlayerManager
 from app.features.tasks.definitions.deps import get_task_definitions_repo
 from app.features.tasks.service import Tasks
+from app.features.toolbox.service import Toolbox
 from app.features.ytdlp.extractor import ExtractorPool
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.cache import Cache
@@ -134,6 +135,7 @@ class Main:
         BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
         PlayerManager(self._config).attach(self._app)
+        Toolbox(self._config).attach(self._app)
         Cache.get_instance().attach(self._app)
         TerminalSessionManager.get_instance().attach(self._app)
 

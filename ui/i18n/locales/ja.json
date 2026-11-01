@@ -1,4 +1,9 @@
 {
+  "toolbox": {
+    "title": "ツールボックス",
+    "description": "ファイルに対して実行するカスタム操作。",
+    "unsupportedOptions": "このフォームでは次のオプションを編集できません：{fields}。"
+  },
   "auth": {
     "setupHeading": "アカウントを作成",
     "setupSubtitle": "YTPTubeを設定して始めましょう。",
@@ -52,6 +57,12 @@
     "errorTitle": "問題が発生しました"
   },
   "common": {
+    "operation": "操作",
+    "failed": "失敗",
+    "interrupted": "中断済み",
+    "overwriteSource": "元のファイルを上書き",
+    "overwriteSourceDesc": "コピーを作成するにはオフにしてください",
+    "close": "閉じる",
     "add": "追加",
     "save": "保存",
     "cancel": "キャンセル",

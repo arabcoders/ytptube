@@ -1,4 +1,9 @@
 {
+  "toolbox": {
+    "title": "صندوق الأدوات",
+    "description": "عمليات مخصصة لتشغيلها على الملفات.",
+    "unsupportedOptions": "لا يمكن لهذا النموذج تعديل هذه الخيارات: {fields}."
+  },
   "auth": {
     "setupHeading": "أنشئ حسابك",
     "setupSubtitle": "أكمل إعداد YTPTube للبدء.",
@@ -52,6 +57,12 @@
     "errorTitle": "حدث خطأ ما"
   },
   "common": {
+    "operation": "العملية",
+    "failed": "فشل",
+    "interrupted": "تمت المقاطعة",
+    "overwriteSource": "استبدال الملف المصدر",
+    "overwriteSourceDesc": "عطّل لإنشاء نسخة",
+    "close": "إغلاق",
     "add": "إضافة",
     "save": "حفظ",
     "cancel": "إلغاء",

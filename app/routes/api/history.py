@@ -10,7 +10,6 @@ from app.features.core.utils import api_error_response
 from app.features.downloads.items import Item
 from app.features.downloads.runtime.core import Download
 from app.features.downloads.runtime.queue_manager import DownloadQueue
-from app.features.downloads.runtime.utils import safe_relative_path
 from app.features.downloads.store import StoreType
 from app.features.presets.schemas import Preset
 from app.features.presets.service import Presets
@@ -21,7 +20,7 @@ from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.logging import get_logger
 from app.library.router import route
-from app.library.Utils import calc_download_path, get_file_sidecar, rename_file
+from app.library.Utils import rename_file
 
 LOG = get_logger()
 
@@ -517,20 +516,7 @@ async def item_rename(
             status=web.HTTPInternalServerError.status_code,
         )
 
-    item_dir: Path = (
-        Path(item.info.download_dir)
-        if item.info.download_dir
-        else Path(calc_download_path(base_path=config.download_path, folder=item.info.folder, create_path=False))
-    )
-    item.info.filename = safe_relative_path(renamed, item_dir, Path(config.download_path))
-
-    try:
-        item.info.sidecar = get_file_sidecar(renamed)
-    except Exception:
-        item.info.sidecar = {}
-
-    await queue.done.put(item, no_notify=True)
-    notify.emit(Events.ITEM_UPDATED, data=item.info)
+    await queue.done.update_file([item], renamed, Path(config.download_path), notify)
 
     sidecar_count: int = len(sidecar_renamed)
     LOG.info(

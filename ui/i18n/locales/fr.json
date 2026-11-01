@@ -1,4 +1,9 @@
 {
+  "toolbox": {
+    "title": "Boîte à outils",
+    "description": "Opérations personnalisées à exécuter sur les fichiers.",
+    "unsupportedOptions": "Ce formulaire ne peut pas modifier ces options : {fields}."
+  },
   "auth": {
     "setupHeading": "Créez votre compte",
     "setupSubtitle": "Configurez YTPTube pour commencer.",
@@ -52,6 +57,12 @@
     "errorTitle": "Une erreur est survenue"
   },
   "common": {
+    "operation": "Opération",
+    "failed": "Échec",
+    "interrupted": "Interrompu",
+    "overwriteSource": "Remplacer le fichier source",
+    "overwriteSourceDesc": "Désactivez pour créer une copie",
+    "close": "Fermer",
     "add": "Ajouter",
     "save": "Enregistrer",
     "cancel": "Annuler",

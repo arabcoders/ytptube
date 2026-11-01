@@ -52,6 +52,7 @@ class Events:
     TASKS_ADD: str = "task_add"
     TASK_FINISHED: str = "task_finished"
     TASK_ERROR: str = "task_error"
+    TOOLBOX_JOB: str = "toolbox_job"
 
     SCHEDULE_ADD: str = "schedule_add"
 
@@ -81,6 +82,7 @@ class Events:
             Events.RESUMED,
             Events.TASK_FINISHED,
             Events.TASK_ERROR,
+            Events.TOOLBOX_JOB,
         ]
 
     def only_debug() -> list:

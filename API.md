@@ -92,6 +92,12 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/file/download](#post-apifiledownload)
     - [GET /api/file/download/{token}](#get-apifiledownloadtoken)
     - [GET /api/download/{filename}](#get-apidownloadfilename)
+    - [GET /api/toolbox/tools](#get-apitoolboxtools)
+    - [POST /api/toolbox/jobs](#post-apitoolboxjobs)
+    - [GET /api/toolbox/jobs](#get-apitoolboxjobs)
+    - [GET /api/toolbox/jobs/{id}](#get-apitoolboxjobsid)
+    - [POST /api/toolbox/jobs/{id}/cancel](#post-apitoolboxjobsidcancel)
+    - [DELETE /api/toolbox/jobs/{id}](#delete-apitoolboxjobsid)
     - [GET /api/random/background](#get-apirandombackground)
     - [GET /api/presets](#get-apipresets)
     - [GET /api/presets/{id}](#get-apipresetsid)
@@ -176,6 +182,8 @@ This document describes the available endpoints and their usage. All endpoints r
         - [`item_status`](#item_status)
         - [`paused`](#paused)
         - [`resumed`](#resumed)
+      - [Toolbox Events](#toolbox-events)
+        - [`toolbox_job`](#toolbox_job)
   - [Error Responses](#error-responses)
 
 ---
@@ -2725,6 +2733,169 @@ with an appropriate HTTP status code.
 
 ---
 
+### GET /api/toolbox/tools
+**Purpose**: List Toolbox tools and their availability.
+
+**Response**:
+```json
+{
+  "items": [
+    {
+      "id": "remux",
+      "name": "Remux into MP4",
+      "description": "Copy streams into MP4 without re-encoding.",
+      "available": true, // false when ffmpeg is not available
+      "reason": null,
+      "options_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "title": "RemuxOptions",
+        "type": "object"
+      }
+    }
+  ]
+}
+```
+
+**Notes**:
+- `options_schema` contains the tool's JSON Schema.
+- `reason` explains why a tool is unavailable, or is `null`.
+
+---
+
+### POST /api/toolbox/jobs
+**Purpose**: Queue a tool operation on a local file.
+
+**Body**:
+```json
+{
+  "tool": "remux",
+  "file": "shows/episode.mp4",
+  "extra": { "overwrite_source": true, "options": {} }
+}
+```
+
+- `tool`: Tool ID from [GET /api/toolbox/tools](#get-apitoolboxtools).
+- `file`: File path relative to `download_path`.
+- `extra`:
+  - `overwrite_source` is a boolean (default `true`).
+  - `options` is an object of tool-specific options (default `{}`) may be required depending on the tool.
+
+**Response**: `202 Accepted` with the job object:
+```json
+{
+  "id": 1,
+  "tool": "remux",
+  "file": "shows/episode.mp4",
+  "extra": { "overwrite_source": true, "options": {} },
+  "status": "queued",
+  "created_at": "2026-10-30T12:00:00+00:00",
+  "started_at": null,
+  "finished_at": null,
+  "progress": null,
+  "message": null,
+  "result": null,
+  "error": null,
+  "error_code": null,
+  "log": ""
+}
+```
+- `status`: `queued`, `running`, `succeeded`, `skipped`, `failed`, `cancelled`, or `interrupted`.
+- `created_at`, `started_at`, `finished_at`: ISO 8601 timestamps. `started_at` and `finished_at` are `null` until set.
+- `progress`: Percentage from `0` to `100`, or `null` when indeterminate or skipped.
+- `message`: Current status text or `null`.
+- `result`: `{"outputs": [...]}` with paths relative to `download_path` on success.
+- `error`, `error_code`: Failure message and code, or `null`.
+- `log`: The last 16 KiB of diagnostic output.
+
+**Notes**:
+- Download the resulting files through [GET /api/download/{filename}](#get-apidownloadfilename).
+
+**Errors**:
+- `400 Bad Request` for invalid request data.
+- `404 Not Found` (`FILE_UNAVAILABLE`, `params.file`) if the source file is missing.
+- `429 Too Many Requests` if the job queue is full.
+- `503 Service Unavailable` if the tool or job runner is unavailable.
+
+---
+
+### GET /api/toolbox/jobs
+**Purpose**: Retrieve saved Toolbox jobs.
+
+**Query Parameters**:
+- `page` (optional): Page number (1-indexed). Default: `1`.
+- `per_page` (optional): Items per page (`1` to `1000`).
+- `status` (optional): Filter by one of the job status values listed above.
+
+**Response**: An `items` array of [job objects](#post-apitoolboxjobs) with pagination:
+```json
+{
+  "items": [
+    // job objects as returned by the Toolbox job endpoints
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 0,
+    "total_pages": 1,
+    "has_next": false,
+    "has_prev": false
+  }
+}
+```
+
+**Notes**:
+- Unfinished jobs become `interrupted` and are not resumed or retried.
+
+**Errors**:
+- `400 Bad Request` for invalid pagination or status parameters.
+
+---
+
+### GET /api/toolbox/jobs/{id}
+**Purpose**: Retrieve a Toolbox job by ID.
+
+**Path Parameters**:
+- `id`: Job ID.
+
+**Response**: `200 OK` with the [job object](#post-apitoolboxjobs).
+
+**Errors**:
+- `400 Bad Request` for an invalid job ID.
+- `404 Not Found` if the job does not exist.
+
+---
+
+### POST /api/toolbox/jobs/{id}/cancel
+**Purpose**: Cancel a queued job or request termination of a running job.
+
+**Path Parameters**:
+- `id`: Job ID.
+
+**Response**: `200 OK` with the [job object](#post-apitoolboxjobs). The response can still report `running` while cancellation is pending.
+Cancelling a finished job leaves its state unchanged.
+
+**Errors**:
+- `400 Bad Request` for an invalid job ID.
+- `404 Not Found` if the job does not exist.
+
+---
+
+### DELETE /api/toolbox/jobs/{id}
+**Purpose**: Delete a finished job record. Output files are kept.
+
+**Path Parameters**:
+- `id`: Job ID.
+
+**Response**: `204 No Content`.
+
+**Errors**:
+- `400 Bad Request` for an invalid job ID.
+- `404 Not Found` if the job does not exist.
+- `409 Conflict` if the job is still queued or running.
+
+---
+
 ### GET /api/random/background
 **Purpose**: Get a random background image from configured backends.  
 
@@ -4622,6 +4793,23 @@ Emitted when the download queue is resumed.
   "data": {
     "paused": false,
     "at": 1234567890.123
+  }
+}
+```
+
+---
+
+#### Toolbox Events
+
+##### `toolbox_job`
+
+Emitted when a Toolbox job changes state or reports progress. `data` contains the [job object](#post-apitoolboxjobs).
+
+```json
+{
+  "event": "toolbox_job",
+  "data": {
+    // job object as returned by the Toolbox job endpoints
   }
 }
 ```

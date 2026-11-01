@@ -1,4 +1,9 @@
 {
+  "toolbox": {
+    "title": "Toolbox",
+    "description": "Custom operations to run on files.",
+    "unsupportedOptions": "This form cannot edit these options: {fields}."
+  },
   "auth": {
     "setupHeading": "Create your account",
     "setupSubtitle": "Set up YTPTube to get started.",
@@ -52,6 +57,12 @@
     "errorTitle": "Something went wrong"
   },
   "common": {
+    "operation": "Operation",
+    "failed": "Failed",
+    "interrupted": "Interrupted",
+    "overwriteSource": "Overwrite source",
+    "overwriteSourceDesc": "Turn off to create a copy",
+    "close": "Close",
     "add": "Add",
     "save": "Save",
     "cancel": "Cancel",

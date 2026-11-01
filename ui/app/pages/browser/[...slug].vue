@@ -211,7 +211,7 @@
                   class="ms-1 inline-flex size-3.5"
                 />
               </th>
-              <th v-if="controlEnabled" class="w-96 whitespace-nowrap">
+              <th class="w-96 whitespace-nowrap">
                 {{ t('common.actions') }}
               </th>
             </tr>
@@ -266,7 +266,7 @@
                 </UTooltip>
               </td>
 
-              <td v-if="controlEnabled" class="w-96 px-3 py-3 align-middle whitespace-nowrap">
+              <td class="w-96 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     v-if="item.type === 'file'"
@@ -282,6 +282,17 @@
                     {{ t('common.download') }}
                   </UButton>
                   <UButton
+                    v-if="item.is_file"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-wrench"
+                    @click="toolboxSource = item.path"
+                  >
+                    {{ t('toolbox.title') }}
+                  </UButton>
+                  <UButton
+                    v-if="controlEnabled"
                     color="neutral"
                     variant="outline"
                     size="xs"
@@ -292,6 +303,7 @@
                   </UButton>
 
                   <UButton
+                    v-if="controlEnabled"
                     color="neutral"
                     variant="outline"
                     size="xs"
@@ -302,6 +314,7 @@
                   </UButton>
 
                   <UButton
+                    v-if="controlEnabled"
                     color="neutral"
                     variant="outline"
                     size="xs"
@@ -383,7 +396,7 @@
           </div>
         </div>
 
-        <div v-if="controlEnabled" class="ytp-border-top-soft px-4 py-4">
+        <div class="ytp-border-top-soft px-4 py-4">
           <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
             <UButton
               v-if="item.type === 'file'"
@@ -400,6 +413,19 @@
             </UButton>
 
             <UButton
+              v-if="item.is_file"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-wrench"
+              @click="toolboxSource = item.path"
+              class="w-full justify-center"
+            >
+              {{ t('toolbox.title') }}
+            </UButton>
+
+            <UButton
+              v-if="controlEnabled"
               color="neutral"
               variant="outline"
               size="sm"
@@ -411,6 +437,7 @@
             </UButton>
 
             <UButton
+              v-if="controlEnabled"
               color="neutral"
               variant="outline"
               size="sm"
@@ -422,6 +449,7 @@
             </UButton>
 
             <UButton
+              v-if="controlEnabled"
               color="neutral"
               variant="outline"
               size="sm"
@@ -514,6 +542,14 @@
       </template>
     </UModal>
 
+    <ToolboxCreateModal
+      v-if="toolboxSource !== null"
+      :file="toolboxSource"
+      @close="toolboxSource = null"
+      @created="showToolboxJob"
+    />
+    <ToolboxJobModal v-if="toolboxJob" :id="toolboxJob" @close="toolboxJob = null" />
+
     <LazyGetInfo
       v-if="model_item?.type === 'text'"
       :link="model_item.filename"
@@ -525,6 +561,8 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
+import ToolboxCreateModal from '~/components/ToolboxCreateModal.vue';
+import ToolboxJobModal from '~/components/ToolboxJobModal.vue';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import type { FileItem } from '~/types/filebrowser';
@@ -532,6 +570,7 @@ import { formatPageTitle } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
 import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
+import type { ToolboxJob } from '~/types/toolbox';
 const { locale, t } = useI18n();
 
 const route = useRoute();
@@ -539,6 +578,12 @@ const toast = useNotification();
 const config = useYtpConfig();
 const dialog = useDialog();
 const browser = useBrowser();
+const toolboxSource = ref<string | null>(null);
+const toolboxJob = ref<number | null>(null);
+const showToolboxJob = (job: ToolboxJob): void => {
+  toolboxSource.value = null;
+  toolboxJob.value = job.id;
+};
 
 const display_style = useStorage<string>('browser_display_style', 'list');
 const isMobile = useMediaQuery({ maxWidth: 639 });

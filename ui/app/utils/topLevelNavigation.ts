@@ -178,6 +178,15 @@ const NavItems: Array<NavDefinition> = [
     requires: 'file_logging',
   },
   {
+    id: 'toolbox',
+    section: 'tools',
+    group: 'tools',
+    label: 'toolbox.title',
+    description: 'toolbox.description',
+    icon: 'i-lucide-wrench',
+    to: '/toolbox',
+  },
+  {
     id: 'console',
     section: 'tools',
     group: 'tools',
