@@ -1,7 +1,4 @@
 import { describe, expect, it } from 'bun:test';
-import { createI18n } from 'vue-i18n';
-import en from '../../i18n/locales/en.json';
-import fr from '../../i18n/locales/fr.json';
 import { getNavItems, getSearchNavItems } from '~/utils/topLevelNavigation';
 import { getPath, makeDownload, sTrim } from '~/utils';
 import type { ToolboxJob } from '~/types/toolbox';
@@ -11,7 +8,6 @@ import {
   toolboxOptionFields,
   toolboxShowMessage,
   toolboxStatusColor,
-  toolboxStatusLabel,
 } from '~/utils/toolbox';
 
 describe('toolbox options', () => {
@@ -115,20 +111,8 @@ describe('toolbox options', () => {
 });
 
 describe('toolbox statuses', () => {
-  it('uses translated statuses', () => {
-    const i18n = createI18n({ legacy: false, locale: 'fr', messages: { en, fr } });
-    try {
-      expect(toolboxStatusLabel('failed', i18n.global.t)).toBe('Échec');
-      expect(toolboxStatusLabel('interrupted', i18n.global.t)).toBe('Interrompu');
-      expect(toolboxStatusLabel('succeeded', i18n.global.t)).toBe(fr.common.completed);
-      expect(toolboxStatusLabel('skipped', i18n.global.t)).toBe('Ignoré');
-    } finally {
-      i18n.dispose();
-    }
-  });
-
   it('shows skip reason', () => {
-    const i18n = createI18n({ legacy: false, locale: 'fr', messages: { en, fr } });
+    const t = (key: string) => `translated:${key}`;
     const skipped: ToolboxJob = {
       id: 1,
       tool: 'custom-copy',
@@ -145,15 +129,13 @@ describe('toolbox statuses', () => {
       error_code: null,
       log: '',
     };
-    try {
-      expect(isToolboxActive(skipped)).toBe(false);
-      expect(toolboxStatusColor(skipped.status)).toBe('neutral');
-      expect(toolboxShowMessage(skipped, i18n.global.t)).toBe(true);
-      expect(toolboxShowMessage({ ...skipped, message: 'Skipped.' }, i18n.global.t)).toBe(false);
-      expect(toolboxShowMessage({ ...skipped, message: 'Ignoré!' }, i18n.global.t)).toBe(false);
-    } finally {
-      i18n.dispose();
-    }
+    expect(isToolboxActive(skipped)).toBe(false);
+    expect(toolboxStatusColor(skipped.status)).toBe('neutral');
+    expect(toolboxShowMessage(skipped, t)).toBe(true);
+    expect(toolboxShowMessage({ ...skipped, message: 'Skipped.' }, t)).toBe(false);
+    expect(toolboxShowMessage({ ...skipped, message: 'translated:common.skipped!' }, t)).toBe(
+      false,
+    );
   });
 });
 

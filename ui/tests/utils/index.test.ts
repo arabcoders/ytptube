@@ -1,6 +1,4 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, mock, spyOn } from 'bun:test';
-import { createI18n } from 'vue-i18n';
-import en from '../../i18n/locales/en.json';
 
 type StorageEntry = { value: unknown };
 
@@ -453,16 +451,17 @@ describe('dom and browser helpers', () => {
 describe('network and id helpers', () => {
   it('renders_missing_file', async () => {
     const file = 'shows/日本語 #1/episode 50% + ? & 😀.mp4';
-    const message = `File '${file}' is no longer available.`;
-    const payload = { error: message, code: 'FILE_UNAVAILABLE', params: { file } };
-    const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } });
+    const payload = { error: 'File unavailable', code: 'FILE_UNAVAILABLE', params: { file } };
+    const t = mock(() => 'translated error');
+    const message = `translated error - ${payload.error}`;
     const app = globalThis.useNuxtApp();
     const nuxt = spyOn(globalThis, 'useNuxtApp').mockReturnValue({
       ...app,
-      $i18n: { ...app.$i18n, t: i18n.global.t, te: i18n.global.te },
+      $i18n: { ...app.$i18n, t, te: (key: string) => key === 'errors.FILE_UNAVAILABLE' },
     });
     try {
       expect(await utils.parse_api_error(payload)).toBe(message);
+      expect(t).toHaveBeenCalledWith('errors.FILE_UNAVAILABLE', { file });
       const response = new Response(JSON.stringify(payload), { status: 404 });
       await expect(utils.ensure_api_success(response)).rejects.toMatchObject({
         name: 'ApiError',
@@ -472,7 +471,6 @@ describe('network and id helpers', () => {
       });
     } finally {
       nuxt.mockRestore();
-      i18n.dispose();
     }
   });
 

@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from 'bun:test';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from 'bun:test';
 
 import type { Preset } from '~/types/presets';
 
@@ -13,24 +13,23 @@ mock.module('~/composables/useYtpConfig', () => ({
   useYtpConfig: () => configState,
 }));
 
-mock.module('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: { value: 'en' },
-  }),
-}));
-
 let usePresetOptions: typeof import('~/composables/usePresetOptions').usePresetOptions;
+let useI18n: typeof globalThis.useI18n;
 
 beforeAll(async () => {
   ({ usePresetOptions } = await import('~/composables/usePresetOptions'));
 });
 
 beforeEach(() => {
+  useI18n = globalThis.useI18n;
   globalThis.useI18n = () => ({
     t: (key: string) => key,
     locale: { value: 'en' },
   });
+});
+
+afterEach(() => {
+  globalThis.useI18n = useI18n;
 });
 
 const buildPreset = (name: string, isDefault: boolean): Preset => ({
