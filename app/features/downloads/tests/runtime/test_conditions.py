@@ -18,6 +18,90 @@ def reset_conditions_singleton():
     Conditions._reset_singleton()
 
 
+@pytest.fixture
+def url_conditions(monkeypatch: pytest.MonkeyPatch) -> Conditions:
+    rule = SimpleNamespace(
+        id=1,
+        name="Proxy",
+        enabled=True,
+        priority=0,
+        filter="extractor = example",
+        cli="--geo-verification-proxy http://proxy.example:3128",
+        extras={},
+    )
+    deferred = SimpleNamespace(
+        id=2,
+        name="Metadata",
+        enabled=True,
+        priority=10,
+        filter="extractor = example & !duration",
+        cli="",
+        extras={},
+    )
+    service = Conditions.get_instance()
+    service._repo = Mock(all=AsyncMock(return_value=[rule, deferred]))
+    monkeypatch.setattr(
+        "app.features.conditions.service.get_archive_id", lambda _url: {"id": "video", "ie_key": "Example"}
+    )
+    monkeypatch.setattr(
+        "app.features.conditions.service.get_ytdlp", lambda: Mock(_ies={"Example": SimpleNamespace(IE_NAME="example")})
+    )
+    return service
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ignored", [[], ["Proxy"], ["1"], ["*"]])
+async def test_url_conditions(url_conditions: Conditions, ignored: list[str]) -> None:
+    rule = await url_conditions.match_url("https://example.com/video", ignore_conditions=ignored)
+
+    assert (rule.name if rule else None) == (None if ignored else "Proxy")
+    rule = await url_conditions.match(info={"extractor": "example"})
+    assert rule is not None
+    assert rule.name == "Metadata"
+
+
+@pytest.mark.asyncio
+async def test_url_without_extractor(url_conditions: Conditions, monkeypatch: pytest.MonkeyPatch) -> None:
+    rules = await url_conditions.get_all()
+    rules[0].filter = "url ^= 'https://example.com/'"
+    monkeypatch.setattr("app.features.conditions.service.get_archive_id", lambda _url: {})
+
+    rule = await url_conditions.match_url("https://example.com/video")
+
+    assert rule is not None
+    assert rule.name == "Proxy"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ignored", [[], ["*"]])
+async def test_extract_condition_proxy(tmp_path: Path, url_conditions: Conditions, ignored: list[str]) -> None:
+    queue = Mock(config=Mock(temp_path=str(tmp_path), ignore_archived_items=False, ytdlp_debug=False))
+    item = Item(url="https://example.com/video", preset="default", extras={"ignore_conditions": ignored})
+    item.get_ytdlp_opts = Mock(return_value=Mock(get_all=Mock(return_value={})))
+    item.get_archive_id = Mock(return_value=None)
+    item.get_archive_file = Mock(return_value=None)
+    item.is_archived = Mock(return_value=False)
+    entry = {"id": "video", "title": "Video", "extractor": "example", "duration": 60}
+
+    with (
+        patch(
+            "app.features.downloads.runtime.item_adder.Presets.get_instance",
+            return_value=Mock(get=Mock(return_value=None)),
+        ),
+        patch("app.features.downloads.runtime.item_adder.fetch_info", new=AsyncMock(return_value=(entry, []))) as fetch,
+        patch("app.features.downloads.runtime.item_adder.ytdlp_reject", return_value=(True, "")),
+        patch("app.features.downloads.runtime.item_adder.add_item", new=AsyncMock(return_value={"status": "ok"})),
+    ):
+        result = await add(queue=queue, item=item)
+
+    assert result == {"status": "ok"}
+    assert fetch.await_count == (1 if ignored else 2)
+    assert all(
+        call.kwargs["config"].get("geo_verification_proxy") == (None if ignored else "http://proxy.example:3128")
+        for call in fetch.await_args_list
+    )
+
+
 class TestConditionIgnoreMatching:
     @pytest.mark.asyncio
     async def test_match_skip_name(self) -> None:

@@ -14,6 +14,7 @@ from app.features.downloads.items import ItemDTO
 from app.features.presets.service import Presets
 from app.features.ytdlp.extractor import fetch_info
 from app.features.ytdlp.utils import archive_add, archive_read, arg_converter, get_extras, ytdlp_reject
+from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.Events import Events
 from app.library.logging import get_logger
 from app.library.Utils import create_cookies_file, merge_dict
@@ -309,6 +310,13 @@ async def add(
                     }
                 },
             )
+
+        if not entry and not item.requeued:
+            condition = await Conditions.get_instance().match_url(
+                item.url, ignore_conditions=_get_ignored_conditions(item.extras)
+            )
+            if condition and condition.cli:
+                yt_conf = YTDLPOpts.get_instance().add(yt_conf).add_cli(condition.cli, from_user=True).get_all()
 
         extract_conf, light_extract = _extract_config(yt_conf) if _is_youtube(item) else (yt_conf, False)
 

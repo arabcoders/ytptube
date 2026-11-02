@@ -2274,7 +2274,9 @@ class TestQueueManager:
         monkeypatch.setattr(
             item_adder.Conditions,
             "get_instance",
-            classmethod(lambda cls: SimpleNamespace(match=AsyncMock(return_value=None))),
+            classmethod(
+                lambda cls: SimpleNamespace(match=AsyncMock(return_value=None), match_url=AsyncMock(return_value=None))
+            ),
         )
 
         result = await item_adder.add(queue=queue, item=item)
@@ -2318,7 +2320,9 @@ class TestQueueManager:
         monkeypatch.setattr(
             item_adder.Conditions,
             "get_instance",
-            classmethod(lambda cls: SimpleNamespace(match=AsyncMock(return_value=None))),
+            classmethod(
+                lambda cls: SimpleNamespace(match=AsyncMock(return_value=None), match_url=AsyncMock(return_value=None))
+            ),
         )
 
         result = await item_adder.add(queue=queue, item=item)
@@ -2366,7 +2370,9 @@ class TestQueueManager:
         monkeypatch.setattr(
             item_adder.Conditions,
             "get_instance",
-            classmethod(lambda cls: SimpleNamespace(match=AsyncMock(return_value=None))),
+            classmethod(
+                lambda cls: SimpleNamespace(match=AsyncMock(return_value=None), match_url=AsyncMock(return_value=None))
+            ),
         )
 
         result = await item_adder.add(queue=queue, item=item)

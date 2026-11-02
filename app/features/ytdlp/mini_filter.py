@@ -63,8 +63,14 @@ class MiniFilter:
     def run(expr: str, dct: dict[str, Any] | bool = False) -> bool:
         return MiniFilter(expr).evaluate(dct)
 
-    def evaluate(self, dct: dict[str, Any] | bool = False) -> bool:
+    def evaluate(self, dct: dict[str, Any] | bool = False, *, incomplete: bool = False) -> bool:
         data: dict[str, Any] = dct if isinstance(dct, dict) else {}
+        # Unknown fields must not satisfy negated checks before extraction.
+        if incomplete:
+            for kind, atom in self.tokens:
+                if kind == "ATOM" and (field := re.match(r"!?([a-z_]+)", atom)) and field[1] not in data:
+                    return False
+
         return self._eval(self.ast, data)
 
     def export(self) -> list[str]:

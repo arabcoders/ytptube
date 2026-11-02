@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
+from app.features.conditions.service import Conditions
 from app.features.ytdlp import router
+from app.features.ytdlp.utils import arg_converter
 from app.tests.helpers import url_for
 
 
@@ -14,18 +16,20 @@ class _Cache:
     def __init__(self, value: dict[str, Any] | None = None) -> None:
         self.keys: list[str] = []
         self.value = value
+        self.key: str | None = None
 
     def hash(self, value: str) -> str:
         self.keys.append(value)
         return value
 
-    def has(self, _key: str) -> bool:
-        return self.value is not None
+    def has(self, key: str) -> bool:
+        return self.value is not None and (self.key is None or self.key == key)
 
     def get(self, _key: str) -> dict[str, Any] | None:
         return self.value
 
     def set(self, *, key: str, value: dict[str, Any], ttl: int) -> None:
+        self.key = key
         self.value = value
 
 
@@ -38,17 +42,60 @@ class _Options:
     def __init__(self, wait: str | None = None, archive: str | None = None) -> None:
         self.wait = wait
         self.archive = archive
+        self.cli = ""
 
     def preset(self, _name: str) -> _Options:
         return self
 
+    def add_cli(self, cli: str, **_kwargs: Any) -> _Options:
+        self.cli = cli
+        return self
+
     def get_all(self) -> dict[str, Any]:
         opts: dict[str, Any] = {"noplaylist": True}
+        opts.update(arg_converter(self.cli, level=True) if self.cli else {})
         if self.archive is not None:
             opts["download_archive"] = self.archive
         if self.wait is not None:
             opts["extractor_args"] = {"generic": {"wait": [self.wait]}}
         return opts
+
+
+@pytest.fixture(autouse=True)
+def url_matcher(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    matcher = AsyncMock(return_value=None)
+    monkeypatch.setattr(Conditions, "get_instance", lambda: Mock(match_url=matcher))
+    return matcher
+
+
+@pytest.mark.asyncio
+async def test_info_condition_proxy(monkeypatch: pytest.MonkeyPatch, test_client, url_matcher: AsyncMock) -> None:
+    rule = SimpleNamespace(cli="--geo-verification-proxy http://proxy.example:3128")
+    url_matcher.return_value = rule
+    fetch = AsyncMock(return_value=({"id": "video", "title": "Video"}, []))
+    cache = _Cache()
+    monkeypatch.setattr(router, "validate_url", lambda *_args: True)
+    monkeypatch.setattr(router.Presets, "get_instance", lambda: _Presets())
+    monkeypatch.setattr(router.YTDLPOpts, "get_instance", _Options)
+    monkeypatch.setattr(router, "fetch_info", fetch)
+
+    async def handler(request):
+        return await router.get_info(request, cache, SimpleNamespace(default_preset="default"))
+
+    client = await test_client({"get_info": handler})
+    query = {"url": "https://example.com/video"}
+    response = await client.get(url_for("get_info", query=query))
+    assert response.status == 200
+    first_key = (await response.json())["_cached"]["key"]
+    assert fetch.await_args is not None
+    assert fetch.await_args.kwargs["config"]["geo_verification_proxy"] == "http://proxy.example:3128"
+
+    rule.cli = "--geo-verification-proxy http://other-proxy.example:3128"
+    response = await client.get(url_for("get_info", query=query))
+    assert response.status == 200
+    assert (await response.json())["_cached"]["key"] != first_key
+    assert fetch.await_count == 2
+    assert fetch.await_args.kwargs["config"]["geo_verification_proxy"] == "http://other-proxy.example:3128"
 
 
 @pytest.mark.parametrize(
