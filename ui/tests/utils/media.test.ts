@@ -31,6 +31,44 @@ describe('media utils', () => {
     expect(media.read('item-1')).toBe(0);
   });
 
+  it('stores_file_resume', () => {
+    const request = spyOn(utils, 'request').mockRejectedValue(new Error('Unexpected request'));
+    const file = '/tube/api/download/shows/Episode%20%231.mp4';
+    const key = media.progressKey('', file);
+    expect(key).toBe(`file:${file}`);
+    media.save(key, 42, 'user:1');
+    expect(media.read(media.progressKey('', file), 'user:1')).toBe(42);
+    media.clear(key, 'user:1');
+    expect(media.read(key, 'user:1')).toBe(0);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it('isolates_file_resume', () => {
+    const first = media.progressKey('', '/tube/api/download/first/movie.mp4');
+    const second = media.progressKey('', '/tube/api/download/second/movie.mp4');
+    const deployment = media.progressKey('', '/other/api/download/first/movie.mp4');
+    media.save(first, 10, 'user:1');
+    media.save(second, 20, 'user:1');
+    media.save(deployment, 30, 'user:1');
+    media.save(first, 40, 'user:2');
+    media.clear(first, 'user:1');
+    expect(media.read(first, 'user:1')).toBe(0);
+    expect(media.read(second, 'user:1')).toBe(20);
+    expect(media.read(deployment, 'user:1')).toBe(30);
+    expect(media.read(first, 'user:2')).toBe(40);
+    expect(media.read(first)).toBe(0);
+  });
+
+  it('preserves_history_keys', () => {
+    media.save('item-1', 17, 'user:1');
+    const key = media.progressKey('item-1', '/tube/api/download/movie.mp4');
+    expect(key).toBe('item-1');
+    expect(media.read(key, 'user:1')).toBe(17);
+    media.clear(key, 'user:1');
+    expect(media.read('item-1', 'user:1')).toBe(0);
+    expect(media.progressKey('', '')).toBe('');
+  });
+
   it('isolates_local_users', () => {
     media.save('item-1', 8);
     media.save('item-1', 17, 'user:1');
@@ -55,6 +93,13 @@ describe('media utils', () => {
     );
     expect(await media.readRemote('item-1')).toBe(12);
     expect(request).toHaveBeenCalledWith('/api/playback/item-1', { timeout: 5 });
+  });
+
+  it('skips_missing_id', async () => {
+    const request = spyOn(utils, 'request').mockRejectedValue(new Error('Unexpected request'));
+    expect(await media.readRemote('')).toBeUndefined();
+    expect(await media.saveRemote('', 12)).toBe(false);
+    expect(request).not.toHaveBeenCalled();
   });
 
   it('reads_remote_empty', async () => {

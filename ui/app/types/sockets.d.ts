@@ -1,4 +1,5 @@
 import type { ItemStatus, StoreItem } from './store';
+import type { ToolboxJob } from './toolbox';
 
 export type ItemProgress = {
   _id: string;
@@ -54,6 +55,7 @@ export type WSEP = {
   config_update: EventPayload<ConfigUpdatePayload>;
   task_finished: EventPayload<TaskEvent>;
   task_error: EventPayload<TaskEvent>;
+  toolbox_job: EventPayload<ToolboxJob>;
 };
 
 export type WebSocketClientEmits = {

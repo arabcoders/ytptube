@@ -23,11 +23,12 @@ def _memory_db_url(db_path: str) -> str:
 
 class SqliteStore(metaclass=ThreadSafe):
     @staticmethod
-    def get_instance(db_path: str | None = None) -> "SqliteStore":
-        return SqliteStore(db_path=db_path)
+    def get_instance(db_path: str | None = None, no_auto_migration: bool = False) -> "SqliteStore":
+        return SqliteStore(db_path=db_path, no_auto_migration=no_auto_migration)
 
-    def __init__(self, db_path: str | None):
+    def __init__(self, db_path: str | None, no_auto_migration: bool = False):
         self._db_path = db_path
+        self._no_auto_migration = no_auto_migration
         self._engine: AsyncEngine | None = None
         self._conn: AsyncConnection | None = None
         self._sessionmaker: async_sessionmaker[AsyncSession] | None = None
@@ -116,14 +117,29 @@ class SqliteStore(metaclass=ThreadSafe):
         if self._db_path.startswith(":memory"):
             engine_options["poolclass"] = StaticPool
         self._engine = create_async_engine(db_url, **engine_options)
-        self._conn = await self._engine.connect()
-        await migrate.upgrade(self._conn, ROOT_PATH / "migrations")
-        version = await migrate.get_version(self._conn)
-        if version:
-            LOG.debug("Database schema version is '%s'.", version)
-        await self._conn.execute(text("PRAGMA journal_mode=wal"))
-        await self._conn.execute(text("PRAGMA busy_timeout=5000"))
-        await self._conn.execute(text("PRAGMA foreign_keys=ON"))
-        await self._conn.commit()
-        self._sessionmaker = async_sessionmaker(bind=self._engine, class_=AsyncSession, expire_on_commit=False)
+        try:
+            self._conn = await self._engine.connect()
+            version = await migrate.get_version(self._conn)
+            if self._no_auto_migration and version is not None:
+                latest = max(m.get_version() for m in migrate.load_migrations(ROOT_PATH / "migrations"))
+                if version != latest:
+                    msg = (
+                        f"Database revision is {version}; expected {latest}. "
+                        "Start without --no-auto-migration to apply pending migrations, "
+                        "or use a YTPTube version matching the database revision."
+                    )
+                    raise RuntimeError(msg)
+            else:
+                await migrate.upgrade(self._conn, ROOT_PATH / "migrations")
+                version = await migrate.get_version(self._conn)
+            if version:
+                LOG.debug("Database schema version is '%s'.", version)
+            await self._conn.execute(text("PRAGMA journal_mode=wal"))
+            await self._conn.execute(text("PRAGMA busy_timeout=5000"))
+            await self._conn.execute(text("PRAGMA foreign_keys=ON"))
+            await self._conn.commit()
+            self._sessionmaker = async_sessionmaker(bind=self._engine, class_=AsyncSession, expire_on_commit=False)
+        finally:
+            if self._sessionmaker is None:
+                await self.close()
         return self._conn

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from app.features.downloads.store import StoreType
+from app.features.downloads.store import DataStore, StoreType
 from app.library.cache import Cache
 from app.features.downloads.items import ItemDTO
 from app.library.encoder import Encoder
@@ -300,6 +300,7 @@ async def test_item_rename_sidecars(test_client) -> None:
         item = _make_download(filename="video.mp4", download_dir=str(temp_dir))
         item.info._id = "item-1"
         queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item), put=AsyncMock()))
+        queue.done.update_file = lambda *args: DataStore.update_file(queue.done, *args)
         encoder = Encoder()
         notify = Mock()
         config = SimpleNamespace(download_path=str(temp_dir))

@@ -39,6 +39,9 @@ Run the backend from the repository root:
 uv run python -m app.main --dev
 ```
 
+Add `--no-auto-migration` to prevent automatic upgrades of initialized databases. Startup requires their revision to
+match the latest shipped migration. Fresh databases are still initialized. This flag also works without `--dev`.
+
 Run the frontend from `ui/`:
 
 ```bash

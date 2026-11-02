@@ -1,4 +1,9 @@
 {
+  "toolbox": {
+    "title": "工具箱",
+    "description": "对文件执行自定义操作。",
+    "unsupportedOptions": "此表单无法编辑以下选项：{fields}。"
+  },
   "auth": {
     "setupHeading": "创建账户",
     "setupSubtitle": "完成 YTPTube 设置即可开始。",
@@ -52,6 +57,12 @@
     "errorTitle": "出现问题"
   },
   "common": {
+    "operation": "操作",
+    "failed": "失败",
+    "interrupted": "已中断",
+    "overwriteSource": "覆盖源文件",
+    "overwriteSourceDesc": "关闭以创建副本",
+    "close": "关闭",
     "add": "添加",
     "save": "保存",
     "cancel": "取消",

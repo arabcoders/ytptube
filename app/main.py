@@ -30,6 +30,7 @@ from app.features.presets.deps import get_presets_repo
 from app.features.streaming.service import PlayerManager
 from app.features.tasks.definitions.deps import get_task_definitions_repo
 from app.features.tasks.service import Tasks
+from app.features.toolbox.service import Toolbox
 from app.features.ytdlp.extractor import ExtractorPool
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.cache import Cache
@@ -53,7 +54,8 @@ ROOT_PATH: Path = Path(__file__).parent.absolute()
 
 
 class Main:
-    def __init__(self, is_native: bool = False):
+    def __init__(self, is_native: bool = False, no_auto_migration: bool = False):
+        self._no_auto_migration = no_auto_migration
         self._config: Config = Config.get_instance(is_native=is_native)
         self._config.set_app_path(str(ROOT_PATH))
         self._app = web.Application()
@@ -118,6 +120,10 @@ class Main:
         host = host or self._config.host
         port = port or self._config.port
 
+        store = SqliteStore.get_instance(db_path=self._config.db_file, no_auto_migration=self._no_auto_migration)
+        if self._no_auto_migration:
+            asyncio.get_event_loop().run_until_complete(store.get_connection())
+
         EventBus.get_instance().emit(
             Events.STARTUP,
             data={"app": self._app},
@@ -127,13 +133,13 @@ class Main:
         if self._config.debug:
             EventBus.get_instance().debug_enable()
 
-        SqliteStore.get_instance(db_path=self._config.db_file)
         DownloadsRepository.get_instance().attach(self._app)
-        SqliteStore.get_instance(db_path=self._config.db_file).attach(self._app)
+        store.attach(self._app)
         AuthService.get_instance().attach(self._app)
         BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
         PlayerManager(self._config).attach(self._app)
+        Toolbox(self._config).attach(self._app)
         Cache.get_instance().attach(self._app)
         TerminalSessionManager.get_instance().attach(self._app)
 
@@ -178,6 +184,10 @@ class Main:
                 self._config.download_path,
                 extra={"download_path": self._config.download_path},
             )
+
+            if self._config.temp_keep:
+                LOG.warning("Keep temp files option is enabled.")
+
             if self._config.is_native:
                 LOG.info("Running in native mode.")
 
@@ -224,16 +234,17 @@ class Main:
         )
 
 
-def start() -> None:
-    Main().start()
+def start(no_auto_migration: bool = False) -> None:
+    Main(no_auto_migration=no_auto_migration).start()
 
 
-def run_dev() -> None:
+def run_dev(no_auto_migration: bool = False) -> None:
     from watchfiles import PythonFilter, run_process
 
     run_process(
         ROOT_PATH,
         target=start,
+        kwargs={"no_auto_migration": no_auto_migration},
         watch_filter=PythonFilter(
             ignore_paths=(
                 ROOT_PATH / "migrations",
@@ -246,12 +257,17 @@ def run_dev() -> None:
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Start YTPTube server", allow_abbrev=False)
     parser.add_argument("--dev", action="store_true", help="Reload the server when Python files change")
+    parser.add_argument(
+        "--no-auto-migration",
+        action="store_true",
+        help="Prevent automatic upgrades of initialized databases; new databases are still initialized",
+    )
     args, _ = parser.parse_known_args(argv)
 
     if args.dev:
-        run_dev()
+        run_dev(no_auto_migration=args.no_auto_migration)
     else:
-        start()
+        start(no_auto_migration=args.no_auto_migration)
 
 
 if __name__ == "__main__":

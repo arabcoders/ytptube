@@ -449,6 +449,31 @@ describe('dom and browser helpers', () => {
 });
 
 describe('network and id helpers', () => {
+  it('renders_missing_file', async () => {
+    const file = 'shows/日本語 #1/episode 50% + ? & 😀.mp4';
+    const payload = { error: 'File unavailable', code: 'FILE_UNAVAILABLE', params: { file } };
+    const t = mock(() => 'translated error');
+    const message = `translated error - ${payload.error}`;
+    const app = globalThis.useNuxtApp();
+    const nuxt = spyOn(globalThis, 'useNuxtApp').mockReturnValue({
+      ...app,
+      $i18n: { ...app.$i18n, t, te: (key: string) => key === 'errors.FILE_UNAVAILABLE' },
+    });
+    try {
+      expect(await utils.parse_api_error(payload)).toBe(message);
+      expect(t).toHaveBeenCalledWith('errors.FILE_UNAVAILABLE', { file });
+      const response = new Response(JSON.stringify(payload), { status: 404 });
+      await expect(utils.ensure_api_success(response)).rejects.toMatchObject({
+        name: 'ApiError',
+        message,
+        status: 404,
+        payload,
+      });
+    } finally {
+      nuxt.mockRestore();
+    }
+  });
+
   it('preserve_api_error_fields', async () => {
     const payload = {
       message: 'Validation failed.',

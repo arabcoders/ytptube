@@ -126,6 +126,16 @@ class DownloadsRepository(metaclass=Singleton):
             found = {model.id: model.to_item() for model in result.scalars()}
         return [(id, found[id]) for id in ids if id in found]
 
+    async def get_by_filenames(self, type_value: str, filenames: Iterable[str]) -> list[tuple[str, ItemDTO]]:
+        async with self.session() as session:
+            result = await session.execute(
+                select(DownloadModel).where(
+                    DownloadModel.type == type_value,
+                    func.json_extract(DownloadModel.data, "$.filename").in_(list(filenames)),
+                )
+            )
+            return [(model.id, model.to_item()) for model in result.scalars()]
+
     async def get_many_by_status(self, type_value: str, status_filter: str) -> list[tuple[str, ItemDTO]]:
         async with self.session() as session:
             query = select(DownloadModel).where(DownloadModel.type == type_value)

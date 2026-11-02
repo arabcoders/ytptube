@@ -496,6 +496,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
             try:
                 sidecar_count: int = 0
                 sidecar_renamed: list[tuple[Path, Path]] = []
+                history = await queue.done.get_by_file(path, Path(config.download_path)) if path.is_file() else []
                 if path.is_dir():
                     renamed: Path = path.rename(new_path)
                 else:
@@ -539,13 +540,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 for old_sidecar, new_sidecar in sidecar_renamed:
                     record(old_sidecar, ok=True, action=action, extra={"new_path": new_sidecar})
 
-                if item := await queue.done.get_item(filename=str(path.relative_to(config.download_path))):
-                    item.info.filename = str(renamed.relative_to(config.download_path))
-                    if sidecar_renamed:
-                        item.info.get_file_sidecar()
-
-                    await queue.done.put(item)
-                    notify.emit(Events.ITEM_UPDATED, data=item.info)
+                await queue.done.update_file(history, renamed, Path(config.download_path), notify)
 
         if "delete" == action:
             try:

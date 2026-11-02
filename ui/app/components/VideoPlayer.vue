@@ -114,7 +114,7 @@
         "
         playsinline
         webkit-playsinline
-        preload="metadata"
+        :preload="active ? 'auto' : 'none'"
         crossorigin="anonymous"
         :poster="poster ? uri(poster) : undefined"
         @error="handleMediaError"
@@ -492,6 +492,7 @@ import {
 } from '~/utils';
 import { usePlayerShortcutHelp } from '~/composables/usePlayerShortcutHelp';
 import { usePlayerShortcuts } from '~/composables/usePlayerShortcuts';
+import { usePlayerStartup } from '~/composables/usePlayerStartup';
 import { usePlayerSubtitles } from '~/composables/usePlayerSubtitles';
 import { useApiErrorMessage } from '~/composables/useApiErrorMessage';
 import { useAuth } from '~/composables/useAuth';
@@ -502,7 +503,16 @@ import {
   requestElementFullscreen,
 } from '~/utils/fullscreen';
 import { clampMediaVolume } from '~/utils/keyboard';
-import { clear, clampResumeTime, nearEnd, read, readRemote, save, saveRemote } from '~/utils/media';
+import {
+  clear,
+  clampResumeTime,
+  nearEnd,
+  progressKey,
+  read,
+  readRemote,
+  save,
+  saveRemote,
+} from '~/utils/media';
 import { nextTapVisible } from '~/utils/playerControls';
 import { playbackMediaHasNoVideo, playbackMediaSnapshot } from '~/utils/playback';
 
@@ -646,7 +656,30 @@ const initAbort = new AbortController();
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
 const mediaFile = computed(() => props.item.filename || '');
 const id = computed(() => props.item._id || '');
+const mediaPath = computed(() => currentPlaybackUrl('api/download'));
+const localKey = computed(() => progressKey(id.value, mediaPath.value));
 const canPlay = computed(() => Boolean(mediaFile.value && !loadingError.value));
+const startup = usePlayerStartup({
+  video: videoElement,
+  enabled: () =>
+    active.value &&
+    sources.value.length > 0 &&
+    !loading.value &&
+    !usingHls.value &&
+    !preferHls.value &&
+    !switching.value &&
+    !destroyed.value &&
+    !playbackError.value,
+  onFallback: (reason) => {
+    recordEvent(reason);
+    void src_error(new Event(reason));
+    sources.value = [];
+    const video = videoElement.value;
+    video?.removeAttribute('src');
+    video?.querySelectorAll('source').forEach((source) => source.removeAttribute('src'));
+    video?.load();
+  },
+});
 const shouldRender = computed(() => active.value && !loading.value);
 const progress = computed(() => {
   if (!duration.value) return 0;
@@ -915,12 +948,29 @@ function currentPlaybackUrl(base: string): string {
 }
 
 async function activatePlayer() {
-  if (!canPlay.value || switching.value || active.value) return;
+  if (!canPlay.value || switching.value || active.value || !session.value) return;
   const resume = ++resumeVersion;
-  active.value = true;
-  await nextTick();
+  switching.value = true;
   try {
     const time = await savedProgress;
+    if (destroyed.value || resume !== resumeVersion) return;
+    if (
+      selectedAudio.value === null &&
+      !(subtitleEnabled.value && selectedSubtitleTrack.value?.renderer === 'bitmap') &&
+      !usingHls.value &&
+      !preferHls.value
+    ) {
+      const guarded = await startup.prepare(
+        uri(session.value.media_url),
+        uri('/player-worker.js'),
+        initAbort.signal,
+      );
+      if (destroyed.value || resume !== resumeVersion) return;
+      if (!guarded) recordEvent('request-guard-unavailable');
+    }
+    switching.value = false;
+    active.value = true;
+    await nextTick();
     if (destroyed.value || resume !== resumeVersion) return;
     if (
       selectedAudio.value !== null ||
@@ -941,16 +991,20 @@ async function activatePlayer() {
       () => failPlayback(t('player.preparationFailed'), version),
       300000,
     );
-    if (videoElement.value && videoElement.value.readyState >= 1) {
-      pendingSeek = null;
-      await restoreSwitch(time, true, version);
-      if (destroyed.value || version !== switchVersion) return;
-      pendingPlay = isPlaying();
-      window.clearTimeout(switchTimeout);
-    }
+    sources.value = [
+      {
+        src: uri(session.value.media_url),
+        type: session.value.mimetype,
+        onerror: (err: Event) => void src_error(err),
+      },
+    ];
+    await nextTick();
+    if (destroyed.value || version !== switchVersion) return;
+    videoElement.value?.load();
   } catch {
     playbackError.value = t('player.playFailed');
   } finally {
+    if (!active.value) switching.value = false;
     syncVideoState();
     showControls();
   }
@@ -1143,24 +1197,33 @@ async function restoreSwitch(time: number, play: boolean, version = switchVersio
 }
 
 function syncProgress(position: number | null) {
-  if (lastRemote === position) return;
+  if (!id.value || lastRemote === position) return;
   lastRemote = position;
   const mediaId = id.value;
+  const file = mediaPath.value;
   const localScope = scope.value;
   remoteWrite = remoteWrite.then(async () => {
-    if (localScope !== scope.value) return;
-    if (!(await saveRemote(mediaId, position)) && lastRemote === position) lastRemote = undefined;
+    if (mediaId !== id.value || file !== mediaPath.value || localScope !== scope.value) return;
+    if (
+      !(await saveRemote(mediaId, position)) &&
+      mediaId === id.value &&
+      file === mediaPath.value &&
+      localScope === scope.value &&
+      lastRemote === position
+    ) {
+      lastRemote = undefined;
+    }
   });
 }
 
 function persistProgress(force: boolean) {
   const video = videoElement.value;
-  if (!id.value || !video || destroyed.value || switching.value) {
+  if (!localKey.value || !video || destroyed.value || switching.value) {
     return;
   }
 
   if (nearEnd(video)) {
-    clear(id.value, scope.value);
+    clear(localKey.value, scope.value);
     syncProgress(null);
     lastSaveAt = 0;
     return;
@@ -1176,7 +1239,7 @@ function persistProgress(force: boolean) {
     return;
   }
 
-  save(id.value, time, scope.value);
+  save(localKey.value, time, scope.value);
   if (force) syncProgress(time);
   lastSaveAt = now;
 }
@@ -1294,7 +1357,7 @@ function syncVideoState() {
   paused.value = video.paused;
 
   if (video.ended || nearEnd(video)) {
-    clear(id.value, scope.value);
+    clear(localKey.value, scope.value);
     lastSaveAt = 0;
   }
 
@@ -1500,17 +1563,28 @@ async function loadPlayerInfo() {
   session.value = response;
   sessionTracks.value = response.subtitles;
   const mediaId = id.value;
+  const file = mediaPath.value;
+  const key = localKey.value;
   const localScope = scope.value;
-  savedProgress = readRemote(mediaId).then((remoteTime) => {
-    if (destroyed.value || mediaId !== id.value || localScope !== scope.value) return 0;
-    const time = remoteTime === undefined ? read(mediaId, localScope) : (remoteTime ?? 0);
-    if (remoteTime !== undefined) {
-      lastRemote = remoteTime;
-      if (time > 0) save(mediaId, time, localScope);
-      else clear(mediaId, localScope);
-    }
-    return time;
-  });
+  savedProgress = (mediaId ? readRemote(mediaId) : Promise.resolve(undefined)).then(
+    (remoteTime) => {
+      if (
+        destroyed.value ||
+        mediaId !== id.value ||
+        file !== mediaPath.value ||
+        localScope !== scope.value
+      ) {
+        return 0;
+      }
+      const time = remoteTime === undefined ? read(key, localScope) : (remoteTime ?? 0);
+      if (remoteTime !== undefined) {
+        lastRemote = remoteTime;
+        if (time > 0) save(key, time, localScope);
+        else clear(key, localScope);
+      }
+      return time;
+    },
+  );
 
   poster.value = '/images/placeholder.png';
   hasPoster.value = false;
@@ -1536,25 +1610,7 @@ async function loadPlayerInfo() {
     isAudio.value = true;
   }
 
-  sources.value = [];
-  if (isApple) {
-    const allowedCodec = response.mimetype && response.mimetype.includes('video/mp4');
-    const src = uri(response.media_url);
-    sources.value.push({
-      src,
-      type: response.mimetype,
-      onerror: (err: Event) => void src_error(err),
-    });
-    preferHls.value = !allowedCodec;
-    usingHls.value = false;
-  } else {
-    sources.value.push({
-      src: uri(response.media_url),
-      type: response.mimetype,
-      onerror: (err: Event) => void src_error(err),
-    });
-    usingHls.value = false;
-  }
+  preferHls.value = isApple && !response.mimetype?.includes('video/mp4');
 
   if (props.item.extras?.channel) {
     artist.value = props.item.extras.channel;

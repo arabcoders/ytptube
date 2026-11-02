@@ -1,12 +1,16 @@
 from collections import OrderedDict
 from collections.abc import Iterable
 from enum import Enum
+from pathlib import Path
 
 from app.features.downloads.items import ItemDTO
 from app.features.downloads.repository import DownloadsRepository
 from app.features.downloads.runtime.core import Download
+from app.features.downloads.runtime.utils import safe_relative_path
+from app.library.Events import EventBus, Events
 from app.library.logging import get_logger
 from app.library.operations import matches_condition
+from app.library.Utils import calc_download_path, get_file_sidecar
 
 LOG = get_logger()
 
@@ -103,6 +107,46 @@ class DataStore:
             return self._dict[id]
 
         return None
+
+    async def get_by_file(self, file: Path, root: Path) -> list[Download]:
+        file, root = file.resolve(), root.resolve()
+        parts = file.relative_to(root).parts
+        names = {str(file), *(str(Path(*parts[index:])) for index in range(len(parts)))}
+        candidates = {key: item for key, item in self._dict.items() if item.info.filename in names}
+        if StoreType.HISTORY == self._type:
+            await self._connection.flush()
+            for key, info in await self._connection.get_by_filenames(str(self._type), names):
+                candidates[key] = self._dict.get(key) or Download(info=info)
+        matched = []
+        for key, item in candidates.items():
+            info = item.info
+            if not info.filename:
+                continue
+            filename = Path(info.filename)
+            base = Path(info.download_dir) if info.download_dir else root / info.folder
+            path = (base / filename).resolve()
+            if not path.is_file() and filename.parent != Path("."):
+                # Directory-bearing filenames can already be relative to the download root.
+                path = (root / filename).resolve()
+            if file == path:
+                self._dict[key] = item
+                matched.append(item)
+        return matched
+
+    async def update_file(self, items: Iterable[Download], file: Path, root: Path, notify: EventBus) -> None:
+        for item in items:
+            base = (
+                Path(item.info.download_dir)
+                if item.info.download_dir
+                else Path(calc_download_path(base_path=root, folder=item.info.folder, create_path=False))
+            )
+            item.info.filename = safe_relative_path(file, base, root)
+            try:
+                item.info.sidecar = get_file_sidecar(file)
+            except OSError:
+                item.info.sidecar = {}
+            await self.put(item, no_notify=True)
+            notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     async def get_many_by_ids(self, ids: Iterable[str]) -> list[tuple[str, Download]]:
         ids_list = list(ids)
