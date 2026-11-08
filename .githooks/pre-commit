@@ -1,10 +1,40 @@
 #!/bin/sh
 set -eu
 
+usage() {
+  echo "usage: pre-commit [--unstaged | --all]" >&2
+  echo "  (no args)  check staged files" >&2
+  echo "  --unstaged check unstaged and untracked files instead" >&2
+  echo "  --all      check all tracked files" >&2
+}
+
+case "${1:-}" in
+  "")
+    selected_files=$(git diff --cached --name-only --diff-filter=ACMR)
+    mode_label="staged"
+    ;;
+  --unstaged)
+    selected_files=$(git diff --name-only --diff-filter=ACMR)
+    selected_files="$selected_files
+$(git ls-files --others --exclude-standard)"
+    mode_label="unstaged"
+    ;;
+  --all)
+    selected_files=$(git ls-files)
+    mode_label="all"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
+
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || exit 1
 
-PIDS_FILE=$(mktemp)
+TMP_ROOT=${TMPDIR:-/tmp}/tests-ytptube
+mkdir -p "$TMP_ROOT"
+PIDS_FILE=$(mktemp "$TMP_ROOT/ytptube-precommit.XXXXXX")
 trap 'rm -f "$PIDS_FILE"' EXIT
 
 export CI=1
@@ -16,7 +46,7 @@ run_step() {
   echo "Starting $label..." >&2
   (
     if ! "$@"; then
-      echo "[$label] failed. Commit aborted." >&2
+      echo "[$label] failed. $mode_label run failed." >&2
       exit 1
     else
       echo "[$label] passed." >&2
@@ -34,8 +64,7 @@ run_extra_dir() {
   done
 }
 
-echo "Running pre-commit checks... ${REPO_ROOT}" >&2
-staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+echo "Running pre-commit checks ($mode_label)... ${REPO_ROOT}" >&2
 python_changed=0
 frontend_changed=0
 
@@ -56,14 +85,12 @@ while IFS= read -r path; do
       ;;
   esac
 done <<EOF
-$staged_files
+$selected_files
 EOF
 
 if [ "$frontend_changed" -eq 1 ]; then
   echo "Preparing frontend..." >&2
-  (
-    cd "$REPO_ROOT/ui" && NODE_ENV=development ./node_modules/.bin/nuxt prepare --envName=development
-  )
+  NODE_ENV=development bun --cwd=./ui run nuxt prepare --envName=development
   echo "Frontend preparation passed." >&2
 fi
 
@@ -75,11 +102,11 @@ if [ "$python_changed" -eq 1 ]; then
 fi
 
 if [ "$frontend_changed" -eq 1 ]; then
-  run_step "Frontend: Formatter" bun --cwd=./ui format:check
-  run_step "Frontend: i18n" bun --cwd=./ui i18n:check
-  run_step "Frontend: Linter" bun --cwd=./ui lint
+  run_step "Frontend: Formatter" bun --cwd=./ui run format:check
+  run_step "Frontend: i18n" bun --cwd=./ui run i18n:check
+  run_step "Frontend: Linter" bun --cwd=./ui run lint:ci
   run_step "Frontend: Tests" bun --cwd=./ui test:ci
-  run_step "Frontend: TSC" bun --cwd=./ui lint:tsc
+  run_step "Frontend: TSC" bun --cwd=./ui run lint:tsc
 fi
 
 extra_dir=$(git rev-parse --git-path hooks)/pre-commit.d
@@ -92,7 +119,7 @@ if [ "$frontend_changed" -eq 1 ]; then
 fi
 
 if [ "$checks_started" -eq 0 ]; then
-  echo "No relevant checks for the staged files. Commit allowed."
+  echo "No checks apply to the $mode_label files."
   exit 0
 fi
 
@@ -104,9 +131,9 @@ while read -r pid; do
 done <"$PIDS_FILE"
 
 if [ "$fail" -eq 1 ]; then
-  echo "[X] One or more checks failed. Commit aborted." >&2
+  echo "[X] One or more checks failed. $mode_label run failed." >&2
   exit 1
 fi
 
-echo "All checks passed. Commit allowed."
+echo "All checks passed."
 exit 0
