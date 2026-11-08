@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 from aiohttp import helpers, web
 from aiohttp.web import Request, Response
 
+from app.features.conditions.service import Conditions
 from app.features.core.utils import api_error_response
 from app.features.downloads.items import Item
 from app.features.presets.service import Presets
@@ -562,8 +563,13 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             )
 
     try:
+        condition = await Conditions.get_instance().match_url(url)
+        condition_cli = condition.cli if condition else ""
+        if condition_cli:
+            opts = opts.add_cli(condition_cli, from_user=True)
+
         cache_suffix = ":entries" if include_entries else ""
-        key: str = cache.hash(f"{preset}:{url}:{cli_args or ''}{cache_suffix}")
+        key: str = cache.hash(f"{preset}:{url}:{cli_args or ''}:{condition_cli}{cache_suffix}")
 
         if cache.has(key) and not request.query.get("force", False):
             data: Any | None = cache.get(key)

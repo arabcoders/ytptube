@@ -5,7 +5,8 @@ from aiohttp import web
 from app.features.conditions.models import ConditionModel
 from app.features.conditions.repository import ConditionsRepository
 from app.features.conditions.schemas import Condition
-from app.features.ytdlp.mini_filter import match_str
+from app.features.ytdlp.mini_filter import MiniFilter, match_str
+from app.features.ytdlp.utils import get_archive_id, get_ytdlp
 from app.library.Events import EventBus, Events
 from app.library.logging import get_logger
 from app.library.Singleton import Singleton
@@ -113,20 +114,22 @@ class Conditions(metaclass=Singleton):
         repo = self._repo
         return await repo.get(identifier)
 
-    async def match(
-        self, info: dict, ignore_conditions: Iterable[str | int | float] | None = None
+    async def match_url(
+        self, url: str, ignore_conditions: Iterable[str | int | float] | None = None
     ) -> ConditionModel | None:
-        """
-        Check if any condition matches the info dict.
+        info = {"url": url, "webpage_url": url, "original_url": url}
+        identity = get_archive_id(url)
+        if entry_id := identity.get("id"):
+            info["id"] = entry_id
+        if key := identity.get("ie_key"):
+            info.update(extractor_key=key, ie_key=key, extractor=get_ytdlp()._ies[key].IE_NAME)
 
-        Args:
-            info (dict): The info dict to check.
-            ignore_conditions (Iterable[str | int | float] | None): Condition ids or names to skip for this match.
+        return await self.match(info, ignore_conditions=ignore_conditions, incomplete=True)
 
-        Returns:
-            Condition|None: The condition if found, None otherwise.
-
-        """
+    async def match(
+        self, info: dict, ignore_conditions: Iterable[str | int | float] | None = None, *, incomplete: bool = False
+    ) -> ConditionModel | None:
+        """Match the highest-priority rule, deferring unknown fields when metadata is incomplete."""
         if not info or not isinstance(info, dict) or len(info) < 1:
             return None
 
@@ -153,7 +156,7 @@ class Conditions(metaclass=Singleton):
                 continue
 
             try:
-                if not match_str(item.filter, info):
+                if not MiniFilter(item.filter).evaluate(info, incomplete=incomplete):
                     continue
 
                 LOG.debug(
