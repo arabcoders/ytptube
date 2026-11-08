@@ -102,4 +102,15 @@ DEFAULT_PRESETS: list[dict[str, object]] = [
         "priority": 0,
         "updated_at": DEFAULT_PRESET_UPDATED_AT,
     },
+    {
+        "name": "widevine",
+        "default": True,
+        "cli": '--socket-timeout 30 --download-archive %(archive_file)s\n--extractor-args "media:type=widevine;config=widevine.toml"',
+        "description": "Downloads Widevine-protected media.",
+        "folder": "",
+        "template": "",
+        "cookies": "",
+        "priority": 0,
+        "updated_at": datetime(2026, 11, 8, tzinfo=UTC),
+    },
 ]
