@@ -154,19 +154,15 @@ to report vulnerabilities.
 
 ## Project Policy
 
-YTPTube is a personal-first project. Contributions are welcome ONLY after approval from the maintainer following prior 
-discussion. Any unsolicited pull requests will be declined. Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting any 
-work to not waste your and the maintainer's time.
+YTPTube is built for my own needs and use cases. Discuss contributions with me and get approval before starting work.
+Unsolicited pull requests will be declined. Read [CONTRIBUTING.md](CONTRIBUTING.md). I use AI tools in this project.
+You're welcome to use it if it works for you. However, if you object to AI tools, then simply put, this project
+is not good fit for you. Build your own using technologies you approve of.
 
-AI-assisted tools have been used in this project and will continue to be used where I find them useful. This project is
-built for my own needs and use cases, and I maintain it according to my own preferences.
+## Disclaimer
 
-You are welcome to use it if it works for you, but I will not change the project's development approach to accommodate 
-your objections. I believe these tools can be genuinely useful when used appropriately. If the use of AI-assisted tools 
-is a deal-breaker for you, this project may not be the right fit for you. Feel free to build your own.
-
-YTPTube is not affiliated with yt-dlp or any supported service. It is intended for downloading content you are 
-permitted to access, not for piracy or unlawful use.
+YTPTube is not affiliated with yt-dlp or any other service. It is intended for downloading content you are permitted to 
+access, not for piracy or unlawful use.
 
 ## Community
 
