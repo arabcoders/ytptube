@@ -1,43 +1,39 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading items-start">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
-
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
+    <PageHeader v-bind="pageShell">
+      <template #icon>
         <UTooltip
           :text="connected ? t('status.clickToDisconnect') : t('status.clickToReconnect')"
-          v-if="!monitorDisabled"
+          :disabled="monitorDisabled"
         >
-          <button
+          <UButton
             type="button"
-            class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-toned transition-colors hover:bg-elevated/60 hover:text-default"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            square
+            class="size-full justify-center p-0"
+            :disabled="monitorDisabled"
+            :aria-pressed="!monitorDisabled && connected"
+            :aria-label="
+              monitorDisabled
+                ? t('status.monitoringDisabled')
+                : connected
+                  ? t('status.clickToDisconnect')
+                  : t('status.clickToReconnect')
+            "
             @click="toggleStream"
           >
-            <span
-              :class="[
-                'inline-flex size-2 shrink-0 rounded-full',
-                connected ? 'bg-success' : 'bg-muted',
-              ]"
-            ></span>
-            <span>{{ connected ? t('common.live') : t('common.offline') }}</span>
-          </button>
+            <UIcon
+              :name="pageShell.icon"
+              class="size-5 transition-colors"
+              :class="!monitorDisabled && connected ? 'animate-pulse text-success' : 'text-toned'"
+              aria-hidden="true"
+            />
+          </UButton>
         </UTooltip>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <UAlert
       v-if="monitorDisabled"
@@ -55,6 +51,7 @@
       icon="i-lucide-loader-circle"
       :title="t('common.loading')"
       :description="t('status.loadingDesc')"
+      :ui="{ icon: 'animate-spin' }"
     />
 
     <UAlert
@@ -71,6 +68,7 @@
         <button
           type="button"
           class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
+          :aria-expanded="isOpen('resources')"
           @click="toggleSection('resources')"
         >
           <div class="flex items-center gap-2">
@@ -137,6 +135,7 @@
         <button
           type="button"
           class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
+          :aria-expanded="isOpen('appState')"
           @click="toggleSection('appState')"
         >
           <div class="flex items-center gap-2">
@@ -209,6 +208,7 @@
         <button
           type="button"
           class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
+          :aria-expanded="isOpen('children')"
           @click="toggleSection('children')"
         >
           <div class="flex items-center gap-2">
@@ -224,10 +224,10 @@
           />
         </button>
 
-        <div v-if="isOpen('children')" class="overflow-x-auto rounded-lg border border-default">
+        <div v-if="isOpen('children')" class="ytp-card overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="border-b border-default bg-elevated/40">
+              <tr class="border-b border-default">
                 <th class="px-3 py-2 text-start font-medium text-highlighted">
                   {{ t('status.process') }}
                 </th>
@@ -290,6 +290,7 @@
         <button
           type="button"
           class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
+          :aria-expanded="isOpen('diskUsage')"
           @click="toggleSection('diskUsage')"
         >
           <div class="flex items-center gap-2">
@@ -326,6 +327,7 @@
         <button
           type="button"
           class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
+          :aria-expanded="isOpen('charts')"
           @click="toggleSection('charts')"
         >
           <div class="flex items-center gap-2">
@@ -386,6 +388,7 @@
         <button
           type="button"
           class="flex w-full items-center justify-between gap-2 text-start text-sm font-semibold text-highlighted"
+          :aria-expanded="isOpen('diagnosis')"
           @click="toggleSection('diagnosis')"
         >
           <div class="flex items-center gap-2">
@@ -418,21 +421,22 @@
         </div>
       </section>
 
-      <UAlert color="info" variant="soft">
-        <template #description>
-          <ul class="list-disc space-y-2 ps-5 text-sm text-default">
-            <li v-html="t('status.helpAppCpu')"></li>
-            <li v-html="t('status.helpSystemCpu')"></li>
-            <li v-html="t('status.helpRss')"></li>
-            <li v-html="t('status.helpUss')"></li>
-            <li v-html="t('status.helpHandles')"></li>
-            <li v-html="t('status.helpDiskIo')"></li>
-            <li v-html="t('status.helpChildren')"></li>
-            <li v-html="t('status.helpPool')"></li>
-            <li v-html="t('status.helpBottlenecks')"></li>
-          </ul>
-        </template>
-      </UAlert>
+      <details class="text-sm">
+        <summary class="w-fit cursor-pointer font-medium text-toned">
+          {{ t('common.usageNotes') }}
+        </summary>
+        <ul class="mt-3 list-disc space-y-2 ps-5 text-toned">
+          <li v-html="t('status.helpAppCpu')"></li>
+          <li v-html="t('status.helpSystemCpu')"></li>
+          <li v-html="t('status.helpRss')"></li>
+          <li v-html="t('status.helpUss')"></li>
+          <li v-html="t('status.helpHandles')"></li>
+          <li v-html="t('status.helpDiskIo')"></li>
+          <li v-html="t('status.helpChildren')"></li>
+          <li v-html="t('status.helpPool')"></li>
+          <li v-html="t('status.helpBottlenecks')"></li>
+        </ul>
+      </details>
     </template>
   </main>
 </template>

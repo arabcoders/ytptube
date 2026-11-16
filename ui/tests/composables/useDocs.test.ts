@@ -1,8 +1,29 @@
 import { describe, expect, it } from 'bun:test';
 
-import { getDocsEntryBySlug, resolveDocsImageSrc, resolveDocsLink } from '~/composables/useDocs';
+import {
+  DOCS_ENTRIES,
+  getDocsEntryBySlug,
+  getDocsGroups,
+  resolveDocsImageSrc,
+  resolveDocsLink,
+} from '~/composables/useDocs';
 
 describe('docs resolver', () => {
+  it('groups every guide', () => {
+    const groups = getDocsGroups();
+    const entries = groups.flatMap((group) => group.entries);
+
+    expect(groups.map((group) => group.id)).toEqual(['start', 'guides', 'reference']);
+    expect(entries.map((entry) => entry.id).sort()).toEqual(
+      DOCS_ENTRIES.filter((entry) => entry.id !== 'docs-index')
+        .map((entry) => entry.id)
+        .sort(),
+    );
+    for (const entry of entries) {
+      expect(getDocsEntryBySlug(entry.slug)?.route).toBe(entry.route);
+    }
+  });
+
   it('distinguishes index and root readme', () => {
     expect(getDocsEntryBySlug()?.file).toBe('docs/README.md');
     expect(getDocsEntryBySlug('readme')?.file).toBe('README.md');

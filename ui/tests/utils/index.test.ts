@@ -54,7 +54,7 @@ let fetchSpy: ReturnType<typeof spyOn> | undefined;
 const resetStorage = () => {
   storageMap.clear();
   storageMap.set('random_bg', { value: true });
-  storageMap.set('random_bg_opacity', { value: 0.95 });
+  storageMap.set('random_bg_opacity_v2', { value: 0.75 });
 };
 
 beforeAll(async () => {
@@ -62,6 +62,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+  document.documentElement.classList.remove('simple-mode');
   storageMap.set('random_bg', { value: false });
   utils.syncOpacity();
   resetStorage();
@@ -103,6 +104,8 @@ beforeEach(() => {
 afterEach(() => {
   storageMap.set('random_bg', { value: false });
   utils.syncOpacity();
+  document.documentElement.classList.remove('simple-mode');
+  document.documentElement.style.removeProperty('--ytp-artwork-opacity');
 
   if (fetchSpy) {
     fetchSpy.mockRestore();
@@ -387,6 +390,7 @@ describe('dom and browser helpers', () => {
   });
 
   it('lock_opacity', () => {
+    document.documentElement.classList.add('simple-mode');
     const result = utils.disableOpacity();
     expect(result).toBe(true);
     expect(document.body.style.opacity).toBe('1');
@@ -413,6 +417,7 @@ describe('dom and browser helpers', () => {
   });
 
   it('restore_opacity', () => {
+    document.documentElement.classList.add('simple-mode');
     utils.disableOpacity();
     useStorageFn.mockImplementation((key: string, defaultValue: any) => {
       if (!storageMap.has(key)) {
@@ -421,15 +426,16 @@ describe('dom and browser helpers', () => {
       return storageMap.get(key);
     });
 
-    storageMap.set('random_bg_opacity', { value: 0.75 });
+    storageMap.set('random_bg_opacity_simple', { value: 0.75 });
     const result = utils.enableOpacity();
     expect(result).toBe(true);
     expect(document.body.style.opacity).toBe('0.75');
   });
 
   it('keep_opacity_lock', () => {
+    document.documentElement.classList.add('simple-mode');
     utils.disableOpacity();
-    storageMap.set('random_bg_opacity', { value: 0.35 });
+    storageMap.set('random_bg_opacity_simple', { value: 0.35 });
 
     const result = utils.syncOpacity();
 
@@ -444,6 +450,78 @@ describe('dom and browser helpers', () => {
     const result = utils.syncOpacity();
 
     expect(result).toBe(true);
+    expect(document.body.style.opacity).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')).toBe('0');
+  });
+
+  it('fade_artwork', () => {
+    storageMap.set('random_bg_opacity_v2', { value: 0.75 });
+    document.body.style.opacity = '0.8';
+
+    expect(utils.syncOpacity()).toBe(true);
+    expect(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')).toBe('0.25');
+    expect(document.body.style.opacity).toBe('');
+  });
+
+  it('separate_opacity', () => {
+    storageMap.set('random_bg_opacity_v2', { value: 0.7 });
+    storageMap.set('random_bg_opacity_simple', { value: 0.9 });
+
+    utils.syncOpacity();
+    expect(
+      Number(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')),
+    ).toBeCloseTo(0.3);
+    expect(document.body.style.opacity).toBe('');
+
+    document.documentElement.classList.add('simple-mode');
+    utils.syncOpacity();
+    expect(document.body.style.opacity).toBe('0.9');
+
+    storageMap.set('random_bg_opacity_v2', { value: 0.8 });
+    utils.syncOpacity();
+    expect(document.body.style.opacity).toBe('0.9');
+
+    storageMap.set('random_bg_opacity_simple', { value: 0.85 });
+    document.documentElement.classList.remove('simple-mode');
+    utils.syncOpacity();
+    expect(
+      Number(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')),
+    ).toBeCloseTo(0.2);
+    expect(document.body.style.opacity).toBe('');
+  });
+
+  it('simple_opacity_default', () => {
+    document.documentElement.classList.add('simple-mode');
+    storageMap.set('random_bg_opacity_v2', { value: 0.6 });
+
+    utils.syncOpacity();
+
+    expect(document.body.style.opacity).toBe('0.95');
+  });
+
+  it('clamp_artwork', () => {
+    storageMap.set('random_bg_opacity_v2', { value: -1 });
+    utils.syncOpacity();
+    expect(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')).toBe('0.5');
+
+    storageMap.set('random_bg_opacity_v2', { value: 2 });
+    utils.syncOpacity();
+    expect(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')).toBe('0');
+  });
+
+  it('lock_artwork', () => {
+    storageMap.set('random_bg_opacity_v2', { value: 0.75 });
+    utils.syncOpacity();
+    utils.disableOpacity();
+    utils.disableOpacity();
+    expect(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')).toBe('0');
+    expect(document.body.style.opacity).toBe('');
+
+    utils.enableOpacity();
+    expect(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')).toBe('0');
+
+    utils.enableOpacity();
+    expect(document.documentElement.style.getPropertyValue('--ytp-artwork-opacity')).toBe('0.25');
     expect(document.body.style.opacity).toBe('');
   });
 });

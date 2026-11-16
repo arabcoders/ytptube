@@ -1,23 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading items-start">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
-
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
+    <PageHeader v-bind="pageShell">
+      <template #actions>
         <UButton
           color="neutral"
           variant="outline"
@@ -29,8 +13,8 @@
         >
           {{ t('common.refresh') }}
         </UButton>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <UAlert
       v-if="!limits && limitsLoading"
@@ -39,6 +23,7 @@
       icon="i-lucide-loader-circle"
       :title="t('common.loading')"
       :description="t('common.loadingData')"
+      :ui="{ icon: 'animate-spin' }"
     />
 
     <UAlert
@@ -164,22 +149,20 @@
           </div>
         </div>
 
-        <UAlert
+        <UEmpty
           v-if="trackedExtractorCount === 0"
-          color="info"
-          variant="soft"
+          variant="naked"
+          size="sm"
           icon="i-lucide-info"
           :title="t('common.noActivity')"
           :description="t('common.noActivityDesc')"
         />
 
-        <div v-else class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
+        <div v-else class="ytp-card w-full min-w-0 max-w-full overflow-hidden">
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table class="min-w-160 w-full text-sm">
-              <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-                <tr
-                  class="text-start [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-2.5 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-                >
+              <thead class="border-b border-default text-xs uppercase tracking-wide text-toned">
+                <tr class="text-start [&>th]:px-3 [&>th]:py-2.5 [&>th]:font-semibold">
                   <th class="w-full min-w-48">{{ t('common.extractor') }}</th>
                   <th class="w-40 whitespace-nowrap">{{ t('common.source') }}</th>
                   <th class="w-20 whitespace-nowrap">{{ t('common.active') }}</th>
@@ -193,7 +176,7 @@
                 <tr
                   v-for="item in extractorItems"
                   :key="item.name"
-                  class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td]:px-3 [&>td]:py-2.5 [&>td:last-child]:border-e-0"
+                  class="transition-colors hover:bg-elevated/30 [&>td]:px-3 [&>td]:py-2.5"
                 >
                   <td class="font-medium text-highlighted">{{ item.name }}</td>
                   <td class="whitespace-nowrap">

@@ -1,5 +1,5 @@
 <template>
-  <AppRoot ref="root" mode="regular" load-opts v-slot="{ reloadBg, bgLoading }">
+  <AppRoot ref="root" mode="regular" load-opts v-slot="{ reloadBg, bgLoading, bgSrc }">
     <div class="shell-stage shell-surface flex flex-col">
       <Shutdown v-if="app_shutdown" />
 
@@ -51,23 +51,17 @@
               <UTooltip :text="connectionStatusLabel">
                 <NuxtLink
                   to="/"
-                  class="flex w-full min-w-0 items-center gap-2 rounded-xl transition-colors hover:bg-elevated/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  :class="collapsed ? 'justify-center p-1' : 'px-1.5 py-1'"
+                  class="flex w-full min-w-0 items-center gap-3 rounded-md transition-colors hover:bg-elevated/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  :class="collapsed ? 'justify-center' : ''"
                   :aria-label="t('common.home')"
                 >
                   <span
-                    class="relative inline-flex shrink-0 items-center justify-center transition-all duration-200"
-                    :class="
-                      collapsed
-                        ? 'size-10 rounded-xl bg-elevated/80 ring ring-default shadow-xs'
-                        : 'size-9 rounded-lg'
-                    "
+                    class="relative inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/80 shadow-sm"
                   >
                     <img
                       :src="uri('/images/favicon.png')"
                       alt="YTPTube"
-                      class="rounded-lg object-contain"
-                      :class="collapsed ? 'size-6' : 'size-5'"
+                      class="size-7 rounded-md object-contain"
                     />
                     <span
                       aria-hidden="true"
@@ -77,9 +71,7 @@
                   </span>
 
                   <div v-if="false === collapsed" class="min-w-0">
-                    <p class="truncate text-sm font-semibold" :class="connectionStatusColor">
-                      YTPTube
-                    </p>
+                    <p class="truncate text-sm font-semibold text-highlighted">YTPTube</p>
                     <p v-if="config?.app?.instance_title" class="truncate text-xs text-toned">
                       {{ config.app.instance_title }}
                     </p>
@@ -89,29 +81,21 @@
             </template>
 
             <template #default="{ collapsed }">
-              <div class="flex h-full flex-col gap-6 px-1 py-1">
-                <div v-for="section in sidebarSections" :key="section.id" class="space-y-2">
-                  <p
-                    v-if="false === collapsed && section.label"
-                    class="px-2 text-[11px] font-semibold text-toned"
-                    :class="isRtl ? 'tracking-normal' : 'tracking-[0.22em] uppercase'"
-                  >
-                    {{ t(section.label) }}
-                  </p>
-
-                  <UNavigationMenu
-                    orientation="vertical"
-                    :collapsed="collapsed"
-                    :items="section.items"
-                    :tooltip="true"
-                    :ui="navigationUi(collapsed)"
-                  />
-                </div>
+              <div class="flex h-full flex-col gap-5 px-1 py-1">
+                <UNavigationMenu
+                  v-model="openNavigationGroups"
+                  orientation="vertical"
+                  variant="link"
+                  :collapsed="collapsed"
+                  :items="sidebarItems"
+                  :tooltip="true"
+                  :popover="{
+                    mode: 'click',
+                    content: { side: isRtl ? 'left' : 'right', align: 'start' },
+                  }"
+                  :ui="navigationUi(collapsed)"
+                />
               </div>
-            </template>
-
-            <template #footer="{ collapsed }">
-              <div v-if="false === collapsed" class="w-full"></div>
             </template>
           </UDashboardSidebar>
 
@@ -119,24 +103,14 @@
             <template #header>
               <UDashboardNavbar :toggle="false" :title="pageTitle" :ui="dashboardNavbarUi">
                 <template #left>
-                  <div class="flex items-center gap-2">
+                  <div class="flex min-w-0 shrink-0 items-center gap-2">
                     <UDashboardSidebarToggle class="lg:hidden" />
-                    <UButton
-                      to="/"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-house"
-                      class="lg:hidden"
-                    >
-                      {{ t('common.home') }}
-                    </UButton>
                     <UDashboardSidebarCollapse class="hidden lg:inline-flex" />
                   </div>
                 </template>
 
                 <template #right>
-                  <div class="flex items-center gap-1 sm:gap-2">
+                  <div class="flex min-w-0 shrink items-center gap-0.5 sm:gap-2">
                     <UButton
                       v-if="socket.connectionStatus !== 'connected'"
                       color="neutral"
@@ -154,32 +128,16 @@
                     <NotifyDropdown />
                     <ThemeButton square :show-label="false" />
 
-                    <UButton
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-search"
-                      :aria-label="t('app.search')"
-                      :title="t('app.search')"
-                      class="shrink-0 lg:hidden"
-                      @click="
-                        () => {
-                          showRouteSearch = true;
-                        }
-                      "
-                    />
-
-                    <UDashboardSearchButton class="hidden shrink-0 lg:inline-flex" />
-
-                    <UButton
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      icon="i-lucide-refresh-cw"
-                      @click="() => router.go(0)"
-                    >
-                      <span class="hidden xl:inline">{{ t('common.refresh') }}</span>
-                    </UButton>
+                    <UTooltip :text="t('app.search')">
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-search"
+                        :aria-label="t('app.search')"
+                        @click="showRouteSearch = true"
+                      />
+                    </UTooltip>
 
                     <UDropdownMenu :items="accountMenu" :content="{ align: 'end' }">
                       <UButton
@@ -203,8 +161,14 @@
                 <NuxtLoadingIndicator />
 
                 <div
-                  class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5 lg:px-6"
+                  class="relative isolate flex min-h-0 min-w-0 max-w-full flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5 lg:px-6"
                 >
+                  <div
+                    v-if="bgSrc"
+                    aria-hidden="true"
+                    class="shell-header-artwork pointer-events-none absolute inset-x-0 top-0 -z-10 h-80"
+                    :style="{ backgroundImage: `url(${bgSrc})` }"
+                  />
                   <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col gap-4">
                     <UAlert
                       v-if="!config.is_loaded"
@@ -437,21 +401,15 @@ import AccountModal from '~/components/AccountModal.vue';
 import type { version_check } from '~/types';
 import {
   getActiveNavItem,
-  getNavItems,
   getNavSections,
   getSearchNavItems,
+  getSidebarSections,
   isNavItemActive,
   type NavItem,
 } from '~/utils/topLevelNavigation';
 
 const { t } = useI18n();
 const { isRtl, locale } = useAppLocale();
-
-type SidebarSection = {
-  id: string;
-  label?: string;
-  items: Array<Array<NavigationMenuItem>>;
-};
 
 type SwipeMode = 'open' | 'close';
 
@@ -484,6 +442,11 @@ const accountMenu = computed<DropdownMenuItem[][]>(() => {
       onSelect: (): void => {
         void openSettings();
       },
+    },
+    {
+      label: t('common.refresh'),
+      icon: 'i-lucide-refresh-cw',
+      onSelect: (): void => router.go(0),
     },
   ];
 
@@ -526,6 +489,7 @@ const updateCheckMessageKey = ref('app.update.upToDate');
 const updateCheckMessage = computed(() => t(updateCheckMessageKey.value));
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
+const openNavigationGroups = ref<Array<string>>([]);
 const accountOpen = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
@@ -642,7 +606,7 @@ const handleSwipeCancel = (): void => {
 const dashboardSidebarUi = computed(() => {
   return {
     root: 'shell-surface border-e border-default bg-default/95 backdrop-blur-sm',
-    header: 'border-b border-default px-2.5 py-3',
+    header: 'px-3 py-5',
     body: 'gap-3 px-2.5 py-3',
     footer: 'border-t border-default px-2.5 py-3',
   };
@@ -650,8 +614,8 @@ const dashboardSidebarUi = computed(() => {
 
 const dashboardNavbarUi = {
   root: 'border-b border-default bg-transparent px-4 py-3 sm:px-5 lg:px-6',
-  title: 'text-sm font-semibold text-highlighted',
-  right: 'flex items-center shrink-0 gap-1.5',
+  title: 'hidden text-sm font-medium text-muted md:flex',
+  right: 'flex min-w-0 shrink items-center gap-0.5 sm:gap-1.5',
 };
 
 const dashboardPanelUi = {
@@ -663,18 +627,25 @@ const navigationUi = (collapsed: boolean) => ({
   root: 'w-full',
   list: 'gap-1.5',
   link: collapsed
-    ? 'justify-center rounded-lg px-2 py-2'
-    : 'rounded-lg px-2.5 py-2 text-sm font-medium text-default transition-colors',
+    ? 'justify-center rounded-md px-2 py-2 text-default'
+    : 'rounded-md px-2.5 py-2 text-sm font-medium text-default transition-colors',
   linkLeadingIcon: collapsed ? 'size-5' : 'size-4',
   linkLabel: collapsed ? 'hidden' : 'truncate',
+  childList: 'ms-4 border-s border-default ps-2',
+  childLink: 'py-2 text-default before:bg-transparent',
+  childLinkIcon: 'group-data-[active]:text-primary',
 });
 
 const makeNavigationItem = (item: NavItem): NavigationMenuItem => ({
   label: t(item.label),
+  'aria-label': t(item.label),
   icon: item.icon,
   to: item.to,
   value: item.id,
   active: isNavItemActive(item, route),
+  onSelect: () => {
+    showSidebar.value = false;
+  },
 });
 
 const navigationAvailability = computed(() => ({
@@ -682,37 +653,32 @@ const navigationAvailability = computed(() => ({
   consoleEnabled: Boolean(config.app?.console_enabled),
 }));
 
-const navItems = computed(() => getNavItems(navigationAvailability.value));
 const searchNavItems = computed(() => getSearchNavItems(navigationAvailability.value));
 
-const groupSectionEntries = (entries: Array<NavItem>): Array<Array<NavItem>> => {
-  const order = [...new Set(entries.map((entry) => entry.group))];
-  return order.map((group) => entries.filter((entry) => entry.group === group));
-};
-
-const sidebarItems = computed<
-  Array<{
-    id: string;
-    label: string;
-    items: Array<Array<NavItem>>;
-  }>
->(() => {
-  return getNavSections()
-    .map((section) => {
-      const sectionEntries = navItems.value.filter(
-        (entry) => entry.section === section.id && entry.sidebarVisible !== false,
-      );
-
-      return {
-        id: section.id,
-        label: section.label,
-        items: groupSectionEntries(sectionEntries),
-      };
-    })
-    .filter((section) => section.items.some((group) => group.length > 0));
-});
+const sidebarSections = computed(() => getSidebarSections(navigationAvailability.value));
+const sidebarItems = computed<Array<NavigationMenuItem>>(() =>
+  sidebarSections.value.map((section) => ({
+    value: section.id,
+    label: t(section.label),
+    'aria-label': t(section.label),
+    icon: section.icon,
+    active: activeNavItem.value?.section === section.id,
+    children: section.items.map(makeNavigationItem),
+  })),
+);
 
 const activeNavItem = computed(() => getActiveNavItem(route, navigationAvailability.value));
+
+watch(
+  [() => route.path, () => activeNavItem.value?.section],
+  ([, section]) => {
+    if (section && !openNavigationGroups.value.includes(section)) {
+      openNavigationGroups.value = [...openNavigationGroups.value, section];
+    }
+    showSidebar.value = false;
+  },
+  { immediate: true },
+);
 
 const pageTitle = computed(() => {
   const item = activeNavItem.value;
@@ -729,18 +695,6 @@ const documentTitle = computed(() => {
 useHead(() => ({
   title: formatPageTitle(documentTitle.value),
 }));
-
-const connectionStatusColor = computed(() => {
-  if (socket.connectionStatus === 'connected') {
-    return 'text-success';
-  }
-
-  if (socket.connectionStatus === 'connecting') {
-    return 'text-warning';
-  }
-
-  return 'text-error';
-});
 
 const connectionStatusDotClass = computed(() => {
   if (socket.connectionStatus === 'connected') {
@@ -765,13 +719,6 @@ const connectionStatusLabel = computed(() => {
 
   return t('app.connection.disconnected');
 });
-
-const sidebarSections = computed<Array<SidebarSection>>(() =>
-  sidebarItems.value.map((section) => ({
-    ...section,
-    items: section.items.map((group) => group.map((entry) => makeNavigationItem(entry))),
-  })),
-);
 
 const routeSearchGroups = computed(() => [
   ...getNavSections()
@@ -848,6 +795,7 @@ const openSettings = async (): Promise<void> => {
 
 const handleRouteSelect = async (item: NavItem) => {
   await closeRouteSearch();
+  showSidebar.value = false;
 
   if (item.to) {
     await navigateTo(item.to);

@@ -1,34 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading items-start">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
-
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-copy"
-          :disabled="isLoading || !report"
-          @click="copyDiagnostics"
-        >
-          {{ t('common.copy') }}
-        </UButton>
-
+    <PageHeader v-bind="pageShell">
+      <template #actions>
         <UButton
           color="neutral"
           variant="outline"
@@ -40,8 +13,19 @@
         >
           {{ t('common.refresh') }}
         </UButton>
-      </div>
-    </div>
+
+        <UButton
+          color="primary"
+          variant="solid"
+          size="sm"
+          icon="i-lucide-copy"
+          :disabled="isLoading || !report"
+          @click="copyDiagnostics"
+        >
+          {{ t('common.copy') }}
+        </UButton>
+      </template>
+    </PageHeader>
 
     <UAlert
       v-if="!report && isLoading"
@@ -50,6 +34,7 @@
       icon="i-lucide-loader-circle"
       :title="t('common.loading')"
       :description="t('diagnostics.loadingDesc')"
+      :ui="{ icon: 'animate-spin' }"
     />
 
     <UAlert
@@ -96,20 +81,32 @@
           <span>{{ t('diagnostics.runtime') }}</span>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <StatCard
+        <dl class="ytp-card grid divide-y divide-default md:grid-cols-2">
+          <div
             v-for="row in runtimeRows"
             :key="row.label"
-            :label="row.label"
-            :value="row.value"
-            :hint="row.description"
-            :icon="row.icon"
-            :href="row.href"
-            :tooltip="row.tooltip"
-            color="neutral"
-            value-wrap
-          />
-        </div>
+            class="grid min-w-0 gap-x-3 gap-y-1 px-4 py-3 sm:grid-cols-[8rem_minmax(0,1fr)]"
+          >
+            <dt class="flex items-center gap-1.5 text-xs text-muted">
+              <UIcon :name="row.icon" class="size-3.5 shrink-0" aria-hidden="true" />
+              {{ row.label }}
+            </dt>
+            <dd class="min-w-0 space-y-1 wrap-anywhere text-sm text-default">
+              <UTooltip :text="row.tooltip" :disabled="!row.tooltip">
+                <a
+                  v-if="row.href"
+                  :href="row.href"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="hover:text-primary hover:underline"
+                  >{{ row.value }}</a
+                >
+                <span v-else>{{ row.value }}</span>
+              </UTooltip>
+              <p class="text-xs text-toned">{{ row.description }}</p>
+            </dd>
+          </div>
+        </dl>
       </section>
 
       <section v-for="section in featureSections" :key="section.id" class="space-y-3">
@@ -123,18 +120,17 @@
           </div>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        <div class="ytp-card divide-y divide-default">
           <article
             v-for="item in section.items"
             :key="item.id"
-            class="ytp-card-padded shadow-sm"
-            dir="ltr"
+            class="min-w-0 space-y-3 p-4 sm:p-5"
           >
             <div class="min-w-0 space-y-3">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <span :class="tagDotClass(item.status)"></span>
-                  <p class="text-base font-semibold text-default" dir="auto">{{ item.label }}</p>
+                  <h3 class="text-base font-semibold text-default" dir="auto">{{ item.label }}</h3>
                   <span
                     class="inline-flex items-center rounded-md border border-default px-2 py-1 text-xs text-toned"
                   >
@@ -157,7 +153,7 @@
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 text-xs text-toned"
                 >
                   <span class="font-medium text-default" dir="auto">{{ keyLabel(key) }}:</span>
-                  <span dir="auto">{{ formatValue(value) }}</span>
+                  <span class="wrap-anywhere" dir="auto">{{ formatValue(value) }}</span>
                 </span>
               </div>
             </div>

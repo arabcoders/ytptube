@@ -1,5 +1,8 @@
 <template>
-  <UPopover :content="{ align: 'end', side: 'bottom', sideOffset: 8 }">
+  <UPopover
+    :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
+    :ui="{ content: 'shell-surface bg-transparent' }"
+  >
     <UButton
       color="neutral"
       variant="ghost"
@@ -138,7 +141,6 @@
             variant="naked"
             icon="i-lucide-inbox"
             :title="t('app.notifications.noNotifications')"
-            :description="t('app.notifications.noNotificationsDesc')"
             class="px-4 py-8"
           />
         </template>

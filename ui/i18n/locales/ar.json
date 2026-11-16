@@ -11,7 +11,6 @@
     "loginHeading": "مرحباً بعودتك",
     "loginSubtitle": "سجّل الدخول للمتابعة إلى YTPTube.",
     "loginAction": "تسجيل الدخول",
-    "oidcLogin": "تسجيل الدخول باستخدام OIDC",
     "forgotPassword": "هل نسيت كلمة المرور؟",
     "recoveryGuidance": "تتطلب استعادة كلمة المرور وصولاً محلياً إلى تثبيت YTPTube. استخدم الأمر الموضح في الأسئلة الشائعة.",
     "recoveryInstructions": "فتح تعليمات إعادة تعيين كلمة المرور",
@@ -390,6 +389,7 @@
     "warning": "تحذير",
     "handleWarningDesc": "أنت تستخدم رابط يوتيوب بـ <code>{'@'}handle</code> بدلاً من <code>channel_id</code>. لتفعيل دعم <bdi>RSS</bdi> للرابط، انقر على رابط <b>تحويل الرابط</b>.",
     "information": "معلومات",
+    "usageNotes": "ملاحظات الاستخدام",
     "rssWarningDesc": "أنت تستخدم رابط RSS/Atom عام. سيقوم معالج المهمة بتنزيل العناصر الجديدة الموجودة في هذا الخلاصة تلقائياً.",
     "multipleUrls": "روابط متعددة",
     "multipleUrlsDesc1": "الرابط الأول يستخدم الاسم المقدم مع الإعدادات الكاملة.",
@@ -836,7 +836,6 @@
       "subtitle": "آخر الأنشطة والأخطاء.",
       "unread": "{count} غير مقروءة | {count} غير مقروءة",
       "noNotifications": "لا توجد إشعارات",
-      "noNotificationsDesc": "ليس لديك أي إشعارات محفوظة بعد.",
       "markAllRead": "تعليم الكل كمقروء",
       "clearAll": "مسح الكل",
       "copied": "تم النسخ!"
@@ -1018,6 +1017,8 @@
     "handlerOnly": "المعالج فقط",
     "openSourceUrl": "فتح رابط المصدر",
     "schedule": "الجدول",
+    "nextRun": "التشغيل المجدول التالي",
+    "inProgress": "قيد التنفيذ",
     "schedulePlaylistOnly": "يمكن جدولة روابط قوائم التشغيل أو القنوات فقط.",
     "runTasksConfirm": "تشغيل المهام التالية؟",
     "archiveAllConfirm": "وضع علامة على جميع عناصر '{name}' كمُنزلة في أرشيف التنزيل؟",
@@ -1245,7 +1246,11 @@
   },
   "changelog": {
     "description": "آخر تغييرات المشروع",
-    "filterPlaceholder": "تصفية مدخلات سجل التغييرات",
+    "filterPlaceholder": "الإصدار أو التغيير أو المؤلف أو الإيداع",
+    "search": "البحث في سجل التغييرات",
+    "latestOnly": "الأحدث فقط",
+    "latestCount": "أحدث {count} إصدارات",
+    "noCommits": "لا توجد إيداعات",
     "releaseDateValue": "تاريخ الإصدار: {date}",
     "installed": "مثبت",
     "commits": "{count} تعديل",
@@ -1277,6 +1282,11 @@
   },
   "docs": {
     "notFound": "التوثيق غير موجود",
+    "groups": {
+      "start": "ابدأ هنا",
+      "guides": "الأدلة",
+      "reference": "المراجع"
+    },
     "entries": {
       "index": {
         "title": "التوثيق",

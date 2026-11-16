@@ -17,6 +17,11 @@ export default defineAppConfig({
         content: 'pointer-events-auto',
       },
     },
+    toast: {
+      slots: {
+        root: 'shell-surface bg-transparent',
+      },
+    },
     dropdownMenu: {
       slots: {
         content: 'ytp-floating-surface',

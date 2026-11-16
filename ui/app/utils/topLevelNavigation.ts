@@ -5,6 +5,7 @@ export type SectionId = 'downloads' | 'automation' | 'configuration' | 'tools' |
 type NavSection = {
   id: SectionId;
   label: string;
+  icon: string;
 };
 
 type NavDefinition = {
@@ -51,11 +52,11 @@ type NavAvailability = {
 };
 
 const SECTIONS: Array<NavSection> = [
-  { id: 'downloads', label: 'common.downloads' },
-  { id: 'automation', label: 'app.nav.sections.automation' },
-  { id: 'configuration', label: 'app.nav.sections.configuration' },
-  { id: 'tools', label: 'app.nav.sections.tools' },
-  { id: 'docs', label: 'app.nav.sections.docs' },
+  { id: 'downloads', label: 'common.downloads', icon: 'i-lucide-download' },
+  { id: 'automation', label: 'app.nav.sections.automation', icon: 'i-lucide-workflow' },
+  { id: 'configuration', label: 'app.nav.sections.configuration', icon: 'i-lucide-settings-2' },
+  { id: 'tools', label: 'app.nav.sections.tools', icon: 'i-lucide-wrench' },
+  { id: 'docs', label: 'app.nav.sections.docs', icon: 'i-lucide-book-open' },
 ];
 const DOCS_INDEX_EXCLUSIONS = DOCS_ENTRIES.filter((entry) => entry.id !== 'docs-index').map(
   (entry) => entry.route,
@@ -308,6 +309,15 @@ export const getSearchNavItems = (options?: NavAvailability): Array<NavItem> =>
 
 export const getNavSections = (): Array<NavSection> => {
   return SECTIONS;
+};
+
+export const getSidebarSections = (options?: NavAvailability) => {
+  const entries = getNavItems(options).filter((entry) => entry.sidebarVisible);
+
+  return SECTIONS.map((section) => ({
+    ...section,
+    items: entries.filter((entry) => entry.section === section.id),
+  })).filter((section) => section.items.length > 0);
 };
 
 export const getNavItemById = (id: string): NavItem | undefined => {

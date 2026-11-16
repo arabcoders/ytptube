@@ -549,6 +549,16 @@ const clearBodyOpacity = (): boolean => {
 const syncOpacity = (): boolean => {
   if (!getStorageValue<boolean>('random_bg', true, false)) {
     opacityLockCount = 0;
+    document.documentElement.style.setProperty('--ytp-artwork-opacity', '0');
+    return clearBodyOpacity();
+  }
+
+  if (!document.documentElement.classList.contains('simple-mode')) {
+    const opacity =
+      opacityLockCount > 0
+        ? 0
+        : Math.min(0.5, Math.max(0, 1 - getStorageValue<number>('random_bg_opacity_v2', 0.75)));
+    document.documentElement.style.setProperty('--ytp-artwork-opacity', String(opacity));
     return clearBodyOpacity();
   }
 
@@ -556,7 +566,7 @@ const syncOpacity = (): boolean => {
     return setBodyOpacity('1.0');
   }
 
-  return setBodyOpacity(String(getStorageValue<number>('random_bg_opacity', 0.95)));
+  return setBodyOpacity(String(getStorageValue<number>('random_bg_opacity_simple', 0.95)));
 };
 
 const disableOpacity = (): boolean => {
@@ -566,7 +576,7 @@ const disableOpacity = (): boolean => {
   }
 
   opacityLockCount += 1;
-  return setBodyOpacity('1.0');
+  return syncOpacity();
 };
 
 const enableOpacity = (): boolean => {

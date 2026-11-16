@@ -72,6 +72,13 @@
     backdrop-filter: blur(16px);
   }
 
+  .shell-header-artwork {
+    opacity: var(--ytp-artwork-opacity, 0.05);
+    background-position: center 35%;
+    background-size: cover;
+    mask-image: linear-gradient(to bottom, black, transparent);
+  }
+
   .ytp-page-header {
     @apply flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between;
   }

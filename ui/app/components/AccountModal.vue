@@ -4,9 +4,9 @@
     :title="t('auth.account')"
     :dismissible="!busy"
     :ui="{
-      content: 'w-full sm:max-w-2xl',
+      ...modalUi,
+      content: 'shell-surface w-full bg-transparent sm:max-w-2xl',
       body: 'max-h-[75vh] overflow-y-auto p-4 sm:p-5',
-      footer: 'px-4 pb-4 sm:px-5 sm:pb-5',
     }"
   >
     <template #body>
@@ -32,17 +32,19 @@
           {{ t('common.retry') }}
         </UButton>
       </div>
-      <div v-else class="space-y-6">
-        <section class="space-y-3">
-          <div class="flex items-center justify-between gap-3">
-            <div class="flex min-w-0 items-center gap-3">
-              <span class="ytp-detail-icon">
-                <UIcon name="i-lucide-user-round-cog" class="size-4" />
-              </span>
-              <div>
-                <h2 class="font-semibold text-highlighted">{{ t('auth.accountDetails') }}</h2>
-                <p class="text-sm text-toned">{{ t('auth.accountDetailsDescription') }}</p>
-              </div>
+      <div v-else class="divide-y divide-default">
+        <section class="space-y-4 pb-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+                <UIcon
+                  name="i-lucide-user-round-cog"
+                  class="size-5 text-toned"
+                  aria-hidden="true"
+                />
+                {{ t('auth.accountDetails') }}
+              </h2>
+              <p class="text-sm text-toned">{{ t('auth.accountDetailsDescription') }}</p>
             </div>
             <UButton
               color="neutral"
@@ -56,27 +58,24 @@
               {{ t('common.edit') }}
             </UButton>
           </div>
-          <div
-            class="flex min-w-0 items-center gap-3 rounded-sm border border-default bg-elevated/40 p-3"
-          >
-            <UIcon name="i-lucide-user" class="size-4 shrink-0 text-toned" />
-            <div class="min-w-0">
-              <p class="text-xs font-medium text-toned">{{ t('auth.username') }}</p>
-              <p class="truncate font-semibold text-highlighted">{{ username }}</p>
+          <dl>
+            <div class="min-w-0 space-y-1">
+              <dt class="text-xs font-medium text-muted">{{ t('auth.username') }}</dt>
+              <dd class="wrap-anywhere text-sm font-medium text-highlighted">
+                <bdi>{{ username }}</bdi>
+              </dd>
             </div>
-          </div>
+          </dl>
         </section>
 
-        <section class="space-y-3 border-t border-default pt-5">
-          <div class="flex items-center justify-between gap-3">
-            <div class="flex min-w-0 items-center gap-3">
-              <span class="ytp-detail-icon">
-                <UIcon name="i-lucide-key-round" class="size-4" />
-              </span>
-              <div>
-                <h2 class="font-semibold text-highlighted">{{ t('auth.apiKeys') }}</h2>
-                <p class="text-sm text-toned">{{ t('auth.apiKeysDescription') }}</p>
-              </div>
+        <section class="space-y-4 py-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+                <UIcon name="i-lucide-key-round" class="size-5 text-toned" aria-hidden="true" />
+                {{ t('auth.apiKeys') }}
+              </h2>
+              <p class="text-sm text-toned">{{ t('auth.apiKeysDescription') }}</p>
             </div>
             <UButton
               color="neutral"
@@ -92,21 +91,24 @@
           </div>
           <UEmpty
             v-if="!keys.length"
+            variant="naked"
             icon="i-lucide-key-round"
             :title="t('auth.noApiKeys')"
             :description="t('auth.noApiKeysDescription')"
             class="py-8"
           />
-          <div v-else class="divide-y divide-default rounded-sm border border-default">
+          <div v-else class="divide-y divide-default">
             <div
               v-for="key in keys"
               :key="key.id"
-              class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+              class="flex min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between"
             >
               <div class="min-w-0">
-                <p class="truncate font-medium text-highlighted">{{ key.name }}</p>
+                <p class="wrap-anywhere text-sm font-medium text-highlighted">
+                  <bdi>{{ key.name }}</bdi>
+                </p>
                 <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-toned">
-                  <code class="rounded-sm bg-elevated px-1.5 py-0.5 font-mono"
+                  <code class="rounded-md bg-elevated/30 px-1.5 py-0.5 font-mono"
                     >...{{ key.hint }}</code
                   >
                   <UTooltip :text="formatDateTime(key.created_at, locale)">
@@ -130,7 +132,7 @@
               </div>
               <UButton
                 color="error"
-                variant="soft"
+                variant="outline"
                 size="sm"
                 icon="i-lucide-trash-2"
                 class="shrink-0 self-start sm:self-auto"
@@ -144,23 +146,18 @@
           </div>
         </section>
 
-        <section
-          v-if="auth.status?.value?.auth_method !== 'remote_user'"
-          class="space-y-3 border-t border-default pt-5"
-        >
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex min-w-0 items-center gap-3">
-              <span class="ytp-detail-icon">
-                <UIcon name="i-lucide-monitor" class="size-4" />
-              </span>
-              <div>
-                <h2 class="font-semibold text-highlighted">{{ t('auth.sessions') }}</h2>
-                <p class="text-sm text-toned">{{ t('auth.sessionsDescription') }}</p>
-              </div>
+        <section v-if="auth.status?.value?.auth_method !== 'remote_user'" class="space-y-4 pt-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+                <UIcon name="i-lucide-monitor" class="size-5 text-toned" aria-hidden="true" />
+                {{ t('auth.sessions') }}
+              </h2>
+              <p class="text-sm text-toned">{{ t('auth.sessionsDescription') }}</p>
             </div>
             <UButton
               color="error"
-              variant="soft"
+              variant="outline"
               size="sm"
               icon="i-lucide-log-out"
               :loading="revokingAll"
@@ -172,19 +169,20 @@
           </div>
           <UEmpty
             v-if="!sessions.length"
+            variant="naked"
             icon="i-lucide-monitor"
             :title="t('auth.noSessions')"
             class="py-8"
           />
-          <div v-else class="divide-y divide-default rounded-sm border border-default">
+          <div v-else class="divide-y divide-default">
             <div
               v-for="session in sessions"
               :key="session.id"
-              class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+              class="flex min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between"
             >
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
-                  <p class="font-medium text-highlighted">{{ t('auth.session') }}</p>
+                  <p class="text-sm font-medium text-highlighted">{{ t('auth.session') }}</p>
                   <UBadge v-if="session.current" color="primary" variant="soft" size="sm">
                     {{ t('auth.currentSession') }}
                   </UBadge>
@@ -210,7 +208,7 @@
               </div>
               <UButton
                 color="error"
-                variant="soft"
+                variant="outline"
                 size="sm"
                 icon="i-lucide-log-out"
                 class="shrink-0 self-start sm:self-auto"
@@ -230,7 +228,7 @@
         <UButton
           v-if="auth.status?.value?.auth_method !== 'remote_user'"
           color="error"
-          variant="soft"
+          variant="outline"
           icon="i-lucide-log-out"
           :loading="loggingOut"
           :disabled="busy"
@@ -257,20 +255,28 @@
     :title="t('auth.editAccount')"
     :description="t('auth.editAccountDescription')"
     :dismissible="!saving"
+    :ui="modalUi"
     @update:open="handleEditOpenChange"
   >
     <template #body>
       <form id="accountForm" class="space-y-4" @submit.prevent="save">
-        <UFormField :label="t('auth.username')" name="username"
-          ><UInput
+        <UFormField :label="t('auth.username')" name="username" :ui="fieldUi">
+          <UInput
             v-model="editUsername"
             class="w-full"
             icon="i-lucide-user"
             autocomplete="username"
             :disabled="saving"
-        /></UFormField>
-        <UFormField :label="t('auth.currentPassword')" name="currentPassword" required
-          ><UInput
+            :ui="{ base: 'bg-elevated/40' }"
+          />
+        </UFormField>
+        <UFormField
+          :label="t('auth.currentPassword')"
+          name="currentPassword"
+          required
+          :ui="fieldUi"
+        >
+          <UInput
             v-model="currentPassword"
             class="w-full"
             icon="i-lucide-lock-keyhole"
@@ -278,42 +284,49 @@
             autocomplete="current-password"
             required
             :disabled="saving"
+            :ui="{ base: 'bg-elevated/40' }"
             :trailing-icon="showCurrentPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             @click:trailing="showCurrentPassword = !showCurrentPassword"
-        /></UFormField>
-        <UFormField :label="t('auth.newPassword')" name="newPassword"
-          ><UInput
+          />
+        </UFormField>
+        <UFormField :label="t('auth.newPassword')" name="newPassword" :ui="fieldUi">
+          <UInput
             v-model="newPassword"
             class="w-full"
             icon="i-lucide-lock-keyhole"
             :type="showNewPassword ? 'text' : 'password'"
             autocomplete="new-password"
             :disabled="saving"
+            :ui="{ base: 'bg-elevated/40' }"
             :trailing-icon="showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             @click:trailing="showNewPassword = !showNewPassword"
-        /></UFormField>
+          />
+        </UFormField>
       </form>
     </template>
-    <template #footer
-      ><div class="flex w-full flex-wrap items-center justify-end gap-2">
+    <template #footer>
+      <div class="flex w-full flex-wrap items-center justify-end gap-2">
         <UButton
           color="neutral"
           variant="outline"
           icon="i-lucide-x"
           :disabled="saving"
           @click="() => void requestCloseEdit()"
-          >{{ t('common.cancel') }}</UButton
-        ><UButton
+        >
+          {{ t('common.cancel') }}
+        </UButton>
+        <UButton
           type="submit"
           form="accountForm"
           color="primary"
           icon="i-lucide-save"
           :loading="saving"
           :disabled="saving"
-          >{{ t('common.save') }}</UButton
         >
-      </div></template
-    >
+          {{ t('common.save') }}
+        </UButton>
+      </div>
+    </template>
   </UModal>
 
   <UModal
@@ -322,40 +335,47 @@
     :title="t('auth.createKey')"
     :description="t('auth.createKeyDescription')"
     :dismissible="!creating"
+    :ui="modalUi"
     @update:open="handleCreateOpenChange"
   >
-    <template #body
-      ><form id="keyForm" class="space-y-4" @submit.prevent="createKey">
-        <UFormField :label="t('auth.keyName')" name="keyName" required
-          ><UInput
+    <template #body>
+      <form id="keyForm" class="space-y-4" @submit.prevent="createKey">
+        <UFormField :label="t('auth.keyName')" name="keyName" required :ui="fieldUi">
+          <UInput
             v-model="keyName"
             class="w-full"
             icon="i-lucide-key-round"
             autocomplete="off"
             required
             :disabled="creating"
-        /></UFormField></form
-    ></template>
-    <template #footer
-      ><div class="flex w-full flex-wrap items-center justify-end gap-2">
+            :ui="{ base: 'bg-elevated/40' }"
+          />
+        </UFormField>
+      </form>
+    </template>
+    <template #footer>
+      <div class="flex w-full flex-wrap items-center justify-end gap-2">
         <UButton
           color="neutral"
           variant="outline"
           icon="i-lucide-x"
           :disabled="creating"
           @click="() => void requestCloseCreate()"
-          >{{ t('common.cancel') }}</UButton
-        ><UButton
+        >
+          {{ t('common.cancel') }}
+        </UButton>
+        <UButton
           type="submit"
           form="keyForm"
           color="primary"
           icon="i-lucide-plus"
           :loading="creating"
           :disabled="creating || !keyName.trim()"
-          >{{ t('auth.createKey') }}</UButton
         >
-      </div></template
-    >
+          {{ t('auth.createKey') }}
+        </UButton>
+      </div>
+    </template>
   </UModal>
 
   <UModal
@@ -364,23 +384,24 @@
     :title="t('auth.keyCreated')"
     :description="t('auth.copyWarning')"
     :dismissible="false"
+    :ui="modalUi"
   >
-    <template #body
-      ><div class="flex items-start gap-3 rounded-sm border border-default bg-elevated/50 p-3">
+    <template #body>
+      <div class="flex items-start gap-3 rounded-md border border-default bg-elevated/20 p-3">
         <UIcon name="i-lucide-key-round" class="mt-0.5 size-4 shrink-0 text-toned" />
         <code class="min-w-0 break-all font-mono text-sm text-highlighted">{{ newKey }}</code>
-      </div></template
-    >
-    <template #footer
-      ><div class="flex w-full flex-wrap items-center justify-end gap-2">
-        <UButton color="neutral" variant="outline" icon="i-lucide-check" @click="closeNewKey">{{
-          t('common.ok')
-        }}</UButton
-        ><UButton color="primary" icon="i-lucide-copy" @click="copyKey">{{
-          t('common.copy')
-        }}</UButton>
-      </div></template
-    >
+      </div>
+    </template>
+    <template #footer>
+      <div class="flex w-full flex-wrap items-center justify-end gap-2">
+        <UButton color="neutral" variant="outline" icon="i-lucide-check" @click="closeNewKey">
+          {{ t('common.ok') }}
+        </UButton>
+        <UButton color="primary" icon="i-lucide-copy" @click="copyKey">
+          {{ t('common.copy') }}
+        </UButton>
+      </div>
+    </template>
   </UModal>
 </template>
 
@@ -419,6 +440,15 @@ const { t, locale } = useI18n();
 const auth = useAuth();
 const notify = useNotification();
 const { confirm } = useConfirm();
+const modalUi = {
+  content: 'shell-surface bg-transparent',
+  body: 'p-4 sm:p-5',
+  footer: 'p-4 sm:p-5',
+};
+const fieldUi = {
+  label: 'text-sm font-medium text-highlighted',
+  container: 'mt-2',
+};
 const username = ref('');
 const editUsername = ref('');
 const currentPassword = ref('');

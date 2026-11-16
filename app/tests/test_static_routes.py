@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Generator
+from unittest.mock import Mock
 
 import pytest
 
@@ -71,6 +72,148 @@ class TestServeStaticFile:
         assert response.status == 200
         assert await response.read() == b"canonical icon"
         assert response.headers["Cache-Control"] == "public, max-age=31536000, immutable"
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "CHANGELOG.json",
+            "favicon.ico",
+            "manifest.webmanifest",
+            "player-worker.js",
+            "assets/app.js",
+            "assets/config.json",
+            "assets/builds/latest.json",
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_unversioned_revalidates(self, name: str, tmp_path: Path, test_client) -> None:
+        config = Config.get_instance()
+        (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
+        target = tmp_path / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("unversioned", encoding="utf-8")
+        _configure_static_root(tmp_path)
+        _register_static_routes(tmp_path, config)
+
+        async def handler(request):
+            return await _static.serve_static_file(request, config)
+
+        client = await test_client({"static_fallback": handler})
+        response = await client.get(url_for("static_fallback", path=name))
+
+        assert response.status == 200
+        assert response.headers["Cache-Control"] == "public, max-age=0, must-revalidate"
+
+    @pytest.mark.asyncio
+    async def test_build_pointer_refreshes(self, tmp_path: Path, test_client) -> None:
+        config = Config.get_instance()
+        (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
+        latest = tmp_path / "assets" / "builds" / "latest.json"
+        latest.parent.mkdir(parents=True)
+        latest.write_text('{"id": "first"}', encoding="utf-8")
+        _configure_static_root(tmp_path)
+        _register_static_routes(tmp_path, config)
+
+        async def handler(request):
+            return await _static.serve_static_file(request, config)
+
+        client = await test_client({"static_fallback": handler})
+        response = await client.get(url_for("static_fallback", path="assets/builds/latest.json"))
+        etag = response.headers["ETag"]
+
+        assert response.status == 200
+        assert response.headers["Cache-Control"] == "public, max-age=0, must-revalidate"
+        assert (await response.json())["id"] == "first"
+
+        cached = await client.get(
+            url_for("static_fallback", path="assets/builds/latest.json"), headers={"If-None-Match": etag}
+        )
+        assert cached.status == 304
+
+        latest.write_text('{"id": "second", "extra": true}', encoding="utf-8")
+        response = await client.get(
+            url_for("static_fallback", path="assets/builds/latest.json"), headers={"If-None-Match": etag}
+        )
+
+        assert response.status == 200
+        assert (await response.json())["id"] == "second"
+        assert response.headers["ETag"] != etag
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "assets/4tVxZq34.js",
+            "assets/AccountModal.8QddckA9.css",
+            "_fonts/1234567890abcdef1234567890abcdef.woff2",
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_fingerprinted_assets_immutable(self, name: str, tmp_path: Path, test_client) -> None:
+        config = Config.get_instance()
+        (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
+        target = tmp_path / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("generated", encoding="utf-8")
+        _configure_static_root(tmp_path)
+        _register_static_routes(tmp_path, config)
+
+        async def handler(request):
+            return await _static.serve_static_file(request, config)
+
+        client = await test_client({"static_fallback": handler})
+        response = await client.get(url_for("static_fallback", path=name))
+
+        assert response.status == 200
+        assert response.headers["Cache-Control"] == "public, max-age=31536000, immutable"
+
+    @pytest.mark.asyncio
+    async def test_base_path_fallback(self, tmp_path: Path, test_client) -> None:
+        config = Config.get_instance()
+        config.base_path = "/tube/"
+        (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
+        asset = tmp_path / "assets" / "app.8QddckA9.js"
+        asset.parent.mkdir()
+        asset.write_text("console.log(1)", encoding="utf-8")
+        _configure_static_root(tmp_path)
+        _register_static_routes(tmp_path, config)
+
+        async def handler(request):
+            return await _static.serve_static_file(request, config)
+
+        client = await test_client({"static_fallback": handler})
+        asset_response = await client.get("/tube/assets/app.8QddckA9.js")
+        fallback_response = await client.get("/tube/docs/readme")
+
+        assert asset_response.headers["Cache-Control"] == "public, max-age=31536000, immutable"
+        assert await fallback_response.text() == "<html>root shell</html>"
+        assert fallback_response.headers["Cache-Control"] == "public, max-age=0, must-revalidate"
+
+    @pytest.mark.asyncio
+    async def test_mime_fallback_lazy(self, tmp_path: Path, test_client, monkeypatch: pytest.MonkeyPatch) -> None:
+        config = Config.get_instance()
+        (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
+        (tmp_path / "known.js").write_text("console.log(1)", encoding="utf-8")
+        (tmp_path / "unknown.bin").write_bytes(b"\x00")
+        _configure_static_root(tmp_path)
+        _register_static_routes(tmp_path, config)
+
+        mime = Mock()
+        mime.from_file.return_value = "application/x-fallback"
+        monkeypatch.setattr(_static, "MIME", mime)
+
+        async def handler(request):
+            return await _static.serve_static_file(request, config)
+
+        client = await test_client({"static_fallback": handler})
+        known = await client.get(url_for("static_fallback", path="known.js"))
+
+        assert known.headers["Content-Type"] == "application/javascript"
+        mime.from_file.assert_not_called()
+
+        unknown = await client.get(url_for("static_fallback", path="unknown.bin"))
+
+        assert unknown.headers["Content-Type"] == "application/x-fallback"
+        mime.from_file.assert_called_once_with(str(tmp_path / "unknown.bin"))
 
     @pytest.mark.asyncio
     async def test_html_revalidates(self, tmp_path: Path, test_client) -> None:

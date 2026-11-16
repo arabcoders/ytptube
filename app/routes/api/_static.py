@@ -25,6 +25,12 @@ EXT_TO_MIME: dict[str, str] = {
     ".m4a": "audio/mp4",
 }
 
+REVALIDATE = "public, max-age=0, must-revalidate"
+IMMUTABLE = "public, max-age=31536000, immutable"
+
+ASSET_FINGERPRINT = re.compile(r"/assets/(?:[^/]+\.)?[A-Za-z0-9_-]{8}\.(?:css|js)")
+FONT_FINGERPRINT = re.compile(r"/_fonts/[A-Za-z0-9_-]{32,}\.woff2")
+
 
 class StaticAlias(TypedDict):
     match: str
@@ -124,6 +130,10 @@ def normalize_path(path: str, base_path: str) -> str:
     return path or "/"
 
 
+def is_fingerprinted(path: str) -> bool:
+    return ASSET_FINGERPRINT.fullmatch(path) is not None or FONT_FINGERPRINT.fullmatch(path) is not None
+
+
 def get_static_file(path: str) -> Path | None:
     """
     Get the static file corresponding to a request path.
@@ -181,20 +191,20 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
                 params={"resource": "api.resources.file"},
             )
 
+    cache_control = IMMUTABLE if (alias is not None and alias["immutable"]) or is_fingerprinted(path) else REVALIDATE
+    if STATIC_STATE.index_file is not None and file_path == STATIC_STATE.index_file:
+        cache_control = REVALIDATE
+
+    content_type: str | None = EXT_TO_MIME.get(file_path.suffix)
+    if content_type is None:
+        content_type = MIME.from_file(str(file_path))
+
     response = web.FileResponse(
         path=file_path,
         headers={
             "Pragma": "public",
-            "Cache-Control": (
-                "public, max-age=0, must-revalidate"
-                if STATIC_STATE.index_file is not None and file_path == STATIC_STATE.index_file
-                else (
-                    "public, max-age=31536000, immutable"
-                    if alias is not None and alias["immutable"]
-                    else "public, max-age=31536000"
-                )
-            ),
-            "Content-Type": EXT_TO_MIME.get(file_path.suffix, MIME.from_file(str(file_path))),
+            "Cache-Control": cache_control,
+            "Content-Type": content_type,
         },
         status=web.HTTPOk.status_code,
     )

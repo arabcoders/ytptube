@@ -1,18 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading">
-        <span class="ytp-page-icon"><UIcon :name="pageShell.icon" class="size-5" /></span>
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
+    <PageHeader v-bind="pageShell">
+      <template #actions>
         <UButton
           color="neutral"
           :variant="showFilter ? 'soft' : 'outline'"
@@ -42,19 +31,19 @@
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <div
       v-if="jobs.length > 0 || pagination.total_pages > 1"
-      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
+      class="flex flex-wrap items-center justify-between gap-3"
     >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+          :icon="allSelected ? 'i-lucide-square-check-big' : 'i-lucide-square'"
           :disabled="!visibleIds.length || isLoading || bulkBusy"
           @click="toggleSelection"
         >
@@ -101,11 +90,12 @@
       variant="soft"
       icon="i-lucide-loader-circle"
       :title="t('common.loading')"
+      :ui="{ icon: 'animate-spin' }"
     />
-    <UAlert
+    <UEmpty
       v-else-if="query && jobs.length > 0 && filteredJobs.length === 0"
-      color="warning"
-      variant="soft"
+      variant="naked"
+      size="sm"
       icon="i-lucide-search"
       :title="t('common.noResults')"
       :description="t('common.noResultsFor', { query })"
@@ -115,45 +105,96 @@
       :icon="pageShell.icon"
       :title="t('common.noItems')"
       :description="t('common.empty')"
-      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+      variant="naked"
+      size="sm"
     />
-    <div v-if="filteredJobs.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div v-if="filteredJobs.length" class="ytp-card divide-y divide-default">
       <article
         v-for="job in filteredJobs"
         :key="job.id"
-        class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden"
+        :aria-labelledby="`toolbox-job-${job.id}`"
+        class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_22rem_auto]"
       >
-        <div class="p-4 pb-3 ytp-border-bottom-soft">
-          <div class="flex min-w-0 items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <UTooltip :text="job.file">
-                <div class="min-w-0 text-sm font-semibold text-highlighted">
-                  <NuxtLink :to="jobUrl(job.id)" class="block truncate hover:underline" dir="auto">
-                    {{ basename(job.file) }}
-                  </NuxtLink>
-                </div>
-              </UTooltip>
-            </div>
-
-            <label class="inline-flex cursor-pointer items-center justify-center px-1">
-              <input
-                :id="`checkbox-${job.id}`"
-                v-model="selectedIds"
-                class="completed-checkbox size-4 rounded border-default"
-                type="checkbox"
-                :value="job.id"
-                :aria-label="`${t('common.select')}: ${basename(job.file)}`"
-                :disabled="isLoading || bulkBusy || inProgressIds.has(job.id)"
-                @click="rangeSelection.handleClick"
-                @keydown="rangeSelection.handleKeydown"
-                @change="rangeSelection.handleChange(job.id, $event)"
-              />
-            </label>
+        <div class="flex min-w-0 items-start gap-3">
+          <UCheckbox
+            :id="`checkbox-${job.id}`"
+            color="primary"
+            class="mt-0.5 shrink-0"
+            :model-value="selectedIds.includes(job.id)"
+            :aria-label="`${t('common.select')}: ${basename(job.file)}`"
+            :disabled="isLoading || bulkBusy || inProgressIds.has(job.id)"
+            @click.capture="rangeSelection.handleClick"
+            @keydown.capture="rangeSelection.handleKeydown"
+            @update:model-value="selectJob(job.id, $event)"
+          />
+          <div class="min-w-0 space-y-1">
+            <h2 :id="`toolbox-job-${job.id}`" class="text-sm font-semibold text-highlighted">
+              <NuxtLink
+                :to="jobUrl(job.id)"
+                class="wrap-anywhere hover:text-primary hover:underline"
+                dir="auto"
+              >
+                {{ basename(job.file) }}
+              </NuxtLink>
+            </h2>
+            <p class="wrap-anywhere whitespace-pre-wrap font-mono text-xs text-toned" dir="ltr">
+              {{ job.file }}
+            </p>
           </div>
         </div>
-        <div class="flex flex-1 flex-col gap-4 p-4">
+
+        <dl
+          class="col-span-2 grid gap-3 text-sm sm:grid-cols-3 xl:col-span-1 xl:col-start-2 xl:row-start-1"
+        >
+          <div class="min-w-0 space-y-1">
+            <dt class="text-xs text-muted">{{ t('common.operation') }}</dt>
+            <dd class="wrap-anywhere">{{ toolLabel(job.tool) }}</dd>
+          </div>
+          <div class="min-w-0 space-y-1">
+            <dt class="text-xs text-muted">{{ t('common.status') }}</dt>
+            <dd>
+              <UBadge :color="toolboxStatusColor(job.status)" variant="soft" size="sm">
+                <UIcon
+                  :name="statusIcons[job.status]"
+                  class="size-3.5 shrink-0"
+                  :class="job.status === 'running' ? 'animate-spin' : ''"
+                  aria-hidden="true"
+                />
+                {{ toolboxStatusLabel(job.status, t) }}
+              </UBadge>
+            </dd>
+          </div>
+          <div class="min-w-0 space-y-1">
+            <dt class="text-xs text-muted">{{ t('common.date') }}</dt>
+            <dd>
+              <UTooltip :text="formatDateTime(job.created_at, locale, { seconds: true })">
+                <time
+                  :datetime="job.created_at"
+                  :data-datetime="job.created_at"
+                  v-rtime="job.created_at"
+                />
+              </UTooltip>
+            </dd>
+          </div>
+        </dl>
+
+        <div class="col-start-2 row-start-1 flex justify-end xl:col-start-3">
+          <UDropdownMenu :items="itemActions(job)" :modal="false" :content="{ align: 'end' }">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-ellipsis"
+              square
+              :aria-label="`${t('common.actions')}: ${basename(job.file)}`"
+              :loading="inProgressIds.has(job.id)"
+              :disabled="bulkBusy || inProgressIds.has(job.id)"
+            />
+          </UDropdownMenu>
+        </div>
+
+        <div v-if="job.status === 'running'" class="col-span-2 xl:col-span-3">
           <div
-            v-if="job.status === 'running'"
             class="queue-progress rounded-md border border-default bg-muted/20"
             role="progressbar"
             :aria-label="t('queue.progress')"
@@ -175,106 +216,29 @@
               }}</span>
             </div>
           </div>
-
-          <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
-            <button
-              type="button"
-              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
-              :aria-label="t('common.status')"
-              @click="toggleExpand(job.id, 'status')"
-            >
-              <span class="inline-flex w-full items-center justify-center gap-2">
-                <UIcon
-                  :name="statusIcons[job.status]"
-                  :class="[statusColors[toolboxStatusColor(job.status)], 'size-4 shrink-0']"
-                />
-                <span :class="['min-w-0 text-center', expandClass(job.id, 'status')]">
-                  {{ toolboxStatusLabel(job.status, t) }}
-                </span>
-              </span>
-            </button>
-
-            <button
-              type="button"
-              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-default transition hover:border-primary hover:text-default"
-              :aria-label="t('common.operation')"
-              @click="toggleExpand(job.id, 'operation')"
-            >
-              <span class="inline-flex w-full items-center justify-center gap-2">
-                <UIcon name="i-lucide-wrench" class="size-4 shrink-0 text-toned" />
-                <span :class="['min-w-0 text-center', expandClass(job.id, 'operation')]">
-                  {{ toolLabel(job.tool) }}
-                </span>
-              </span>
-            </button>
-
-            <button
-              type="button"
-              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-toned transition hover:border-primary hover:text-default"
-              :aria-label="t('common.date')"
-              @click="toggleExpand(job.id, 'date')"
-            >
-              <UTooltip :text="formatDateTime(job.created_at, locale, { seconds: true })">
-                <span class="inline-flex w-full items-center justify-center gap-2">
-                  <UIcon name="i-lucide-clock-3" class="size-4 shrink-0 text-toned" />
-                  <span
-                    :class="['min-w-0 text-center', expandClass(job.id, 'date')]"
-                    :data-datetime="job.created_at"
-                    v-rtime="job.created_at"
-                  />
-                </span>
-              </UTooltip>
-            </button>
-          </div>
-
-          <div v-if="job.error || showMessage(job)" class="space-y-2 border-t border-default pt-3">
-            <button
-              v-if="job.error"
-              type="button"
-              :class="messageClass(job.id, 'error')"
-              :aria-expanded="isExpanded(job.id, 'error')"
-              @click="toggleExpand(job.id, 'error')"
-            >
-              {{ job.error }}
-            </button>
-            <button
-              v-if="showMessage(job)"
-              type="button"
-              :class="messageClass(job.id, 'message')"
-              :aria-expanded="isExpanded(job.id, 'message')"
-              @click="toggleExpand(job.id, 'message')"
-            >
-              {{ job.message }}
-            </button>
-          </div>
         </div>
-        <div class="ytp-border-top-soft px-4 py-4">
-          <div class="flex flex-wrap justify-end gap-2">
-            <UButton
-              v-if="isToolboxActive(job)"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-square"
-              class="justify-center"
-              :loading="inProgressIds.has(job.id)"
-              :disabled="bulkBusy || inProgressIds.has(job.id)"
-              @click="cancel(job)"
-            >
-              {{ t('common.cancel') }}
-            </UButton>
-            <UButton
-              v-else
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-trash"
-              class="justify-center"
-              :loading="inProgressIds.has(job.id)"
-              :disabled="bulkBusy || inProgressIds.has(job.id)"
-              @click="remove(job)"
-            >
-              {{ t('common.delete') }}
-            </UButton>
-          </div>
+        <div
+          v-if="job.error || showMessage(job)"
+          class="col-span-2 space-y-2 border-t border-default pt-3 xl:col-span-3"
+        >
+          <button
+            v-if="job.error"
+            type="button"
+            :class="messageClass(job.id, 'error')"
+            :aria-expanded="isExpanded(job.id, 'error')"
+            @click="toggleExpand(job.id, 'error')"
+          >
+            {{ job.error }}
+          </button>
+          <button
+            v-if="showMessage(job)"
+            type="button"
+            :class="messageClass(job.id, 'message')"
+            :aria-expanded="isExpanded(job.id, 'message')"
+            @click="toggleExpand(job.id, 'message')"
+          >
+            {{ job.message }}
+          </button>
         </div>
       </article>
     </div>
@@ -306,6 +270,7 @@ import type { WSEP } from '~/types/sockets';
 import type { ToolboxJob, ToolboxStatus } from '~/types/toolbox';
 import { basename, formatPageTitle } from '~/utils';
 import { formatDateTime } from '~/utils/date';
+import { setSelected } from '~/utils/selection';
 import {
   isToolboxActive,
   toolboxShowMessage,
@@ -332,7 +297,7 @@ const {
   deleteJob,
   upsert,
 } = useToolbox();
-const { toggleExpand, isExpanded, expandClass } = useExpandableMeta();
+const { toggleExpand, isExpanded } = useExpandableMeta();
 const query = ref('');
 const showFilter = ref(false);
 const selectedIds = ref<number[]>([]);
@@ -353,13 +318,6 @@ const statusIcons: Record<ToolboxStatus, string> = {
   cancelled: 'i-lucide-ban',
   interrupted: 'i-lucide-triangle-alert',
 };
-const statusColors = {
-  success: 'text-success',
-  error: 'text-error',
-  warning: 'text-warning',
-  info: 'text-info',
-  neutral: 'text-toned',
-};
 const filteredJobs = computed(() => {
   const search = query.value.trim().toLocaleLowerCase();
   if (!search) return jobs.value;
@@ -371,6 +329,10 @@ const filteredJobs = computed(() => {
 });
 const visibleIds = computed(() => filteredJobs.value.map((job) => job.id));
 const rangeSelection = useRangeSelection(selectedIds, visibleIds);
+const selectJob = (id: number, checked: boolean | 'indeterminate'): void => {
+  selectedIds.value = setSelected(selectedIds.value, id, checked);
+  rangeSelection.handleChange(id, new Event('change'));
+};
 const allSelected = computed(
   () =>
     visibleIds.value.length > 0 && visibleIds.value.every((id) => selectedIds.value.includes(id)),
@@ -398,6 +360,23 @@ const bulkActions = computed<DropdownMenuItem[][]>(() => [
     },
   ],
 ]);
+
+const itemActions = (job: ToolboxJob): DropdownMenuItem[][] => [
+  [
+    isToolboxActive(job)
+      ? {
+          label: t('common.cancel'),
+          icon: 'i-lucide-square',
+          onSelect: () => void cancel(job),
+        }
+      : {
+          label: t('common.delete'),
+          icon: 'i-lucide-trash',
+          color: 'error',
+          onSelect: () => void remove(job),
+        },
+  ],
+];
 
 watch(showFilter, (visible) => {
   if (!visible) query.value = '';

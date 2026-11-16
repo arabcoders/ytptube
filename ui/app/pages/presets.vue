@@ -1,23 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
-
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
+    <PageHeader v-bind="pageShell">
+      <template #actions>
         <UButton
           v-if="presets.length > 0"
           color="neutral"
@@ -30,8 +14,8 @@
         </UButton>
 
         <UButton
-          color="neutral"
-          variant="outline"
+          color="primary"
+          variant="solid"
           size="sm"
           icon="i-lucide-plus"
           @click="editor.openCreate()"
@@ -63,267 +47,286 @@
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
-    <div
-      v-if="!isLoading && filteredPresets.length > 0"
-      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
-    >
-      <div class="flex flex-wrap items-center gap-2">
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
-          @click="toggleMasterSelection"
-        >
-          {{ allSelected ? t('common.unselect') : t('common.select') }}
-        </UButton>
-
-        <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
-          {{ selectedIds.length }}
-        </UBadge>
-
-        <UDropdownMenu :items="bulkActionGroups" :modal="false">
+    <section :aria-label="t('common.presets')" :aria-busy="isLoading" class="space-y-4">
+      <div
+        v-if="!isLoading && filteredPresets.length > 0"
+        class="flex flex-wrap items-center justify-between gap-3"
+      >
+        <div class="flex flex-wrap items-center gap-2">
           <UButton
             color="neutral"
             variant="outline"
             size="sm"
-            icon="i-lucide-list"
-            trailing-icon="i-lucide-chevron-down"
+            :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+            @click="toggleMasterSelection"
           >
-            {{ t('common.actions') }}
+            {{ allSelected ? t('common.unselect') : t('common.select') }}
           </UButton>
-        </UDropdownMenu>
-      </div>
 
-      <UPagination
-        v-if="paging?.total_pages > 1"
-        :page="paging.page"
-        :total="paging.total"
-        :items-per-page="paging.per_page"
-        :disabled="isLoading"
-        show-edges
-        :sibling-count="0"
-        @update:page="loadContent"
-        size="sm"
-      />
-    </div>
+          <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
+            {{ selectedIds.length }}
+          </UBadge>
 
-    <div v-if="filteredPresets.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <div v-for="item in filteredPresets" :key="item.id" class="min-w-0 w-full max-w-full">
-        <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
-          <div class="p-4 pb-3 ytp-border-bottom-soft">
-            <div class="flex min-w-0 items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-start gap-2">
-                  <button
-                    type="button"
-                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
-                    @click="toggleExpand(item.id, 'title')"
-                  >
-                    <span :class="['block', expandClass(item.id, 'title')]">
-                      {{ item.name }}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div class="flex shrink-0 items-center gap-2">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-lucide-file-up"
-                  square
-                  @click="exportItem(item)"
-                >
-                  <span>{{ t('common.exportItem') }}</span>
-                </UButton>
-
-                <label class="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    v-model="selectedIds"
-                    class="completed-checkbox size-4 rounded border-default"
-                    type="checkbox"
-                    :value="item.id"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div class="space-y-2 text-sm text-default">
-              <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
-                  <UIcon
-                    name="i-lucide-cookie"
-                    class="size-3.5"
-                    :class="item.cookies ? 'text-success' : ''"
-                  />
-                  <span>{{
-                    item.cookies ? t('presets.cookiesConfigured') : t('presets.cookiesNotSet')
-                  }}</span>
-                </span>
-
-                <span
-                  v-if="item.priority > 0"
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
-                  <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>{{ t('presets.priority', { priority: item.priority }) }}</span>
-                </span>
-              </div>
-
-              <div v-if="item.folder || item.template || item.cli" class="feature-meta-grid">
-                <button
-                  v-if="item.folder"
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                  @click="toggleExpand(item.id, 'folder')"
-                >
-                  <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">{{ t('common.downloadPath') }}</div>
-                    <span :class="['block', expandClass(item.id, 'folder')]" dir="ltr">{{
-                      calcPath(item.folder)
-                    }}</span>
-                  </div>
-                </button>
-
-                <button
-                  v-if="item.template"
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                  @click="toggleExpand(item.id, 'template')"
-                >
-                  <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">
-                      {{ t('common.outputTemplate') }}
-                    </div>
-                    <span :class="['block', expandClass(item.id, 'template')]" dir="ltr">{{
-                      item.template
-                    }}</span>
-                  </div>
-                </button>
-
-                <button
-                  v-if="item.cli"
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                  @click="toggleExpand(item.id, 'cli')"
-                >
-                  <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">{{ t('common.cliOptions') }}</div>
-                    <span :class="['block', expandClass(item.id, 'cli')]" dir="ltr">{{
-                      item.cli
-                    }}</span>
-                  </div>
-                </button>
-              </div>
-
-              <button
-                v-if="item.description"
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                @click="toggleExpand(item.id, 'description')"
-              >
-                <UIcon name="i-lucide-align-left" class="mt-0.5 size-4 shrink-0 text-toned" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">
-                    {{ t('common.description') }}
-                  </div>
-                  <span :class="['block', expandClass(item.id, 'description')]">{{
-                    item.description
-                  }}</span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <div class="ytp-border-top-soft px-4 py-4">
-            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-pencil"
-                class="w-full justify-center"
-                @click="editor.openEdit(item)"
-              >
-                {{ t('common.edit') }}
-              </UButton>
-
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-trash"
-                class="w-full justify-center"
-                @click="() => void deleteItem(item)"
-              >
-                {{ t('common.delete') }}
-              </UButton>
-            </div>
-          </div>
+          <UDropdownMenu :items="bulkActionGroups" :modal="false">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-list"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              {{ t('common.actions') }}
+            </UButton>
+          </UDropdownMenu>
         </div>
+
+        <UPagination
+          v-if="paging?.total_pages > 1"
+          :page="paging.page"
+          :total="paging.total"
+          :items-per-page="paging.per_page"
+          :disabled="isLoading"
+          show-edges
+          :sibling-count="0"
+          @update:page="loadContent"
+          size="sm"
+        />
       </div>
-    </div>
 
-    <UAlert
-      v-if="isLoading"
-      color="info"
-      variant="soft"
-      icon="i-lucide-loader-circle"
-      :title="t('common.loading')"
-      :description="t('common.loadingData')"
-    />
+      <div v-if="filteredPresets.length > 0" class="ytp-card divide-y divide-default">
+        <article v-for="item in filteredPresets" :key="item.id" class="min-w-0 w-full max-w-full">
+          <div class="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.5fr)_auto]">
+            <div class="min-w-0">
+              <div class="flex min-w-0 items-start justify-between gap-3">
+                <div class="min-w-0 flex-1 space-y-2">
+                  <h2 class="min-w-0">
+                    <button
+                      type="button"
+                      class="min-w-0 flex-1 text-start text-base font-semibold text-highlighted"
+                      @click="toggleExpand(item.id, 'title')"
+                    >
+                      <span :class="['block', expandClass(item.id, 'title')]">{{ item.name }}</span>
+                    </button>
+                  </h2>
 
-    <div v-else-if="query && filteredPresets.length < 1" class="space-y-3">
+                  <div class="flex flex-wrap items-start gap-x-4 gap-y-2 text-xs text-toned">
+                    <span class="inline-flex items-center gap-1.5">
+                      <UIcon
+                        name="i-lucide-cookie"
+                        class="size-3.5"
+                        :class="item.cookies ? 'text-success' : ''"
+                      />
+                      <span>{{
+                        item.cookies ? t('presets.cookiesConfigured') : t('presets.cookiesNotSet')
+                      }}</span>
+                    </span>
+
+                    <span v-if="item.priority > 0" class="inline-flex items-center gap-1.5">
+                      <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                      <span>{{ t('presets.priority', { priority: item.priority }) }}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                  <UCheckbox
+                    color="primary"
+                    :model-value="item.id !== undefined && selectedIds.includes(item.id)"
+                    :disabled="item.id === undefined"
+                    :aria-label="`${t('common.select')}: ${item.name}`"
+                    @update:model-value="selectedIds = setSelected(selectedIds, item.id, $event)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="min-w-0 space-y-4">
+              <div class="space-y-2 text-sm text-default">
+                <dl
+                  v-if="item.folder || item.template || item.cli || item.description"
+                  class="grid min-w-0 gap-x-6 gap-y-3 sm:grid-cols-2"
+                >
+                  <div v-if="item.folder" class="min-w-0 space-y-1">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-folder-output"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('common.downloadPath') }}
+                    </dt>
+                    <dd class="min-w-0">
+                      <button
+                        type="button"
+                        class="block w-full text-start text-default"
+                        @click="toggleExpand(item.id, 'folder')"
+                      >
+                        <span :class="['block', expandClass(item.id, 'folder')]" dir="ltr">{{
+                          calcPath(item.folder)
+                        }}</span>
+                      </button>
+                    </dd>
+                  </div>
+
+                  <div v-if="item.template" class="min-w-0 space-y-1">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-file-code-2"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('common.outputTemplate') }}
+                    </dt>
+                    <dd class="min-w-0">
+                      <button
+                        type="button"
+                        class="block w-full text-start text-default"
+                        @click="toggleExpand(item.id, 'template')"
+                      >
+                        <span :class="['block', expandClass(item.id, 'template')]" dir="ltr">{{
+                          item.template
+                        }}</span>
+                      </button>
+                    </dd>
+                  </div>
+
+                  <div v-if="item.cli" class="min-w-0 space-y-1 sm:col-span-2">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-terminal"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('common.cliOptions') }}
+                    </dt>
+                    <dd class="min-w-0">
+                      <button
+                        type="button"
+                        class="block w-full text-start text-default"
+                        @click="toggleExpand(item.id, 'cli')"
+                      >
+                        <span :class="['block', expandClass(item.id, 'cli')]" dir="ltr">{{
+                          item.cli
+                        }}</span>
+                      </button>
+                    </dd>
+                  </div>
+
+                  <div v-if="item.description" class="min-w-0 space-y-1 sm:col-span-2">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-message-square-text"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('common.description') }}
+                    </dt>
+                    <dd class="min-w-0">
+                      <button
+                        type="button"
+                        class="block w-full text-start text-default"
+                        @click="toggleExpand(item.id, 'description')"
+                      >
+                        <span :class="['block', expandClass(item.id, 'description')]">{{
+                          item.description
+                        }}</span>
+                      </button>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            <div class="flex justify-end self-start">
+              <div class="flex shrink-0 items-center gap-1.5">
+                <UTooltip :text="t('common.edit')">
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    size="sm"
+                    icon="i-lucide-pencil"
+                    :aria-label="t('common.editTitle', { name: item.name })"
+                    @click="editor.openEdit(item)"
+                  >
+                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
+                  </UButton>
+                </UTooltip>
+
+                <UDropdownMenu
+                  :items="itemActionGroups(item)"
+                  :modal="false"
+                  :content="{ align: 'end' }"
+                >
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    icon="i-lucide-ellipsis"
+                    square
+                    :aria-label="`${t('common.actions')}: ${item.name}`"
+                  />
+                </UDropdownMenu>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
       <UAlert
-        color="warning"
+        v-if="isLoading"
+        color="info"
         variant="soft"
+        icon="i-lucide-loader-circle"
+        :title="t('common.loading')"
+        :ui="{ icon: 'animate-spin' }"
+      />
+
+      <UEmpty
+        v-else-if="query && filteredPresets.length < 1"
+        variant="naked"
+        size="sm"
         icon="i-lucide-search"
         :title="t('common.noResults')"
         :description="t('common.noResultsFor', { query })"
       />
-    </div>
 
-    <UEmpty
-      v-else-if="!filteredPresets.length"
-      icon="i-lucide-sliders-horizontal"
-      :title="t('common.noItems')"
-      :description="t('common.empty')"
-      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
-    />
-
-    <div
-      v-if="filteredPresets.length > 0 && !query && paging?.total_pages > 1"
-      class="flex justify-end"
-    >
-      <UPagination
-        :page="paging.page"
-        :total="paging.total"
-        :items-per-page="paging.per_page"
-        :disabled="isLoading"
-        show-edges
-        :sibling-count="0"
-        @update:page="loadContent"
+      <UEmpty
+        v-else-if="!filteredPresets.length"
+        icon="i-lucide-sliders-horizontal"
+        :title="t('common.noItems')"
+        :description="t('common.empty')"
+        variant="naked"
         size="sm"
       />
-    </div>
 
-    <UAlert v-if="!query && presets.length > 0" color="info" variant="soft">
-      <template #description>
-        <ul class="list-disc space-y-2 ps-5 text-sm text-default">
-          <li>{{ t('presets.info1') }}</li>
-        </ul>
-      </template>
-    </UAlert>
+      <div
+        v-if="filteredPresets.length > 0 && !query && paging?.total_pages > 1"
+        class="flex justify-end"
+      >
+        <UPagination
+          :page="paging.page"
+          :total="paging.total"
+          :items-per-page="paging.per_page"
+          :disabled="isLoading"
+          show-edges
+          :sibling-count="0"
+          @update:page="loadContent"
+          size="sm"
+        />
+      </div>
+    </section>
+
+    <details v-if="!query && presets.length > 0" class="text-sm">
+      <summary class="w-fit cursor-pointer font-medium text-toned">
+        {{ t('common.usageNotes') }}
+      </summary>
+      <ul class="mt-3 list-disc space-y-2 ps-5 text-toned">
+        <li>{{ t('presets.info1') }}</li>
+      </ul>
+    </details>
 
     <UModal
       v-if="editor.isOpen.value"
@@ -379,6 +382,8 @@
 </template>
 
 <script setup lang="ts">
+import PageHeader from '~/components/PageHeader.vue';
+import { setSelected } from '~/utils/selection';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import type { Preset } from '~/types/presets';
 import { useDialog } from '~/composables/useDialog';
@@ -442,6 +447,24 @@ const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
     },
   ],
 ]);
+
+const itemActionGroups = (item: Preset): DropdownMenuItem[][] => [
+  [
+    {
+      label: t('common.exportItem'),
+      icon: 'i-lucide-file-up',
+      onSelect: () => exportItem(item),
+    },
+  ],
+  [
+    {
+      label: t('common.delete'),
+      icon: 'i-lucide-trash',
+      color: 'error',
+      onSelect: () => void deleteItem(item),
+    },
+  ],
+];
 
 const syncPageQuery = async (pageNumber: number): Promise<void> => {
   const totalPages = paging.value.total_pages;

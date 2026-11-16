@@ -17,114 +17,116 @@
 
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading items-start">
-        <span class="ytp-page-icon">
-          <UIcon
-            name="i-lucide-file-text"
-            :class="[
-              'size-5 transition-colors',
-              loading ? 'text-info' : 'animate-pulse text-success',
-            ]"
-            :title="loading ? t('logs.loadingHistoryTitle') : t('logs.liveStreamActiveTitle')"
-            :aria-label="loading ? t('logs.loadingHistoryTitle') : t('logs.liveStreamActiveTitle')"
-          />
-        </span>
+    <PageHeader v-bind="pageShell">
+      <template #icon>
+        <UIcon
+          :name="pageShell.icon"
+          :class="[
+            'size-5 transition-colors',
+            loading ? 'text-info' : 'animate-pulse text-success',
+          ]"
+          role="img"
+          :title="loading ? t('logs.loadingHistoryTitle') : t('logs.liveStreamActiveTitle')"
+          :aria-label="loading ? t('logs.loadingHistoryTitle') : t('logs.liveStreamActiveTitle')"
+        />
+      </template>
+    </PageHeader>
 
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
+    <section
+      :aria-label="pageShell.pageLabel"
+      :aria-busy="loading"
+      class="min-w-0 overflow-hidden rounded-xl border border-default bg-elevated/20"
+    >
+      <div class="space-y-3 bg-elevated/30 px-3 py-3 sm:px-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex min-w-0 flex-wrap items-center gap-2">
+            <UButton
+              color="neutral"
+              :variant="toggleFilter ? 'soft' : 'outline'"
+              size="sm"
+              icon="i-lucide-filter"
+              :aria-pressed="toggleFilter"
+              aria-controls="filter"
+              @click="
+                () => {
+                  toggleFilter = !toggleFilter;
+                }
+              "
+            >
+              {{ t('common.filter') }}
+            </UButton>
+
+            <USelectMenu
+              v-model="selectedLevels"
+              :items="levelFilterItems"
+              value-key="value"
+              label-key="label"
+              color="neutral"
+              multiple
+              size="sm"
+              icon="i-lucide-list-filter"
+              class="w-44 shrink-0 sm:w-48"
+              :ui="{ content: 'min-w-48', item: 'ps-6' }"
+              :search-input="false"
+            >
+              {{ levelFilterLabel }}
+            </USelectMenu>
+
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-sliders-horizontal"
+              class="shrink-0"
+              :loading="runtimeLogLevelLoading"
+              :disabled="!canApplyRuntimeLogLevel || runtimeLogLevelLoading"
+              @click="applyRuntimeLogLevel"
+            >
+              {{ t('common.apply') }}
+            </UButton>
           </div>
 
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <UButton
+              color="neutral"
+              :variant="textWrap ? 'soft' : 'outline'"
+              size="sm"
+              icon="i-lucide-wrap-text"
+              :aria-pressed="textWrap"
+              :title="textWrap ? t('logs.textWrapOn') : t('logs.textWrapOff')"
+              @click="
+                () => {
+                  textWrap = !textWrap;
+                }
+              "
+            >
+              {{ t('common.wrap') }}
+            </UButton>
+
+            <UDropdownMenu :items="copyMenuItems" :content="copyMenuContent" :modal="false">
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-copy"
+                trailing-icon="i-lucide-chevron-down"
+              >
+                {{ t('common.copy') }}
+              </UButton>
+            </UDropdownMenu>
+
+            <UButton
+              v-if="!autoScroll"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-arrow-down"
+              @click="scrollToBottom(false)"
+            >
+              {{ t('common.bottom') }}
+            </UButton>
+          </div>
         </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
-        <UButton
-          v-if="!autoScroll"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-arrow-down"
-          @click="scrollToBottom(false)"
-        >
-          {{ t('common.bottom') }}
-        </UButton>
-
-        <UButton
-          color="neutral"
-          :variant="toggleFilter ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-filter"
-          @click="
-            () => {
-              toggleFilter = !toggleFilter;
-            }
-          "
-        >
-          {{ t('common.filter') }}
-        </UButton>
-
-        <UButton
-          color="neutral"
-          :variant="textWrap ? 'soft' : 'outline'"
-          size="sm"
-          icon="i-lucide-wrap-text"
-          :aria-pressed="textWrap"
-          :title="textWrap ? t('logs.textWrapOn') : t('logs.textWrapOff')"
-          :class="['transition-all', textWrap ? '-translate-y-px ring ring-default shadow-xs' : '']"
-          @click="
-            () => {
-              textWrap = !textWrap;
-            }
-          "
-        >
-          {{ t('common.wrap') }}
-        </UButton>
-
-        <UDropdownMenu :items="copyMenuItems" :content="copyMenuContent" :modal="false">
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            icon="i-lucide-copy"
-            trailing-icon="i-lucide-chevron-down"
-          >
-            {{ t('common.copy') }}
-          </UButton>
-        </UDropdownMenu>
-
-        <USelectMenu
-          v-model="selectedLevels"
-          :items="levelFilterItems"
-          value-key="value"
-          label-key="label"
-          color="neutral"
-          multiple
-          size="sm"
-          icon="i-lucide-list-filter"
-          class="w-44 shrink-0 sm:w-48"
-          :ui="{ content: 'min-w-48', item: 'ps-6' }"
-          :search-input="false"
-        >
-          {{ levelFilterLabel }}
-        </USelectMenu>
-
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-sliders-horizontal"
-          class="shrink-0"
-          :loading="runtimeLogLevelLoading"
-          :disabled="!canApplyRuntimeLogLevel || runtimeLogLevelLoading"
-          @click="applyRuntimeLogLevel"
-        >
-          {{ t('common.apply') }}
-        </UButton>
 
         <UInput
           v-if="toggleFilter || query"
@@ -134,15 +136,14 @@
           :placeholder="t('common.filterDisplayedContent')"
           icon="i-lucide-filter"
           size="sm"
-          class="order-last w-full sm:order-first sm:w-80"
+          class="w-full"
+          :aria-label="t('common.filterDisplayedContent')"
         />
       </div>
-    </div>
 
-    <div class="ytp-frame overflow-hidden rounded-none bg-elevated/20 shadow-sm">
       <div
         ref="logContainer"
-        class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden bg-transparent font-mono text-sm text-default overscroll-x-contain"
+        class="w-full min-w-0 max-w-full min-h-[55vh] max-h-[60vh] overflow-y-auto overflow-x-hidden border-t border-default bg-transparent font-mono text-sm text-default overscroll-x-contain"
         dir="ltr"
         @scroll.passive="handleScroll"
       >
@@ -201,18 +202,11 @@
                   <UButton
                     color="neutral"
                     variant="ghost"
-                    size="xs"
-                    icon="i-lucide-ellipsis-vertical"
-                    trailing-icon="i-lucide-chevron-down"
-                    class="inline-flex h-5! align-[-0.2em] opacity-70 hover:opacity-100"
-                    :ui="{
-                      base: 'min-h-0 min-w-0',
-                      leadingIcon: 'size-3',
-                      trailingIcon: 'size-3',
-                    }"
-                  >
-                    <span class="text-[10px] font-medium">{{ t('common.actions') }}</span>
-                  </UButton>
+                    size="sm"
+                    icon="i-lucide-ellipsis"
+                    square
+                    :aria-label="t('common.actions')"
+                  />
                 </UDropdownMenu>
                 <span
                   :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
@@ -258,24 +252,17 @@
             </div>
           </template>
 
-          <template v-else-if="hasActiveFilter">
-            <UIcon name="i-lucide-filter-x" class="size-6 text-toned" />
-            <div class="space-y-1">
-              <p class="text-sm font-medium text-default">{{ t('logs.emptyFilter') }}</p>
-              <p class="text-sm text-toned">{{ t('logs.emptyFilterDesc') }}</p>
-            </div>
-          </template>
-
-          <template v-else>
-            <UIcon name="i-lucide-circle-off" class="size-6 text-toned" />
-            <div class="space-y-1">
-              <p class="text-sm font-medium text-default">{{ t('logs.emptyLines') }}</p>
-              <p class="text-sm text-toned">{{ t('logs.emptyLinesDesc') }}</p>
-            </div>
-          </template>
+          <UEmpty
+            v-else
+            variant="naked"
+            size="sm"
+            :icon="hasActiveFilter ? 'i-lucide-filter-x' : 'i-lucide-circle-off'"
+            :title="hasActiveFilter ? t('logs.emptyFilter') : t('logs.emptyLines')"
+            :description="hasActiveFilter ? t('logs.emptyFilterDesc') : t('logs.emptyLinesDesc')"
+          />
         </div>
       </div>
-    </div>
+    </section>
 
     <LazyLogDetailModal v-if="detailsOpen" v-model="detailsOpen" :log="selectedLog" />
   </main>

@@ -1,227 +1,213 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
+    <PageHeader v-bind="pageShell" />
 
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
+    <section :aria-label="pageShell.pageLabel" :aria-busy="isLoading" class="space-y-4">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div class="w-full space-y-1.5 sm:max-w-md">
+          <label for="changelog-filter" class="block text-xs font-medium text-toned">
+            {{ t('changelog.search') }}
+          </label>
+          <UInput
+            id="changelog-filter"
+            v-model.lazy="query"
+            type="search"
+            :placeholder="t('changelog.filterPlaceholder')"
+            icon="i-lucide-search"
+            size="sm"
+            class="w-full"
+          />
         </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
-        <UButton
-          v-if="logs.length > 0"
-          color="neutral"
-          :variant="toggleFilter ? 'soft' : 'outline'"
+        <USwitch
+          v-model="latestOnly"
           size="sm"
-          icon="i-lucide-filter"
-          @click="
-            () => {
-              toggleFilter = !toggleFilter;
-            }
-          "
-        >
-          <span>{{ t('common.filter') }}</span>
-        </UButton>
-
-        <UInput
-          v-if="toggleFilter && logs.length > 0"
-          id="filter"
-          v-model.lazy="query"
-          type="search"
-          :placeholder="t('changelog.filterPlaceholder')"
-          icon="i-lucide-filter"
-          size="sm"
-          class="order-last w-full sm:order-first sm:w-80"
+          :label="t('changelog.latestOnly')"
+          :description="t('changelog.latestCount', { count: DEFAULT_LIMIT })"
+          :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
         />
       </div>
-    </div>
 
-    <UAlert
-      v-if="isLoading"
-      color="info"
-      variant="soft"
-      icon="i-lucide-loader-circle"
-      :title="t('common.loading')"
-      :description="t('common.loadingData')"
-    />
+      <UAlert
+        v-if="isLoading"
+        color="info"
+        variant="soft"
+        icon="i-lucide-loader-circle"
+        :title="t('common.loading')"
+        :description="t('common.loadingData')"
+        :ui="{ icon: 'animate-spin' }"
+      />
 
-    <template v-else>
-      <div v-if="filteredLogs.length > 0" class="space-y-5">
-        <section v-for="log in filteredLogs" :key="log.tag" class="space-y-3">
-          <section class="space-y-3">
-            <button
-              type="button"
-              class="flex w-full flex-wrap items-center justify-between gap-3 text-start"
-              @click="toggleRelease(log.tag)"
-            >
-              <div class="flex min-w-0 items-center gap-3">
-                <span class="ytp-section-icon">
-                  <UIcon
-                    :name="isInstalled(log) ? 'i-lucide-badge-check' : 'i-lucide-git-branch'"
-                    class="size-5"
-                  />
-                </span>
-
-                <div class="min-w-0 space-y-1">
-                  <h2 class="truncate text-base font-semibold text-highlighted">
-                    {{ log.tag }}
-                  </h2>
-
-                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-toned">
-                    <UTooltip
-                      v-if="log.date"
-                      :text="t('changelog.releaseDateValue', { date: log.date })"
-                    >
-                      <span class="inline-flex cursor-help items-center gap-1.5">
-                        <UIcon name="i-lucide-calendar-days" class="size-3.5 text-muted" />
-                        <span>{{ relativeTime(log.date) }}</span>
-                      </span>
-                    </UTooltip>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex shrink-0 items-center gap-2">
-                <UBadge
-                  v-if="isInstalled(log)"
-                  color="success"
-                  variant="soft"
-                  size="sm"
-                  icon="i-lucide-check"
-                >
-                  {{ t('changelog.installed') }}
-                </UBadge>
-
-                <UBadge color="neutral" variant="outline" size="sm" icon="i-lucide-list">
-                  {{ t('changelog.commits', { count: log.commits?.length || 0 }) }}
-                </UBadge>
-
-                <UIcon
-                  name="i-lucide-chevron-right"
-                  :class="[
-                    'size-4 text-toned transition-transform',
-                    isReleaseOpen(log.tag) ? 'rotate-90' : '',
-                  ]"
-                />
-              </div>
-            </button>
-
-            <div v-if="isReleaseOpen(log.tag)" class="space-y-2">
-              <article
-                v-for="commit in log.commits"
-                :key="commit.sha"
-                class="min-w-0 max-w-full rounded-md border border-default bg-elevated/20 px-3 py-3 transition-colors hover:bg-elevated/35"
-                dir="ltr"
+      <template v-else>
+        <UAlert
+          v-if="loadError"
+          color="error"
+          variant="soft"
+          icon="i-lucide-triangle-alert"
+          :title="t('common.error')"
+          :description="loadError"
+        />
+        <div v-if="filteredLogs.length > 0" class="divide-y divide-default border-y border-default">
+          <section
+            v-for="(log, index) in filteredLogs"
+            :key="log.tag"
+            :aria-labelledby="`changelog-release-${index}`"
+            class="py-5"
+          >
+            <h2>
+              <button
+                :id="`changelog-release-${index}`"
+                type="button"
+                :aria-expanded="isReleaseOpen(log.tag)"
+                :aria-controls="`changelog-commits-${index}`"
+                class="group flex w-full items-start gap-3 rounded-sm text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                @click="toggleRelease(log.tag)"
               >
-                <NuxtLink
-                  :to="`${REPO}/commit/${commit.full_sha}`"
-                  target="_blank"
-                  class="block min-w-0 max-w-full wrap-break-word text-sm font-medium leading-5 text-highlighted transition hover:text-primary"
+                <UIcon
+                  :name="isRtl ? 'i-lucide-chevron-left' : 'i-lucide-chevron-right'"
+                  :class="[
+                    'mt-0.5 size-5 shrink-0 text-muted transition-transform',
+                    isReleaseOpen(log.tag) ? (isRtl ? '-rotate-90' : 'rotate-90') : '',
+                  ]"
+                  aria-hidden="true"
+                />
+                <span
+                  class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-6 gap-y-2"
                 >
-                  {{ formatCommitMessage(commit.message).title }}
-                </NuxtLink>
-
-                <div
-                  v-if="formatCommitMessage(commit.message).description.length > 0"
-                  class="mt-2 min-w-0 max-w-full"
-                >
-                  <button
-                    type="button"
-                    class="inline-flex max-w-full items-center gap-1 text-xs text-toned hover:text-primary"
-                    :aria-expanded="isCommitDescriptionOpen(commit.sha)"
-                    :aria-label="t('common.showMore')"
-                    @click="toggleCommitDescription(commit.sha)"
-                  >
-                    <UIcon
-                      name="i-lucide-chevron-right"
-                      :class="[
-                        'size-3.5 transition-transform',
-                        isCommitDescriptionOpen(commit.sha) ? 'rotate-90' : '',
-                      ]"
-                    />
-                    <span>{{ t('common.showMore') }}</span>
-                  </button>
-
-                  <Markdown
-                    v-if="isCommitDescriptionOpen(commit.sha)"
-                    :markdown="formatCommitMessage(commit.message).description.join('\n\n')"
-                    class="changelog-commit-markdown mt-1 text-sm text-toned"
-                  />
-                </div>
-
-                <div
-                  class="mt-2 flex min-w-0 max-w-full flex-wrap items-center gap-2 text-xs text-toned"
-                >
-                  <span
-                    class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-sm border border-default px-2 py-1"
-                  >
-                    <UIcon name="i-lucide-user" class="size-3.5 text-muted" />
-                    <span class="wrap-break-word">{{ commit.author }}</span>
-                  </span>
-
-                  <UTooltip :text="t('changelog.date', { date: commit.date })">
-                    <time
-                      class="inline-flex cursor-help items-center gap-1 rounded-sm border border-default px-2 py-1"
+                  <span class="flex min-w-0 flex-wrap items-center gap-2">
+                    <span
+                      class="wrap-anywhere font-mono text-base font-semibold text-highlighted transition-colors group-hover:text-primary"
                     >
-                      <UIcon name="i-lucide-clock-3" class="size-3.5 text-muted" />
-                      <span>{{ relativeTime(commit.date) }}</span>
+                      {{ log.tag }}
+                    </span>
+                    <UBadge
+                      v-if="isInstalled(log)"
+                      color="success"
+                      variant="soft"
+                      size="sm"
+                      icon="i-lucide-check"
+                    >
+                      {{ t('changelog.installed') }}
+                    </UBadge>
+                  </span>
+                  <span class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-toned">
+                    <time v-if="log.date" :datetime="log.date" :title="log.date">
+                      {{ formatDateOnly(log.date, locale) }}
                     </time>
-                  </UTooltip>
+                    <span class="tabular-nums">
+                      {{ t('changelog.commits', { count: log.commits?.length || 0 }) }}
+                    </span>
+                  </span>
+                </span>
+              </button>
+            </h2>
 
-                  <UTooltip :text="`SHA: ${commit.full_sha}`">
+            <div
+              :id="`changelog-commits-${index}`"
+              :hidden="!isReleaseOpen(log.tag)"
+              class="mt-4 sm:ms-8"
+            >
+              <ul v-if="isReleaseOpen(log.tag)" class="divide-y divide-default">
+                <li v-for="commit in log.commits" :key="commit.sha">
+                  <article class="min-w-0 max-w-full space-y-2 py-3" dir="ltr">
                     <NuxtLink
                       :to="`${REPO}/commit/${commit.full_sha}`"
                       target="_blank"
-                      class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1 font-mono transition hover:border-primary hover:text-primary"
+                      rel="noopener noreferrer"
+                      class="block wrap-anywhere text-sm font-medium leading-6 text-highlighted transition-colors hover:text-primary focus-visible:outline-none focus-visible:underline"
                     >
-                      <UIcon name="i-lucide-git-commit-horizontal" class="size-3.5 text-muted" />
-                      <span>{{ commit.sha }}</span>
+                      {{ formatCommitMessage(commit.message).title }}
                     </NuxtLink>
-                  </UTooltip>
 
-                  <span
-                    v-if="commit.full_sha === app_sha"
-                    class="inline-flex items-center gap-1 rounded-sm border border-default px-2 py-1 font-medium"
-                  >
-                    <UIcon name="i-lucide-check" class="size-3.5 text-success" />
-                    <span>{{ t('changelog.installed') }}</span>
-                  </span>
-                </div>
-              </article>
+                    <div
+                      v-if="formatCommitMessage(commit.message).description.length > 0"
+                      class="mt-2 min-w-0 max-w-full"
+                    >
+                      <button
+                        type="button"
+                        class="inline-flex max-w-full items-center gap-1 text-xs text-toned hover:text-primary"
+                        :aria-expanded="isCommitDescriptionOpen(commit.sha)"
+                        :aria-label="t('common.showMore')"
+                        @click="toggleCommitDescription(commit.sha)"
+                      >
+                        <UIcon
+                          name="i-lucide-chevron-right"
+                          :class="[
+                            'size-3.5 transition-transform',
+                            isCommitDescriptionOpen(commit.sha) ? 'rotate-90' : '',
+                          ]"
+                        />
+                        <span>{{ t('common.showMore') }}</span>
+                      </button>
+
+                      <Markdown
+                        v-if="isCommitDescriptionOpen(commit.sha)"
+                        :markdown="formatCommitMessage(commit.message).description.join('\n\n')"
+                        class="changelog-commit-markdown mt-1 text-sm text-toned"
+                      />
+                    </div>
+
+                    <div
+                      class="flex min-w-0 max-w-full flex-wrap items-center gap-x-4 gap-y-1 text-xs text-toned"
+                    >
+                      <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                        <UIcon name="i-lucide-user" class="size-3.5 text-muted" />
+                        <span class="wrap-anywhere">{{ commit.author }}</span>
+                      </span>
+
+                      <UTooltip :text="t('changelog.date', { date: commit.date })">
+                        <time :datetime="commit.date" class="cursor-help">
+                          {{ relativeTime(commit.date) }}
+                        </time>
+                      </UTooltip>
+
+                      <UTooltip :text="`SHA: ${commit.full_sha}`">
+                        <NuxtLink
+                          :to="`${REPO}/commit/${commit.full_sha}`"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          :aria-label="`SHA: ${commit.full_sha}`"
+                          class="inline-flex items-center gap-1.5 font-mono transition-colors hover:text-primary focus-visible:outline-none focus-visible:underline"
+                        >
+                          <UIcon
+                            name="i-lucide-git-commit-horizontal"
+                            class="size-3.5 text-muted"
+                          />
+                          <span>{{ commit.sha }}</span>
+                        </NuxtLink>
+                      </UTooltip>
+
+                      <span
+                        v-if="matchesSha(commit.full_sha, app_sha)"
+                        class="inline-flex items-center gap-1.5 font-medium text-success"
+                      >
+                        <UIcon name="i-lucide-check" class="size-3.5 text-success" />
+                        <span>{{ t('changelog.installed') }}</span>
+                      </span>
+                    </div>
+                  </article>
+                </li>
+              </ul>
+              <UEmpty
+                v-if="isReleaseOpen(log.tag) && log.commits.length === 0"
+                size="sm"
+                variant="naked"
+                icon="i-lucide-git-commit-horizontal"
+                :title="t('changelog.noCommits')"
+              />
             </div>
           </section>
-        </section>
-      </div>
-
-      <div v-else class="space-y-3">
-        <UAlert
-          v-if="query"
-          color="warning"
-          variant="soft"
-          icon="i-lucide-search"
-          :title="t('common.noResults')"
-          :description="t('changelog.noResultsFor', { query })"
-        />
+        </div>
 
         <UEmpty
-          v-else
-          icon="i-lucide-scroll-text"
-          :title="t('changelog.noItems')"
-          :description="t('changelog.empty')"
-          class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+          v-else-if="!loadError"
+          variant="naked"
+          size="sm"
+          :icon="query ? 'i-lucide-search' : 'i-lucide-scroll-text'"
+          :title="query ? t('common.noResults') : t('changelog.noItems')"
+          :description="query ? t('changelog.noResultsFor', { query }) : t('changelog.empty')"
         />
-      </div>
-    </template>
+      </template>
+    </section>
   </main>
 </template>
 
@@ -231,8 +217,16 @@ import Markdown from '~/components/Markdown.vue';
 import type { changelogs, changeset } from '~/types/changelogs';
 import { request, ucFirst, uri } from '~/utils';
 import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime';
+import { formatDateOnly } from '~/utils/date';
+import {
+  filterChangelog,
+  getOpenReleases,
+  isInstalledRelease,
+  matchesSha,
+} from '~/utils/changelog';
 import { usePageShell } from '~/composables/usePageShell';
 const { locale, t } = useI18n();
+const { isRtl } = useAppLocale();
 
 const toast = useNotification();
 const config = useYtpConfig();
@@ -249,78 +243,17 @@ const app_version = ref('');
 const app_branch = ref('');
 const app_sha = ref('');
 const isLoading = ref(true);
+const loadError = ref('');
 const query = ref('');
-const toggleFilter = ref(false);
-const openReleases = useStorage<string[]>('changelog_open_releases_v2', []);
+const latestOnly = useStorage<boolean>('changelog_latest_only', true);
+const openReleases = ref<string[]>([]);
 const openCommitDescriptions = ref<string[]>([]);
-let openDefaultsInitialized = false;
 
-watch(toggleFilter, () => {
-  if (!toggleFilter.value) {
-    query.value = '';
-  }
-});
+const visibleLogs = computed<changelogs>(() =>
+  latestOnly.value ? logs.value.slice(0, DEFAULT_LIMIT) : logs.value,
+);
 
-const visibleLogs = computed<changelogs>(() => logs.value.slice(0, DEFAULT_LIMIT));
-
-const filteredLogs = computed<changelogs>(() => {
-  const q = query.value?.toLowerCase();
-  if (!q) {
-    return visibleLogs.value;
-  }
-
-  return visibleLogs.value
-    .map((log) => {
-      const tagMatches = log.tag.toLowerCase().includes(q);
-      const filteredCommits =
-        log.commits?.filter(
-          (commit) =>
-            commit.message.toLowerCase().includes(q) ||
-            commit.author.toLowerCase().includes(q) ||
-            commit.full_sha.toLowerCase().includes(q),
-        ) ?? [];
-
-      if (tagMatches || filteredCommits.length > 0) {
-        return { ...log, commits: tagMatches ? log.commits : filteredCommits };
-      }
-
-      return null;
-    })
-    .filter((log): log is changeset => log !== null);
-});
-
-const compareVersions = (left: string, right: string): number => {
-  const leftParts = left
-    .replace(/^v/i, '')
-    .split('.')
-    .map((part) => Number.parseInt(part, 10) || 0);
-  const rightParts = right
-    .replace(/^v/i, '')
-    .split('.')
-    .map((part) => Number.parseInt(part, 10) || 0);
-
-  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
-    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
-    if (difference !== 0) {
-      return difference;
-    }
-  }
-
-  return 0;
-};
-
-watch([visibleLogs, app_version], ([items, currentVersion]) => {
-  if (openDefaultsInitialized || !currentVersion || items.length < 1) {
-    return;
-  }
-
-  const installedIndex = items.findIndex((log) => isInstalled(log));
-  openReleases.value =
-    installedIndex >= 0
-      ? items.slice(0, installedIndex + 1).map((log) => log.tag)
-      : items.filter((log) => compareVersions(log.tag, currentVersion) >= 0).map((log) => log.tag);
-  openDefaultsInitialized = true;
-});
+const filteredLogs = computed(() => filterChangelog(visibleLogs.value, query.value));
 
 const isReleaseOpen = (tag: string): boolean => openReleases.value.includes(tag);
 
@@ -363,39 +296,37 @@ const loadContent = async (): Promise<void> => {
     return;
   }
 
+  loadError.value = '';
   try {
     try {
       const changes = await fetch(
         REPO_URL.replace('{branch}', app_branch.value).replace('{version}', app_version.value),
       );
+      if (!changes.ok) {
+        throw new Error(t('common.failedFetch'));
+      }
       logs.value = await changes.json();
     } catch (error) {
       console.error(error);
-      logs.value = await (await request(uri('/CHANGELOG.json'), { method: 'GET' })).json();
+      const response = await request(uri('/CHANGELOG.json'), { method: 'GET' });
+      if (!response.ok) {
+        throw new Error(t('common.failedFetch'), { cause: error });
+      }
+      logs.value = await response.json();
     }
-  } catch (error: any) {
+    openReleases.value = getOpenReleases(logs.value, app_sha.value);
+  } catch (error: unknown) {
     console.error(error);
-    toast.error(t('changelog.failedFetch', { error: error.message }));
+    loadError.value = t('changelog.failedFetch', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    toast.error(loadError.value);
   } finally {
     isLoading.value = false;
   }
 };
 
-const isInstalled = (log: changeset): boolean => {
-  const installed = String(app_sha.value);
-
-  if (log.full_sha.startsWith(installed)) {
-    return true;
-  }
-
-  for (const commit of log?.commits ?? []) {
-    if (commit.full_sha.startsWith(installed)) {
-      return true;
-    }
-  }
-
-  return false;
-};
+const isInstalled = (log: changeset): boolean => isInstalledRelease(log, app_sha.value);
 
 onMounted(async () => {
   await awaiter(config.isLoaded);

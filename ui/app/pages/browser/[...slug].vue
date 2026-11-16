@@ -1,51 +1,27 @@
 <template>
-  <div class="w-full min-w-0 max-w-full space-y-6">
+  <main class="w-full min-w-0 max-w-full space-y-6">
     <div
       class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
       :class="lightsOut ? 'opacity-100' : 'opacity-0'"
       aria-hidden="true"
     />
 
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
-
-        <div class="min-w-0 flex-1 space-y-3">
-          <nav :aria-label="t('common.breadcrumb')" class="min-w-0 ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-
-            <template v-for="item in breadcrumbTrailItems" :key="item.path">
-              <span>/</span>
-
-              <button
-                type="button"
-                class="max-w-full truncate normal-case tracking-normal transition hover:text-highlighted"
-                @click="() => void handleBreadcrumbClick(item.path)"
-              >
-                {{ item.name }}
-              </button>
-            </template>
-
-            <UIcon
-              v-if="isLoading"
-              name="i-lucide-loader-circle"
-              class="size-4 animate-spin text-info"
-            />
-          </nav>
-
-          <div>
-            <h1 class="truncate text-2xl font-semibold text-highlighted">
-              {{ currentDirectoryName }}
-            </h1>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
+    <PageHeader
+      v-bind="pageShell"
+      :page-label="currentDirectoryName"
+      description=""
+      class="[&_h1]:wrap-anywhere"
+    >
+      <template #icon>
+        <UIcon
+          :name="pageShell.icon"
+          class="size-5"
+          :class="isLoading ? 'animate-pulse text-info' : ''"
+          role="img"
+          :aria-label="isLoading ? t('common.loading') : pageShell.pageLabel"
+        />
+      </template>
+      <template #actions>
         <UButton
           color="neutral"
           :variant="show_filter ? 'soft' : 'outline'"
@@ -67,28 +43,18 @@
           <span>{{ t('common.add') }}</span>
         </UButton>
 
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
-          class="hidden sm:inline-flex"
-          @click="toggleDisplayStyle"
-        >
-          <span class="hidden sm:inline">{{
-            display_style === 'list' ? t('common.list') : t('common.grid')
-          }}</span>
-        </UButton>
-
         <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
           <UButton
             color="neutral"
             variant="outline"
             size="sm"
-            icon="i-lucide-arrow-up-down"
+            :icon="sortDirectionIcon"
             trailing-icon="i-lucide-chevron-down"
           >
-            <span>{{ t('common.sort') }}</span>
+            <span
+              >{{ t('common.sort') }}:
+              {{ sortOptions.find((option) => option.value === sort_by)?.label }}</span
+            >
           </UButton>
         </UDropdownMenu>
 
@@ -115,19 +81,40 @@
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
+
+    <nav
+      :aria-label="t('common.breadcrumb')"
+      class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-toned"
+    >
+      <span>{{ pageShell.pageLabel }}</span>
+      <span aria-hidden="true">/</span>
+      <template v-for="item in breadcrumbTrailItems" :key="item.path">
+        <button
+          type="button"
+          class="max-w-full wrap-anywhere text-start hover:text-primary hover:underline"
+          @click="() => void handleBreadcrumbClick(item.path)"
+        >
+          <bdi>{{ item.name }}</bdi>
+        </button>
+        <span aria-hidden="true">/</span>
+      </template>
+      <span class="wrap-anywhere font-medium text-highlighted" aria-current="page"
+        ><bdi>{{ currentDirectoryName }}</bdi></span
+      >
+    </nav>
 
     <div
       v-if="controlEnabled && hasItems"
-      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
+      class="flex flex-wrap items-center justify-between gap-3"
     >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+          :icon="masterSelectAll ? 'i-lucide-square-check-big' : 'i-lucide-square'"
           :disabled="isLoading || filteredItems.length < 1"
           @click="toggleMasterSelection"
         >
@@ -165,309 +152,117 @@
     </div>
 
     <div
-      v-if="contentStyle === 'list' && hasItems"
-      class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface"
+      v-if="hasItems"
+      :aria-busy="isLoading"
+      class="ytp-card divide-y divide-default xl:grid xl:grid-cols-[minmax(0,1fr)_25rem_auto] xl:gap-x-4"
     >
-      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-360 w-full text-sm">
-          <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-            <tr
-              class="text-center [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-            >
-              <th v-if="controlEnabled" class="w-16">
-                <button
-                  type="button"
-                  class="cursor-pointer"
-                  :aria-label="masterSelectAll ? t('common.unselectAll') : t('common.selectAll')"
-                  @click="toggleMasterSelection"
-                >
-                  <UIcon
-                    :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-square-check-big'"
-                    class="size-4"
-                  />
-                </button>
-              </th>
-              <th class="w-full text-start">
-                {{ t('common.name') }}
-                <UIcon
-                  v-if="sort_by === 'name'"
-                  :name="sortDirectionIcon"
-                  class="ms-1 inline-flex size-3.5"
-                />
-              </th>
-              <th class="w-28 whitespace-nowrap">
-                {{ t('common.size') }}
-                <UIcon
-                  v-if="sort_by === 'size'"
-                  :name="sortDirectionIcon"
-                  class="ms-1 inline-flex size-3.5"
-                />
-              </th>
-              <th class="w-40 whitespace-nowrap">
-                {{ t('common.date') }}
-                <UIcon
-                  v-if="sort_by === 'date'"
-                  :name="sortDirectionIcon"
-                  class="ms-1 inline-flex size-3.5"
-                />
-              </th>
-              <th class="w-96 whitespace-nowrap">
-                {{ t('common.actions') }}
-              </th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y divide-default">
-            <tr
-              v-for="item in filteredItems"
-              :key="item.path"
-              class="transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-            >
-              <td v-if="controlEnabled" class="px-3 py-3 text-center align-middle">
-                <label class="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    v-model="selectedElms"
-                    class="completed-checkbox size-4 rounded border-default"
-                    type="checkbox"
-                    :value="item.path"
-                  />
-                </label>
-              </td>
-
-              <td class="px-3 py-3 align-middle">
-                <div class="flex min-w-0 items-center gap-3">
-                  <UTooltip :text="itemTypeLabel(item)">
-                    <span class="inline-flex shrink-0 items-center justify-center text-toned">
-                      <UIcon :name="itemTypeIcon(item)" class="size-5" />
-                    </span>
-                  </UTooltip>
-
-                  <div class="min-w-0 flex-1">
-                    <UTooltip :text="item.name">
-                      <a
-                        :href="itemHref(item)"
-                        class="block truncate font-medium text-highlighted hover:underline"
-                        @click.prevent="handleClick(item)"
-                      >
-                        <bdi>{{ item.name }}</bdi>
-                      </a>
-                    </UTooltip>
-                  </div>
-                </div>
-              </td>
-
-              <td class="px-3 py-3 text-center align-middle text-toned whitespace-nowrap">
-                {{ itemSizeLabel(item) }}
-              </td>
-
-              <td class="px-3 py-3 text-center align-middle text-toned whitespace-nowrap">
-                <UTooltip :text="formatDateTime(item.mtime, locale, { seconds: true })">
-                  <span>{{ relativeTime(item.mtime) }}</span>
-                </UTooltip>
-              </td>
-
-              <td class="w-96 px-3 py-3 align-middle whitespace-nowrap">
-                <div class="flex items-center justify-end gap-2">
-                  <UButton
-                    v-if="item.type === 'file'"
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-download"
-                    class="shrink-0"
-                    external
-                    :href="downloadHref(item)"
-                    :download="downloadName(item)"
-                  >
-                    {{ t('common.download') }}
-                  </UButton>
-                  <UButton
-                    v-if="item.is_file"
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-wrench"
-                    @click="toolboxSource = item.path"
-                  >
-                    {{ t('toolbox.title') }}
-                  </UButton>
-                  <UButton
-                    v-if="controlEnabled"
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-pencil"
-                    @click="() => void handleAction('rename', item)"
-                  >
-                    {{ t('common.rename') }}
-                  </UButton>
-
-                  <UButton
-                    v-if="controlEnabled"
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-arrow-right-left"
-                    @click="() => void handleAction('move', item)"
-                  >
-                    {{ t('files.move') }}
-                  </UButton>
-
-                  <UButton
-                    v-if="controlEnabled"
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-trash"
-                    @click="() => void handleAction('delete', item)"
-                  >
-                    {{ t('common.delete') }}
-                  </UButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div v-else-if="hasItems" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <div
+      <article
         v-for="item in filteredItems"
         :key="item.path"
-        class="ytp-card flex h-full flex-col overflow-hidden"
+        class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 p-4 xl:col-span-3 xl:grid-cols-subgrid xl:items-center"
       >
-        <div class="p-4 pb-3 ytp-border-bottom-soft">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-start gap-2">
-                <span class="pt-0.5 text-toned">
-                  <UIcon :name="itemTypeIcon(item)" class="size-5" />
-                </span>
-
-                <div class="min-w-0 flex-1">
-                  <UTooltip :text="item.name">
-                    <a
-                      :href="itemHref(item)"
-                      class="block truncate text-sm font-semibold text-highlighted hover:underline"
-                      @click.prevent="handleClick(item)"
-                    >
-                      <bdi>{{ item.name }}</bdi>
-                    </a>
-                  </UTooltip>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex shrink-0 items-center gap-1">
-              <label v-if="controlEnabled" class="inline-flex cursor-pointer items-center px-1">
-                <input
-                  v-model="selectedElms"
-                  class="completed-checkbox size-4 rounded border-default"
-                  type="checkbox"
-                  :value="item.path"
-                />
-              </label>
-            </div>
-          </div>
+        <div class="flex min-w-0 items-center gap-3">
+          <UCheckbox
+            v-if="controlEnabled"
+            color="primary"
+            class="shrink-0"
+            :model-value="selectedElms.includes(item.path)"
+            :aria-label="`${t('common.select')}: ${item.name}`"
+            @update:model-value="selectedElms = setSelected(selectedElms, item.path, $event)"
+          />
+          <span
+            class="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-default bg-elevated/40 text-toned"
+          >
+            <UIcon :name="itemTypeIcon(item)" class="size-4" aria-hidden="true" />
+          </span>
+          <a
+            :href="itemHref(item)"
+            class="min-w-0 wrap-anywhere text-sm font-semibold text-highlighted hover:text-primary hover:underline"
+            @click.prevent="handleClick(item)"
+          >
+            <bdi>{{ item.name }}</bdi>
+          </a>
         </div>
 
-        <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
-            <div
-              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
-            >
-              <span class="block truncate">{{ itemTypeLabel(item) }}</span>
-            </div>
-
-            <div
-              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
-            >
-              <span class="block truncate">{{ itemSizeLabel(item) }}</span>
-            </div>
-
-            <div
-              class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
-            >
+        <dl
+          class="col-span-2 grid min-w-0 grid-cols-2 gap-3 text-sm sm:grid-cols-3 xl:col-span-1 xl:col-start-2 xl:row-start-1"
+        >
+          <div class="min-w-0 space-y-1">
+            <dt class="text-xs text-muted">{{ t('common.type') }}</dt>
+            <dd>
+              <UBadge color="neutral" variant="soft" size="sm">{{ itemTypeLabel(item) }}</UBadge>
+            </dd>
+          </div>
+          <div class="min-w-0 space-y-1">
+            <dt class="text-xs text-muted">{{ t('common.size') }}</dt>
+            <dd class="tabular-nums text-toned">{{ itemSizeLabel(item) }}</dd>
+          </div>
+          <div class="col-span-2 min-w-0 space-y-1 sm:col-span-1">
+            <dt class="text-xs text-muted">{{ t('common.date') }}</dt>
+            <dd class="text-toned">
               <UTooltip :text="formatDateTime(item.mtime, locale, { seconds: true })">
-                <span class="block truncate">{{ relativeTime(item.mtime) }}</span>
+                <time :datetime="item.mtime">{{ relativeTime(item.mtime) }}</time>
               </UTooltip>
-            </div>
+            </dd>
           </div>
-        </div>
+        </dl>
 
-        <div class="ytp-border-top-soft px-4 py-4">
-          <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
+        <div
+          v-if="controlEnabled || item.type === 'file' || item.is_file"
+          class="col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-1.5 self-start xl:col-start-3 xl:self-center"
+        >
+          <UTooltip v-if="item.type === 'file' || item.is_file" :text="t('common.download')">
             <UButton
-              v-if="item.type === 'file'"
               color="neutral"
               variant="outline"
-              size="xs"
+              size="sm"
               icon="i-lucide-download"
               external
               :href="downloadHref(item)"
               :download="downloadName(item)"
-              class="w-full justify-center"
+              :aria-label="`${t('common.download')}: ${item.name}`"
             >
-              {{ t('common.download') }}
+              <span class="hidden sm:inline">{{ t('common.download') }}</span>
             </UButton>
-
+          </UTooltip>
+          <UTooltip
+            v-else-if="controlEnabled && item.content_type === 'dir'"
+            :text="t('files.move')"
+          >
             <UButton
-              v-if="item.is_file"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-wrench"
-              @click="toolboxSource = item.path"
-              class="w-full justify-center"
-            >
-              {{ t('toolbox.title') }}
-            </UButton>
-
-            <UButton
-              v-if="controlEnabled"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-pencil"
-              class="w-full justify-center"
-              @click="() => void handleAction('rename', item)"
-            >
-              {{ t('common.rename') }}
-            </UButton>
-
-            <UButton
-              v-if="controlEnabled"
               color="neutral"
               variant="outline"
               size="sm"
               icon="i-lucide-arrow-right-left"
-              class="w-full justify-center"
+              :aria-label="`${t('files.move')}: ${item.name}`"
               @click="() => void handleAction('move', item)"
             >
-              {{ t('files.move') }}
+              <span class="hidden sm:inline">{{ t('files.move') }}</span>
             </UButton>
-
+          </UTooltip>
+          <UDropdownMenu
+            v-if="controlEnabled || item.is_file"
+            :items="itemActionGroups(item)"
+            :modal="false"
+            :content="{ align: 'end' }"
+          >
             <UButton
-              v-if="controlEnabled"
               color="neutral"
-              variant="outline"
+              variant="ghost"
               size="sm"
-              icon="i-lucide-trash"
-              class="w-full justify-center"
-              @click="() => void handleAction('delete', item)"
-            >
-              {{ t('common.delete') }}
-            </UButton>
-          </div>
+              icon="i-lucide-ellipsis"
+              square
+              :aria-label="`${t('common.actions')}: ${item.name}`"
+            />
+          </UDropdownMenu>
         </div>
-      </div>
+      </article>
     </div>
 
-    <div v-if="localSearch && !hasItems && !isLoading" class="space-y-3">
-      <UAlert
-        color="warning"
-        variant="soft"
+    <div v-if="localSearch && !hasItems && !isLoading">
+      <UEmpty
+        variant="naked"
+        size="sm"
         icon="i-lucide-filter"
         :title="t('common.noResults')"
         :description="t('files.noResultsFor', { query: localSearch })"
@@ -481,6 +276,7 @@
       icon="i-lucide-loader-circle"
       :title="t('files.loading')"
       :description="t('files.loadingDesc')"
+      :ui="{ icon: 'animate-spin' }"
     />
 
     <UEmpty
@@ -488,7 +284,8 @@
       icon="i-lucide-folder-open"
       :title="t('files.noContent')"
       :description="t('files.empty')"
-      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+      variant="naked"
+      size="sm"
     />
 
     <UAlert
@@ -556,11 +353,10 @@
       :useUrl="true"
       @closeModel="closeModel"
     />
-  </div>
+  </main>
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core';
 import ToolboxCreateModal from '~/components/ToolboxCreateModal.vue';
 import ToolboxJobModal from '~/components/ToolboxJobModal.vue';
 import type { DropdownMenuItem } from '@nuxt/ui';
@@ -571,6 +367,7 @@ import { formatRelativeTime, type RelativeTimeInput } from '~/utils/relativeTime
 import { formatDateTime } from '~/utils/date';
 import { usePageShell } from '~/composables/usePageShell';
 import type { ToolboxJob } from '~/types/toolbox';
+import { setSelected } from '~/utils/selection';
 const { locale, t } = useI18n();
 
 const route = useRoute();
@@ -585,8 +382,6 @@ const showToolboxJob = (job: ToolboxJob): void => {
   toolboxJob.value = job.id;
 };
 
-const display_style = useStorage<string>('browser_display_style', 'list');
-const isMobile = useMediaQuery({ maxWidth: 639 });
 const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(value, locale.value);
 const show_filter = ref(false);
 const localSearch = ref('');
@@ -603,9 +398,6 @@ const sort_order = browser.sort_order;
 const filteredItems = browser.filteredItems;
 
 const controlEnabled = computed(() => Boolean(config.app.browser_control_enabled));
-const contentStyle = computed<'list' | 'grid'>(() =>
-  isMobile.value ? 'grid' : 'list' === display_style.value ? 'list' : 'grid',
-);
 const pageShell = usePageShell('files');
 const hasItems = computed(() => filteredItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
@@ -659,6 +451,50 @@ const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
     },
   ],
 ]);
+
+const itemActionGroups = (item: FileItem): DropdownMenuItem[][] => {
+  const actions: DropdownMenuItem[] = [];
+
+  if (item.is_file) {
+    actions.push({
+      label: t('toolbox.title'),
+      icon: 'i-lucide-wrench',
+      onSelect: () => {
+        toolboxSource.value = item.path;
+      },
+    });
+  }
+
+  if (controlEnabled.value) {
+    actions.push({
+      label: t('common.rename'),
+      icon: 'i-lucide-pencil',
+      onSelect: () => void handleAction('rename', item),
+    });
+  }
+
+  if (controlEnabled.value && item.content_type !== 'dir') {
+    actions.push({
+      label: t('files.move'),
+      icon: 'i-lucide-arrow-right-left',
+      onSelect: () => void handleAction('move', item),
+    });
+  }
+
+  const groups = actions.length ? [actions] : [];
+  if (controlEnabled.value) {
+    groups.push([
+      {
+        label: t('common.delete'),
+        icon: 'i-lucide-trash',
+        color: 'error',
+        onSelect: () => void handleAction('delete', item),
+      },
+    ]);
+  }
+
+  return groups;
+};
 
 const initialPath = (() => {
   const slug = route.params.slug;
@@ -1008,10 +844,6 @@ const toggleFilter = async (): Promise<void> => {
 
   await nextTick();
   searchInput.value?.inputRef?.value?.focus?.({ preventScroll: true });
-};
-
-const toggleDisplayStyle = (): void => {
-  display_style.value = display_style.value === 'list' ? 'grid' : 'list';
 };
 
 const toggleMasterSelection = (): void => {
