@@ -1,386 +1,328 @@
 <template>
   <USlideover
     :open="isOpen"
+    :title="t('common.webuiSettings')"
+    :description="t('app.settings.subtitle')"
     :side="direction"
     :dismissible="true"
     :overlay="true"
-    :ui="{ content: 'yt-settings-panel w-full sm:max-w-xl' }"
+    :ui="{
+      content: 'yt-settings-panel shell-surface w-full bg-transparent sm:max-w-xl',
+      body: 'p-4 sm:p-5',
+    }"
     @update:open="(open) => !open && emitter('close')"
   >
-    <template #header>
-      <div class="flex w-full items-start gap-3">
-        <div class="min-w-0 flex-1">
-          <p class="text-base font-semibold text-highlighted">{{ t('common.webuiSettings') }}</p>
-          <p class="text-sm text-toned">{{ t('app.settings.subtitle') }}</p>
-        </div>
-
-        <UButton
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          square
-          icon="i-lucide-x"
-          :aria-label="t('app.settings.closeAria')"
-          :title="t('app.settings.closeAria')"
-          class="ms-auto shrink-0"
-          @click="emitter('close')"
-        />
-      </div>
+    <template #close="{ ui }">
+      <UButton
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        icon="i-lucide-x"
+        :aria-label="t('app.settings.closeAria')"
+        :title="t('app.settings.closeAria')"
+        :class="ui.close()"
+      />
     </template>
 
     <template #body>
-      <div class="w-full space-y-6">
-        <div class="ytp-card w-full">
-          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-layout-dashboard" class="size-4 text-toned" />
-              <span class="text-sm font-semibold text-highlighted">{{
-                t('app.settings.pageView')
-              }}</span>
-            </div>
-          </div>
+      <div class="w-full divide-y divide-default">
+        <section class="space-y-5 pb-6">
+          <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-layout-dashboard" class="size-5 text-toned" aria-hidden="true" />
+            {{ t('app.settings.pageView') }}
+          </h2>
 
-          <div class="p-4 sm:p-5 space-y-4">
-            <UFormField label="" class="w-full" :ui="settingsFieldUi">
-              <USelect
-                v-model="draftMode"
-                :items="modeItems"
-                value-key="value"
-                label-key="label"
-                size="lg"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-              />
-
-              <div class="mt-3 flex justify-end">
-                <UButton
-                  color="primary"
-                  variant="soft"
-                  size="sm"
-                  icon="i-lucide-save"
-                  :disabled="!modeChanged || savingMode"
-                  :loading="savingMode"
-                  @click="saveMode"
-                >
-                  {{ t('app.settings.saveLayout') }}
-                </UButton>
-              </div>
-            </UFormField>
-
-            <USwitch
-              v-model="page_anims"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="page_anims ? t('common.enabled') : t('common.disabled')"
-              :description="t('app.settings.animationsDesc')"
-            />
-          </div>
-        </div>
-
-        <div class="ytp-card w-full">
-          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-palette" class="size-4 text-toned" />
-              <span class="text-sm font-semibold text-highlighted">{{
-                t('app.settings.appearance')
-              }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 sm:p-5 space-y-4">
-            <UFormField :label="t('app.settings.theme')" class="w-full" :ui="settingsFieldUi">
-              <USelect
-                v-model="themePreference"
-                :items="themeItems"
-                value-key="value"
-                label-key="label"
-                size="lg"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-              />
-            </UFormField>
-
-            <UFormField :label="t('common.language')" class="w-full" :ui="settingsFieldUi">
-              <USelect
-                :model-value="locale"
-                :items="localeItems"
-                value-key="code"
-                label-key="label"
-                size="lg"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-                @update:model-value="(value: unknown) => void changeLocale(value as string)"
-              />
-            </UFormField>
-          </div>
-        </div>
-
-        <div class="ytp-card w-full">
-          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-image" class="size-4 text-toned" />
-              <span class="text-sm font-semibold text-highlighted">{{
-                t('app.settings.background')
-              }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 sm:p-5 space-y-4">
-            <USwitch
-              v-model="bg_enable"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="bg_enable ? t('common.shown') : t('common.hidden')"
-              :description="t('app.settings.bgDesc')"
+          <div class="flex min-w-0 flex-wrap items-center gap-2">
+            <USelect
+              v-model="draftMode"
+              :items="modeItems"
+              value-key="value"
+              label-key="label"
+              size="md"
+              class="min-w-0 flex-1"
+              :aria-label="t('app.settings.pageView')"
             />
 
             <UButton
-              v-if="bg_enable"
-              color="neutral"
+              color="primary"
               variant="outline"
-              icon="i-lucide-image-up"
-              class="w-full justify-center"
-              :disabled="isLoading"
-              :loading="isLoading"
-              @click="$emit('reload_bg')"
+              size="sm"
+              icon="i-lucide-save"
+              :disabled="!modeChanged || savingMode"
+              :loading="savingMode"
+              @click="saveMode"
             >
-              {{ t('app.settings.reloadBg') }}
-            </UButton>
-
-            <UFormField
-              class="w-full"
-              v-if="bg_enable"
-              :label="t('app.settings.bgVisibility')"
-              :hint="`${Math.round(bgVisibilityModel * 100)}%`"
-            >
-              <USlider
-                v-model="bgVisibilityModel"
-                :min="0"
-                :max="0.5"
-                :step="0.01"
-                size="lg"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
-        </div>
-
-        <div class="ytp-card w-full">
-          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-monitor" class="size-4 text-toned" />
-              <span class="text-sm font-semibold text-highlighted">{{
-                t('common.downloads')
-              }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 sm:p-5 space-y-4">
-            <UFormField
-              v-if="!modeOn"
-              :label="t('app.settings.urlSeparator')"
-              class="w-full"
-              :ui="settingsFieldUi"
-            >
-              <USelect
-                v-model="separator"
-                :items="separatorItems"
-                value-key="value"
-                label-key="label"
-                size="lg"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-              />
-            </UFormField>
-
-            <USwitch
-              v-model="show_thumbnail"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="show_thumbnail ? t('common.shown') : t('common.hidden')"
-              :description="t('app.settings.thumbnailsDesc')"
-            />
-
-            <UFormField
-              v-if="show_thumbnail"
-              :label="t('app.settings.aspectRatio')"
-              class="w-full"
-              :ui="settingsFieldUi"
-            >
-              <USelect
-                v-model="thumbnail_ratio"
-                :items="thumbnailRatioItems"
-                value-key="value"
-                label-key="label"
-                size="lg"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-              />
-            </UFormField>
-
-            <USwitch
-              v-model="show_popover"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="show_popover ? t('common.enabled') : t('common.disabled')"
-              :description="t('app.settings.popoverDesc')"
-            />
-          </div>
-        </div>
-
-        <div class="ytp-card w-full">
-          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-download" class="size-4 text-toned" />
-              <span class="text-sm font-semibold text-highlighted">{{ t('common.queue') }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 sm:p-5 space-y-4">
-            <USwitch
-              v-model="queue_auto_refresh"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="queue_auto_refresh ? t('common.enabled') : t('common.disabled')"
-              :description="t('app.settings.autoRefreshDesc')"
-            />
-
-            <UFormField
-              class="w-full"
-              v-if="queue_auto_refresh"
-              :label="t('app.settings.autoRefreshInterval')"
-              :hint="`${queue_auto_refresh_delay / 1000}s`"
-              :ui="settingsFieldUi"
-            >
-              <USlider
-                v-model="queueRefreshDelayModel"
-                :min="5000"
-                :max="60000"
-                :step="5000"
-                size="lg"
-                class="w-full"
-              />
-              <p class="mt-2 text-sm text-toned">
-                {{ t('app.settings.autoRefreshHint') }}
-              </p>
-            </UFormField>
-          </div>
-        </div>
-
-        <div class="ytp-card w-full">
-          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-bell" class="size-4 text-toned" />
-              <span class="text-sm font-semibold text-highlighted">{{
-                t('common.notifications')
-              }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 sm:p-5 space-y-4">
-            <USwitch
-              v-model="allow_toasts"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="allow_toasts ? t('common.enabled') : t('common.disabled')"
-              :description="t('app.settings.notifyDesc')"
-            />
-
-            <UFormField
-              v-if="allow_toasts"
-              :label="t('app.settings.notifyTarget')"
-              class="w-full"
-              :ui="settingsFieldUi"
-            >
-              <USelect
-                v-model="toast_target"
-                :items="notificationTargetItems"
-                value-key="value"
-                label-key="label"
-                size="lg"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-                @update:model-value="() => void onNotificationTargetChange()"
-              />
-              <p class="mt-2 text-sm text-toned">
-                <template v-if="!isSecureContext">
-                  {{ t('app.settings.notifyHttpsRequired') }}
-                </template>
-                <template v-else>
-                  {{ t('app.settings.notifyChooseTarget') }}
-                </template>
-              </p>
-            </UFormField>
-
-            <UFormField
-              v-if="allow_toasts && toast_target === 'toast'"
-              :label="t('app.settings.notifyPosition')"
-              class="w-full"
-              :ui="settingsFieldUi"
-            >
-              <USelect
-                v-model="toast_position"
-                :items="toastPositionItems"
-                size="lg"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-              />
-            </UFormField>
-
-            <USwitch
-              v-if="allow_toasts && toast_target === 'toast'"
-              v-model="toast_dismiss_on_click"
-              class="w-full"
-              size="lg"
-              :ui="settingsSwitchUi"
-              :label="toast_dismiss_on_click ? t('common.enabled') : t('common.disabled')"
-              :description="t('app.settings.dismissOnClickDesc')"
-            />
-          </div>
-        </div>
-
-        <div class="ytp-card w-full">
-          <div class="p-4 sm:p-5 ytp-border-bottom-soft">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-shield-alert" class="size-4 text-toned" />
-              <span class="text-sm font-semibold text-highlighted">{{
-                t('app.settings.unsavedChanges')
-              }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 sm:p-5 space-y-4">
-            <p class="text-sm text-toned">{{ t('app.settings.unsavedChangesDesc') }}</p>
-            <div class="space-y-3">
-              <USwitch
-                v-for="item in dirtyCloseItems"
-                :key="item.key"
-                :model-value="true === dirtyCloseSkips[item.key]"
-                class="w-full"
-                size="lg"
-                :ui="settingsSwitchUi"
-                :label="item.label"
-                @update:model-value="(value) => setDirtyCloseSkip(item.key, value)"
-              />
-            </div>
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-rotate-ccw"
-              class="w-full justify-center"
-              :disabled="0 === Object.keys(dirtyCloseSkips).length"
-              @click="resetDirtyCloseSkips"
-            >
-              {{ t('app.settings.resetUnsavedChanges') }}
+              {{ t('app.settings.saveLayout') }}
             </UButton>
           </div>
-        </div>
+
+          <USwitch
+            v-model="page_anims"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.animationsDesc')"
+          />
+        </section>
+
+        <section class="space-y-4 py-6">
+          <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-palette" class="size-5 text-toned" aria-hidden="true" />
+            {{ t('app.settings.appearance') }}
+          </h2>
+
+          <UFormField :label="t('app.settings.theme')" class="w-full" :ui="settingsFieldUi">
+            <USelect
+              v-model="themePreference"
+              :items="themeItems"
+              value-key="value"
+              label-key="label"
+              size="md"
+              class="w-full"
+              :ui="{ base: 'w-full' }"
+            />
+          </UFormField>
+
+          <UFormField :label="t('common.language')" class="w-full" :ui="settingsFieldUi">
+            <USelect
+              :model-value="locale"
+              :items="localeItems"
+              value-key="code"
+              label-key="label"
+              size="md"
+              class="w-full"
+              :ui="{ base: 'w-full' }"
+              @update:model-value="(value: unknown) => void changeLocale(value as string)"
+            />
+          </UFormField>
+        </section>
+
+        <section class="space-y-4 py-6">
+          <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-image" class="size-5 text-toned" aria-hidden="true" />
+            {{ t('app.settings.background') }}
+          </h2>
+
+          <USwitch
+            v-model="bg_enable"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.bgDesc')"
+          />
+
+          <UFormField
+            class="w-full"
+            v-if="bg_enable"
+            :label="t('app.settings.bgVisibility')"
+            :hint="`${Math.round(bgVisibilityModel * 100)}%`"
+            :ui="settingsFieldUi"
+          >
+            <USlider
+              v-model="bgVisibilityModel"
+              :min="0"
+              :max="props.layout === 'simple' ? 1 : 0.5"
+              :step="0.01"
+              class="w-full"
+              :aria-label="t('app.settings.bgVisibility')"
+            />
+          </UFormField>
+          <UButton
+            v-if="bg_enable"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-image-up"
+            :disabled="isLoading"
+            :loading="isLoading"
+            @click="emitter('reload_bg')"
+          >
+            {{ t('app.settings.reloadBg') }}
+          </UButton>
+        </section>
+
+        <section class="space-y-4 py-6">
+          <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-monitor" class="size-5 text-toned" aria-hidden="true" />
+            {{ t('common.downloads') }}
+          </h2>
+
+          <UFormField
+            v-if="!modeOn"
+            :label="t('app.settings.urlSeparator')"
+            class="w-full"
+            :ui="settingsFieldUi"
+          >
+            <USelect
+              v-model="separator"
+              :items="separatorItems"
+              value-key="value"
+              label-key="label"
+              size="md"
+              class="w-full"
+              :ui="{ base: 'w-full' }"
+            />
+          </UFormField>
+
+          <USwitch
+            v-model="show_thumbnail"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.thumbnailsDesc')"
+          />
+
+          <UFormField
+            v-if="show_thumbnail"
+            :label="t('app.settings.aspectRatio')"
+            class="w-full"
+            :ui="settingsFieldUi"
+          >
+            <USelect
+              v-model="thumbnail_ratio"
+              :items="thumbnailRatioItems"
+              value-key="value"
+              label-key="label"
+              size="md"
+              class="w-full"
+              :ui="{ base: 'w-full' }"
+            />
+          </UFormField>
+
+          <USwitch
+            v-model="show_popover"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.popoverDesc')"
+          />
+        </section>
+
+        <section class="space-y-4 py-6">
+          <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-download" class="size-5 text-toned" aria-hidden="true" />
+            {{ t('common.queue') }}
+          </h2>
+
+          <USwitch
+            v-model="queue_auto_refresh"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.autoRefreshDesc')"
+          />
+
+          <UFormField
+            class="w-full"
+            v-if="queue_auto_refresh"
+            :label="t('app.settings.autoRefreshInterval')"
+            :hint="`${queue_auto_refresh_delay / 1000}s`"
+            :ui="settingsFieldUi"
+            :description="t('app.settings.autoRefreshHint')"
+          >
+            <USlider
+              v-model="queueRefreshDelayModel"
+              :min="5000"
+              :max="60000"
+              :step="5000"
+              class="w-full"
+              :aria-label="t('app.settings.autoRefreshInterval')"
+            />
+          </UFormField>
+        </section>
+
+        <section class="space-y-4 py-6">
+          <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-bell" class="size-5 text-toned" aria-hidden="true" />
+            {{ t('common.notifications') }}
+          </h2>
+
+          <USwitch
+            v-model="allow_toasts"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.notifyDesc')"
+          />
+
+          <UFormField
+            v-if="allow_toasts"
+            :label="t('app.settings.notifyTarget')"
+            class="w-full"
+            :ui="settingsFieldUi"
+            :description="
+              isSecureContext
+                ? t('app.settings.notifyChooseTarget')
+                : t('app.settings.notifyHttpsRequired')
+            "
+          >
+            <USelect
+              v-model="toast_target"
+              :items="notificationTargetItems"
+              value-key="value"
+              label-key="label"
+              size="md"
+              class="w-full"
+              :ui="{ base: 'w-full' }"
+              @update:model-value="() => void onNotificationTargetChange()"
+            />
+          </UFormField>
+
+          <UFormField
+            v-if="allow_toasts && toast_target === 'toast'"
+            :label="t('app.settings.notifyPosition')"
+            class="w-full"
+            :ui="settingsFieldUi"
+          >
+            <USelect
+              v-model="toast_position"
+              :items="toastPositionItems"
+              size="md"
+              class="w-full"
+              :ui="{ base: 'w-full' }"
+            />
+          </UFormField>
+
+          <USwitch
+            v-if="allow_toasts && toast_target === 'toast'"
+            v-model="toast_dismiss_on_click"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.dismissOnClickDesc')"
+          />
+        </section>
+
+        <section class="space-y-4 pt-6">
+          <h2 class="flex items-center gap-2 font-semibold text-highlighted">
+            <UIcon name="i-lucide-shield-alert" class="size-5 text-toned" aria-hidden="true" />
+            {{ t('app.settings.unsavedChanges') }}
+          </h2>
+
+          <p class="text-sm text-toned">{{ t('app.settings.unsavedChangesDesc') }}</p>
+          <div class="divide-y divide-default">
+            <USwitch
+              v-for="item in dirtyCloseItems"
+              :key="item.key"
+              :model-value="true === dirtyCloseSkips[item.key]"
+              class="w-full py-3"
+              color="neutral"
+              :ui="settingsSwitchUi"
+              :label="item.label"
+              @update:model-value="(value) => setDirtyCloseSkip(item.key, value)"
+            />
+          </div>
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-rotate-ccw"
+            :disabled="0 === Object.keys(dirtyCloseSkips).length"
+            @click="resetDirtyCloseSkips"
+          >
+            {{ t('app.settings.resetUnsavedChanges') }}
+          </UButton>
+        </section>
       </div>
     </template>
   </USlideover>
@@ -402,11 +344,13 @@ const props = withDefaults(
     isOpen?: boolean;
     direction?: 'left' | 'right';
     isLoading?: boolean;
+    layout?: 'regular' | 'simple';
   }>(),
   {
     isOpen: false,
     direction: 'right',
     isLoading: false,
+    layout: 'regular',
   },
 );
 
@@ -418,7 +362,8 @@ const color = useColorMode();
 type ThemeChoice = 'system' | 'light' | 'dark';
 
 const bg_enable = useStorage<boolean>('random_bg', true);
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
+const bg_opacity_v2 = useStorage<number>('random_bg_opacity_v2', 0.75);
+const simpleBgOpacity = useStorage<number>('random_bg_opacity_simple', 0.95);
 const allow_toasts = useStorage<boolean>('allow_toasts', true);
 const toast_position = useStorage<toastPosition>('toast_position', 'top-right');
 const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true);
@@ -480,17 +425,29 @@ const localeItems = computed(() =>
 const settingsFieldUi = {
   root: 'w-full',
   container: 'mt-2 w-full',
+  label: 'text-sm font-medium text-highlighted',
+  description: 'text-xs text-toned',
+  hint: 'font-mono text-xs text-toned',
 };
 
 const settingsSwitchUi = {
-  root: 'w-full items-start justify-between gap-4',
+  root: 'w-full flex-row-reverse items-start justify-between gap-3',
   wrapper: 'ms-0 flex-1 text-sm',
+  label: 'text-sm font-medium text-highlighted',
 };
 
 const bgVisibilityModel = computed<number>({
-  get: () => Number((1 - Number(bg_opacity.value)).toFixed(2)),
+  get: () => {
+    const opacity = props.layout === 'simple' ? simpleBgOpacity.value : bg_opacity_v2.value;
+    return Number((1 - Number(opacity)).toFixed(2));
+  },
   set: (value) => {
-    bg_opacity.value = Number((1 - Number(value)).toFixed(2));
+    const opacity = Number((1 - Number(value)).toFixed(2));
+    if (props.layout === 'simple') {
+      simpleBgOpacity.value = opacity;
+    } else {
+      bg_opacity_v2.value = opacity;
+    }
   },
 });
 

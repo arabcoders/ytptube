@@ -20,73 +20,47 @@
       class="sticky top-0 z-10 shadow-sm"
     />
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <div v-if="reference" class="md:col-span-2 flex justify-end">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          @click="
-            () => {
-              showImport = !showImport;
-            }
-          "
-        >
-          {{ showImport ? t('common.hideImport') : t('common.showImport') }}
-        </UButton>
-      </div>
+    <details :open="!reference" class="border-b border-default pb-5">
+      <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
+        {{ t('common.import') }}
+      </summary>
+      <UFormField
+        class="mt-4 w-full"
+        :ui="fieldUi"
+        :label="t('common.importString')"
+        :help="t('common.importStringDesc')"
+      >
+        <UFieldGroup size="lg" class="w-full">
+          <UInput
+            id="import_string"
+            v-model="importString"
+            dir="ltr"
+            type="text"
+            autocomplete="off"
+            class="min-w-0 flex-1"
+            :ui="inputUi"
+            :disabled="importInProgress"
+            @keydown.enter.prevent="() => void importItem()"
+          />
 
-      <template v-if="showImport || !reference">
-        <UFormField class="w-full md:col-span-2" :ui="fieldUi">
-          <template #label>
-            <div class="flex flex-wrap items-center gap-2">
-              <UIcon name="i-lucide-import" class="size-4 text-toned" />
-              <span class="font-semibold text-default">{{ t('common.importString') }}</span>
-            </div>
-          </template>
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-import"
+            class="justify-center"
+            :loading="importInProgress"
+            :disabled="!importString || importInProgress"
+            @click="() => void importItem()"
+          >
+            {{ t('common.import') }}
+          </UButton>
+        </UFieldGroup>
+      </UFormField>
+    </details>
 
-          <template #description>
-            <span>{{ t('common.importStringDesc') }}</span>
-          </template>
-
-          <UFieldGroup size="lg" class="w-full">
-            <UInput
-              id="import_string"
-              v-model="importString"
-              type="text"
-              autocomplete="off"
-              class="min-w-0 flex-1"
-              :ui="inputUi"
-              :disabled="importInProgress"
-              @keydown.enter.prevent="() => void importItem()"
-            />
-
-            <UButton
-              type="button"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-import"
-              class="justify-center sm:min-w-28"
-              :loading="importInProgress"
-              :disabled="!importString || importInProgress"
-              @click="() => void importItem()"
-            >
-              {{ t('common.import') }}
-            </UButton>
-          </UFieldGroup>
-        </UFormField>
-      </template>
-
-      <UFormField class="w-full md:col-span-2" :ui="fieldUi">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-type" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.name') }}</span>
-          </div>
-        </template>
-
+    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_auto]">
+      <UFormField class="min-w-0" :ui="fieldUi" :label="t('common.name')">
         <UInput
           id="name"
           v-model="form.name"
@@ -99,32 +73,7 @@
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-power" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.enabled') }}</span>
-          </div>
-        </template>
-
-        <div
-          class="flex min-h-11 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
-        >
-          <span class="text-sm text-default">{{
-            form.enabled ? t('common.yesLabel') : t('common.noLabel')
-          }}</span>
-          <USwitch v-model="form.enabled" :disabled="addInProgress" />
-        </div>
-      </UFormField>
-
-      <UFormField class="w-full" :ui="fieldUi">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.priority') }}</span>
-          </div>
-        </template>
-
+      <UFormField class="min-w-0" :ui="fieldUi" :label="t('common.priority')">
         <UInput
           id="priority"
           v-model.number="form.priority"
@@ -137,65 +86,83 @@
           :ui="inputUi"
         />
       </UFormField>
-    </div>
 
-    <div class="space-y-5 border-t border-default pt-5">
-      <UFormField class="w-full" :ui="fieldUi">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-filter" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.conditionFilter') }}</span>
-            <button
-              v-if="!addInProgress || form.filter"
-              type="button"
-              class="text-primary hover:underline"
-              @click="testData.show = true"
-            >
-              {{ t('common.testFilter') }}
-            </button>
-          </div>
-        </template>
-        <template #description>
-          <span v-html="t('common.filterSyntaxDesc')"></span>
-        </template>
+      <UFormField :ui="fieldUi" :label="t('common.enabled')">
+        <div class="flex min-h-11 items-center">
+          <USwitch
+            v-model="form.enabled"
+            :disabled="addInProgress"
+            :label="form.enabled ? t('common.yesLabel') : t('common.noLabel')"
+            :aria-label="t('common.enabled')"
+          />
+        </div>
+      </UFormField>
 
-        <UInput
-          id="filter"
-          dir="ltr"
-          v-model="form.filter"
-          type="text"
-          placeholder="availability = 'needs_auth' & channel_id = 'channel_id'"
-          size="lg"
+      <UFormField class="w-full sm:col-span-3" :ui="editorFieldUi" :label="t('common.description')">
+        <UTextarea
+          id="description"
+          v-model="form.description"
           :disabled="addInProgress"
+          :placeholder="t('common.conditionDescPlaceholder')"
+          :rows="3"
+          size="lg"
+          variant="outline"
+          color="neutral"
           class="w-full"
-          :ui="inputUi"
+          :ui="textareaUi"
         />
       </UFormField>
     </div>
 
     <div class="space-y-5 border-t border-default pt-5">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-          <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-          <span>{{ t('common.cliOptions') }}</span>
-        </div>
-        <p class="text-sm text-toned">
-          <button type="button" class="text-primary hover:underline" @click="showOptions = true">
-            {{ t('common.cliOptionsViewAll') }}
-          </button>
-          {{ t('common.cliOptionsDescPrefix') }}
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
-            class="text-primary hover:underline"
+      <UFormField class="w-full" :ui="fieldUi" :label="t('common.conditionFilter')">
+        <template #hint>
+          <UButton
+            v-if="!addInProgress || form.filter"
+            type="button"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-play"
+            @click="testData.show = true"
           >
-            {{ t('common.cliOptionsDescIgnored') }}</a
-          >.
-        </p>
-      </div>
+            {{ t('common.testFilter') }}
+          </UButton>
+        </template>
+        <template #description>
+          <span v-html="t('common.filterSyntaxDesc')"></span>
+        </template>
 
-      <UFormField class="w-full" :ui="editorFieldUi">
+        <UTextarea
+          id="filter"
+          dir="ltr"
+          v-model="form.filter"
+          placeholder="availability = 'needs_auth' & channel_id = 'channel_id'"
+          :rows="3"
+          size="lg"
+          :disabled="addInProgress"
+          class="w-full"
+          :ui="{ ...textareaUi, base: `${textareaUi.base} font-mono` }"
+        />
+      </UFormField>
+
+      <UFormField class="w-full" :ui="editorFieldUi" :label="t('common.cliOptions')">
+        <template #description>
+          <p class="text-sm text-toned">
+            <button type="button" class="text-primary hover:underline" @click="showOptions = true">
+              {{ t('common.cliOptionsViewAll') }}
+            </button>
+            {{ t('common.cliOptionsDescPrefix') }}
+            <a
+              target="_blank"
+              rel="noreferrer"
+              href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
+              class="text-primary hover:underline"
+            >
+              {{ t('common.cliOptionsDescIgnored') }}</a
+            >.
+          </p>
+        </template>
         <TextareaAutocomplete
           id="cli_options"
           v-model="form.cli"
@@ -205,224 +172,173 @@
       </UFormField>
     </div>
 
-    <div class="space-y-5 border-t border-default pt-5">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-          <UIcon name="i-lucide-list-plus" class="size-4 text-toned" />
-          <span>{{ t('common.extraOptions') }}</span>
-        </div>
-      </div>
+    <details
+      :open="Boolean(Object.keys(item.extras || {}).length)"
+      class="border-t border-default pt-5"
+    >
+      <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
+        {{ t('common.extraOptions') }}
+      </summary>
+      <div class="mt-4 space-y-4">
+        <div v-if="extrasEntries.length > 0" class="space-y-3">
+          <div
+            v-for="(entry, index) in extrasEntries"
+            :key="`${entry[0]}-${index}`"
+            class="grid gap-3 border-b border-default pb-4 md:grid-cols-[12rem_minmax(0,1fr)_auto]"
+          >
+            <UFormField :ui="fieldUi" :label="t('common.keyLabel')">
+              <USelect
+                :model-value="entry[0]"
+                :items="extraOptionItems"
+                value-key="value"
+                size="lg"
+                disabled
+                class="w-full"
+                :ui="inputUi"
+              />
+            </UFormField>
 
-      <div v-if="extrasEntries.length > 0" class="space-y-3">
-        <div
-          v-for="(entry, index) in extrasEntries"
-          :key="`${entry[0]}-${index}`"
-          class="grid gap-3 rounded-lg border border-default bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
-        >
-          <UFormField :ui="fieldUi">
-            <template #label>
-              <div class="flex flex-wrap items-center gap-2">
-                <UIcon name="i-lucide-key" class="size-4 text-toned" />
-                <span class="font-semibold text-default">{{ t('common.keyLabel') }}</span>
+            <UFormField :ui="fieldUi" :label="t('common.valueLabel')">
+              <div
+                v-if="booleanExtraKeys.includes(entry[0])"
+                class="flex h-10 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
+              >
+                <span class="text-sm text-default">{{
+                  entry[1] === true ? t('common.yesLabel') : t('common.noLabel')
+                }}</span>
+                <USwitch
+                  :model-value="entry[1] === true"
+                  :disabled="addInProgress"
+                  @update:model-value="(value) => updateExtraValue(entry[0], Boolean(value))"
+                />
               </div>
-            </template>
+              <UTextarea
+                v-else-if="entry[0] === 'set_cookies'"
+                :model-value="String(entry[1] ?? '')"
+                placeholder="value"
+                :disabled="addInProgress"
+                class="w-full"
+                :ui="textareaUi"
+                dir="ltr"
+                :rows="8"
+                @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
+              />
+              <UInput
+                v-else
+                :model-value="String(entry[1] ?? '')"
+                type="text"
+                placeholder="value"
+                size="lg"
+                :disabled="addInProgress"
+                class="w-full"
+                dir="ltr"
+                :ui="inputUi"
+                @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
+              />
+            </UFormField>
 
+            <div class="flex items-end">
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-trash"
+                :disabled="addInProgress"
+                @click="removeExtra(entry[0])"
+              >
+                {{ t('common.remove') }}
+              </UButton>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-3 md:grid-cols-[12rem_minmax(0,1fr)_auto]">
+          <UFormField :ui="fieldUi" :label="t('common.newKey')">
             <USelect
-              :model-value="entry[0]"
-              :items="extraOptionItems"
+              v-model="newExtraKey"
+              :items="extraOptionItems.filter((item) => form.extras[item.value] === undefined)"
               value-key="value"
+              :placeholder="t('common.selectOption')"
               size="lg"
-              disabled
+              :disabled="addInProgress"
               class="w-full"
               :ui="inputUi"
+              @update:model-value="(value) => selectNewExtra(String(value))"
             />
           </UFormField>
 
-          <UFormField :ui="fieldUi">
-            <template #label>
-              <div class="flex flex-wrap items-center gap-2">
-                <UIcon name="i-lucide-pen-line" class="size-4 text-toned" />
-                <span class="font-semibold text-default">{{ t('common.valueLabel') }}</span>
-              </div>
-            </template>
-
+          <UFormField :ui="fieldUi" :label="t('common.newValue')">
             <div
-              v-if="booleanExtraKeys.includes(entry[0])"
+              v-if="booleanExtraKeys.includes(newExtraKey)"
               class="flex h-10 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
             >
               <span class="text-sm text-default">{{
-                entry[1] === true ? t('common.yesLabel') : t('common.noLabel')
+                newExtraValue === 'true' ? t('common.yesLabel') : t('common.noLabel')
               }}</span>
               <USwitch
-                :model-value="entry[1] === true"
+                :model-value="newExtraValue === 'true'"
                 :disabled="addInProgress"
-                @update:model-value="(value) => updateExtraValue(entry[0], Boolean(value))"
+                @update:model-value="(value) => (newExtraValue = String(Boolean(value)))"
               />
             </div>
             <UTextarea
-              v-else-if="entry[0] === 'set_cookies'"
-              :model-value="String(entry[1] ?? '')"
+              v-else-if="newExtraKey.trim() === 'set_cookies'"
+              v-model="newExtraValue"
               placeholder="value"
               :disabled="addInProgress"
               class="w-full"
               :ui="textareaUi"
               dir="ltr"
               :rows="8"
-              @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
             />
             <UInput
               v-else
-              :model-value="String(entry[1] ?? '')"
+              v-model="newExtraValue"
               type="text"
-              placeholder="value"
+              placeholder="new_value"
               size="lg"
               :disabled="addInProgress"
               class="w-full"
-              dir="ltr"
               :ui="inputUi"
-              @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
+              dir="ltr"
+              @keyup.enter="addExtra"
             />
           </UFormField>
 
-          <div class="flex items-end">
+          <div class="flex items-end gap-2">
+            <UButton
+              v-if="newExtraKey"
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-rotate-ccw"
+              class="justify-center"
+              :disabled="addInProgress"
+              @click="
+                () => {
+                  newExtraKey = '';
+                  newExtraValue = '';
+                }
+              "
+            >
+              {{ t('common.reset') }}
+            </UButton>
+
             <UButton
               type="button"
               color="neutral"
               variant="outline"
-              icon="i-lucide-trash"
-              :disabled="addInProgress"
-              @click="removeExtra(entry[0])"
+              icon="i-lucide-plus"
+              class="justify-center"
+              :disabled="addInProgress || !newExtraKey || !newExtraValue"
+              @click="addExtra"
             >
-              {{ t('common.remove') }}
+              {{ t('common.add') }}
             </UButton>
           </div>
         </div>
       </div>
-
-      <div class="grid gap-3 ytp-card-padded md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-        <UFormField :ui="fieldUi">
-          <template #label>
-            <div class="flex flex-wrap items-center gap-2">
-              <UIcon name="i-lucide-key" class="size-4 text-toned" />
-              <span class="font-semibold text-default">{{ t('common.newKey') }}</span>
-            </div>
-          </template>
-
-          <USelect
-            v-model="newExtraKey"
-            :items="extraOptionItems.filter((item) => form.extras[item.value] === undefined)"
-            value-key="value"
-            :placeholder="t('common.selectOption')"
-            size="lg"
-            :disabled="addInProgress"
-            class="w-full"
-            :ui="inputUi"
-            @update:model-value="(value) => selectNewExtra(String(value))"
-          />
-        </UFormField>
-
-        <UFormField :ui="fieldUi">
-          <template #label>
-            <div class="flex flex-wrap items-center gap-2">
-              <UIcon name="i-lucide-pen-line" class="size-4 text-toned" />
-              <span class="font-semibold text-default">{{ t('common.newValue') }}</span>
-            </div>
-          </template>
-
-          <div
-            v-if="booleanExtraKeys.includes(newExtraKey)"
-            class="flex h-10 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
-          >
-            <span class="text-sm text-default">{{
-              newExtraValue === 'true' ? t('common.yesLabel') : t('common.noLabel')
-            }}</span>
-            <USwitch
-              :model-value="newExtraValue === 'true'"
-              :disabled="addInProgress"
-              @update:model-value="(value) => (newExtraValue = String(Boolean(value)))"
-            />
-          </div>
-          <UTextarea
-            v-else-if="newExtraKey.trim() === 'set_cookies'"
-            v-model="newExtraValue"
-            placeholder="value"
-            :disabled="addInProgress"
-            class="w-full"
-            :ui="textareaUi"
-            dir="ltr"
-            :rows="8"
-          />
-          <UInput
-            v-else
-            v-model="newExtraValue"
-            type="text"
-            placeholder="new_value"
-            size="lg"
-            :disabled="addInProgress"
-            class="w-full"
-            :ui="inputUi"
-            dir="ltr"
-            @keyup.enter="addExtra"
-          />
-        </UFormField>
-
-        <div class="flex items-end gap-2">
-          <UButton
-            v-if="newExtraKey"
-            type="button"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-rotate-ccw"
-            class="justify-center"
-            :disabled="addInProgress"
-            @click="
-              () => {
-                newExtraKey = '';
-                newExtraValue = '';
-              }
-            "
-          >
-            {{ t('common.reset') }}
-          </UButton>
-
-          <UButton
-            type="button"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-plus"
-            class="justify-center"
-            :disabled="addInProgress || !newExtraKey || !newExtraValue"
-            @click="addExtra"
-          >
-            {{ t('common.add') }}
-          </UButton>
-        </div>
-      </div>
-    </div>
-
-    <div class="space-y-4 border-t border-default pt-5">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-          <UIcon name="i-lucide-message-square-text" class="size-4 text-toned" />
-          <span>{{ t('common.description') }}</span>
-        </div>
-      </div>
-
-      <UFormField class="w-full" :ui="editorFieldUi">
-        <UTextarea
-          id="description"
-          v-model="form.description"
-          :disabled="addInProgress"
-          :placeholder="t('common.conditionDescPlaceholder')"
-          :rows="6"
-          size="lg"
-          variant="outline"
-          color="neutral"
-          class="w-full"
-          :ui="textareaUi"
-        />
-      </UFormField>
-    </div>
+    </details>
 
     <UModal
       v-if="testData.show"
@@ -468,16 +384,16 @@
               </div>
             </template>
 
-            <UInput
+            <UTextarea
               id="test_filter"
               dir="ltr"
               v-model="form.filter"
-              type="text"
               placeholder="availability = 'needs_auth' & channel_id = 'channel_id'"
+              :rows="3"
               size="lg"
               :disabled="testData.in_progress"
               class="w-full"
-              :ui="inputUi"
+              :ui="{ ...textareaUi, base: `${textareaUi.base} font-mono` }"
             />
           </UFormField>
 
@@ -553,7 +469,6 @@
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import { useConfirm } from '~/composables/useConfirm';
 import type { ImportedItem } from '~/types';
@@ -574,7 +489,6 @@ const props = defineProps<{
   addInProgress?: boolean;
 }>();
 
-const showImport = useStorage('showImport', false);
 const box = useConfirm();
 const config = useYtpConfig();
 
@@ -605,7 +519,6 @@ const dirtySource = computed(() => ({
   reference: props.reference ?? null,
   form: normalizeCondition(form),
   importString: importString.value,
-  showImport: showImport.value,
   newExtraKey: newExtraKey.value,
   newExtraValue: newExtraValue.value,
 }));
@@ -633,7 +546,7 @@ const inputUi = {
 
 const textareaUi = {
   root: 'w-full',
-  base: 'min-h-[9rem] w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
 };
 
 watch(
@@ -885,7 +798,6 @@ const importItem = async (): Promise<void> => {
 
     Object.assign(form, normalizeCondition(item));
     importString.value = '';
-    showImport.value = false;
     action.clear();
   } catch (error) {
     action.setError(

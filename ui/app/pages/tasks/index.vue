@@ -1,23 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
-
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
+    <PageHeader v-bind="pageShell">
+      <template #actions>
         <UButton
           v-if="tasks.length > 0"
           color="neutral"
@@ -30,8 +14,8 @@
         </UButton>
 
         <UButton
-          color="neutral"
-          variant="outline"
+          color="primary"
+          variant="solid"
           size="sm"
           icon="i-lucide-plus"
           @click="openCreateForm"
@@ -63,19 +47,19 @@
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <div
       v-if="!isLoading && filteredTasks.length > 0"
-      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
+      class="flex flex-wrap items-center justify-between gap-3"
     >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
           color="neutral"
           variant="outline"
           size="sm"
-          :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+          :icon="allSelected ? 'i-lucide-square-check-big' : 'i-lucide-square'"
           @click="toggleMasterSelection"
         >
           {{ allSelected ? t('common.unselect') : t('common.select') }}
@@ -113,281 +97,249 @@
 
     <div
       v-if="filteredTasks.length > 0"
-      class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+      :aria-label="pageShell.pageLabel"
+      :aria-busy="isLoading"
+      class="ytp-card divide-y divide-default"
     >
-      <div v-for="item in filteredTasks" :key="item.id" class="min-w-0 w-full max-w-full">
-        <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
-          <div class="p-4 pb-3 ytp-border-bottom-soft">
+      <article
+        v-for="item in filteredTasks"
+        :key="item.id"
+        :aria-labelledby="`task-title-${item.id}`"
+        class="min-w-0 w-full max-w-full"
+      >
+        <div class="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.5fr)_auto]">
+          <div class="min-w-0">
             <div class="flex min-w-0 items-start justify-between gap-3">
               <div class="min-w-0 flex-1 space-y-2">
-                <div class="flex items-start gap-2">
-                  <NuxtLink
-                    target="_blank"
-                    :href="item.url"
-                    class="mt-0.5 shrink-0 text-toned transition hover:text-highlighted"
-                    :aria-label="t('tasks.openSourceUrl')"
-                  >
-                    <UIcon name="i-lucide-external-link" class="size-4" />
-                  </NuxtLink>
-                  <UTooltip :text="remove_tags(item.name)">
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <h2 :id="`task-title-${item.id}`" class="min-w-0 text-base font-semibold">
                     <NuxtLink
                       :to="item.id ? `/tasks/${item.id}` : '/tasks'"
-                      class="block min-w-0 flex-1 truncate text-start text-sm font-semibold text-highlighted hover:underline"
-                      :aria-label="t('common.details')"
+                      class="wrap-anywhere text-highlighted hover:text-primary hover:underline"
+                      :aria-label="`${t('common.details')}: ${remove_tags(item.name)}`"
                     >
                       {{ remove_tags(item.name) }}
                     </NuxtLink>
+                  </h2>
+                  <UTooltip :text="item.url">
+                    <a
+                      :href="item.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex shrink-0 items-center text-toned hover:text-primary"
+                      :aria-label="`${t('tasks.openSourceUrl')}: ${remove_tags(item.name)}`"
+                    >
+                      <UIcon name="i-lucide-external-link" class="size-3.5" aria-hidden="true" />
+                    </a>
                   </UTooltip>
-
-                  <UIcon
-                    v-if="item.id && isTaskInProgress(item.id)"
-                    name="i-lucide-loader-circle"
-                    class="mt-0.5 size-4 shrink-0 animate-spin text-info"
-                  />
-                </div>
-
-                <div
-                  v-if="get_tags(item.name).length > 0"
-                  class="flex flex-wrap items-center gap-1"
-                >
                   <UBadge
-                    v-for="tag in get_tags(item.name)"
-                    :key="`${item.id}-${tag}`"
+                    v-if="item.id && isTaskInProgress(item.id)"
                     color="info"
                     variant="soft"
                     size="sm"
+                    icon="i-lucide-loader-circle"
+                    :ui="{ leadingIcon: 'animate-spin' }"
+                    role="status"
+                  >
+                    {{ t('tasks.inProgress') }}
+                  </UBadge>
+                </div>
+
+                <div v-if="get_tags(item.name).length > 0" class="flex flex-wrap gap-1">
+                  <UBadge
+                    v-for="tag in get_tags(item.name)"
+                    :key="`${item.id}-${tag}`"
+                    color="neutral"
+                    variant="soft"
+                    size="xs"
                   >
                     {{ tag }}
                   </UBadge>
                 </div>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-toned">
+                  <UButton
+                    type="button"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    class="text-start"
+                    :aria-pressed="item.enabled !== false"
+                    :aria-label="`${t('common.enabled')}: ${remove_tags(item.name)}`"
+                    @click="() => void toggleFlag(item, 'enabled')"
+                  >
+                    <UIcon
+                      name="i-lucide-power"
+                      class="size-3.5"
+                      :class="item.enabled !== false ? 'text-success' : 'text-error'"
+                      aria-hidden="true"
+                    />
+                    {{ item.enabled !== false ? t('common.enabled') : t('common.disabled') }}
+                  </UButton>
+                  <UButton
+                    type="button"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    :aria-pressed="item.auto_start"
+                    @click="() => void toggleFlag(item, 'auto_start')"
+                  >
+                    <UIcon name="i-lucide-circle-play" class="size-3.5" aria-hidden="true" />
+                    {{ item.auto_start ? t('tasks.autoStartYes') : t('tasks.autoStartNo') }}
+                  </UButton>
+                  <UButton
+                    type="button"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    :aria-pressed="item.handler_enabled !== false"
+                    @click="() => void toggleFlag(item, 'handler_enabled')"
+                  >
+                    <UIcon name="i-lucide-rss" class="size-3.5" aria-hidden="true" />
+                    {{
+                      item.handler_enabled !== false ? t('tasks.handlerOn') : t('tasks.handlerOff')
+                    }}
+                  </UButton>
+                </div>
               </div>
-
               <div class="flex shrink-0 items-center gap-2">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-lucide-file-up"
-                  square
-                  @click="() => void exportItem(item)"
-                >
-                  <span>{{ t('common.exportItem') }}</span>
-                </UButton>
-                <label class="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    v-model="selectedElms"
-                    class="completed-checkbox size-4 rounded border-default"
-                    type="checkbox"
-                    :value="item.id"
-                  />
-                </label>
+                <UCheckbox
+                  color="primary"
+                  :model-value="item.id !== undefined && selectedElms.includes(item.id)"
+                  :disabled="item.id === undefined"
+                  :aria-label="`${t('common.select')}: ${remove_tags(item.name)}`"
+                  @update:model-value="selectedElms = setSelected(selectedElms, item.id, $event)"
+                />
               </div>
             </div>
           </div>
 
-          <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div class="space-y-2 text-sm text-default">
-              <div class="grid grid-cols-2 gap-2 text-xs text-toned sm:flex sm:flex-wrap">
-                <button
-                  type="button"
-                  class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
-                  @click="() => void toggleFlag(item, 'enabled')"
-                >
-                  <UIcon
-                    name="i-lucide-power"
-                    class="size-3.5"
-                    :class="item.enabled !== false ? 'text-success' : 'text-error'"
-                  />
-                  <span>{{
-                    item.enabled !== false ? t('common.enabled') : t('common.disabled')
+          <div class="min-w-0 space-y-4">
+            <dl
+              class="grid min-w-0 gap-x-8 gap-y-3 text-sm sm:grid-cols-2"
+              :class="{ 'lg:grid-cols-3': item.timer }"
+            >
+              <div class="min-w-0 space-y-1">
+                <dt class="flex items-center gap-1.5 text-xs text-muted">
+                  <UIcon name="i-lucide-clock-3" class="size-3.5 shrink-0" aria-hidden="true" />
+                  {{ item.timer ? t('tasks.nextRun') : t('tasks.schedule') }}
+                </dt>
+                <dd class="wrap-anywhere">
+                  <span v-if="item.enabled === false" class="text-toned">{{
+                    t('common.disabled')
                   }}</span>
-                </button>
-
-                <button
-                  type="button"
-                  class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
-                  @click="() => void toggleFlag(item, 'auto_start')"
-                >
-                  <UIcon
-                    name="i-lucide-circle-play"
-                    class="size-3.5"
-                    :class="item.auto_start ? 'text-success' : 'text-error'"
-                  />
-                  <span>{{
-                    item.auto_start ? t('tasks.autoStartYes') : t('tasks.autoStartNo')
-                  }}</span>
-                </button>
-
-                <button
-                  type="button"
-                  class="flex min-w-0 w-full items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default sm:w-auto sm:flex-none sm:shrink-0 sm:whitespace-nowrap"
-                  @click="() => void toggleFlag(item, 'handler_enabled')"
-                >
-                  <UIcon
-                    name="i-lucide-rss"
-                    class="size-3.5"
-                    :class="item.handler_enabled !== false ? 'text-success' : 'text-error'"
-                  />
-                  <span>{{
-                    item.handler_enabled !== false ? t('tasks.handlerOn') : t('tasks.handlerOff')
-                  }}</span>
-                </button>
-
-                <button
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-1 rounded-md border border-default px-2 py-1 text-start transition hover:border-primary hover:text-default sm:flex-1"
-                  @click="toggleExpand(item.id, 'preset')"
-                >
-                  <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                  <span class="min-w-0 flex-1">
-                    <span :class="['min-w-0', expandClass(item.id, 'preset')]">
-                      {{ t('common.presetLabel') }}: {{ item.preset ?? config.app.default_preset }}
-                    </span>
+                  <a
+                    v-else-if="item.timer"
+                    :href="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-primary hover:underline underline-offset-2"
+                    :title="item.timer"
+                  >
+                    {{ tryParse(item.timer) }}
+                  </a>
+                  <span v-else :class="willTaskBeProcessed(item) ? 'text-default' : 'text-error'">
+                    {{
+                      willTaskBeProcessed(item) ? t('tasks.handlerOnly') : t('tasks.notConfigured')
+                    }}
                   </span>
-                </button>
+                </dd>
               </div>
-
-              <div
-                v-if="
-                  item.timer ||
-                  item.folder ||
-                  item.template ||
-                  item.cli ||
-                  willTaskBeProcessed(item)
-                "
-                class="feature-meta-grid"
-              >
-                <button
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                  @click="toggleExpand(item.id, 'schedule')"
-                >
+              <div class="min-w-0 space-y-1">
+                <dt class="flex items-center gap-1.5 text-xs text-muted">
                   <UIcon
-                    :name="
-                      item.timer
-                        ? 'i-lucide-clock-3'
-                        : willTaskBeProcessed(item)
-                          ? 'i-lucide-rss'
-                          : 'i-lucide-triangle-alert'
-                    "
-                    class="mt-0.5 size-4 shrink-0"
-                    :class="!item.timer && !willTaskBeProcessed(item) ? 'text-error' : 'text-toned'"
+                    name="i-lucide-sliders-horizontal"
+                    class="size-3.5 shrink-0"
+                    aria-hidden="true"
                   />
-
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">{{ t('tasks.schedule') }}</div>
-                    <template v-if="item.timer">
-                      <a
-                        target="_blank"
-                        :href="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`"
-                        class="block text-highlighted hover:underline"
-                        @click.stop
-                      >
-                        <span :class="['block', expandClass(item.id, 'schedule')]" dir="ltr">
-                          {{ item.timer }} ( {{ tryParse(item.timer) }} )
-                        </span>
-                      </a>
-                    </template>
-
-                    <p
-                      v-else-if="willTaskBeProcessed(item)"
-                      :class="['text-sm text-default', expandClass(item.id, 'schedule')]"
-                    >
-                      {{ t('tasks.handlerOnly') }}
-                    </p>
-                    <p v-else :class="['text-sm text-error', expandClass(item.id, 'schedule')]">
-                      {{ t('tasks.notConfigured') }}
-                    </p>
-                  </div>
-                </button>
-
-                <button
-                  v-if="item.folder"
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                  @click="toggleExpand(item.id, 'folder')"
-                >
-                  <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">{{ t('common.downloadPath') }}</div>
-                    <span :class="['block', expandClass(item.id, 'folder')]" dir="ltr">
-                      {{ calcPath(item.folder) }}
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  v-if="item.template"
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                  @click="toggleExpand(item.id, 'template')"
-                >
-                  <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">
-                      {{ t('common.outputTemplate') }}
-                    </div>
-                    <span :class="['block', expandClass(item.id, 'template')]" dir="ltr">{{
-                      item.template
-                    }}</span>
-                  </div>
-                </button>
-
-                <button
-                  v-if="item.cli"
-                  type="button"
-                  class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
-                  @click="toggleExpand(item.id, 'cli')"
-                >
-                  <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-medium text-toned">{{ t('common.cliOptions') }}</div>
-                    <span :class="['block', expandClass(item.id, 'cli')]" dir="ltr">{{
-                      item.cli
-                    }}</span>
-                  </div>
-                </button>
+                  {{ t('common.presetLabel') }}
+                </dt>
+                <dd class="wrap-anywhere">{{ item.preset ?? config.app.default_preset }}</dd>
               </div>
-            </div>
+              <div v-if="item.timer" class="min-w-0 space-y-1">
+                <dt class="flex items-center gap-1.5 text-xs text-muted">
+                  <UIcon name="i-lucide-clock-3" class="size-3.5 shrink-0" aria-hidden="true" />
+                  {{ t('tasks.timer') }}
+                </dt>
+                <dd class="min-w-0">
+                  <a
+                    :href="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="wrap-anywhere font-mono text-primary hover:underline"
+                    dir="ltr"
+                    >{{ item.timer }}</a
+                  >
+                </dd>
+              </div>
+            </dl>
+
+            <dl v-if="item.folder || item.template || item.cli" class="min-w-0 space-y-3 text-sm">
+              <div v-if="item.folder" class="space-y-1">
+                <dt class="flex items-center gap-1.5 text-xs text-muted">
+                  <UIcon
+                    name="i-lucide-folder-output"
+                    class="size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  {{ t('common.downloadPath') }}
+                </dt>
+                <dd class="wrap-anywhere whitespace-pre-wrap font-mono text-xs" dir="ltr">
+                  {{ calcPath(item.folder) }}
+                </dd>
+              </div>
+              <div v-if="item.template" class="space-y-1">
+                <dt class="flex items-center gap-1.5 text-xs text-muted">
+                  <UIcon name="i-lucide-file-code-2" class="size-3.5 shrink-0" aria-hidden="true" />
+                  {{ t('common.outputTemplate') }}
+                </dt>
+                <dd class="wrap-anywhere whitespace-pre-wrap font-mono text-xs" dir="ltr">
+                  {{ item.template }}
+                </dd>
+              </div>
+              <div v-if="item.cli" class="space-y-1">
+                <dt class="flex items-center gap-1.5 text-xs text-muted">
+                  <UIcon name="i-lucide-terminal" class="size-3.5 shrink-0" aria-hidden="true" />
+                  {{ t('common.cliOptions') }}
+                </dt>
+                <dd class="wrap-anywhere whitespace-pre-wrap font-mono text-xs" dir="ltr">
+                  {{ item.cli }}
+                </dd>
+              </div>
+            </dl>
           </div>
-
-          <div class="ytp-border-top-soft px-4 py-4">
-            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-pencil"
-                class="w-full justify-center"
-                @click="editItem(item)"
-              >
-                {{ t('common.edit') }}
-              </UButton>
-
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-trash"
-                class="w-full justify-center"
-                @click="() => void deleteItem(item)"
-              >
-                {{ t('common.delete') }}
-              </UButton>
-
-              <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
+          <div class="flex justify-end self-start">
+            <div class="flex shrink-0 items-center gap-1.5">
+              <UTooltip :text="t('common.edit')">
                 <UButton
                   color="neutral"
                   variant="outline"
-                  icon="i-lucide-settings-2"
-                  trailing-icon="i-lucide-chevron-down"
-                  class="w-full justify-center"
+                  size="sm"
+                  icon="i-lucide-pencil"
+                  :aria-label="t('common.editTitle', { name: remove_tags(item.name) })"
+                  @click="editItem(item)"
                 >
-                  {{ t('common.actions') }}
+                  <span class="hidden sm:inline">{{ t('common.edit') }}</span>
                 </UButton>
+              </UTooltip>
+
+              <UDropdownMenu
+                :items="itemActionGroups(item)"
+                :modal="false"
+                :content="{ align: 'end' }"
+              >
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  icon="i-lucide-ellipsis"
+                  square
+                  :aria-label="`${t('common.actions')}: ${remove_tags(item.name)}`"
+                />
               </UDropdownMenu>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </div>
 
     <UAlert
@@ -396,25 +348,25 @@
       variant="soft"
       icon="i-lucide-loader-circle"
       :title="t('common.loading')"
-      :description="t('common.loadingData')"
+      :ui="{ icon: 'animate-spin' }"
     />
 
-    <div v-else-if="query && filteredTasks.length < 1" class="space-y-3">
-      <UAlert
-        color="warning"
-        variant="soft"
-        icon="i-lucide-search"
-        :title="t('common.noResults')"
-        :description="t('common.noResultsFor', { query })"
-      />
-    </div>
+    <UEmpty
+      v-else-if="query && filteredTasks.length < 1"
+      variant="naked"
+      size="sm"
+      icon="i-lucide-search"
+      :title="t('common.noResults')"
+      :description="t('common.noResultsFor', { query })"
+    />
 
     <UEmpty
       v-else-if="!query && tasks.length < 1"
       icon="i-lucide-calendar-clock"
       :title="t('common.noItems')"
       :description="t('common.empty')"
-      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+      variant="naked"
+      size="sm"
     />
 
     <div v-if="filteredTasks.length > 0 && paging?.total_pages > 1" class="flex justify-end">
@@ -430,22 +382,20 @@
       />
     </div>
 
-    <UAlert v-if="tasks.length > 0" color="info" variant="soft">
-      <template #description>
-        <ul class="list-disc space-y-2 ps-5 text-sm text-default">
-          <li>
-            <strong>{{ t('tasks.notesTitle') }}</strong>
-          </li>
-          <li>
-            <span class="text-error" v-html="t('tasks.noteArchive')" />
-          </li>
-          <li v-html="t('tasks.noteArchiveAll')" />
-          <li v-html="t('tasks.noteCron')" />
-          <li v-html="t('tasks.noteMetadata', { path: config.app.download_path })" />
-          <li v-html="t('tasks.noteYoutubeRss')" />
-        </ul>
-      </template>
-    </UAlert>
+    <details v-if="tasks.length > 0" class="text-sm">
+      <summary class="w-fit cursor-pointer font-medium text-toned">
+        {{ t('common.usageNotes') }}
+      </summary>
+      <ul class="mt-3 list-disc space-y-2 ps-5 text-sm text-toned">
+        <li>
+          <span class="text-error" v-html="t('tasks.noteArchive')" />
+        </li>
+        <li v-html="t('tasks.noteArchiveAll')" />
+        <li v-html="t('tasks.noteCron')" />
+        <li v-html="t('tasks.noteMetadata', { path: config.app.download_path })" />
+        <li v-html="t('tasks.noteYoutubeRss')" />
+      </ul>
+    </details>
 
     <UModal
       v-if="toggleForm"
@@ -595,10 +545,10 @@
 </template>
 
 <script setup lang="ts">
+import { setSelected } from '~/utils/selection';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { CronExpressionParser } from 'cron-parser';
 import { useConfirm } from '~/composables/useConfirm';
-import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useTasks } from '~/composables/useTasks';
 import type TaskInspect from '~/components/TaskInspect.vue';
 import type { ExportedTask, Task, TaskScheduleDraft } from '~/types/tasks';
@@ -621,7 +571,6 @@ const route = useRoute();
 const router = useRouter();
 const { confirmDialog } = useDialog();
 const sessionCache = useSessionCache();
-const { toggleExpand, expandClass } = useExpandableMeta();
 
 const tasksComposable = useTasks();
 const submission = useFormSubmit();
@@ -1335,6 +1284,14 @@ const itemActionGroups = (item: Task): DropdownMenuItem[][] => [
       label: t('common.exportItem'),
       icon: 'i-lucide-file-up',
       onSelect: () => void exportItem(item),
+    },
+  ],
+  [
+    {
+      label: t('common.delete'),
+      icon: 'i-lucide-trash',
+      color: 'error',
+      onSelect: () => void deleteItem(item),
     },
   ],
 ];

@@ -11,7 +11,6 @@
     "loginHeading": "Bon retour",
     "loginSubtitle": "Connectez-vous pour continuer sur YTPTube.",
     "loginAction": "Se connecter",
-    "oidcLogin": "Se connecter avec OIDC",
     "forgotPassword": "Mot de passe oublié ?",
     "recoveryGuidance": "La récupération du mot de passe nécessite un accès local à l’installation YTPTube. Utilisez la commande indiquée dans la FAQ.",
     "recoveryInstructions": "Ouvrir les instructions de réinitialisation",
@@ -390,6 +389,7 @@
     "warning": "Avertissement",
     "handleWarningDesc": "Vous utilisez un lien YouTube avec <code>{'@'}handle</code> au lieu de <code>channel_id</code>. Pour activer la prise en charge du flux RSS pour l'URL, cliquez sur le lien <b>Convertir l'URL</b>.",
     "information": "Information",
+    "usageNotes": "Notes d’utilisation",
     "rssWarningDesc": "Vous utilisez une URL de flux RSS/Atom générique. Le gestionnaire de tâches téléchargera automatiquement les nouveaux éléments trouvés dans ce flux.",
     "multipleUrls": "URL multiples",
     "multipleUrlsDesc1": "La première URL utilise le nom fourni ci-dessus avec tous les paramètres.",
@@ -836,7 +836,6 @@
       "subtitle": "Activité et erreurs récentes.",
       "unread": "{count} non lue | {count} non lues",
       "noNotifications": "Aucune notification",
-      "noNotificationsDesc": "Vous n'avez pas encore de notifications stockées.",
       "markAllRead": "Tout marquer comme lu",
       "clearAll": "Tout effacer",
       "copied": "Copié !"
@@ -1018,6 +1017,8 @@
     "handlerOnly": "Gestionnaire uniquement",
     "openSourceUrl": "Ouvrir l'URL source",
     "schedule": "Planification",
+    "nextRun": "Prochaine exécution planifiée",
+    "inProgress": "En cours",
     "schedulePlaylistOnly": "Seules les URL de playlists ou de chaînes peuvent être planifiées.",
     "runTasksConfirm": "Exécuter les tâches suivantes ?",
     "archiveAllConfirm": "Marquer tous les éléments de « {name} » comme téléchargés dans l'archive de téléchargement ?",
@@ -1245,7 +1246,11 @@
   },
   "changelog": {
     "description": "Dernières modifications du projet",
-    "filterPlaceholder": "Filtrer les entrées du journal",
+    "filterPlaceholder": "Version, modification, auteur ou commit",
+    "search": "Rechercher dans le journal des modifications",
+    "latestOnly": "Versions récentes uniquement",
+    "latestCount": "Les {count} dernières versions",
+    "noCommits": "Aucun commit",
     "releaseDateValue": "Date de publication : {date}",
     "installed": "Installé",
     "commits": "{count} commits",
@@ -1277,6 +1282,11 @@
   },
   "docs": {
     "notFound": "Documentation introuvable",
+    "groups": {
+      "start": "Commencer ici",
+      "guides": "Guides",
+      "reference": "Référence"
+    },
     "entries": {
       "index": {
         "title": "Documentation",

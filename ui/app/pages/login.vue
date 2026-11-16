@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <UAlert
       v-if="error"
       color="error"
@@ -9,57 +9,78 @@
       :description="error"
       data-testid="auth-error"
     />
-    <form class="space-y-5" @submit.prevent="submit">
-      <UFormField :label="t('auth.username')" name="username" required>
-        <UInput
-          id="login-username"
-          v-model="username"
-          class="w-full"
-          :placeholder="t('auth.username')"
-          icon="i-lucide-user"
-          autocomplete="username"
-          autofocus
-        />
-      </UFormField>
-      <UFormField :label="t('auth.password')" name="password" required>
-        <UInput
-          id="login-password"
-          v-model="password"
-          class="w-full"
-          :type="showPassword ? 'text' : 'password'"
-          :placeholder="t('auth.password')"
-          icon="i-lucide-lock-keyhole"
-          autocomplete="current-password"
+    <form method="post" @submit.prevent="submit">
+      <fieldset class="space-y-5" :disabled="busy">
+        <UFormField :label="t('auth.username')" name="username" required>
+          <UInput
+            id="login-username"
+            name="username"
+            v-model="username"
+            class="w-full"
+            :placeholder="t('auth.username')"
+            icon="i-lucide-user"
+            autocomplete="username"
+            required
+            autofocus
+          />
+        </UFormField>
+        <UFormField :label="t('auth.password')" name="password" required>
+          <UInput
+            id="login-password"
+            name="password"
+            v-model="password"
+            class="w-full"
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="t('auth.password')"
+            icon="i-lucide-lock-keyhole"
+            autocomplete="current-password"
+            required
+          >
+            <template #trailing>
+              <UButton
+                type="button"
+                color="neutral"
+                variant="ghost"
+                square
+                size="xs"
+                :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              />
+            </template>
+          </UInput>
+        </UFormField>
+        <div
+          class="grid gap-3"
+          :class="auth.status.value?.oidc_available ? 'sm:grid-cols-2' : 'grid-cols-1'"
         >
-          <template #trailing>
-            <UButton
-              type="button"
-              color="neutral"
-              variant="ghost"
-              square
-              size="xs"
-              :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-              :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
-              @click="showPassword = !showPassword"
-            />
-          </template>
-        </UInput>
-      </UFormField>
-      <UButton type="submit" color="primary" block icon="i-lucide-log-in" :loading="busy">
-        {{ t('auth.loginAction') }}
-      </UButton>
+          <UButton type="submit" color="primary" block icon="i-lucide-log-in" :loading="busy">
+            {{ t('auth.loginAction') }}
+          </UButton>
+          <UButton
+            v-if="auth.status.value?.oidc_available"
+            type="button"
+            color="neutral"
+            variant="outline"
+            block
+            icon="i-lucide-key-round"
+            :disabled="busy"
+            @click="oidcLogin"
+          >
+            SSO
+          </UButton>
+        </div>
+      </fieldset>
     </form>
     <UButton
-      v-if="auth.status?.value?.oidc_available"
       type="button"
-      @click="oidcLogin"
-      variant="outline"
+      variant="link"
+      color="neutral"
       block
-      icon="i-lucide-key-round"
+      :disabled="busy"
+      @click="recoveryOpen = true"
     >
-      {{ t('auth.oidcLogin') }}
-    </UButton>
-    <UButton variant="link" color="neutral" class="w-full" @click="recoveryOpen = true">
       {{ t('auth.forgotPassword') }}
     </UButton>
 

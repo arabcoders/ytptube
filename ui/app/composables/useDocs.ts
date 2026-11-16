@@ -151,6 +151,26 @@ const getDocsEntryBySlug = (slug?: string | string[]): DocsEntry | undefined => 
   return DOCS_ENTRIES.find((entry) => entry.slug.join('/') === key);
 };
 
+const getDocsGroups = () =>
+  [
+    { id: 'start', ids: ['docs-readme', 'docs-features'] },
+    {
+      id: 'guides',
+      ids: [
+        'docs-native-builds',
+        'docs-authentication',
+        'docs-media-handlers',
+        'docs-task-definitions',
+        'docs-faq',
+      ],
+    },
+    { id: 'reference', ids: ['docs-api', 'docs-security'] },
+  ].map((group) => ({
+    id: group.id,
+    title: `docs.groups.${group.id}`,
+    entries: group.ids.flatMap((id) => DOCS_ENTRIES.filter((entry) => entry.id === id)),
+  }));
+
 const getSourcePath = (source?: string): string =>
   source?.replace(/^\/api\/docs\//, '').replace(/^\//, '') || 'README.md';
 
@@ -214,4 +234,4 @@ const resolveDocsImageSrc = (href: string, source?: string): string => {
   return DOCS_ASSETS.includes(asset as (typeof DOCS_ASSETS)[number]) ? `/api/docs/${asset}` : href;
 };
 
-export { DOCS_ENTRIES, getDocsEntryBySlug, resolveDocsImageSrc, resolveDocsLink };
+export { DOCS_ENTRIES, getDocsEntryBySlug, getDocsGroups, resolveDocsImageSrc, resolveDocsLink };

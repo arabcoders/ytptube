@@ -1,11 +1,12 @@
 <template>
   <UApp :toaster="toaster" :locale="uiLocale" :dir="direction">
-    <slot :openSettings="open" :reloadBg="loadBg" :bgLoading="bgLoading" />
+    <slot :openSettings="open" :reloadBg="loadBg" :bgLoading="bgLoading" :bgSrc="bgOn ? bg : ''" />
 
     <SettingsPanel
       :isOpen="settings"
       :isLoading="bgLoading"
       :direction="slideoverSide"
+      :layout="mode"
       @close="settings = false"
       @reload_bg="loadBg(true)"
     />
@@ -43,12 +44,14 @@ const emit = defineEmits<{ ready: [] }>();
 const cfg = useYtpConfig();
 const sock = useAppSocket();
 const bgOn = useStorage<boolean>('random_bg', true);
-const bgOpacity = useStorage<number>('random_bg_opacity', 0.95);
+const bgOpacity = useStorage<number>('random_bg_opacity_v2', 0.75);
+const simpleBgOpacity = useStorage<number>('random_bg_opacity_simple', 0.95);
 const anim = useStorage<boolean>('page_anims', true);
 const toastPos = useStorage<toastPosition>('toast_position', 'top-right');
 const settings = ref(false);
 const bg = ref('');
 const bgLoading = ref(false);
+let disposed = false;
 
 const toaster = computed(() => ({
   position: toastPos.value,
@@ -70,13 +73,24 @@ const clearBg = (): void => {
   const body = document.querySelector('body');
 
   html.classList.remove('bg-fanart');
-  html.removeAttribute('style');
-  body?.removeAttribute('style');
+  for (const name of [
+    'background-color',
+    'display',
+    'min-height',
+    'min-width',
+    'background-image',
+  ]) {
+    html.style.removeProperty(name);
+  }
+  body?.style.removeProperty('opacity');
+  if (bg.value) {
+    URL.revokeObjectURL(bg.value);
+  }
   bg.value = '';
 };
 
 const loadBg = async (force = false): Promise<void> => {
-  if (bgLoading.value) {
+  if (disposed || !bgOn.value || bgLoading.value) {
     return;
   }
 
@@ -84,7 +98,14 @@ const loadBg = async (force = false): Promise<void> => {
     bgLoading.value = true;
     const resp = await request(`/api/random/background${force ? '?force=true' : ''}`);
     if (resp.status === 200) {
-      bg.value = URL.createObjectURL(await resp.blob());
+      const image = await resp.blob();
+      if (disposed || !bgOn.value) {
+        return;
+      }
+      if (bg.value) {
+        URL.revokeObjectURL(bg.value);
+      }
+      bg.value = URL.createObjectURL(image);
     }
   } catch (e) {
     console.error(e);
@@ -117,6 +138,7 @@ const loadOptions = async (): Promise<void> => {
 
 onMounted(async () => {
   setMode();
+  syncOpacity();
 
   try {
     await cfg.loadConfig();
@@ -135,13 +157,19 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
+  clearBg();
+  document.documentElement.style.removeProperty('--ytp-artwork-opacity');
   if (props.mode === 'simple') {
     document.documentElement.classList.remove('simple-mode');
   }
 });
 
-watch(bgOn, () => void syncBg());
-watch(bgOpacity, () => bgOn.value && syncOpacity());
+watch(bgOn, () => {
+  syncOpacity();
+  void syncBg();
+});
+watch([bgOpacity, simpleBgOpacity], () => bgOn.value && syncOpacity());
 watch(anim, (on) => document.documentElement.classList.toggle('no-page-anim', !on), {
   immediate: true,
 });
@@ -150,17 +178,15 @@ watch(bg, () => {
     return;
   }
 
-  document.documentElement.setAttribute(
-    'style',
-    [
-      'background-color: unset',
-      'display: block',
-      'min-height: 100%',
-      'min-width: 100%',
-      `background-image: url(${bg.value})`,
-    ].join('; '),
-  );
-  document.documentElement.classList.add('bg-fanart');
+  if (props.mode === 'simple') {
+    const html = document.documentElement;
+    html.style.backgroundColor = 'unset';
+    html.style.display = 'block';
+    html.style.minHeight = '100%';
+    html.style.minWidth = '100%';
+    html.style.backgroundImage = `url(${bg.value})`;
+    html.classList.add('bg-fanart');
+  }
   syncOpacity();
 });
 </script>

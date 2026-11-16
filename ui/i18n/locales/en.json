@@ -11,7 +11,6 @@
     "loginHeading": "Welcome back",
     "loginSubtitle": "Sign in to continue to YTPTube.",
     "loginAction": "Log in",
-    "oidcLogin": "Sign in with OIDC",
     "forgotPassword": "Forgot password?",
     "recoveryGuidance": "Password recovery requires local access to the YTPTube installation. Use the reset command described in the FAQ.",
     "recoveryInstructions": "Open password reset instructions",
@@ -390,6 +389,7 @@
     "warning": "Warning",
     "handleWarningDesc": "You are using a YouTube link with <code>{'@'}handle</code> instead of <code>channel_id</code>. To activate RSS feed support for URL click on the <b>Convert URL</b> link.",
     "information": "Information",
+    "usageNotes": "Usage notes",
     "rssWarningDesc": "You are using a generic RSS/Atom feed URL. The task handler will automatically download new items found in this feed.",
     "multipleUrls": "Multiple URLs",
     "multipleUrlsDesc1": "First URL uses the Name provided above with full settings.",
@@ -836,7 +836,6 @@
       "subtitle": "Recent activity and errors.",
       "unread": "{count} unread | {count} unread",
       "noNotifications": "No notifications",
-      "noNotificationsDesc": "You do not have any stored notifications yet.",
       "markAllRead": "Mark all read",
       "clearAll": "Clear all",
       "copied": "Copied!"
@@ -1018,6 +1017,8 @@
     "handlerOnly": "Handler only",
     "openSourceUrl": "Open source URL",
     "schedule": "Schedule",
+    "nextRun": "Next scheduled run",
+    "inProgress": "In progress",
     "schedulePlaylistOnly": "Only playlist or channel URLs can be scheduled.",
     "runTasksConfirm": "Run the following tasks?",
     "archiveAllConfirm": "Mark all '{name}' items as downloaded in download archive?",
@@ -1245,7 +1246,11 @@
   },
   "changelog": {
     "description": "Latest project changes",
-    "filterPlaceholder": "Filter changelog entries",
+    "filterPlaceholder": "Release, change, author or commit",
+    "search": "Search changelog",
+    "latestOnly": "Latest only",
+    "latestCount": "{count} most recent releases",
+    "noCommits": "No commits",
     "releaseDateValue": "Release Date: {date}",
     "installed": "Installed",
     "commits": "{count} commits",
@@ -1277,6 +1282,11 @@
   },
   "docs": {
     "notFound": "Documentation not found",
+    "groups": {
+      "start": "Start here",
+      "guides": "Guides",
+      "reference": "Reference"
+    },
     "entries": {
       "index": {
         "title": "Documentation",

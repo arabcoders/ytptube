@@ -1,23 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
-    <div class="ytp-page-header">
-      <div class="ytp-page-heading">
-        <span class="ytp-page-icon">
-          <UIcon :name="pageShell.icon" class="size-5" />
-        </span>
-
-        <div class="min-w-0 space-y-2">
-          <div class="ytp-page-kicker">
-            <span>{{ pageShell.sectionLabel }}</span>
-            <span>/</span>
-            <span>{{ pageShell.pageLabel }}</span>
-          </div>
-
-          <p class="max-w-3xl text-sm text-toned">{{ pageShell.description }}</p>
-        </div>
-      </div>
-
-      <div class="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
+    <PageHeader v-bind="pageShell">
+      <template #actions>
         <UButton
           v-if="definitions.length > 0"
           color="neutral"
@@ -43,13 +27,7 @@
           <span>{{ t('common.inspect') }}</span>
         </UButton>
 
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          icon="i-lucide-plus"
-          @click="openCreate"
-        >
+        <UButton color="primary" variant="solid" size="sm" icon="i-lucide-plus" @click="openCreate">
           <span>{{ t('common.add') }}</span>
         </UButton>
 
@@ -76,8 +54,8 @@
           size="sm"
           class="order-last w-full sm:order-first sm:w-80"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <UAlert
       v-if="lastError"
@@ -90,7 +68,7 @@
 
     <div
       v-if="!isLoading && filteredDefinitions.length > 0"
-      class="flex flex-wrap items-center justify-between gap-3 ytp-card px-3 py-3"
+      class="flex flex-wrap items-center justify-between gap-3"
     >
       <div class="flex flex-wrap items-center gap-2">
         <UButton
@@ -121,59 +99,57 @@
       </div>
     </div>
 
-    <div v-if="filteredDefinitions.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <div
+    <div
+      v-if="filteredDefinitions.length > 0"
+      :aria-label="pageShell.pageLabel"
+      :aria-busy="isLoading"
+      class="ytp-card divide-y divide-default"
+    >
+      <article
         v-for="definition in filteredDefinitions"
         :key="definition.id"
         class="min-w-0 w-full max-w-full"
       >
-        <div class="ytp-card flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden">
-          <div class="p-4 pb-3 ytp-border-bottom-soft">
+        <div class="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.5fr)_auto]">
+          <div class="min-w-0">
             <div class="flex min-w-0 items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
-                <div class="flex items-start gap-2">
+                <h2 class="min-w-0">
                   <button
                     type="button"
-                    class="min-w-0 flex-1 text-start text-sm font-semibold text-highlighted"
+                    class="min-w-0 flex-1 text-start text-base font-semibold text-highlighted"
                     @click="toggleExpand(definition.id, 'title')"
                   >
                     <span :class="['block', expandClass(definition.id, 'title')]">
                       {{ definition.name || t('taskDefinitions.unnamed') }}
                     </span>
                   </button>
-                </div>
+                </h2>
               </div>
 
               <div class="flex shrink-0 items-center gap-2">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-lucide-file-up"
-                  square
-                  @click="() => void exportDefinition(definition)"
-                >
-                  <span>{{ t('common.exportItem') }}</span>
-                </UButton>
-
-                <label class="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    v-model="selectedIds"
-                    class="completed-checkbox size-4 rounded border-default"
-                    type="checkbox"
-                    :value="definition.id"
-                  />
-                </label>
+                <UCheckbox
+                  color="primary"
+                  :model-value="selectedIds.includes(definition.id)"
+                  :aria-label="`${t('common.select')}: ${definition.name || t('taskDefinitions.unnamed')}`"
+                  @update:model-value="
+                    selectedIds = setSelected(selectedIds, definition.id, $event)
+                  "
+                />
               </div>
             </div>
           </div>
 
-          <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div class="min-w-0 space-y-4">
             <div class="space-y-2 text-sm text-default">
-              <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
-                <button
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-toned">
+                <UButton
                   type="button"
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
+                  class="text-start"
+                  :aria-pressed="definition.enabled"
                   @click="() => void toggle(definition)"
                 >
                   <UIcon
@@ -182,11 +158,9 @@
                     :class="definition.enabled ? 'text-success' : 'text-error'"
                   />
                   <span>{{ definition.enabled ? t('common.enabled') : t('common.disabled') }}</span>
-                </button>
+                </UButton>
 
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
+                <span class="inline-flex items-center gap-1.5">
                   <UIcon name="i-lucide-list-ordered" class="size-3.5" />
                   <span>{{ t('common.priority') }}: {{ definition.priority }}</span>
                 </span>
@@ -194,7 +168,7 @@
 
               <button
                 type="button"
-                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-start"
+                class="flex min-w-0 w-full items-start gap-2 text-start"
                 @click="toggleExpand(definition.id, 'patterns')"
               >
                 <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
@@ -210,43 +184,41 @@
             </div>
           </div>
 
-          <div class="ytp-border-top-soft px-4 py-4">
-            <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-pencil"
-                class="w-full justify-center"
-                @click="() => void openEdit(definition)"
-              >
-                {{ t('common.edit') }}
-              </UButton>
-
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-trash"
-                class="w-full justify-center"
-                @click="() => void remove(definition)"
-              >
-                {{ t('common.delete') }}
-              </UButton>
-
-              <UDropdownMenu :items="itemActionGroups(definition)" :modal="false">
+          <div class="flex justify-end self-start">
+            <div class="flex shrink-0 items-center gap-1.5">
+              <UTooltip :text="t('common.edit')">
                 <UButton
                   color="neutral"
                   variant="outline"
-                  icon="i-lucide-settings-2"
-                  trailing-icon="i-lucide-chevron-down"
-                  class="w-full justify-center"
+                  size="sm"
+                  icon="i-lucide-pencil"
+                  :aria-label="
+                    t('common.editTitle', { name: definition.name || t('taskDefinitions.unnamed') })
+                  "
+                  @click="() => void openEdit(definition)"
                 >
-                  {{ t('common.actions') }}
+                  <span class="hidden sm:inline">{{ t('common.edit') }}</span>
                 </UButton>
+              </UTooltip>
+
+              <UDropdownMenu
+                :items="itemActionGroups(definition)"
+                :modal="false"
+                :content="{ align: 'end' }"
+              >
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  icon="i-lucide-ellipsis"
+                  square
+                  :aria-label="`${t('common.actions')}: ${definition.name || t('taskDefinitions.unnamed')}`"
+                />
               </UDropdownMenu>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </div>
 
     <UAlert
@@ -255,25 +227,25 @@
       variant="soft"
       icon="i-lucide-loader-circle"
       :title="t('common.loading')"
-      :description="t('common.loadingData')"
+      :ui="{ icon: 'animate-spin' }"
     />
 
-    <div v-else-if="query && filteredDefinitions.length < 1" class="space-y-3">
-      <UAlert
-        color="warning"
-        variant="soft"
-        icon="i-lucide-search"
-        :title="t('common.noResults')"
-        :description="t('common.noResultsFor', { query })"
-      />
-    </div>
+    <UEmpty
+      v-else-if="query && filteredDefinitions.length < 1"
+      variant="naked"
+      size="sm"
+      icon="i-lucide-search"
+      :title="t('common.noResults')"
+      :description="t('common.noResultsFor', { query })"
+    />
 
     <UEmpty
       v-else-if="!definitions.length"
       icon="i-lucide-file-cog"
       :title="t('common.noItems')"
       :description="t('common.empty')"
-      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+      variant="naked"
+      size="sm"
     />
 
     <UModal
@@ -495,6 +467,7 @@
 </template>
 
 <script setup lang="ts">
+import { setSelected } from '~/utils/selection';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { computed, onMounted, ref, watch } from 'vue';
 
@@ -900,6 +873,14 @@ const itemActionGroups = (summary: TaskDefinitionSummary): DropdownMenuItem[][] 
       label: t('common.exportItem'),
       icon: 'i-lucide-file-up',
       onSelect: () => void exportDefinition(summary),
+    },
+  ],
+  [
+    {
+      label: t('common.delete'),
+      icon: 'i-lucide-trash',
+      color: 'error',
+      onSelect: () => void remove(summary),
     },
   ],
 ];

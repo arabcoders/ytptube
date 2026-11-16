@@ -15,34 +15,30 @@
 }
 
 .docs-markdown :where(h1, h2, h3, h4, h5, h6) {
-  margin-top: 1.75em;
+  margin: 1.5rem 0 0.75rem;
   color: var(--ui-text-highlighted);
-  font-weight: 700;
-  line-height: 1.25;
+  font-weight: 600;
+  line-height: 1.3;
   overflow-wrap: anywhere;
+  scroll-margin-top: calc(var(--ui-header-height, 4rem) + 1.5rem);
 }
 
 .docs-markdown h1 {
-  font-size: clamp(1.85rem, 1.55rem + 1vw, 2.4rem);
+  font-size: 1.875rem;
 }
 
 .docs-markdown h2 {
-  font-size: clamp(1.5rem, 1.3rem + 0.7vw, 1.95rem);
-  padding-top: 0.35rem;
-  border-top: 1px solid color-mix(in oklab, var(--ui-border) 80%, transparent);
+  font-size: 1.5rem;
 }
 
 .docs-markdown h3 {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
 }
 
-.docs-markdown h4 {
-  font-size: 1.15rem;
-}
-
+.docs-markdown h4,
 .docs-markdown h5,
 .docs-markdown h6 {
-  font-size: 1rem;
+  font-size: 1.125rem;
 }
 
 .docs-markdown :where(p, ul, ol, pre, blockquote, .markdown-alert, .docs-markdown__table-wrap, hr) {
@@ -79,7 +75,7 @@
 }
 
 .docs-markdown a {
-  color: color-mix(in oklab, var(--ui-info) 60%, var(--ui-text-highlighted) 40%);
+  color: var(--ui-primary);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.18em;
@@ -93,7 +89,7 @@
 .docs-markdown :not(pre) > code {
   display: inline;
   border: 1px solid color-mix(in oklab, var(--ui-border) 80%, transparent);
-  border-radius: 0.45rem;
+  border-radius: 0.375rem;
   background: color-mix(in oklab, var(--ui-bg-muted) 60%, var(--ui-bg) 40%);
   padding: 0.125rem 0.375rem;
   font-size: 0.875em;
@@ -105,7 +101,7 @@
   max-width: 100%;
   overflow-x: auto;
   border: 1px solid color-mix(in oklab, var(--ui-border) 80%, transparent);
-  border-radius: 0.9rem;
+  border-radius: 0.375rem;
   background: color-mix(in oklab, var(--ui-bg-muted) 40%, var(--ui-bg) 60%);
   padding: 0.9rem 1rem;
 }
@@ -122,10 +118,8 @@
 }
 
 .docs-markdown blockquote {
-  border-left: 0.3rem solid color-mix(in oklab, var(--ui-info) 60%, var(--ui-border) 40%);
-  border-radius: 0.85rem;
-  background: color-mix(in oklab, var(--ui-info) 7%, var(--ui-bg) 93%);
-  padding: 0.95rem 1rem;
+  border-left: 0.25rem solid color-mix(in oklab, var(--ui-border) 70%, transparent);
+  padding-left: 1rem;
   color: var(--ui-text-toned);
 }
 
@@ -149,8 +143,8 @@
   max-width: 100%;
   overflow-x: auto;
   border: 1px solid color-mix(in oklab, var(--ui-border) 85%, transparent);
-  border-radius: 0.95rem;
-  background: var(--ui-bg);
+  border-radius: 0.375rem;
+  background: color-mix(in oklab, var(--ui-bg) 70%, transparent);
 }
 
 .docs-markdown__table {
@@ -176,10 +170,7 @@
 .docs-markdown__table thead th {
   background: color-mix(in oklab, var(--ui-bg-muted) 60%, var(--ui-bg) 40%);
   color: var(--ui-text-toned);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .docs-markdown__table tbody tr:nth-child(odd) {
@@ -199,7 +190,7 @@
   max-width: 100%;
   height: auto;
   border: 1px solid color-mix(in oklab, var(--ui-border) 75%, transparent);
-  border-radius: 0.9rem;
+  border-radius: 0.375rem;
 }
 
 .docs-markdown img.docs-markdown__image--inline {
@@ -226,7 +217,7 @@
   border: 1px solid color-mix(in oklab, var(--markdown-alert-accent) 35%, var(--ui-border) 65%);
   border-left-width: 0.35rem;
   border-left-color: var(--markdown-alert-accent);
-  border-radius: 0.9rem;
+  border-radius: 0.5rem;
   background: color-mix(in oklab, var(--markdown-alert-accent) 9%, var(--ui-bg) 91%);
   padding: 0.9rem 1rem;
   color: inherit;

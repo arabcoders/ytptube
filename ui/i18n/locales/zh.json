@@ -11,7 +11,6 @@
     "loginHeading": "欢迎回来",
     "loginSubtitle": "登录以继续使用 YTPTube。",
     "loginAction": "登录",
-    "oidcLogin": "使用 OIDC 登录",
     "forgotPassword": "忘记密码？",
     "recoveryGuidance": "恢复密码需要访问 YTPTube 安装所在的本地环境。请使用 FAQ 中的重置命令。",
     "recoveryInstructions": "打开密码重置说明",
@@ -390,6 +389,7 @@
     "warning": "警告",
     "handleWarningDesc": "您正在使用带有 <code>{'@'}handle</code> 的 YouTube 链接，而非 <code>channel_id</code>。要为 URL 启用 RSS 订阅支持，请点击 <b>转换 URL</b> 链接。",
     "information": "信息",
+    "usageNotes": "使用说明",
     "rssWarningDesc": "您正在使用通用的 RSS/Atom 订阅源 URL。任务处理程序将自动下载此订阅源中的新项目。",
     "multipleUrls": "多个 URL",
     "multipleUrlsDesc1": "第一个 URL 使用上方提供的名称和完整设置。",
@@ -836,7 +836,6 @@
       "subtitle": "近期活动和错误。",
       "unread": "{count} 条未读 | {count} 条未读",
       "noNotifications": "暂无通知",
-      "noNotificationsDesc": "您目前还没有任何存储的通知。",
       "markAllRead": "全部标记为已读",
       "clearAll": "全部清除",
       "copied": "已复制！"
@@ -1018,6 +1017,8 @@
     "handlerOnly": "仅处理程序",
     "openSourceUrl": "打开来源 URL",
     "schedule": "计划",
+    "nextRun": "下次计划运行",
+    "inProgress": "处理中",
     "schedulePlaylistOnly": "只能计划播放列表或频道 URL。",
     "runTasksConfirm": "运行以下任务？",
     "archiveAllConfirm": "将 '{name}' 的所有项目在下载归档中标记为已下载？",
@@ -1245,7 +1246,11 @@
   },
   "changelog": {
     "description": "最新的项目变更",
-    "filterPlaceholder": "筛选更新日志条目",
+    "filterPlaceholder": "版本、变更、作者或提交",
+    "search": "搜索更新日志",
+    "latestOnly": "仅显示最新版本",
+    "latestCount": "最近 {count} 个版本",
+    "noCommits": "暂无提交",
     "releaseDateValue": "发布日期：{date}",
     "installed": "已安装",
     "commits": "{count} 次提交",
@@ -1277,6 +1282,11 @@
   },
   "docs": {
     "notFound": "未找到文档",
+    "groups": {
+      "start": "入门",
+      "guides": "指南",
+      "reference": "参考"
+    },
     "entries": {
       "index": { "title": "文档", "navLabel": "帮助", "description": "指南和项目参考资料。" },
       "readme": {

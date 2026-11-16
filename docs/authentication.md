@@ -36,8 +36,9 @@ trusted_proxies = ["10.0.0.10", "2001:db8::10/128"]
 For a deployment under a URL prefix, add that prefix before `/api/auth/oidc/callback`. For example, an instance served at
 `https://foo.example.org/ytptube/` uses `https://foo.example.org/ytptube/api/auth/oidc/callback`.
 
-Register the redirect URI with the OIDC provider. OIDC uses provider discovery, authorization code flow, and PKCE. Start at
-`GET /api/auth/oidc/login`; the provider returns to `GET /api/auth/oidc/callback`.
+Register the redirect URI with the OIDC provider. OIDC uses provider discovery, authorization code flow, and PKCE. When configured, the login page shows an **SSO** (single sign-on) button. Select **SSO** to sign in through your provider.
+
+The button starts at `GET /api/auth/oidc/login`; the provider returns to `GET /api/auth/oidc/callback`.
 
 Restart YTPTube after changing the file, then verify local login, OIDC login, and proxy login separately. Local logout ends the YTPTube session, but doesn't end the OIDC provider session. Proxy logout is controlled by the proxy.
 

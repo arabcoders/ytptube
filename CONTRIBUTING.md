@@ -1,27 +1,17 @@
 # Contributing to YTPTube
 
-YTPTube is a personal-first project maintained according to the maintainer's needs and preferences. Contributions are
-welcome after discussion and approval, but the maintainer decides the project's direction and which changes are
-accepted.
-
-Do not start work or open a pull request without approval. Unsolicited pull requests will be closed without review.
+YTPTube is my own little pet project that was based on [meTube](https://github.com/alexta69/metube). I have specific 
+requirements and preferences for how this project is developed and maintained. Discuss your change and get approval 
+before starting work or opening a pull request. Unsolicited pull requests will be closed without review.
 
 ## Before You Start
 
-Open a GitHub issue for a bug fix or small feature. Use a GitHub discussion for a larger change or a general question.
-Your proposal should explain:
+Report vulnerabilities privately through [SECURITY.md](SECURITY.md). For bugs, proposed changes or general questions,
+open a GitHub issue. Explain what you want to change, why, your proposed approach and which existing behavior or use
+cases it affects.
 
-* What you want to change
-* Why the change is needed
-* How you plan to implement it
-* Which use cases or existing behavior are relevant
-
-Bug fixes, functional improvements, and measurable performance work take priority. A personal preference or a claim
-that something looks better is not enough reason to change the interface. Large refactors, new abstractions, and
-architectural changes need approval before implementation.
-
-Wait for an explicit response from the maintainer before writing code. Approval may include limits or a requested
-approach. A proposal can be declined if it does not fit the project's goals or the maintainer's use cases.
+Bug fixes, functional improvements and measurable performance work take priority. An interface change needs more than
+personal preference. I will decline a proposal or ask for a different scope or approach.
 
 ## Development
 
@@ -97,8 +87,8 @@ rejected. Tests must validate behavior rather than exist only to increase covera
 
 ## Pull Requests
 
-Every pull request must target `dev`, never `master`. Reference the approved issue or discussion and describe what
-changed and why. Include any breaking changes or migration steps, and make sure the applicable checks pass.
+Every pull request must target `dev`, never `master`. Reference the approved issue and describe what changed and why. 
+Include any breaking changes or migration steps, and make sure the applicable checks pass.
 
 Use this checklist before submitting:
 
@@ -119,8 +109,8 @@ A pull request will be closed without review if it:
 
 ## Questions
 
-Check existing GitHub issues and discussions first. For short questions, join the project
-[Discord server](https://discord.gg/G3GpVR8xpb). YTPTube is maintained as a solo project, so replies may take some time.
+Check existing GitHub issues. For short questions, join the project [Discord server](https://discord.gg/G3GpVR8xpb). 
+YTPTube is maintained as a solo project, so replies may take some time.
 
 ## License
 

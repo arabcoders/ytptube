@@ -10,37 +10,17 @@
       class="sticky top-0 z-10 shadow-sm"
     />
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <div v-if="reference" class="md:col-span-2 flex justify-end">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          @click="
-            () => {
-              showImport = !showImport;
-            }
-          "
+    <details :open="!reference" class="border-b border-default pb-5">
+      <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
+        {{ t('common.import') }}
+      </summary>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <UFormField
+          class="min-w-0"
+          :ui="fieldUi"
+          :label="t('common.importPreset')"
+          :help="t('common.importPresetDesc')"
         >
-          {{ showImport ? t('common.hideImport') : t('common.showImport') }}
-        </UButton>
-      </div>
-
-      <template v-if="showImport || !reference">
-        <UFormField class="w-full" :ui="fieldUi">
-          <template #label>
-            <div class="flex flex-wrap items-center gap-2">
-              <UIcon name="i-lucide-copy" class="size-4 text-toned" />
-              <span class="font-semibold text-default">{{ t('common.importPreset') }}</span>
-            </div>
-          </template>
-
-          <template #description>
-            <span>{{ t('common.importPresetDesc') }}</span>
-          </template>
-
           <USelectMenu
             v-model="selectedPreset"
             :items="importPresetItems"
@@ -57,18 +37,12 @@
           />
         </UFormField>
 
-        <UFormField class="w-full" :ui="fieldUi">
-          <template #label>
-            <div class="flex flex-wrap items-center gap-2">
-              <UIcon name="i-lucide-import" class="size-4 text-toned" />
-              <span class="font-semibold text-default">{{ t('common.importString') }}</span>
-            </div>
-          </template>
-
-          <template #description>
-            <span>{{ t('common.importStringDesc') }}</span>
-          </template>
-
+        <UFormField
+          class="min-w-0"
+          :ui="fieldUi"
+          :label="t('common.importString')"
+          :help="t('common.importStringDesc')"
+        >
           <UFieldGroup size="lg" class="w-full">
             <UInput
               id="import_string"
@@ -89,27 +63,23 @@
               icon="i-lucide-import"
               :loading="importInProgress"
               :disabled="!importString || importInProgress"
-              class="justify-center sm:min-w-28"
+              class="justify-center"
               @click="() => void importItem()"
             >
               {{ t('common.import') }}
             </UButton>
           </UFieldGroup>
         </UFormField>
-      </template>
+      </div>
+    </details>
 
-      <UFormField class="w-full" :ui="fieldUi">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-type" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.name') }}</span>
-          </div>
-        </template>
-
-        <template #description>
-          <span>{{ t('common.presetNameDesc') }}</span>
-        </template>
-
+    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+      <UFormField
+        class="w-full"
+        :ui="fieldUi"
+        :label="t('common.name')"
+        :help="t('common.presetNameDesc')"
+      >
         <UInput
           id="name"
           v-model="form.name"
@@ -122,18 +92,12 @@
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.priority') }}</span>
-          </div>
-        </template>
-
-        <template #description>
-          <span>{{ t('common.presetPriorityDesc') }}</span>
-        </template>
-
+      <UFormField
+        class="w-full"
+        :ui="fieldUi"
+        :label="t('common.priority')"
+        :help="t('common.presetPriorityDesc')"
+      >
         <UInput
           id="priority"
           v-model.number="form.priority"
@@ -147,14 +111,29 @@
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi" :description="t('common.presetPathDesc')">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.downloadPath') }}</span>
-          </div>
-        </template>
+      <UFormField class="w-full sm:col-span-2" :ui="fieldUi" :label="t('common.description')">
+        <UTextarea
+          id="description"
+          v-model="form.description"
+          :disabled="addInProgress"
+          :placeholder="t('common.extrasInstructions')"
+          :rows="3"
+          size="lg"
+          variant="outline"
+          color="neutral"
+          class="w-full"
+          :ui="textareaUi"
+        />
+      </UFormField>
+    </div>
 
+    <div class="space-y-4 border-t border-default pt-5">
+      <UFormField
+        class="w-full"
+        :ui="fieldUi"
+        :label="t('common.downloadPath')"
+        :description="t('common.presetPathDesc')"
+      >
         <div class="flex flex-col gap-2 sm:flex-row" dir="ltr">
           <UTooltip :text="t('common.fullPath', { path: config.app.download_path })">
             <div
@@ -167,6 +146,7 @@
           <FolderInput
             id="folder"
             v-model="form.folder"
+            class="min-w-0 flex-1"
             :placeholder="t('common.leaveEmptyDefault')"
             :disabled="addInProgress"
             :ui="inputUi"
@@ -174,14 +154,12 @@
         </div>
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi" :description="t('common.presetTemplateDesc')">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-file-code-2" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.outputTemplate') }}</span>
-          </div>
-        </template>
-
+      <UFormField
+        class="w-full"
+        :ui="fieldUi"
+        :label="t('common.outputTemplate')"
+        :description="t('common.presetTemplateDesc')"
+      >
         <UInput
           id="output_template"
           dir="ltr"
@@ -196,15 +174,8 @@
       </UFormField>
     </div>
 
-    <div class="space-y-5 border-t border-default pt-5">
-      <UFormField class="w-full" :ui="editorFieldUi">
-        <template #label>
-          <div class="flex flex-wrap items-center gap-2">
-            <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
-            <span class="font-semibold text-default">{{ t('common.cliOptions') }}</span>
-          </div>
-        </template>
-
+    <div class="border-t border-default pt-5">
+      <UFormField class="w-full" :ui="editorFieldUi" :label="t('common.cliOptions')">
         <template #description>
           <p class="text-sm text-toned">
             <button type="button" class="text-primary hover:underline" @click="showOptions = true">
@@ -228,75 +199,47 @@
       </UFormField>
     </div>
 
-    <div class="grid gap-5 border-t border-default pt-5 md:grid-cols-2">
-      <div class="space-y-3">
-        <UFormField class="h-full w-full" :ui="editorFieldUi">
-          <template #label>
-            <div class="flex flex-wrap items-center gap-2">
-              <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
-              <span>{{ t('common.cookiesLabel') }}</span>
-            </div>
-          </template>
-          <template #description>
-            <p class="text-sm text-toned">
-              {{ t('common.cookiesDesc') }}
-              <NuxtLink
-                target="_blank"
-                to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
-                class="text-sm text-primary hover:underline"
-                >{{ t('common.recommendedAddon') }}</NuxtLink
-              >
-            </p>
-          </template>
-          <template #hint>
-            <button
-              type="button"
-              class="text-sm font-medium text-primary hover:underline"
-              @click="triggerCookieUpload"
+    <details :open="Boolean(preset.cookies)" class="border-t border-default pt-5">
+      <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
+        {{ t('common.cookiesLabel') }}
+      </summary>
+      <UFormField
+        class="mt-4 w-full"
+        :ui="{ ...editorFieldUi, label: 'sr-only' }"
+        :label="t('common.cookiesLabel')"
+      >
+        <template #description>
+          <p class="text-sm text-toned">
+            {{ t('common.cookiesDesc') }}
+            <NuxtLink
+              target="_blank"
+              to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+              class="text-sm text-primary hover:underline"
+              >{{ t('common.recommendedAddon') }}</NuxtLink
             >
-              {{ t('common.uploadFile') }}
-            </button>
-          </template>
-          <TextDropzone
-            ref="cookiesDropzoneRef"
-            id="cookies"
-            :rows="7"
-            v-model="form.cookies"
-            :disabled="addInProgress"
-            dir="ltr"
-            @error="showActionError"
-            :placeholder="t('common.cookiesPlaceholder')"
-          />
-        </UFormField>
-      </div>
-
-      <div class="space-y-3">
-        <UFormField class="h-full w-full" :ui="editorFieldUi">
-          <template #label>
-            <div class="flex flex-wrap items-center gap-2">
-              <UIcon name="i-lucide-message-square-text" class="size-4 text-toned" />
-              <span class="font-semibold text-default">{{ t('common.description') }}</span>
-            </div>
-          </template>
-          <template #description>
-            <span>&nbsp;</span>
-          </template>
-
-          <UTextarea
-            id="description"
-            v-model="form.description"
-            :disabled="addInProgress"
-            :placeholder="t('common.extrasInstructions')"
-            :rows="7"
-            size="lg"
-            variant="outline"
-            color="neutral"
-            class="w-full"
-            :ui="textareaUi"
-          />
-        </UFormField>
-      </div>
-    </div>
+          </p>
+        </template>
+        <template #hint>
+          <button
+            type="button"
+            class="text-sm font-medium text-primary hover:underline"
+            @click="triggerCookieUpload"
+          >
+            {{ t('common.uploadFile') }}
+          </button>
+        </template>
+        <TextDropzone
+          ref="cookiesDropzoneRef"
+          id="cookies"
+          :rows="7"
+          v-model="form.cookies"
+          :disabled="addInProgress"
+          dir="ltr"
+          @error="showActionError"
+          :placeholder="t('common.cookiesPlaceholder')"
+        />
+      </UFormField>
+    </details>
 
     <UModal
       v-if="showOptions"
@@ -317,7 +260,6 @@
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import TextDropzone from '~/components/TextDropzone.vue';
 import type { ImportedItem } from '~/types';
@@ -356,7 +298,6 @@ const form = reactive<Preset>({
 });
 
 const importString = ref('');
-const showImport = useStorage<boolean>('showImport', false);
 const selectedPreset = ref<string>('');
 const importInProgress = ref(false);
 const showOptions = ref(false);
@@ -385,7 +326,7 @@ const inputUi = {
 
 const textareaUi = {
   root: 'w-full',
-  base: 'min-h-[10rem] w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
 };
 
 const importPresetItems = computed(() => selectItems.value);
@@ -395,7 +336,6 @@ const dirtySource = computed(() => ({
   form: JSON.parse(JSON.stringify(form)),
   importString: importString.value,
   selectedPreset: selectedPreset.value,
-  showImport: showImport.value,
 }));
 const { isDirty, markClean } = useDirtyState(dirtySource);
 
@@ -604,7 +544,6 @@ const importItem = async (): Promise<void> => {
     }
 
     importString.value = '';
-    showImport.value = false;
     action.clear();
   } catch (error) {
     console.error(error);

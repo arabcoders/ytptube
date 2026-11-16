@@ -11,7 +11,6 @@
     "loginHeading": "おかえりなさい",
     "loginSubtitle": "ログインしてYTPTubeを続けます。",
     "loginAction": "ログイン",
-    "oidcLogin": "OIDCでログイン",
     "forgotPassword": "パスワードをお忘れですか？",
     "recoveryGuidance": "パスワードの復旧には、YTPTubeのインストール先へのローカルアクセスが必要です。FAQに記載されたリセットコマンドを使用してください。",
     "recoveryInstructions": "パスワードリセット手順を開く",
@@ -390,6 +389,7 @@
     "warning": "警告",
     "handleWarningDesc": "<code>channel_id</code> の代わりに <code>{'@'}handle</code> を使用した YouTube リンクを使用しています。URL の RSS フィードサポートを有効にするには、<b>URL を変換</b>リンクをクリックしてください。",
     "information": "情報",
+    "usageNotes": "使用上の注意",
     "rssWarningDesc": "汎用 RSS/Atom フィード URL を使用しています。タスクハンドラーはこのフィードで見つかった新着アイテムを自動的にダウンロードします。",
     "multipleUrls": "複数の URL",
     "multipleUrlsDesc1": "最初の URL は上記の名前と完全な設定を使用します。",
@@ -836,7 +836,6 @@
       "subtitle": "最近のアクティビティとエラー。",
       "unread": "{count} 件の未読 | {count} 件の未読",
       "noNotifications": "通知なし",
-      "noNotificationsDesc": "保存された通知はまだありません。",
       "markAllRead": "すべて既読にする",
       "clearAll": "すべてクリア",
       "copied": "コピーしました!"
@@ -1018,6 +1017,8 @@
     "handlerOnly": "ハンドラーのみ",
     "openSourceUrl": "ソース URL を開く",
     "schedule": "スケジュール",
+    "nextRun": "次の予定実行",
+    "inProgress": "処理中",
     "schedulePlaylistOnly": "スケジュールできるのはプレイリストまたはチャンネルの URL のみです。",
     "runTasksConfirm": "以下のタスクを実行しますか?",
     "archiveAllConfirm": "'{name}' のすべてのアイテムをダウンロードアーカイブでダウンロード済みとしてマークしますか?",
@@ -1245,7 +1246,11 @@
   },
   "changelog": {
     "description": "最新のプロジェクト変更",
-    "filterPlaceholder": "変更履歴エントリをフィルター",
+    "filterPlaceholder": "リリース、変更内容、作者、コミット",
+    "search": "変更履歴を検索",
+    "latestOnly": "最新のみ",
+    "latestCount": "最新{count}件のリリース",
+    "noCommits": "コミットなし",
     "releaseDateValue": "リリース日: {date}",
     "installed": "インストール済み",
     "commits": "{count} コミット",
@@ -1277,6 +1282,11 @@
   },
   "docs": {
     "notFound": "ドキュメントが見つかりません",
+    "groups": {
+      "start": "はじめに",
+      "guides": "ガイド",
+      "reference": "リファレンス"
+    },
     "entries": {
       "index": {
         "title": "ドキュメント",
