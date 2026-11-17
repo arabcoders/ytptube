@@ -25,16 +25,15 @@
               <UBadge :color="isMultiLineInput ? 'info' : 'neutral'" variant="soft" size="sm">
                 {{ isMultiLineInput ? t('console.multiLine') : t('console.singleLine') }}
               </UBadge>
-              <UBadge :color="sessionStatusColor" variant="soft" size="sm" role="status">
-                <span class="inline-flex items-center gap-1.5">
-                  <UIcon
-                    :name="sessionStatusIcon"
-                    class="size-3.5"
-                    :class="sessionStatusSpinning ? 'animate-spin' : ''"
-                  />
-                  <span>{{ sessionStatusLabel }}</span>
-                </span>
-              </UBadge>
+              <span class="inline-flex items-center gap-1.5 text-xs text-toned" role="status">
+                <UIcon
+                  :name="sessionStatusIcon"
+                  class="size-3.5 shrink-0"
+                  :class="[sessionStatusClass, sessionStatusSpinning ? 'animate-spin' : '']"
+                  aria-hidden="true"
+                />
+                <span>{{ sessionStatusLabel }}</span>
+              </span>
             </div>
           </div>
           <TextareaAutocomplete
@@ -152,26 +151,18 @@
                               </button>
 
                               <div class="flex flex-wrap items-center gap-2 text-[11px] text-toned">
-                                <UBadge
-                                  :color="recentSessionStatusColor(item)"
-                                  variant="soft"
-                                  size="sm"
-                                >
-                                  <span
-                                    v-if="recentSessionStatusSpinning(item)"
-                                    class="inline-flex items-center gap-1.5"
-                                  >
-                                    <UIcon
-                                      :name="recentSessionStatusIcon(item)"
-                                      class="size-3.5 animate-spin"
-                                    />
-                                    <span>{{ recentSessionStatusLabel(item) }}</span>
-                                  </span>
-                                  <span v-else class="inline-flex items-center gap-1.5">
-                                    <UIcon :name="recentSessionStatusIcon(item)" class="size-3.5" />
-                                    <span>{{ recentSessionStatusLabel(item) }}</span>
-                                  </span>
-                                </UBadge>
+                                <span class="inline-flex items-center gap-1.5">
+                                  <UIcon
+                                    :name="recentSessionStatusIcon(item)"
+                                    class="size-3.5 shrink-0"
+                                    :class="[
+                                      recentSessionStatusClass(item),
+                                      recentSessionStatusSpinning(item) ? 'animate-spin' : '',
+                                    ]"
+                                    aria-hidden="true"
+                                  />
+                                  <span>{{ recentSessionStatusLabel(item) }}</span>
+                                </span>
 
                                 <UTooltip
                                   v-if="item.finishedAt || item.startedAt || item.createdAt"
@@ -457,25 +448,25 @@ const sessionStatusLabel = computed(() => {
       return t('console.idle');
   }
 });
-const sessionStatusColor = computed(() => {
+const sessionStatusClass = computed(() => {
   switch (sessionStatus.value) {
     case 'starting':
     case 'running':
-      return 'info';
+      return 'text-info';
 
     case 'reconnecting':
     case 'interrupted':
     case 'expired':
-      return 'warning';
+      return 'text-warning';
 
     case 'finished':
-      return sessionExitCode.value === 0 ? 'success' : 'error';
+      return sessionExitCode.value === 0 ? 'text-success' : 'text-error';
 
     case 'error':
-      return 'error';
+      return 'text-error';
 
     default:
-      return 'neutral';
+      return 'text-toned';
   }
 });
 const sessionStatusIcon = computed(() => {
@@ -524,20 +515,18 @@ const recentSessionStatusLabel = (item: (typeof recentSessions.value)[number]): 
   }
 };
 
-const recentSessionStatusColor = (
-  item: (typeof recentSessions.value)[number],
-): 'success' | 'error' | 'info' | 'neutral' => {
+const recentSessionStatusClass = (item: (typeof recentSessions.value)[number]): string => {
   if (isRecentSessionFailed(item)) {
-    return 'error';
+    return 'text-error';
   }
 
   switch (item.status) {
     case 'starting':
     case 'running':
-      return 'info';
+      return 'text-info';
 
     default:
-      return item.exitCode === 0 ? 'success' : 'neutral';
+      return item.exitCode === 0 ? 'text-success' : 'text-toned';
   }
 };
 

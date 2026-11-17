@@ -47,12 +47,7 @@
           :ui="{ icon: 'animate-spin' }"
           :title="$t('common.loading')"
         />
-        <UEmpty
-          v-else-if="!items.length"
-          icon="i-lucide-inbox"
-          :title="empty"
-          class="rounded-lg border border-dashed border-default bg-muted/10 py-8"
-        />
+        <UEmpty v-else-if="!items.length" icon="i-lucide-inbox" :title="empty" class="py-8" />
         <div v-else class="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <article
             v-for="item in items"
@@ -116,18 +111,20 @@
                     </UTooltip>
 
                     <div class="flex flex-wrap items-center gap-2 text-xs">
-                      <UBadge :color="statusColor(item)" variant="soft" size="sm" class="gap-1">
+                      <span class="inline-flex items-center gap-1.5 text-toned">
                         <UIcon
                           :name="statusIcon(item)"
                           :class="[
-                            'size-3.5',
+                            'size-3.5 shrink-0',
+                            statusClass(item),
                             ['downloading', 'preparing', 'postprocessing'].includes(status(item))
                               ? 'animate-spin'
                               : '',
                           ]"
+                          aria-hidden="true"
                         />
                         <span>{{ statusLabel(item) }}</span>
-                      </UBadge>
+                      </span>
 
                       <UBadge
                         v-if="item.extras?.retry_attempt && item.extras.retry_attempt > 1"
@@ -332,17 +329,17 @@ const statusIcon = (item: StoreItem) =>
     queued: 'i-lucide-hourglass',
     cancelled: 'i-lucide-circle-x',
   })[status(item)] || 'i-lucide-circle-question-mark';
-const statusColor = (item: StoreItem) =>
-  (({
-    completed: 'success',
-    skipped: 'warning',
-    failed: 'error',
-    downloading: 'info',
-    preparing: 'info',
-    postprocessing: 'info',
-    started: 'info',
-    cancelled: 'neutral',
-  })[status(item)] || 'neutral') as 'success' | 'warning' | 'error' | 'info' | 'neutral';
+const statusClass = (item: StoreItem): string =>
+  ({
+    completed: 'text-success',
+    skipped: 'text-warning',
+    failed: 'text-error',
+    downloading: 'text-info',
+    preparing: 'text-info',
+    postprocessing: 'text-info',
+    started: 'text-info',
+    cancelled: 'text-toned',
+  })[status(item)] || 'text-toned';
 const formatDate = (item: StoreItem) =>
   formatDateTime(item.datetime || item.timestamp, locale.value);
 const thumbnail = (item: StoreItem) =>

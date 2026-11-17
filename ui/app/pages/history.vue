@@ -181,7 +181,7 @@
 
             <div
               v-if="showThumbnails"
-              class="aspect-video w-40 max-w-full self-start overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-55"
+              class="aspect-video w-full max-w-full self-start overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-55"
             >
               <button
                 v-if="item.filename || isEmbedable(item.url)"
@@ -249,8 +249,8 @@
                 </div>
               </dl>
 
-              <dl class="grid min-w-0 gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
-                <div class="min-w-0 space-y-1">
+              <dl class="flex min-w-0 flex-col gap-x-8 gap-y-3 text-sm sm:flex-row sm:items-start">
+                <div class="min-w-0 space-y-1 sm:w-1/4 sm:shrink-0">
                   <dt class="flex items-center gap-1.5 text-xs text-muted">
                     <UIcon
                       name="i-lucide-sliders-horizontal"
@@ -263,7 +263,7 @@
                     <bdi>{{ item.preset }}</bdi>
                   </dd>
                 </div>
-                <div v-if="getItemTaskUrl(item)" class="min-w-0 space-y-1">
+                <div v-if="getItemTaskUrl(item)" class="min-w-0 space-y-1 sm:max-w-1/4">
                   <dt class="flex items-center gap-1.5 text-xs text-muted">
                     <UIcon
                       name="i-lucide-calendar-clock"
@@ -281,7 +281,7 @@
                     </NuxtLink>
                   </dd>
                 </div>
-                <div v-if="getItemPath(item)" class="min-w-0 space-y-1">
+                <div v-if="getItemPath(item)" class="min-w-0 space-y-1 sm:flex-1">
                   <dt class="flex items-center gap-1.5 text-xs text-muted">
                     <UIcon
                       name="i-lucide-folder-output"
@@ -507,7 +507,7 @@
           icon="i-lucide-triangle-alert"
           :title="t('common.noItems')"
           :description="t('history.empty')"
-          class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+          class="py-10"
         />
       </div>
 

@@ -208,13 +208,16 @@
                     :aria-label="t('common.actions')"
                   />
                 </UDropdownMenu>
-                <span
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
                   :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
                   @click="openLogDetails(entry.log)"
                 >
                   <UIcon :name="LOG_LEVEL_ICON[getLogLevel(entry.log.level)]" class="size-3" />
                   {{ getLogLevel(entry.log.level) }}
-                </span>
+                </UButton>
                 <span
                   v-if="entry.log.logger && !['ytptube', 'http_api'].includes(entry.log.logger)"
                   :title="entry.log.logger"
@@ -841,11 +844,11 @@ const getLogLevel = (level: string): LogLevel => {
 };
 
 const logLevelBadgeClass = (level: LogLevel): string[] => [
-  'inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-pointer',
-  level === 'debug' ? 'bg-muted/40 text-muted' : '',
-  level === 'info' ? 'bg-info/10 text-info' : '',
-  level === 'warning' ? 'bg-warning/10 text-warning' : '',
-  level === 'error' ? 'bg-error/10 text-error' : '',
+  'gap-1.5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+  level === 'debug' ? 'text-muted' : '',
+  level === 'info' ? 'text-info' : '',
+  level === 'warning' ? 'text-warning' : '',
+  level === 'error' ? 'text-error' : '',
 ];
 
 const messageClass = (id: string): string[] => [

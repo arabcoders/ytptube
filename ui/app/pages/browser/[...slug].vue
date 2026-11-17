@@ -222,7 +222,7 @@
               :download="downloadName(item)"
               :aria-label="`${t('common.download')}: ${item.name}`"
             >
-              <span class="hidden sm:inline">{{ t('common.download') }}</span>
+              <span>{{ t('common.download') }}</span>
             </UButton>
           </UTooltip>
           <UTooltip
@@ -237,7 +237,7 @@
               :aria-label="`${t('files.move')}: ${item.name}`"
               @click="() => void handleAction('move', item)"
             >
-              <span class="hidden sm:inline">{{ t('files.move') }}</span>
+              <span>{{ t('files.move') }}</span>
             </UButton>
           </UTooltip>
           <UDropdownMenu
@@ -261,7 +261,6 @@
 
     <div v-if="localSearch && !hasItems && !isLoading">
       <UEmpty
-        variant="naked"
         size="sm"
         icon="i-lucide-filter"
         :title="t('common.noResults')"
@@ -284,7 +283,6 @@
       icon="i-lucide-folder-open"
       :title="t('files.noContent')"
       :description="t('files.empty')"
-      variant="naked"
       size="sm"
     />
 

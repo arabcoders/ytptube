@@ -113,7 +113,7 @@
         <div class="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.5fr)_auto]">
           <div class="min-w-0">
             <div class="flex min-w-0 items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
+              <div class="min-w-0 flex-1 space-y-2">
                 <h2 class="min-w-0">
                   <button
                     type="button"
@@ -125,6 +125,32 @@
                     </span>
                   </button>
                 </h2>
+
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-toned">
+                  <UButton
+                    type="button"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    class="text-start"
+                    :aria-pressed="definition.enabled"
+                    @click="() => void toggle(definition)"
+                  >
+                    <UIcon
+                      name="i-lucide-power"
+                      class="size-3.5"
+                      :class="definition.enabled ? 'text-success' : 'text-error'"
+                    />
+                    <span>{{
+                      definition.enabled ? t('common.enabled') : t('common.disabled')
+                    }}</span>
+                  </UButton>
+
+                  <span class="inline-flex items-center gap-1.5">
+                    <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                    <span>{{ t('common.priority') }}: {{ definition.priority }}</span>
+                  </span>
+                </div>
               </div>
 
               <div class="flex shrink-0 items-center gap-2">
@@ -142,45 +168,24 @@
 
           <div class="min-w-0 space-y-4">
             <div class="space-y-2 text-sm text-default">
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-toned">
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="outline"
-                  size="xs"
-                  class="text-start"
-                  :aria-pressed="definition.enabled"
-                  @click="() => void toggle(definition)"
-                >
-                  <UIcon
-                    name="i-lucide-power"
-                    class="size-3.5"
-                    :class="definition.enabled ? 'text-success' : 'text-error'"
-                  />
-                  <span>{{ definition.enabled ? t('common.enabled') : t('common.disabled') }}</span>
-                </UButton>
-
-                <span class="inline-flex items-center gap-1.5">
-                  <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>{{ t('common.priority') }}: {{ definition.priority }}</span>
-                </span>
-              </div>
-
-              <button
-                type="button"
-                class="flex min-w-0 w-full items-start gap-2 text-start"
-                @click="toggleExpand(definition.id, 'patterns')"
-              >
-                <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-medium text-toned">
+              <dl class="space-y-2">
+                <div class="min-w-0 space-y-1">
+                  <dt class="text-xs text-muted">
                     {{ t('taskDefinitions.urlPatterns') }}
-                  </div>
-                  <span :class="['block', expandClass(definition.id, 'patterns')]" dir="ltr">
-                    {{ definition.match_url.join('\n') }}
-                  </span>
+                  </dt>
+                  <dd class="min-w-0">
+                    <button
+                      type="button"
+                      class="block w-full text-start text-default"
+                      @click="toggleExpand(definition.id, 'patterns')"
+                    >
+                      <span :class="['block', expandClass(definition.id, 'patterns')]" dir="ltr">
+                        {{ definition.match_url.join('\n') }}
+                      </span>
+                    </button>
+                  </dd>
                 </div>
-              </button>
+              </dl>
             </div>
           </div>
 
@@ -197,7 +202,7 @@
                   "
                   @click="() => void openEdit(definition)"
                 >
-                  <span class="hidden sm:inline">{{ t('common.edit') }}</span>
+                  <span>{{ t('common.edit') }}</span>
                 </UButton>
               </UTooltip>
 
@@ -232,7 +237,6 @@
 
     <UEmpty
       v-else-if="query && filteredDefinitions.length < 1"
-      variant="naked"
       size="sm"
       icon="i-lucide-search"
       :title="t('common.noResults')"
@@ -244,7 +248,6 @@
       icon="i-lucide-file-cog"
       :title="t('common.noItems')"
       :description="t('common.empty')"
-      variant="naked"
       size="sm"
     />
 

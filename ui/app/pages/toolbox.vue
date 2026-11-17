@@ -94,7 +94,6 @@
     />
     <UEmpty
       v-else-if="query && jobs.length > 0 && filteredJobs.length === 0"
-      variant="naked"
       size="sm"
       icon="i-lucide-search"
       :title="t('common.noResults')"
@@ -105,7 +104,6 @@
       :icon="pageShell.icon"
       :title="t('common.noItems')"
       :description="t('common.empty')"
-      variant="naked"
       size="sm"
     />
     <div v-if="filteredJobs.length" class="ytp-card divide-y divide-default">
@@ -153,15 +151,18 @@
           <div class="min-w-0 space-y-1">
             <dt class="text-xs text-muted">{{ t('common.status') }}</dt>
             <dd>
-              <UBadge :color="toolboxStatusColor(job.status)" variant="soft" size="sm">
+              <span class="inline-flex items-center gap-1.5 text-toned">
                 <UIcon
-                  :name="statusIcons[job.status]"
+                  :name="toolboxStatusIcon(job.status)"
                   class="size-3.5 shrink-0"
-                  :class="job.status === 'running' ? 'animate-spin' : ''"
+                  :class="[
+                    toolboxStatusClass(job.status),
+                    job.status === 'running' ? 'animate-spin' : '',
+                  ]"
                   aria-hidden="true"
                 />
                 {{ toolboxStatusLabel(job.status, t) }}
-              </UBadge>
+              </span>
             </dd>
           </div>
           <div class="min-w-0 space-y-1">
@@ -267,14 +268,15 @@ import { usePageShell } from '~/composables/usePageShell';
 import { useRangeSelection } from '~/composables/useRangeSelection';
 import { useToolbox } from '~/composables/useToolbox';
 import type { WSEP } from '~/types/sockets';
-import type { ToolboxJob, ToolboxStatus } from '~/types/toolbox';
+import type { ToolboxJob } from '~/types/toolbox';
 import { basename, formatPageTitle } from '~/utils';
 import { formatDateTime } from '~/utils/date';
 import { setSelected } from '~/utils/selection';
 import {
   isToolboxActive,
   toolboxShowMessage,
-  toolboxStatusColor,
+  toolboxStatusClass,
+  toolboxStatusIcon,
   toolboxStatusLabel,
 } from '~/utils/toolbox';
 
@@ -309,15 +311,6 @@ const jobId = computed(() => {
 });
 let disposed = false;
 const toolLabel = (id: string): string => tools.value.find((item) => item.id === id)?.name ?? id;
-const statusIcons: Record<ToolboxStatus, string> = {
-  queued: 'i-lucide-clock',
-  running: 'i-lucide-loader-circle',
-  succeeded: 'i-lucide-check',
-  skipped: 'i-lucide-circle-slash',
-  failed: 'i-lucide-circle-alert',
-  cancelled: 'i-lucide-ban',
-  interrupted: 'i-lucide-triangle-alert',
-};
 const filteredJobs = computed(() => {
   const search = query.value.trim().toLocaleLowerCase();
   if (!search) return jobs.value;

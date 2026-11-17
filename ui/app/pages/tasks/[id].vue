@@ -65,12 +65,7 @@
       :ui="{ icon: 'animate-spin' }"
       :title="t('common.loading')"
     />
-    <UEmpty
-      v-else-if="!task"
-      icon="i-lucide-search-x"
-      :title="t('common.noItems')"
-      class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
-    >
+    <UEmpty v-else-if="!task" icon="i-lucide-search-x" :title="t('common.noItems')" class="py-10">
       <template #actions>
         <UButton to="/tasks" color="neutral" variant="outline">
           {{ pageShell.pageLabel }}
@@ -79,19 +74,34 @@
     </UEmpty>
 
     <template v-else>
-      <section class="ytp-card flex flex-wrap items-center gap-2 p-3">
-        <UBadge :color="task.enabled === false ? 'error' : 'success'" variant="soft">
-          <UIcon name="i-lucide-power" class="size-3.5" />
+      <section class="ytp-card flex flex-wrap items-center gap-x-4 gap-y-2 p-3 text-xs text-toned">
+        <span class="inline-flex items-center gap-1.5">
+          <UIcon
+            name="i-lucide-power"
+            class="size-3.5 shrink-0"
+            :class="task.enabled === false ? 'text-error' : 'text-success'"
+            aria-hidden="true"
+          />
           {{ task.enabled === false ? t('common.disabled') : t('common.enabled') }}
-        </UBadge>
-        <UBadge :color="task.handler_enabled === false ? 'neutral' : 'info'" variant="soft">
-          <UIcon name="i-lucide-rss" class="size-3.5" />
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <UIcon
+            name="i-lucide-rss"
+            class="size-3.5 shrink-0"
+            :class="task.handler_enabled === false ? 'text-toned' : 'text-info'"
+            aria-hidden="true"
+          />
           {{ task.handler_enabled === false ? t('tasks.handlerOff') : t('tasks.handlerOn') }}
-        </UBadge>
-        <UBadge :color="task.auto_start === false ? 'warning' : 'success'" variant="soft">
-          <UIcon name="i-lucide-circle-play" class="size-3.5" />
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <UIcon
+            name="i-lucide-circle-play"
+            class="size-3.5 shrink-0"
+            :class="task.auto_start === false ? 'text-warning' : 'text-success'"
+            aria-hidden="true"
+          />
           {{ task.auto_start === false ? t('queue.manualStart') : t('common.autoStart') }}
-        </UBadge>
+        </span>
         <UBadge color="neutral" variant="soft">
           <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
           {{ task.preset || config.app.default_preset }}

@@ -1081,8 +1081,6 @@
     "headersCount": "Headers: {count}",
     "eventsCount": "Events: {count}",
     "eventsAll": "Events: All",
-    "presetsAll": "Presets: All",
-    "presetsCount": "Presets: {count}",
     "headers": "Headers",
     "events": "Events",
     "info1": "When you export notification target, We remove <code>Authorization</code> header key by default, However this might not be enough to remove credentials from the exported data. it's your responsibility to ensure that the exported data does not contain any sensitive information for sharing.",
