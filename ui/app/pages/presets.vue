@@ -251,7 +251,7 @@
                     :aria-label="t('common.editTitle', { name: item.name })"
                     @click="editor.openEdit(item)"
                   >
-                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
+                    <span>{{ t('common.edit') }}</span>
                   </UButton>
                 </UTooltip>
 
@@ -286,7 +286,6 @@
 
       <UEmpty
         v-else-if="query && filteredPresets.length < 1"
-        variant="naked"
         size="sm"
         icon="i-lucide-search"
         :title="t('common.noResults')"
@@ -298,7 +297,6 @@
         icon="i-lucide-sliders-horizontal"
         :title="t('common.noItems')"
         :description="t('common.empty')"
-        variant="naked"
         size="sm"
       />
 

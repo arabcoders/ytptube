@@ -23,6 +23,26 @@ export const toolboxStatusLabel = (status: ToolboxStatus, t: (key: string) => st
   return t(`common.${status}`);
 };
 
+export const toolboxStatusClass = (status: ToolboxStatus): string =>
+  ({
+    success: 'text-success',
+    error: 'text-error',
+    warning: 'text-warning',
+    info: 'text-info',
+    neutral: 'text-toned',
+  })[toolboxStatusColor(status)];
+
+export const toolboxStatusIcon = (status: ToolboxStatus): string =>
+  ({
+    queued: 'i-lucide-clock',
+    running: 'i-lucide-loader-circle',
+    succeeded: 'i-lucide-check',
+    skipped: 'i-lucide-circle-slash',
+    failed: 'i-lucide-circle-alert',
+    cancelled: 'i-lucide-ban',
+    interrupted: 'i-lucide-triangle-alert',
+  })[status];
+
 export const toolboxShowMessage = (job: ToolboxJob, t: (key: string) => string): boolean => {
   const message = job.message?.trim();
   if (!message || message === job.error?.trim()) return false;

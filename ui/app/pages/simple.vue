@@ -318,18 +318,18 @@
                                 </UTooltip>
 
                                 <div class="flex flex-wrap items-center gap-2 text-xs">
-                                  <UBadge
-                                    :color="getStatusColor(item)"
-                                    variant="soft"
-                                    size="sm"
-                                    class="gap-1"
-                                  >
+                                  <span class="inline-flex items-center gap-1.5 text-toned">
                                     <UIcon
                                       :name="getStatusIcon(item)"
-                                      :class="['size-3.5', getStatusIconAnimation(item)]"
+                                      :class="[
+                                        'size-3.5 shrink-0',
+                                        getStatusClass(item),
+                                        getStatusIconAnimation(item),
+                                      ]"
+                                      aria-hidden="true"
                                     />
                                     <span>{{ getStatusLabel(item) }}</span>
-                                  </UBadge>
+                                  </span>
 
                                   <UBadge
                                     v-if="
@@ -453,7 +453,7 @@
                       v-else
                       icon="i-lucide-inbox"
                       :title="t('simple.queueEmpty')"
-                      class="rounded-lg border border-dashed border-default bg-muted/10 py-8"
+                      class="py-8"
                     />
                   </div>
                 </Transition>
@@ -588,18 +588,18 @@
                                 </UTooltip>
 
                                 <div class="flex flex-wrap items-center gap-2 text-xs">
-                                  <UBadge
-                                    :color="getStatusColor(item)"
-                                    variant="soft"
-                                    size="sm"
-                                    class="gap-1"
-                                  >
+                                  <span class="inline-flex items-center gap-1.5 text-toned">
                                     <UIcon
                                       :name="getStatusIcon(item)"
-                                      :class="['size-3.5', getStatusIconAnimation(item)]"
+                                      :class="[
+                                        'size-3.5 shrink-0',
+                                        getStatusClass(item),
+                                        getStatusIconAnimation(item),
+                                      ]"
+                                      aria-hidden="true"
                                     />
                                     <span>{{ getStatusLabel(item) }}</span>
-                                  </UBadge>
+                                  </span>
 
                                   <UBadge
                                     v-if="
@@ -701,7 +701,7 @@
                       v-else
                       icon="i-lucide-history"
                       :title="t('simple.historyEmpty')"
-                      class="rounded-lg border border-dashed border-default bg-muted/10 py-8"
+                      class="py-8"
                     />
 
                     <div v-if="historyPagination.total_pages > 1" class="flex justify-end py-2">
@@ -1344,31 +1344,31 @@ const getStatusIconAnimation = (item: StoreItem): string => {
     : '';
 };
 
-const getStatusColor = (item: StoreItem): 'neutral' | 'info' | 'success' | 'error' | 'warning' => {
+const getStatusClass = (item: StoreItem): string => {
   if (item.status === null) {
-    return 'neutral';
+    return 'text-toned';
   }
 
   if (isDownloadSkipped(item)) {
-    return 'info';
+    return 'text-info';
   }
 
   if (item.status === 'error' && item.filename) {
-    return 'warning';
+    return 'text-warning';
   }
 
-  const map: Record<string, 'neutral' | 'info' | 'success' | 'error' | 'warning'> = {
-    downloading: 'info',
-    postprocessing: 'info',
-    preparing: 'info',
-    finished: 'success',
-    error: 'error',
-    cancelled: 'neutral',
-    not_live: 'warning',
-    skip: 'neutral',
+  const map: Record<string, string> = {
+    downloading: 'text-info',
+    postprocessing: 'text-info',
+    preparing: 'text-info',
+    finished: 'text-success',
+    error: 'text-error',
+    cancelled: 'text-toned',
+    not_live: 'text-warning',
+    skip: 'text-toned',
   };
 
-  return map[item.status] ?? 'info';
+  return map[item.status] ?? 'text-info';
 };
 
 const percentPipe = (value: number | null): string => {

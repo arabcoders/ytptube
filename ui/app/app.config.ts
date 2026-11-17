@@ -12,6 +12,18 @@ export default defineAppConfig({
         label: 'block font-bold text-default',
       },
     },
+    empty: {
+      variants: {
+        variant: {
+          outline: {
+            root: 'border border-dashed border-default bg-muted/10 ring-0',
+          },
+        },
+      },
+      defaultVariants: {
+        variant: 'outline',
+      },
+    },
     tooltip: {
       slots: {
         content: 'pointer-events-auto',

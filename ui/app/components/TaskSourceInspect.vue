@@ -81,9 +81,10 @@
           />
           <UEmpty
             v-else
+            variant="naked"
             icon="i-lucide-list-video"
             :title="t('common.noItems')"
-            class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
+            class="py-10"
           />
         </template>
       </div>

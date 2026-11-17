@@ -155,15 +155,6 @@
                       }}</span>
                     </span>
 
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
-                      <span>{{
-                        item.presets.length
-                          ? t('notificationsPage.presetsCount', { count: item.presets.length })
-                          : t('notificationsPage.presetsAll')
-                      }}</span>
-                    </span>
-
                     <span
                       v-if="headerKeys(item).length > 0"
                       class="inline-flex items-center gap-1.5"
@@ -279,7 +270,7 @@
                     :aria-label="t('common.editTitle', { name: item.name })"
                     @click="editItem(item)"
                   >
-                    <span class="hidden sm:inline">{{ t('common.edit') }}</span>
+                    <span>{{ t('common.edit') }}</span>
                   </UButton>
                 </UTooltip>
 
@@ -314,7 +305,6 @@
 
       <UEmpty
         v-else-if="query && filteredTargets.length < 1"
-        variant="naked"
         size="sm"
         icon="i-lucide-search"
         :title="t('common.noResults')"
@@ -326,7 +316,6 @@
         icon="i-lucide-bell"
         :title="t('common.noItems')"
         :description="t('common.empty')"
-        variant="naked"
         size="sm"
       />
 

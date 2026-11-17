@@ -87,6 +87,7 @@
 
         <UEmpty
           v-else-if="filteredEntries.length === 0"
+          variant="naked"
           icon="i-lucide-list-video"
           :title="entries.length === 0 ? t('common.noPlaylistEntries') : t('common.noResults')"
           class="py-12"

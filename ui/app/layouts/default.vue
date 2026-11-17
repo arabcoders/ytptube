@@ -387,6 +387,7 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
+import { useStorage } from '@vueuse/core';
 import { ref, computed, onBeforeUnmount, onMounted, readonly } from 'vue';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import AppRoot from '~/components/AppRoot.vue';
@@ -489,7 +490,6 @@ const updateCheckMessageKey = ref('app.update.upToDate');
 const updateCheckMessage = computed(() => t(updateCheckMessageKey.value));
 const showRouteSearch = ref(false);
 const showSidebar = ref(false);
-const openNavigationGroups = ref<Array<string>>([]);
 const accountOpen = ref(false);
 const { alertDialog, confirmDialog } = useDialog();
 const isMobile = useMediaQuery({ query: '(max-width: 1023px)' });
@@ -668,16 +668,20 @@ const sidebarItems = computed<Array<NavigationMenuItem>>(() =>
 );
 
 const activeNavItem = computed(() => getActiveNavItem(route, navigationAvailability.value));
+const openNavigationGroups = useStorage<string[]>(
+  'sidebar_open_groups',
+  activeNavItem.value ? [activeNavItem.value.section] : [],
+);
 
 watch(
-  [() => route.path, () => activeNavItem.value?.section],
-  ([, section]) => {
+  () => route.path,
+  () => {
+    const section = activeNavItem.value?.section;
     if (section && !openNavigationGroups.value.includes(section)) {
       openNavigationGroups.value = [...openNavigationGroups.value, section];
     }
     showSidebar.value = false;
   },
-  { immediate: true },
 );
 
 const pageTitle = computed(() => {

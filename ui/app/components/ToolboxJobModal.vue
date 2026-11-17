@@ -15,21 +15,35 @@
         <UAlert v-if="detailError" color="error" variant="soft" :title="detailError" />
         <template v-if="selectedJob">
           <section class="space-y-3">
-            <div class="grid gap-4 sm:grid-cols-2">
-              <StatCard
-                :label="t('common.status')"
-                :value="toolboxStatusLabel(selectedJob.status, t)"
-                icon="i-lucide-activity"
-                :color="toolboxStatusColor(selectedJob.status)"
-              />
-              <StatCard
-                :label="t('common.date')"
-                :value="formatRelativeTime(selectedJob.created_at, locale)"
-                icon="i-lucide-clock"
-                :tooltip="formatDateTime(selectedJob.created_at, locale, { seconds: true })"
-                color="neutral"
-              />
-            </div>
+            <dl class="grid gap-4 text-sm sm:grid-cols-2">
+              <div class="space-y-1">
+                <dt class="text-xs text-muted">{{ t('common.status') }}</dt>
+                <dd class="inline-flex items-center gap-1.5 text-toned">
+                  <UIcon
+                    :name="toolboxStatusIcon(selectedJob.status)"
+                    class="size-3.5 shrink-0"
+                    :class="[
+                      toolboxStatusClass(selectedJob.status),
+                      selectedJob.status === 'running' ? 'animate-spin' : '',
+                    ]"
+                    aria-hidden="true"
+                  />
+                  {{ toolboxStatusLabel(selectedJob.status, t) }}
+                </dd>
+              </div>
+              <div class="space-y-1">
+                <dt class="text-xs text-muted">{{ t('common.date') }}</dt>
+                <dd class="text-toned">
+                  <UTooltip
+                    :text="formatDateTime(selectedJob.created_at, locale, { seconds: true })"
+                  >
+                    <time :datetime="selectedJob.created_at">
+                      {{ formatRelativeTime(selectedJob.created_at, locale) }}
+                    </time>
+                  </UTooltip>
+                </dd>
+              </div>
+            </dl>
             <div v-if="selectedJob.status === 'running'" class="space-y-2">
               <div class="flex items-center justify-between gap-3 text-xs text-toned">
                 <span>{{ t('queue.progress') }}</span>
@@ -150,7 +164,6 @@
 </template>
 
 <script setup lang="ts">
-import StatCard from '~/components/StatCard.vue';
 import { useAppSocket } from '~/composables/useAppSocket';
 import { useToolbox } from '~/composables/useToolbox';
 import type { WSEP } from '~/types/sockets';
@@ -158,7 +171,12 @@ import type { ToolboxJob } from '~/types/toolbox';
 import { basename, copyText, dirname, encodePath, makeDownload } from '~/utils';
 import { formatDateTime } from '~/utils/date';
 import { formatRelativeTime } from '~/utils/relativeTime';
-import { isToolboxActive, toolboxStatusColor, toolboxStatusLabel } from '~/utils/toolbox';
+import {
+  isToolboxActive,
+  toolboxStatusClass,
+  toolboxStatusIcon,
+  toolboxStatusLabel,
+} from '~/utils/toolbox';
 
 const props = defineProps<{ id: number }>();
 const emit = defineEmits<{ close: [] }>();

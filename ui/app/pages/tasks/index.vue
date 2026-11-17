@@ -132,17 +132,18 @@
                       <UIcon name="i-lucide-external-link" class="size-3.5" aria-hidden="true" />
                     </a>
                   </UTooltip>
-                  <UBadge
+                  <span
                     v-if="item.id && isTaskInProgress(item.id)"
-                    color="info"
-                    variant="soft"
-                    size="sm"
-                    icon="i-lucide-loader-circle"
-                    :ui="{ leadingIcon: 'animate-spin' }"
+                    class="inline-flex items-center gap-1.5 text-xs text-toned"
                     role="status"
                   >
+                    <UIcon
+                      name="i-lucide-loader-circle"
+                      class="size-3.5 shrink-0 animate-spin text-info"
+                      aria-hidden="true"
+                    />
                     {{ t('tasks.inProgress') }}
-                  </UBadge>
+                  </span>
                 </div>
 
                 <div v-if="get_tags(item.name).length > 0" class="flex flex-wrap gap-1">
@@ -318,7 +319,7 @@
                   :aria-label="t('common.editTitle', { name: remove_tags(item.name) })"
                   @click="editItem(item)"
                 >
-                  <span class="hidden sm:inline">{{ t('common.edit') }}</span>
+                  <span>{{ t('common.edit') }}</span>
                 </UButton>
               </UTooltip>
 
@@ -353,7 +354,6 @@
 
     <UEmpty
       v-else-if="query && filteredTasks.length < 1"
-      variant="naked"
       size="sm"
       icon="i-lucide-search"
       :title="t('common.noResults')"
@@ -365,7 +365,6 @@
       icon="i-lucide-calendar-clock"
       :title="t('common.noItems')"
       :description="t('common.empty')"
-      variant="naked"
       size="sm"
     />
 

@@ -151,7 +151,6 @@
 
         <UEmpty
           v-if="trackedExtractorCount === 0"
-          variant="naked"
           size="sm"
           icon="i-lucide-info"
           :title="t('common.noActivity')"

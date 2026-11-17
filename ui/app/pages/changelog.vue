@@ -189,8 +189,8 @@
               </ul>
               <UEmpty
                 v-if="isReleaseOpen(log.tag) && log.commits.length === 0"
-                size="sm"
                 variant="naked"
+                size="sm"
                 icon="i-lucide-git-commit-horizontal"
                 :title="t('changelog.noCommits')"
               />
@@ -200,7 +200,6 @@
 
         <UEmpty
           v-else-if="!loadError"
-          variant="naked"
           size="sm"
           :icon="query ? 'i-lucide-search' : 'i-lucide-scroll-text'"
           :title="query ? t('common.noResults') : t('changelog.noItems')"
