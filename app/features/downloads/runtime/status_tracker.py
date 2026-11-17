@@ -87,6 +87,7 @@ class StatusTracker:
         self._last_progress_time: float = 0.0
         self._pending_progress: bool = False
         self._progress_interval: float = 0.5
+        self._stream_bytes: dict[str | None, int] = {}
 
     def _progress_payload(self) -> dict:
         return {
@@ -283,7 +284,9 @@ class StatusTracker:
                 message=f"'{self.info.title}' failed to download. {self.info.error}",
             )
         elif "downloaded_bytes" in status and status.get("downloaded_bytes", 0) > 0:
-            self.info.downloaded_bytes = status.get("downloaded_bytes")
+            filename = status.get("filename")
+            self._stream_bytes[filename] = max(self._stream_bytes.get(filename, 0), status["downloaded_bytes"])
+            self.info.downloaded_bytes = sum(self._stream_bytes.values())
             total: float | None = status.get("total_bytes") or status.get("total_bytes_estimate")
             if total:
                 try:

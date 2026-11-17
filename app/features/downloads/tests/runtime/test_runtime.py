@@ -1642,6 +1642,54 @@ class TestStatusTracker:
         assert st.info.percent == 50.0
 
     @pytest.mark.asyncio
+    async def test_stream_sizes(self, mock_config: dict[str, Any]) -> None:
+        st = StatusTracker(**mock_config)
+        updates = [
+            ("video.mp4", "downloading", 100, 500, 100),
+            ("video.mp4", "finished", 500, 500, 500),
+            ("audio.m4a", "downloading", 1, 50, 501),
+            ("audio.m4a", "downloading", 25, 50, 525),
+            ("audio.m4a", "finished", 50, 50, 550),
+        ]
+
+        for filename, status, downloaded, total, expected in updates:
+            await st.process_status_update(
+                {
+                    "id": "test-id",
+                    "filename": filename,
+                    "status": status,
+                    "downloaded_bytes": downloaded,
+                    "total_bytes": total,
+                    "speed": 10,
+                    "eta": 5,
+                }
+            )
+
+            assert st.info.downloaded_bytes == expected
+            assert st._progress_payload()["downloaded_bytes"] == expected
+            assert st.info.total_bytes == total
+            assert st.info.percent == downloaded / total * 100
+            assert st.info.speed == 10
+            assert st.info.eta == 5
+
+    @pytest.mark.parametrize("filename", ["video.mp4", None])
+    @pytest.mark.asyncio
+    async def test_stream_retries(self, mock_config: dict[str, Any], filename: str | None) -> None:
+        st = StatusTracker(**mock_config)
+
+        for downloaded, expected in [(100, 100), (100, 100), (20, 100), (150, 150)]:
+            await st.process_status_update(
+                {
+                    "id": "test-id",
+                    "filename": filename,
+                    "status": "downloading",
+                    "downloaded_bytes": downloaded,
+                }
+            )
+
+            assert st.info.downloaded_bytes == expected
+
+    @pytest.mark.asyncio
     async def test_status_uses_estimate(self, mock_config: dict[str, Any]) -> None:
         st = StatusTracker(**mock_config)
         status = {
@@ -1687,17 +1735,31 @@ class TestStatusTracker:
         assert st.info.error == "Download failed"
 
     @pytest.mark.asyncio
-    async def test_update_sets_final_update(self, tmp_path: Path, mock_config: dict[str, Any]) -> None:
+    async def test_update_sets_final_update(
+        self, tmp_path: Path, mock_config: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("app.features.streaming.library.ffprobe.ffprobe_bin", lambda: None)
         test_file = tmp_path / "test.mp4"
         test_file.write_text("test content")
 
         st = StatusTracker(**mock_config)
         st.download_dir = str(tmp_path)
+        for filename in ("video.mp4", "audio.m4a"):
+            await st.process_status_update(
+                {
+                    "id": "test-id",
+                    "filename": filename,
+                    "status": "downloading",
+                    "downloaded_bytes": 100,
+                }
+            )
         status = {"id": "test-id", "status": "finished", "final_name": str(test_file)}
 
         await st.process_status_update(status)
         assert st.final_update is True
         assert st.info.filename == "test.mp4"
+        assert st.info.file_size == len("test content")
+        assert st.info.downloaded_bytes == 200
 
     @pytest.mark.asyncio
     async def test_media_profile(
