@@ -328,11 +328,18 @@
                 class="flex items-center gap-1.5 text-sm text-info"
               >
                 <UIcon name="i-lucide-calendar" class="size-3.5 shrink-0" aria-hidden="true" />
-                {{
-                  t('history.retryAt', {
-                    date: formatDateTime(item.live_in || item.extras?.release_in, locale),
-                  })
-                }}
+                <i18n-t keypath="history.retryAt" tag="span" scope="global">
+                  <template #date>
+                    <UTooltip
+                      :text="formatDateTime(item.live_in || item.extras?.release_in, locale)"
+                    >
+                      <time
+                        :datetime="item.live_in || item.extras?.release_in"
+                        v-rtime="item.live_in || item.extras?.release_in"
+                      />
+                    </UTooltip>
+                  </template>
+                </i18n-t>
               </p>
 
               <div
