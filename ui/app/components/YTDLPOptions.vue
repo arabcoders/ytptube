@@ -1,14 +1,13 @@
 <template>
   <div class="w-full min-w-0 max-w-full space-y-4 p-1 sm:p-2">
-    <div class="grid gap-4 rounded-lg border border-default bg-muted/10 p-4 lg:grid-cols-12">
-      <UFormField :label="t('common.search')" class="lg:col-span-4" :ui="fieldUi">
+    <div class="ytp-form-group grid gap-4 p-4 lg:grid-cols-12">
+      <UFormField :label="t('common.search')" class="lg:col-span-4">
         <UInput
           v-model.trim="filters.query"
           type="text"
           :placeholder="t('common.filterFlagDesc')"
           autocomplete="off"
           class="w-full"
-          :ui="inputUi"
         >
           <template #leading>
             <UIcon name="i-lucide-search" class="size-4 text-toned" />
@@ -16,11 +15,7 @@
         </UInput>
       </UFormField>
 
-      <UFormField
-        :label="t('common.groupFilter')"
-        class="sm:col-span-6 lg:col-span-2"
-        :ui="fieldUi"
-      >
+      <UFormField :label="t('common.groupFilter')" class="sm:col-span-6 lg:col-span-2">
         <USelectMenu
           v-model="filters.group"
           :items="groupItems"
@@ -33,7 +28,7 @@
         />
       </UFormField>
 
-      <UFormField :label="t('common.display')" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+      <UFormField :label="t('common.display')" class="sm:col-span-6 lg:col-span-2">
         <USelectMenu
           v-model="displayMode"
           :items="displayItems"
@@ -46,7 +41,7 @@
         />
       </UFormField>
 
-      <UFormField :label="t('common.sortBy')" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+      <UFormField :label="t('common.sortBy')" class="sm:col-span-6 lg:col-span-2">
         <USelectMenu
           v-model="sortBy"
           :items="sortItems"
@@ -59,7 +54,7 @@
         />
       </UFormField>
 
-      <UFormField :label="t('common.order')" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+      <UFormField :label="t('common.order')" class="sm:col-span-6 lg:col-span-2">
         <USelectMenu
           v-model="sortDir"
           :items="orderItems"
@@ -72,7 +67,7 @@
         />
       </UFormField>
 
-      <UFormField :label="t('common.flagsColumn')" class="lg:col-span-12" :ui="fieldUi">
+      <UFormField :label="t('common.flagsColumn')" class="lg:col-span-12">
         <div class="flex flex-wrap gap-2">
           <UButton
             v-for="item in flagFilterItems"
@@ -133,22 +128,16 @@
 
         <div class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <table class="min-w-180 w-full table-auto text-sm" dir="ltr">
-              <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-                <tr
-                  class="text-left [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-                >
+            <table class="ytp-table ytp-table-bordered min-w-180 table-auto" dir="ltr">
+              <thead>
+                <tr>
                   <th class="w-80 whitespace-nowrap">{{ t('common.flagsColumn') }}</th>
                   <th>{{ t('common.description') }}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-default">
-                <tr
-                  v-for="opt in group.items"
-                  :key="opt.flags.join('|')"
-                  class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-                >
-                  <td class="w-80 px-3 py-3 align-top">
+              <tbody>
+                <tr v-for="opt in group.items" :key="opt.flags.join('|')">
+                  <td class="w-80">
                     <div class="flex items-start gap-3" dir="ltr">
                       <div class="flex min-w-0 flex-1 flex-wrap gap-1.5">
                         <UBadge
@@ -178,7 +167,7 @@
                       </UTooltip>
                     </div>
                   </td>
-                  <td class="px-3 py-3 align-top text-default">
+                  <td class="text-default">
                     <div class="min-w-0 wrap-break-word whitespace-normal">
                       <span v-if="opt.description && opt.description.length !== 0">{{
                         opt.description
@@ -196,23 +185,17 @@
 
     <div v-else class="w-full min-w-0 max-w-full overflow-hidden ytp-table-surface">
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-215 w-full table-auto text-sm" dir="ltr">
-          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
-            <tr
-              class="text-left [&>th]:border-e [&>th]:border-default/60 [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-            >
+        <table class="ytp-table ytp-table-bordered min-w-215 table-auto" dir="ltr">
+          <thead>
+            <tr>
               <th class="w-80 whitespace-nowrap">{{ t('common.flagsColumn') }}</th>
               <th class="w-36 whitespace-nowrap">{{ t('common.groupColumn') }}</th>
               <th>{{ t('common.description') }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-default">
-            <tr
-              v-for="opt in visible"
-              :key="opt.flags.join('|')"
-              class="align-top transition-colors hover:bg-elevated/70 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-            >
-              <td class="w-80 px-3 py-3 align-top">
+          <tbody>
+            <tr v-for="opt in visible" :key="opt.flags.join('|')">
+              <td class="w-80">
                 <div class="flex items-start gap-3" dir="ltr">
                   <div class="flex min-w-0 flex-1 flex-wrap gap-1.5">
                     <UBadge
@@ -242,10 +225,10 @@
                   </UTooltip>
                 </div>
               </td>
-              <td class="w-36 px-3 py-3 align-top font-medium text-default whitespace-nowrap">
+              <td class="w-36 font-medium text-default whitespace-nowrap">
                 {{ opt.group || 'root' }}
               </td>
-              <td class="px-3 py-3 align-top text-default">
+              <td class="text-default">
                 <div class="min-w-0 wrap-break-word whitespace-normal">
                   <span v-if="opt.description && opt.description.length !== 0">{{
                     opt.description
@@ -283,17 +266,6 @@ const filters = reactive({
   group: YTDLP_ALL_GROUPS,
   flagKind: 'any' as 'any' | 'short' | 'long',
 });
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
 
 const displayItems = computed(() => [
   { label: t('common.grouped'), value: 'grouped' },

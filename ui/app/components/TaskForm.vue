@@ -7,7 +7,7 @@
       variant="soft"
       icon="i-lucide-triangle-alert"
       :title="displayError"
-      class="sticky top-0 z-10 shadow-sm"
+      class="ytp-form-alert"
     />
 
     <UAlert
@@ -61,7 +61,7 @@
       </template>
     </UAlert>
 
-    <div class="space-y-6 border-b border-default pb-5 last:border-b-0 last:pb-0">
+    <div class="space-y-4">
       <div v-if="reference" class="flex justify-end">
         <UButton
           type="button"
@@ -79,8 +79,8 @@
         </UButton>
       </div>
 
-      <div v-if="showImport || !reference" class="space-y-3 border-b border-default pb-5">
-        <UFormField class="w-full" :ui="fieldUi">
+      <div v-if="showImport || !reference" class="ytp-card-padded-lg space-y-3">
+        <UFormField class="w-full">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
@@ -98,8 +98,7 @@
               v-model="import_string"
               type="text"
               autocomplete="off"
-              class="min-w-0 flex-1"
-              :ui="inputUi"
+              class="w-full min-w-0 flex-1"
               :disabled="importInProgress"
               @keydown.enter.prevent="() => void importItem()"
             />
@@ -120,9 +119,9 @@
         </UFormField>
       </div>
 
-      <div class="space-y-5">
+      <div class="ytp-card-padded-lg space-y-5">
         <div class="grid gap-4 xl:grid-cols-2">
-          <UFormField class="w-full" :ui="fieldUi">
+          <UFormField class="w-full">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-type" class="size-4 text-toned" />
@@ -140,11 +139,10 @@
               size="lg"
               :disabled="addInProgress"
               class="w-full"
-              :ui="inputUi"
             />
           </UFormField>
 
-          <UFormField class="w-full" :ui="fieldUi">
+          <UFormField class="w-full">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-link" class="size-4 text-toned" />
@@ -184,7 +182,7 @@
                 autoresize
                 size="lg"
                 class="w-full"
-                :ui="textareaUi"
+                :ui="{ base: 'min-h-[7rem]' }"
                 placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg"
                 @keydown="handleKeyDown"
               />
@@ -199,7 +197,6 @@
                 :disabled="addInProgress || convertInProgress"
                 size="lg"
                 class="w-full"
-                :ui="inputUi"
                 placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg"
                 @keydown="handleKeyDown"
                 @paste="handlePaste"
@@ -209,9 +206,9 @@
         </div>
       </div>
 
-      <div class="space-y-5">
+      <div class="ytp-card-padded-lg space-y-5">
         <div class="grid gap-4 xl:grid-cols-2">
-          <UFormField class="w-full" :ui="fieldUi" :error="timerError || undefined">
+          <UFormField class="w-full" :error="timerError || undefined">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-clock-3" class="size-4 text-toned" />
@@ -241,11 +238,10 @@
               placeholder="0 12 * * 5"
               size="lg"
               class="w-full"
-              :ui="inputUi"
             />
           </UFormField>
 
-          <UFormField class="w-full" :ui="fieldUi" :description="presetDescription">
+          <UFormField class="w-full" :description="presetDescription">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
@@ -276,9 +272,9 @@
         </div>
       </div>
 
-      <div class="space-y-5">
+      <div class="ytp-card-padded-lg space-y-5">
         <div class="grid gap-4 xl:grid-cols-2">
-          <UFormField class="w-full" :ui="fieldUi">
+          <UFormField class="w-full">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
@@ -290,26 +286,16 @@
               {{ t('common.downloadPathDesc') }}
             </template>
 
-            <div class="flex flex-col gap-2 sm:flex-row" dir="ltr">
-              <UTooltip :text="t('common.fullPath', { path: config.app.download_path })">
-                <div
-                  class="inline-flex min-h-11 items-center rounded-md border border-default bg-muted/30 px-3 text-sm text-toned"
-                >
-                  {{ shortPath(config.app.download_path) }}
-                </div>
-              </UTooltip>
-
-              <FolderInput
-                id="folder"
-                v-model="form.folder"
-                :placeholder="getDefault('folder', '/')"
-                :disabled="addInProgress"
-                :ui="inputUi"
-              />
-            </div>
+            <FolderInput
+              id="folder"
+              v-model="form.folder"
+              :base-path="config.app.download_path"
+              :placeholder="getDefault('folder', '/')"
+              :disabled="addInProgress"
+            />
           </UFormField>
 
-          <UFormField class="w-full" :ui="fieldUi">
+          <UFormField class="w-full">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-file-code-2" class="size-4 text-toned" />
@@ -332,11 +318,10 @@
               "
               size="lg"
               class="w-full"
-              :ui="inputUi"
             />
           </UFormField>
 
-          <UFormField v-if="hasIgnoreConditionOptions" class="w-full" :ui="fieldUi">
+          <UFormField v-if="hasIgnoreConditionOptions" class="w-full">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-list-minus" class="size-4 text-toned" />
@@ -378,7 +363,7 @@
 
       <div class="space-y-5">
         <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
-          <div class="rounded-lg border border-default bg-muted/20 p-3">
+          <div class="ytp-form-group p-3">
             <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
@@ -394,7 +379,7 @@
             </div>
           </div>
 
-          <div class="rounded-lg border border-default bg-muted/20 p-3">
+          <div class="ytp-form-group p-3">
             <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
@@ -410,7 +395,7 @@
             </div>
           </div>
 
-          <div class="rounded-lg border border-default bg-muted/20 p-3">
+          <div class="ytp-form-group p-3">
             <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
@@ -429,7 +414,7 @@
             </div>
           </div>
 
-          <div v-if="!reference" class="rounded-lg border border-default bg-muted/20 p-3">
+          <div v-if="!reference" class="ytp-form-group p-3">
             <div class="flex h-full items-center justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
@@ -448,8 +433,8 @@
         </div>
       </div>
 
-      <div class="space-y-5 border-t border-default pt-5">
-        <UFormField class="w-full" :ui="editorFieldUi">
+      <div class="ytp-card-padded-lg space-y-5">
+        <UFormField class="w-full">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
@@ -517,7 +502,7 @@ import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Condition } from '~/types/conditions';
 import type { ExportedTask, Task } from '~/types/tasks';
-import { ensure_api_success, shortPath } from '~/utils';
+import { ensure_api_success } from '~/utils';
 
 const props = defineProps<{
   reference?: number | null | undefined;
@@ -598,32 +583,6 @@ const dirtySource = computed(() => ({
   archiveAllAfterAdd: archiveAllAfterAdd.value,
 }));
 const { isDirty, markClean } = useDirtyState(dirtySource);
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-  error: 'text-sm text-error',
-};
-
-const editorFieldUi = {
-  root: 'w-full',
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const textareaUi = {
-  root: 'w-full',
-  base: 'min-h-[7rem] w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
 
 const canUseMultiUrl = computed(() => props.reference == null);
 const isMultiLineInput = computed(

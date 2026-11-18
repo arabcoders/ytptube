@@ -6,7 +6,7 @@
       variant="soft"
       icon="i-lucide-triangle-alert"
       :title="validationError"
-      class="sticky top-0 z-10 shadow-sm"
+      class="ytp-form-alert"
     />
 
     <div class="flex flex-wrap items-center gap-2">
@@ -27,15 +27,8 @@
       </UButton>
     </div>
 
-    <div
-      v-if="showImport"
-      class="grid gap-4 rounded-lg border border-default bg-muted/10 p-4 lg:grid-cols-2"
-    >
-      <UFormField
-        v-if="editorDefinitions.length"
-        :ui="fieldUi"
-        :description="t('common.prefillFromDef')"
-      >
+    <div v-if="showImport" class="ytp-card-padded-lg grid gap-4 lg:grid-cols-2">
+      <UFormField v-if="editorDefinitions.length" :description="t('common.prefillFromDef')">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-copy" class="size-4 text-toned" />
@@ -58,7 +51,7 @@
         />
       </UFormField>
 
-      <UFormField :ui="fieldUi" :description="t('common.importStringDesc')">
+      <UFormField :description="t('common.importStringDesc')">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-import" class="size-4 text-toned" />
@@ -71,8 +64,7 @@
             v-model="importString"
             type="text"
             autocomplete="off"
-            class="min-w-0 flex-1"
-            :ui="inputUi"
+            class="w-full min-w-0 flex-1"
             :disabled="isBusy"
             dir="ltr"
           />
@@ -111,12 +103,8 @@
     />
 
     <template v-if="mode === 'gui'">
-      <div class="grid gap-4 md:grid-cols-12">
-        <UFormField
-          class="md:col-span-6"
-          :ui="fieldUi"
-          :description="t('common.definitionNameDesc')"
-        >
+      <div class="ytp-card-padded-lg grid gap-4 md:grid-cols-12">
+        <UFormField class="md:col-span-6" :description="t('common.definitionNameDesc')">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-type" class="size-4 text-toned" />
@@ -124,20 +112,10 @@
             </div>
           </template>
 
-          <UInput
-            v-model="guiState.name"
-            type="text"
-            class="w-full"
-            :ui="inputUi"
-            :disabled="isBusy"
-          />
+          <UInput v-model="guiState.name" type="text" class="w-full" :disabled="isBusy" />
         </UFormField>
 
-        <UFormField
-          class="md:col-span-3"
-          :ui="fieldUi"
-          :description="t('common.definitionPriorityDesc')"
-        >
+        <UFormField class="md:col-span-3" :description="t('common.definitionPriorityDesc')">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
@@ -150,12 +128,11 @@
             type="number"
             min="0"
             class="w-full"
-            :ui="inputUi"
             :disabled="isBusy"
           />
         </UFormField>
 
-        <UFormField class="md:col-span-3" :ui="fieldUi">
+        <UFormField class="md:col-span-3">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-power" class="size-4 text-toned" />
@@ -166,9 +143,7 @@
             <span>&nbsp;</span>
           </template>
 
-          <div
-            class="flex min-h-11 items-center rounded-md border border-default bg-elevated/40 px-3"
-          >
+          <div class="ytp-value">
             <USwitch v-model="guiState.enabled" :disabled="isBusy" />
             <span class="ms-3 text-sm text-default">{{
               guiState.enabled ? t('common.enabled') : t('common.disabled')
@@ -176,11 +151,7 @@
           </div>
         </UFormField>
 
-        <UFormField
-          class="md:col-span-12"
-          :ui="fieldUi"
-          :description="t('common.matchPatternsDesc')"
-        >
+        <UFormField class="md:col-span-12" :description="t('common.matchPatternsDesc')">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-link" class="size-4 text-toned" />
@@ -200,7 +171,7 @@
         </UFormField>
       </div>
 
-      <div class="space-y-5 border-t border-default pt-5">
+      <div class="ytp-card-padded-lg space-y-5">
         <div class="space-y-4">
           <div class="space-y-1">
             <div
@@ -231,7 +202,7 @@
           </div>
 
           <div class="grid gap-4 md:grid-cols-2">
-            <UFormField :ui="fieldUi" :description="t('common.engineDesc')">
+            <UFormField :description="t('common.engineDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-cpu" class="size-4 text-toned" />
@@ -245,13 +216,12 @@
                 value-key="value"
                 label-key="label"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
             </UFormField>
 
-            <UFormField :ui="fieldUi" :description="t('common.requestMethodDesc')">
+            <UFormField :description="t('common.requestMethodDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-arrow-right-left" class="size-4 text-toned" />
@@ -264,13 +234,12 @@
                 value-key="value"
                 label-key="label"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
             </UFormField>
 
-            <UFormField :ui="fieldUi" :description="t('common.requestUrlDesc')">
+            <UFormField :description="t('common.requestUrlDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-link" class="size-4 text-toned" />
@@ -282,7 +251,6 @@
                 type="url"
                 placeholder="https://example.com/feed"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
@@ -290,7 +258,6 @@
 
             <UFormField
               v-if="guiState.engineType === 'browser'"
-              :ui="fieldUi"
               :description="t('common.browserEndpointUrlDesc')"
             >
               <template #label>
@@ -306,7 +273,6 @@
                 type="url"
                 placeholder="http://chrome:9222"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
@@ -315,7 +281,6 @@
             <UFormField
               v-if="guiState.requestMethod === 'POST'"
               :class="guiState.engineType === 'browser' ? '' : 'md:col-span-2'"
-              :ui="fieldUi"
               :description="t('common.requestBodyTypeDesc')"
             >
               <template #label>
@@ -331,7 +296,6 @@
                 value-key="value"
                 label-key="label"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
               />
             </UFormField>
@@ -339,7 +303,6 @@
             <UFormField
               v-if="guiState.requestMethod === 'POST' && guiState.requestBodyType === 'raw'"
               class="md:col-span-2"
-              :ui="fieldUi"
               :description="t('common.requestBodyDesc')"
             >
               <template #label>
@@ -405,7 +368,7 @@
               <div
                 v-for="(pair, index) in guiState.requestBodyPairs"
                 :key="`request-body-${index}`"
-                class="grid gap-2 rounded-lg border border-default bg-muted/20 p-3"
+                class="ytp-form-group grid gap-2 p-3"
                 :class="
                   guiState.requestBodyType === 'form'
                     ? 'md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'
@@ -417,7 +380,7 @@
                   v-model="pair.key"
                   :placeholder="t('common.keyLabel')"
                   :disabled="isBusy"
-                  :ui="inputUi"
+                  class="w-full"
                 />
                 <template v-if="guiState.requestBodyType === 'form'">
                   <USelect
@@ -425,7 +388,7 @@
                     :items="scalarTypeItems"
                     value-key="value"
                     label-key="label"
-                    :ui="inputUi"
+                    class="w-full"
                     :disabled="isBusy"
                   />
                   <USelect
@@ -434,7 +397,7 @@
                     :items="booleanValueItems"
                     value-key="value"
                     label-key="label"
-                    :ui="inputUi"
+                    class="w-full"
                     :disabled="isBusy"
                   />
                   <UInput
@@ -442,16 +405,16 @@
                     v-model="pair.value"
                     :placeholder="t('common.valueLabel')"
                     :disabled="isBusy"
-                    :ui="inputUi"
+                    class="w-full"
                   />
-                  <UInput v-else disabled placeholder="null" :ui="inputUi" />
+                  <UInput v-else disabled placeholder="null" class="w-full" />
                 </template>
                 <UInput
                   v-else
                   v-model="pair.value"
                   :placeholder="t('common.jsonValue')"
                   :disabled="isBusy"
-                  :ui="inputUi"
+                  class="w-full"
                 />
                 <UButton
                   type="button"
@@ -473,38 +436,33 @@
           class="grid gap-4 md:grid-cols-2"
         >
           <template v-if="guiState.engineType === 'http'">
-            <UFormField :ui="fieldUi" :description="t('common.impersonateDesc')">
+            <UFormField :description="t('common.impersonateDesc')">
               <template #label>{{ t('common.impersonate') }}</template>
               <USelectMenu
                 v-model="httpImpersonate"
                 :items="impersonateTargetItems"
                 :search-input="true"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy || !impersonateTargetItems.length"
                 dir="ltr"
               />
             </UFormField>
-            <UFormField :ui="fieldUi" :description="t('common.curlDefaultHeadersDesc')">
+            <UFormField :description="t('common.curlDefaultHeadersDesc')">
               <template #label>{{ t('common.curlDefaultHeaders') }}</template>
-              <div
-                class="flex min-h-11 items-center rounded-md border border-default bg-elevated/40 px-3"
-              >
+              <div class="ytp-value">
                 <USwitch v-model="curlDefaultHeaders" :disabled="isBusy" />
               </div>
             </UFormField>
-            <UFormField :ui="fieldUi" :description="t('common.flaresolverrDesc')">
+            <UFormField :description="t('common.flaresolverrDesc')">
               <template #label>{{ t('common.flaresolverr') }}</template>
-              <div
-                class="flex min-h-11 items-center rounded-md border border-default bg-elevated/40 px-3"
-              >
+              <div class="ytp-value">
                 <USwitch v-model="flaresolverr" :disabled="isBusy" />
               </div>
             </UFormField>
           </template>
 
           <template v-if="guiState.engineType === 'browser'">
-            <UFormField :ui="fieldUi" :description="t('common.waitForDesc')">
+            <UFormField :description="t('common.waitForDesc')">
               <template #label>{{ t('common.waitFor') }}</template>
               <div class="grid gap-2 sm:grid-cols-2">
                 <USelect
@@ -512,19 +470,19 @@
                   :items="waitTypeItems"
                   value-key="value"
                   label-key="label"
-                  :ui="inputUi"
+                  class="w-full"
                   :disabled="isBusy"
                 />
                 <UInput
                   v-model="browserWaitExpression"
                   :placeholder="t('common.waitExpression')"
-                  :ui="inputUi"
+                  class="w-full"
                   :disabled="isBusy"
                   dir="ltr"
                 />
               </div>
             </UFormField>
-            <UFormField :ui="fieldUi" :description="t('common.waitTimeoutDesc')">
+            <UFormField :description="t('common.waitTimeoutDesc')">
               <template #label>{{ t('common.waitTimeout') }}</template>
               <UInput
                 v-model="browserWaitTimeout"
@@ -533,12 +491,11 @@
                 max="300"
                 step="any"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
             </UFormField>
-            <UFormField :ui="fieldUi" :description="t('common.pageLoadTimeoutDesc')">
+            <UFormField :description="t('common.pageLoadTimeoutDesc')">
               <template #label>{{ t('common.pageLoadTimeout') }}</template>
               <UInput
                 v-model="pageLoadTimeout"
@@ -547,14 +504,13 @@
                 max="300"
                 step="any"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
             </UFormField>
           </template>
 
-          <UFormField :ui="fieldUi" :description="t('common.requestTimeoutDesc')">
+          <UFormField :description="t('common.requestTimeoutDesc')">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-timer" class="size-4 text-toned" />
@@ -568,7 +524,6 @@
               step="any"
               placeholder="120"
               class="w-full"
-              :ui="inputUi"
               :disabled="isBusy"
               dir="ltr"
             />
@@ -596,21 +551,21 @@
             <div
               v-for="(param, index) in guiState.requestParams"
               :key="`request-param-${index}`"
-              class="grid gap-2 rounded-lg border border-default bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+              class="ytp-form-group grid gap-2 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
               dir="ltr"
             >
               <UInput
                 v-model="param.key"
                 :placeholder="t('common.keyLabel')"
                 :disabled="isBusy"
-                :ui="inputUi"
+                class="w-full"
               />
               <USelect
                 v-model="param.type"
                 :items="scalarTypeItems"
                 value-key="value"
                 label-key="label"
-                :ui="inputUi"
+                class="w-full"
                 :disabled="isBusy"
               />
               <USelect
@@ -619,7 +574,7 @@
                 :items="booleanValueItems"
                 value-key="value"
                 label-key="label"
-                :ui="inputUi"
+                class="w-full"
                 :disabled="isBusy"
               />
               <UInput
@@ -627,9 +582,9 @@
                 v-model="param.value"
                 :placeholder="t('common.valueLabel')"
                 :disabled="isBusy"
-                :ui="inputUi"
+                class="w-full"
               />
-              <UInput v-else disabled placeholder="null" :ui="inputUi" />
+              <UInput v-else disabled placeholder="null" class="w-full" />
               <UButton
                 type="button"
                 color="neutral"
@@ -664,20 +619,20 @@
             <div
               v-for="(header, index) in guiState.requestHeaders"
               :key="`request-header-${index}`"
-              class="grid gap-2 rounded-lg border border-default bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+              class="ytp-form-group grid gap-2 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
               dir="ltr"
             >
               <UInput
                 v-model="header.key"
                 :placeholder="t('common.keyLabel')"
                 :disabled="isBusy"
-                :ui="inputUi"
+                class="w-full"
               />
               <UInput
                 v-model="header.value"
                 :placeholder="t('common.valueLabel')"
                 :disabled="isBusy"
-                :ui="inputUi"
+                class="w-full"
               />
               <UButton
                 type="button"
@@ -699,7 +654,7 @@
           </div>
 
           <div class="grid gap-4 md:grid-cols-2">
-            <UFormField :ui="fieldUi" :description="t('common.responseTypeDesc')">
+            <UFormField :description="t('common.responseTypeDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-file-output" class="size-4 text-toned" />
@@ -712,12 +667,11 @@
                 value-key="value"
                 label-key="label"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
               />
             </UFormField>
 
-            <UFormField :ui="fieldUi" :description="t('common.parseModeDesc')">
+            <UFormField :description="t('common.parseModeDesc')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-list-tree" class="size-4 text-toned" />
@@ -730,7 +684,6 @@
                 value-key="value"
                 label-key="label"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
               />
             </UFormField>
@@ -746,7 +699,7 @@
           </div>
 
           <div class="grid gap-4 md:grid-cols-12">
-            <UFormField class="md:col-span-4" :ui="fieldUi" :description="t('common.selectorType')">
+            <UFormField class="md:col-span-4" :description="t('common.selectorType')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-shapes" class="size-4 text-toned" />
@@ -760,17 +713,12 @@
                 value-key="value"
                 label-key="label"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
             </UFormField>
 
-            <UFormField
-              class="md:col-span-8"
-              :ui="fieldUi"
-              :description="t('common.matchExpression')"
-            >
+            <UFormField class="md:col-span-8" :description="t('common.matchExpression')">
               <template #label>
                 <div class="flex flex-wrap items-center gap-2">
                   <UIcon name="i-lucide-crosshair" class="size-4 text-toned" />
@@ -785,7 +733,6 @@
                 type="text"
                 placeholder="div.card"
                 class="w-full"
-                :ui="inputUi"
                 :disabled="isBusy"
                 dir="ltr"
               />
@@ -794,7 +741,7 @@
         </div>
       </div>
 
-      <div class="space-y-4 border-t border-default pt-5">
+      <div class="space-y-4">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="space-y-1">
             <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
@@ -817,11 +764,9 @@
         </div>
 
         <div class="w-full min-w-0 overflow-x-auto overscroll-x-contain ytp-table-surface">
-          <table class="table-fixed w-full text-sm" dir="ltr">
-            <thead class="bg-elevated/60 text-xs uppercase tracking-wide text-toned">
-              <tr
-                class="text-start [&>th]:border-e [&>th]:border-default/60 [&>th]:px-2 [&>th]:py-2.5 [&>th]:font-semibold [&>th:last-child]:border-e-0"
-              >
+          <table class="ytp-table ytp-table-bordered ytp-table-compact table-fixed" dir="ltr">
+            <thead>
+              <tr>
                 <th class="w-28">
                   <span class="inline-flex items-center gap-1.5">
                     <UIcon name="i-lucide-key" class="size-3.5 text-toned" />
@@ -854,79 +799,71 @@
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-default">
+            <tbody>
               <tr v-if="!guiState.fields.length">
-                <td colspan="6" class="px-2 py-6 text-center text-sm text-toned">
+                <td colspan="6" class="py-6 text-center text-toned">
                   {{ t('common.noExtractorFields') }}
                 </td>
               </tr>
-              <tr
-                v-for="(field, index) in guiState.fields"
-                :key="`${index}-${field.key}`"
-                class="align-top [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-              >
-                <td class="px-2 py-2">
+              <tr v-for="(field, index) in guiState.fields" :key="`${index}-${field.key}`">
+                <td>
                   <UInput
                     v-model="field.key"
                     type="text"
                     class="w-full"
-                    :ui="inputUi"
                     :disabled="isBusy"
                     dir="ltr"
                   />
                 </td>
-                <td class="px-2 py-2">
+                <td>
                   <USelect
                     v-model="field.type"
                     :items="fieldTypeItems"
                     value-key="value"
                     label-key="label"
                     class="w-full"
-                    :ui="inputUi"
                     :disabled="isBusy"
                     dir="ltr"
                   />
                 </td>
-                <td class="px-2 py-2">
+                <td>
                   <UInput
                     v-model="field.expression"
                     type="text"
                     class="w-full"
-                    :ui="inputUi"
                     :disabled="isBusy"
                     dir="ltr"
                   />
                 </td>
-                <td class="px-2 py-2">
+                <td>
                   <UInput
                     v-model="field.attribute"
                     type="text"
                     :placeholder="t('common.optional')"
                     class="w-full"
-                    :ui="inputUi"
                     :disabled="isBusy"
                     dir="ltr"
                   />
                 </td>
-                <td class="px-2 py-2">
+                <td>
                   <div class="space-y-2">
                     <UInput
                       v-model="field.postFilter.filter"
                       :placeholder="t('common.filter')"
-                      :ui="inputUi"
+                      class="w-full"
                       :disabled="isBusy"
                       dir="ltr"
                     />
                     <UInput
                       v-model="field.postFilter.value"
                       :placeholder="t('common.optional')"
-                      :ui="inputUi"
+                      class="w-full"
                       :disabled="isBusy"
                       dir="ltr"
                     />
                   </div>
                 </td>
-                <td class="px-2 py-2 text-end">
+                <td class="text-end">
                   <UButton
                     type="button"
                     color="neutral"
@@ -955,7 +892,7 @@
     </template>
 
     <template v-else>
-      <UFormField :ui="fieldUi">
+      <UFormField class="ytp-card-padded-lg">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-file-code-2" class="size-4 text-toned" />
@@ -1031,8 +968,6 @@ const {
   guiState,
   showAdvancedRequestOptions,
   guiDiagnostics,
-  fieldUi,
-  inputUi,
   textareaUi,
   advancedTextareaUi,
   engineItems,

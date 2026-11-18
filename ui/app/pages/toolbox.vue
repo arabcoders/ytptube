@@ -196,7 +196,7 @@
 
         <div v-if="job.status === 'running'" class="col-span-2 xl:col-span-3">
           <div
-            class="queue-progress rounded-md border border-default bg-muted/20"
+            class="queue-progress"
             role="progressbar"
             :aria-label="t('queue.progress')"
             :aria-valuenow="job.progress ?? undefined"

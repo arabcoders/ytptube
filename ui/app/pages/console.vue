@@ -84,10 +84,7 @@
             {{ t('common.help') }}
           </UButton>
 
-          <UPopover
-            :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
-            :ui="{ content: 'bg-elevated/80 dark:bg-elevated/30 backdrop-blur-md ring-0' }"
-          >
+          <UPopover :content="{ side: 'bottom', align: 'end', sideOffset: 8 }">
             <UButton
               color="neutral"
               variant="outline"
@@ -100,7 +97,7 @@
             </UButton>
 
             <template #content>
-              <UCard class="w-[min(92vw,42rem)]" dir="ltr" :ui="historyCardUi">
+              <UCard variant="soft" class="w-[min(92vw,42rem)]" dir="ltr" :ui="historyCardUi">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
                     <UIcon name="i-lucide-history" class="size-4 text-toned" />
@@ -132,14 +129,10 @@
                   class="max-h-96 w-full min-w-0 max-w-full overflow-hidden ytp-table-surface bg-transparent"
                 >
                   <div class="w-full max-w-full overflow-auto overscroll-contain">
-                    <table class="w-full text-sm">
-                      <tbody class="divide-y divide-default">
-                        <tr
-                          v-for="item in recentSessionEntries"
-                          :key="item.sessionId"
-                          class="transition-colors hover:bg-elevated/20 [&>td]:border-e [&>td]:border-default/60 [&>td:last-child]:border-e-0"
-                        >
-                          <td class="px-3 py-3 align-middle">
+                    <table class="ytp-table ytp-table-bordered">
+                      <tbody>
+                        <tr v-for="item in recentSessionEntries" :key="item.sessionId">
+                          <td class="align-middle">
                             <div class="space-y-2">
                               <button
                                 type="button"
@@ -194,7 +187,7 @@
                             </div>
                           </td>
 
-                          <td class="w-28 px-3 py-3 text-center align-middle whitespace-nowrap">
+                          <td class="w-28 text-center align-middle whitespace-nowrap">
                             <div class="flex items-center justify-end gap-1">
                               <UButton
                                 color="neutral"
@@ -362,13 +355,12 @@ const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(va
 
 const terminal = shallowRef<Terminal | null>(null);
 const terminalFit = shallowRef<FitAddon | null>(null);
-const command = ref('');
+const command = useStorage<string>('console_command', '', undefined, { flush: 'sync' });
 const manualReconnectPending = ref(false);
 const cancelPending = ref(false);
 const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window');
 const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null);
 const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null);
-const storedCommand = useStorage<string>('console_command', '');
 
 const historyCardUi = {
   root: 'bg-transparent ring-0 shadow-none',
@@ -548,18 +540,9 @@ const recentSessionStatusIcon = (item: (typeof recentSessions.value)[number]): s
 const recentSessionStatusSpinning = (item: (typeof recentSessions.value)[number]): boolean => {
   return ['starting', 'running'].includes(item.status);
 };
-watch(command, (value) => {
-  storedCommand.value = value;
-});
-
 watch(
   () => sessionStatus.value,
   async (value, oldValue) => {
-    const sessionCommand = consoleSession.state.value.command.trim();
-    if (sessionCommand && (!command.value.trim() || ['expired', 'interrupted'].includes(value))) {
-      command.value = sessionCommand;
-    }
-
     if (
       oldValue &&
       oldValue !== value &&
@@ -857,14 +840,10 @@ const runCommand = async (): Promise<void> => {
 
   await ensureTerminal();
 
-  const started = await consoleSession.startSession({
+  await consoleSession.startSession({
     command: runnableCommand.value,
     displayCommand: displayCommand.value,
   });
-
-  if (started) {
-    storedCommand.value = '';
-  }
 };
 
 const runHelp = async (): Promise<void> => {
@@ -919,7 +898,6 @@ const clearOutput = async (withCommand: boolean = false): Promise<void> => {
 
   if (withCommand) {
     command.value = '';
-    storedCommand.value = '';
   }
 
   await focusInput();
@@ -983,19 +961,11 @@ onMounted(async () => {
   await consoleSession.fetchRecentSessions();
   restoreBufferedTerminalOutput();
 
-  if (storedCommand.value.trim()) {
-    command.value = storedCommand.value;
-    await nextTick();
-  } else if (consoleSession.state.value.command.trim()) {
-    command.value = consoleSession.state.value.command;
-    await nextTick();
-  }
-
   await focusInput();
 });
 
 onBeforeUnmount(() => {
-  consoleSession.disconnect();
+  handlePageLeave();
   window.removeEventListener('pagehide', handlePageLeave);
   window.removeEventListener('beforeunload', handlePageLeave);
   terminalResizeObserver?.disconnect();

@@ -1,5 +1,5 @@
 <template>
-  <form id="presetForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+  <form id="presetForm" autocomplete="off" class="space-y-4" @submit.prevent="checkInfo">
     <FormSubmitError :message="action.message.value" @dismiss="action.clear" />
     <UAlert
       v-if="formError && hasFormContent"
@@ -7,17 +7,16 @@
       variant="soft"
       icon="i-lucide-triangle-alert"
       :title="formError"
-      class="sticky top-0 z-10 shadow-sm"
+      class="ytp-form-alert"
     />
 
-    <details :open="!reference" class="border-b border-default pb-5">
+    <details :open="!reference" class="ytp-card-padded-lg">
       <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
         {{ t('common.import') }}
       </summary>
       <div class="mt-4 grid gap-4 sm:grid-cols-2">
         <UFormField
           class="min-w-0"
-          :ui="fieldUi"
           :label="t('common.importPreset')"
           :help="t('common.importPresetDesc')"
         >
@@ -39,7 +38,6 @@
 
         <UFormField
           class="min-w-0"
-          :ui="fieldUi"
           :label="t('common.importString')"
           :help="t('common.importStringDesc')"
         >
@@ -50,8 +48,7 @@
               v-model="importString"
               type="text"
               autocomplete="off"
-              class="min-w-0 flex-1"
-              :ui="inputUi"
+              class="w-full min-w-0 flex-1"
               :disabled="importInProgress"
               @keydown.enter.prevent="() => void importItem()"
             />
@@ -73,13 +70,8 @@
       </div>
     </details>
 
-    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
-      <UFormField
-        class="w-full"
-        :ui="fieldUi"
-        :label="t('common.name')"
-        :help="t('common.presetNameDesc')"
-      >
+    <div class="ytp-card-padded-lg grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+      <UFormField class="w-full" :label="t('common.name')" :help="t('common.presetNameDesc')">
         <UInput
           id="name"
           v-model="form.name"
@@ -87,14 +79,12 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
           @update:model-value="normalizeName"
         />
       </UFormField>
 
       <UFormField
         class="w-full"
-        :ui="fieldUi"
         :label="t('common.priority')"
         :help="t('common.presetPriorityDesc')"
       >
@@ -107,11 +97,10 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
 
-      <UFormField class="w-full sm:col-span-2" :ui="fieldUi" :label="t('common.description')">
+      <UFormField class="w-full sm:col-span-2" :label="t('common.description')">
         <UTextarea
           id="description"
           v-model="form.description"
@@ -122,41 +111,27 @@
           variant="outline"
           color="neutral"
           class="w-full"
-          :ui="textareaUi"
         />
       </UFormField>
     </div>
 
-    <div class="space-y-4 border-t border-default pt-5">
+    <div class="ytp-card-padded-lg space-y-4">
       <UFormField
         class="w-full"
-        :ui="fieldUi"
         :label="t('common.downloadPath')"
         :description="t('common.presetPathDesc')"
       >
-        <div class="flex flex-col gap-2 sm:flex-row" dir="ltr">
-          <UTooltip :text="t('common.fullPath', { path: config.app.download_path })">
-            <div
-              class="inline-flex min-h-11 items-center rounded-md border border-default bg-muted/30 px-3 text-sm text-toned"
-            >
-              {{ shortPath(config.app.download_path) }}
-            </div>
-          </UTooltip>
-
-          <FolderInput
-            id="folder"
-            v-model="form.folder"
-            class="min-w-0 flex-1"
-            :placeholder="t('common.leaveEmptyDefault')"
-            :disabled="addInProgress"
-            :ui="inputUi"
-          />
-        </div>
+        <FolderInput
+          id="folder"
+          v-model="form.folder"
+          :base-path="config.app.download_path"
+          :placeholder="t('common.leaveEmptyDefault')"
+          :disabled="addInProgress"
+        />
       </UFormField>
 
       <UFormField
         class="w-full"
-        :ui="fieldUi"
         :label="t('common.outputTemplate')"
         :description="t('common.presetTemplateDesc')"
       >
@@ -169,12 +144,11 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
     </div>
 
-    <div class="border-t border-default pt-5">
+    <div class="ytp-card-padded-lg">
       <UFormField class="w-full" :ui="editorFieldUi" :label="t('common.cliOptions')">
         <template #description>
           <p class="text-sm text-toned">
@@ -199,7 +173,7 @@
       </UFormField>
     </div>
 
-    <details :open="Boolean(preset.cookies)" class="border-t border-default pt-5">
+    <details :open="Boolean(preset.cookies)" class="ytp-card-padded-lg">
       <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
         {{ t('common.cookiesLabel') }}
       </summary>
@@ -265,7 +239,7 @@ import TextDropzone from '~/components/TextDropzone.vue';
 import type { ImportedItem } from '~/types';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset } from '~/types/presets';
-import { normalizePresetName, shortPath } from '~/utils';
+import { normalizePresetName } from '~/utils';
 
 const { t } = useI18n();
 
@@ -304,29 +278,8 @@ const showOptions = ref(false);
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null);
 
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
 const editorFieldUi = {
-  root: 'w-full',
-  label: 'font-semibold text-default',
-  container: 'flex flex-col space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const textareaUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+  container: 'flex flex-col',
 };
 
 const importPresetItems = computed(() => selectItems.value);

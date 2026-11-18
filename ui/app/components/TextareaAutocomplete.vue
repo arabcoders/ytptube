@@ -14,8 +14,7 @@
       color="neutral"
       class="h-full w-full"
       :ui="{
-        root: 'w-full',
-        base: 'min-h-[10rem] w-full bg-elevated/60 font-mono text-sm ring-default focus-visible:ring-primary',
+        base: 'min-h-[10rem] font-mono text-sm',
       }"
       @input="onInput"
       @focus="onFocus"
@@ -35,7 +34,7 @@
 
     <div
       v-if="showList && filteredOptions.length"
-      class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md bg-elevated/80 dark:bg-elevated/30 ytp-floating-surface"
+      class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden ytp-floating-surface"
       dir="ltr"
       role="menu"
     >
@@ -45,12 +44,8 @@
         ref="dropdownItems"
         data-autocomplete-item
         type="button"
-        class="flex w-full items-start justify-between gap-4 px-3 py-2 text-start text-sm transition-colors"
-        :class="
-          idx === highlightedIndex
-            ? 'bg-elevated text-highlighted'
-            : 'text-default hover:bg-elevated/60'
-        "
+        class="ytp-autocomplete-item items-start justify-between"
+        :data-highlighted="idx === highlightedIndex"
         @mousedown.prevent="appendFlag(option.value)"
       >
         <span class="shrink-0 font-semibold text-highlighted">{{ option.value }}</span>

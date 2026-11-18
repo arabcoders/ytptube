@@ -1,7 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
     <div
-      class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+      class="ytp-lights-out"
       :class="lightsOut ? 'opacity-100' : 'opacity-0'"
       aria-hidden="true"
     />

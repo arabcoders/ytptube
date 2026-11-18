@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-5">
     <form :id="formId" class="space-y-5" @submit.prevent="onSubmit">
-      <div class="grid gap-4 lg:grid-cols-2">
-        <UFormField :ui="fieldUi" :error="urlError || undefined">
+      <div class="ytp-card-padded-lg grid gap-4 lg:grid-cols-2">
+        <UFormField :error="urlError || undefined">
           <template #label>
             <span class="inline-flex items-center gap-2 font-semibold">
               <UIcon name="i-lucide-link" class="size-4 text-toned" />
@@ -16,13 +16,12 @@
             type="url"
             :placeholder="t('common.urlPlaceholder')"
             class="w-full"
-            :ui="inputUi"
             :disabled="loading"
             dir="ltr"
           />
         </UFormField>
 
-        <UFormField :ui="fieldUi">
+        <UFormField>
           <template #label>
             <span class="inline-flex items-center gap-2 font-semibold">
               <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
@@ -47,7 +46,7 @@
         </UFormField>
       </div>
 
-      <div class="rounded-lg border border-default bg-muted/20 p-3">
+      <div class="ytp-form-group p-3">
         <div class="flex h-full items-center justify-between gap-3">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
@@ -81,7 +80,7 @@
       :description="errorDescription"
     />
 
-    <div v-else-if="response" class="space-y-3">
+    <div v-else-if="response" class="ytp-card-padded-lg space-y-3">
       <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
         <UIcon name="i-lucide-braces" class="size-4 text-toned" />
         <span>{{ t('common.result') }}</span>
@@ -152,18 +151,6 @@ const contentView = ref<HTMLElement | null>(null);
 const elapsed = ref(0);
 let loadingStartedAt = 0;
 let loadingTimer: ReturnType<typeof setInterval> | null = null;
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  error: 'text-sm text-error',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
 
 const presetItems = computed(
   () => selectItems.value as Array<{ type?: 'label' | 'item'; label: string; value?: string }>,

@@ -5,7 +5,7 @@
     :dismissible="!busy"
     :ui="{
       ...modalUi,
-      content: 'shell-surface w-full bg-transparent sm:max-w-2xl',
+      content: 'w-full sm:max-w-2xl',
       body: 'max-h-[75vh] overflow-y-auto p-4 sm:p-5',
     }"
   >
@@ -32,8 +32,8 @@
           {{ t('common.retry') }}
         </UButton>
       </div>
-      <div v-else class="divide-y divide-default">
-        <section class="space-y-4 pb-6">
+      <div v-else class="space-y-4">
+        <section class="ytp-card-padded-lg space-y-4">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 space-y-1">
               <h2 class="flex items-center gap-2 font-semibold text-highlighted">
@@ -68,7 +68,7 @@
           </dl>
         </section>
 
-        <section class="space-y-4 py-6">
+        <section class="ytp-card-padded-lg space-y-4">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 space-y-1">
               <h2 class="flex items-center gap-2 font-semibold text-highlighted">
@@ -146,7 +146,10 @@
           </div>
         </section>
 
-        <section v-if="auth.status?.value?.auth_method !== 'remote_user'" class="space-y-4 pt-6">
+        <section
+          v-if="auth.status?.value?.auth_method !== 'remote_user'"
+          class="ytp-card-padded-lg space-y-4"
+        >
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 space-y-1">
               <h2 class="flex items-center gap-2 font-semibold text-highlighted">
@@ -260,22 +263,16 @@
   >
     <template #body>
       <form id="accountForm" class="space-y-4" @submit.prevent="save">
-        <UFormField :label="t('auth.username')" name="username" :ui="fieldUi">
+        <UFormField :label="t('auth.username')" name="username">
           <UInput
             v-model="editUsername"
             class="w-full"
             icon="i-lucide-user"
             autocomplete="username"
             :disabled="saving"
-            :ui="{ base: 'bg-elevated/40' }"
           />
         </UFormField>
-        <UFormField
-          :label="t('auth.currentPassword')"
-          name="currentPassword"
-          required
-          :ui="fieldUi"
-        >
+        <UFormField :label="t('auth.currentPassword')" name="currentPassword" required>
           <UInput
             v-model="currentPassword"
             class="w-full"
@@ -284,12 +281,11 @@
             autocomplete="current-password"
             required
             :disabled="saving"
-            :ui="{ base: 'bg-elevated/40' }"
             :trailing-icon="showCurrentPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             @click:trailing="showCurrentPassword = !showCurrentPassword"
           />
         </UFormField>
-        <UFormField :label="t('auth.newPassword')" name="newPassword" :ui="fieldUi">
+        <UFormField :label="t('auth.newPassword')" name="newPassword">
           <UInput
             v-model="newPassword"
             class="w-full"
@@ -297,7 +293,6 @@
             :type="showNewPassword ? 'text' : 'password'"
             autocomplete="new-password"
             :disabled="saving"
-            :ui="{ base: 'bg-elevated/40' }"
             :trailing-icon="showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             @click:trailing="showNewPassword = !showNewPassword"
           />
@@ -340,7 +335,7 @@
   >
     <template #body>
       <form id="keyForm" class="space-y-4" @submit.prevent="createKey">
-        <UFormField :label="t('auth.keyName')" name="keyName" required :ui="fieldUi">
+        <UFormField :label="t('auth.keyName')" name="keyName" required>
           <UInput
             v-model="keyName"
             class="w-full"
@@ -348,7 +343,6 @@
             autocomplete="off"
             required
             :disabled="creating"
-            :ui="{ base: 'bg-elevated/40' }"
           />
         </UFormField>
       </form>
@@ -441,13 +435,8 @@ const auth = useAuth();
 const notify = useNotification();
 const { confirm } = useConfirm();
 const modalUi = {
-  content: 'shell-surface bg-transparent',
   body: 'p-4 sm:p-5',
   footer: 'p-4 sm:p-5',
-};
-const fieldUi = {
-  label: 'text-sm font-medium text-highlighted',
-  container: 'mt-2',
 };
 const username = ref('');
 const editUsername = ref('');

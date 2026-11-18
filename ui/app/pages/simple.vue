@@ -3,19 +3,19 @@
     <AppRoot mode="simple" @ready="init" v-slot="{ openSettings }">
       <Shutdown v-if="app_shutdown" />
 
-      <div v-else class="shell-stage shell-surface flex min-h-screen flex-col">
+      <div v-else class="shell-stage shell-surface flex flex-col">
         <div
           class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
         >
           <div
-            class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+            class="ytp-lights-out"
             :class="lightsOut ? 'opacity-100' : 'opacity-0'"
             aria-hidden="true"
           />
 
           <div class="transition-transform duration-300">
             <div class="mx-auto w-full transition-all duration-300" :class="formContainerClass">
-              <div class="ytp-card p-4 sm:p-5">
+              <div class="ytp-card-padded-lg">
                 <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
                   <FormSubmitError :message="submitError" @dismiss="submitError = ''" />
                   <div class="flex items-start justify-between gap-3">
@@ -91,7 +91,7 @@
                         required
                         :disabled="isFormDisabled"
                         class="min-w-0 flex-1"
-                        :ui="urlInputUi"
+                        :ui="{ root: 'w-full' }"
                       />
 
                       <UButton
@@ -108,7 +108,7 @@
                   </div>
 
                   <div v-if="showExtras" class="space-y-3 ytp-border-top-soft pt-4">
-                    <UFormField :label="t('common.presetLabel')" :ui="fieldUi" class="w-full">
+                    <UFormField :label="t('common.presetLabel')" class="w-full">
                       <template #label>
                         <span class="inline-flex items-center gap-2 font-semibold">
                           <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
@@ -231,7 +231,7 @@
                         <div class="p-4 pb-0 ytp-border-bottom-soft">
                           <div
                             v-if="downloadingStatuses.has(item.status) || item.status === null"
-                            class="queue-progress rounded-md border border-default bg-muted/20"
+                            class="queue-progress"
                           >
                             <div
                               class="queue-progress__bar bg-success/35"
@@ -258,9 +258,7 @@
 
                         <div class="p-4">
                           <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
-                            <figure
-                              class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
-                            >
+                            <figure class="ytp-thumbnail relative w-full shrink-0 sm:w-52">
                               <span
                                 v-if="item.filename || isEmbedable(item.url)"
                                 class="play-overlay"
@@ -528,9 +526,7 @@
                       >
                         <div class="p-4">
                           <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
-                            <figure
-                              class="relative w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
-                            >
+                            <figure class="ytp-thumbnail relative w-full shrink-0 sm:w-52">
                               <span
                                 v-if="item.filename || isEmbedable(item.url)"
                                 class="play-overlay"
@@ -965,16 +961,6 @@ const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set([
   'postprocessing',
   'preparing',
 ]);
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-};
-
-const urlInputUi = {
-  root: 'w-full',
-  base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
-};
 
 const historyPagination = computed(() => pagination.value);
 const historyIsLoading = computed(() => isLoading.value);

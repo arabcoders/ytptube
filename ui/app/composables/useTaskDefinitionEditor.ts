@@ -91,26 +91,12 @@ export const useTaskDefinitionEditor = (props: Props, emit: Emit) => {
   const advancedMode = computed(() => mode.value === 'advanced');
   const guiDiagnostics = ref('');
 
-  const fieldUi = {
-    label: 'font-semibold text-default',
-    container: 'space-y-2',
-    description: 'text-sm text-toned',
-    hint: 'text-sm text-toned',
-  };
-
-  const inputUi = {
-    root: 'w-full',
-    base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-  };
-
   const textareaUi = {
-    root: 'w-full',
-    base: 'min-h-[8rem] w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+    base: 'min-h-[8rem]',
   };
 
   const advancedTextareaUi = {
-    root: 'w-full',
-    base: 'min-h-[24rem] w-full bg-elevated/60 font-mono text-sm ring-default focus-visible:ring-primary',
+    base: 'min-h-[24rem] font-mono text-sm',
   };
 
   const engineItems = [
@@ -633,8 +619,6 @@ export const useTaskDefinitionEditor = (props: Props, emit: Emit) => {
     isBusy,
     advancedMode,
     guiDiagnostics,
-    fieldUi,
-    inputUi,
     textareaUi,
     advancedTextareaUi,
     engineItems,

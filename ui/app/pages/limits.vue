@@ -157,11 +157,11 @@
           :description="t('common.noActivityDesc')"
         />
 
-        <div v-else class="ytp-card w-full min-w-0 max-w-full overflow-hidden">
+        <div v-else class="ytp-table-surface w-full overflow-hidden">
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <table class="min-w-160 w-full text-sm">
-              <thead class="border-b border-default text-xs uppercase tracking-wide text-toned">
-                <tr class="text-start [&>th]:px-3 [&>th]:py-2.5 [&>th]:font-semibold">
+            <table class="ytp-table min-w-160">
+              <thead>
+                <tr>
                   <th class="w-full min-w-48">{{ t('common.extractor') }}</th>
                   <th class="w-40 whitespace-nowrap">{{ t('common.source') }}</th>
                   <th class="w-20 whitespace-nowrap">{{ t('common.active') }}</th>
@@ -171,12 +171,8 @@
                 </tr>
               </thead>
 
-              <tbody class="divide-y divide-default">
-                <tr
-                  v-for="item in extractorItems"
-                  :key="item.name"
-                  class="transition-colors hover:bg-elevated/30 [&>td]:px-3 [&>td]:py-2.5"
-                >
+              <tbody>
+                <tr v-for="item in extractorItems" :key="item.name">
                   <td class="font-medium text-highlighted">{{ item.name }}</td>
                   <td class="whitespace-nowrap">
                     <span class="inline-flex items-center gap-1 text-xs text-toned">

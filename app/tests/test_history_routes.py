@@ -131,6 +131,42 @@ async def test_items_source_invalid(source_id: str, test_client) -> None:
 
 
 @pytest.mark.asyncio
+async def test_update_keeps_internal(test_client, tmp_path: Path) -> None:
+    item = _make_download(status="error")
+    queue = SimpleNamespace(done=SimpleNamespace(get_by_id=AsyncMock(return_value=item), put=AsyncMock()))
+    notify = Mock()
+    target = tmp_path / "archive"
+
+    async def update(request):
+        return await history.item_update(request, queue, Encoder(), notify)
+
+    async def archive(request):
+        return await history.item_archive_add(request, queue, notify)
+
+    client = await test_client({"item_update": update, "history.item.archive.add": archive})
+    response = await client.post(
+        url_for("item_update", id="item-1"),
+        json={
+            "title": "Updated",
+            "archive_id": "test marker",
+            "is_archivable": True,
+            "_archive_file": str(target),
+            "archive_add": "not callable",
+        },
+    )
+
+    assert response.status == 200
+    assert item.info.title == "Updated"
+    assert item.info._archive_file is None
+    assert callable(item.info.archive_add)
+
+    response = await client.post(url_for("history.item.archive.add", id="item-1"))
+
+    assert response.status == 500
+    assert not target.exists()
+
+
+@pytest.mark.asyncio
 async def test_retry_ids(test_client) -> None:
     queue = Mock(retry=AsyncMock(return_value=2))
 

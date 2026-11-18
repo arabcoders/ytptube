@@ -21,8 +21,7 @@
       color="neutral"
       class="h-full w-full"
       :ui="{
-        root: 'w-full',
-        base: 'min-h-[10rem] w-full bg-elevated/60 font-mono text-sm ring-default focus-visible:ring-primary',
+        base: 'min-h-[10rem] font-mono text-sm',
       }"
     />
 

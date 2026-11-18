@@ -2,12 +2,8 @@
   <div class="min-h-screen">
     <UApp :locale="uiLocale" :dir="direction">
       <main
-        class="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-default px-4 py-8 sm:px-6"
+        class="shell-surface relative flex min-h-dvh w-full items-center justify-center overflow-hidden px-4 py-8 sm:px-6"
       >
-        <div
-          class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgb(59_130_246/0.16),transparent_42%),radial-gradient(circle_at_bottom_right,rgb(14_165_233/0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_left,rgb(59_130_246/0.22),transparent_42%),radial-gradient(circle_at_bottom_right,rgb(14_165_233/0.14),transparent_40%)]"
-        />
-
         <div class="relative w-full max-w-md space-y-6">
           <header class="space-y-3 text-center">
             <div
@@ -25,7 +21,6 @@
 
           <UCard
             :ui="{
-              root: 'bg-elevated/40 shadow-xl backdrop-blur-sm',
               header: 'px-5 py-4 sm:px-6',
               body: 'p-5 sm:p-6',
             }"

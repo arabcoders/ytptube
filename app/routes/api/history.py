@@ -577,6 +577,9 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
         if not hasattr(item.info, k):
             continue
 
+        if k.startswith("_") or k not in item.info.__dataclass_fields__:
+            continue
+
         if getattr(item.info, k) == v:
             continue
 
