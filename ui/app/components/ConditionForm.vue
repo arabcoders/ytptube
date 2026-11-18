@@ -17,16 +17,15 @@
       variant="soft"
       icon="i-lucide-triangle-alert"
       :title="formError"
-      class="sticky top-0 z-10 shadow-sm"
+      class="ytp-form-alert"
     />
 
-    <details :open="!reference" class="border-b border-default pb-5">
+    <details :open="!reference" class="ytp-card-padded-lg">
       <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
         {{ t('common.import') }}
       </summary>
       <UFormField
         class="mt-4 w-full"
-        :ui="fieldUi"
         :label="t('common.importString')"
         :help="t('common.importStringDesc')"
       >
@@ -37,8 +36,7 @@
             dir="ltr"
             type="text"
             autocomplete="off"
-            class="min-w-0 flex-1"
-            :ui="inputUi"
+            class="w-full min-w-0 flex-1"
             :disabled="importInProgress"
             @keydown.enter.prevent="() => void importItem()"
           />
@@ -59,8 +57,8 @@
       </UFormField>
     </details>
 
-    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_auto]">
-      <UFormField class="min-w-0" :ui="fieldUi" :label="t('common.name')">
+    <div class="ytp-card-padded-lg grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_auto]">
+      <UFormField class="min-w-0" :label="t('common.name')">
         <UInput
           id="name"
           v-model="form.name"
@@ -69,11 +67,10 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
 
-      <UFormField class="min-w-0" :ui="fieldUi" :label="t('common.priority')">
+      <UFormField class="min-w-0" :label="t('common.priority')">
         <UInput
           id="priority"
           v-model.number="form.priority"
@@ -83,11 +80,10 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
 
-      <UFormField :ui="fieldUi" :label="t('common.enabled')">
+      <UFormField :label="t('common.enabled')">
         <div class="flex min-h-11 items-center">
           <USwitch
             v-model="form.enabled"
@@ -98,7 +94,7 @@
         </div>
       </UFormField>
 
-      <UFormField class="w-full sm:col-span-3" :ui="editorFieldUi" :label="t('common.description')">
+      <UFormField class="w-full sm:col-span-3" :label="t('common.description')">
         <UTextarea
           id="description"
           v-model="form.description"
@@ -109,13 +105,12 @@
           variant="outline"
           color="neutral"
           class="w-full"
-          :ui="textareaUi"
         />
       </UFormField>
     </div>
 
-    <div class="space-y-5 border-t border-default pt-5">
-      <UFormField class="w-full" :ui="fieldUi" :label="t('common.conditionFilter')">
+    <div class="ytp-card-padded-lg space-y-5">
+      <UFormField class="w-full" :label="t('common.conditionFilter')">
         <template #hint>
           <UButton
             v-if="!addInProgress || form.filter"
@@ -142,11 +137,11 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="{ ...textareaUi, base: `${textareaUi.base} font-mono` }"
+          :ui="{ base: 'font-mono' }"
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="editorFieldUi" :label="t('common.cliOptions')">
+      <UFormField class="w-full" :label="t('common.cliOptions')">
         <template #description>
           <p class="text-sm text-toned">
             <button type="button" class="text-primary hover:underline" @click="showOptions = true">
@@ -172,10 +167,7 @@
       </UFormField>
     </div>
 
-    <details
-      :open="Boolean(Object.keys(item.extras || {}).length)"
-      class="border-t border-default pt-5"
-    >
+    <details :open="Boolean(Object.keys(item.extras || {}).length)" class="ytp-card-padded-lg">
       <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
         {{ t('common.extraOptions') }}
       </summary>
@@ -186,7 +178,7 @@
             :key="`${entry[0]}-${index}`"
             class="grid gap-3 border-b border-default pb-4 md:grid-cols-[12rem_minmax(0,1fr)_auto]"
           >
-            <UFormField :ui="fieldUi" :label="t('common.keyLabel')">
+            <UFormField :label="t('common.keyLabel')">
               <USelect
                 :model-value="entry[0]"
                 :items="extraOptionItems"
@@ -194,14 +186,13 @@
                 size="lg"
                 disabled
                 class="w-full"
-                :ui="inputUi"
               />
             </UFormField>
 
-            <UFormField :ui="fieldUi" :label="t('common.valueLabel')">
+            <UFormField :label="t('common.valueLabel')">
               <div
                 v-if="booleanExtraKeys.includes(entry[0])"
-                class="flex h-10 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
+                class="ytp-value h-10 min-h-0 justify-between"
               >
                 <span class="text-sm text-default">{{
                   entry[1] === true ? t('common.yesLabel') : t('common.noLabel')
@@ -218,7 +209,6 @@
                 placeholder="value"
                 :disabled="addInProgress"
                 class="w-full"
-                :ui="textareaUi"
                 dir="ltr"
                 :rows="8"
                 @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
@@ -232,7 +222,6 @@
                 :disabled="addInProgress"
                 class="w-full"
                 dir="ltr"
-                :ui="inputUi"
                 @update:model-value="(value) => updateExtraValue(entry[0], String(value))"
               />
             </UFormField>
@@ -253,7 +242,7 @@
         </div>
 
         <div class="grid gap-3 md:grid-cols-[12rem_minmax(0,1fr)_auto]">
-          <UFormField :ui="fieldUi" :label="t('common.newKey')">
+          <UFormField :label="t('common.newKey')">
             <USelect
               v-model="newExtraKey"
               :items="extraOptionItems.filter((item) => form.extras[item.value] === undefined)"
@@ -262,15 +251,14 @@
               size="lg"
               :disabled="addInProgress"
               class="w-full"
-              :ui="inputUi"
               @update:model-value="(value) => selectNewExtra(String(value))"
             />
           </UFormField>
 
-          <UFormField :ui="fieldUi" :label="t('common.newValue')">
+          <UFormField :label="t('common.newValue')">
             <div
               v-if="booleanExtraKeys.includes(newExtraKey)"
-              class="flex h-10 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
+              class="ytp-value h-10 min-h-0 justify-between"
             >
               <span class="text-sm text-default">{{
                 newExtraValue === 'true' ? t('common.yesLabel') : t('common.noLabel')
@@ -287,7 +275,6 @@
               placeholder="value"
               :disabled="addInProgress"
               class="w-full"
-              :ui="textareaUi"
               dir="ltr"
               :rows="8"
             />
@@ -299,7 +286,6 @@
               size="lg"
               :disabled="addInProgress"
               class="w-full"
-              :ui="inputUi"
               dir="ltr"
               @keyup.enter="addExtra"
             />
@@ -351,7 +337,7 @@
       <template #body>
         <form id="conditionTestForm" autocomplete="off" class="space-y-5" @submit.prevent="runTest">
           <FormSubmitError :message="testAction.message.value" @dismiss="testAction.clear" />
-          <UFormField :ui="fieldUi">
+          <UFormField>
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-link" class="size-4 text-toned" />
@@ -372,11 +358,10 @@
               size="lg"
               :disabled="testData.in_progress"
               class="w-full"
-              :ui="inputUi"
             />
           </UFormField>
 
-          <UFormField :ui="fieldUi" :description="t('common.testFilterDesc')">
+          <UFormField :description="t('common.testFilterDesc')">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-filter" class="size-4 text-toned" />
@@ -393,7 +378,7 @@
               size="lg"
               :disabled="testData.in_progress"
               class="w-full"
-              :ui="{ ...textareaUi, base: `${textareaUi.base} font-mono` }"
+              :ui="{ base: 'font-mono' }"
             />
           </UFormField>
 
@@ -417,7 +402,7 @@
             "
           />
 
-          <UFormField :ui="fieldUi">
+          <UFormField>
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-braces" class="size-4 text-toned" />
@@ -523,31 +508,6 @@ const dirtySource = computed(() => ({
   newExtraValue: newExtraValue.value,
 }));
 const { isDirty, markClean } = useDirtyState(dirtySource);
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
-const editorFieldUi = {
-  root: 'w-full',
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const textareaUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
 
 watch(
   () => props.item,

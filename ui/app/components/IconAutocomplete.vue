@@ -13,7 +13,6 @@
       variant="outline"
       color="neutral"
       class="w-full"
-      :ui="{ root: 'w-full', base: 'w-full bg-elevated/60' }"
       @focus="onFocus"
       @blur="hideList"
       @keydown="handleKeydown"
@@ -23,7 +22,7 @@
       <div
         v-if="showList && filteredOptions.length"
         ref="dropdownRef"
-        class="fixed z-50 overflow-y-auto rounded-md bg-elevated/80 dark:bg-elevated/30 ytp-floating-surface"
+        class="fixed z-50 overflow-y-auto ytp-floating-surface"
         :style="dropdownStyle"
         dir="ltr"
         role="menu"
@@ -32,12 +31,8 @@
           v-for="(option, idx) in filteredOptions"
           :key="option.value"
           type="button"
-          class="flex w-full items-start justify-between gap-4 px-3 py-2 text-start text-sm transition-colors"
-          :class="
-            idx === highlightedIndex
-              ? 'bg-elevated text-highlighted'
-              : 'text-default hover:bg-elevated/60'
-          "
+          class="ytp-autocomplete-item items-start justify-between"
+          :data-highlighted="idx === highlightedIndex"
           @mousedown.prevent="selectOption(option.value)"
           :ref="(el) => setDropdownItemRef(el, idx)"
         >

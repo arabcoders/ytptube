@@ -3,7 +3,7 @@
     <div class="shell-stage shell-surface flex flex-col">
       <Shutdown v-if="app_shutdown" />
 
-      <div id="main_container" class="shell-root flex flex-col" v-else>
+      <div id="main_container" class="flex min-h-dvh flex-col" v-else>
         <UAlert
           v-if="newVersionIsAvailable"
           color="success"
@@ -31,7 +31,7 @@
         <UDashboardGroup
           storage="local"
           storage-key="ytptube-shell"
-          class="shell-dashboard flex-1"
+          class="min-h-dvh flex-1"
           :ui="{ base: 'relative flex min-h-full overflow-visible' }"
         >
           <UDashboardSidebar
@@ -235,7 +235,7 @@
 
                   <footer
                     v-if="config.is_loaded"
-                    class="shell-footer mt-auto border-t border-default pt-6 text-sm text-toned"
+                    class="mt-auto border-t border-default py-6 text-sm text-toned"
                   >
                     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
                       <div class="space-y-3">
@@ -373,8 +373,7 @@
             shortcut="meta_k"
             :placeholder="t('app.search')"
             :ui="{
-              modal:
-                'sm:max-w-3xl h-full sm:h-[28rem] bg-elevated/80 dark:bg-elevated/30 backdrop-blur-md',
+              modal: 'sm:max-w-3xl h-full sm:h-[28rem]',
             }"
           />
 
@@ -605,7 +604,7 @@ const handleSwipeCancel = (): void => {
 
 const dashboardSidebarUi = computed(() => {
   return {
-    root: 'shell-surface border-e border-default bg-default/95 backdrop-blur-sm',
+    root: 'shell-surface border-e border-default bg-transparent',
     header: 'px-3 py-5',
     body: 'gap-3 px-2.5 py-3',
     footer: 'border-t border-default px-2.5 py-3',
@@ -951,25 +950,3 @@ const relativeTime = (value: RelativeTimeInput): string => formatRelativeTime(va
 
 const reloadPage = () => window.location.reload();
 </script>
-
-<style>
-.shell-stage {
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-.shell-root {
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-.shell-dashboard {
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-.shell-footer {
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
-}
-</style>

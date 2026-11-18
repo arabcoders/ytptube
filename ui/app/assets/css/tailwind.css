@@ -1,4 +1,4 @@
-@layer theme, base, legacy, components, utilities;
+@layer theme, base, components, utilities;
 
 @import 'tailwindcss';
 @import '@nuxt/ui';
@@ -40,6 +40,11 @@
 }
 
 @layer components {
+  .shell-stage {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
   .feature-meta-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -69,7 +74,6 @@
       radial-gradient(circle at top left, rgb(99 102 241 / 0.12), transparent 26%),
       radial-gradient(circle at top right, rgb(245 158 11 / 0.07), transparent 20%),
       linear-gradient(180deg, rgb(9 12 18 / 0.84), rgb(17 24 39 / 0.9));
-    backdrop-filter: blur(16px);
   }
 
   .shell-header-artwork {
@@ -84,30 +88,19 @@
   }
 
   .ytp-page-heading {
-    @apply flex min-w-0 items-center gap-3;
+    @apply flex min-w-0 items-start gap-4;
   }
 
-  .ytp-page-kicker {
-    @apply flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-toned;
-  }
-
-  :dir(rtl) .ytp-page-kicker,
   :dir(rtl) [class*='tracking-'] {
     letter-spacing: normal;
   }
 
-  :dir(rtl) .ytp-page-kicker,
   :dir(rtl) .uppercase {
     text-transform: none;
   }
 
   .ytp-page-icon {
     @apply inline-flex size-11 shrink-0 items-center justify-center rounded-md border bg-elevated/70 text-primary;
-    border-color: var(--ytp-surface-border-solid);
-  }
-
-  .ytp-section-icon {
-    @apply inline-flex size-10 shrink-0 items-center justify-center rounded-md border bg-elevated/70 text-primary;
     border-color: var(--ytp-surface-border-solid);
   }
 
@@ -121,9 +114,27 @@
     border-color: var(--ytp-surface-border-soft);
   }
 
-  .ytp-card-padded {
-    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20 p-4;
+  .ytp-stat-card {
+    @apply bg-elevated/40;
+  }
+
+  .ytp-form-group {
+    @apply rounded-lg border bg-muted/20;
     border-color: var(--ytp-surface-border-soft);
+  }
+
+  .ytp-value {
+    @apply flex min-h-11 items-center rounded-md border bg-elevated/40 px-3;
+    border-color: var(--ytp-surface-border-solid);
+  }
+
+  .ytp-form-alert {
+    @apply sticky top-0 z-10 shadow-sm;
+  }
+
+  .ytp-inset {
+    @apply rounded-sm border bg-elevated/40;
+    border-color: var(--ytp-surface-border-solid);
   }
 
   .ytp-card-padded-lg {
@@ -136,51 +147,54 @@
     border-color: var(--ytp-surface-border-soft);
   }
 
-  .ytp-panel-padded {
-    @apply min-w-0 max-w-full rounded-lg border p-4;
-    border-color: var(--ytp-surface-border-soft);
-  }
-
-  .ytp-panel-padded-lg {
-    @apply min-w-0 max-w-full rounded-lg border p-4 sm:p-5;
-    border-color: var(--ytp-surface-border-soft);
-  }
-
-  .ytp-frame {
-    @apply min-w-0 max-w-full rounded-lg border;
-    border-color: var(--ytp-surface-border-soft);
-  }
-
   .ytp-table-surface {
-    @apply min-w-0 max-w-full rounded-sm border bg-elevated/20;
+    @apply min-w-0 max-w-full rounded-lg border bg-elevated/20;
     border-color: var(--ytp-surface-border-solid);
+  }
+
+  .ytp-table {
+    @apply w-full text-sm;
+  }
+
+  .ytp-table :where(thead) {
+    @apply border-b border-default bg-elevated/20 text-toned;
+  }
+
+  .ytp-table :where(th, td) {
+    @apply px-3 py-2 align-top;
+  }
+
+  .ytp-table :where(th) {
+    @apply text-start font-medium;
+  }
+
+  .ytp-table :where(tbody) {
+    @apply divide-y divide-default;
+  }
+
+  .ytp-table :where(tbody tr) {
+    @apply transition-colors hover:bg-elevated/30;
+  }
+
+  .ytp-table-bordered :where(th:not(:last-child), td:not(:last-child)) {
+    @apply border-e border-default/60;
+  }
+
+  .ytp-table-compact :where(th, td) {
+    @apply px-2 py-2;
   }
 
   .ytp-floating-surface {
-    @apply border bg-default/95 shadow-xl backdrop-blur-md;
+    @apply rounded-lg border bg-(--ytp-floating-bg) shadow-(--ytp-floating-shadow) backdrop-blur-md;
     border-color: var(--ytp-surface-border-solid);
-    box-shadow: 0 1rem 2rem rgb(15 23 42 / 0.1);
   }
 
-  .ytp-floating-surface [data-slot='item'][data-highlighted]::before,
-  .ytp-floating-surface [data-slot='item'][data-state='open']::before,
-  .ytp-floating-surface [data-slot='item']:hover::before {
-    background-color: color-mix(in oklab, var(--ui-primary) 11%, transparent) !important;
+  .ytp-autocomplete-item {
+    @apply flex w-full gap-4 px-3 py-2 text-start text-sm text-default transition-colors hover:bg-elevated/30;
   }
 
-  .ytp-floating-surface [data-slot='item'][data-disabled]::before {
-    background-color: transparent !important;
-  }
-
-  .dark .ytp-floating-surface {
-    background: color-mix(in oklab, var(--ui-bg) 92%, var(--ui-bg-elevated) 8%);
-    box-shadow: 0 1rem 2rem rgb(0 0 0 / 0.3);
-  }
-
-  .dark .ytp-floating-surface [data-slot='item'][data-highlighted]::before,
-  .dark .ytp-floating-surface [data-slot='item'][data-state='open']::before,
-  .dark .ytp-floating-surface [data-slot='item']:hover::before {
-    background-color: color-mix(in oklab, var(--ui-primary) 16%, transparent) !important;
+  .ytp-autocomplete-item[data-highlighted='true'] {
+    @apply bg-elevated/50 text-highlighted;
   }
 
   .ytp-border-top-soft {
@@ -190,11 +204,6 @@
 
   .ytp-border-bottom-soft {
     @apply border-b;
-    border-color: var(--ytp-surface-border-soft);
-  }
-
-  .ytp-border-left-soft {
-    @apply border-l;
     border-color: var(--ytp-surface-border-soft);
   }
 
@@ -216,6 +225,7 @@
   }
 
   .queue-progress {
+    @apply rounded-md border border-default bg-muted/20;
     position: relative;
     min-height: 2.25rem;
     overflow: hidden;
@@ -251,6 +261,14 @@
   .queue-progress--compact .queue-progress__label {
     min-height: 1.875rem;
     padding: 0.375rem 0.75rem;
+  }
+
+  .ytp-lights-out {
+    @apply pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out;
+  }
+
+  .ytp-thumbnail {
+    @apply overflow-hidden rounded-lg border border-default bg-muted/20;
   }
 
   .play-overlay {
@@ -338,15 +356,17 @@
   --ui-radius: 0.5rem;
   --ui-container: 96rem;
   --ui-header-height: 4.25rem;
-  --ytp-border-strong: var(--ui-border-accented);
   --ytp-surface-border-soft: var(--ui-border-accented);
   --ytp-surface-border-solid: var(--ui-border-accented);
+  --ytp-floating-bg: color-mix(in oklab, var(--ui-bg-elevated) 80%, transparent);
+  --ytp-floating-shadow: 0 1rem 2rem rgb(15 23 42 / 0.1);
 }
 
 .dark {
-  --ytp-border-strong: var(--ui-border);
   --ytp-surface-border-soft: color-mix(in oklab, var(--ui-border) 70%, transparent);
   --ytp-surface-border-solid: var(--ui-border);
+  --ytp-floating-bg: color-mix(in oklab, var(--ui-bg-elevated) 30%, transparent);
+  --ytp-floating-shadow: 0 1rem 2rem rgb(0 0 0 / 0.3);
 }
 
 html:not(.no-page-anim) .page-enter-active {

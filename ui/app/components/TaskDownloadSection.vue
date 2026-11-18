@@ -94,7 +94,7 @@
 
             <figure
               v-if="showThumbnails"
-              class="aspect-video w-full max-w-full self-start overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-55"
+              class="ytp-thumbnail aspect-video w-full max-w-full self-start sm:w-55"
             >
               <img
                 :src="thumbnail(item)"
@@ -108,7 +108,7 @@
             <div class="min-w-0 space-y-4" :class="{ 'xl:col-span-2': !showThumbnails }">
               <div
                 v-if="mode === 'queue' && activeStatuses.has(item.status)"
-                class="queue-progress rounded-md border border-default bg-muted/20"
+                class="queue-progress"
               >
                 <div
                   class="queue-progress__bar bg-success/35"
@@ -228,7 +228,7 @@
                 <UPopover
                   v-if="showPopover && item.description"
                   :content="{ side: 'bottom', align: 'start', sideOffset: 8 }"
-                  :ui="{ content: 'shell-surface max-w-[calc(100vw-2rem)] bg-transparent' }"
+                  :ui="{ content: 'max-w-[calc(100vw-2rem)]' }"
                 >
                   <UButton color="neutral" variant="outline" size="xs" icon="i-lucide-info">
                     {{ $t('common.description') }}

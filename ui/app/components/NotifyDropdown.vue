@@ -1,8 +1,5 @@
 <template>
-  <UPopover
-    :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
-    :ui="{ content: 'shell-surface bg-transparent' }"
-  >
+  <UPopover :content="{ align: 'end', side: 'bottom', sideOffset: 8 }">
     <UButton
       color="neutral"
       variant="ghost"
@@ -23,6 +20,7 @@
 
     <template #content>
       <UCard
+        variant="soft"
         class="w-md max-w-[calc(100vw-1rem)]"
         :ui="{
           root: 'bg-transparent shadow-none ring-0',

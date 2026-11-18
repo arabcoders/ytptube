@@ -7,7 +7,7 @@
       variant="soft"
       icon="i-lucide-triangle-alert"
       :title="formError"
-      class="sticky top-0 z-10 shadow-sm"
+      class="ytp-form-alert"
     />
 
     <div class="grid gap-4 md:grid-cols-2">
@@ -28,8 +28,11 @@
         </UButton>
       </div>
 
-      <template v-if="showImport || !reference">
-        <UFormField class="w-full md:col-span-2" :ui="fieldUi">
+      <div
+        v-if="showImport || !reference"
+        class="ytp-card-padded-lg grid gap-4 md:col-span-2 md:grid-cols-2"
+      >
+        <UFormField class="w-full md:col-span-2">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
@@ -48,8 +51,7 @@
               v-model="importString"
               type="text"
               autocomplete="off"
-              class="min-w-0 flex-1"
-              :ui="inputUi"
+              class="w-full min-w-0 flex-1"
               :disabled="importInProgress"
               @keydown.enter.prevent="() => void importItem()"
             />
@@ -68,9 +70,11 @@
             </UButton>
           </UFieldGroup>
         </UFormField>
-      </template>
+      </div>
+    </div>
 
-      <UFormField class="w-full" :ui="fieldUi">
+    <div class="ytp-card-padded-lg grid gap-4 md:grid-cols-2">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-type" class="size-4 text-toned" />
@@ -85,11 +89,10 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-link" class="size-4 text-toned" />
@@ -105,7 +108,6 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
     </div>
@@ -119,8 +121,8 @@
       :description="t('common.appriseDetectedDesc')"
     />
 
-    <div v-if="!isAppriseTarget" class="grid gap-4 border-t border-default pt-5 md:grid-cols-2">
-      <UFormField class="w-full" :ui="fieldUi">
+    <div v-if="!isAppriseTarget" class="ytp-card-padded-lg grid gap-4 md:grid-cols-2">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-arrow-right-left" class="size-4 text-toned" />
@@ -140,11 +142,10 @@
           size="lg"
           class="w-full"
           :disabled="addInProgress"
-          :ui="selectUi"
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-braces" class="size-4 text-toned" />
@@ -166,13 +167,12 @@
           size="lg"
           class="w-full"
           :disabled="addInProgress"
-          :ui="selectUi"
         />
       </UFormField>
     </div>
 
-    <div class="grid gap-5 border-t border-default pt-5 md:grid-cols-2">
-      <UFormField class="w-full" :ui="fieldUi">
+    <div class="ytp-card-padded-lg grid gap-5 md:grid-cols-2">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-2 font-semibold text-default">
@@ -205,11 +205,10 @@
           class="w-full"
           :disabled="addInProgress"
           :search-input="{ placeholder: t('common.search') }"
-          :ui="selectUi"
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-2 font-semibold text-default">
@@ -243,13 +242,10 @@
           class="w-full"
           :disabled="addInProgress"
           :search-input="{ placeholder: t('common.searchPresets') }"
-          :ui="selectUi"
         />
       </UFormField>
-    </div>
 
-    <div class="grid gap-4 border-t border-default pt-5 md:grid-cols-2">
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-power" class="size-4 text-toned" />
@@ -260,9 +256,7 @@
           <span>&nbsp;</span>
         </template>
 
-        <div
-          class="flex min-h-11 items-center justify-between rounded-md border border-default bg-elevated/40 px-3"
-        >
+        <div class="ytp-value justify-between">
           <span class="text-sm text-default">{{
             form.enabled ? t('common.yesLabel') : t('common.noLabel')
           }}</span>
@@ -270,7 +264,7 @@
         </div>
       </UFormField>
 
-      <UFormField v-if="!isAppriseTarget" class="w-full" :ui="fieldUi">
+      <UFormField v-if="!isAppriseTarget" class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-braces" class="size-4 text-toned" />
@@ -290,12 +284,11 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
     </div>
 
-    <div v-if="!isAppriseTarget" class="space-y-4 border-t border-default pt-5">
+    <div v-if="!isAppriseTarget" class="ytp-card-padded-lg space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="space-y-1">
           <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
@@ -321,10 +314,10 @@
         <div
           v-for="(header, index) in form.request.headers"
           :key="`header-${index}`"
-          class="grid gap-3 rounded-lg border border-default bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+          class="ytp-form-group grid gap-3 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
           dir="ltr"
         >
-          <UFormField :ui="fieldUi">
+          <UFormField>
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-key" class="size-4 text-toned" />
@@ -339,11 +332,10 @@
               size="lg"
               :disabled="addInProgress"
               class="w-full"
-              :ui="inputUi"
             />
           </UFormField>
 
-          <UFormField :ui="fieldUi">
+          <UFormField>
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UIcon name="i-lucide-pen-line" class="size-4 text-toned" />
@@ -358,7 +350,6 @@
               size="lg"
               :disabled="addInProgress"
               class="w-full"
-              :ui="inputUi"
             />
           </UFormField>
 
@@ -431,22 +422,6 @@ const requestType = computed(() => form.request.type);
 
 const form = reactive<notification>(normalizeNotification(props.item));
 const action = useFormSubmit();
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const selectUi = {
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
 
 const isAppriseTarget = computed(() => Boolean(form.request.url) && isApprise(form.request.url));
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="ytp-card bg-elevated/40 p-3">
+  <div class="ytp-card ytp-stat-card p-3">
     <div class="flex items-center justify-between gap-3">
       <div class="min-w-0 space-y-1">
         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-toned">

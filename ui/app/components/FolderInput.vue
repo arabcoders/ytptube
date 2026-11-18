@@ -1,37 +1,45 @@
 <template>
-  <div class="relative w-full">
-    <UInput
-      :id="id"
-      ref="inputRef"
-      v-model="model"
-      type="text"
-      :placeholder="placeholder"
-      :disabled="disabled"
-      :size="size"
-      autocomplete="off"
-      class="w-full"
-      :ui="ui"
-      dir="ltr"
-      @focus="onFocus"
-      @blur="onBlur"
-      @input="onInput"
-      @keydown="onKeydown"
-    />
+  <div class="relative w-full min-w-0">
+    <UFieldGroup :size="size" class="w-full" dir="ltr">
+      <UTooltip v-if="basePath" :text="t('common.fullPath', { path: basePath })">
+        <UBadge
+          color="neutral"
+          variant="outline"
+          :label="shortPath(basePath)"
+          class="min-w-0 max-w-[40%] shrink-0"
+        />
+      </UTooltip>
+
+      <UInput
+        :id="id"
+        ref="inputRef"
+        v-model="model"
+        type="text"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        autocomplete="off"
+        class="w-full min-w-0 flex-1"
+        :ui="ui"
+        dir="ltr"
+        @focus="onFocus"
+        @blur="onBlur"
+        @input="onInput"
+        @keydown="onKeydown"
+      />
+    </UFieldGroup>
 
     <div
       v-if="open && suggestions.length"
       ref="dropdownRef"
-      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md bg-elevated/80 dark:bg-elevated/30 ytp-floating-surface"
+      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto ytp-floating-surface"
       role="listbox"
     >
       <button
         v-for="(item, idx) in suggestions"
         :key="item"
         type="button"
-        class="flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors"
-        :class="
-          idx === highlighted ? 'bg-elevated text-highlighted' : 'text-default hover:bg-elevated/60'
-        "
+        class="ytp-autocomplete-item items-center gap-2"
+        :data-highlighted="idx === highlighted"
         role="option"
         :aria-selected="idx === highlighted"
         @mousedown.prevent="select(item)"
@@ -46,10 +54,14 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue';
 import { useFolderSuggestions } from '~/composables/useFolderSuggestions';
+import { shortPath } from '~/utils';
+
+const { t } = useI18n();
 
 withDefaults(
   defineProps<{
     id?: string;
+    basePath?: string;
     placeholder?: string;
     disabled?: boolean;
     size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -57,6 +69,7 @@ withDefaults(
   }>(),
   {
     id: undefined,
+    basePath: '',
     placeholder: '/',
     disabled: false,
     size: 'lg',

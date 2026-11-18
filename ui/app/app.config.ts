@@ -1,3 +1,6 @@
+const floatingSurface =
+  'ytp-floating-surface rounded-lg bg-(--ytp-floating-bg) shadow-(--ytp-floating-shadow) ring-0';
+
 export default defineAppConfig({
   ui: {
     primary: 'indigo',
@@ -9,7 +12,12 @@ export default defineAppConfig({
     },
     formField: {
       slots: {
-        label: 'block font-bold text-default',
+        label: 'block font-semibold text-default',
+        container: 'space-y-2',
+        description: 'text-sm text-toned',
+        hint: 'text-sm text-toned',
+        help: 'text-sm text-toned',
+        error: 'text-sm text-error',
       },
     },
     empty: {
@@ -24,6 +32,20 @@ export default defineAppConfig({
         variant: 'outline',
       },
     },
+    input: {
+      variants: {
+        variant: {
+          outline: 'bg-elevated/40 hover:bg-elevated/55 disabled:bg-elevated/20',
+        },
+      },
+    },
+    textarea: {
+      variants: {
+        variant: {
+          outline: 'bg-elevated/40 hover:bg-elevated/55 disabled:bg-elevated/20',
+        },
+      },
+    },
     tooltip: {
       slots: {
         content: 'pointer-events-auto',
@@ -34,19 +56,47 @@ export default defineAppConfig({
         root: 'shell-surface bg-transparent',
       },
     },
+    modal: {
+      slots: {
+        content: 'shell-surface bg-transparent',
+      },
+    },
+    slideover: {
+      slots: {
+        content: 'shell-surface bg-transparent',
+      },
+    },
+    card: {
+      slots: {
+        root: 'min-w-0 max-w-full rounded-lg overflow-hidden',
+      },
+      variants: {
+        variant: {
+          outline: {
+            root: 'border border-(--ytp-surface-border-soft) bg-elevated/20 divide-y divide-default ring-0',
+          },
+          soft: {
+            root: 'bg-elevated/20 divide-y divide-default',
+          },
+          subtle: {
+            root: 'border border-(--ytp-surface-border-soft) bg-elevated/20 divide-y divide-default ring-0',
+          },
+        },
+      },
+    },
     dropdownMenu: {
       slots: {
-        content: 'ytp-floating-surface',
+        content: floatingSurface,
       },
     },
     popover: {
       slots: {
-        content: 'ytp-floating-surface',
+        content: floatingSurface,
       },
     },
     select: {
       slots: {
-        content: 'ytp-floating-surface',
+        content: floatingSurface,
       },
       variants: {
         variant: {
@@ -56,7 +106,7 @@ export default defineAppConfig({
     },
     selectMenu: {
       slots: {
-        content: 'ytp-floating-surface',
+        content: floatingSurface,
       },
       variants: {
         variant: {

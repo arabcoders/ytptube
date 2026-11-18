@@ -4,7 +4,7 @@
     <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
       <div class="ytp-card p-4 sm:p-6 space-y-4">
         <div class="space-y-4">
-          <UFormField class="w-full" :ui="downloadFieldUi">
+          <UFormField class="w-full">
             <template #label>
               <div class="flex flex-wrap items-center gap-2">
                 <UTooltip :text="t('common.downloadUrlHint')">
@@ -28,11 +28,7 @@
                 :disabled="addInProgress"
                 :variant="show_description ? 'soft' : 'outline'"
                 color="neutral"
-                class="min-w-0 flex-1"
-                :ui="{
-                  root: 'w-full',
-                  base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
-                }"
+                class="w-full min-w-0 flex-1"
                 @keydown="handleKeyDown"
                 @paste="handlePaste"
                 @update:model-value="clearPickedEntries"
@@ -76,10 +72,7 @@
                   :rows="3"
                   :maxrows="12"
                   autoresize
-                  :ui="{
-                    root: 'w-full',
-                    base: 'min-h-[7.25rem] bg-elevated/60 ring-default focus-visible:ring-primary',
-                  }"
+                  :ui="{ base: 'min-h-[7.25rem]' }"
                   @keydown="handleKeyDown"
                   @update:model-value="clearPickedEntries"
                   autofocus
@@ -117,7 +110,6 @@
             <UFormField
               class="min-w-0 w-full"
               :label="t('common.presetLabel')"
-              :ui="downloadFieldUi"
               :description="hasFormatInConfig ? t('common.presetDisabled') : t('common.presetDesc')"
             >
               <template #label>
@@ -163,7 +155,6 @@
             <UFormField
               class="min-w-0 w-full"
               :label="t('common.downloadPath')"
-              :ui="downloadFieldUi"
               :description="t('common.downloadPathHint', { path: config.app.download_path })"
             >
               <template #label>
@@ -173,22 +164,13 @@
                 </span>
               </template>
 
-              <div class="flex items-center gap-2" dir="ltr">
-                <span
-                  class="max-w-44 shrink-0 truncate rounded-md border border-default bg-muted/40 px-3 py-2 text-xs text-toned"
-                  :title="config.app.download_path"
-                >
-                  {{ shortPath(config.app.download_path) }}
-                </span>
-
-                <FolderInput
-                  id="folder"
-                  v-model="form.folder"
-                  :placeholder="getDefault('folder', '/')"
-                  :disabled="addInProgress"
-                  :ui="{ root: 'w-full', base: 'bg-default/90' }"
-                />
-              </div>
+              <FolderInput
+                id="folder"
+                v-model="form.folder"
+                :base-path="config.app.download_path"
+                :placeholder="getDefault('folder', '/')"
+                :disabled="addInProgress"
+              />
             </UFormField>
 
             <div class="flex w-full items-end xl:col-span-1">
@@ -300,11 +282,7 @@
               </DLInput>
             </div>
 
-            <UFormField
-              v-if="hasIgnoreConditionOptions"
-              class="md:col-span-2 xl:col-span-3 w-full"
-              :ui="advancedEditorFieldUi"
-            >
+            <UFormField v-if="hasIgnoreConditionOptions" class="md:col-span-2 xl:col-span-3 w-full">
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-list-minus" class="size-4 text-toned" />
@@ -344,7 +322,7 @@
           </div>
 
           <div class="grid gap-4 xl:grid-cols-2">
-            <UFormField :label="t('common.cliOptions')" class="w-full" :ui="advancedEditorFieldUi">
+            <UFormField :label="t('common.cliOptions')" class="w-full">
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
@@ -382,11 +360,7 @@
               />
             </UFormField>
 
-            <UFormField
-              :label="t('common.cookiesLabel')"
-              class="w-full"
-              :ui="advancedEditorFieldUi"
-            >
+            <UFormField :label="t('common.cookiesLabel')" class="w-full">
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
@@ -555,7 +529,7 @@
               <button
                 type="button"
                 class="pointer-events-auto inline-flex size-9 items-center justify-center rounded-md border border-default bg-default/90 text-toned shadow-sm transition-colors hover:text-default"
-                :aria-label="t('common.copyTextAria')"
+                :aria-label="t('common.copyText')"
                 @click="copyTestResults"
               >
                 <UIcon name="i-lucide-copy" class="size-4" />
@@ -596,7 +570,7 @@ import type { TaskScheduleDraft, TaskScheduleMetadata } from '~/types/tasks';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import { navigateTo } from '#app';
 import { useDialog } from '~/composables/useDialog';
-import { getSeparatorsName, parse_api_error, shortPath, splitSources } from '~/utils';
+import { getSeparatorsName, parse_api_error, splitSources } from '~/utils';
 import { useFormHandoff } from '~/composables/useFormHandoff';
 
 const { t } = useI18n();
@@ -776,19 +750,6 @@ const testResultsPreClasses = computed(() => [
   'font-mono leading-6 whitespace-pre',
   testResultsClasses.value,
 ]);
-
-const downloadFieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-};
-
-const advancedEditorFieldUi = {
-  root: 'w-full',
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  help: 'mt-2 text-sm text-toned',
-};
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,

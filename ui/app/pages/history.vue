@@ -1,7 +1,7 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
     <div
-      class="pointer-events-none fixed inset-0 z-20 bg-black/45 backdrop-blur-[1px] transition-all duration-500 ease-out"
+      class="ytp-lights-out"
       :class="lightsOut ? 'opacity-100' : 'opacity-0'"
       aria-hidden="true"
     />
@@ -181,7 +181,7 @@
 
             <div
               v-if="showThumbnails"
-              class="aspect-video w-full max-w-full self-start overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-55"
+              class="ytp-thumbnail aspect-video w-full max-w-full self-start sm:w-55"
             >
               <button
                 v-if="item.filename || isEmbedable(item.url)"
@@ -385,7 +385,7 @@
                 <UPopover
                   v-if="show_popover && item.description"
                   :content="{ side: 'bottom', align: 'start', sideOffset: 8 }"
-                  :ui="{ content: 'shell-surface max-w-[calc(100vw-2rem)] bg-transparent' }"
+                  :ui="{ content: 'max-w-[calc(100vw-2rem)]' }"
                 >
                   <UButton color="neutral" variant="outline" size="xs" icon="i-lucide-info">
                     {{ t('common.description') }}

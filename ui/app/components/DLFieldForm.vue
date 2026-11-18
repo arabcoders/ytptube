@@ -14,7 +14,7 @@
       variant="soft"
       icon="i-lucide-triangle-alert"
       :title="formError"
-      class="sticky top-0 z-10 shadow-sm"
+      class="ytp-form-alert"
     />
 
     <div class="grid gap-4 md:grid-cols-2">
@@ -35,8 +35,11 @@
         </UButton>
       </div>
 
-      <template v-if="showImport || !reference">
-        <UFormField class="w-full md:col-span-2" :ui="fieldUi">
+      <div
+        v-if="showImport || !reference"
+        class="ytp-card-padded-lg grid gap-4 md:col-span-2 md:grid-cols-2"
+      >
+        <UFormField class="w-full md:col-span-2">
           <template #label>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-lucide-import" class="size-4 text-toned" />
@@ -55,8 +58,7 @@
               v-model="importString"
               type="text"
               autocomplete="off"
-              class="min-w-0 flex-1"
-              :ui="inputUi"
+              class="w-full min-w-0 flex-1"
               :disabled="importInProgress"
               @keydown.enter.prevent="() => void importItem()"
             />
@@ -75,9 +77,11 @@
             </UButton>
           </UFieldGroup>
         </UFormField>
-      </template>
+      </div>
+    </div>
 
-      <UFormField class="w-full" :ui="fieldUi">
+    <div class="ytp-card-padded-lg grid gap-4 md:grid-cols-2">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-type" class="size-4 text-toned" />
@@ -91,11 +95,10 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-message-square-text" class="size-4 text-toned" />
@@ -109,11 +112,12 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
+    </div>
 
-      <UFormField class="w-full" :ui="fieldUi">
+    <div class="ytp-card-padded-lg grid gap-4 md:grid-cols-2">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-shapes" class="size-4 text-toned" />
@@ -133,11 +137,10 @@
           size="lg"
           class="w-full"
           :disabled="addInProgress"
-          :ui="selectUi"
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
@@ -160,7 +163,7 @@
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
@@ -181,11 +184,10 @@
           size="lg"
           :disabled="addInProgress"
           class="w-full"
-          :ui="inputUi"
         />
       </UFormField>
 
-      <UFormField class="w-full" :ui="fieldUi">
+      <UFormField class="w-full">
         <template #label>
           <div class="flex flex-wrap items-center gap-2">
             <UIcon name="i-lucide-image" class="size-4 text-toned" />
@@ -259,22 +261,6 @@ const dirtySource = computed(() => ({
   showImport: showImport.value,
 }));
 const { isDirty, markClean } = useDirtyState(dirtySource);
-
-const fieldUi = {
-  label: 'font-semibold text-default',
-  container: 'space-y-2',
-  description: 'text-sm text-toned',
-  hint: 'text-sm text-toned',
-};
-
-const inputUi = {
-  root: 'w-full',
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
-
-const selectUi = {
-  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
-};
 
 watch(
   () => props.item,

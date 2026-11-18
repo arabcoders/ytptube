@@ -71,7 +71,7 @@
             :description="selectedJob.error_code || undefined"
           />
           <dl>
-            <div class="rounded-sm border border-default bg-elevated/40 p-3">
+            <div class="ytp-inset p-3">
               <dt class="text-[11px] font-semibold uppercase tracking-wide text-toned">
                 {{ t('common.source') }}
               </dt>
@@ -94,7 +94,7 @@
             <div
               v-for="output in selectedJob.result.outputs"
               :key="output"
-              class="flex items-center gap-3 rounded-sm border border-default bg-elevated/40 p-3"
+              class="ytp-inset flex items-center gap-3 p-3"
             >
               <div class="min-w-0 flex-1">
                 <UTooltip :text="output">

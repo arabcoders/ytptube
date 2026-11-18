@@ -35,7 +35,7 @@
     <section
       :aria-label="pageShell.pageLabel"
       :aria-busy="loading"
-      class="min-w-0 overflow-hidden rounded-xl border border-default bg-elevated/20"
+      class="ytp-card overflow-hidden"
     >
       <div class="space-y-3 bg-elevated/30 px-3 py-3 sm:px-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -212,6 +212,7 @@
                   color="neutral"
                   variant="outline"
                   size="xs"
+                  class="min-w-18 max-w-18 shrink-0 justify-start rounded-none"
                   :class="logLevelBadgeClass(getLogLevel(entry.log.level))"
                   @click="openLogDetails(entry.log)"
                 >
@@ -371,12 +372,12 @@ const copyMenuContent = computed(() => ({ align: 'end' as const }));
 const copyMenuItems = computed(() => [
   [
     {
-      label: t('logs.copyRendered'),
+      label: t('common.copyText'),
       icon: 'i-lucide-file-text',
       onSelect: () => copyText(copyRenderedLogText.value),
     },
     {
-      label: t('logs.copyRaw'),
+      label: t('common.copyRaw'),
       icon: 'i-lucide-file-code',
       onSelect: () => copyText(copyRawLogText.value),
     },
@@ -390,12 +391,12 @@ const logMenuItems = (log: log_line) => [
       onSelect: () => openLogDetails(log),
     },
     {
-      label: t('logs.copyRendered'),
+      label: t('common.copyText'),
       icon: 'i-lucide-file-text',
       onSelect: () => copyText(formatLogLine(log)),
     },
     {
-      label: t('logs.copyRaw'),
+      label: t('common.copyRaw'),
       icon: 'i-lucide-file-code',
       onSelect: () => copyText(JSON.stringify(log)),
     },

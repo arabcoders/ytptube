@@ -1,6 +1,6 @@
 <template>
   <div class="ytp-page-header">
-    <div class="ytp-page-heading items-start gap-4">
+    <div class="ytp-page-heading">
       <span class="ytp-page-icon" :class="{ 'hidden sm:inline-flex': !$slots.icon }">
         <slot name="icon">
           <UIcon :name="icon" class="size-5" aria-hidden="true" />

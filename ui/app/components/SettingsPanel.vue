@@ -7,7 +7,7 @@
     :dismissible="true"
     :overlay="true"
     :ui="{
-      content: 'yt-settings-panel shell-surface w-full bg-transparent sm:max-w-xl',
+      content: 'yt-settings-panel w-full sm:max-w-xl',
       body: 'p-4 sm:p-5',
     }"
     @update:open="(open) => !open && emitter('close')"
@@ -25,8 +25,8 @@
     </template>
 
     <template #body>
-      <div class="w-full divide-y divide-default">
-        <section class="space-y-5 pb-6">
+      <div class="w-full space-y-4">
+        <section class="ytp-card-padded-lg space-y-5">
           <h2 class="flex items-center gap-2 font-semibold text-highlighted">
             <UIcon name="i-lucide-layout-dashboard" class="size-5 text-toned" aria-hidden="true" />
             {{ t('app.settings.pageView') }}
@@ -65,7 +65,7 @@
           />
         </section>
 
-        <section class="space-y-4 py-6">
+        <section class="ytp-card-padded-lg space-y-4">
           <h2 class="flex items-center gap-2 font-semibold text-highlighted">
             <UIcon name="i-lucide-palette" class="size-5 text-toned" aria-hidden="true" />
             {{ t('app.settings.appearance') }}
@@ -97,7 +97,7 @@
           </UFormField>
         </section>
 
-        <section class="space-y-4 py-6">
+        <section class="ytp-card-padded-lg space-y-4">
           <h2 class="flex items-center gap-2 font-semibold text-highlighted">
             <UIcon name="i-lucide-image" class="size-5 text-toned" aria-hidden="true" />
             {{ t('app.settings.background') }}
@@ -141,7 +141,7 @@
           </UButton>
         </section>
 
-        <section class="space-y-4 py-6">
+        <section class="ytp-card-padded-lg space-y-4">
           <h2 class="flex items-center gap-2 font-semibold text-highlighted">
             <UIcon name="i-lucide-monitor" class="size-5 text-toned" aria-hidden="true" />
             {{ t('common.downloads') }}
@@ -198,7 +198,7 @@
           />
         </section>
 
-        <section class="space-y-4 py-6">
+        <section class="ytp-card-padded-lg space-y-4">
           <h2 class="flex items-center gap-2 font-semibold text-highlighted">
             <UIcon name="i-lucide-download" class="size-5 text-toned" aria-hidden="true" />
             {{ t('common.queue') }}
@@ -231,7 +231,7 @@
           </UFormField>
         </section>
 
-        <section class="space-y-4 py-6">
+        <section class="ytp-card-padded-lg space-y-4">
           <h2 class="flex items-center gap-2 font-semibold text-highlighted">
             <UIcon name="i-lucide-bell" class="size-5 text-toned" aria-hidden="true" />
             {{ t('common.notifications') }}
@@ -293,7 +293,7 @@
           />
         </section>
 
-        <section class="space-y-4 pt-6">
+        <section class="ytp-card-padded-lg space-y-4">
           <h2 class="flex items-center gap-2 font-semibold text-highlighted">
             <UIcon name="i-lucide-shield-alert" class="size-5 text-toned" aria-hidden="true" />
             {{ t('app.settings.unsavedChanges') }}
@@ -425,7 +425,6 @@ const localeItems = computed(() =>
 const settingsFieldUi = {
   root: 'w-full',
   container: 'mt-2 w-full',
-  label: 'text-sm font-medium text-highlighted',
   description: 'text-xs text-toned',
   hint: 'font-mono text-xs text-toned',
 };

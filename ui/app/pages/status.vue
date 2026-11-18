@@ -224,37 +224,33 @@
           />
         </button>
 
-        <div v-if="isOpen('children')" class="ytp-card overflow-x-auto">
-          <table class="w-full text-sm">
+        <div v-if="isOpen('children')" class="ytp-table-surface overflow-x-auto">
+          <table class="ytp-table">
             <thead>
-              <tr class="border-b border-default">
-                <th class="px-3 py-2 text-start font-medium text-highlighted">
+              <tr>
+                <th>
                   {{ t('status.process') }}
                 </th>
-                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                <th>
                   {{ t('status.pid') }}
                 </th>
-                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                <th>
                   {{ t('status.cpu') }}
                 </th>
-                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                <th>
                   {{ t('status.rss') }}
                 </th>
-                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                <th>
                   {{ t('common.threads') }}
                 </th>
-                <th class="px-3 py-2 text-start font-medium text-highlighted">
+                <th>
                   {{ t('common.status') }}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="child in sample.children"
-                :key="child.pid"
-                class="border-b border-default last:border-b-0"
-              >
-                <td class="px-3 py-2 text-default font-medium">
+              <tr v-for="child in sample.children" :key="child.pid">
+                <td class="font-medium">
                   <p class="max-w-80 truncate" :title="childDisplayName(child)">
                     {{ childDisplayName(child) }}
                   </p>
@@ -266,10 +262,10 @@
                     {{ childMeta(child) }}
                   </p>
                 </td>
-                <td class="px-3 py-2 text-toned">{{ child.pid }}</td>
-                <td class="px-3 py-2 text-toned">{{ fmtPct(child.cpu_percent) }}</td>
-                <td class="px-3 py-2 text-toned">{{ fmtMb(child.rss_mb) }}</td>
-                <td class="px-3 py-2 text-toned">
+                <td class="text-toned">{{ child.pid }}</td>
+                <td class="text-toned">{{ fmtPct(child.cpu_percent) }}</td>
+                <td class="text-toned">{{ fmtMb(child.rss_mb) }}</td>
+                <td class="text-toned">
                   <p>{{ fmtNum(child.threads) }}</p>
                   <p
                     v-if="threadNames(child)"
@@ -279,7 +275,7 @@
                     {{ threadNames(child) }}
                   </p>
                 </td>
-                <td class="px-3 py-2 text-toned">{{ child.status }}</td>
+                <td class="text-toned">{{ child.status }}</td>
               </tr>
             </tbody>
           </table>
@@ -341,7 +337,7 @@
         </button>
 
         <div v-if="isOpen('charts')" class="grid gap-4 lg:grid-cols-2">
-          <div class="ytp-card bg-elevated/40 p-4">
+          <div class="ytp-card ytp-stat-card p-4">
             <Chart
               :label="t('status.cpuPercent')"
               icon="i-lucide-cpu"
@@ -351,7 +347,7 @@
               :format-value="fmtChartPct"
             />
           </div>
-          <div class="ytp-card bg-elevated/40 p-4">
+          <div class="ytp-card ytp-stat-card p-4">
             <Chart
               :label="t('status.memoryMb')"
               icon="i-lucide-memory-stick"
@@ -361,7 +357,7 @@
               :format-value="fmtChartMb"
             />
           </div>
-          <div class="ytp-card bg-elevated/40 p-4">
+          <div class="ytp-card ytp-stat-card p-4">
             <Chart
               :label="t('status.diskWrite')"
               icon="i-lucide-hard-drive"
@@ -371,7 +367,7 @@
               :format-value="fmtChartBps"
             />
           </div>
-          <div class="ytp-card bg-elevated/40 p-4">
+          <div class="ytp-card ytp-stat-card p-4">
             <Chart
               :label="t('status.networkRecv')"
               icon="i-lucide-globe"
@@ -408,7 +404,7 @@
           <div
             v-for="item in bottlenecks.bottlenecks"
             :key="item.type"
-            class="ytp-card bg-elevated/40 p-4"
+            class="ytp-card ytp-stat-card p-4"
           >
             <div class="flex items-start gap-3">
               <span :class="bottleneckDotClass(item.level)"></span>

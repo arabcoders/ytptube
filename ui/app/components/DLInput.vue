@@ -1,8 +1,6 @@
 <template>
   <div v-if="'bool' === type && compact && !required && !error" class="w-full space-y-1.5">
-    <div
-      class="flex min-h-11 items-start justify-between gap-3 rounded-md border border-default bg-elevated/20 px-3 py-2"
-    >
+    <div class="ytp-value items-start justify-between gap-3 py-2">
       <div class="min-w-0 flex-1">
         <div class="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-default">
           <UIcon v-if="iconName" :name="iconName" class="size-4 shrink-0 text-toned" />
@@ -73,7 +71,6 @@
       :disabled="disabled"
       size="lg"
       class="w-full"
-      :ui="{ root: 'w-full', base: 'w-full bg-elevated/60' }"
     />
 
     <UTextarea
@@ -87,10 +84,7 @@
       :rows="4"
       size="lg"
       class="w-full"
-      :ui="{
-        root: 'w-full',
-        base: 'w-full bg-elevated/60 font-mono text-sm whitespace-pre-wrap ring-default',
-      }"
+      :ui="{ base: 'font-mono text-sm whitespace-pre-wrap' }"
     />
 
     <UInput
@@ -105,7 +99,6 @@
       :disabled="disabled"
       size="lg"
       class="w-full"
-      :ui="{ root: 'w-full', base: 'w-full bg-elevated/60' }"
     />
 
     <USelectMenu
@@ -121,7 +114,6 @@
       clear
       size="lg"
       class="w-full"
-      :ui="{ base: 'w-full bg-elevated/60' }"
     />
 
     <USwitch
@@ -210,9 +202,13 @@ const selectModel = computed({
   },
 });
 
-const fieldUi = computed(() => ({
-  container: props.compact ? 'space-y-1.5' : 'space-y-2',
-  description: props.compact ? 'text-xs text-toned' : 'text-sm text-toned',
-  help: props.compact ? 'mt-1 text-xs text-toned' : 'mt-2 text-sm text-toned',
-}));
+const fieldUi = computed(() =>
+  props.compact
+    ? {
+        container: 'space-y-1.5',
+        description: 'text-xs',
+        help: 'mt-1 text-xs text-toned',
+      }
+    : undefined,
+);
 </script>
