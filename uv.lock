@@ -1804,6 +1804,14 @@ wheels = [
 ]
 
 [[package]]
+name = "python-magic-standalone"
+version = "0.4.29"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/3c/62632d9768685784f0b3a9ab72365a1f4daa100b9bc92738536859d83d78/python_magic_standalone-0.4.29-py2.py3-none-win_arm64.whl", hash = "sha256:fba6b07889c28acc94caec9506df60c529a494320aa443b5b97570a54ba101a5", size = 1533788, upload-time = "2026-10-29T07:22:04.68Z" },
+]
+
+[[package]]
 name = "pytz"
 version = "2026.6"
 source = { registry = "https://pypi.org/simple" }
@@ -2551,7 +2559,6 @@ dependencies = [
     { name = "async-timeout" },
     { name = "bgutil-ytdlp-pot-provider" },
     { name = "brotli" },
-    { name = "brotlicffi" },
     { name = "coloredlogs" },
     { name = "curl-cffi" },
     { name = "dateparser" },
@@ -2575,7 +2582,8 @@ dependencies = [
     { name = "pysubs2" },
     { name = "python-dotenv" },
     { name = "python-magic", marker = "sys_platform != 'win32'" },
-    { name = "python-magic-bin", marker = "sys_platform == 'win32'" },
+    { name = "python-magic-bin", marker = "platform_machine != 'ARM64' and sys_platform == 'win32'" },
+    { name = "python-magic-standalone", marker = "platform_machine == 'ARM64' and sys_platform == 'win32'" },
     { name = "regex" },
     { name = "sqlalchemy" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
@@ -2610,7 +2618,6 @@ requires-dist = [
     { name = "async-timeout" },
     { name = "bgutil-ytdlp-pot-provider", specifier = ">=2.0.0" },
     { name = "brotli" },
-    { name = "brotlicffi" },
     { name = "coloredlogs", specifier = ">=15.0.1" },
     { name = "curl-cffi", specifier = "==0.14" },
     { name = "dateparser", specifier = ">=1.2.1" },
@@ -2635,7 +2642,8 @@ requires-dist = [
     { name = "pysubs2" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "python-magic", marker = "sys_platform != 'win32'", specifier = ">=0.4.27" },
-    { name = "python-magic-bin", marker = "sys_platform == 'win32'" },
+    { name = "python-magic-bin", marker = "platform_machine != 'ARM64' and sys_platform == 'win32'" },
+    { name = "python-magic-standalone", marker = "platform_machine == 'ARM64' and sys_platform == 'win32'", specifier = ">=0.4.29" },
     { name = "regex" },
     { name = "sqlalchemy", specifier = ">=2.0.45" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },

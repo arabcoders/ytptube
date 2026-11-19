@@ -317,19 +317,19 @@ def binary_key(binary: str) -> tuple[str, int, int, int, int, int]:
     return binary, info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
 
 
-async def detect_qsv_capabilities() -> dict[str, dict[str, bool]]:
+async def detect_qsv_capabilities(device: str) -> dict[str, dict[str, bool]]:
     vainfo = shutil.which("vainfo")
     if not vainfo:
         return {}
 
-    return await _qsv(binary_key(vainfo))
+    return await _qsv(binary_key(vainfo), device)
 
 
 @timed_lru_cache(ttl_seconds=300, max_size=8)
-async def _qsv(key: tuple[str, int, int, int, int, int]) -> dict[str, dict[str, bool]]:
+async def _qsv(key: tuple[str, int, int, int, int, int], device: str) -> dict[str, dict[str, bool]]:
     try:
-        _, data, error = await run(key[0], [], deadline=5, max_bytes=256 * 1024)
-        out = data.decode("utf-8", errors="replace") + error
+        _, data, error = await run(key[0], ["--display", "drm", "--device", device], deadline=5, max_bytes=256 * 1024)
+        out = f"{data.decode('utf-8', errors='replace')}\n{error}"
     except (PreparationBusyError, ProcessExitError):
         raise
     except (OSError, TimeoutError, StreamingError):
@@ -337,11 +337,10 @@ async def _qsv(key: tuple[str, int, int, int, int, int]) -> dict[str, dict[str, 
 
     caps: dict[str, dict[str, bool]] = {}
     for line in out.splitlines():
-        line: str = line.strip()
-        parts: list[str] = line.split(":")
-        if len(parts) < 2:
+        prof, sep, entry = line.partition(":")
+        if not sep:
             continue
-        prof, ep_str = parts[0].strip(), parts[1].strip()
+        entry = entry.strip()
         if "H264" in prof:
             codec = "h264"
         elif "HEVC" in prof:
@@ -353,10 +352,10 @@ async def _qsv(key: tuple[str, int, int, int, int, int]) -> dict[str, dict[str, 
         if codec not in caps:
             caps[codec] = {"full": False, "lp": False}
 
-        if "EncSlice " in ep_str:
+        if entry == "VAEntrypointEncSlice":
             caps[codec]["full"] = True
 
-        if "EncSliceLP" in ep_str:
+        if entry == "VAEntrypointEncSliceLP":
             caps[codec]["lp"] = True
 
     return caps
@@ -506,16 +505,15 @@ class QsvBuilder(_BaseBuilder):
 
     def input_args(self, ctx: dict[str, Any] | None = None) -> list[str]:
         ctx = ctx or {}
-        args = []
         is_linux: bool = bool(ctx.get("is_linux", sys.platform.startswith("linux")))
         has_dri: bool = bool(ctx.get("has_dri", False))
         device: str = ctx.get("vaapi_device", "/dev/dri/renderD128")
         if is_linux and has_dri:
+            init = ["-init_hw_device", f"qsv=hw:hw,child_device={device}"]
             if ctx.get("software_decode"):
-                return ["-init_hw_device", f"qsv=hw:{device}", "-filter_hw_device", "hw"]
-            args: list[str] = [
-                "-init_hw_device",
-                f"qsv=hw:{device}",
+                return [*init, "-filter_hw_device", "hw"]
+            return [
+                *init,
                 "-hwaccel",
                 "qsv",
                 "-hwaccel_output_format",
@@ -524,7 +522,7 @@ class QsvBuilder(_BaseBuilder):
                 "hw",
             ]
 
-        return args
+        return []
 
     def add_video_args(self, args: list[str], ctx: dict[str, Any] | None = None) -> list[str]:
         ctx = ctx or {}
@@ -617,14 +615,15 @@ class Segments:
         if self.subtitle is not None and not any(stream.index == self.subtitle for stream in ff.subtitle):
             msg = "Unknown subtitle stream."
             raise StreamingError(msg)
+        device = Config.get_instance().vaapi_device
         ctx = {
             "is_linux": sys.platform.startswith("linux"),
             "has_dri": has_dri_devices(),
-            "vaapi_device": Config.get_instance().vaapi_device,
+            "vaapi_device": device,
             "qsv": {},
         }
-        if "qsv" in s_codec:
-            caps = await detect_qsv_capabilities()
+        if "qsv" in s_codec and ctx["is_linux"] and ctx["has_dri"]:
+            caps = await detect_qsv_capabilities(device)
             ctx["qsv"] = caps.get("h264", {"full": False, "lp": False})
         builder = get_builder_for_codec(s_codec) if ff.has_video() else None
         video_index = ff.video[0].index if ff.has_video() else None

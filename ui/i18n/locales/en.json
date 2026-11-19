@@ -975,7 +975,7 @@
     "loadingDesc": "Loading file browser contents...",
     "noContent": "No Content",
     "controlsDisabled": "File controls disabled",
-    "controlsDisabledDesc": "You can enable rename, delete, move in the configuration.",
+    "controlsDisabledDesc": "Set YTP_BROWSER_CONTROL_ENABLED=true in the server’s environment, then restart YTPTube.",
     "createDir": "Create New Directory",
     "createDirDesc": "Enter name for new directory in '{path}':",
     "create": "Create",

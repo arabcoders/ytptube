@@ -1,9 +1,8 @@
 import importlib.metadata
 import os
-import re
-import sys
 import tomllib
 
+from packaging.requirements import Requirement
 from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
@@ -50,17 +49,14 @@ def parse_pyproject(path: str = "pyproject.toml") -> set[str]:
     for extra in data["project"].get("optional-dependencies", {}).values():
         reqs.update(extra)
 
-    return {re.split(r"[ ;<>=]", r, 1)[0] for r in reqs}  # noqa: B034
+    requirements = map(Requirement, reqs)
+    return {req.name for req in requirements if req.marker is None or req.marker.evaluate()}
 
 
 dist_names = parse_pyproject()
 hidden: list[str] = []
 
 for dist in dist_names:
-    if sys.platform != "win32" and dist in ("python-magic-bin", "tzdata"):
-        continue
-    if sys.platform == "win32" and dist == "python-magic":
-        continue
     hidden.extend(top_level_modules(dist))
 
 hidden += [

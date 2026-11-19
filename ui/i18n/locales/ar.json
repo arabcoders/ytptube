@@ -975,7 +975,7 @@
     "loadingDesc": "جارِ تحميل محتويات متصفح الملفات...",
     "noContent": "لا يوجد محتوى",
     "controlsDisabled": "عناصر تحكم الملفات معطلة",
-    "controlsDisabledDesc": "يمكنك تفعيل إعادة التسمية والحذف والنقل في الإعدادات.",
+    "controlsDisabledDesc": "اضبط YTP_BROWSER_CONTROL_ENABLED=true في بيئة الخادم، ثم أعد تشغيل YTPTube.",
     "createDir": "إنشاء مجلد جديد",
     "createDirDesc": "أدخل اسم المجلد الجديد في '{path}':",
     "create": "إنشاء",
