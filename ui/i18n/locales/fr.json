@@ -975,7 +975,7 @@
     "loadingDesc": "Chargement du contenu de l'explorateur de fichiers...",
     "noContent": "Aucun contenu",
     "controlsDisabled": "Contrôles de fichiers désactivés",
-    "controlsDisabledDesc": "Vous pouvez activer renommer, supprimer, déplacer dans la configuration.",
+    "controlsDisabledDesc": "Définissez YTP_BROWSER_CONTROL_ENABLED=true dans l’environnement du serveur, puis redémarrez YTPTube.",
     "createDir": "Créer un nouveau répertoire",
     "createDirDesc": "Saisissez le nom du nouveau répertoire dans « {path} » :",
     "create": "Créer",

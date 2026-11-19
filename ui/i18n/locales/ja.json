@@ -975,7 +975,7 @@
     "loadingDesc": "ファイルブラウザの内容を読み込んでいます...",
     "noContent": "内容がありません",
     "controlsDisabled": "ファイル操作は無効",
-    "controlsDisabledDesc": "設定で名前の変更、削除、移動を有効にできます。",
+    "controlsDisabledDesc": "サーバーの環境変数に YTP_BROWSER_CONTROL_ENABLED=true を設定し、YTPTube を再起動してください。",
     "createDir": "新規ディレクトリを作成",
     "createDirDesc": "'{path}' に作成する新しいディレクトリの名前を入力してください:",
     "create": "作成",

@@ -23,13 +23,13 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: amd64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             arch: arm64
           - os: macos-latest
             arch: arm64
           - os: windows-latest
             arch: amd64
-          - os: windows-latest
+          - os: windows-11-arm
             arch: arm64
 
     permissions:
@@ -41,6 +41,8 @@ jobs:
       BUN_VERSION: "1.4.2"
       NODE_VERSION: 22
       TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
+      TOOL_ARCH: ${{ matrix.arch == 'amd64' && 'x64' || matrix.arch }}
+      UV_CACHE_DIR: .uv-cache
 
     steps:
       - name: Checkout source repo
@@ -99,29 +101,38 @@ jobs:
           echo "Updated version info:"
           cat app/library/version.py
 
-      - name: Cache Python venv
-        id: cache-python
-        uses: actions/cache@v6
-        with:
-          path: .venv
-          key: uv-${{ runner.os }}-${{ matrix.arch }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ matrix.arch }}-${{ env.PYTHON_VERSION }}-
-
       - name: Set up Python
+        id: python
         uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          architecture: "x64"
+          architecture: ${{ env.TOOL_ARCH }}
+
+      - name: Cache Python packages
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-${{ runner.os }}-${{ runner.arch }}-${{ steps.python.outputs.python-version }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-cache-${{ runner.os }}-${{ runner.arch }}-${{ steps.python.outputs.python-version }}-
+
+      - name: Set up OpenSSL for Windows ARM64
+        if: runner.os == 'Windows' && matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          # cryptography builds from source because it has no Windows ARM64 wheel.
+          vcpkg install openssl:arm64-windows-static-md --host-triplet arm64-windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "OPENSSL_DIR=$env:VCPKG_INSTALLATION_ROOT\installed\arm64-windows-static-md" >> $env:GITHUB_ENV
+          "OPENSSL_STATIC=1" >> $env:GITHUB_ENV
 
       - name: Install Python dependencies
         shell: bash
+        env:
+          UV_PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
-          pip install uv
-          if [ ! -d .venv ]; then
-            uv venv --system-site-packages --relocatable
-          fi
-          uv sync --link-mode=copy --active --extra installer
+          python -m pip install uv
+          uv sync --locked --no-dev --extra installer
 
       - name: Cache bun installation
         id: cache-bun
@@ -141,6 +152,7 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
+          architecture: ${{ env.TOOL_ARCH }}
 
       - name: Build frontend
         working-directory: ui
@@ -156,25 +168,15 @@ jobs:
 
       - name: Clean build outputs (Windows)
         if: runner.os == 'Windows'
-        shell: powershell
+        shell: pwsh
         run: |
           if (Test-Path build)   { Remove-Item -Recurse -Force build }
           if (Test-Path dist)    { Remove-Item -Recurse -Force dist }
           if (Test-Path release) { Remove-Item -Recurse -Force release }
 
-      - name: Build native binary (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: powershell
-        run: |
-          .\.venv\Scripts\activate
-          uv run pyinstaller ./app.spec
-
-      - name: Build native binary (Linux/macOS)
-        if: matrix.os != 'windows-latest'
+      - name: Build native binary
         shell: bash
-        run: |
-          . .venv/bin/activate
-          uv run pyinstaller ./app.spec
+        run: uv run --no-sync python -m PyInstaller app.spec
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -203,7 +205,7 @@ jobs:
 
       - name: Package artifact (Windows)
         if: startsWith(env.TAG_NAME, 'v') && runner.os == 'Windows'
-        shell: powershell
+        shell: pwsh
         run: |
           $pkgDir = "YTPTube-${{ env.TAG_NAME }}"
           $zipName = "ytptube-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}.zip"

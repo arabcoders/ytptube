@@ -1,10 +1,15 @@
+import asyncio
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, call
 
 import pytest
 
+from app.features.streaming import utils
 from app.features.streaming.library.ffprobe import FFProbeResult
 from app.features.streaming.types import StreamingError
 from app.features.streaming.utils import Segments, segment_window
+from app.library.config import Config
 
 
 @pytest.fixture
@@ -68,3 +73,39 @@ async def test_bitmap_args(tmp_path: Path, probe: FFProbeResult) -> None:
     args = await Segments(0, probe=probe, subtitle=7).build_ffmpeg_args(tmp_path / "video.mkv", "libx264")
     assert args[args.index("-filter_complex") + 1] == "[0:1][0:7]overlay[v]"
     assert args[args.index("-force_key_frames") + 1] == "expr:gte(t,n_forced*6.000000)"
+
+
+@pytest.mark.asyncio
+async def test_qsv_render_nodes(tmp_path: Path, probe: FFProbeResult, monkeypatch: pytest.MonkeyPatch) -> None:
+    vainfo = tmp_path / "vainfo"
+    vainfo.touch()
+    run = AsyncMock(
+        side_effect=[
+            (0, b"      VAProfileH264High :\tVAEntrypointEncSlice  \n", ""),
+            (0, b"      VAProfileH264High :\tVAEntrypointEncSliceLP\n", ""),
+        ]
+    )
+    monkeypatch.setattr(utils, "shutil", SimpleNamespace(which=lambda _: str(vainfo)))
+    monkeypatch.setattr(utils, "sys", SimpleNamespace(platform="linux"))
+    monkeypatch.setattr(utils, "has_dri_devices", lambda: True)
+    monkeypatch.setattr(utils, "run", run)
+
+    config = Config.get_instance()
+    segment = Segments(0, probe=probe)
+    file = tmp_path / "video.mp4"
+    async with asyncio.timeout(5):
+        monkeypatch.setattr(config, "vaapi_device", "/dev/dri/renderD129")
+        full = await segment.build_ffmpeg_args(file, "h264_qsv")
+        monkeypatch.setattr(config, "vaapi_device", "/dev/dri/renderD130")
+        low = await segment.build_ffmpeg_args(file, "h264_qsv")
+
+    assert run.await_args_list == [
+        call(str(vainfo), ["--display", "drm", "--device", device], deadline=5, max_bytes=256 * 1024)
+        for device in ("/dev/dri/renderD129", "/dev/dri/renderD130")
+    ]
+    assert full[full.index("-init_hw_device") + 1] == "qsv=hw:hw,child_device=/dev/dri/renderD129"
+    assert full[full.index("-rc_mode") + 1] == "cqp"
+    assert "-low_power" not in full
+    assert low[low.index("-init_hw_device") + 1] == "qsv=hw:hw,child_device=/dev/dri/renderD130"
+    assert low[low.index("-low_power") + 1] == "1"
+    assert low[low.index("-b:v") + 1] == "3M"

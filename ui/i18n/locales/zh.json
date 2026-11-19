@@ -975,7 +975,7 @@
     "loadingDesc": "正在加载文件浏览器内容...",
     "noContent": "无内容",
     "controlsDisabled": "文件控件已禁用",
-    "controlsDisabledDesc": "您可以在配置中启用重命名、删除、移动。",
+    "controlsDisabledDesc": "在服务器环境中设置 YTP_BROWSER_CONTROL_ENABLED=true，然后重启 YTPTube。",
     "createDir": "创建新目录",
     "createDirDesc": "在 '{path}' 中输入新目录的名称：",
     "create": "创建",
