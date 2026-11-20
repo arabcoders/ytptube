@@ -1,17 +1,8 @@
 # Contributing to YTPTube
 
 YTPTube is my own little pet project that was based on [meTube](https://github.com/alexta69/metube). I have specific 
-requirements and preferences for how this project is developed and maintained. Discuss your change and get approval 
-before starting work or opening a pull request. Unsolicited pull requests will be closed without review.
-
-## Before You Start
-
-Report vulnerabilities privately through [SECURITY.md](SECURITY.md). For bugs, proposed changes or general questions,
-open a GitHub issue. Explain what you want to change, why, your proposed approach and which existing behavior or use
-cases it affects.
-
-Bug fixes, functional improvements and measurable performance work take priority. An interface change needs more than
-personal preference. I will decline a proposal or ask for a different scope or approach.
+requirements and preferences for how this project is developed and maintained. Discuss your change before starting work 
+or opening a pull request. Unsolicited pull requests will be closed without review.
 
 ## Development
 
@@ -30,7 +21,7 @@ uv run python -m app.main --dev
 ```
 
 Add `--no-auto-migration` to prevent automatic upgrades of initialized databases. Startup requires their revision to
-match the latest shipped migration. Fresh databases are still initialized. This flag also works without `--dev`.
+match the latest shipped migration.
 
 Run the frontend from `ui/`:
 
@@ -79,29 +70,31 @@ bun run test:ci
 ## AI-Assisted Work
 
 AI-assisted tools are allowed in this project. Disclosure is not required. The standard for a contribution does not
-change based on which tools were used to produce it.
+change based on which tools are used.
 
 You must understand every submitted change, check it against the existing code, test it, and explain its behavior and
 design decisions. Generated code, tests, or documentation that has not received meaningful human review will be
 rejected. Tests must validate behavior rather than exist only to increase coverage.
 
+When i ask something i expect you to respond with your own words, not a copy of generated content.
+
 ## Pull Requests
 
-Every pull request must target `dev`, never `master`. Reference the approved issue and describe what changed and why. 
-Include any breaking changes or migration steps, and make sure the applicable checks pass.
+Pull requests target `dev` branch, Reference the issue and describe what changed and why. Include any breaking 
+changes or migration steps, and make sure the applicable checks pass.
 
 Use this checklist before submitting:
 
-- [ ] The change was discussed and approved before implementation
-- [ ] The pull request targets `dev`
+- [ ] The change was discussed before implementation
+- [ ] The pull request targets `dev` branch
 - [ ] Relevant tests were added or updated and pass
 - [ ] Applicable formatting, linting, and type checks pass
 - [ ] Documentation was updated where needed
 
 A pull request will be closed without review if it:
 
-* Was opened without prior discussion and approval
-* Targets `master` instead of `dev`
+* Was opened without prior discussion
+* Targets anything other than `dev` branch
 * Includes an unapproved large refactor or architectural change
 * Does not fit the approved scope or project goals
 * Contains work the contributor cannot explain or justify

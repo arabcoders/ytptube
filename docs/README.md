@@ -17,3 +17,4 @@
 
 - [HTTP API](../API.md): Integrate YTPTube through documented endpoints and event channels.
 - [Security policy](../SECURITY.md): Review deployment boundaries and reporting steps.
+- [Contribution process](../CONTRIBUTING.md): Discuss proposed changes and prepare a pull request.

@@ -74,6 +74,11 @@ The included [`compose.yaml`](compose.yaml) runs YTPTube with the bundled POT pr
 FlareSolverr support. It also contains commented host-specific examples for hardware acceleration and NFS/SMB storage.
 See the [environment variable reference](FAQ.md#environment-variables) for additional application settings.
 
+> [!NOTE]
+> Everything in the `compose.yaml` is optional and can be customized according to your setup. The only required part 
+> is the service definition for YTPTube itself. remove `YTP_BROWSER_URL` and `YTP_FLARESOLVERR_URL` if not using browser 
+> extraction or FlareSolverr.
+
 Create the directories and start the container:
 
 ```bash
@@ -134,13 +139,12 @@ Read the [native-build guide](docs/native-builds.md) for installation and usage 
 ## Security
 
 > [!IMPORTANT]
-> Do not expose YTPTube to an untrusted network without authentication. Authenticated users are instance administrators 
-> and can pass yt-dlp options, including options that execute commands.
+> Do not expose YTPTube to an internet without authentication. Authenticated users and can pass yt-dlp options
+> that execute commands.
 
 Server installations require local account setup. Only disable authentication when a trusted reverse proxy controls 
 access or the instance is restricted to a private network. Read the [security recommendations](FAQ.md#security-recommendations)
-before exposing an instance and use [security advisories](https://github.com/arabcoders/ytptube/security/advisories/new) 
-to report vulnerabilities.
+before exposing an instance.
 
 ## Documentation
 
@@ -154,15 +158,15 @@ to report vulnerabilities.
 
 ## Project Policy
 
-YTPTube is built for my own needs and use cases. Discuss contributions with me and get approval before starting work.
-Unsolicited pull requests will be declined. Read [CONTRIBUTING.md](CONTRIBUTING.md). I use AI tools in this project.
-You're welcome to use it if it works for you. However, if you object to AI tools, then simply put, this project
-is not good fit for you. Build your own using technologies you approve of.
+This project is built around my own needs and use cases. Please discuss any contributions with me before starting work, 
+as I may choose not to accept them. Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. I use AI tools in this 
+project, and you're welcome to use it if it works for you. If you disagree with that approach, this project may not be 
+a good fit for you. Feel free to build your own using the tools and technologies you approve of.
 
 ## Disclaimer
 
-YTPTube is not affiliated with yt-dlp or any other service. It is intended for downloading content you are permitted to 
-access, not for piracy or unlawful use.
+YTPTube is not affiliated with yt-dlp or any other service. It is intended for downloading content you are already 
+permitted to access.
 
 ## Community
 

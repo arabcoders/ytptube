@@ -4290,7 +4290,7 @@ If both `since` and `Last-Event-ID` are present, the larger value is used.
 **Purpose**: Serve documentation files.
 
 **Path Parameter**:
-- `file`: Allowed root file or nested path: `README.md`, `FAQ.md`, `API.md`, `SECURITY.md`, `docs/README.md`,
+- `file`: Allowed root file or nested path: `README.md`, `FAQ.md`, `API.md`, `SECURITY.md`, `CONTRIBUTING.md`, `docs/README.md`,
   `docs/features.md`, `docs/authentication.md`, `docs/native-builds.md`, `docs/task-definitions.md`, `docs/media-handlers.md`,
   `sc_short.jpg`, or `sc_simple.jpg`.
 

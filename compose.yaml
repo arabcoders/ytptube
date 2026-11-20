@@ -9,10 +9,13 @@ services:
       TZ: "${TZ:-UTC}"
       YTP_TEMP_PATH: /downloads/tmp
       YTP_DOWNLOAD_PATH: /downloads/files
+      # Optional browser and FlareSolverr URLs, remove if not using browser extraction or FlareSolverr.
       YTP_BROWSER_URL: http://127.0.0.1:9222
       YTP_FLARESOLVERR_URL: http://flaresolverr:8191/v1
     ports:
       - "8081:8081"
+      # Optional local Chrome desktop: https://localhost:3001
+      # - "127.0.0.1:3001:3001"
     volumes:
       - ./config:/config:rw
       - ./downloads:/downloads:rw
@@ -27,32 +30,24 @@ services:
     #   - "${VIDEO_GID:-44}"
     #   - "${RENDER_GID:-105}"
 
+  # Everything below is optional and can be customized according to your setup.
   chrome:
-    image: docker.io/jlesage/chromium:v26.07.2 # latest has issue with cdp binding.
+    image: lscr.io/linuxserver/chrome:latest
     container_name: chrome
     restart: unless-stopped
-    ## Uncomment the port to enable VNC access to the browser if needed.
-    #ports:
-    #  - "127.0.0.1:5800:5800"
+    # Share loopback so YTPTube can reach Chrome's debug port without publishing it.
+    network_mode: "service:ytptube"
+    shm_size: "1gb"
     environment:
-      CHROMIUM_REMOTE_DEBUGGING: "1"
-      KEEP_APP_RUNNING: "1"
-      DISPLAY_WIDTH: "1920"
-      DISPLAY_HEIGHT: "1080"
-
-  # Proxy to forward the Chrome CDP port from the Chrome container to the ytptube container.
-  # Chrome blocks Host: headers from other containers, so this proxy is needed to allow ytptube to connect to Chrome.
-  chrome-cdp-proxy:
-      image: docker.io/alpine/socat:latest
-      container_name: chrome-cdp-proxy
-      restart: unless-stopped
-      network_mode: "service:ytptube"
-      depends_on:
-        - ytptube
-        - chrome
-      command:
-        - TCP-LISTEN:9222,fork,reuseaddr
-        - TCP:chrome:9222
+      PUID: "${UID:-1000}"
+      PGID: "${GID:-1000}"
+      TZ: "${TZ:-UTC}"
+      RESTART_APP: "true"
+      CHROME_CLI: >-
+        --remote-debugging-port=9222
+        --user-data-dir=/config/chromium
+    volumes:
+      - ./chrome-config:/config
 
   flaresolverr:
     image: docker.io/flaresolverr/flaresolverr:latest

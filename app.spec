@@ -85,6 +85,7 @@ a = Analysis(  # noqa: F821 # type: ignore
         ("FAQ.md", "."),
         ("API.md", "."),
         ("SECURITY.md", "."),
+        ("CONTRIBUTING.md", "."),
         ("sc_short.jpg", "."),
         ("sc_simple.jpg", "."),
     ],

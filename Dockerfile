@@ -67,7 +67,7 @@ RUN sed -i -E '/^Suites:[[:space:]]*trixie[[:space:]]+trixie-updates$/ {n; s/^(C
   EXTRA_PACKAGES="" && \
   if [ "$ARCH" = "amd64" ]; then EXTRA_PACKAGES="intel-media-va-driver-non-free i965-va-driver libmfx-gen1.2"; fi && \
   apt-get install -y --no-install-recommends locales procps tini fd-find \
-  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 vainfo ${EXTRA_PACKAGES} \
+  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file vainfo ${EXTRA_PACKAGES} \
   && useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
   dpkg-reconfigure --frontend=noninteractive locales && \
@@ -82,7 +82,7 @@ COPY --chown=app:app yt-dlp /opt/bin/yt-dlp
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app ./cli.py /app/cli.py
 COPY --chown=app:app ./docs /app/docs
-COPY --chown=app:app ./README.md ./FAQ.md ./API.md ./SECURITY.md ./sc_short.jpg ./sc_simple.jpg /app/
+COPY --chown=app:app ./README.md ./FAQ.md ./API.md ./SECURITY.md ./CONTRIBUTING.md ./sc_short.jpg ./sc_simple.jpg /app/
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
 COPY --chown=app:app --from=python_builder /opt/python /opt/python
 COPY --from=mp4_tools /usr/bin/mp4box /usr/bin/mp4decrypt /usr/bin/

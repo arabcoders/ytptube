@@ -1328,6 +1328,11 @@
         "navLabel": "セキュリティ",
         "description": "セキュリティポリシーと脆弱性の報告手順。"
       },
+      "contributing": {
+        "title": "コントリビューション",
+        "navLabel": "コントリビューション",
+        "description": "変更を提案し、プルリクエストを送る方法。"
+      },
       "taskDefinitions": {
         "title": "タスク定義",
         "navLabel": "タスク定義",

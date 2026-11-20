@@ -1328,6 +1328,11 @@
         "navLabel": "Security",
         "description": "Security policy and vulnerability reporting guidance."
       },
+      "contributing": {
+        "title": "Contributing",
+        "navLabel": "Contributing",
+        "description": "How to propose changes and submit a pull request."
+      },
       "taskDefinitions": {
         "title": "Task Definitions",
         "navLabel": "Task Definitions",

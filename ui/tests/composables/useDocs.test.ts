@@ -63,6 +63,17 @@ describe('docs resolver', () => {
     );
   });
 
+  it('opens contribution links locally', () => {
+    expect(resolveDocsLink('CONTRIBUTING.md', '/api/docs/README.md')).toEqual({
+      href: '/docs/contributing',
+      external: false,
+      docRoute: '/docs/contributing',
+    });
+    expect(resolveDocsLink('../CONTRIBUTING.md', '/api/docs/docs/README.md').docRoute).toBe(
+      '/docs/contributing',
+    );
+  });
+
   it('resolves assets and unknown links', () => {
     expect(resolveDocsImageSrc('../sc_short.jpg', '/api/docs/docs/README.md')).toBe(
       '/api/docs/sc_short.jpg',
@@ -73,8 +84,8 @@ describe('docs resolver', () => {
         '/api/docs/README.md',
       ),
     ).toBe('/api/docs/sc_short.jpg');
-    expect(resolveDocsLink('../CONTRIBUTING.md', '/api/docs/docs/README.md').href).toBe(
-      'https://github.com/arabcoders/ytptube/blob/dev/CONTRIBUTING.md',
+    expect(resolveDocsLink('../LICENSE', '/api/docs/docs/README.md').href).toBe(
+      'https://github.com/arabcoders/ytptube/blob/dev/LICENSE',
     );
     expect(resolveDocsLink('#section', '/api/docs/docs/README.md').href).toBe('/#section');
   });
