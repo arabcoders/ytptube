@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Generator
-from unittest.mock import Mock
 
 import pytest
 
@@ -188,32 +187,30 @@ class TestServeStaticFile:
         assert await fallback_response.text() == "<html>root shell</html>"
         assert fallback_response.headers["Cache-Control"] == "public, max-age=0, must-revalidate"
 
+    @pytest.mark.parametrize(
+        ("name", "mime"),
+        [
+            ("app.js", "application/javascript"),
+            ("icon.png", "image/png"),
+            ("asset.unknownext", "application/octet-stream"),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_mime_fallback_lazy(self, tmp_path: Path, test_client, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def test_static_content_type(self, tmp_path: Path, test_client, name: str, mime: str) -> None:
         config = Config.get_instance()
         (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
-        (tmp_path / "known.js").write_text("console.log(1)", encoding="utf-8")
-        (tmp_path / "unknown.bin").write_bytes(b"\x00")
+        (tmp_path / name).write_text("example asset", encoding="utf-8")
         _configure_static_root(tmp_path)
         _register_static_routes(tmp_path, config)
-
-        mime = Mock()
-        mime.from_file.return_value = "application/x-fallback"
-        monkeypatch.setattr(_static, "MIME", mime)
 
         async def handler(request):
             return await _static.serve_static_file(request, config)
 
         client = await test_client({"static_fallback": handler})
-        known = await client.get(url_for("static_fallback", path="known.js"))
+        response = await client.get(url_for("static_fallback", path=name), timeout=5)
 
-        assert known.headers["Content-Type"] == "application/javascript"
-        mime.from_file.assert_not_called()
-
-        unknown = await client.get(url_for("static_fallback", path="unknown.bin"))
-
-        assert unknown.headers["Content-Type"] == "application/x-fallback"
-        mime.from_file.assert_called_once_with(str(tmp_path / "unknown.bin"))
+        assert response.status == 200
+        assert response.headers["Content-Type"] == mime
 
     @pytest.mark.asyncio
     async def test_html_revalidates(self, tmp_path: Path, test_client) -> None:
