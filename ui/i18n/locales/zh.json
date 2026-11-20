@@ -1324,6 +1324,11 @@
         "navLabel": "安全",
         "description": "安全政策和漏洞报告指南。"
       },
+      "contributing": {
+        "title": "参与贡献",
+        "navLabel": "参与贡献",
+        "description": "如何提议更改并提交拉取请求。"
+      },
       "taskDefinitions": {
         "title": "任务定义",
         "navLabel": "任务定义",

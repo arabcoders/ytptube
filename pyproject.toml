@@ -9,10 +9,6 @@ authors = [{ name = "Abdulmohsen", email = "contact@arabcoders.org" }]
 dependencies = [
   # Windows‐only
   "tzdata; sys_platform == 'win32'",
-  "python-magic-bin; sys_platform == 'win32' and platform_machine != 'ARM64'",
-  "python-magic-standalone>=0.4.29; sys_platform == 'win32' and platform_machine == 'ARM64'",
-  # Non‐Windows
-  "python-magic>=0.4.27; sys_platform != 'win32'",
   # Cross‐platform
   "aiohttp>=3.9.3",
   "coloredlogs>=15.0.1",

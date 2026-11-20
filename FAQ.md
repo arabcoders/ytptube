@@ -527,10 +527,10 @@ projects.
 # How to use the browser extractor?
 
 Use this extractor when a site's media URL only appears after the page runs in a browser. Set `YTP_BROWSER_URL` to the
-HTTP endpoint exposed by a remote Chromium instance:
+browser's remote debugging endpoint. The included [`compose.yaml`](compose.yaml) already sets it to:
 
 ```env
-YTP_BROWSER_URL=http://chrome:9222
+YTP_BROWSER_URL=http://127.0.0.1:9222
 ```
 
 Select the `generic_browser` preset for downloads that need it. The preset forces yt-dlp's generic extractor, so do
@@ -543,7 +543,7 @@ shorter limit, add this to the CLI options:
 
 If the browser extractor fails, YTPTube falls back to the normal generic extractor.
 
-The root [`compose.yaml`](compose.yaml) includes Chromium with remote debugging enabled and configures YTPTube to use it.
+The Compose example saves Chrome's profile in `./chrome-config`, so cookies and settings survive container recreation.
 
 ---
 

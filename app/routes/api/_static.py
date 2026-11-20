@@ -2,7 +2,6 @@ import re
 from pathlib import Path, PurePosixPath
 from typing import TypedDict
 
-import magic
 from aiohttp import web
 from aiohttp.web import Request, StreamResponse
 
@@ -12,7 +11,6 @@ from app.library.logging import get_logger
 from app.library.router import add_route
 from app.library.Utils import get_file
 
-MIME = magic.Magic(mime=True)
 LOG = get_logger()
 
 EXT_TO_MIME: dict[str, str] = {
@@ -195,17 +193,14 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
     if STATIC_STATE.index_file is not None and file_path == STATIC_STATE.index_file:
         cache_control = REVALIDATE
 
-    content_type: str | None = EXT_TO_MIME.get(file_path.suffix)
-    if content_type is None:
-        content_type = MIME.from_file(str(file_path))
+    headers = {"Pragma": "public", "Cache-Control": cache_control}
+    content_type = EXT_TO_MIME.get(file_path.suffix)
+    if content_type is not None:
+        headers["Content-Type"] = content_type
 
     response = web.FileResponse(
         path=file_path,
-        headers={
-            "Pragma": "public",
-            "Cache-Control": cache_control,
-            "Content-Type": content_type,
-        },
+        headers=headers,
         status=web.HTTPOk.status_code,
     )
 

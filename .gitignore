@@ -25,11 +25,12 @@
 !.vscode/settings.json
 .history/*
 
-# Keep Var dir
+# Local runtime data
 var/*
 !./var/config/.gitkeep
 !./var/downloads/.gitkeep
 !./var/tmp/.gitkeep
+/chrome-config/
 
 # Misc - python stuff
 __pycache__

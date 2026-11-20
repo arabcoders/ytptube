@@ -1328,6 +1328,11 @@
         "navLabel": "Sécurité",
         "description": "Politique de sécurité et consignes de signalement des vulnérabilités."
       },
+      "contributing": {
+        "title": "Contribuer",
+        "navLabel": "Contribuer",
+        "description": "Comment proposer des modifications et soumettre une pull request."
+      },
       "taskDefinitions": {
         "title": "Définitions de tâches",
         "navLabel": "Définitions de tâches",

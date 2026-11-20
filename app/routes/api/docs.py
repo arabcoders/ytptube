@@ -16,6 +16,7 @@ STATIC_FILES: set[str] = {
     "FAQ.md",
     "API.md",
     "SECURITY.md",
+    "CONTRIBUTING.md",
     "sc_short.jpg",
     "sc_simple.jpg",
     "docs/README.md",

@@ -17,7 +17,6 @@ import asyncio
 from collections.abc import Sequence
 from pathlib import Path
 
-import magic
 from aiohttp import web
 
 from app.features.auth.service import AuthService
@@ -48,7 +47,6 @@ from app.library.TerminalSessionManager import TerminalSessionManager
 from app.library.UpdateChecker import UpdateChecker
 
 LOG = get_logger()
-MIME = magic.Magic(mime=True)
 
 ROOT_PATH: Path = Path(__file__).parent.absolute()
 

@@ -3,6 +3,7 @@ export type DocsFile =
   | 'FAQ.md'
   | 'API.md'
   | 'SECURITY.md'
+  | 'CONTRIBUTING.md'
   | 'docs/README.md'
   | 'docs/features.md'
   | 'docs/authentication.md'
@@ -125,6 +126,17 @@ const DOCS_ENTRIES: DocsEntry[] = [
     sidebarVisible: false,
   },
   {
+    id: 'docs-contributing',
+    title: 'docs.entries.contributing.title',
+    description: 'docs.entries.contributing.description',
+    file: 'CONTRIBUTING.md',
+    route: '/docs/contributing',
+    slug: ['contributing'],
+    icon: 'i-lucide-git-branch',
+    navLabel: 'docs.entries.contributing.navLabel',
+    sidebarVisible: false,
+  },
+  {
     id: 'docs-task-definitions',
     title: 'docs.entries.taskDefinitions.title',
     description: 'docs.entries.taskDefinitions.description',
@@ -164,7 +176,7 @@ const getDocsGroups = () =>
         'docs-faq',
       ],
     },
-    { id: 'reference', ids: ['docs-api', 'docs-security'] },
+    { id: 'reference', ids: ['docs-api', 'docs-security', 'docs-contributing'] },
   ].map((group) => ({
     id: group.id,
     title: `docs.groups.${group.id}`,
