@@ -5,9 +5,9 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/arabcoders/ytptube.svg)
 ![GHCR Pulls](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
 
-YTPTube is a self-hosted download manager, automation interface, and media library preparation layer for
-[yt-dlp](https://github.com/yt-dlp/yt-dlp). It handles one-off downloads, recurring sources, metadata-based rules,
-concurrent queues, and organized output from the same web interface.
+YTPTube is a self-hosted media downloader, automation, and library manager for [yt-dlp](https://github.com/yt-dlp/yt-dlp). 
+It handles one-off downloads, recurring sources, metadata-based rules, concurrent queues, and organized output from the 
+same web interface.
 
 YTPTube's automation tools can be used separately or together:
 
@@ -139,8 +139,8 @@ Read the [native-build guide](docs/native-builds.md) for installation and usage 
 ## Security
 
 > [!IMPORTANT]
-> Do not expose YTPTube to an internet without authentication. Authenticated users and can pass yt-dlp options
-> that execute commands.
+> 1. Do not expose YTPTube to the internet directly without authentication. 
+> 2. Authenticated users and can pass yt-dlp options that execute commands.
 
 Server installations require local account setup. Only disable authentication when a trusted reverse proxy controls 
 access or the instance is restricted to a private network. Read the [security recommendations](FAQ.md#security-recommendations)
@@ -159,9 +159,10 @@ before exposing an instance.
 ## Project Policy
 
 This project is built around my own needs and use cases. Please discuss any contributions with me before starting work, 
-as I may choose not to accept them. Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. I use AI tools in this 
-project, and you're welcome to use it if it works for you. If you disagree with that approach, this project may not be 
-a good fit for you. Feel free to build your own using the tools and technologies you approve of.
+as I may choose not to accept them. Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing.
+
+I use AI tools in this project, and you're welcome to use it if it works for you. If you disagree with that approach, 
+this project may not be a good fit for you. Feel free to build your own using the tools and technologies you approve of.
 
 ## Disclaimer
 
