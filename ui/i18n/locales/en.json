@@ -804,7 +804,7 @@
       "reloadPage": "reload the page"
     },
     "update": {
-      "newVersionInstalled": "A new WebUI version is installed.",
+      "newVersionInstalled": "YTPTube has been updated",
       "viewChangelog": "View changelog",
       "reloadApp": "Reload app",
       "updateAvailable": "Update available:",

@@ -4,30 +4,6 @@
       <Shutdown v-if="app_shutdown" />
 
       <div id="main_container" class="flex min-h-dvh flex-col" v-else>
-        <UAlert
-          v-if="newVersionIsAvailable"
-          color="success"
-          variant="soft"
-          orientation="horizontal"
-          :title="t('app.update.newVersionInstalled')"
-        >
-          <template #leading>
-            <UIcon name="i-lucide-info" class="size-4 shrink-0 text-success" />
-          </template>
-
-          <template #actions>
-            <div class="flex items-center gap-3">
-              <UButton to="/changelog" color="neutral" variant="link" size="sm" class="px-0">
-                {{ t('app.update.viewChangelog') }}
-              </UButton>
-
-              <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
-                {{ t('app.update.reloadApp') }}
-              </UButton>
-            </div>
-          </template>
-        </UAlert>
-
         <UDashboardGroup
           storage="local"
           storage-key="ytptube-shell"
@@ -170,6 +146,39 @@
                     :style="{ backgroundImage: `url(${bgSrc})` }"
                   />
                   <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col gap-4">
+                    <div
+                      v-if="newVersionIsAvailable"
+                      class="ytp-card flex flex-wrap items-center gap-x-4 gap-y-3 border-success/35 bg-success/10 px-3 py-2.5 sm:px-4"
+                    >
+                      <div class="flex min-w-0 items-center gap-3" role="status">
+                        <span
+                          class="ytp-detail-icon border-success/30 bg-success/15 text-success"
+                          aria-hidden="true"
+                        >
+                          <UIcon name="i-lucide-circle-check-big" class="size-4" />
+                        </span>
+                        <p class="text-sm font-medium text-highlighted">
+                          {{ t('app.update.newVersionInstalled') }}
+                        </p>
+                      </div>
+
+                      <div class="ms-auto flex max-w-full flex-wrap justify-end gap-2">
+                        <UButton
+                          to="/changelog"
+                          color="neutral"
+                          variant="ghost"
+                          size="sm"
+                          :label="t('app.update.viewChangelog')"
+                        />
+                        <UButton
+                          icon="i-lucide-refresh-cw"
+                          size="sm"
+                          :label="t('app.update.reloadApp')"
+                          @click="reloadPage"
+                        />
+                      </div>
+                    </div>
+
                     <UAlert
                       v-if="!config.is_loaded"
                       :color="config.is_loading ? 'info' : 'error'"
@@ -604,10 +613,11 @@ const handleSwipeCancel = (): void => {
 
 const dashboardSidebarUi = computed(() => {
   return {
-    root: 'shell-surface border-e border-default bg-transparent',
+    root: 'shell-surface sticky top-0 h-dvh self-start border-e border-default bg-transparent',
     header: 'px-3 py-5',
-    body: 'gap-3 px-2.5 py-3',
+    body: 'min-h-0 gap-3 px-2.5 py-3',
     footer: 'border-t border-default px-2.5 py-3',
+    handle: 'sticky top-0 h-dvh self-start',
   };
 });
 
