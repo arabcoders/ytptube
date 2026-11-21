@@ -445,11 +445,10 @@
             <NuxtLink class="text-primary hover:underline" @click="showOptions = true">
               {{ t('common.cliOptionsViewAll') }}
             </NuxtLink>
-            {{ t('common.cliOptionsDescPrefix') }}
             <a
               target="_blank"
               href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
-              class="text-primary hover:underline"
+              class="ms-2 text-primary hover:underline"
             >
               {{ t('common.cliOptionsDescIgnored') }}
             </a>

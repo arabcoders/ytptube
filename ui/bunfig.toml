@@ -1,5 +1,6 @@
 [install]
 minimumReleaseAge = 259200
+minimumReleaseAgeExcludes = ["types/bun"]
 
 [test]
 preload = ["./tests/setup.ts"]

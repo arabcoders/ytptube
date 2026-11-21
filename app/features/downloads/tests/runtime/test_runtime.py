@@ -1293,15 +1293,32 @@ class TestTempManager:
         assert result.parent == tmp_path, "Temp directory should be created in temp_dir"
         assert tm.temp_path == result, "temp_path should be set to created path"
 
-    def test_path_uses_consistent_hash(self, tmp_path: Path) -> None:
-        info = make_item(id="test123")
+    @pytest.mark.parametrize("item_id", ["test123", "None", ""])
+    def test_retry_reuses_temp_path(self, tmp_path: Path, item_id: str) -> None:
         logger = logging.getLogger("test")
-        tm1 = TempManager(info, str(tmp_path), temp_disabled=False, temp_keep=False, logger=logger)
-        tm2 = TempManager(info, str(tmp_path), temp_disabled=False, temp_keep=False, logger=logger)
+        first = TempManager(make_item(id=item_id), str(tmp_path), temp_disabled=False, temp_keep=False, logger=logger)
+        retry = TempManager(make_item(id=item_id), str(tmp_path), temp_disabled=False, temp_keep=False, logger=logger)
 
-        path1 = tm1.create_temp_path()
-        path2 = tm2.create_temp_path()
-        assert path1 == path2, "Same download ID should produce same temp path"
+        assert retry.create_temp_path() == first.create_temp_path()
+
+    @pytest.mark.parametrize("item_id", ["None", ""])
+    def test_cleanup_preserves_other_download(self, tmp_path: Path, item_id: str) -> None:
+        logger = logging.getLogger("test")
+        info = make_item(id=item_id, url="https://example.com/one")
+        other = make_item(id=item_id, url="https://example.com/two")
+        first = TempManager(info, str(tmp_path), temp_disabled=False, temp_keep=False, logger=logger)
+        second = TempManager(other, str(tmp_path), temp_disabled=False, temp_keep=False, logger=logger)
+        first_path = first.create_temp_path()
+        second_path = second.create_temp_path()
+        assert first_path is not None and second_path is not None
+        partial = second_path / "video.part"
+        partial.write_bytes(b"partial")
+
+        info.status = "finished"
+        first.delete_temp()
+
+        assert not first_path.exists()
+        assert partial.read_bytes() == b"partial"
 
     def test_delete_temp_disabled(self, tmp_path: Path) -> None:
         info = make_item()
@@ -2121,6 +2138,35 @@ class TestQueueManager:
 
         assert result == {"status": "ok"}
         assert seen == [entry]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("template", "metadata", "expected"),
+        [
+            ("Shows/%(title)s [%(id)s].%(ext)s", {"ext": "mp4"}, "Source title [video-id].mp4"),
+            ("Concert.%(ext)s", {"_type": "url_transparent"}, "Concert"),
+            ("%(uploader)s/Concert.%(ext)s", {"ext": "mp4"}, "Concert.mp4"),
+            ("%(uploader)s.%(ext)s", {"ext": "mp4"}, None),
+            ("%(ytp_random:8)s.%(ext)s", {"ext": "mp4"}, None),
+        ],
+    )
+    async def test_queued_filename_preview(self, template: str, metadata: dict, expected: str | None) -> None:
+        queue = self._video_queue()
+        item = self._any_video_item()
+        item.template = template
+        entry = {
+            "id": "video-id",
+            "title": "Source title",
+            "url": "https://example.test/video",
+            **metadata,
+        }
+
+        assert await add_video(queue=queue, item=item, entry=entry) == {"status": "ok"}
+
+        result = queue.queue.put.await_args.args[0].info.serialize()
+        assert result["filename_preview"] == expected
+        assert result["filename"] is None
+        assert result["title"] == "Source title"
 
     @pytest.mark.asyncio
     async def test_keeps_format_warnings(self) -> None:

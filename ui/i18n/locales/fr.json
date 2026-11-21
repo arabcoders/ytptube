@@ -159,9 +159,6 @@
     "addToDownloadForm": "Ajouter au formulaire de téléchargement",
     "addToArchive": "Ajouter à l'archive",
     "removeFromArchive": "Retirer de l'archive",
-    "startDownload": "Démarrer le téléchargement",
-    "pauseDownload": "Mettre en pause le téléchargement",
-    "cancelDownload": "Annuler le téléchargement",
     "runNow": "Exécuter maintenant",
     "generateMetadata": "Générer les métadonnées",
     "archiveAll": "Tout archiver",
@@ -329,8 +326,7 @@
     "searchConditions": "Rechercher des conditions",
     "cliOptions": "Options CLI",
     "cliOptionsViewAll": "Voir toutes les options",
-    "cliOptionsDescPrefix": ". Toutes les options ne sont pas prises en charge ; ",
-    "cliOptionsDescIgnored": "certaines sont ignorées",
+    "cliOptionsDescIgnored": "Certaines options sont ignorées",
     "uploadFile": "Téléverser un fichier",
     "cookiesLabel": "Cookies",
     "cookiesInstructionsPrefix": "Utilisez le ",
@@ -804,7 +800,7 @@
       "reloadPage": "recharger la page"
     },
     "update": {
-      "newVersionInstalled": "Une nouvelle version de l'interface Web est installée.",
+      "newVersionInstalled": "YTPTube a été mis à jour",
       "viewChangelog": "Voir le journal des modifications",
       "reloadApp": "Recharger l'application",
       "updateAvailable": "Mise à jour disponible :",
@@ -861,7 +857,7 @@
       "bgVisibility": "Visibilité de l'arrière-plan",
       "urlSeparator": "Séparateur d'URL",
       "thumbnailsDesc": "Afficher les miniatures des vidéos si disponibles",
-      "aspectRatio": "Format d'image",
+      "showFilename": "Afficher les noms de fichiers à la place des titres",
       "popoverDesc": "Afficher des informations supplémentaires sur certains éléments.",
       "autoRefreshDesc": "Actualiser automatiquement les données de la file d'attente lorsque la connexion WebSocket est indisponible.",
       "autoRefreshInterval": "Intervalle d'actualisation automatique",
@@ -938,7 +934,7 @@
     "queuePaused": "File d'attente de téléchargement mise en pause."
   },
   "history": {
-    "description": "Téléchargements terminés, ignorés et échoués.",
+    "description": "Demandes de téléchargement précédentes.",
     "sizeStarts": "Taille/Départs",
     "downloadSkipped": "Téléchargement ignoré",
     "premiered": "Avant-première",

@@ -150,19 +150,23 @@
 
     <div class="ytp-card-padded-lg">
       <UFormField class="w-full" :ui="editorFieldUi" :label="t('common.cliOptions')">
+        <template #hint>
+          <button
+            type="button"
+            class="font-medium text-primary hover:underline"
+            @click="showOptions = true"
+          >
+            {{ t('common.cliOptionsViewAll') }}
+          </button>
+        </template>
         <template #description>
-          <p class="text-sm text-toned">
-            <button type="button" class="text-primary hover:underline" @click="showOptions = true">
-              {{ t('common.cliOptionsViewAll') }}</button
-            >{{ t('common.cliOptionsDescPrefix') }}
-            <a
-              target="_blank"
-              class="text-primary hover:underline"
-              href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
-            >
-              {{ t('common.cliOptionsDescIgnored') }}</a
-            >.
-          </p>
+          <a
+            target="_blank"
+            class="text-primary hover:underline"
+            href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
+          >
+            {{ t('common.cliOptionsDescIgnored') }}
+          </a>
         </template>
         <TextareaAutocomplete
           id="cli_options"
@@ -173,17 +177,57 @@
       </UFormField>
     </div>
 
-    <details :open="Boolean(preset.cookies)" class="ytp-card-padded-lg">
-      <summary class="w-fit cursor-pointer text-sm font-semibold text-highlighted">
-        {{ t('common.cookiesLabel') }}
-      </summary>
+    <div class="ytp-card-padded-lg">
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 text-sm font-semibold text-highlighted"
+          :aria-expanded="showCookies"
+          :aria-controls="cookiesPanelId"
+          @click="showCookies = !showCookies"
+        >
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="size-4 text-toned"
+            :class="{ 'rotate-180': showCookies }"
+            aria-hidden="true"
+          />
+          {{ t('common.cookiesLabel') }}
+        </button>
+
+        <div
+          class="ms-auto flex flex-wrap justify-end gap-x-3 gap-y-1"
+          role="group"
+          :aria-label="t('common.cookiesLabel')"
+        >
+          <button
+            type="button"
+            class="text-sm font-medium text-toned hover:text-highlighted hover:underline disabled:opacity-50"
+            :disabled="addInProgress || !form.cookies"
+            @click="form.cookies = ''"
+          >
+            {{ t('common.clear') }}
+          </button>
+          <button
+            type="button"
+            class="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+            :disabled="addInProgress"
+            @click="triggerCookieUpload"
+          >
+            {{ t('common.uploadFile') }}
+          </button>
+        </div>
+      </div>
+
       <UFormField
-        class="mt-4 w-full"
+        v-show="showCookies"
+        :id="cookiesPanelId"
+        class="mt-2 w-full"
         :ui="{ ...editorFieldUi, label: 'sr-only' }"
         :label="t('common.cookiesLabel')"
       >
         <template #description>
-          <p class="text-sm text-toned">
+          <span class="text-sm text-toned">
             {{ t('common.cookiesDesc') }}
             <NuxtLink
               target="_blank"
@@ -191,16 +235,7 @@
               class="text-sm text-primary hover:underline"
               >{{ t('common.recommendedAddon') }}</NuxtLink
             >
-          </p>
-        </template>
-        <template #hint>
-          <button
-            type="button"
-            class="text-sm font-medium text-primary hover:underline"
-            @click="triggerCookieUpload"
-          >
-            {{ t('common.uploadFile') }}
-          </button>
+          </span>
         </template>
         <TextDropzone
           ref="cookiesDropzoneRef"
@@ -213,7 +248,7 @@
           :placeholder="t('common.cookiesPlaceholder')"
         />
       </UFormField>
-    </details>
+    </div>
 
     <UModal
       v-if="showOptions"
@@ -275,6 +310,8 @@ const importString = ref('');
 const selectedPreset = ref<string>('');
 const importInProgress = ref(false);
 const showOptions = ref(false);
+const showCookies = ref(Boolean(props.preset.cookies));
+const cookiesPanelId = useId();
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null);
 
@@ -334,6 +371,7 @@ watch(
 );
 
 const triggerCookieUpload = (): void => {
+  showCookies.value = true;
   cookiesDropzoneRef.value?.triggerFileSelect();
 };
 

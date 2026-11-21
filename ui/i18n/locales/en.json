@@ -159,9 +159,6 @@
     "addToDownloadForm": "Add to download form",
     "addToArchive": "Add to archive",
     "removeFromArchive": "Remove from archive",
-    "startDownload": "Start Download",
-    "pauseDownload": "Pause Download",
-    "cancelDownload": "Cancel Download",
     "runNow": "Run now",
     "generateMetadata": "Generate metadata",
     "archiveAll": "Archive All",
@@ -329,8 +326,7 @@
     "searchConditions": "Search conditions",
     "cliOptions": "CLI options",
     "cliOptionsViewAll": "View all options",
-    "cliOptionsDescPrefix": ". Not all options are supported; ",
-    "cliOptionsDescIgnored": "some are ignored",
+    "cliOptionsDescIgnored": "Some options are ignored",
     "uploadFile": "Upload file",
     "cookiesLabel": "Cookies",
     "cookiesInstructionsPrefix": "Use the ",
@@ -804,7 +800,7 @@
       "reloadPage": "reload the page"
     },
     "update": {
-      "newVersionInstalled": "A new WebUI version is installed.",
+      "newVersionInstalled": "YTPTube has been updated",
       "viewChangelog": "View changelog",
       "reloadApp": "Reload app",
       "updateAvailable": "Update available:",
@@ -861,7 +857,7 @@
       "bgVisibility": "Background visibility",
       "urlSeparator": "URL Separator",
       "thumbnailsDesc": "Show videos thumbnail if available",
-      "aspectRatio": "Aspect Ratio",
+      "showFilename": "Show filenames instead of download titles",
       "popoverDesc": "Show additional information over certain elements.",
       "autoRefreshDesc": "Automatically refresh queue data when WebSocket connection is unavailable.",
       "autoRefreshInterval": "Auto-refresh interval",
@@ -938,7 +934,7 @@
     "queuePaused": "Download queue paused."
   },
   "history": {
-    "description": "Completed, skipped, and failed downloads.",
+    "description": "Past download requests.",
     "sizeStarts": "Size/Starts",
     "downloadSkipped": "Download skipped",
     "premiered": "Premiered",

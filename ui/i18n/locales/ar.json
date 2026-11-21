@@ -159,9 +159,6 @@
     "addToDownloadForm": "إضافة إلى نموذج التنزيل",
     "addToArchive": "إضافة إلى الأرشيف",
     "removeFromArchive": "إزالة من الأرشيف",
-    "startDownload": "بدء التنزيل",
-    "pauseDownload": "إيقاف التنزيل مؤقتاً",
-    "cancelDownload": "إلغاء التنزيل",
     "runNow": "تشغيل الآن",
     "generateMetadata": "إنشاء بيانات وصفية",
     "archiveAll": "أرشفة الكل",
@@ -329,8 +326,7 @@
     "searchConditions": "البحث في الشروط",
     "cliOptions": "خيارات CLI",
     "cliOptionsViewAll": "عرض جميع الخيارات",
-    "cliOptionsDescPrefix": ". ليست كل الخيارات مدعومة؛ ",
-    "cliOptionsDescIgnored": "بعضها متجاهل",
+    "cliOptionsDescIgnored": "يتم تجاهل بعض الخيارات",
     "uploadFile": "رفع ملف",
     "cookiesLabel": "ملفات تعريف الارتباط",
     "cookiesInstructionsPrefix": "استخدم ",
@@ -804,7 +800,7 @@
       "reloadPage": "إعادة تحميل الصفحة"
     },
     "update": {
-      "newVersionInstalled": "تم تثبيت إصدار جديد من واجهة الويب.",
+      "newVersionInstalled": "تم تحديث YTPTube",
       "viewChangelog": "عرض سجل التغييرات",
       "reloadApp": "إعادة تحميل التطبيق",
       "updateAvailable": "يتوفر تحديث:",
@@ -861,7 +857,7 @@
       "bgVisibility": "وضوح الخلفية",
       "urlSeparator": "فاصل الروابط",
       "thumbnailsDesc": "إظهار الصور المصغرة للفيديوهات إن وجدت",
-      "aspectRatio": "نسبة العرض إلى الارتفاع",
+      "showFilename": "إظهار أسماء الملفات بدلًا من عناوين التنزيلات",
       "popoverDesc": "إظهار معلومات إضافية عند المرور على عناصر معينة.",
       "autoRefreshDesc": "تحديث بيانات قائمة الانتظار تلقائياً عند عدم توفر اتصال WebSocket.",
       "autoRefreshInterval": "فترة التحديث التلقائي",
@@ -938,7 +934,7 @@
     "queuePaused": "تم إيقاف قائمة الانتظار مؤقتاً."
   },
   "history": {
-    "description": "التنزيلات المكتملة والمتخطية والفاشلة.",
+    "description": "طلبات التنزيل السابقة.",
     "sizeStarts": "الحجم/البدء",
     "downloadSkipped": "تم تخطي التنزيل",
     "premiered": "تم العرض الأول",

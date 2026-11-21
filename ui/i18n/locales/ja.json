@@ -159,9 +159,6 @@
     "addToDownloadForm": "ダウンロードフォームに追加",
     "addToArchive": "アーカイブに追加",
     "removeFromArchive": "アーカイブから削除",
-    "startDownload": "ダウンロードを開始",
-    "pauseDownload": "ダウンロードを一時停止",
-    "cancelDownload": "ダウンロードをキャンセル",
     "runNow": "今すぐ実行",
     "generateMetadata": "メタデータを生成",
     "archiveAll": "すべてアーカイブ",
@@ -329,8 +326,7 @@
     "searchConditions": "条件を検索",
     "cliOptions": "CLI オプション",
     "cliOptionsViewAll": "すべてのオプションを表示",
-    "cliOptionsDescPrefix": "。すべてのオプションがサポートされているわけではありません。",
-    "cliOptionsDescIgnored": "一部は無視されます",
+    "cliOptionsDescIgnored": "一部のオプションは無視されます",
     "uploadFile": "ファイルをアップロード",
     "cookiesLabel": "クッキー",
     "cookiesInstructionsPrefix": "",
@@ -804,7 +800,7 @@
       "reloadPage": "ページを再読み込み"
     },
     "update": {
-      "newVersionInstalled": "新しい WebUI バージョンがインストールされました。",
+      "newVersionInstalled": "YTPTube が更新されました",
       "viewChangelog": "変更履歴を表示",
       "reloadApp": "アプリを再読み込み",
       "updateAvailable": "更新が利用可能:",
@@ -861,7 +857,7 @@
       "bgVisibility": "背景の表示設定",
       "urlSeparator": "URL 区切り文字",
       "thumbnailsDesc": "利用可能な場合に動画のサムネイルを表示します",
-      "aspectRatio": "アスペクト比",
+      "showFilename": "ダウンロードのタイトルの代わりにファイル名を表示",
       "popoverDesc": "特定の要素上に追加情報を表示します。",
       "autoRefreshDesc": "WebSocket 接続が利用できない場合、キューデータを自動的に更新します。",
       "autoRefreshInterval": "自動更新間隔",
@@ -938,7 +934,7 @@
     "queuePaused": "ダウンロードキューを一時停止しました。"
   },
   "history": {
-    "description": "完了、スキップ、失敗したダウンロード。",
+    "description": "過去のダウンロードリクエスト。",
     "sizeStarts": "サイズ/開始",
     "downloadSkipped": "ダウンロードをスキップ",
     "premiered": "プレミア公開済み",

@@ -159,9 +159,6 @@
     "addToDownloadForm": "添加到下载表单",
     "addToArchive": "添加到归档",
     "removeFromArchive": "从归档移除",
-    "startDownload": "开始下载",
-    "pauseDownload": "暂停下载",
-    "cancelDownload": "取消下载",
     "runNow": "立即运行",
     "generateMetadata": "生成元数据",
     "archiveAll": "全部归档",
@@ -329,8 +326,7 @@
     "searchConditions": "搜索条件",
     "cliOptions": "CLI 选项",
     "cliOptionsViewAll": "查看所有选项",
-    "cliOptionsDescPrefix": "。并非所有选项都被支持；",
-    "cliOptionsDescIgnored": "部分会被忽略",
+    "cliOptionsDescIgnored": "部分选项会被忽略",
     "uploadFile": "上传文件",
     "cookiesLabel": "Cookies",
     "cookiesInstructionsPrefix": "使用 ",
@@ -804,7 +800,7 @@
       "reloadPage": "重新加载页面"
     },
     "update": {
-      "newVersionInstalled": "已安装新的 WebUI 版本。",
+      "newVersionInstalled": "YTPTube 已更新",
       "viewChangelog": "查看更新日志",
       "reloadApp": "重新加载应用",
       "updateAvailable": "有可用更新：",
@@ -861,7 +857,7 @@
       "bgVisibility": "背景可见性",
       "urlSeparator": "URL 分隔符",
       "thumbnailsDesc": "如可用则显示视频缩略图",
-      "aspectRatio": "宽高比",
+      "showFilename": "显示文件名而不是下载标题",
       "popoverDesc": "在某些元素上显示额外信息。",
       "autoRefreshDesc": "当 WebSocket 连接不可用时自动刷新队列数据。",
       "autoRefreshInterval": "自动刷新间隔",
@@ -938,7 +934,7 @@
     "queuePaused": "下载队列已暂停。"
   },
   "history": {
-    "description": "已完成、已跳过和失败的下载。",
+    "description": "以往的下载请求。",
     "sizeStarts": "大小/开始次数",
     "downloadSkipped": "下载已跳过",
     "premiered": "已首映",

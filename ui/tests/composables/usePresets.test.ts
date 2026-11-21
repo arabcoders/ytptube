@@ -222,6 +222,29 @@ describe('usePresets', () => {
       expect(requestBody.default).toBe(false);
       requestSpy.mockRestore();
     });
+
+    it('sends_cleared_cookies', async () => {
+      const requestSpy = spyOn(utils, 'request');
+      const cleared = { ...mockPreset, cookies: '' };
+      requestSpy.mockResolvedValueOnce(
+        createMockResponse({ ok: true, status: 200, jsonData: cleared }),
+      );
+
+      try {
+        const result = await usePresets().updatePreset(mockPreset.id, cleared);
+
+        expect(requestSpy).toHaveBeenCalledWith(
+          `/api/presets/${mockPreset.id}`,
+          expect.objectContaining({
+            method: 'PUT',
+            body: expect.stringContaining('"cookies":""'),
+          }),
+        );
+        expect(result?.cookies).toBe('');
+      } finally {
+        requestSpy.mockRestore();
+      }
+    });
   });
 
   describe('patchPreset', () => {

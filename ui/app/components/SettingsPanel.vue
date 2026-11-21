@@ -172,29 +172,20 @@
             :label="t('app.settings.thumbnailsDesc')"
           />
 
-          <UFormField
-            v-if="show_thumbnail"
-            :label="t('app.settings.aspectRatio')"
-            class="w-full"
-            :ui="settingsFieldUi"
-          >
-            <USelect
-              v-model="thumbnail_ratio"
-              :items="thumbnailRatioItems"
-              value-key="value"
-              label-key="label"
-              size="md"
-              class="w-full"
-              :ui="{ base: 'w-full' }"
-            />
-          </UFormField>
-
           <USwitch
             v-model="show_popover"
             class="w-full"
             color="neutral"
             :ui="settingsSwitchUi"
             :label="t('app.settings.popoverDesc')"
+          />
+
+          <USwitch
+            v-model="showFilename"
+            class="w-full"
+            color="neutral"
+            :ui="settingsSwitchUi"
+            :label="t('app.settings.showFilename')"
           />
         </section>
 
@@ -334,6 +325,7 @@ import { useStorage } from '@vueuse/core';
 import { useNotification } from '~/composables/useNotification';
 import type { notificationTarget, toastPosition } from '~/composables/useNotification';
 import { useDirtyCloseGuardPreferences } from '~/composables/useDirtyCloseGuard';
+import { useDownloadTitle } from '~/composables/useDownloadTitle';
 import { useMode, type Mode } from '~/composables/useMode';
 
 const { t } = useI18n();
@@ -370,7 +362,7 @@ const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', tru
 const toast_target = useStorage<notificationTarget>('toast_target', 'toast');
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
 const show_popover = useStorage<boolean>('show_popover', true);
-const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1');
+const { showFilename } = useDownloadTitle();
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',');
 const { mode, on: modeOn, save: applyMode } = useMode();
 const draftMode = ref<Mode>(mode.value);
@@ -495,11 +487,6 @@ const setDirtyCloseSkip = (key: string, value: boolean): void => {
   }
   dirtyCloseSkips.value = next;
 };
-
-const thumbnailRatioItems = [
-  { label: '16:9', value: 'is-16by9' },
-  { label: '3:1', value: 'is-3by1' },
-];
 
 const notificationTargetItems = computed(() => [
   { label: t('app.settings.toast'), value: 'toast' },

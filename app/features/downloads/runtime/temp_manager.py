@@ -51,7 +51,10 @@ class TempManager:
         if self.temp_disabled or not self.temp_dir:
             return None
 
-        self.temp_path = Path(self.temp_dir) / hashlib.shake_256(f"D-{self.info.id}".encode()).hexdigest(5)
+        # Flat hand-offs without an ID are queued with the string "None".
+        item_id = self.info.id
+        key = f"D-{item_id}" if item_id and item_id != "None" else f"U-{self.info.url}"
+        self.temp_path = Path(self.temp_dir) / hashlib.shake_256(key.encode()).hexdigest(5)
 
         if not self.temp_path.exists():
             self.temp_path.mkdir(parents=True, exist_ok=True)
