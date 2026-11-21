@@ -2140,6 +2140,35 @@ class TestQueueManager:
         assert seen == [entry]
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("template", "metadata", "expected"),
+        [
+            ("Shows/%(title)s [%(id)s].%(ext)s", {"ext": "mp4"}, "Source title [video-id].mp4"),
+            ("Concert.%(ext)s", {"_type": "url_transparent"}, "Concert"),
+            ("%(uploader)s/Concert.%(ext)s", {"ext": "mp4"}, "Concert.mp4"),
+            ("%(uploader)s.%(ext)s", {"ext": "mp4"}, None),
+            ("%(ytp_random:8)s.%(ext)s", {"ext": "mp4"}, None),
+        ],
+    )
+    async def test_queued_filename_preview(self, template: str, metadata: dict, expected: str | None) -> None:
+        queue = self._video_queue()
+        item = self._any_video_item()
+        item.template = template
+        entry = {
+            "id": "video-id",
+            "title": "Source title",
+            "url": "https://example.test/video",
+            **metadata,
+        }
+
+        assert await add_video(queue=queue, item=item, entry=entry) == {"status": "ok"}
+
+        result = queue.queue.put.await_args.args[0].info.serialize()
+        assert result["filename_preview"] == expected
+        assert result["filename"] is None
+        assert result["title"] == "Source title"
+
+    @pytest.mark.asyncio
     async def test_keeps_format_warnings(self) -> None:
         queue = self._video_queue()
         logs = [

@@ -304,14 +304,14 @@
 
                             <div class="min-w-0 flex-1 space-y-3">
                               <div class="space-y-2">
-                                <UTooltip :text="item.title">
+                                <UTooltip :text="downloadTitleTooltip(item, t('simple.untitled'))">
                                   <a
                                     :href="item.url"
                                     target="_blank"
                                     rel="noreferrer"
                                     class="block truncate text-sm font-semibold text-highlighted hover:underline"
                                   >
-                                    {{ item.title || t('simple.untitled') }}
+                                    <bdi>{{ downloadTitle(item, t('simple.untitled')) }}</bdi>
                                   </a>
                                 </UTooltip>
 
@@ -572,14 +572,14 @@
 
                             <div class="min-w-0 flex-1 space-y-3">
                               <div class="space-y-2">
-                                <UTooltip :text="item.title">
+                                <UTooltip :text="downloadTitleTooltip(item, t('simple.untitled'))">
                                   <a
                                     :href="item.url"
                                     target="_blank"
                                     rel="noreferrer"
                                     class="block truncate text-sm font-semibold text-highlighted hover:underline"
                                   >
-                                    {{ item.title || t('simple.untitled') }}
+                                    <bdi>{{ downloadTitle(item, t('simple.untitled')) }}</bdi>
                                   </a>
                                 </UTooltip>
 
@@ -783,6 +783,7 @@ import Shutdown from '~/components/shutdown.vue';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDialog } from '~/composables/useDialog';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
+import { downloadTitleTooltip, useDownloadTitle } from '~/composables/useDownloadTitle';
 import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { usePresetOptions } from '~/composables/usePresetOptions';
@@ -808,6 +809,7 @@ const configStore = useYtpConfig();
 const stateStore = useQueueState();
 const socketStore = useAppSocket();
 const toast = useNotification();
+const { downloadTitle } = useDownloadTitle();
 const dlFields = useStorage<Record<string, any>>('dl_fields', {});
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
 const autoRefreshEnabled = useStorage<boolean>('queue_auto_refresh', true);

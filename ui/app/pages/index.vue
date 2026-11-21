@@ -165,14 +165,14 @@
                     :id="`queue-title-${item._id}`"
                     class="min-w-0 flex-1 text-base font-semibold text-highlighted"
                   >
-                    <UTooltip :text="item.title" :content="{ align: 'start' }">
+                    <UTooltip :text="downloadTitleTooltip(item)" :content="{ align: 'start' }">
                       <a
                         :href="item.url"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="line-clamp-2 w-fit max-w-full wrap-anywhere hover:text-primary hover:underline"
                       >
-                        <bdi>{{ item.title }}</bdi>
+                        <bdi>{{ downloadTitle(item) }}</bdi>
                       </a>
                     </UTooltip>
                   </h2>
@@ -181,7 +181,7 @@
                     color="primary"
                     class="mt-1 shrink-0"
                     :model-value="selectedElms.includes(item._id)"
-                    :aria-label="`${t('common.select')}: ${item.title}`"
+                    :aria-label="`${t('common.select')}: ${downloadTitle(item)}`"
                     @click.capture="rangeSelection.handleClick"
                     @keydown.capture="rangeSelection.handleKeydown"
                     @update:model-value="selectItem(item._id, $event)"
@@ -215,7 +215,7 @@
                   v-if="isEmbedable(item.url)"
                   type="button"
                   class="play-overlay focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
-                  :aria-label="`${t('common.playVideo')}: ${item.title}`"
+                  :aria-label="`${t('common.playVideo')}: ${downloadTitle(item)}`"
                   @click="playItem(item)"
                 >
                   <span class="play-icon embed-icon" aria-hidden="true">
@@ -403,20 +403,10 @@
                         variant="outline"
                         size="sm"
                         icon="i-lucide-play"
-                        :aria-label="`${t('common.playVideo')}: ${item.title}`"
+                        :aria-label="`${t('common.playVideo')}: ${downloadTitle(item)}`"
                         @click="playItem(item)"
                       />
                     </UTooltip>
-                    <UButton
-                      color="neutral"
-                      variant="outline"
-                      size="sm"
-                      icon="i-lucide-circle-off"
-                      @click="() => void confirmCancel(item)"
-                    >
-                      {{ item.is_live ? t('common.stopStream') : t('common.cancel') }}
-                    </UButton>
-
                     <UButton
                       v-if="canStartItem(item)"
                       color="neutral"
@@ -439,6 +429,29 @@
                       {{ t('common.pause') }}
                     </UButton>
 
+                    <template v-if="wideActions">
+                      <UButton
+                        v-for="action in positionActions(item)"
+                        :key="action.icon"
+                        color="neutral"
+                        variant="outline"
+                        size="sm"
+                        :icon="action.icon"
+                        :label="action.label"
+                        @click="action.onSelect"
+                      />
+                    </template>
+
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      size="sm"
+                      icon="i-lucide-circle-off"
+                      @click="() => void confirmCancel(item)"
+                    >
+                      {{ item.is_live ? t('common.stopStream') : t('common.cancel') }}
+                    </UButton>
+
                     <UDropdownMenu
                       :items="itemActionGroups(item)"
                       :modal="false"
@@ -449,7 +462,7 @@
                         variant="ghost"
                         size="sm"
                         icon="i-lucide-ellipsis"
-                        :aria-label="`${t('common.actions')}: ${item.title}`"
+                        :aria-label="`${t('common.actions')}: ${downloadTitle(item)}`"
                       />
                     </UDropdownMenu>
                   </div>
@@ -527,10 +540,13 @@
 </template>
 
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
 import { useStorage } from '@vueuse/core';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDialog } from '~/composables/useDialog';
+import { downloadTitleTooltip, useDownloadTitle } from '~/composables/useDownloadTitle';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
+import { useMediaQuery } from '~/composables/useMediaQuery';
 import type { download_form_item } from '~/types/item';
 import type { StoreItem } from '~/types/store';
 import {
@@ -560,11 +576,13 @@ const socket = useAppSocket();
 const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog } = useDialog();
+const { downloadTitle } = useDownloadTitle();
 const { toggleExpand, isExpanded, expandClass } = useExpandableMeta();
 const downloadFormHandoff = useFormHandoff<download_form_item>('download');
 
 const showThumbnails = useStorage<boolean>('show_thumbnail', true);
 const show_popover = useStorage<boolean>('show_popover', true);
+const wideActions = useMediaQuery({ query: '(min-width: 80rem)' });
 const autoRefreshEnabled = useStorage<boolean>('queue_auto_refresh', true);
 const autoRefreshDelay = useStorage<number>('queue_auto_refresh_delay', 10000);
 
@@ -910,67 +928,43 @@ const bulkActionGroups = computed(() => {
   return groups;
 });
 
-const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>> => {
-  const groups: Array<Array<Record<string, unknown>>> = [];
-  const primaryActions: Array<Record<string, unknown>> = [];
+const positionActions = (item: StoreItem): DropdownMenuItem[] => {
+  if (item.status || !stateStore.canPosition(item._id)) return [];
 
-  if (isEmbedable(item.url)) {
-    primaryActions.push({
-      label: t('common.playVideo'),
-      icon: 'i-lucide-play',
-      onSelect: () => playItem(item),
+  const actions: DropdownMenuItem[] = [];
+  if (!stateStore.isFirst(item._id)) {
+    actions.push({
+      label: t('queue.moveToFront'),
+      icon: 'i-lucide-arrow-up-to-line',
+      onSelect: () => void positionItem(item, 'front'),
     });
   }
-
-  primaryActions.push({
-    label: item.is_live ? t('common.stopStream') : t('common.cancelDownload'),
-    icon: 'i-lucide-circle-off',
-    onSelect: () => confirmCancel(item),
-  });
-
-  if (canStartItem(item)) {
-    primaryActions.push({
-      label: t('common.startDownload'),
-      icon: 'i-lucide-circle-play',
-      onSelect: () => startItem(item),
+  if (!stateStore.isLastPending(item._id)) {
+    actions.push({
+      label: t('queue.moveToBack'),
+      icon: 'i-lucide-arrow-down-to-line',
+      onSelect: () => void positionItem(item, 'back'),
     });
   }
+  return actions;
+};
 
-  if (!item.status) {
-    if (stateStore.hasActive()) {
-      primaryActions.push({
-        label: t('queue.forceStart'),
-        icon: 'i-lucide-zap',
-        onSelect: () => forceStartItem(item),
-      });
-    }
-
-    if (stateStore.canPosition(item._id) && !stateStore.isFirst(item._id)) {
-      primaryActions.push({
-        label: t('queue.moveToFront'),
-        icon: 'i-lucide-arrow-up-to-line',
-        onSelect: () => positionItem(item, 'front'),
-      });
-    }
-
-    if (stateStore.canPosition(item._id) && !stateStore.isLastPending(item._id)) {
-      primaryActions.push({
-        label: t('queue.moveToBack'),
-        icon: 'i-lucide-arrow-down-to-line',
-        onSelect: () => positionItem(item, 'back'),
-      });
-    }
-  }
-
-  if (canPauseItem(item)) {
-    primaryActions.push({
-      label: t('common.pauseDownload'),
-      icon: 'i-lucide-pause',
-      onSelect: () => pauseItem(item),
+const itemActionGroups = (item: StoreItem): DropdownMenuItem[][] => {
+  const groups: DropdownMenuItem[][] = [];
+  const queueActions: DropdownMenuItem[] = [];
+  if (!item.status && stateStore.hasActive()) {
+    queueActions.push({
+      label: t('queue.forceStart'),
+      icon: 'i-lucide-zap',
+      onSelect: () => void forceStartItem(item),
     });
   }
-
-  groups.push(primaryActions);
+  if (!wideActions.value) {
+    queueActions.push(...positionActions(item));
+  }
+  if (queueActions.length) {
+    groups.push(queueActions);
+  }
 
   groups.push([
     {
@@ -1190,7 +1184,7 @@ const confirmCancel = async (item: StoreItem): Promise<boolean> => {
     (await box.confirm(
       t('common.confirmActionNamed', {
         action: item.is_live ? t('common.stop') : t('common.cancel'),
-        name: item.title,
+        name: downloadTitle(item),
       }),
     ))
   ) {

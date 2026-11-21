@@ -84,6 +84,7 @@ type StoreItem = {
   };
   tmpfilename?: string | null;
   filename?: string | null;
+  filename_preview?: string | null;
   total_bytes?: number | null;
   total_bytes_estimate?: number | null;
   downloaded_bytes?: number | null;

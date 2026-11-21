@@ -128,14 +128,14 @@
                   :id="`history-title-${item._id}`"
                   class="min-w-0 flex-1 text-base font-semibold text-highlighted"
                 >
-                  <UTooltip :text="item.title" :content="{ align: 'start' }">
+                  <UTooltip :text="downloadTitleTooltip(item)" :content="{ align: 'start' }">
                     <a
                       :href="item.url"
                       target="_blank"
                       rel="noopener noreferrer"
                       class="line-clamp-2 w-fit max-w-full wrap-anywhere hover:text-primary hover:underline"
                     >
-                      <bdi>{{ item.title }}</bdi>
+                      <bdi>{{ downloadTitle(item) }}</bdi>
                     </a>
                   </UTooltip>
                 </h2>
@@ -145,7 +145,7 @@
                   color="primary"
                   class="mt-1 shrink-0"
                   :model-value="selectedElms.includes(item._id)"
-                  :aria-label="`${t('common.select')}: ${item.title}`"
+                  :aria-label="`${t('common.select')}: ${downloadTitle(item)}`"
                   @click.capture="rangeSelection.handleClick"
                   @keydown.capture="rangeSelection.handleKeydown"
                   @update:model-value="selectItem(item._id, $event)"
@@ -187,7 +187,7 @@
                 v-if="item.filename || isEmbedable(item.url)"
                 type="button"
                 class="play-overlay focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
-                :aria-label="`${t('common.playVideo')}: ${item.title}`"
+                :aria-label="`${t('common.playVideo')}: ${downloadTitle(item)}`"
                 @click="playItem(item)"
               >
                 <span
@@ -412,7 +412,7 @@
                       variant="outline"
                       size="sm"
                       icon="i-lucide-play"
-                      :aria-label="`${t('common.playVideo')}: ${item.title}`"
+                      :aria-label="`${t('common.playVideo')}: ${downloadTitle(item)}`"
                       @click="playItem(item)"
                     />
                   </UTooltip>
@@ -448,6 +448,18 @@
                   >
                     {{ t('common.download') }}
                   </UButton>
+                  <template v-if="wideActions">
+                    <UButton
+                      v-for="action in fileActions(item)"
+                      :key="action.icon"
+                      color="neutral"
+                      variant="outline"
+                      size="sm"
+                      :icon="action.icon"
+                      :label="action.label"
+                      @click="action.onSelect"
+                    />
+                  </template>
                   <UButton
                     color="neutral"
                     variant="outline"
@@ -467,7 +479,7 @@
                       variant="ghost"
                       size="sm"
                       icon="i-lucide-ellipsis"
-                      :aria-label="`${t('common.actions')}: ${item.title}`"
+                      :aria-label="`${t('common.actions')}: ${downloadTitle(item)}`"
                     />
                   </UDropdownMenu>
                 </div>
@@ -589,6 +601,7 @@
 </template>
 
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
 import { toRaw } from 'vue';
 import ToolboxCreateModal from '~/components/ToolboxCreateModal.vue';
 import ToolboxJobModal from '~/components/ToolboxJobModal.vue';
@@ -596,10 +609,12 @@ import { useStorage } from '@vueuse/core';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDirtyCloseGuard } from '~/composables/useDirtyCloseGuard';
 import { useDialog } from '~/composables/useDialog';
+import { downloadTitleTooltip, useDownloadTitle } from '~/composables/useDownloadTitle';
 import { useAppSocket } from '~/composables/useAppSocket';
 import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useHistoryState } from '~/composables/useHistoryState';
 import { useHistoryNfo } from '~/composables/useHistoryNfo';
+import { useMediaQuery } from '~/composables/useMediaQuery';
 import { useWebShare } from '~/composables/useWebShare';
 import type { item_request } from '~/types/item';
 import type { StoreItem } from '~/types/store';
@@ -634,6 +649,7 @@ const socketStore = useAppSocket();
 const toast = useNotification();
 const box = useConfirm();
 const { confirmDialog, promptDialog } = useDialog();
+const { downloadTitle } = useDownloadTitle();
 const { toggleExpand, isExpanded, expandClass } = useExpandableMeta();
 const { canShare, shareUrl } = useWebShare();
 const downloadFormHandoff = useFormHandoff<item_request>('download');
@@ -663,6 +679,7 @@ const {
 
 const showThumbnails = useStorage<boolean>('show_thumbnail', true);
 const show_popover = useStorage<boolean>('show_popover', true);
+const wideActions = useMediaQuery({ query: '(min-width: 80rem)' });
 
 const pageShell = usePageShell('history');
 const info_view = ref<{ url: string; preset: string; cli: string; useUrl: boolean }>({
@@ -922,27 +939,33 @@ const bulkActionGroups = computed(() => {
   return groups;
 });
 
-const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>> => {
-  const groups: Array<Array<Record<string, unknown>>> = [];
-  const mediaActions: Array<Record<string, unknown>> = [];
+const fileActions = (item: StoreItem): DropdownMenuItem[] => {
+  if (!item.filename) return [];
+
+  const actions: DropdownMenuItem[] = [
+    {
+      label: t('common.renameFile'),
+      icon: 'i-lucide-pencil',
+      onSelect: () => void renameFile(item),
+    },
+  ];
+  if (item.status === 'finished') {
+    actions.push({
+      label: t('toolbox.title'),
+      icon: 'i-lucide-wrench',
+      onSelect: () => {
+        toolboxSource.value = getItemPath(item);
+      },
+    });
+  }
+  return actions;
+};
+
+const itemActionGroups = (item: StoreItem): DropdownMenuItem[][] => {
+  const groups: DropdownMenuItem[][] = [];
+  const mediaActions = wideActions.value ? [] : fileActions(item);
 
   if (item.filename) {
-    if (item.status === 'finished') {
-      mediaActions.push({
-        label: t('toolbox.title'),
-        icon: 'i-lucide-wrench',
-        onSelect: () => {
-          toolboxSource.value = getItemPath(item);
-        },
-      });
-    }
-
-    mediaActions.push({
-      label: t('common.playVideo'),
-      icon: 'i-lucide-play',
-      onSelect: () => playItem(item),
-    });
-
     if ('error' === item.status) {
       mediaActions.push({
         label: t('common.retryDownload'),
@@ -955,18 +978,6 @@ const itemActionGroups = (item: StoreItem): Array<Array<Record<string, unknown>>
       label: t('common.generateNfo'),
       icon: 'i-lucide-file-code-2',
       onSelect: () => void generateNfo(item),
-    });
-
-    mediaActions.push({
-      label: t('common.renameFile'),
-      icon: 'i-lucide-pencil',
-      onSelect: () => void renameFile(item),
-    });
-  } else if (isEmbedable(item.url)) {
-    mediaActions.push({
-      label: t('common.playVideo'),
-      icon: 'i-lucide-play',
-      onSelect: () => playItem(item),
     });
   }
 

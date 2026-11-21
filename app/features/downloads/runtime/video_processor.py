@@ -3,7 +3,11 @@
 import time
 from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
+from functools import cache
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from yt_dlp import YoutubeDL
 
 from app.features.downloads.items import ItemDTO
 from app.features.ytdlp.extractor import REEXTRACT_INFO_KEY, needs_reextract
@@ -23,6 +27,33 @@ if TYPE_CHECKING:
 LOG = get_logger()
 LIGHT_EXTRACT_KEY = "_ytptube_light_extract"
 _REDUNDANT_FORMAT_WARNINGS = {"No video formats found!", "Requested format is not available"}
+_MISSING_FIELD = "__YTP_PREVIEW_MISSING__"
+
+
+@cache
+def _preview_renderer() -> YoutubeDL:
+    return YoutubeDL({"quiet": True, "outtmpl_na_placeholder": _MISSING_FIELD}, auto_init=False)
+
+
+def _preview_filename(template: str | None, entry: dict) -> str | None:
+    # The download generates its own random value.
+    if not template or "%(ytp_random:" in template:
+        return None
+
+    if not entry.get("ext"):
+        template = template.removesuffix(".%(ext)s")
+
+    try:
+        name = _preview_renderer().evaluate_outtmpl(template, entry, sanitize=True)
+    except (TypeError, ValueError, OverflowError):
+        LOG.debug("Could not render the output filename preview.", exc_info=True)
+        return None
+
+    if name == "-" or name.endswith(("/", "\\")):
+        return None
+
+    filename = Path(name).name
+    return filename if filename and _MISSING_FIELD not in filename else None
 
 
 async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, Any]:
@@ -153,6 +184,7 @@ async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: lis
     )
 
     try:
+        dl.filename_preview = _preview_filename(dl.template, {**dl.extras, **entry})
         _reextract: bool = bool(
             entry.get("_type") == "url_transparent"
             or entry.get(REEXTRACT_INFO_KEY)

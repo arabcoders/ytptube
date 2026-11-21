@@ -255,6 +255,7 @@ class ItemDTO:
     """ Sidecar data associated with the item. """
     download_skipped: bool = False
     """ True when yt-dlp intentionally skips the primary media download. """
+    filename_preview: str | None = None
 
     # yt-dlp injected fields.
     tmpfilename: str | None = None
