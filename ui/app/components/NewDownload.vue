@@ -330,23 +330,23 @@
                 </span>
               </template>
 
+              <template #hint>
+                <button
+                  type="button"
+                  class="font-medium text-primary hover:underline"
+                  @click="showOptions = true"
+                >
+                  {{ t('common.cliOptionsViewAll') }}
+                </button>
+              </template>
               <template #description>
-                <span>
-                  <button
-                    type="button"
-                    class="font-medium text-primary hover:underline"
-                    @click="showOptions = true"
-                  >
-                    {{ t('common.cliOptionsViewAll') }}
-                  </button>
-                  {{ t('common.cliOptionsDescPrefix')
-                  }}<a
-                    target="_blank"
-                    href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
-                  >
-                    {{ t('common.cliOptionsDescIgnored') }}
-                  </a>
-                </span>
+                <a
+                  target="_blank"
+                  class="text-primary hover:underline"
+                  href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
+                >
+                  {{ t('common.cliOptionsDescIgnored') }}
+                </a>
               </template>
 
               <TextareaAutocomplete
@@ -360,7 +360,11 @@
               />
             </UFormField>
 
-            <UFormField :label="t('common.cookiesLabel')" class="w-full">
+            <UFormField
+              :label="t('common.cookiesLabel')"
+              class="w-full"
+              :ui="{ labelWrapper: 'flex-wrap', hint: 'ms-auto' }"
+            >
               <template #label>
                 <span class="inline-flex items-center gap-2 font-semibold">
                   <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
@@ -369,13 +373,28 @@
               </template>
 
               <template #hint>
-                <button
-                  type="button"
-                  class="font-medium text-primary hover:underline"
-                  @click="cookiesDropzoneRef?.triggerFileSelect()"
+                <span
+                  class="inline-flex flex-wrap justify-end gap-x-3 gap-y-1"
+                  role="group"
+                  :aria-label="t('common.cookiesLabel')"
                 >
-                  {{ t('common.uploadFile') }}
-                </button>
+                  <button
+                    type="button"
+                    class="font-medium text-toned hover:text-highlighted hover:underline disabled:opacity-50"
+                    :disabled="addInProgress || !form.cookies"
+                    @click="form.cookies = ''"
+                  >
+                    {{ t('common.clear') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="font-medium text-primary hover:underline disabled:opacity-50"
+                    :disabled="addInProgress"
+                    @click="cookiesDropzoneRef?.triggerFileSelect()"
+                  >
+                    {{ t('common.uploadFile') }}
+                  </button>
+                </span>
               </template>
               <template #description>
                 <span>

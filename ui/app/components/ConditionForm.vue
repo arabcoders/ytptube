@@ -143,20 +143,19 @@
 
       <UFormField class="w-full" :label="t('common.cliOptions')">
         <template #description>
-          <p class="text-sm text-toned">
+          <span>
             <button type="button" class="text-primary hover:underline" @click="showOptions = true">
               {{ t('common.cliOptionsViewAll') }}
             </button>
-            {{ t('common.cliOptionsDescPrefix') }}
             <a
               target="_blank"
               rel="noreferrer"
               href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
-              class="text-primary hover:underline"
+              class="ms-2 text-primary hover:underline"
             >
-              {{ t('common.cliOptionsDescIgnored') }}</a
-            >.
-          </p>
+              {{ t('common.cliOptionsDescIgnored') }}
+            </a>
+          </span>
         </template>
         <TextareaAutocomplete
           id="cli_options"
