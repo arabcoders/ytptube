@@ -1,9 +1,10 @@
 import asyncio
 import functools
 import glob
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from aiohttp import web
 
@@ -309,6 +310,47 @@ class DownloadQueue(metaclass=Singleton):
 
         return status
 
+    async def requeue_paused(self, id: str) -> Literal["requeued", "stopping"] | None:
+        if (item := await self.queue.get_by_id(id)) is None:
+            return None
+
+        if self.pool.requeue_active(id):
+            return "stopping"
+
+        item.info.auto_start = False
+        item.info.force_start = False
+        await self.position_items([id], "back")
+        return "requeued"
+
+    async def finish_requeue(self, item: Download, *, keep_history: bool = False) -> None:
+        info = replace(
+            item.info,
+            auto_start=False,
+            force_start=False,
+            status=None,
+            error=None,
+            file_size=None,
+            sidecar={},
+            download_skipped=False,
+            tmpfilename=None,
+            filename=None,
+            total_bytes=None,
+            total_bytes_estimate=None,
+            downloaded_bytes=None,
+            msg=None,
+            percent=None,
+            speed=None,
+            eta=None,
+            postprocessor=None,
+        )
+        if not keep_history:
+            info._id = item.info._id
+
+        updated = await self.queue.put(Download(info=info))
+        if keep_history:
+            self._notify.emit(Events.ITEM_ADDED, data=updated.info)
+        await self.position_items([info._id], "back")
+
     def pause(self, shutdown: bool = False) -> bool:
         if not self.pool.is_paused():
             self.pool.pause()
@@ -394,6 +436,10 @@ class DownloadQueue(metaclass=Singleton):
         status: dict[str, str] = {}
 
         for id in ids:
+            if self.pool.is_requeueing(id):
+                status[id] = "requeueing"
+                continue
+
             try:
                 item = await self.queue.get(key=id)
             except KeyError as e:

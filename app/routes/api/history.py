@@ -902,6 +902,21 @@ async def items_cancel(request: Request, queue: DownloadQueue, encoder: Encoder)
     return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
+@route("POST", r"api/history/{id}/requeue", "queue.item.requeue")
+async def item_requeue(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    id = request.match_info["id"]
+    result = await queue.requeue_paused(id)
+    if result is None:
+        return api_error_response(
+            "Queued download not found.",
+            code="NOT_FOUND",
+            status=web.HTTPNotFound.status_code,
+        )
+
+    status = web.HTTPAccepted.status_code if result == "stopping" else web.HTTPOk.status_code
+    return web.json_response(data={"status": result}, status=status, dumps=encoder.encode)
+
+
 @route("POST", "api/history/retry", "items_retry")
 async def items_retry(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
     data = await request.json()

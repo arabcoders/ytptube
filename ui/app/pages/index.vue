@@ -447,6 +447,19 @@
                       />
                     </template>
 
+                    <UTooltip :text="t('queue.manualStart')">
+                      <UButton
+                        color="neutral"
+                        variant="outline"
+                        size="sm"
+                        icon="i-lucide-rotate-cw"
+                        :loading="requeueing.has(item._id)"
+                        @click="() => void requeueItem(item)"
+                      >
+                        {{ t('common.requeue') }}
+                      </UButton>
+                    </UTooltip>
+
                     <UButton
                       color="neutral"
                       variant="outline"
@@ -557,6 +570,7 @@ import type { StoreItem } from '~/types/store';
 import {
   ag,
   deepIncludes,
+  ensure_api_success,
   formatBytes,
   formatTime,
   getBrowserUrl,
@@ -603,6 +617,7 @@ const item_form = ref<download_form_item | object>({});
 const query = ref('');
 const toggleFilter = ref(false);
 const selectedElms = ref<string[]>([]);
+const requeueing = reactive(new Set<string>());
 const masterSelectAll = ref(false);
 const embed_url = ref('');
 const isRefreshing = ref(false);
@@ -1198,6 +1213,44 @@ const confirmCancel = async (item: StoreItem): Promise<boolean> => {
 
   cancelItems(item._id);
   return true;
+};
+
+const requeueItem = async (item: StoreItem): Promise<void> => {
+  const id = item._id;
+  if (requeueing.has(id)) {
+    return;
+  }
+
+  requeueing.add(id);
+  try {
+    if (
+      item.status &&
+      !(await box.confirm(
+        t('common.confirmActionNamed', { action: t('common.stop'), name: downloadTitle(item) }),
+        { confirmText: t('common.requeue') },
+      ))
+    ) {
+      return;
+    }
+
+    const response = await request(`/api/history/${encodeURIComponent(id)}/requeue`, {
+      method: 'POST',
+    });
+    await ensure_api_success(response);
+
+    if (response.status === 202) {
+      return;
+    }
+
+    toast.success(t('queue.pausedCount', { count: 1 }));
+    if (!socket.isConnected) {
+      await refreshQueue();
+    }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('common.unknownError'));
+  } finally {
+    requeueing.delete(id);
+  }
 };
 
 const cancelSelected = async (): Promise<boolean> => {

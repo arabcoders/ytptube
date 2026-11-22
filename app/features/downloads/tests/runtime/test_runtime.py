@@ -22,6 +22,7 @@ from app.features.downloads.runtime.status_tracker import StatusTracker
 from app.features.downloads.runtime.temp_manager import TempManager
 from app.features.downloads.runtime.types import Terminator
 from app.features.downloads.runtime.video_processor import add_video
+from app.features.downloads.store import DataStore, StoreType
 from app.library.Events import EventBus, Events
 
 
@@ -2517,6 +2518,7 @@ class TestQueueManager:
         queue_manager.queue = Mock()
         queue_manager.done = Mock()
         queue_manager._notify = Mock()
+        queue_manager.pool = Mock(is_requeueing=Mock(return_value=False))
 
         item = Mock()
         item.info = make_item(id="queued-id")
@@ -2539,6 +2541,7 @@ class TestQueueManager:
         queue_manager.queue = Mock()
         queue_manager.done = Mock()
         queue_manager._notify = Mock()
+        queue_manager.pool = Mock(is_requeueing=Mock(return_value=False))
 
         item = Mock()
         item.info = make_item(id="queued-id")
@@ -2663,7 +2666,99 @@ class TestQueueManager:
         queue_manager.clear_bulk.assert_awaited_once_with(["done-id"], remove_file=True)
 
 
+@pytest.fixture
+def requeue_manager(tmp_path: Path) -> DownloadQueue:
+    queue = object.__new__(DownloadQueue)
+    queue.config = Mock(max_workers=1, max_workers_per_extractor=1, download_path=str(tmp_path))
+    repo = Mock(enqueue_upsert=AsyncMock(), enqueue_delete=AsyncMock())
+    queue.queue = DataStore(StoreType.QUEUE, connection=repo)
+    queue.done = DataStore(StoreType.HISTORY, connection=repo)
+    queue._notify = Mock()
+    queue.pool = PoolManager(queue=queue, config=queue.config)
+    queue.pool._notify = queue._notify
+    return queue
+
+
 class TestPoolManager:
+    @pytest.mark.asyncio
+    async def test_requeue_waiting(self, requeue_manager: DownloadQueue, monkeypatch: pytest.MonkeyPatch) -> None:
+        queue = requeue_manager
+        entry = Download(info=make_item(id="waiting"))
+        entry.info.force_start = True
+        other = Download(info=make_item(id="other"))
+        await queue.queue.put(entry)
+        await queue.queue.put(other)
+        start = AsyncMock()
+        monkeypatch.setattr(entry, "start", start)
+
+        assert await queue.requeue_paused(entry.id) == "requeued"
+        assert [id for id, _ in queue.queue.items()] == [other.id, entry.id]
+        assert entry.info.auto_start is False
+        assert entry.info.force_start is False
+        assert entry.info.queue_position == 1
+
+        await queue.pool._download_file(entry.id, entry)
+        start.assert_not_awaited()
+        assert not list(queue.done.items())
+        assert await queue.requeue_paused("missing") is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("finished", [False, True], ids=["cancelled", "saved-stream"])
+    async def test_requeue_active(
+        self, requeue_manager: DownloadQueue, monkeypatch: pytest.MonkeyPatch, *, finished: bool
+    ) -> None:
+        queue = requeue_manager
+        entry = Download(info=make_item(id="active"))
+        entry.info.cli = "--no-playlist"
+        entry.info.extras = {"source_id": 7}
+        entry.info.percent = 35
+        entry.is_live = finished
+        await queue.queue.put(entry)
+        other = Download(info=make_item(id="other"))
+        await queue.queue.put(other)
+        loop = asyncio.get_running_loop()
+        stopped = asyncio.Event()
+
+        def stop() -> bool:
+            loop.call_soon_threadsafe(stopped.set)
+            return True
+
+        cancel = Mock(side_effect=stop)
+
+        async def start() -> None:
+            assert await queue.requeue_paused(entry.id) == "stopping"
+            assert await queue.requeue_paused(entry.id) == "stopping"
+            await asyncio.wait_for(stopped.wait(), timeout=2)
+            entry.info.status = "finished" if finished else "cancelled"
+            entry.info.filename = "live.mp4" if finished else None
+
+        async def close() -> None:
+            assert await queue.queue.get_by_id(entry.id) is entry
+            cancel.assert_called_once_with()
+
+        monkeypatch.setattr(entry, "start", start)
+        monkeypatch.setattr(entry, "close", close)
+        monkeypatch.setattr(entry, "running", lambda: True)
+        monkeypatch.setattr(entry, "cancel", cancel)
+        await asyncio.wait_for(queue.pool._download_file(entry.id, entry), timeout=3)
+
+        first, (_, replacement) = list(queue.queue.items())
+        assert first[0] == other.id
+        assert replacement is not entry
+        assert replacement.info.auto_start is False
+        assert replacement.info.status is None
+        assert replacement.info.filename is None
+        assert replacement.info.percent is None
+        assert replacement.info.cli == "--no-playlist"
+        assert replacement.info.extras == {"source_id": 7}
+        if finished:
+            assert replacement.id != entry.id
+            assert list(queue.done.items()) == [(entry.id, entry)]
+            assert entry.info.filename == "live.mp4"
+        else:
+            assert replacement.id == entry.id
+            assert not list(queue.done.items())
+
     @pytest.mark.asyncio
     async def test_cancelled_file_stays_finished(self, monkeypatch: pytest.MonkeyPatch) -> None:
         emitted_events: list[str] = []
