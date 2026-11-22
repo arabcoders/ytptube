@@ -374,6 +374,17 @@ describe('data conversion helpers', () => {
     );
     expect(utils.isDownloadSkipped(undefined as any)).toBe(false);
   });
+
+  it('pick_retry_time', () => {
+    const liveIn = '2026-12-01T18:00:00Z';
+    const releaseIn = '2026-12-01T17:00:00Z';
+    const extras = { release_in: releaseIn };
+
+    expect(utils.getRetryAt({ status: 'not_live', live_in: liveIn, extras })).toBe(liveIn);
+    expect(utils.getRetryAt({ status: 'not_live', live_in: null, extras })).toBe(releaseIn);
+    expect(utils.getRetryAt({ status: 'not_live', live_in: null, extras: {} })).toBeUndefined();
+    expect(utils.getRetryAt({ status: 'finished', live_in: liveIn, extras })).toBeUndefined();
+  });
 });
 
 describe('dom and browser helpers', () => {

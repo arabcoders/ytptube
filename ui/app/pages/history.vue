@@ -215,42 +215,22 @@
             </div>
 
             <div class="min-w-0 space-y-4" :class="{ 'xl:col-span-2': !showThumbnails }">
-              <dl class="grid min-w-0 grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
+              <dl
+                class="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_12rem_minmax(0,1fr)]"
+              >
                 <div class="min-w-0 space-y-1">
                   <dt class="flex items-center gap-1.5 text-xs text-muted">
                     <UIcon name="i-lucide-clock-3" class="size-3.5 shrink-0" aria-hidden="true" />
                     {{ t('common.created') }}
                   </dt>
-                  <dd>
+                  <dd class="wrap-anywhere">
                     <UTooltip :text="formatDateTime(item.datetime, locale)">
                       <time :datetime="item.datetime" v-rtime="item.datetime" />
                     </UTooltip>
                   </dd>
                 </div>
 
-                <div v-if="item.extras?.duration" class="min-w-0 space-y-1">
-                  <dt class="flex items-center gap-1.5 text-xs text-muted">
-                    <UIcon name="i-lucide-timer" class="size-3.5 shrink-0" aria-hidden="true" />
-                    {{ t('queue.duration') }}
-                  </dt>
-                  <dd class="tabular-nums">{{ formatTime(item.extras.duration) }}</dd>
-                </div>
-
-                <div v-if="item.file_size" class="min-w-0 space-y-1">
-                  <dt class="flex items-center gap-1.5 text-xs text-muted">
-                    <UIcon
-                      name="i-lucide-hard-drive"
-                      class="size-3.5 shrink-0"
-                      aria-hidden="true"
-                    />
-                    {{ t('common.size') }}
-                  </dt>
-                  <dd class="tabular-nums">{{ formatBytes(item.file_size, 2, t) }}</dd>
-                </div>
-              </dl>
-
-              <dl class="flex min-w-0 flex-col gap-x-8 gap-y-3 text-sm sm:flex-row sm:items-start">
-                <div class="min-w-0 space-y-1 sm:w-1/4 sm:shrink-0">
+                <div class="min-w-0 space-y-1">
                   <dt class="flex items-center gap-1.5 text-xs text-muted">
                     <UIcon
                       name="i-lucide-sliders-horizontal"
@@ -263,25 +243,8 @@
                     <bdi>{{ item.preset }}</bdi>
                   </dd>
                 </div>
-                <div v-if="getItemTaskUrl(item)" class="min-w-0 space-y-1 sm:max-w-1/4">
-                  <dt class="flex items-center gap-1.5 text-xs text-muted">
-                    <UIcon
-                      name="i-lucide-calendar-clock"
-                      class="size-3.5 shrink-0"
-                      aria-hidden="true"
-                    />
-                    {{ t('tasks.task') }}
-                  </dt>
-                  <dd>
-                    <NuxtLink
-                      :to="getItemTaskUrl(item)"
-                      class="wrap-anywhere text-primary hover:underline"
-                    >
-                      <bdi>{{ item.extras.source_name || `#${item.extras.source_id}` }}</bdi>
-                    </NuxtLink>
-                  </dd>
-                </div>
-                <div v-if="getItemPath(item)" class="min-w-0 space-y-1 sm:flex-1">
+
+                <div v-if="getItemPath(item)" class="col-span-2 min-w-0 space-y-1 sm:col-span-1">
                   <dt class="flex items-center gap-1.5 text-xs text-muted">
                     <UIcon
                       name="i-lucide-folder-output"
@@ -323,24 +286,63 @@
                 </div>
               </dl>
 
-              <p
-                v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)"
-                class="flex items-center gap-1.5 text-sm text-info"
+              <dl
+                v-if="
+                  item.extras?.duration ||
+                  item.file_size ||
+                  getItemTaskUrl(item) ||
+                  getRetryAt(item)
+                "
+                class="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3 border-t border-default pt-3 text-sm sm:grid-cols-[8rem_12rem_minmax(0,1fr)] lg:has-[>:nth-child(4)]:grid-cols-[8rem_12rem_minmax(0,12rem)_minmax(0,1fr)]"
               >
-                <UIcon name="i-lucide-calendar" class="size-3.5 shrink-0" aria-hidden="true" />
-                <i18n-t keypath="history.retryAt" tag="span" scope="global">
-                  <template #date>
-                    <UTooltip
-                      :text="formatDateTime(item.live_in || item.extras?.release_in, locale)"
+                <div v-if="item.extras?.duration" class="min-w-0 space-y-1">
+                  <dt class="flex items-center gap-1.5 text-xs text-muted">
+                    <UIcon name="i-lucide-timer" class="size-3.5 shrink-0" aria-hidden="true" />
+                    {{ t('queue.duration') }}
+                  </dt>
+                  <dd class="tabular-nums">{{ formatTime(item.extras.duration) }}</dd>
+                </div>
+                <div v-if="item.file_size" class="min-w-0 space-y-1">
+                  <dt class="flex items-center gap-1.5 text-xs text-muted">
+                    <UIcon
+                      name="i-lucide-hard-drive"
+                      class="size-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {{ t('common.size') }}
+                  </dt>
+                  <dd class="tabular-nums">{{ formatBytes(item.file_size, 2, t) }}</dd>
+                </div>
+                <div v-if="getItemTaskUrl(item)" class="min-w-0 space-y-1">
+                  <dt class="flex items-center gap-1.5 text-xs text-muted">
+                    <UIcon
+                      name="i-lucide-calendar-clock"
+                      class="size-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {{ t('tasks.task') }}
+                  </dt>
+                  <dd>
+                    <NuxtLink
+                      :to="getItemTaskUrl(item)"
+                      class="wrap-anywhere text-primary hover:underline"
                     >
-                      <time
-                        :datetime="item.live_in || item.extras?.release_in"
-                        v-rtime="item.live_in || item.extras?.release_in"
-                      />
+                      <bdi>{{ item.extras.source_name || `#${item.extras.source_id}` }}</bdi>
+                    </NuxtLink>
+                  </dd>
+                </div>
+                <div v-if="getRetryAt(item)" class="min-w-0 space-y-1">
+                  <dt class="flex items-center gap-1.5 text-xs text-muted">
+                    <UIcon name="i-lucide-calendar" class="size-3.5 shrink-0" aria-hidden="true" />
+                    {{ t('common.retry') }}
+                  </dt>
+                  <dd class="wrap-anywhere text-info">
+                    <UTooltip :text="formatDateTime(getRetryAt(item), locale)">
+                      <time :datetime="getRetryAt(item)" v-rtime="getRetryAt(item)" />
                     </UTooltip>
-                  </template>
-                </i18n-t>
-              </p>
+                  </dd>
+                </div>
+              </dl>
 
               <div
                 v-if="item.error || showMessage(item)"
@@ -626,6 +628,7 @@ import {
   getHistoryImage,
   getRemoteImage,
   getPath,
+  getRetryAt,
   isDownloadSkipped,
   makeDownload,
   request,

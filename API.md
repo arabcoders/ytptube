@@ -50,6 +50,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/force-start](#post-apihistoryforce-start)
     - [POST /api/history/position](#post-apihistoryposition)
     - [POST /api/history/cancel](#post-apihistorycancel)
+    - [POST /api/history/{id}/requeue](#post-apihistoryidrequeue)
     - [POST /api/history/retry](#post-apihistoryretry)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
@@ -1310,6 +1311,45 @@ This endpoint returns the current state of active downloads from memory.
 **Notes**:
 - Items must exist in the queue
 - Stops active downloads if they are currently running
+- Returns `"requeueing"` for an item that is already stopping to be requeued.
+
+---
+
+### POST /api/history/{id}/requeue
+**Purpose**: Move a download to the back of the queue and leave it paused.
+
+**Path Parameter**:
+- `id`: Unique ID of an item in the queue.
+
+**Body**: None.
+
+**Response** (`200 OK` when a waiting download has been moved and paused):
+```json
+{
+  "status": "requeued"
+}
+```
+
+**Response** (`202 Accepted` when an active attempt must stop first):
+```json
+{
+  "status": "stopping"
+}
+```
+
+**Error Responses**:
+- `404 Not Found` if the item is not in the queue:
+  ```json
+  {
+    "error": "Queued download not found.",
+    "code": "NOT_FOUND"
+  }
+  ```
+
+**Notes**:
+- Active downloads are requeued after the current attempt stops and cleanup finishes.
+- Sets `auto_start: false`. Use `POST /api/history/start` to start the item.
+- If the attempt finishes with a file while stopping, both the file and its history entry are kept.
 
 ---
 

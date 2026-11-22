@@ -262,42 +262,22 @@
                   </div>
                 </div>
 
-                <dl class="grid min-w-0 grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
+                <dl
+                  class="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_12rem_minmax(0,1fr)]"
+                >
                   <div class="min-w-0 space-y-1">
                     <dt class="flex items-center gap-1.5 text-xs text-muted">
                       <UIcon name="i-lucide-clock-3" class="size-3.5 shrink-0" aria-hidden="true" />
                       {{ t('common.created') }}
                     </dt>
-                    <dd>
+                    <dd class="wrap-anywhere">
                       <UTooltip :text="formatLongDateTime(item.datetime, locale)">
                         <time :datetime="item.datetime" v-rtime="item.datetime" />
                       </UTooltip>
                     </dd>
                   </div>
-                  <div v-if="item.extras?.duration" class="min-w-0 space-y-1">
-                    <dt class="flex items-center gap-1.5 text-xs text-muted">
-                      <UIcon name="i-lucide-timer" class="size-3.5 shrink-0" aria-hidden="true" />
-                      {{ t('queue.duration') }}
-                    </dt>
-                    <dd class="tabular-nums">{{ formatTime(item.extras.duration) }}</dd>
-                  </div>
-                  <div v-if="item.downloaded_bytes" class="min-w-0 space-y-1">
-                    <dt class="flex items-center gap-1.5 text-xs text-muted">
-                      <UIcon
-                        name="i-lucide-hard-drive"
-                        class="size-3.5 shrink-0"
-                        aria-hidden="true"
-                      />
-                      {{ t('common.size') }}
-                    </dt>
-                    <dd class="tabular-nums">{{ formatBytes(item.downloaded_bytes, 2, t) }}</dd>
-                  </div>
-                </dl>
 
-                <dl
-                  class="flex min-w-0 flex-col gap-x-8 gap-y-3 text-sm sm:flex-row sm:items-start"
-                >
-                  <div class="min-w-0 space-y-1 sm:w-1/4 sm:shrink-0">
+                  <div class="min-w-0 space-y-1">
                     <dt class="flex items-center gap-1.5 text-xs text-muted">
                       <UIcon
                         name="i-lucide-sliders-horizontal"
@@ -310,25 +290,8 @@
                       <bdi>{{ item.preset }}</bdi>
                     </dd>
                   </div>
-                  <div v-if="getItemTaskUrl(item)" class="min-w-0 space-y-1 sm:max-w-1/4">
-                    <dt class="flex items-center gap-1.5 text-xs text-muted">
-                      <UIcon
-                        name="i-lucide-calendar-clock"
-                        class="size-3.5 shrink-0"
-                        aria-hidden="true"
-                      />
-                      {{ t('tasks.task') }}
-                    </dt>
-                    <dd>
-                      <NuxtLink
-                        :to="getItemTaskUrl(item)"
-                        class="wrap-anywhere text-primary hover:underline"
-                      >
-                        <bdi>{{ item.extras.source_name || `#${item.extras.source_id}` }}</bdi>
-                      </NuxtLink>
-                    </dd>
-                  </div>
-                  <div v-if="getItemPath(item)" class="min-w-0 space-y-1 sm:flex-1">
+
+                  <div v-if="getItemPath(item)" class="col-span-2 min-w-0 space-y-1 sm:col-span-1">
                     <dt class="flex items-center gap-1.5 text-xs text-muted">
                       <UIcon
                         name="i-lucide-folder-output"
@@ -368,6 +331,48 @@
                         :aria-expanded="isExpanded(item._id, 'path')"
                         @click="toggleExpand(item._id, 'path')"
                       />
+                    </dd>
+                  </div>
+                </dl>
+
+                <dl
+                  v-if="item.extras?.duration || item.downloaded_bytes || getItemTaskUrl(item)"
+                  class="flex min-w-0 flex-wrap gap-x-6 gap-y-3 border-t border-default pt-3 text-sm"
+                >
+                  <div v-if="item.extras?.duration" class="min-w-0 space-y-1">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon name="i-lucide-timer" class="size-3.5 shrink-0" aria-hidden="true" />
+                      {{ t('queue.duration') }}
+                    </dt>
+                    <dd class="tabular-nums">{{ formatTime(item.extras.duration) }}</dd>
+                  </div>
+                  <div v-if="item.downloaded_bytes" class="min-w-0 space-y-1">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-hard-drive"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('common.size') }}
+                    </dt>
+                    <dd class="tabular-nums">{{ formatBytes(item.downloaded_bytes, 2, t) }}</dd>
+                  </div>
+                  <div v-if="getItemTaskUrl(item)" class="min-w-0 max-w-full space-y-1 sm:max-w-xs">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-calendar-clock"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('tasks.task') }}
+                    </dt>
+                    <dd>
+                      <NuxtLink
+                        :to="getItemTaskUrl(item)"
+                        class="wrap-anywhere text-primary hover:underline"
+                      >
+                        <bdi>{{ item.extras.source_name || `#${item.extras.source_id}` }}</bdi>
+                      </NuxtLink>
                     </dd>
                   </div>
                 </dl>
@@ -441,6 +446,19 @@
                         @click="action.onSelect"
                       />
                     </template>
+
+                    <UTooltip :text="t('queue.manualStart')">
+                      <UButton
+                        color="neutral"
+                        variant="outline"
+                        size="sm"
+                        icon="i-lucide-rotate-cw"
+                        :loading="requeueing.has(item._id)"
+                        @click="() => void requeueItem(item)"
+                      >
+                        {{ t('common.requeue') }}
+                      </UButton>
+                    </UTooltip>
 
                     <UButton
                       color="neutral"
@@ -552,6 +570,7 @@ import type { StoreItem } from '~/types/store';
 import {
   ag,
   deepIncludes,
+  ensure_api_success,
   formatBytes,
   formatTime,
   getBrowserUrl,
@@ -598,6 +617,7 @@ const item_form = ref<download_form_item | object>({});
 const query = ref('');
 const toggleFilter = ref(false);
 const selectedElms = ref<string[]>([]);
+const requeueing = reactive(new Set<string>());
 const masterSelectAll = ref(false);
 const embed_url = ref('');
 const isRefreshing = ref(false);
@@ -1193,6 +1213,44 @@ const confirmCancel = async (item: StoreItem): Promise<boolean> => {
 
   cancelItems(item._id);
   return true;
+};
+
+const requeueItem = async (item: StoreItem): Promise<void> => {
+  const id = item._id;
+  if (requeueing.has(id)) {
+    return;
+  }
+
+  requeueing.add(id);
+  try {
+    if (
+      item.status &&
+      !(await box.confirm(
+        t('common.confirmActionNamed', { action: t('common.stop'), name: downloadTitle(item) }),
+        { confirmText: t('common.requeue') },
+      ))
+    ) {
+      return;
+    }
+
+    const response = await request(`/api/history/${encodeURIComponent(id)}/requeue`, {
+      method: 'POST',
+    });
+    await ensure_api_success(response);
+
+    if (response.status === 202) {
+      return;
+    }
+
+    toast.success(t('queue.pausedCount', { count: 1 }));
+    if (!socket.isConnected) {
+      await refreshQueue();
+    }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('common.unknownError'));
+  } finally {
+    requeueing.delete(id);
+  }
 };
 
 const cancelSelected = async (): Promise<boolean> => {

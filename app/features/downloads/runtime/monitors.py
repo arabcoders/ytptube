@@ -145,7 +145,7 @@ async def check_live(queue: "DownloadQueue") -> None:
         if time_now < (starts_in + timedelta(minutes=1)):
             starts_in_text = dt_delta(starts_in - time_now)
             LOG.debug(
-                "Live item '%s' is not ready yet; starts in %s.",
+                "Live item '%s' is not ready yet. Starts in %s.",
                 item.info.title,
                 starts_in_text,
                 extra={

@@ -45,6 +45,10 @@
   margin-top: 1rem;
 }
 
+.markdown-alert {
+  margin-bottom: 1rem;
+}
+
 .docs-markdown :where(p, li, blockquote, th, td) {
   overflow-wrap: anywhere;
 }

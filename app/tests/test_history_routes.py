@@ -10,7 +10,15 @@ from app.library.cache import Cache
 from app.features.downloads.items import ItemDTO
 from app.library.encoder import Encoder
 from app.routes.api import history
-from app.routes.api.history import item_rename, item_thumbnail, items_delete, items_list, items_live, items_retry
+from app.routes.api.history import (
+    item_rename,
+    item_requeue,
+    item_thumbnail,
+    items_delete,
+    items_list,
+    items_live,
+    items_retry,
+)
 from app.tests.helpers import temporary_test_dir, url_for
 
 
@@ -164,6 +172,23 @@ async def test_update_keeps_internal(test_client, tmp_path: Path) -> None:
 
     assert response.status == 500
     assert not target.exists()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("result", "status"), [("requeued", 200), ("stopping", 202), (None, 404)])
+async def test_requeue_response(test_client, result: str | None, status: int) -> None:
+    requeue = AsyncMock(return_value=result)
+    queue = Mock(requeue_paused=requeue)
+
+    async def handler(request):
+        return await item_requeue(request, queue, Encoder())
+
+    response = await _request(test_client, "queue.item.requeue", handler, "POST", params={"id": "queued-id"})
+
+    requeue.assert_awaited_once_with("queued-id")
+    assert response.status == status
+    body = await response.json()
+    assert body == {"status": result} if result else body["code"] == "NOT_FOUND"
 
 
 @pytest.mark.asyncio

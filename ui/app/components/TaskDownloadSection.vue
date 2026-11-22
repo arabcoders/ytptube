@@ -313,7 +313,7 @@
                       icon="i-lucide-rotate-cw"
                       @click="requeue(item)"
                     >
-                      {{ $t('simple.requeue') }}
+                      {{ $t('common.requeue') }}
                     </UButton>
                     <UButton
                       color="neutral"

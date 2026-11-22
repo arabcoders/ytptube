@@ -162,7 +162,8 @@ class TaskHandle:
                 s["f"].append(task.name)
 
         if len(tasks) > 0:
-            LOG.info(
+            log = LOG.warning if s["f"] else LOG.debug
+            log(
                 "Task dispatch finished: %s handled, %s unhandled, %s disabled, %s failed.",
                 len(s["h"]),
                 len(s["u"]),

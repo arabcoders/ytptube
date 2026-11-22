@@ -46,6 +46,7 @@ class PoolManager:
 
         self._active: dict[str, Download] = {}
         "Dictionary of active downloads."
+        self._requeue: dict[str, asyncio.Task[None] | None] = {}
 
         self.paused.set()
 
@@ -72,6 +73,36 @@ class PoolManager:
 
     def get_active_download(self, download_id: str) -> Download | None:
         return self._active.get(download_id)
+
+    def is_requeueing(self, id: str) -> bool:
+        return id in self._requeue
+
+    def requeue_active(self, id: str) -> bool:
+        if (entry := self._active.get(id)) is None:
+            return False
+
+        if id not in self._requeue:
+            self._requeue[id] = (
+                asyncio.create_task(self._stop_for_requeue(id, entry), name=f"requeue-{id}")
+                if entry.running()
+                else None
+            )
+        return True
+
+    async def _stop_for_requeue(self, id: str, entry: Download) -> None:
+        try:
+            if await asyncio.to_thread(entry.cancel) or not entry.running():
+                return
+        except Exception:
+            LOG.exception("Failed to stop download '%s' for requeue.", id)
+
+        self._requeue.pop(id, None)
+        self._notify.emit(
+            Events.LOG_ERROR,
+            data={"download_id": id},
+            title="Requeue Failed",
+            message=f"Could not stop '{entry.info.title}' to requeue it.",
+        )
 
     async def start_pool(self) -> None:
         asyncio.create_task(self._download_pool(), name="download_pool")
@@ -167,6 +198,9 @@ class PoolManager:
             entry: The download entry
 
         """
+        if not entry.info.auto_start or id in self._active:
+            return
+
         filePath: str = calc_download_path(base_path=self.config.download_path, folder=entry.info.folder)
         LOG.info(
             "Started download for '%s' to '%s'.",
@@ -197,12 +231,22 @@ class PoolManager:
             entry.info.status = "error"
             entry.info.error = str(e)
         finally:
-            if entry.info._id in self._active:
-                self._active.pop(entry.info._id, None)
-
-            await entry.close()
+            try:
+                # The stop request can still be using the process handle when the worker exits.
+                if stop := self._requeue.get(id):
+                    await stop
+                await entry.close()
+            finally:
+                self._active.pop(id, None)
+                requeue = id in self._requeue
+                self._requeue.pop(id, None)
 
         if await self.queue.queue.exists(key=id):
+            finished = entry.info.status == "finished" and bool(entry.info.filename)
+            if requeue and not finished:
+                await self.queue.finish_requeue(entry)
+                return
+
             LOG.debug(
                 "Removing completed download '%s' from queue.",
                 entry.info.title,
@@ -219,21 +263,13 @@ class PoolManager:
 
             nTitle: str | None = None
             nMessage: str | None = None
-            finalized_live = entry.is_live and entry.info.status == "finished" and bool(entry.info.filename)
-
-            if finalized_live:
-                nTitle = "Download Completed"
-                nMessage = f"Completed '{entry.info.title}' download."
-                if entry.info.is_archivable and not entry.info.is_archived:
-                    entry.info.is_archived = True
-
-                self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage)
-            elif entry.is_cancelled() is True:
+            keep_file = finished and (entry.is_live or requeue)
+            if not keep_file and entry.is_cancelled() is True:
                 nTitle = "Download Cancelled"
                 nMessage = f"Cancelled '{entry.info.title}' download."
                 self._notify.emit(Events.ITEM_CANCELLED, data=entry.info, title=nTitle, message=nMessage)
                 entry.info.status = "cancelled"
-            elif entry.info.status == "finished" and entry.info.filename:
+            elif finished:
                 nTitle = "Download Completed"
                 nMessage = f"Completed '{entry.info.title}' download."
                 if entry.info.is_archivable and not entry.info.is_archived:
@@ -248,6 +284,8 @@ class PoolManager:
                 title=nTitle,
                 message=nMessage,
             )
+            if requeue:
+                await self.queue.finish_requeue(entry, keep_history=True)
         else:
             LOG.warning(
                 "Completed download '%s' was not found in the queue.",
