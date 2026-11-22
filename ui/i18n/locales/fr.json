@@ -950,7 +950,6 @@
     "archiveLabel": "Archiver",
     "removeFromHistory": "Aussi, retirer de l'historique.",
     "loading": "Chargement de l'historique...",
-    "retryAt": "Réessayer à : {date}",
     "removeFromArchiveTitle": "Retirer de l'archive",
     "removedFromArchive": "« {title} » retiré de l'archive.",
     "renameFileTitle": "Renommer le fichier",

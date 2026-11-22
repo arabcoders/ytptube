@@ -616,6 +616,9 @@ const isDownloadSkipped = (
   item: Pick<StoreItem, 'status' | 'download_skipped'> | null | undefined,
 ): boolean => Boolean(item && item.status === 'finished' && item.download_skipped);
 
+const getRetryAt = (item: Pick<StoreItem, 'status' | 'live_in' | 'extras'>): string | undefined =>
+  item.status === 'not_live' ? item.live_in || item.extras?.release_in : undefined;
+
 /**
  * Recursively test if a value (including nested objects/arrays) contains a query string.
  * - Plain queries match keys or values (case-insensitive).
@@ -984,6 +987,7 @@ export {
   stripPath,
   shortPath,
   isDownloadSkipped,
+  getRetryAt,
   deepIncludes,
   getPath,
   getBrowserUrl,

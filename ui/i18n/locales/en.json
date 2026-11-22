@@ -950,7 +950,6 @@
     "archiveLabel": "Archive",
     "removeFromHistory": "Also, Remove from history.",
     "loading": "Loading history...",
-    "retryAt": "Retry at: {date}",
     "removeFromArchiveTitle": "Remove from Archive",
     "removedFromArchive": "Removed '{title}' from archive.",
     "renameFileTitle": "Rename File",

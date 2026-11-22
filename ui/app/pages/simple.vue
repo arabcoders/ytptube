@@ -625,6 +625,21 @@
                                   >
                                     {{ mediaProfileLabel(item) }}
                                   </UBadge>
+
+                                  <UTooltip
+                                    v-if="getRetryAt(item)"
+                                    :text="formatDateTime(getRetryAt(item), locale)"
+                                  >
+                                    <span
+                                      class="inline-flex items-center gap-1.5 rounded-full border border-default px-2 py-0.5 text-toned"
+                                    >
+                                      <time
+                                        :datetime="getRetryAt(item)"
+                                        v-rtime="getRetryAt(item)"
+                                        class="text-info"
+                                      />
+                                    </span>
+                                  </UTooltip>
                                 </div>
                               </div>
 
@@ -788,6 +803,7 @@ import { useHistoryState } from '~/composables/useHistoryState';
 import { useMediaQuery } from '~/composables/useMediaQuery';
 import { usePresetOptions } from '~/composables/usePresetOptions';
 import { useNotification } from '~/composables/useNotification';
+import { formatDateTime } from '~/utils/date';
 import { getEmbedable, isEmbedable } from '~/utils/embedable';
 import { mediaProfileLabel } from '~/utils/mediaProfile';
 import {
@@ -796,12 +812,13 @@ import {
   getHistoryImage,
   getImage,
   getRemoteImage,
+  getRetryAt,
   isDownloadSkipped,
   makeDownload,
   request,
   ucFirst,
 } from '~/utils';
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 definePageMeta({ layout: 'empty' });
 

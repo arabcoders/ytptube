@@ -950,7 +950,6 @@
     "archiveLabel": "归档",
     "removeFromHistory": "同时从历史记录中移除。",
     "loading": "正在加载历史...",
-    "retryAt": "重试时间：{date}",
     "removeFromArchiveTitle": "从归档移除",
     "removedFromArchive": "已从归档移除 '{title}'。",
     "renameFileTitle": "重命名文件",

@@ -262,42 +262,22 @@
                   </div>
                 </div>
 
-                <dl class="grid min-w-0 grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
+                <dl
+                  class="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_12rem_minmax(0,1fr)]"
+                >
                   <div class="min-w-0 space-y-1">
                     <dt class="flex items-center gap-1.5 text-xs text-muted">
                       <UIcon name="i-lucide-clock-3" class="size-3.5 shrink-0" aria-hidden="true" />
                       {{ t('common.created') }}
                     </dt>
-                    <dd>
+                    <dd class="wrap-anywhere">
                       <UTooltip :text="formatLongDateTime(item.datetime, locale)">
                         <time :datetime="item.datetime" v-rtime="item.datetime" />
                       </UTooltip>
                     </dd>
                   </div>
-                  <div v-if="item.extras?.duration" class="min-w-0 space-y-1">
-                    <dt class="flex items-center gap-1.5 text-xs text-muted">
-                      <UIcon name="i-lucide-timer" class="size-3.5 shrink-0" aria-hidden="true" />
-                      {{ t('queue.duration') }}
-                    </dt>
-                    <dd class="tabular-nums">{{ formatTime(item.extras.duration) }}</dd>
-                  </div>
-                  <div v-if="item.downloaded_bytes" class="min-w-0 space-y-1">
-                    <dt class="flex items-center gap-1.5 text-xs text-muted">
-                      <UIcon
-                        name="i-lucide-hard-drive"
-                        class="size-3.5 shrink-0"
-                        aria-hidden="true"
-                      />
-                      {{ t('common.size') }}
-                    </dt>
-                    <dd class="tabular-nums">{{ formatBytes(item.downloaded_bytes, 2, t) }}</dd>
-                  </div>
-                </dl>
 
-                <dl
-                  class="flex min-w-0 flex-col gap-x-8 gap-y-3 text-sm sm:flex-row sm:items-start"
-                >
-                  <div class="min-w-0 space-y-1 sm:w-1/4 sm:shrink-0">
+                  <div class="min-w-0 space-y-1">
                     <dt class="flex items-center gap-1.5 text-xs text-muted">
                       <UIcon
                         name="i-lucide-sliders-horizontal"
@@ -310,25 +290,8 @@
                       <bdi>{{ item.preset }}</bdi>
                     </dd>
                   </div>
-                  <div v-if="getItemTaskUrl(item)" class="min-w-0 space-y-1 sm:max-w-1/4">
-                    <dt class="flex items-center gap-1.5 text-xs text-muted">
-                      <UIcon
-                        name="i-lucide-calendar-clock"
-                        class="size-3.5 shrink-0"
-                        aria-hidden="true"
-                      />
-                      {{ t('tasks.task') }}
-                    </dt>
-                    <dd>
-                      <NuxtLink
-                        :to="getItemTaskUrl(item)"
-                        class="wrap-anywhere text-primary hover:underline"
-                      >
-                        <bdi>{{ item.extras.source_name || `#${item.extras.source_id}` }}</bdi>
-                      </NuxtLink>
-                    </dd>
-                  </div>
-                  <div v-if="getItemPath(item)" class="min-w-0 space-y-1 sm:flex-1">
+
+                  <div v-if="getItemPath(item)" class="col-span-2 min-w-0 space-y-1 sm:col-span-1">
                     <dt class="flex items-center gap-1.5 text-xs text-muted">
                       <UIcon
                         name="i-lucide-folder-output"
@@ -368,6 +331,48 @@
                         :aria-expanded="isExpanded(item._id, 'path')"
                         @click="toggleExpand(item._id, 'path')"
                       />
+                    </dd>
+                  </div>
+                </dl>
+
+                <dl
+                  v-if="item.extras?.duration || item.downloaded_bytes || getItemTaskUrl(item)"
+                  class="flex min-w-0 flex-wrap gap-x-6 gap-y-3 border-t border-default pt-3 text-sm"
+                >
+                  <div v-if="item.extras?.duration" class="min-w-0 space-y-1">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon name="i-lucide-timer" class="size-3.5 shrink-0" aria-hidden="true" />
+                      {{ t('queue.duration') }}
+                    </dt>
+                    <dd class="tabular-nums">{{ formatTime(item.extras.duration) }}</dd>
+                  </div>
+                  <div v-if="item.downloaded_bytes" class="min-w-0 space-y-1">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-hard-drive"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('common.size') }}
+                    </dt>
+                    <dd class="tabular-nums">{{ formatBytes(item.downloaded_bytes, 2, t) }}</dd>
+                  </div>
+                  <div v-if="getItemTaskUrl(item)" class="min-w-0 max-w-full space-y-1 sm:max-w-xs">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-calendar-clock"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('tasks.task') }}
+                    </dt>
+                    <dd>
+                      <NuxtLink
+                        :to="getItemTaskUrl(item)"
+                        class="wrap-anywhere text-primary hover:underline"
+                      >
+                        <bdi>{{ item.extras.source_name || `#${item.extras.source_id}` }}</bdi>
+                      </NuxtLink>
                     </dd>
                   </div>
                 </dl>

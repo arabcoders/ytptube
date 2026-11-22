@@ -950,7 +950,6 @@
     "archiveLabel": "أرشفة",
     "removeFromHistory": "أيضاً، إزالة من السجل.",
     "loading": "جارِ تحميل السجل...",
-    "retryAt": "إعادة المحاولة في: {date}",
     "removeFromArchiveTitle": "إزالة من الأرشيف",
     "removedFromArchive": "تمت إزالة '{title}' من الأرشيف.",
     "renameFileTitle": "إعادة تسمية الملف",
