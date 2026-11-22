@@ -607,4 +607,4 @@ class ResourceTracker(metaclass=Singleton):
         with self._prune_lock:
             removed: int = self._store.prune(config.monitor_retention_hours)
             if removed > 0:
-                LOG.info("Pruned %d old monitor samples.", removed)
+                LOG.debug("Pruned %d old monitor samples.", removed)
