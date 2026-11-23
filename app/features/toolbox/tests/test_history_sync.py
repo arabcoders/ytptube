@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import dataclasses
 import errno
+import sys
 import threading
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -18,8 +18,10 @@ from app.features.downloads.repository import DownloadsRepository
 from app.features.downloads.runtime.core import Download
 from app.features.downloads.store import DataStore, StoreType
 from app.features.toolbox import tools
+from app.features.toolbox.definitions import Definition
 from app.features.toolbox.schemas import Extra, Submission
 from app.features.toolbox.service import Context, Toolbox, ToolboxError
+from app.features.toolbox.tests import REMUX_ID, patch_tool
 from app.library.Events import EventBus, Events
 from app.library.Services import Services
 from app.library.Utils import get_file_sidecar
@@ -134,7 +136,7 @@ async def test_remux_history(
     notify = Mock()
     monkeypatch.setattr(EventBus.get_instance(), "emit", notify)
     entered, release = asyncio.Event(), asyncio.Event()
-    target = media.with_suffix(".mp4") if overwrite_source else media.with_name("video.remux.mp4")
+    target = media.with_suffix(".mp4") if overwrite_source else media.with_name(f"video.tool-{REMUX_ID}.mp4")
     if mode == "collision":
         target.write_bytes(b"unrelated")
     if mode == "publish":
@@ -147,7 +149,7 @@ async def test_remux_history(
 
         monkeypatch.setattr(Path, "replace", replace_file)
 
-    async def run(_: Context, _binary: str, args: list[str], _duration: float | None = None) -> None:
+    async def run(_: Context, _binary: str, args: list[str], **_kwargs: object) -> None:
         Path(args[-1]).write_bytes(b"remuxed")
         if mode == "failure":
             raise ToolboxError("Operation failed", "TOOL_FAILED")
@@ -157,14 +159,10 @@ async def test_remux_history(
 
     monkeypatch.setattr(Context, "run", run)
     if mode == "post":
-        monkeypatch.setitem(
-            tools.TOOLS,
-            "remux",
-            dataclasses.replace(tools.TOOLS["remux"], post=AsyncMock(side_effect=ValueError("Output rejected."))),
-        )
+        patch_tool(monkeypatch, post=AsyncMock(side_effect=ValueError("Output rejected.")))
     try:
         accepted = await toolbox.submit(
-            Submission(tool="remux", file="nested/video.mkv", extra=Extra(overwrite_source=overwrite_source))
+            Submission(tool=REMUX_ID, file="nested/video.mkv", extra=Extra(overwrite_source=overwrite_source))
         )
         if mode == "cancel":
             await asyncio.wait_for(entered.wait(), 5)
@@ -213,12 +211,57 @@ async def test_remux_history(
         if mode == "publish":
             assert not target.exists()
         if mode in {"success", "untracked"} and not overwrite_source:
-            assert job.result and job.result.outputs == ["nested/video.remux.mp4"]
+            assert job.result and job.result.outputs == [f"nested/video.tool-{REMUX_ID}.mp4"]
             assert target.read_bytes() == b"remuxed" and media.read_bytes() == b"original"
         assert not list(root.rglob("*.part"))
         assert not list((root / "work").iterdir())
     finally:
         release.set()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("overwrite", "extension"),
+    [(None, ".mp4"), (True, ".json"), (False, ".json")],
+)
+async def test_custom_overwrite(
+    toolbox: Toolbox,
+    history: DataStore,
+    source: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    terminal,
+    overwrite: bool | None,
+    extension: str,
+) -> None:
+    info = await save(history, source, source.parent)
+    definition = await toolbox.definitions.create(
+        Definition(name="Convert", command=[sys.executable], output_extension=extension, supports_overwrite=True)
+    )
+    name = (
+        f"{source.stem}.tool-{definition.id}{extension}" if overwrite is False else source.with_suffix(extension).name
+    )
+
+    async def run(_ctx: Context, _binary: str, _args: list[str], *, env: dict[str, str], cwd: Path) -> None:
+        output = Path(env["TB_OUT"])
+        assert output.parent == cwd
+        output.write_bytes(b"converted")
+
+    monkeypatch.setattr(Context, "run", run)
+    assert next(item for item in await toolbox.tools() if item["id"] == definition.id)["supports_overwrite"]
+    extra = Extra() if overwrite is None else Extra(overwrite_source=overwrite)
+    accepted = await toolbox.submit(Submission(tool=definition.id, file=source.name, extra=extra))
+    job = await terminal(accepted.id)
+
+    assert job.status == "succeeded" and job.result and job.result.outputs == [name]
+    assert job.extra.overwrite_source is (overwrite is not False)
+    assert source.with_name(name).read_bytes() == b"converted"
+    await asyncio.wait_for(history.flush(), 5)
+    stored = await history._connection.get_by_id(StoreType.HISTORY.value, info._id)
+    assert stored and stored.filename == (source.name if overwrite is False else name)
+    if overwrite is False:
+        assert source.read_bytes() == b"original"
+    elif name != source.name:
+        assert not source.exists()
 
 
 @pytest.mark.asyncio
@@ -241,7 +284,7 @@ async def test_staged_move(
     monkeypatch.setattr(history, "get_by_file", find)
     notify = Mock()
     monkeypatch.setattr(EventBus.get_instance(), "emit", notify)
-    target = media.with_suffix(".mp4") if overwrite_source else media.with_name("tracked.remux.mp4")
+    target = media.with_suffix(".mp4") if overwrite_source else media.with_name(f"tracked.tool-{REMUX_ID}.mp4")
     entered, exited, settling = asyncio.Event(), asyncio.Event(), asyncio.Event()
     release = threading.Event()
     loop = asyncio.get_running_loop()
@@ -265,7 +308,7 @@ async def test_staged_move(
         settling.set()
         return await original_settle(task)
 
-    async def run(_: Context, _binary: str, args: list[str], _duration: float | None = None) -> None:
+    async def run(_: Context, _binary: str, args: list[str], **_kwargs: object) -> None:
         Path(args[-1]).write_bytes(b"remuxed")
 
     monkeypatch.setattr(tools.shutil, "move", move)
@@ -273,7 +316,7 @@ async def test_staged_move(
     monkeypatch.setattr(Context, "run", run)
     try:
         accepted = await toolbox.submit(
-            Submission(tool="remux", file=media.name, extra=Extra(overwrite_source=overwrite_source))
+            Submission(tool=REMUX_ID, file=media.name, extra=Extra(overwrite_source=overwrite_source))
         )
         await asyncio.wait_for(entered.wait(), 5)
         temporary, stage = moves[0]
@@ -339,13 +382,13 @@ async def test_committed_history(
         await asyncio.wait_for(release.wait(), 5)
         await update(*args)
 
-    async def run(_: Context, _binary: str, args: list[str], _duration: float | None = None) -> None:
+    async def run(_: Context, _binary: str, args: list[str], **_kwargs: object) -> None:
         Path(args[-1]).write_bytes(b"remuxed")
 
     monkeypatch.setattr(history, "update_file", update_file)
     monkeypatch.setattr(Context, "run", run)
     try:
-        accepted = await toolbox.submit(Submission(tool="remux", file=media.name))
+        accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=media.name))
         await asyncio.wait_for(entered.wait(), 5)
         assert not media.exists() and target.read_bytes() == b"remuxed"
         await toolbox.cancel(accepted.id)

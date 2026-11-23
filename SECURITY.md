@@ -47,6 +47,11 @@ Reports that only describe the following behavior will be closed:
   demonstrate access after setup is complete or another authentication boundary bypass.
 - Behavior caused by yt-dlp itself, including command execution or path control through options such as `--exec`, `--output`,
   or `--netrc`. yt-dlp is not sandboxed and can execute arbitrary commands.
+- An authenticated user defining a [custom Toolbox command](docs/toolbox.md).
+  Custom commands run with YTPTube's permissions, inherit its environment, and aren't sandboxed.
+- Running shipped or previously saved Toolbox tools, including passing declared parameters, under the normal Toolbox
+  job access rules. This includes running those tools when authentication is disabled. Disabling authentication
+  doesn't permit tool management.
 - YTPTube does not sandbox outbound network access. Authenticated administrators can cause requests to internal services,
 including through redirects or yt-dlp behavior or even via dns rebinding.
 - Intentionally enabling the debugger and exposing it publicly. The debugger is intended for local development and 
@@ -55,9 +60,21 @@ including through redirects or yt-dlp behavior or even via dns rebinding.
 
 
 A report about these areas must demonstrate a boundary bypass, such as access without valid authentication while auth is
-enabled.
+enabled. 
+
+Toolbox management routes require an authenticated request and are unavailable when authentication is disabled.
+Examples of a bypass include accessing those routes without meeting the requirements, or submitting a job that supplies
+its own shell or command or overrides fixed environment variables instead of using the tool definition.
 
 ## Generated reports
 
-Verify scanner and LLM output before submitting it. Reports that contain unreviewed generated output without a working 
-reproduction and demonstrated impact will be closed.
+**AI/LLM-generated dumps submitted without human verification will be closed immediately.**
+
+Reports must include **human verification and meaningful context** demonstrating that the findings have been 
+independently reviewed and validated BY **A HUMAN** not an AI or automated system. it must also adhere 
+to the reporting guidelines and requirements outlined in this document.
+
+Any report lacking these elements will be **closed immediately**, even if the AI-generated findings are technically 
+correct or the reported vulnerability is valid.
+
+**No attribution, acknowledgment, or credit will be granted for valid findings submitted without human review and verification.**

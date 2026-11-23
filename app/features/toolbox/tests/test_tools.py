@@ -5,6 +5,7 @@ import errno
 import json
 import os
 import shutil
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
@@ -15,8 +16,11 @@ from app.features.core.models import utcnow
 from app.features.streaming.library import ffprobe as probe_module
 from app.features.streaming.types import FFProbeError
 from app.features.toolbox import service, tools
+from app.features.toolbox.defaults import REMUX
+from app.features.toolbox.definitions import Definition
 from app.features.toolbox.schemas import Extra, Job, Submission
 from app.features.toolbox.service import Context, Toolbox, ToolboxError
+from app.features.toolbox.tests import REMUX_ID
 from app.library.Services import Services
 
 
@@ -24,9 +28,10 @@ def context(toolbox: Toolbox, source: Path, identifier: int = 1, *, overwrite_so
     return Context(
         service=toolbox,
         source=source,
+        tool=tools.configured(REMUX, toolbox.config_dir),
         job=Job(
             id=identifier,
-            tool="remux",
+            tool=REMUX_ID,
             file=source.name,
             extra=Extra(overwrite_source=overwrite_source),
             status="running",
@@ -62,8 +67,8 @@ def test_unique_workspace(toolbox: Toolbox, source: Path) -> None:
 @pytest.mark.parametrize("overwrite_source", [True, False])
 def test_tool_destination(toolbox: Toolbox, source: Path, overwrite_source: bool) -> None:
     ctx = context(toolbox, source, overwrite_source=overwrite_source)
-    expected = "video.webm" if overwrite_source else "video.converted.webm"
-    assert ctx.destination(".webm", ".converted") == source.with_name(expected)
+    expected = "video.webm" if overwrite_source else f"video.tool-{REMUX_ID}.webm"
+    assert ctx.destination(".webm") == source.with_name(expected)
 
 
 @pytest.mark.asyncio
@@ -77,7 +82,7 @@ async def test_media_publish(
     ctx = context(toolbox, source, overwrite_source=overwrite_source)
     commands = []
 
-    async def run(_: Context, binary: str, args: list[str], _duration: float | None = None) -> None:
+    async def run(_: Context, binary: str, args: list[str], **_kwargs: object) -> None:
         commands.append((binary, args))
         Path(args[-1]).write_bytes(b"new-media")
 
@@ -86,7 +91,7 @@ async def test_media_publish(
         result = await toolbox.execute(ctx)
     finally:
         ctx.cleanup()
-    expected = source.with_suffix(".mp4").name if overwrite_source else f"{source.stem}.remux.mp4"
+    expected = source.with_suffix(".mp4").name if overwrite_source else f"{source.stem}.tool-{REMUX_ID}.mp4"
     assert result.outputs == [expected]
     assert (source.parent / result.outputs[0]).read_bytes() == b"new-media"
     if overwrite_source and suffix != ".mp4":
@@ -114,11 +119,11 @@ async def test_cross_filesystem(
     original_rename = os.rename
 
     def rename(file: Path, target: Path) -> None:
-        if Path(file).name == "output.part.mp4":
+        if Path(file).name == "output.mp4":
             raise OSError(errno.EXDEV, "different filesystems")
         original_rename(file, target)
 
-    async def run(_: Context, _binary: str, args: list[str], _duration: float | None = None) -> None:
+    async def run(_: Context, _binary: str, args: list[str], **_kwargs: object) -> None:
         Path(args[-1]).write_bytes(b"new-media")
 
     monkeypatch.setattr(Context, "run", run)
@@ -163,18 +168,18 @@ async def test_extension_replace(
 ) -> None:
     media = source.with_name("input.mkv")
     media.write_bytes(b"original")
-    target = media.with_suffix(".mp4") if overwrite_source else media.with_name("input.remux.mp4")
+    target = media.with_suffix(".mp4") if overwrite_source else media.with_name(f"input.tool-{REMUX_ID}.mp4")
     if collision:
         target.write_bytes(b"unrelated")
     move = Mock(wraps=tools.shutil.move)
     monkeypatch.setattr(tools.shutil, "move", move)
 
-    async def run(_: Context, _binary: str, args: list[str], _duration: float | None = None) -> None:
+    async def run(_: Context, _binary: str, args: list[str], **_kwargs: object) -> None:
         Path(args[-1]).write_bytes(b"new-media")
 
     monkeypatch.setattr(Context, "run", run)
     accepted = await toolbox.submit(
-        Submission(tool="remux", file=media.name, extra=Extra(overwrite_source=overwrite_source))
+        Submission(tool=REMUX_ID, file=media.name, extra=Extra(overwrite_source=overwrite_source))
     )
     job = await terminal(accepted.id)
     assert job.file == media.name
@@ -199,7 +204,7 @@ async def test_extension_replace(
 async def test_remux_failure(
     toolbox: Toolbox, source: Path, monkeypatch: pytest.MonkeyPatch, terminal, failure: str
 ) -> None:
-    async def run(_: Context, _binary: str, args: list[str], _duration: float | None = None) -> None:
+    async def run(_: Context, _binary: str, args: list[str], **_kwargs: object) -> None:
         if failure == "disk-full":
             raise OSError(errno.ENOSPC, "No space left")
         Path(args[-1]).write_bytes(b"new")
@@ -207,7 +212,7 @@ async def test_remux_failure(
             source.unlink()
 
     monkeypatch.setattr(Context, "run", run)
-    accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+    accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     finished = await terminal(accepted.id)
     assert finished.status == "failed" and finished.result is None
     assert not list((source.parent / "work").iterdir())
@@ -224,7 +229,7 @@ async def test_remux_failure(
 async def test_ffmpeg_failure(toolbox: Toolbox, source: Path, terminal) -> None:
     if not shutil.which("ffmpeg"):
         pytest.skip("A local FFmpeg binary is required.")
-    accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+    accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     job = await terminal(accepted.id)
     assert job.status == "failed" and job.error_code == "TOOL_FAILED"
     assert source.name in job.log and job.error and "job log" in job.error
@@ -247,7 +252,10 @@ async def test_bounded_process(
     spawn, release = AsyncMock(return_value=proc), AsyncMock()
     monkeypatch.setattr(service.process, "spawn", spawn)
     monkeypatch.setattr(service.process, "release", release)
-    await asyncio.wait_for(ctx.run("ffmpeg", ["fixed-args"], 12), 5)
+    metadata = probe_module.FFProbeResult()
+    metadata.metadata["duration"] = "12"
+    monkeypatch.setattr(service, "ffprobe", AsyncMock(return_value=metadata))
+    await asyncio.wait_for(ctx.run("ffmpeg", ["-progress", "pipe:1"]), 5)
     assert len(ctx.job.log) <= service.LOG_LIMIT and "diagnostic" in ctx.job.log
     assert ctx.job.progress == expected
     assert not ctx.unsafe
@@ -271,26 +279,33 @@ async def test_progress_throttle(toolbox: Toolbox, source: Path, monkeypatch: py
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("duration", ["available", "missing", "failed", "invalid"])
+@pytest.mark.parametrize("duration", ["available", "missing", "failed", "invalid", "disabled"])
 async def test_optional_duration(
     toolbox: Toolbox, source: Path, monkeypatch: pytest.MonkeyPatch, terminal, duration: str
 ) -> None:
     if duration == "missing":
         monkeypatch.setattr(probe_module, "ffprobe_bin", lambda: None)
-        monkeypatch.setattr(tools, "ffprobe", probe_module.ffprobe)
+        probe = AsyncMock(wraps=probe_module.ffprobe)
     elif duration == "failed":
-        monkeypatch.setattr(tools, "ffprobe", AsyncMock(side_effect=FFProbeError("Duration unavailable")))
+        probe = AsyncMock(side_effect=FFProbeError("Duration unavailable"))
     else:
         metadata = probe_module.FFProbeResult()
-        metadata.metadata["duration"] = "12" if duration == "available" else "nan"
-        monkeypatch.setattr(tools, "ffprobe", AsyncMock(return_value=metadata))
+        metadata.metadata["duration"] = "nan" if duration == "invalid" else "12"
+        probe = AsyncMock(return_value=metadata)
+    monkeypatch.setattr(service, "ffprobe", probe)
+    command = [sys.executable]
+    if duration != "disabled":
+        command.extend(("-progress", "pipe:1"))
+    definition = await toolbox.definitions.create(
+        Definition(name="Convert", output_extension=".mp4", command=[*command, "{output}"], supports_overwrite=True)
+    )
     stdout, stderr = asyncio.StreamReader(), asyncio.StreamReader()
     stdout.feed_data(b"out_time_us=6000000\n")
     stdout.feed_eof()
     stderr.feed_eof()
     proc = SimpleNamespace(stdout=stdout, stderr=stderr, wait=AsyncMock(return_value=0))
 
-    async def spawn(_binary: str, args: list[str]):
+    async def spawn(_binary: str, args: list[str], **_kwargs):
         Path(args[-1]).write_bytes(b"remuxed")
         return proc
 
@@ -306,13 +321,13 @@ async def test_optional_duration(
         progress.append(ctx.job.progress)
 
     monkeypatch.setattr(tools, "publish", publish_output)
-    assert toolbox.tools()[0]["available"]
-    accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+    accepted = await toolbox.submit(Submission(tool=definition.id, file=source.name))
     job = await terminal(accepted.id)
     assert job.status == "succeeded" and job.result and job.result.outputs == [source.name]
     assert source.read_bytes() == b"remuxed"
     expected = 50 if duration == "available" else None
     assert progress == [expected, expected]
+    assert probe.await_count == (0 if duration == "disabled" else 1)
     release.assert_awaited_once_with(proc)
     assert not list((source.parent / "work").iterdir())
 
@@ -326,7 +341,7 @@ async def test_process_cancellation(
     proc = SimpleNamespace(stdout=asyncio.StreamReader(), stderr=asyncio.StreamReader(), wait=AsyncMock(return_value=0))
     folders: list[Path] = []
 
-    async def spawn(_binary: str, _args: list[str]):
+    async def spawn(_binary: str, _args: list[str], **_kwargs):
         entered.set()
         return proc
 
@@ -349,12 +364,12 @@ async def test_process_cancellation(
 
     monkeypatch.setattr(Context, "workspace", create_workspace)
     try:
-        accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+        accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
         await asyncio.wait_for(entered.wait(), 5)
-        (folders[0] / "output.part.mp4").write_bytes(b"partial")
+        (folders[0] / "output.mp4").write_bytes(b"partial")
         await toolbox.cancel(accepted.id)
         await asyncio.wait_for(releasing.wait(), 5)
-        assert (folders[0] / "output.part.mp4").read_bytes() == b"partial"
+        assert (folders[0] / "output.mp4").read_bytes() == b"partial"
         released.set()
         job = await terminal(accepted.id)
         assert job.status == ("interrupted" if unconfirmed else "cancelled")
@@ -363,9 +378,9 @@ async def test_process_cancellation(
         release.assert_awaited_once_with(proc)
         if unconfirmed:
             with pytest.raises(ToolboxError) as error:
-                await toolbox.submit(Submission(tool="remux", file=source.name))
+                await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
             assert error.value.status == 503
-            assert all(not tool["available"] for tool in toolbox.tools())
+            assert all(not tool["available"] for tool in await toolbox.tools())
     finally:
         released.set()
 
@@ -416,7 +431,7 @@ async def test_chapter_remux(toolbox: Toolbox, source: Path, terminal) -> None:
     )
     assert code == 0, log
     original = media.read_bytes()
-    accepted = await toolbox.submit(Submission(tool="remux", file=media.name, extra=Extra(overwrite_source=False)))
+    accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=media.name, extra=Extra(overwrite_source=False)))
     job = await terminal(accepted.id)
     assert job.status == "succeeded", job.error or job.log
     assert job.result
@@ -474,12 +489,12 @@ async def test_faststart_remux(toolbox: Toolbox, source: Path, terminal, overwri
     original = media.read_bytes()
     assert original.index(b"moov") > original.index(b"mdat")
     accepted = await toolbox.submit(
-        Submission(tool="remux", file=media.name, extra=Extra(overwrite_source=overwrite_source))
+        Submission(tool=REMUX_ID, file=media.name, extra=Extra(overwrite_source=overwrite_source))
     )
     job = await terminal(accepted.id)
     assert job.status == "succeeded", job.error or job.log
     assert job.result
-    expected = media.name if overwrite_source else f"{media.stem}.remux.mp4"
+    expected = media.name if overwrite_source else f"{media.stem}.tool-{REMUX_ID}.mp4"
     assert job.result.outputs == [expected]
     output = await inspect_output(source.parent / expected)
     assert [(stream["codec_type"], stream["codec_name"]) for stream in output["streams"]] == [

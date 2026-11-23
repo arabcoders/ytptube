@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
@@ -11,6 +10,7 @@ import pytest
 from app.features.toolbox import service, tools
 from app.features.toolbox.schemas import Extra, Result, Submission
 from app.features.toolbox.service import Context, Toolbox, ToolboxError
+from app.features.toolbox.tests import REMUX_ID, patch_tool
 from app.library.Services import Services
 
 
@@ -19,8 +19,8 @@ from app.library.Services import Services
 async def test_pre_proceeds(toolbox: Toolbox, source: Path, monkeypatch: pytest.MonkeyPatch, terminal, reason) -> None:
     pre = AsyncMock(return_value=reason)
     execute = AsyncMock(return_value=Result())
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], pre=pre, execute=execute))
-    accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+    patch_tool(monkeypatch, pre=pre, execute=execute)
+    accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     assert (await terminal(accepted.id)).status == "succeeded"
     pre.assert_awaited_once()
     execute.assert_awaited_once_with(pre.call_args.args[0])
@@ -31,7 +31,7 @@ async def test_pre_skips(toolbox: Toolbox, source: Path, monkeypatch: pytest.Mon
     reason = "No work is needed."
     pre, execute, post = AsyncMock(return_value=reason), AsyncMock(), AsyncMock()
     workspace, spawn, publish, find = Mock(), AsyncMock(), AsyncMock(), AsyncMock()
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], pre=pre, execute=execute, post=post))
+    patch_tool(monkeypatch, pre=pre, execute=execute, post=post)
     monkeypatch.setattr(Context, "workspace", workspace)
     monkeypatch.setattr(service.process, "spawn", spawn)
     monkeypatch.setattr(tools, "publish", publish)
@@ -39,7 +39,7 @@ async def test_pre_skips(toolbox: Toolbox, source: Path, monkeypatch: pytest.Mon
         "queue", SimpleNamespace(queue=SimpleNamespace(items=lambda: []), done=SimpleNamespace(get_by_file=find))
     )
     try:
-        accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+        accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
         job = await terminal(accepted.id)
         saved = await toolbox.repo.get(job.id)
         assert saved == job and job.status == "skipped" and job.message == reason
@@ -60,10 +60,8 @@ async def test_pre_skips(toolbox: Toolbox, source: Path, monkeypatch: pytest.Mon
 @pytest.mark.parametrize("error", [ValueError("Rejected input."), ToolboxError("Rejected input.", "REJECTED")])
 async def test_pre_rejects(toolbox: Toolbox, source: Path, monkeypatch: pytest.MonkeyPatch, terminal, error) -> None:
     execute = AsyncMock()
-    monkeypatch.setitem(
-        tools.TOOLS, "remux", replace(tools.TOOLS["remux"], pre=AsyncMock(side_effect=error), execute=execute)
-    )
-    accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+    patch_tool(monkeypatch, pre=AsyncMock(side_effect=error), execute=execute)
+    accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     job = await terminal(accepted.id)
     assert job.status == "failed" and job.error == str(error) and job.result is None
     assert job.error_code == (error.code if isinstance(error, ToolboxError) else "TOOL_FAILED")
@@ -79,7 +77,7 @@ async def test_post_boundary(
 ) -> None:
     media = source.with_suffix(".mkv")
     source.rename(media)
-    target = media.with_suffix(".mp4") if overwrite_source else media.with_name("video.remux.mp4")
+    target = media.with_suffix(".mp4") if overwrite_source else media.with_name(f"video.tool-{REMUX_ID}.mp4")
     if mode == "collision":
         target.write_bytes(b"existing")
     phases: list[str] = []
@@ -110,11 +108,11 @@ async def test_post_boundary(
             raise ToolboxError("Output rejected.", "INVALID_OUTPUT")
 
     check = AsyncMock(side_effect=post)
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], execute=execute, post=check))
+    patch_tool(monkeypatch, execute=execute, post=check)
     monkeypatch.setattr(tools.shutil, "move", move)
     try:
         accepted = await toolbox.submit(
-            Submission(tool="remux", file=media.name, extra=Extra(overwrite_source=overwrite_source))
+            Submission(tool=REMUX_ID, file=media.name, extra=Extra(overwrite_source=overwrite_source))
         )
         job = await terminal(accepted.id)
         assert job.status == ("succeeded" if mode == "success" else "failed")
@@ -156,9 +154,9 @@ async def test_hook_cancellation(
         return Result(outputs=[source.name])
 
     executor = AsyncMock(side_effect=execute)
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], execute=executor, **{hook: check}))
+    patch_tool(monkeypatch, execute=executor, **{hook: check})
     try:
-        accepted = await toolbox.submit(Submission(tool="remux", file=source.name))
+        accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
         await asyncio.wait_for(entered.wait(), 5)
         if shutdown:
             await asyncio.wait_for(toolbox.shutdown(), 5)

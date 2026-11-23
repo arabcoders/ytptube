@@ -40,6 +40,11 @@ describe('docs resolver', () => {
     expect(resolveDocsLink('task-definitions.md', '/api/docs/docs/README.md').docRoute).toBe(
       '/docs/task-definitions',
     );
+    expect(resolveDocsLink('toolbox.md', '/api/docs/docs/README.md')).toEqual({
+      href: '/docs/toolbox',
+      external: false,
+      docRoute: '/docs/toolbox',
+    });
     expect(resolveDocsLink('features.md', '/api/docs/docs/README.md').docRoute).toBe(
       '/docs/features',
     );

@@ -7,10 +7,6 @@ Status = Literal["queued", "running", "succeeded", "skipped", "failed", "cancell
 TERMINAL = frozenset({"succeeded", "skipped", "failed", "cancelled", "interrupted"})
 
 
-class RemuxOptions(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
-
-
 class Extra(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
@@ -21,7 +17,7 @@ class Extra(BaseModel):
 class Submission(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    tool: str
+    tool: int = Field(gt=0, lt=2**63)
     file: str = Field(min_length=1, max_length=4096)
     extra: Extra = Field(default_factory=Extra)
 
@@ -34,7 +30,7 @@ class Job(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    tool: str
+    tool: int
     file: str
     extra: Extra = Field(default_factory=Extra)
     status: Status

@@ -1,73 +1,28 @@
 from __future__ import annotations
 
 import asyncio
-import math
+import os
 import shutil
 import stat
 from dataclasses import dataclass
+from pathlib import Path
+from shutil import which
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from app.features.streaming import utils as process
-from app.features.streaming.library.ffprobe import ffmpeg_bin, ffprobe
-from app.features.streaming.types import FFProbeError
-from app.features.toolbox.schemas import RemuxOptions, Result
+from app.features.toolbox.definitions import INPUT, OUTPUT
+from app.features.toolbox.schemas import Result
 from app.library.Events import EventBus
 from app.library.Services import Services
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
-    from pathlib import Path
 
     from pydantic import BaseModel
 
+    from app.features.toolbox.definitions import Definition
     from app.features.toolbox.service import Context
-
-
-async def remux(ctx: Context) -> Result:
-    duration = None
-    try:
-        seconds = float((await ffprobe(ctx.source)).metadata.get("duration", 0))
-        if math.isfinite(seconds) and seconds > 0:
-            duration = seconds
-    except (FFProbeError, OSError, ValueError, TypeError):
-        pass
-    folder = ctx.workspace()
-    temporary = folder / "output.part.mp4"
-    binary = ffmpeg_bin()
-    if binary is None:
-        msg = "ffmpeg is unavailable."
-        raise ValueError(msg)
-    await ctx.run(
-        binary,
-        [
-            "-nostdin",
-            "-n",
-            "-hide_banner",
-            "-loglevel",
-            "warning",
-            "-nostats",
-            "-progress",
-            "pipe:1",
-            "-i",
-            str(ctx.source),
-            "-map",
-            "0",
-            "-c",
-            "copy",
-            "-map_metadata",
-            "0",
-            "-map_chapters",
-            "0",
-            "-movflags",
-            "+faststart",
-            str(temporary),
-        ],
-        duration,
-    )
-    final = ctx.destination(".mp4", ".remux")
-    await publish(ctx, temporary, final)
-    return Result(outputs=[final.relative_to(ctx.root).as_posix()])
 
 
 async def publish(ctx: Context, temporary: Path, final: Path) -> None:
@@ -79,8 +34,8 @@ async def publish(ctx: Context, temporary: Path, final: Path) -> None:
         raise ValueError(msg)
 
     mode = stat.S_IMODE(ctx.source.stat().st_mode)
-    if post := TOOLS[ctx.job.tool].post:
-        await post(ctx, temporary)
+    if ctx.tool.post:
+        await ctx.tool.post(ctx, temporary)
     queue = Services.get_instance().get("queue")
     history = (
         await queue.done.get_by_file(ctx.source, ctx.root)
@@ -126,17 +81,59 @@ class Tool:
     availability: Callable[[], str | None] | None = None
     pre: Callable[[Context], Awaitable[str | None]] | None = None
     post: Callable[[Context, Path], Awaitable[None]] | None = None
+    supports_overwrite: bool = False
 
     def reason(self) -> str | None:
         return self.availability() if self.availability else None
 
 
-TOOLS = {
-    "remux": Tool(
-        name="Remux into MP4",
-        description="Copy streams into MP4 without re-encoding.",
-        options=RemuxOptions,
-        execute=remux,
-        availability=lambda: None if ffmpeg_bin() else "ffmpeg is unavailable.",
-    ),
-}
+def configured(spec: Definition, config_dir: Path) -> Tool:
+    command, *args = spec.command
+
+    def binary() -> str | None:
+        path = Path(command)
+        if command.startswith("./") or (os.name == "nt" and command.startswith(".\\")):
+            path = config_dir / path
+        elif not path.is_absolute() and command != path.name:
+            return None
+        found = which(path)
+        if found is None or (os.name == "nt" and Path(found).suffix.lower() in (".bat", ".cmd")):
+            return None
+        return str(Path(found).absolute())
+
+    def reason() -> str | None:
+        return None if binary() else "The configured executable is unavailable."
+
+    async def execute(ctx: Context) -> Result:
+        if (executable := binary()) is None:
+            msg = "The configured executable is unavailable."
+            raise ValueError(msg)
+
+        folder = ctx.workspace()
+        output = folder / f"output{spec.output_extension}"
+        values = {
+            key: str(value).lower() if isinstance(value, bool) else str(value)
+            for key, value in ctx.job.extra.options.items()
+        }
+        env = {**spec.env, **values, INPUT: str(ctx.source), OUTPUT: str(output)}
+        if os.name == "nt":
+            env = {key.upper(): value for key, value in env.items()}
+        substitutions = {
+            "{input}": str(ctx.source),
+            "{output}": str(output),
+            **{f"{{param.{key}}}": value for key, value in values.items()},
+        }
+
+        await ctx.run(executable, [substitutions.get(arg, arg) for arg in args], env={**os.environ, **env}, cwd=folder)
+        final = ctx.destination(spec.output_extension)
+        await publish(ctx, output, final)
+        return Result(outputs=[final.relative_to(ctx.root).as_posix()])
+
+    return Tool(
+        name=spec.name,
+        description=spec.description,
+        options=spec.options(),
+        execute=execute,
+        availability=reason,
+        supports_overwrite=spec.supports_overwrite,
+    )

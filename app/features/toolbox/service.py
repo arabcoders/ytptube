@@ -3,19 +3,23 @@ from __future__ import annotations
 import asyncio
 import errno
 import logging
+import math
 import re
 import shutil
 import tempfile
 from collections import deque
 from dataclasses import dataclass
+from itertools import pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.features.core.models import utcnow
 from app.features.streaming import utils as process
-from app.features.toolbox.repository import ToolboxRepository
+from app.features.streaming.library.ffprobe import ffprobe
+from app.features.streaming.types import FFProbeError
+from app.features.toolbox.repository import DefinitionsRepository, ToolboxRepository
 from app.features.toolbox.schemas import TERMINAL, Job, Result, Status, Submission
-from app.features.toolbox.tools import TOOLS
+from app.features.toolbox.tools import Tool, configured
 from app.library.config import Config
 from app.library.Events import EventBus, Events
 from app.library.Services import Services
@@ -55,6 +59,7 @@ class Context:
     service: Toolbox
     job: Job
     source: Path
+    tool: Tool
     unsafe: bool = False
     folder: Path | None = None
     last_event: float = float("-inf")
@@ -74,10 +79,10 @@ class Context:
         self.folder = folder
         return folder
 
-    def destination(self, suffix: str, affix: str) -> Path:
+    def destination(self, suffix: str) -> Path:
         if self.job.extra.overwrite_source:
-            return self.source if self.source.suffix.lower() == suffix else self.source.with_suffix(suffix)
-        return self.source.with_name(f"{self.source.stem}{affix}{suffix}")
+            return self.source if self.source.name.lower().endswith(suffix.lower()) else self.source.with_suffix(suffix)
+        return self.source.with_name(f"{self.source.stem}.tool-{self.job.tool}{suffix}")
 
     def cleanup(self) -> None:
         if self.unsafe or self.folder is None:
@@ -94,11 +99,26 @@ class Context:
             self.last_event = now
             self.service.emit(self.job)
 
-    async def run(self, binary: str, args: list[str], duration: float | None = None) -> None:
+    async def run(
+        self,
+        binary: str,
+        args: list[str],
+        *,
+        env: dict[str, str] | None = None,
+        cwd: Path | None = None,
+    ) -> None:
         self.check_source()
+        duration = None
+        if ("-progress", "pipe:1") in pairwise(args):
+            try:
+                seconds = float((await ffprobe(self.source)).metadata.get("duration", 0))
+                if math.isfinite(seconds) and seconds > 0:
+                    duration = seconds
+            except (FFProbeError, OSError, ValueError, TypeError):
+                pass
         self.unsafe = True
         try:
-            proc = await process.spawn(binary, args)
+            proc = await process.spawn(binary, args, cwd=cwd, env=env)
         except process.ProcessExitError:
             raise
         except BaseException:
@@ -152,6 +172,8 @@ class Toolbox:
     def __init__(self, config: Config | None = None, repo: ToolboxRepository | None = None):
         self.config = config or Config.get_instance()
         self.repo = repo or ToolboxRepository()
+        self.definitions = DefinitionsRepository()
+        self.config_dir = Path(self.config.config_path).absolute()
         self.pending: deque[Context] = deque()
         self.active: Context | None = None
         self.execution: asyncio.Task[Result] | None = None
@@ -170,25 +192,28 @@ class Toolbox:
         from app.library.sqlite_store import SqliteStore
 
         await SqliteStore.get_instance().get_connection()
+        await self.definitions.seed()
         await self.repo.interrupt()
         self.worker = asyncio.create_task(self.work(), name="toolbox")
 
     def emit(self, job: Job) -> None:
         EventBus.get_instance().emit(Events.TOOLBOX_JOB, data=job.model_dump(mode="json"))
 
-    def tools(self) -> list[dict]:
+    async def tools(self) -> list[dict]:
         items = []
-        for key, tool in TOOLS.items():
+        for definition in await self.definitions.all():
+            tool = configured(definition, self.config_dir)
             reason = tool.reason()
             if self.blocked or self.closing:
                 reason = "Toolbox is unavailable. Restart the server."
             items.append(
                 {
-                    "id": key,
+                    "id": definition.id,
                     "name": tool.name,
                     "description": tool.description,
                     "available": reason is None,
                     "reason": reason,
+                    "supports_overwrite": tool.supports_overwrite,
                     "options_schema": tool.options.model_json_schema(),
                 }
             )
@@ -196,7 +221,10 @@ class Toolbox:
 
     def source(self, file: str) -> Path:
         path, status = get_file(self.config.download_path, file)
-        if status not in (200, 302):
+        root = Path(self.config.download_path).resolve()
+        if status == 302:
+            path = path.resolve()
+        if status not in (200, 302) or not path.is_relative_to(root):
             msg = f"File '{file}' is no longer available."
             raise ToolboxError(msg, "FILE_UNAVAILABLE", 404, params={"file": file})
         if not path.is_file():
@@ -207,7 +235,6 @@ class Toolbox:
             raise ToolboxError(msg, "ACTIVE_DOWNLOAD")
         queue = Services.get_instance().get("queue")
         if queue is not None:
-            root = Path(self.config.download_path).resolve()
             for entry in queue.queue.items():
                 info = entry[1].info
                 for name in (info.filename, info.tmpfilename):
@@ -224,23 +251,26 @@ class Toolbox:
             if len(self.pending) >= QUEUE_LIMIT:
                 msg = "The Toolbox queue is full."
                 raise ToolboxError(msg, "QUEUE_FULL", 429)
-            if (tool := TOOLS.get(data.tool)) is None:
+            definition = await self.definitions.get(data.tool)
+            if definition is None:
                 msg = "Unknown Toolbox operation."
                 raise ToolboxError(msg, "UNKNOWN_TOOL")
+            tool = configured(definition, self.config_dir)
             if reason := tool.reason():
                 raise ToolboxError(reason, "UNAVAILABLE", 503)
-            options = tool.options.model_validate(data.extra.options).model_dump()
+            overwrite = tool.supports_overwrite and data.extra.overwrite_source
+            options = tool.options.model_validate(data.extra.options).model_dump(by_alias=True)
             source = self.source(data.file)
             job = await self.repo.create(
                 {
                     "tool": data.tool,
                     "file": source.relative_to(Path(self.config.download_path).resolve()).as_posix(),
-                    "extra": data.extra.model_copy(update={"options": options}).model_dump(),
+                    "extra": {"overwrite_source": overwrite, "options": options},
                     "status": "queued",
                     "created_at": utcnow(),
                 }
             )
-            ctx = Context(service=self, job=job, source=source)
+            ctx = Context(service=self, job=job, source=source, tool=tool)
             self.pending.append(ctx)
             self.emit(job)
             self.wake.set()
@@ -345,7 +375,7 @@ class Toolbox:
                 self.execution = None
 
     async def execute(self, ctx: Context) -> Result:
-        tool = TOOLS[ctx.job.tool]
+        tool = ctx.tool
         if reason := tool.reason():
             raise ToolboxError(reason, "UNAVAILABLE")
         ctx.check_source()

@@ -7,7 +7,9 @@ from app.routes.api import docs
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("name", ["CONTRIBUTING.md", "docs/authentication.md", "docs/media-handlers.md"])
+@pytest.mark.parametrize(
+    "name", ["CONTRIBUTING.md", "docs/authentication.md", "docs/media-handlers.md", "docs/toolbox.md"]
+)
 async def test_serves_doc(tmp_path: Path, name: str) -> None:
     (tmp_path / "README.md").write_text("root", encoding="utf-8")
     (tmp_path / "docs").mkdir()

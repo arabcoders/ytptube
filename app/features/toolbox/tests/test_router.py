@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
-from dataclasses import replace
+from collections.abc import Awaitable, Callable, Iterator
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -10,11 +9,15 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 
+from app.features.auth.middleware import auth_middleware
+from app.features.auth.service import AuthService
 from app.features.core.models import utcnow
-from app.features.toolbox import router, tools
+from app.features.toolbox import router
+from app.features.toolbox.defaults import REMUX
 from app.features.toolbox.schemas import Result
 from app.features.toolbox.service import Toolbox
-from app.library.config import Config
+from app.features.toolbox.tests import REMUX_ID, patch_tool
+from app.library.config import Config, ExternalAuthConfig, RemoteUserConfig
 from app.library.HttpAPI import HttpAPI
 from app.library.Services import Services
 
@@ -35,9 +38,99 @@ async def test_tools_dispatch(http_api: HttpAPI) -> None:
     assert isinstance(response, web.Response) and response.text is not None
     assert response.status == 200
     items = json.loads(response.text)["items"]
-    assert {item["id"] for item in items} == {"remux"}
+    assert {item["id"] for item in items} == {REMUX_ID}
     assert all(item["available"] and item["options_schema"] for item in items)
     assert items[0]["options_schema"]["properties"] == {}
+
+
+@pytest.mark.asyncio
+async def test_definitions_crud(http_api: HttpAPI, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def call(
+        handler: Callable[..., Awaitable[web.Response]],
+        method: str,
+        identifier: int | None = None,
+        data: dict | None = None,
+        query: str = "",
+    ) -> tuple[int, dict]:
+        path = "/api/toolbox/definitions/"
+        request = (
+            make_mocked_request(method, f"{path}{identifier}", match_info={"id": str(identifier)})
+            if identifier is not None
+            else make_mocked_request(method, f"{path}{query}")
+        )
+        if data is not None:
+            monkeypatch.setattr(request, "json", AsyncMock(return_value=data))
+        response = await http_api._handle(handler, request)
+        assert isinstance(response, web.Response)
+        return response.status, json.loads(response.text) if response.text else {}
+
+    spec = {"name": "Copy", "command": ["ffmpeg"], "env": {"MODE": "fixed"}, "output_extension": ".mkv"}
+    status, created = await call(router.definitions_add, "POST", data=spec)
+    identifier = created["id"]
+    assert status == 201 and type(identifier) is int and identifier != REMUX_ID and not created["default"]
+    assert (await call(router.definitions_add, "POST", data={**spec, "id": identifier}))[0] == 400
+    assert (await call(router.definitions_add, "POST", data={**spec, "default": True}))[0] == 400
+
+    status, listing = await call(router.definitions_list, "GET")
+    assert status == 200 and listing["pagination"]["total"] == 1
+    custom = {"id": identifier, "name": "Copy", "description": "", "default": False}
+    assert listing["items"] == [custom]
+
+    status, listing = await call(router.definitions_list, "GET", query="?include_defaults=true")
+    assert status == 200 and listing["pagination"]["total"] == 2
+    assert listing["items"] == [
+        {
+            "id": REMUX_ID,
+            "name": "Remux into MP4",
+            "description": "Copy streams into MP4 without re-encoding.",
+            "default": True,
+        },
+        custom,
+    ]
+    status, first = await call(router.definitions_list, "GET", query="?per_page=1")
+    assert status == 200 and first["pagination"]["total_pages"] == 1 and first["items"] == [custom]
+    status, second = await call(router.definitions_list, "GET", query="?include_defaults=true&per_page=1&page=2")
+    assert status == 200 and second["pagination"]["total_pages"] == 2 and second["items"] == [custom]
+
+    status, shipped = await call(router.definitions_get, "GET", REMUX_ID)
+    assert status == 200 and shipped["default"] and shipped["command"] == REMUX.command
+    updated = {**spec, "name": "New name"}
+    assert (await call(router.definitions_replace, "PUT", REMUX_ID, updated))[0] == 409
+    assert (await call(router.definitions_delete, "DELETE", REMUX_ID))[0] == 409
+    assert (await call(router.definitions_replace, "PUT", identifier, updated))[0] == 200
+    status, item = await call(router.definitions_get, "GET", identifier)
+    assert status == 200 and item["name"] == "New name" and item["env"] == {"MODE": "fixed"}
+    status, catalog = await call(router.tools_list, "GET")
+    assert status == 200 and next(item for item in catalog["items"] if item["id"] == identifier)["name"] == "New name"
+    assert (await call(router.definitions_delete, "DELETE", identifier))[0] == 204
+    assert (await call(router.definitions_get, "GET", identifier))[0] == 404
+    status, copied = await call(router.definitions_add, "POST", data=spec)
+    assert status == 201 and copied["id"] != identifier
+
+    draft = {key: value for key, value in shipped.items() if key not in {"id", "default"}}
+    status, clone = await call(router.definitions_add, "POST", data=draft)
+    assert status == 201 and not clone["default"] and clone["id"] != REMUX_ID
+    assert clone["command"] == shipped["command"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("disabled", "status"), [(True, 403), (False, 401)])
+async def test_definition_auth(toolbox: Toolbox, monkeypatch: pytest.MonkeyPatch, disabled: bool, status: int) -> None:
+    config = toolbox.config
+    config.disable_auth = disabled
+    config.cors_origins = ""
+    config.external_auth = ExternalAuthConfig(
+        external_user=None,
+        oidc=None,
+        remote_user=RemoteUserConfig(enabled=False, header="Remote-User", trusted_proxies=()),
+    )
+    middleware = auth_middleware(AsyncMock(spec=AuthService), config)
+    request = make_mocked_request("POST", "/api/toolbox/definitions/")
+    monkeypatch.setattr(request.match_info.route, "name", "toolbox_definition_add")
+    handler = AsyncMock()
+    response = await middleware(request, handler)
+    assert response.status == status
+    handler.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -48,7 +141,7 @@ async def test_missing_history(http_api: HttpAPI, source: Path, monkeypatch: pyt
     media.write_bytes(b"unrelated")
     file = "tester/bar/#360度ロック 🎵 #乃木坂46.mp4"
     request = make_mocked_request("POST", "/api/toolbox/jobs")
-    monkeypatch.setattr(request, "json", AsyncMock(return_value={"tool": "remux", "file": file}))
+    monkeypatch.setattr(request, "json", AsyncMock(return_value={"tool": REMUX_ID, "file": file}))
     response = await http_api._handle(router.jobs_submit, request)
     assert isinstance(response, web.Response) and response.text is not None
     assert response.status == 404
@@ -66,17 +159,13 @@ async def test_missing_history(http_api: HttpAPI, source: Path, monkeypatch: pyt
 async def test_api_lifecycle(
     http_api: HttpAPI, source: Path, monkeypatch: pytest.MonkeyPatch, terminal, overwrite_source: bool, status: str
 ) -> None:
-    monkeypatch.setitem(
-        tools.TOOLS,
-        "remux",
-        replace(
-            tools.TOOLS["remux"],
-            execute=AsyncMock(return_value=Result()),
-            pre=AsyncMock(return_value="Nothing to do.") if status == "skipped" else None,
-        ),
+    patch_tool(
+        monkeypatch,
+        execute=AsyncMock(return_value=Result()),
+        pre=AsyncMock(return_value="Nothing to do.") if status == "skipped" else None,
     )
     request = make_mocked_request("POST", "/api/toolbox/jobs")
-    data = {"tool": "remux", "file": source.name}
+    data = {"tool": REMUX_ID, "file": source.name}
     if not overwrite_source:
         data["extra"] = {"overwrite_source": False, "options": {}}
     monkeypatch.setattr(request, "json", AsyncMock(return_value=data))
@@ -116,7 +205,7 @@ async def test_api_lifecycle(
 @pytest.mark.asyncio
 async def test_list_snapshot(toolbox: Toolbox, source: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     job = await toolbox.repo.create(
-        {"tool": "remux", "file": source.name, "status": "succeeded", "created_at": utcnow()}
+        {"tool": REMUX_ID, "file": source.name, "status": "succeeded", "created_at": utcnow()}
     )
     list_paginated = toolbox.repo.list_paginated
 
@@ -146,10 +235,11 @@ async def test_list_snapshot(toolbox: Toolbox, source: Path, monkeypatch: pytest
     "body",
     [
         [],
-        {"tool": "remux", "file": "video", "extra": True},
-        {"tool": "remux", "file": "video", "extra": {"options": {"args": "-y"}}},
-        {"tool": "remux", "file": "video", "extra": {"overwrite_source": "false"}},
-        {"tool": "remux", "file": "video", "extra": {"overwrite_source": 0}},
+        {"tool": REMUX_ID, "file": "video", "extra": True},
+        {"tool": REMUX_ID, "file": "video", "extra": {"options": {"args": "-y"}}},
+        {"tool": REMUX_ID, "file": "video", "extra": {"overwrite_source": "false"}},
+        {"tool": REMUX_ID, "file": "video", "extra": {"overwrite_source": 0}},
+        {"tool": 2**63, "file": "video"},
     ],
 )
 async def test_invalid_submission(toolbox: Toolbox, source: Path, body: object) -> None:

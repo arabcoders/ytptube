@@ -2,7 +2,16 @@
   "toolbox": {
     "title": "ツールボックス",
     "description": "ファイルに対して実行するカスタム操作。",
-    "unsupportedOptions": "このフォームでは次のオプションを編集できません：{fields}。"
+    "unsupportedOptions": "このフォームでは次のオプションを編集できません：{fields}。",
+    "jobs": "ジョブ",
+    "outputExtension": "出力ファイルの拡張子",
+    "allowOverwrite": "元ファイルの上書きを許可",
+    "executable": "実行ファイル",
+    "environment": "環境変数",
+    "parameters": "パラメーター",
+    "choices": "選択肢",
+    "minimum": "最小値",
+    "maximum": "最大値"
   },
   "auth": {
     "setupHeading": "アカウントを作成",
@@ -1307,6 +1316,11 @@
         "title": "メディアハンドラー",
         "navLabel": "メディアハンドラー",
         "description": "ダウンロードごとにハンドラーを選択して設定します。"
+      },
+      "toolbox": {
+        "title": "ツールボックスのカスタムツール",
+        "navLabel": "ツールボックス",
+        "description": "ダウンロードフォルダー内のファイルに対して実行するコマンドを設定します。"
       },
       "faq": {
         "title": "FAQ",

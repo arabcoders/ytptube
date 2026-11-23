@@ -9,7 +9,8 @@ export type DocsFile =
   | 'docs/authentication.md'
   | 'docs/native-builds.md'
   | 'docs/media-handlers.md'
-  | 'docs/task-definitions.md';
+  | 'docs/task-definitions.md'
+  | 'docs/toolbox.md';
 
 export type DocsEntry = {
   id: string;
@@ -147,6 +148,17 @@ const DOCS_ENTRIES: DocsEntry[] = [
     navLabel: 'docs.entries.taskDefinitions.navLabel',
     sidebarVisible: false,
   },
+  {
+    id: 'docs-toolbox',
+    title: 'docs.entries.toolbox.title',
+    description: 'docs.entries.toolbox.description',
+    file: 'docs/toolbox.md',
+    route: '/docs/toolbox',
+    slug: ['toolbox'],
+    icon: 'i-lucide-wrench',
+    navLabel: 'docs.entries.toolbox.navLabel',
+    sidebarVisible: false,
+  },
 ];
 
 const DOCS_BY_FILE = new Map(DOCS_ENTRIES.map((entry) => [entry.file, entry]));
@@ -173,6 +185,7 @@ const getDocsGroups = () =>
         'docs-authentication',
         'docs-media-handlers',
         'docs-task-definitions',
+        'docs-toolbox',
         'docs-faq',
       ],
     },

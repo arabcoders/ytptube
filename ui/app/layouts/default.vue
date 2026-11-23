@@ -660,6 +660,7 @@ const makeNavigationItem = (item: NavItem): NavigationMenuItem => ({
 const navigationAvailability = computed(() => ({
   fileLogging: Boolean(config.app?.file_logging),
   consoleEnabled: Boolean(config.app?.console_enabled),
+  authenticated: auth.status.value?.disabled === false && auth.status.value.authenticated,
 }));
 
 const searchNavItems = computed(() => getSearchNavItems(navigationAvailability.value));

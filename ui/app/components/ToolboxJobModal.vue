@@ -181,7 +181,7 @@ import {
 const props = defineProps<{ id: number }>();
 const emit = defineEmits<{ close: [] }>();
 const { t, locale } = useI18n();
-const { tools, jobs, getJob } = useToolbox();
+const { toolLabel, jobs, getJob } = useToolbox();
 const socket = useAppSocket();
 const selectedJob = ref<ToolboxJob | null>(null);
 const detailLoading = ref(false);
@@ -223,7 +223,6 @@ const onJob = (event: WSEP['toolbox_job']): void => {
   detailLoading.value = false;
   detailError.value = '';
 };
-const toolLabel = (id: string): string => tools.value.find((item) => item.id === id)?.name ?? id;
 const logOpen = ref(false);
 const outputBrowserUrl = (output: string): string => {
   const folder = dirname(output);

@@ -2,7 +2,16 @@
   "toolbox": {
     "title": "Boîte à outils",
     "description": "Opérations personnalisées à exécuter sur les fichiers.",
-    "unsupportedOptions": "Ce formulaire ne peut pas modifier ces options : {fields}."
+    "unsupportedOptions": "Ce formulaire ne peut pas modifier ces options : {fields}.",
+    "jobs": "Tâches",
+    "outputExtension": "Extension de sortie",
+    "allowOverwrite": "Autoriser l’écrasement du fichier source",
+    "executable": "Exécutable",
+    "environment": "Variables d’environnement",
+    "parameters": "Paramètres",
+    "choices": "Choix",
+    "minimum": "Minimum",
+    "maximum": "Maximum"
   },
   "auth": {
     "setupHeading": "Créez votre compte",
@@ -1307,6 +1316,11 @@
         "title": "Gestionnaires de médias",
         "navLabel": "Gestionnaires de médias",
         "description": "Choisir et configurer un gestionnaire pour chaque téléchargement."
+      },
+      "toolbox": {
+        "title": "Outils personnalisés de la boîte à outils",
+        "navLabel": "Boîte à outils",
+        "description": "Configurer des commandes à exécuter sur les fichiers du dossier de téléchargement."
       },
       "faq": {
         "title": "FAQ",

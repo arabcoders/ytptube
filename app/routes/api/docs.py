@@ -25,6 +25,7 @@ STATIC_FILES: set[str] = {
     "docs/native-builds.md",
     "docs/task-definitions.md",
     "docs/media-handlers.md",
+    "docs/toolbox.md",
 }
 
 

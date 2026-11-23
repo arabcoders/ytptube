@@ -7,9 +7,18 @@
     @update:open="close"
   >
     <template #body>
+      <FormSubmitError
+        :message="submission.message.value || toolsError"
+        @dismiss="submission.clear"
+      />
       <form id="toolboxForm" class="space-y-5" @submit.prevent="submit">
-        <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
-        <UAlert v-if="toolsError" color="error" variant="soft" :title="toolsError" />
+        <UAlert
+          v-if="toolWarning && !submission.message.value && !toolsError"
+          color="warning"
+          variant="soft"
+          icon="i-lucide-triangle-alert"
+          :title="toolWarning"
+        />
         <p v-if="isToolsLoading" role="status" class="text-sm text-toned">
           {{ t('common.loading') }}
         </p>
@@ -24,24 +33,10 @@
             class="w-full"
           />
         </UFormField>
-        <div v-if="selectedTool" class="space-y-2 text-sm text-toned">
-          <p>{{ selectedTool.description }}</p>
-          <UAlert
-            v-if="!selectedTool.available"
-            color="warning"
-            variant="soft"
-            :title="selectedTool.reason || 'This operation is unavailable.'"
-          />
-        </div>
+        <p v-if="selectedTool" class="text-sm text-toned">{{ selectedTool.description }}</p>
         <UFormField :label="t('common.file')">
           <p class="break-all text-sm" dir="auto">{{ file }}</p>
         </UFormField>
-        <UAlert
-          v-if="optionSchema.unsupported.length"
-          color="warning"
-          variant="soft"
-          :title="t('toolbox.unsupportedOptions', { fields: optionSchema.unsupported.join(', ') })"
-        />
         <DLInput
           v-for="field in optionSchema.fields"
           :id="field.name"
@@ -59,7 +54,11 @@
           :error="submission.fields.value[field.name]"
           :disabled="submitting"
         />
-        <UFormField :label="t('common.overwriteSource')" :help="t('common.overwriteSourceDesc')">
+        <UFormField
+          v-if="selectedTool?.supports_overwrite"
+          :label="t('common.overwriteSource')"
+          :help="t('common.overwriteSourceDesc')"
+        >
           <USwitch
             v-model="overwriteSource"
             :disabled="submitting"
@@ -110,8 +109,8 @@ const submission = useFormSubmit();
 const submitting = ref(false);
 const open = ref(true);
 const file = computed(() => sTrim(props.file, '/'));
-const tool = ref('');
-const initialTool = ref('');
+const tool = ref<number>();
+const initialTool = ref<number>();
 const overwriteSource = useStorage('toolbox_overwrite_source', true);
 const options = ref<ToolboxOptions>({});
 const initialOptions = ref('{}');
@@ -120,6 +119,15 @@ const dirty = computed(
 );
 const selectedTool = computed(() => tools.value.find((item) => item.id === tool.value));
 const optionSchema = computed(() => toolboxOptionFields(selectedTool.value?.options_schema ?? {}));
+const toolWarning = computed(() => {
+  if (selectedTool.value && !selectedTool.value.available) {
+    return selectedTool.value.reason || 'This operation is unavailable.';
+  }
+  const unsupported = optionSchema.value.unsupported;
+  return unsupported.length
+    ? t('toolbox.unsupportedOptions', { fields: unsupported.join(', ') })
+    : '';
+});
 watch(
   tool,
   () => {
@@ -144,11 +152,17 @@ const close = async (value: boolean): Promise<void> => {
   if (!value && (await requestClose()) && !disposed) emit('close');
 };
 const submit = async (): Promise<void> => {
-  if (!canSubmit.value) return;
+  const selected = selectedTool.value;
+  if (!canSubmit.value || !selected) return;
   submitting.value = true;
   try {
     const job = await submission.run(() =>
-      createJob(tool.value, file.value, overwriteSource.value, options.value),
+      createJob(
+        selected.id,
+        file.value,
+        selected.supports_overwrite && overwriteSource.value,
+        options.value,
+      ),
     );
     if (job && !disposed) emit('created', job);
   } finally {
@@ -159,7 +173,7 @@ onBeforeRouteLeave(requestClose);
 onMounted(async () => {
   await loadTools();
   if (disposed) return;
-  tool.value = tools.value.find((item) => item.available)?.id ?? tools.value[0]?.id ?? '';
+  tool.value = tools.value.find((item) => item.available)?.id ?? tools.value[0]?.id;
   initialTool.value = tool.value;
 });
 onScopeDispose(() => {

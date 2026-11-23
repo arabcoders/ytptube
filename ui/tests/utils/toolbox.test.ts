@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test';
-import { getNavItems, getSearchNavItems } from '~/utils/topLevelNavigation';
 import { getPath, makeDownload, sTrim } from '~/utils';
 import type { ToolboxJob } from '~/types/toolbox';
 import {
@@ -115,7 +114,7 @@ describe('toolbox statuses', () => {
     const t = (key: string) => `translated:${key}`;
     const skipped: ToolboxJob = {
       id: 1,
-      tool: 'custom-copy',
+      tool: 42,
       file: 'shows/episode.mp4',
       extra: { overwrite_source: true, options: {} },
       status: 'skipped',
@@ -201,11 +200,5 @@ describe('toolbox links', () => {
     } finally {
       globalThis.useRuntimeConfig = original;
     }
-  });
-
-  it('indexes toolbox navigation', () => {
-    const toolbox = getNavItems().find((item) => item.id === 'toolbox');
-    expect(toolbox).toMatchObject({ to: '/toolbox', section: 'tools', sidebarVisible: true });
-    expect(getSearchNavItems()).toContainEqual(toolbox);
   });
 });

@@ -92,6 +92,9 @@ const loadTools = (): Promise<void> => {
   return toolsRequest;
 };
 
+const toolLabel = (id: number): string =>
+  tools.value.find((item) => item.id === id)?.name ?? String(id);
+
 const loadJobs = async (page = pagination.value.page): Promise<void> => {
   if (isLoading.value) return;
   isLoading.value = true;
@@ -117,7 +120,7 @@ const getJob = async (id: number): Promise<ToolboxJob> => {
 };
 
 const createJob = async (
-  tool: string,
+  tool: number,
   file: string,
   overwriteSource = true,
   options: ToolboxOptions = {},
@@ -184,6 +187,7 @@ export const useToolbox = () => ({
   lastError: readonly(lastError),
   toolsError: readonly(toolsError),
   loadTools,
+  toolLabel,
   loadJobs,
   getJob,
   createJob,

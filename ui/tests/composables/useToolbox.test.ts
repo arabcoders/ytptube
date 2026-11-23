@@ -17,7 +17,7 @@ let requests: ReturnType<typeof spyOn<typeof utils, 'request'>>;
 
 const job = (patch: Partial<ToolboxJob> = {}): ToolboxJob => ({
   id: 1,
-  tool: 'remux',
+  tool: 1,
   file: 'shows/episode.mp4',
   extra: { overwrite_source: true, options: {} },
   status: 'queued',
@@ -33,11 +33,12 @@ const job = (patch: Partial<ToolboxJob> = {}): ToolboxJob => ({
   ...patch,
 });
 const tool: ToolboxTool = {
-  id: 'custom-copy',
+  id: 42,
   name: 'Custom copy',
   description: 'Copy all streams.',
   available: true,
   reason: null,
+  supports_overwrite: true,
   options_schema: {},
 };
 const response = (data: unknown, status = 200): Response =>
@@ -117,6 +118,28 @@ describe('shared toolbox', () => {
     }
   });
 
+  it('refreshes runtime catalog', async () => {
+    requests.mockResolvedValueOnce(response({ items: [] }));
+    requests.mockResolvedValueOnce(response({ items: [tool] }));
+    await state.loadTools();
+    await state.loadTools();
+    expect(requests.mock.calls).toEqual([
+      ['/api/toolbox/tools', { timeout: 20 }],
+      ['/api/toolbox/tools', { timeout: 20 }],
+    ]);
+    expect(state.tools.value).toEqual([tool]);
+  });
+
+  it('labels deleted tools', async () => {
+    requests.mockResolvedValueOnce(response({ items: [tool] }));
+    await state.loadTools();
+    expect(state.toolLabel(tool.id)).toBe(tool.name);
+
+    requests.mockResolvedValueOnce(response({ items: [] }));
+    await state.loadTools();
+    expect(state.toolLabel(tool.id)).toBe('42');
+  });
+
   it('loads shared collection', async () => {
     state.upsert(job());
     const snapshot = Promise.withResolvers<Response>();
@@ -175,7 +198,7 @@ describe('shared toolbox', () => {
       payload: { detail: [{ loc: ['extra', 'options', 'mode'], msg: 'Choose a mode' }] },
     });
     requests.mockRejectedValueOnce(invalid);
-    expect(await submission.run(() => state.createJob('remux', 'shows/episode.mp4'))).toBeNull();
+    expect(await submission.run(() => state.createJob(1, 'shows/episode.mp4'))).toBeNull();
     expect(submission.fields.value).toEqual({ mode: 'Choose a mode' });
     expect(otherForm.message.value).toBe('');
     requests.mockRejectedValueOnce(new Error('Job not found'));
@@ -197,11 +220,11 @@ describe('shared toolbox', () => {
   it('creates typed payload', async () => {
     const options = { enabled: false, count: 0, title: '', mode: 'copy', gain: null };
     const draft = { ...options, optional: undefined };
-    const saved = job({ extra: { overwrite_source: false, options } });
+    const saved = job({ tool: tool.id, extra: { overwrite_source: false, options } });
     requests.mockResolvedValueOnce(response(saved, 202));
-    expect(await state.createJob('remux', saved.file, false, draft)).toEqual(saved);
+    expect(await state.createJob(tool.id, saved.file, false, draft)).toEqual(saved);
     expect(JSON.parse(String(requests.mock.calls[0]?.[1]?.body))).toEqual({
-      tool: 'remux',
+      tool: 42,
       file: saved.file,
       extra: { overwrite_source: false, options },
     });
@@ -216,7 +239,7 @@ describe('shared toolbox', () => {
 
   it('never retries creation', async () => {
     requests.mockRejectedValueOnce(new Error('Response lost'));
-    await expect(state.createJob('remux', 'shows/episode.mp4')).rejects.toThrow('Response lost');
+    await expect(state.createJob(1, 'shows/episode.mp4')).rejects.toThrow('Response lost');
     expect(requests).toHaveBeenCalledTimes(1);
     expect(requests.mock.calls[0]?.[1]?.method).toBe('POST');
   });

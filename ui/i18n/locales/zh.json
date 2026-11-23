@@ -2,7 +2,16 @@
   "toolbox": {
     "title": "工具箱",
     "description": "对文件执行自定义操作。",
-    "unsupportedOptions": "此表单无法编辑以下选项：{fields}。"
+    "unsupportedOptions": "此表单无法编辑以下选项：{fields}。",
+    "jobs": "作业",
+    "outputExtension": "输出文件扩展名",
+    "allowOverwrite": "允许覆盖源文件",
+    "executable": "可执行程序",
+    "environment": "环境变量",
+    "parameters": "参数",
+    "choices": "选项",
+    "minimum": "最小值",
+    "maximum": "最大值"
   },
   "auth": {
     "setupHeading": "创建账户",
@@ -1303,6 +1312,11 @@
         "title": "媒体处理器",
         "navLabel": "媒体处理器",
         "description": "为每次下载选择并配置处理器。"
+      },
+      "toolbox": {
+        "title": "工具箱中的自定义工具",
+        "navLabel": "工具箱",
+        "description": "配置用于处理下载文件夹中文件的命令。"
       },
       "faq": {
         "title": "FAQ",
