@@ -183,7 +183,7 @@ async def _abort_spawn(task: asyncio.Task[Process]) -> None:
     await _stop_acquired(proc)
 
 
-async def spawn(binary: str, args: list[str]) -> Process:
+async def spawn(binary: str, args: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None) -> Process:
     if len(_running) >= MAX_PROCESSES:
         msg = "Media preparation is busy."
         raise PreparationBusyError(msg)
@@ -197,6 +197,8 @@ async def spawn(binary: str, args: list[str]) -> Process:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            cwd=cwd,
+            env=env,
         )
     )
     try:

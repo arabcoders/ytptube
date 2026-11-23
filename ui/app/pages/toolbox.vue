@@ -1,28 +1,42 @@
 <template>
   <main class="w-full min-w-0 max-w-full space-y-6">
     <PageHeader v-bind="pageShell">
-      <template #actions>
+      <template v-if="canManage" #actions>
         <UButton
+          v-if="items.length"
           color="neutral"
           :variant="showFilter ? 'soft' : 'outline'"
           size="sm"
           icon="i-lucide-filter"
-          @click="showFilter = !showFilter"
+          @click="toggleFilter"
         >
-          {{ t('common.filter') }}
+          <span>{{ t('common.filter') }}</span>
         </UButton>
         <UButton
+          color="primary"
+          variant="solid"
+          size="sm"
+          icon="i-lucide-plus"
+          :disabled="busy || loading"
+          @click="openEditor()"
+        >
+          <span>{{ t('common.add') }}</span>
+        </UButton>
+        <UButton
+          v-if="items.length || error"
           color="neutral"
           variant="outline"
           size="sm"
           icon="i-lucide-refresh-cw"
-          :loading="isLoading"
-          :disabled="isLoading || bulkBusy"
-          @click="refresh"
-          >{{ t('common.refresh') }}</UButton
+          :loading="loading"
+          :disabled="loading || busy"
+          @click="() => load()"
         >
+          <span>{{ t('common.refresh') }}</span>
+        </UButton>
         <UInput
-          v-if="showFilter"
+          v-if="showFilter && items.length"
+          ref="filterInput"
           v-model="query"
           type="search"
           :placeholder="t('common.filterDisplayedContent')"
@@ -34,457 +48,497 @@
       </template>
     </PageHeader>
 
-    <div
-      v-if="jobs.length > 0 || pagination.total_pages > 1"
-      class="flex flex-wrap items-center justify-between gap-3"
-    >
-      <div class="flex flex-wrap items-center gap-2">
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          :icon="allSelected ? 'i-lucide-square-check-big' : 'i-lucide-square'"
-          :disabled="!visibleIds.length || isLoading || bulkBusy"
-          @click="toggleSelection"
-        >
-          {{ allSelected ? t('common.unselect') : t('common.select') }}
-        </UButton>
-
-        <UBadge v-if="selectedIds.length" color="error" variant="soft" size="sm">
-          {{ selectedIds.length }}
-        </UBadge>
-
-        <UDropdownMenu :items="bulkActions" :modal="false">
+    <UAlert v-if="!canManage" color="warning" variant="soft" :title="t('errors.UNAUTHORIZED')" />
+    <section v-else :aria-label="t('toolbox.title')" :aria-busy="loading" class="space-y-4">
+      <div
+        v-if="!loading && filtered.length > 0"
+        class="flex flex-wrap items-center justify-between gap-3"
+      >
+        <div class="flex flex-wrap items-center gap-2">
           <UButton
             color="neutral"
             variant="outline"
             size="sm"
-            icon="i-lucide-list"
-            trailing-icon="i-lucide-chevron-down"
-            :loading="bulkBusy"
-            :disabled="isLoading || bulkBusy"
+            :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+            :disabled="busy || loading"
+            @click="selected = allSelected ? [] : filtered.map((item) => item.id)"
           >
-            {{ t('common.actions') }}
+            {{ allSelected ? t('common.unselect') : t('common.select') }}
           </UButton>
-        </UDropdownMenu>
-      </div>
-
-      <div v-if="pagination.total_pages > 1" class="ms-auto max-w-full">
-        <UPagination
-          :page="pagination.page"
-          :total="pagination.total"
-          :items-per-page="pagination.per_page"
-          :disabled="isLoading || bulkBusy"
-          show-edges
-          :sibling-count="0"
-          size="sm"
-          @update:page="loadPage"
-        />
-      </div>
-    </div>
-
-    <UAlert v-if="lastError" color="error" variant="soft" :title="lastError" />
-    <UAlert
-      v-if="isLoading && jobs.length === 0"
-      color="info"
-      variant="soft"
-      icon="i-lucide-loader-circle"
-      :title="t('common.loading')"
-      :ui="{ icon: 'animate-spin' }"
-    />
-    <UEmpty
-      v-else-if="query && jobs.length > 0 && filteredJobs.length === 0"
-      size="sm"
-      icon="i-lucide-search"
-      :title="t('common.noResults')"
-      :description="t('common.noResultsFor', { query })"
-    />
-    <UEmpty
-      v-else-if="!lastError && jobs.length === 0"
-      :icon="pageShell.icon"
-      :title="t('common.noItems')"
-      :description="t('common.empty')"
-      size="sm"
-    />
-    <div v-if="filteredJobs.length" class="ytp-card divide-y divide-default">
-      <article
-        v-for="job in filteredJobs"
-        :key="job.id"
-        :aria-labelledby="`toolbox-job-${job.id}`"
-        class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_22rem_auto]"
-      >
-        <div class="flex min-w-0 items-start gap-3">
-          <UCheckbox
-            :id="`checkbox-${job.id}`"
-            color="primary"
-            class="mt-0.5 shrink-0"
-            :model-value="selectedIds.includes(job.id)"
-            :aria-label="`${t('common.select')}: ${basename(job.file)}`"
-            :disabled="isLoading || bulkBusy || inProgressIds.has(job.id)"
-            @click.capture="rangeSelection.handleClick"
-            @keydown.capture="rangeSelection.handleKeydown"
-            @update:model-value="selectJob(job.id, $event)"
-          />
-          <div class="min-w-0 space-y-1">
-            <h2 :id="`toolbox-job-${job.id}`" class="text-sm font-semibold text-highlighted">
-              <NuxtLink
-                :to="jobUrl(job.id)"
-                class="wrap-anywhere hover:text-primary hover:underline"
-                dir="auto"
-              >
-                {{ basename(job.file) }}
-              </NuxtLink>
-            </h2>
-            <p class="wrap-anywhere whitespace-pre-wrap font-mono text-xs text-toned" dir="ltr">
-              {{ job.file }}
-            </p>
-          </div>
-        </div>
-
-        <dl
-          class="col-span-2 grid gap-3 text-sm sm:grid-cols-3 xl:col-span-1 xl:col-start-2 xl:row-start-1"
-        >
-          <div class="min-w-0 space-y-1">
-            <dt class="text-xs text-muted">{{ t('common.operation') }}</dt>
-            <dd class="wrap-anywhere">{{ toolLabel(job.tool) }}</dd>
-          </div>
-          <div class="min-w-0 space-y-1">
-            <dt class="text-xs text-muted">{{ t('common.status') }}</dt>
-            <dd>
-              <span class="inline-flex items-center gap-1.5 text-toned">
-                <UIcon
-                  :name="toolboxStatusIcon(job.status)"
-                  class="size-3.5 shrink-0"
-                  :class="[
-                    toolboxStatusClass(job.status),
-                    job.status === 'running' ? 'animate-spin' : '',
-                  ]"
-                  aria-hidden="true"
-                />
-                {{ toolboxStatusLabel(job.status, t) }}
-              </span>
-            </dd>
-          </div>
-          <div class="min-w-0 space-y-1">
-            <dt class="text-xs text-muted">{{ t('common.date') }}</dt>
-            <dd>
-              <UTooltip :text="formatDateTime(job.created_at, locale, { seconds: true })">
-                <time
-                  :datetime="job.created_at"
-                  :data-datetime="job.created_at"
-                  v-rtime="job.created_at"
-                />
-              </UTooltip>
-            </dd>
-          </div>
-        </dl>
-
-        <div class="col-start-2 row-start-1 flex justify-end xl:col-start-3">
-          <UDropdownMenu :items="itemActions(job)" :modal="false" :content="{ align: 'end' }">
+          <UBadge v-if="selected.length" color="error" variant="soft" size="sm">
+            {{ selected.length }}
+          </UBadge>
+          <UDropdownMenu :items="bulkActions" :modal="false">
             <UButton
               color="neutral"
-              variant="ghost"
+              variant="outline"
               size="sm"
-              icon="i-lucide-ellipsis"
-              square
-              :aria-label="`${t('common.actions')}: ${basename(job.file)}`"
-              :loading="inProgressIds.has(job.id)"
-              :disabled="bulkBusy || inProgressIds.has(job.id)"
-            />
+              icon="i-lucide-list"
+              trailing-icon="i-lucide-chevron-down"
+              :disabled="busy || loading"
+            >
+              {{ t('common.actions') }}
+            </UButton>
           </UDropdownMenu>
         </div>
 
-        <div v-if="job.status === 'running'" class="col-span-2 xl:col-span-3">
-          <div
-            class="queue-progress"
-            role="progressbar"
-            :aria-label="t('queue.progress')"
-            :aria-valuenow="job.progress ?? undefined"
-            :aria-valuemin="0"
-            :aria-valuemax="100"
-          >
-            <div
-              class="queue-progress__bar bg-success/35"
-              :class="job.progress === null ? 'w-1/3 animate-pulse' : ''"
-              :style="job.progress !== null ? { width: `${job.progress}%` } : undefined"
-            />
-            <div class="queue-progress__label">
-              <UIcon name="i-lucide-loader-circle" class="me-1 size-4 animate-spin" />
-              <span>{{
-                job.progress === null
-                  ? toolboxStatusLabel(job.status, t)
-                  : `${Math.round(job.progress)}%`
-              }}</span>
+        <UPagination
+          v-if="paging && paging.total_pages > 1"
+          :page="paging.page"
+          :total="paging.total"
+          :items-per-page="paging.per_page"
+          :disabled="busy || loading"
+          show-edges
+          :sibling-count="0"
+          size="sm"
+          @update:page="load"
+        />
+      </div>
+
+      <div v-if="filtered.length > 0" class="ytp-card divide-y divide-default">
+        <article v-for="item in filtered" :key="item.id" class="min-w-0 w-full max-w-full">
+          <div class="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.5fr)_auto]">
+            <div class="min-w-0">
+              <div class="flex min-w-0 items-start justify-between gap-3">
+                <div class="min-w-0 flex-1 space-y-2">
+                  <h2 class="min-w-0">
+                    <button
+                      type="button"
+                      class="min-w-0 flex-1 text-start text-base font-semibold text-highlighted"
+                      :aria-expanded="isExpanded(item.id, 'title')"
+                      @click="toggleExpand(item.id, 'title')"
+                    >
+                      <span :class="['block', expandClass(item.id, 'title')]">{{ item.name }}</span>
+                    </button>
+                  </h2>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                  <UCheckbox
+                    color="primary"
+                    :model-value="selected.includes(item.id)"
+                    :aria-label="`${t('common.select')}: ${item.name}`"
+                    :disabled="busy || loading"
+                    @update:model-value="selected = setSelected(selected, item.id, $event)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="min-w-0 space-y-4">
+              <div class="space-y-2 text-sm text-default">
+                <dl v-if="item.description" class="grid min-w-0 gap-x-6 gap-y-3 sm:grid-cols-2">
+                  <div class="min-w-0 space-y-1 sm:col-span-2">
+                    <dt class="flex items-center gap-1.5 text-xs text-muted">
+                      <UIcon
+                        name="i-lucide-message-square-text"
+                        class="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t('common.description') }}
+                    </dt>
+                    <dd class="min-w-0">
+                      <button
+                        type="button"
+                        class="block w-full text-start text-default"
+                        :aria-expanded="isExpanded(item.id, 'description')"
+                        @click="toggleExpand(item.id, 'description')"
+                      >
+                        <span :class="['block', expandClass(item.id, 'description')]">{{
+                          item.description
+                        }}</span>
+                      </button>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            <div class="flex justify-end self-start">
+              <div class="flex shrink-0 items-center gap-1.5">
+                <UTooltip :text="t('common.edit')">
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    size="sm"
+                    icon="i-lucide-pencil"
+                    :aria-label="t('common.editTitle', { name: item.name })"
+                    :disabled="busy || loading"
+                    @click="openEditor(item)"
+                  >
+                    <span>{{ t('common.edit') }}</span>
+                  </UButton>
+                </UTooltip>
+                <UDropdownMenu
+                  :items="itemActions(item)"
+                  :modal="false"
+                  :content="{ align: 'end' }"
+                >
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    icon="i-lucide-ellipsis"
+                    square
+                    :aria-label="`${t('common.actions')}: ${item.name}`"
+                    :disabled="busy || loading"
+                  />
+                </UDropdownMenu>
+              </div>
             </div>
           </div>
-        </div>
-        <div
-          v-if="job.error || showMessage(job)"
-          class="col-span-2 space-y-2 border-t border-default pt-3 xl:col-span-3"
-        >
-          <button
-            v-if="job.error"
-            type="button"
-            :class="messageClass(job.id, 'error')"
-            :aria-expanded="isExpanded(job.id, 'error')"
-            @click="toggleExpand(job.id, 'error')"
-          >
-            {{ job.error }}
-          </button>
-          <button
-            v-if="showMessage(job)"
-            type="button"
-            :class="messageClass(job.id, 'message')"
-            :aria-expanded="isExpanded(job.id, 'message')"
-            @click="toggleExpand(job.id, 'message')"
-          >
-            {{ job.message }}
-          </button>
-        </div>
-      </article>
-    </div>
-    <div v-if="pagination.total_pages > 1" class="flex justify-end">
-      <UPagination
-        :page="pagination.page"
-        :total="pagination.total"
-        :items-per-page="pagination.per_page"
-        :disabled="isLoading || bulkBusy"
-        show-edges
-        :sibling-count="0"
-        size="sm"
-        @update:page="loadPage"
+        </article>
+      </div>
+
+      <UAlert v-if="error" color="error" variant="soft" :title="error" />
+      <UAlert
+        v-if="loading"
+        color="info"
+        variant="soft"
+        icon="i-lucide-loader-circle"
+        :title="t('common.loading')"
+        :ui="{ icon: 'animate-spin' }"
       />
-    </div>
-    <ToolboxJobModal v-if="jobId" :id="jobId" @close="closeJob" />
+      <UEmpty
+        v-else-if="query && items.length && !filtered.length"
+        size="sm"
+        icon="i-lucide-search"
+        :title="t('common.noResults')"
+        :description="t('common.noResultsFor', { query })"
+      />
+      <UEmpty
+        v-else-if="!error && !items.length"
+        icon="i-lucide-wrench"
+        :title="t('common.noItems')"
+        :description="t('common.empty')"
+        size="sm"
+      />
+
+      <div
+        v-if="filtered.length > 0 && !query && paging && paging.total_pages > 1"
+        class="flex justify-end"
+      >
+        <UPagination
+          :page="paging.page"
+          :total="paging.total"
+          :items-per-page="paging.per_page"
+          :disabled="busy || loading"
+          show-edges
+          :sibling-count="0"
+          @update:page="load"
+          size="sm"
+        />
+      </div>
+
+      <UModal
+        v-if="editorOpen"
+        :open="editorOpen"
+        :title="editorTitle"
+        :description="editorDescription"
+        :dismissible="!submitting && !editorLoading"
+        :ui="{ content: 'w-full sm:max-w-6xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
+        @update:open="closeEditor"
+      >
+        <template #body>
+          <FormSubmitError :message="submission.message.value" @dismiss="submission.clear" />
+          <UAlert
+            v-if="editorLoading"
+            color="info"
+            variant="soft"
+            icon="i-lucide-loader-circle"
+            :title="t('common.loading')"
+            :ui="{ icon: 'animate-spin' }"
+          />
+          <ToolboxDefinitionForm
+            v-else-if="!editorItem || definition"
+            :definition="definition"
+            :submitting="submitting"
+            :errors="fieldErrors"
+            @dirty-change="dirty = $event"
+            @valid-change="valid = $event"
+            @submit="saveDefinition"
+          />
+        </template>
+
+        <template #footer>
+          <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-x"
+              :disabled="submitting || editorLoading"
+              class="justify-center"
+              @click="closeEditor(false)"
+            >
+              {{ t('common.cancel') }}
+            </UButton>
+            <UButton
+              type="submit"
+              form="toolboxDefinitionForm"
+              color="primary"
+              icon="i-lucide-save"
+              :disabled="!valid || submitting"
+              :loading="submitting"
+              class="justify-center"
+            >
+              {{ t('common.save') }}
+            </UButton>
+          </div>
+        </template>
+      </UModal>
+    </section>
   </main>
 </template>
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
-import ToolboxJobModal from '~/components/ToolboxJobModal.vue';
-import { useAppSocket } from '~/composables/useAppSocket';
-import { useExpandableMeta } from '~/composables/useExpandableMeta';
+import { useAuth } from '~/composables/useAuth';
+import { useDialog } from '~/composables/useDialog';
 import { usePageShell } from '~/composables/usePageShell';
-import { useRangeSelection } from '~/composables/useRangeSelection';
-import { useToolbox } from '~/composables/useToolbox';
-import type { WSEP } from '~/types/sockets';
-import type { ToolboxJob } from '~/types/toolbox';
-import { basename, formatPageTitle } from '~/utils';
-import { formatDateTime } from '~/utils/date';
+import { useToolboxDefinitions } from '~/composables/useToolboxDefinitions';
+import type { Pagination } from '~/types/responses';
+import type {
+  ToolboxDefinition,
+  ToolboxDefinitionPayload,
+  ToolboxDefinitionSummary,
+} from '~/types/toolbox';
+import { copyText, formatPageTitle, to_api_error } from '~/utils';
 import { setSelected } from '~/utils/selection';
-import {
-  isToolboxActive,
-  toolboxShowMessage,
-  toolboxStatusClass,
-  toolboxStatusIcon,
-  toolboxStatusLabel,
-} from '~/utils/toolbox';
+import { exportToolboxDefinition } from '~/utils/toolboxDefinitions';
 
-const { t, locale } = useI18n();
-const route = useRoute();
-const router = useRouter();
-const dialog = useDialog();
-const socket = useAppSocket();
+const { t } = useI18n();
 const pageShell = usePageShell('toolbox');
-const {
-  tools,
-  jobs,
-  pagination,
-  isLoading,
-  inProgressIds,
-  lastError,
-  loadTools,
-  loadJobs,
-  cancelJob,
-  deleteJob,
-  upsert,
-} = useToolbox();
-const { toggleExpand, isExpanded } = useExpandableMeta();
-const query = ref('');
+const { status } = useAuth();
+const canManage = computed(() => status.value?.disabled === false && status.value.authenticated);
+const notification = useNotification();
+const { confirmDialog } = useDialog();
+const { toggleExpand, expandClass, isExpanded } = useExpandableMeta();
+const { list, get, save, remove } = useToolboxDefinitions();
+const items = ref<ToolboxDefinitionSummary[]>([]);
+const paging = ref<Pagination | null>(null);
+const error = ref('');
+const loading = ref(false);
+const busy = ref(false);
+const selected = ref<number[]>([]);
 const showFilter = ref(false);
-const selectedIds = ref<number[]>([]);
-const bulkBusy = ref(false);
-const jobId = computed(() => {
-  if (typeof route.query.job !== 'string') return null;
-  const id = Number(route.query.job);
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-});
-let disposed = false;
-const toolLabel = (id: string): string => tools.value.find((item) => item.id === id)?.name ?? id;
-const filteredJobs = computed(() => {
+const query = ref('');
+const filterInput = useTemplateRef<{ inputRef?: HTMLInputElement }>('filterInput');
+const toggleFilter = async (): Promise<void> => {
+  showFilter.value = !showFilter.value;
+  if (!showFilter.value) {
+    query.value = '';
+    return;
+  }
+  await nextTick();
+  filterInput.value?.inputRef?.focus({ preventScroll: true });
+};
+const filtered = computed(() => {
   const search = query.value.trim().toLocaleLowerCase();
-  if (!search) return jobs.value;
-  return jobs.value.filter((job) =>
-    [job.file, toolLabel(job.tool), toolboxStatusLabel(job.status, t)].some((value) =>
-      value.toLocaleLowerCase().includes(search),
-    ),
+  if (!search) return items.value;
+  return items.value.filter((item) =>
+    [item.name, item.description].some((text) => text.toLocaleLowerCase().includes(search)),
   );
 });
-const visibleIds = computed(() => filteredJobs.value.map((job) => job.id));
-const rangeSelection = useRangeSelection(selectedIds, visibleIds);
-const selectJob = (id: number, checked: boolean | 'indeterminate'): void => {
-  selectedIds.value = setSelected(selectedIds.value, id, checked);
-  rangeSelection.handleChange(id, new Event('change'));
-};
 const allSelected = computed(
   () =>
-    visibleIds.value.length > 0 && visibleIds.value.every((id) => selectedIds.value.includes(id)),
+    filtered.value.length > 0 && filtered.value.every((item) => selected.value.includes(item.id)),
 );
-const selectedJobs = computed(() =>
-  filteredJobs.value.filter(
-    (job) => selectedIds.value.includes(job.id) && !inProgressIds.value.has(job.id),
-  ),
-);
-const activeJobs = computed(() => selectedJobs.value.filter(isToolboxActive));
-const terminalJobs = computed(() => selectedJobs.value.filter((job) => !isToolboxActive(job)));
-const bulkActions = computed<DropdownMenuItem[][]>(() => [
-  [
-    {
-      label: t('common.cancel'),
-      icon: 'i-lucide-square',
-      disabled: !activeJobs.value.length || bulkBusy.value || isLoading.value,
-      onSelect: () => void cancelSelected(),
-    },
-    {
-      label: t('common.deleteSelected'),
-      icon: 'i-lucide-trash',
-      disabled: !terminalJobs.value.length || bulkBusy.value || isLoading.value,
-      onSelect: () => void deleteSelected(),
-    },
-  ],
-]);
-
-const itemActions = (job: ToolboxJob): DropdownMenuItem[][] => [
-  [
-    isToolboxActive(job)
-      ? {
-          label: t('common.cancel'),
-          icon: 'i-lucide-square',
-          onSelect: () => void cancel(job),
-        }
-      : {
-          label: t('common.delete'),
-          icon: 'i-lucide-trash',
-          color: 'error',
-          onSelect: () => void remove(job),
-        },
-  ],
-];
-
-watch(showFilter, (visible) => {
-  if (!visible) query.value = '';
+watch(filtered, (items) => {
+  const visible = new Set(items.map((item) => item.id));
+  selected.value = selected.value.filter((id) => visible.has(id));
 });
-watch(
-  visibleIds,
-  (ids) => {
-    const visible = new Set(ids);
-    selectedIds.value = selectedIds.value.filter((id) => visible.has(id));
-  },
-  { flush: 'sync' },
-);
 
-const toggleSelection = (): void => {
-  selectedIds.value = allSelected.value ? [] : [...visibleIds.value];
-  rangeSelection.reset();
-};
-const loadPage = async (page: number): Promise<void> => {
-  selectedIds.value = [];
-  rangeSelection.reset();
-  await loadJobs(page);
-};
-const refresh = async (): Promise<void> => {
-  await Promise.all([loadTools(), loadJobs()]);
-};
-const onJob = (event: WSEP['toolbox_job']): void => upsert(event.data);
-const reloadJobs = async (): Promise<void> => {
-  await loadJobs(
-    jobs.value.length === 0 ? Math.max(1, pagination.value.page - 1) : pagination.value.page,
+const submission = useFormSubmit();
+const fieldErrors = computed(() => {
+  const detail = submission.error.value?.payload?.detail;
+  if (!Array.isArray(detail)) return {};
+  return Object.fromEntries(
+    detail.flatMap(({ loc, msg }) => (loc?.length === 1 && msg ? [[String(loc[0]), msg]] : [])),
   );
-};
-const showMessage = (job: ToolboxJob): boolean => toolboxShowMessage(job, t);
-const messageClass = (id: number, field: 'error' | 'message'): string[] => [
-  'block w-full cursor-pointer text-start text-sm [overflow-wrap:anywhere]',
-  field === 'error' ? 'text-error' : 'text-toned',
-  isExpanded(id, field) ? 'whitespace-pre-wrap break-words' : 'line-clamp-2 break-words',
-];
-const jobUrl = (id: number) => ({
-  path: route.path,
-  query: { ...route.query, job: id },
-  hash: route.hash,
 });
-const closeJob = async (): Promise<void> => {
-  if (disposed || !('job' in route.query)) return;
-  await router.replace({
-    path: route.path,
-    query: { ...route.query, job: undefined },
-    hash: route.hash,
-  });
+const editorOpen = ref(false);
+const editorItem = ref<ToolboxDefinitionSummary>();
+const definition = ref<ToolboxDefinition | null>(null);
+const editorLoading = ref(false);
+const submitting = ref(false);
+const dirty = ref(false);
+const valid = ref(false);
+const editorTitle = computed(() =>
+  editorItem.value ? t('common.editTitle', { name: editorItem.value.name }) : t('common.add'),
+);
+const editorDescription = computed(() => {
+  if (editorLoading.value) return t('common.loadingData');
+  return t(editorItem.value ? 'common.updateDescription' : 'common.createDescription');
+});
+const guard = useDirtyCloseGuard(editorOpen, { dirty, preferenceKey: 'toolbox-definitions' });
+let disposed = false;
+onScopeDispose(() => {
+  disposed = true;
+});
+
+const closeEditor = (value: boolean): void => {
+  if (!value && !submitting.value && !editorLoading.value) void guard.requestClose();
 };
-const remove = async (job: ToolboxJob): Promise<void> => {
-  if (disposed || bulkBusy.value || inProgressIds.value.has(job.id)) return;
-  const result = await dialog.confirmDialog({
-    title: t('common.delete'),
-    message: t('common.deleteNamedConfirm', { name: basename(job.file) }),
-    confirmText: t('common.delete'),
-  });
-  if (!result.status || disposed) return;
-  const deleted = await deleteJob(job);
-  if (disposed) return;
-  if (deleted && jobId.value === job.id) await closeJob();
-  await reloadJobs();
-};
-const cancel = async (job: ToolboxJob): Promise<void> => {
-  if (disposed || bulkBusy.value || inProgressIds.value.has(job.id)) return;
-  await cancelJob(job);
-  if (!disposed) await loadJobs();
-};
-const cancelSelected = async (): Promise<void> => {
-  if (disposed || bulkBusy.value || !activeJobs.value.length) return;
-  bulkBusy.value = true;
+
+watch(editorOpen, (open) => {
+  if (open) return;
+  submission.clear();
+  definition.value = null;
+  editorItem.value = undefined;
+  dirty.value = false;
+  valid.value = false;
+});
+
+const load = async (page = paging.value?.page ?? 1): Promise<void> => {
+  if (loading.value || disposed) return;
+  loading.value = true;
+  error.value = '';
   try {
-    for (const job of [...activeJobs.value]) {
-      if (disposed) return;
-      if (await cancelJob(job)) selectedIds.value = selectedIds.value.filter((id) => id !== job.id);
-    }
-    if (!disposed) await loadJobs();
+    const result = await list(page);
+    if (disposed) return;
+    items.value = result.items;
+    paging.value = result.pagination;
+  } catch (reason) {
+    if (!disposed) error.value = to_api_error(reason).message;
   } finally {
-    bulkBusy.value = false;
+    loading.value = false;
   }
 };
-const deleteSelected = async (): Promise<void> => {
-  if (disposed || bulkBusy.value || !terminalJobs.value.length) return;
-  const ids = new Set(terminalJobs.value.map((job) => job.id));
-  bulkBusy.value = true;
+
+const openEditor = async (item?: ToolboxDefinitionSummary): Promise<void> => {
+  if (busy.value || editorOpen.value) return;
+  editorItem.value = item;
+  editorLoading.value = Boolean(item);
+  editorOpen.value = true;
+  if (!item) return;
+
   try {
-    const result = await dialog.confirmDialog({
-      title: t('common.deleteSelected'),
-      message: t('common.deleteCountConfirm', { count: ids.size }),
+    const data = await get(item.id);
+    if (!disposed) definition.value = data;
+  } catch (reason) {
+    if (!disposed) submission.setError(reason);
+  } finally {
+    editorLoading.value = false;
+  }
+};
+
+const saveDefinition = async (draft: ToolboxDefinitionPayload): Promise<void> => {
+  if (submitting.value) return;
+  submitting.value = true;
+  const editingId = editorItem.value?.id;
+  const editing = editingId !== undefined;
+  try {
+    const saved = await submission.run(() => save(draft, editingId));
+    if (!saved) return;
+    if (!disposed) {
+      editorOpen.value = false;
+      notification.success(
+        t(editing ? 'common.crudUpdated' : 'common.crudCreated', {
+          type: t('common.operation'),
+          name: saved.name,
+        }),
+      );
+    }
+    await load(editing ? paging.value?.page : 1);
+  } finally {
+    submitting.value = false;
+  }
+};
+
+const deleteItems = async (targets: ToolboxDefinitionSummary[], bulk = false): Promise<void> => {
+  if (busy.value || !targets.length) return;
+  busy.value = true;
+  try {
+    const result = await confirmDialog({
+      title: t(bulk ? 'common.deleteSelected' : 'common.delete'),
+      message: bulk
+        ? `${t('common.deleteCountConfirm', { count: targets.length })}\n\n${targets
+            .map(({ id, name }) => `${id}: ${name}`)
+            .join('\n')}`
+        : t('common.deleteNamedConfirm', { name: targets[0]?.name }),
       confirmText: t('common.delete'),
       confirmColor: 'error',
     });
     if (!result.status || disposed) return;
-    const deleted = new Set<number>();
-    for (const job of terminalJobs.value.filter((job) => ids.has(job.id))) {
-      if (disposed) return;
-      if (await deleteJob(job)) deleted.add(job.id);
+
+    let removed = 0;
+    for (const { id } of targets) {
+      if (disposed) break;
+      try {
+        await remove(id);
+        removed++;
+        selected.value = selected.value.filter((value) => value !== id);
+      } catch (reason) {
+        if (!disposed) notification.error(to_api_error(reason).message);
+      }
     }
-    if (disposed) return;
-    selectedIds.value = selectedIds.value.filter((id) => !deleted.has(id));
-    if (jobId.value !== null && deleted.has(jobId.value)) await closeJob();
-    if (!disposed) await reloadJobs();
+
+    if (removed) {
+      if (!disposed) notification.success(t('common.crudDeleted', { type: t('common.operation') }));
+      const page = paging.value;
+      const last = page ? Math.max(1, Math.ceil((page.total - removed) / page.per_page)) : 1;
+      await load(Math.min(page?.page ?? 1, last));
+    }
   } finally {
-    bulkBusy.value = false;
+    busy.value = false;
   }
 };
+
+const exportItem = async (item: ToolboxDefinitionSummary): Promise<void> => {
+  if (busy.value) return;
+  busy.value = true;
+  try {
+    const detailed = await get(item.id);
+    if (disposed) return;
+    const exported = exportToolboxDefinition(detailed);
+    if (!exported) return;
+    copyText(exported);
+  } catch (reason) {
+    if (!disposed) notification.error(to_api_error(reason).message);
+  } finally {
+    busy.value = false;
+  }
+};
+
+const bulkActions = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: t('common.removeSelected'),
+      icon: 'i-lucide-trash',
+      disabled: !selected.value.length,
+      onSelect: () =>
+        void deleteItems(
+          filtered.value.filter((item) => selected.value.includes(item.id)),
+          true,
+        ),
+    },
+  ],
+]);
+
+const itemActions = (item: ToolboxDefinitionSummary): DropdownMenuItem[][] => [
+  [
+    {
+      label: t('common.exportItem'),
+      icon: 'i-lucide-file-up',
+      onSelect: () => void exportItem(item),
+    },
+  ],
+  [
+    {
+      label: t('common.delete'),
+      icon: 'i-lucide-trash',
+      color: 'error',
+      onSelect: () => void deleteItems([item]),
+    },
+  ],
+];
+
 useHead(() => ({ title: formatPageTitle(t('toolbox.title')) }));
-onMounted(() => {
-  socket.on('toolbox_job', onJob);
-  socket.on('connect', refresh);
-  void refresh();
-});
-onScopeDispose(() => {
-  disposed = true;
-  socket.off('toolbox_job', onJob);
-  socket.off('connect', refresh);
-});
+watch(
+  canManage,
+  (allowed) => {
+    if (allowed) void load();
+  },
+  { immediate: true },
+);
 </script>

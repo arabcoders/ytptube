@@ -90,6 +90,25 @@ describe('documentation navigation', () => {
 });
 
 describe('tools navigation', () => {
+  it('separates Toolbox and Jobs', () => {
+    const guest = { authenticated: false };
+    const admin = { authenticated: true };
+
+    for (const availability of [guest, admin]) {
+      expect(getActiveNavItem({ path: '/jobs' }, availability)).toMatchObject({
+        id: 'jobs',
+        section: 'tools',
+      });
+    }
+    expect(getActiveNavItem({ path: '/toolbox' }, guest)).toBeUndefined();
+    expect(getSearchNavItems(guest).some((entry) => entry.to === '/toolbox')).toBe(false);
+    expect(getSearchNavItems(admin).some((entry) => entry.to === '/toolbox')).toBe(true);
+    expect(
+      getSidebarSections(admin).find((section) => section.id === 'configuration')?.items,
+    ).toContainEqual(expect.objectContaining({ id: 'toolbox', to: '/toolbox' }));
+    expect(getActiveNavItem({ path: '/toolbox' }, admin)?.id).toBe('toolbox');
+  });
+
   it('routes limits page', () => {
     const limits = getNavItems().find((entry) => entry.id === 'limits');
 

@@ -566,7 +566,10 @@ describe('network and id helpers', () => {
   it('preserve_api_error_fields', async () => {
     const payload = {
       message: 'Validation failed.',
-      detail: [{ loc: ['body', 'timer'], msg: 'Timer is required.', type: 'value_error' }],
+      detail: [
+        { loc: ['body', 'timer'], msg: 'Timer is required.', type: 'value_error' },
+        { loc: [], msg: 'Two settings conflict.', type: 'value_error' },
+      ],
     };
     const response = {
       ok: false,
@@ -579,6 +582,9 @@ describe('network and id helpers', () => {
       throw new Error('Expected ensure_api_success to throw');
     } catch (error) {
       expect(error).toBeInstanceOf(utils.ApiError);
+      expect((error as Error).message).toBe(
+        'Validation failed. - timer: Timer is required., Two settings conflict.',
+      );
       expect((error as InstanceType<typeof utils.ApiError>).status).toBe(422);
       expect((error as InstanceType<typeof utils.ApiError>).fields).toEqual({
         timer: 'Timer is required.',

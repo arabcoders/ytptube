@@ -2,7 +2,16 @@
   "toolbox": {
     "title": "Toolbox",
     "description": "Custom operations to run on files.",
-    "unsupportedOptions": "This form cannot edit these options: {fields}."
+    "unsupportedOptions": "This form cannot edit these options: {fields}.",
+    "jobs": "Jobs",
+    "outputExtension": "Output extension",
+    "allowOverwrite": "Allow overwriting the source",
+    "executable": "Executable",
+    "environment": "Environment variables",
+    "parameters": "Parameters",
+    "choices": "Choices",
+    "minimum": "Minimum",
+    "maximum": "Maximum"
   },
   "auth": {
     "setupHeading": "Create your account",
@@ -1307,6 +1316,11 @@
         "title": "Media handlers",
         "navLabel": "Media handlers",
         "description": "Select and configure a handler for each download."
+      },
+      "toolbox": {
+        "title": "Custom Toolbox tools",
+        "navLabel": "Toolbox",
+        "description": "Configure commands that run on files in your download folder."
       },
       "faq": {
         "title": "FAQ",

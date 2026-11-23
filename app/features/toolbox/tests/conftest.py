@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import shutil
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
@@ -9,6 +10,7 @@ import pytest
 import pytest_asyncio
 
 from app.features.streaming.library.ffprobe import FFProbeResult
+from app.features.toolbox import service as toolbox_service
 from app.features.toolbox import tools
 from app.features.toolbox.schemas import TERMINAL, Job
 from app.features.toolbox.service import Toolbox
@@ -19,7 +21,6 @@ from app.tests.helpers import make_in_memory_db_path
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
-    from pathlib import Path
 
 
 @pytest_asyncio.fixture
@@ -27,6 +28,7 @@ async def toolbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncItera
     SqliteStore._reset_singleton()
     store = SqliteStore(db_path=make_in_memory_db_path("toolbox"))
     config = MagicMock(spec=Config)
+    config.config_path = str(tmp_path)
     config.download_path = str(tmp_path)
     config.default_pagination = 20
     work = tmp_path / "work"
@@ -35,8 +37,10 @@ async def toolbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncItera
     service = Toolbox(config=config)
     queue = Services.get_instance().get("queue")
     Services.get_instance().remove("queue")
-    monkeypatch.setattr(tools, "ffmpeg_bin", lambda: "ffmpeg")
-    monkeypatch.setattr(tools, "ffprobe", AsyncMock(return_value=FFProbeResult()))
+    monkeypatch.setattr(
+        tools, "which", lambda path: shutil.which(path) or ("ffmpeg" if path == Path("ffmpeg") else None)
+    )
+    monkeypatch.setattr(toolbox_service, "ffprobe", AsyncMock(return_value=FFProbeResult()))
     monkeypatch.setattr(service, "emit", lambda _: None)
     try:
         await asyncio.wait_for(service.start(), 5)

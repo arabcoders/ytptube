@@ -822,8 +822,8 @@ const parse_api_error = async (json: unknown): Promise<string> => {
   if (Array.isArray(payload.detail)) {
     const errors = payload.detail.map((err: any) => {
       if ('object' === typeof err && err.loc && err.msg) {
-        const field = Array.isArray(err.loc) ? err.loc[err.loc.length - 1] : 'unknown';
-        return `${field}: ${err.msg}`;
+        const field = Array.isArray(err.loc) ? err.loc.at(-1) : 'unknown';
+        return field === undefined ? String(err.msg) : `${field}: ${err.msg}`;
       }
       return String(err);
     });

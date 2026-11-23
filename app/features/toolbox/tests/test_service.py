@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import replace
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
@@ -10,8 +10,10 @@ import pytest
 from pydantic import ValidationError
 
 from app.features.toolbox import service, tools
+from app.features.toolbox.definitions import Definition
 from app.features.toolbox.schemas import Extra, Job, Result, Submission
 from app.features.toolbox.service import Context, Toolbox, ToolboxError
+from app.features.toolbox.tests import REMUX_ID, patch_tool
 from app.library.Services import Services
 from app.library.Events import EventBus, Events
 
@@ -21,7 +23,7 @@ from app.library.Events import EventBus, Events
 async def test_job_persistence(
     toolbox: Toolbox, source: Path, monkeypatch: pytest.MonkeyPatch, terminal, overwrite_source: bool
 ) -> None:
-    result = Result(outputs=[source.name if overwrite_source else f"{source.stem}.remux.mp4"])
+    result = Result(outputs=[source.name if overwrite_source else f"{source.stem}.tool-{REMUX_ID}.mp4"])
     emitted: list[Job] = []
     emit = toolbox.emit
 
@@ -31,9 +33,9 @@ async def test_job_persistence(
 
     monkeypatch.setattr(toolbox, "emit", publish)
     execute = AsyncMock(return_value=result)
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], execute=execute))
+    patch_tool(monkeypatch, execute=execute)
     accepted = await toolbox.submit(
-        Submission(tool="remux", file=source.name, extra=Extra(overwrite_source=overwrite_source))
+        Submission(tool=REMUX_ID, file=source.name, extra=Extra(overwrite_source=overwrite_source))
     )
     assert accepted.status == "queued"
     assert isinstance(accepted.id, int) and accepted.id > 0
@@ -54,11 +56,11 @@ async def test_job_persistence(
 @pytest.mark.asyncio
 async def test_dispatch_options(toolbox: Toolbox, source: Path) -> None:
     with pytest.raises(ToolboxError, match="Unknown"):
-        await toolbox.submit(Submission(tool="missing", file=source.name))
+        await toolbox.submit(Submission(tool=REMUX_ID + 1, file=source.name))
     with pytest.raises(ValidationError):
-        await toolbox.submit(Submission(tool="remux", file=source.name, extra=Extra(options={"overwrite": True})))
+        await toolbox.submit(Submission(tool=REMUX_ID, file=source.name, extra=Extra(options={"overwrite": True})))
     with pytest.raises(ValidationError):
-        Submission.model_validate({"tool": "remux", "file": source.name, "extra": {"overwrite_source": "false"}})
+        Submission.model_validate({"tool": REMUX_ID, "file": source.name, "extra": {"overwrite_source": "false"}})
 
 
 @pytest.mark.parametrize("overwrite_source", [True, False])
@@ -69,7 +71,7 @@ def test_socket_overwrite(
 
     job = Job(
         id=1,
-        tool="remux",
+        tool=REMUX_ID,
         file=source.name,
         extra=Extra(overwrite_source=overwrite_source),
         status="succeeded",
@@ -129,8 +131,8 @@ async def test_resolved_submission(
         contexts.append(ctx)
         return Result()
 
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], execute=execute))
-    accepted = await toolbox.submit(Submission(tool="remux", file=relative))
+    patch_tool(monkeypatch, execute=execute)
+    accepted = await toolbox.submit(Submission(tool=REMUX_ID, file=relative))
     assert accepted.status == "queued" and accepted.file == media.relative_to(source.parent).as_posix()
     assert (await terminal(accepted.id)).status == "succeeded"
     media.unlink()
@@ -147,6 +149,20 @@ def test_symlink_escape(toolbox: Toolbox, source: Path, tmp_path: Path) -> None:
     (tmp_path / "outside").symlink_to("/etc/passwd")
     with pytest.raises(ToolboxError):
         toolbox.source("outside")
+
+
+def test_resolved_confinement(toolbox: Toolbox, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    outside = tmp_path / "outside"
+    outside.write_bytes(b"not a download")
+    root = tmp_path / "downloads"
+    root.mkdir()
+    toolbox.config.download_path = str(root)
+    entry = root / "resolved.mkv"
+    entry.symlink_to(outside)
+    monkeypatch.setattr(service, "get_file", lambda *_: (entry, 302))
+    with pytest.raises(ToolboxError) as error:
+        toolbox.source("resolved.mkv")
+    assert error.value.code == "FILE_UNAVAILABLE"
 
 
 def test_active_file(toolbox: Toolbox, source: Path) -> None:
@@ -177,15 +193,17 @@ async def test_bounded_queue(toolbox: Toolbox, source: Path, monkeypatch: pytest
         await asyncio.wait_for(release.wait(), 5)
         return Result()
 
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], execute=execute))
-    first = await toolbox.submit(Submission(tool="remux", file=source.name))
+    patch_tool(monkeypatch, execute=execute)
+    first = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     try:
         await asyncio.wait_for(entered.wait(), 5)
-        waiting = [await toolbox.submit(Submission(tool="remux", file=source.name)) for _ in range(service.QUEUE_LIMIT)]
+        waiting = [
+            await toolbox.submit(Submission(tool=REMUX_ID, file=source.name)) for _ in range(service.QUEUE_LIMIT)
+        ]
         ids = [first.id, *(job.id for job in waiting)]
         assert len(set(ids)) == len(ids) and ids == sorted(ids)
         with pytest.raises(ToolboxError) as error:
-            await toolbox.submit(Submission(tool="remux", file=source.name))
+            await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
         assert error.value.status == 429 and count == 1
         with pytest.raises(ToolboxError) as error:
             await toolbox.delete(first.id)
@@ -213,11 +231,11 @@ async def test_queued_missing(toolbox: Toolbox, source: Path, monkeypatch: pytes
         await asyncio.wait_for(release.wait(), 5)
         return Result()
 
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], execute=execute))
-    first = await toolbox.submit(Submission(tool="remux", file=source.name))
+    patch_tool(monkeypatch, execute=execute)
+    first = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     try:
         await asyncio.wait_for(entered.wait(), 5)
-        second = await toolbox.submit(Submission(tool="remux", file=source.name))
+        second = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
         source.unlink()
         release.set()
         assert (await terminal(first.id)).status == "succeeded"
@@ -237,32 +255,30 @@ async def test_second_tool(
     stderr.feed_eof()
     proc = SimpleNamespace(stdout=stdout, stderr=stderr, wait=AsyncMock(return_value=code))
     release = AsyncMock()
-    monkeypatch.setattr(service.process, "spawn", AsyncMock(return_value=proc))
+
+    async def spawn(_binary: str, _args: list[str], *, cwd: Path, env: dict[str, str]):
+        output = Path(env["TB_OUT"])
+        assert output.parent == cwd
+        output.write_bytes(b"converted")
+        return proc
+
+    monkeypatch.setattr(service.process, "spawn", spawn)
     monkeypatch.setattr(service.process, "release", release)
-    monkeypatch.setattr(tools, "ffmpeg_bin", lambda: None)
+    which = tools.which
+    monkeypatch.setattr(tools, "which", lambda path: None if path == Path("ffmpeg") else which(path))
 
-    async def execute(ctx: Context) -> Result:
-        assert ctx.job.message == "Running"
-        temporary = ctx.workspace() / "output.webm"
-        temporary.write_bytes(b"converted")
-        await ctx.run("converter", [])
-        final = ctx.destination(".webm", ".converted")
-        await tools.publish(ctx, temporary, final)
-        return Result(outputs=[final.relative_to(ctx.root).as_posix()])
-
-    monkeypatch.setitem(
-        tools.TOOLS,
-        "convert",
-        tools.Tool(name="Convert", description="Convert media.", options=tools.RemuxOptions, execute=execute),
+    definition = await toolbox.definitions.create(
+        Definition(name="Convert", command=[sys.executable], output_extension=".webm")
     )
-    available = {item["id"]: item["available"] for item in toolbox.tools()}
-    assert available == {"remux": False, "convert": True}
-    job = await toolbox.submit(Submission(tool="convert", file=source.name, extra=Extra(overwrite_source=False)))
+    available = {item["id"]: item["available"] for item in await toolbox.tools()}
+    assert available == {REMUX_ID: False, definition.id: True}
+    job = await toolbox.submit(Submission(tool=definition.id, file=source.name, extra=Extra(overwrite_source=False)))
     job = await terminal(job.id)
     assert job.status == ("succeeded" if code == 0 else "failed")
     if code == 0:
-        assert job.result == Result(outputs=["video.converted.webm"])
-        assert source.with_name("video.converted.webm").read_bytes() == b"converted"
+        name = f"video.tool-{definition.id}.webm"
+        assert job.result == Result(outputs=[name])
+        assert source.with_name(name).read_bytes() == b"converted"
     else:
         assert job.error_code == "TOOL_FAILED" and job.error == "Operation failed. See the job log."
         assert job.log == "tool diagnostic\n" and job.result is None
@@ -278,7 +294,7 @@ async def test_restart_interruption(toolbox: Toolbox, source: Path) -> None:
     jobs = [
         await toolbox.repo.create(
             {
-                "tool": "remux",
+                "tool": REMUX_ID,
                 "file": source.name,
                 "extra": Extra(overwrite_source=status == "running").model_dump(),
                 "status": status,
@@ -310,10 +326,10 @@ async def test_shutdown_queue(toolbox: Toolbox, source: Path, monkeypatch: pytes
         return Result()
 
     folders: list[Path] = []
-    monkeypatch.setitem(tools.TOOLS, "remux", replace(tools.TOOLS["remux"], execute=execute))
-    first = await toolbox.submit(Submission(tool="remux", file=source.name))
+    patch_tool(monkeypatch, execute=execute)
+    first = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     await asyncio.wait_for(entered.wait(), 5)
-    second = await toolbox.submit(Submission(tool="remux", file=source.name))
+    second = await toolbox.submit(Submission(tool=REMUX_ID, file=source.name))
     await asyncio.wait_for(toolbox.shutdown(), 5)
     assert (await toolbox.get(first.id)).status == "interrupted"
     assert (await toolbox.get(second.id)).status == "interrupted"

@@ -23,7 +23,7 @@ type NavDefinition = {
   sidebarVisible?: boolean;
   searchable?: boolean;
   navbarTitle?: string;
-  requires?: 'file_logging' | 'console_enabled';
+  requires?: 'file_logging' | 'console_enabled' | 'authenticated';
 };
 
 export type NavItem = NavDefinition & {
@@ -49,6 +49,7 @@ type LocationPath = {
 type NavAvailability = {
   fileLogging?: boolean;
   consoleEnabled?: boolean;
+  authenticated?: boolean;
 };
 
 const SECTIONS: Array<NavSection> = [
@@ -134,6 +135,16 @@ const NavItems: Array<NavDefinition> = [
     matchPath: '/presets',
   },
   {
+    id: 'toolbox',
+    section: 'configuration',
+    group: 'configuration',
+    label: 'toolbox.title',
+    description: 'docs.entries.toolbox.description',
+    icon: 'i-lucide-wrench',
+    to: '/toolbox',
+    requires: 'authenticated',
+  },
+  {
     id: 'custom-fields',
     section: 'configuration',
     group: 'configuration',
@@ -179,13 +190,13 @@ const NavItems: Array<NavDefinition> = [
     requires: 'file_logging',
   },
   {
-    id: 'toolbox',
+    id: 'jobs',
     section: 'tools',
     group: 'tools',
-    label: 'toolbox.title',
+    label: 'toolbox.jobs',
     description: 'toolbox.description',
-    icon: 'i-lucide-wrench',
-    to: '/toolbox',
+    icon: 'i-lucide-list',
+    to: '/jobs',
   },
   {
     id: 'console',
@@ -290,6 +301,9 @@ const matchesAvailability = (entry: NavItem, options: NavAvailability): boolean 
 
     case 'console_enabled':
       return options.consoleEnabled === true;
+
+    case 'authenticated':
+      return options.authenticated === true;
 
     default:
       return true;

@@ -94,6 +94,11 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/file/download/{token}](#get-apifiledownloadtoken)
     - [GET /api/download/{filename}](#get-apidownloadfilename)
     - [GET /api/toolbox/tools](#get-apitoolboxtools)
+    - [GET /api/toolbox/definitions](#get-apitoolboxdefinitions)
+    - [GET /api/toolbox/definitions/{id}](#get-apitoolboxdefinitionsid)
+    - [POST /api/toolbox/definitions](#post-apitoolboxdefinitions)
+    - [PUT /api/toolbox/definitions/{id}](#put-apitoolboxdefinitionsid)
+    - [DELETE /api/toolbox/definitions/{id}](#delete-apitoolboxdefinitionsid)
     - [POST /api/toolbox/jobs](#post-apitoolboxjobs)
     - [GET /api/toolbox/jobs](#get-apitoolboxjobs)
     - [GET /api/toolbox/jobs/{id}](#get-apitoolboxjobsid)
@@ -2775,22 +2780,23 @@ with an appropriate HTTP status code.
 ---
 
 ### GET /api/toolbox/tools
-**Purpose**: List Toolbox tools and their availability.
+**Purpose**: List the tools available for Toolbox jobs.
 
 **Response**:
 ```json
 {
   "items": [
     {
-      "id": "remux",
+      "id": 1,
       "name": "Remux into MP4",
       "description": "Copy streams into MP4 without re-encoding.",
-      "available": true, // false when ffmpeg is not available
+      "available": true,
       "reason": null,
+      "supports_overwrite": true,
       "options_schema": {
         "additionalProperties": false,
         "properties": {},
-        "title": "RemuxOptions",
+        "title": "ToolboxOptions",
         "type": "object"
       }
     }
@@ -2804,29 +2810,162 @@ with an appropriate HTTP status code.
 
 ---
 
+### GET /api/toolbox/definitions
+**Purpose**: Retrieve custom Toolbox tool definitions.
+
+**Query Parameters**:
+- `page` (optional): Page number (1-indexed). Default: `1`.
+- `per_page` (optional): Items per page (`1` to `1000`). Omit to use the server's pagination default.
+- `include_defaults` (optional): When `true`, includes shipped tools in the results. Default: `false`.
+
+**Response**:
+```json
+{
+  "items": [
+    {
+      "id": 2,
+      "name": "Extract FLAC",
+      "description": "Save the first audio track as FLAC.",
+      "default": false
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 1,
+    "total_pages": 1,
+    "has_next": false,
+    "has_prev": false
+  }
+}
+```
+
+**Notes**:
+- `default: true` identifies a shipped tool that cannot be modified or deleted.
+- All `/api/toolbox/definitions` endpoints require authentication to be enabled and valid credentials.
+
+**Error Responses**:
+- `400 Bad Request` - Invalid pagination parameters.
+- `401 Unauthorized` - Missing or invalid credentials.
+- `403 Forbidden` - Authentication is disabled.
+
+---
+
+### GET /api/toolbox/definitions/{id}
+**Purpose**: Retrieve a Toolbox tool definition by ID.
+
+**Path Parameter**:
+- `id`: Tool ID.
+
+**Response**:
+```json
+{
+  "id": 2,
+  "name": "Extract FLAC",
+  "description": "Save the first audio track as FLAC.",
+  "output_extension": ".flac",
+  "supports_overwrite": false,
+  "command": ["ffmpeg", "-nostdin", "-n", "-i", "{input}", "-map", "0:a:0", "{output}"],
+  "env": {},
+  "params": {},
+  "default": false
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` - Invalid tool ID.
+- `404 Not Found` - Tool not found.
+
+---
+
+### POST /api/toolbox/definitions
+**Purpose**: Create a custom Toolbox tool.
+
+**Body**:
+```json
+{
+  "name": "Extract FLAC",
+  "description": "Save the first audio track as FLAC.",
+  "output_extension": ".flac",
+  "supports_overwrite": false,
+  "command": ["ffmpeg", "-nostdin", "-n", "-i", "{input}", "-map", "0:a:0", "{output}"],
+  "env": {},
+  "params": {}
+}
+```
+
+**Notes**:
+- `name`, `output_extension`, and a nonempty `command` array are required.
+- See the [Toolbox guide](docs/toolbox.md) for command arguments and parameters.
+
+**Response**: `201 Created` with the [tool definition](#get-apitoolboxdefinitionsid) and its generated ID.
+
+**Error Responses**:
+- `400 Bad Request` - Invalid request body or validation error.
+
+---
+
+### PUT /api/toolbox/definitions/{id}
+**Purpose**: Replace a custom Toolbox tool definition.
+
+**Path Parameter**:
+- `id`: Tool ID.
+
+**Body**: Full tool definition with the same fields as [POST /api/toolbox/definitions](#post-apitoolboxdefinitions).
+
+**Notes**:
+- Queued and running jobs keep the definition they were submitted with.
+
+**Response**: `200 OK` with the updated [tool definition](#get-apitoolboxdefinitionsid).
+
+**Error Responses**:
+- `400 Bad Request` - Invalid tool ID, invalid request body, or validation error.
+- `404 Not Found` - Tool not found.
+- `409 Conflict` - Shipped tools cannot be modified.
+
+---
+
+### DELETE /api/toolbox/definitions/{id}
+**Purpose**: Delete a custom Toolbox tool by ID.
+
+**Path Parameter**:
+- `id`: Tool ID.
+
+**Response**: `204 No Content`.
+
+**Notes**:
+- Deleting a tool does not remove its jobs or output files.
+
+**Error Responses**:
+- `400 Bad Request` - Invalid tool ID.
+- `404 Not Found` - Tool not found.
+- `409 Conflict` - Shipped tools cannot be deleted.
+
+---
+
 ### POST /api/toolbox/jobs
 **Purpose**: Queue a tool operation on a local file.
 
 **Body**:
 ```json
 {
-  "tool": "remux",
+  "tool": 1,
   "file": "shows/episode.mp4",
   "extra": { "overwrite_source": true, "options": {} }
 }
 ```
 
-- `tool`: Tool ID from [GET /api/toolbox/tools](#get-apitoolboxtools).
+- `tool`: Integer tool ID from [GET /api/toolbox/tools](#get-apitoolboxtools).
 - `file`: File path relative to `download_path`.
 - `extra`:
-  - `overwrite_source` is a boolean (default `true`).
+  - `overwrite_source` is a boolean. It defaults to `true` for tools that support overwrite. Other tools ignore it and save a separate file.
   - `options` is an object of tool-specific options (default `{}`) may be required depending on the tool.
 
 **Response**: `202 Accepted` with the job object:
 ```json
 {
   "id": 1,
-  "tool": "remux",
+  "tool": 1,
   "file": "shows/episode.mp4",
   "extra": { "overwrite_source": true, "options": {} },
   "status": "queued",
@@ -2847,7 +2986,7 @@ with an appropriate HTTP status code.
 - `message`: Current status text or `null`.
 - `result`: `{"outputs": [...]}` with paths relative to `download_path` on success.
 - `error`, `error_code`: Failure message and code, or `null`.
-- `log`: The last 16 KiB of diagnostic output.
+- `log`: The last 16 KiB of stderr.
 
 **Notes**:
 - Download the resulting files through [GET /api/download/{filename}](#get-apidownloadfilename).
