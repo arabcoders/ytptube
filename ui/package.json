@@ -22,12 +22,12 @@
   },
   "web-types": "./web-types.json",
   "dependencies": {
-    "@iconify-json/lucide": "^1.2.156",
+    "@iconify-json/lucide": "^1.2.157",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/eslint-config": "^1.17.0",
     "@nuxt/icon": "^2.6.3",
-    "@nuxt/ui": "^4.12.2",
+    "@nuxt/ui": "^4.13.0",
     "@nuxtjs/i18n": "^10.6.0",
     "@vueuse/core": "^14.4.0",
     "@vueuse/nuxt": "^14.4.0",
@@ -42,7 +42,7 @@
     "marked-gfm-heading-id": "^4.1.4",
     "nuxt": "^4.6.4",
     "tailwindcss": "^4.3.5",
-    "vue": "^3.5.45",
+    "vue": "^3.5.46",
     "vue-router": "^5.5.1"
   },
   "trustedDependencies": [
@@ -50,7 +50,7 @@
     "@parcel/watcher"
   ],
   "devDependencies": {
-    "@types/bun": "^1.4.4",
+    "@types/bun": "^1.4.5",
     "@types/node": "26.1.2",
     "@types/jsdom": "^28.0.3",
     "@typescript-eslint/parser": "^8.73.0",
