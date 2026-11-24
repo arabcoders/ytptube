@@ -1384,6 +1384,7 @@ Or select all matching history items:
 }
 ```
 **Notes**:
+- `count` is the number of items accepted for retry, not the number requeued.
 - The server logs each item ID, title, and URL before deleting the history records.
 
 ---
@@ -3109,7 +3110,8 @@ Binary image data with appropriate headers
       "template": "%(title)s.%(ext)s",
       "cookies": "...",
       "cli": "--write-subs --embed-subs",
-      "default": true
+      "default": true,
+      "max_workers": 0
     }
   ],
   "pagination": {
@@ -3147,7 +3149,8 @@ Binary image data with appropriate headers
   "template": "%(title)s.%(ext)s",
   "cookies": "...",
   "cli": "--write-subs --embed-subs",
-  "default": false
+  "default": false,
+  "max_workers": 1
 }
 ```
 
@@ -3168,9 +3171,13 @@ Binary image data with appropriate headers
   "folder": "my_channel/foo",
   "template": "%(title)s.%(ext)s",
   "cookies": "...",
-  "cli": "--write-subs --embed-subs"
+  "cli": "--write-subs --embed-subs",
+  "max_workers": 1
 }
 ```
+
+**Notes**:
+- `max_workers` is an optional integer from `0` to `1000`. Values above `0` cap concurrent downloads using this preset.
 
 **Response**:
 ```json
@@ -3182,7 +3189,8 @@ Binary image data with appropriate headers
   "template": "%(title)s.%(ext)s",
   "cookies": "...",
   "cli": "--write-subs --embed-subs",
-  "default": false
+  "default": false,
+  "max_workers": 1
 }
 ```
 
@@ -3201,13 +3209,15 @@ Binary image data with appropriate headers
 ```json
 {
   "description": "Updated description",
-  "cli": "--write-subs --embed-subs --format best"
+  "cli": "--write-subs --embed-subs --format best",
+  "max_workers": 0
 }
 ```
 
 **Notes**:
 - Only include fields you want to update
 - All fields are optional
+- Set `max_workers` to `0` to clear the preset limit.
 - Default presets cannot be modified
 
 **Response**: Returns the updated preset object.
@@ -3233,11 +3243,13 @@ Binary image data with appropriate headers
   "folder": "my_channel/foo",
   "template": "%(title)s.%(ext)s",
   "cookies": "...",
-  "cli": "--write-subs --embed-subs"
+  "cli": "--write-subs --embed-subs",
+  "max_workers": 2
 }
 ```
 
 **Notes**:
+- Set `max_workers` to `0` to clear the preset limit.
 - Default presets cannot be modified
 
 **Response**: Returns the updated preset object.

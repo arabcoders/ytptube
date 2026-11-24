@@ -23,5 +23,6 @@ class PresetModel(Base):
     cli: Mapped[str] = mapped_column(Text, nullable=False, default="")
     default: Mapped[bool] = mapped_column("is_default", Boolean, nullable=False, default=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_workers: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow, nullable=False)

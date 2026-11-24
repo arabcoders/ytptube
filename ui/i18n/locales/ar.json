@@ -431,6 +431,7 @@
     "validationImportParseFailed": "فشل تحليل نص الاستيراد. {error}",
     "validationOrderPositive": "يجب أن يكون الترتيب رقماً موجباً.",
     "validationNonNegativeInteger": "يجب أن يكون {field} عددًا صحيحًا غير سالب.",
+    "validationIntegerRange": "يجب أن يكون {field} عددًا صحيحًا من {min} إلى {max}.",
     "validationInvalidFieldType": "نوع حقل غير صالح: {kind}",
     "validationInvalidFieldFormat": "تنسيق حقل غير صالح، يجب أن يبدأ بـ \"--\" ولا يحتوي على مسافات.",
     "validationInvalidIcon": "أيقونة غير صالحة. اختر إحدى الأيقونات المضمنة.",
@@ -1057,6 +1058,8 @@
     "cookiesConfigured": "ملفات تعريف: مكونة",
     "cookiesNotSet": "ملفات تعريف: غير محددة",
     "priority": "الأولوية: {priority}",
+    "maxWorkers": "الحد الأقصى للتنزيلات المتزامنة",
+    "maxWorkersDesc": "0 يعني عدم وجود حد لهذا الإعداد المسبق.",
     "info1": "عند تصدير الإعداد المسبق لا يتم تضمين محتويات حقل ملفات تعريف الارتباط لأسباب أمنية. ومع ذلك هناك بعض خيارات CLI التي قد تحتوي على بيانات حساسة مثل اسم المستخدم أو كلمة المرور. قم بإزالتها قبل مشاركة الإعداد المسبق."
   },
   "customFields": {

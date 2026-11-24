@@ -52,6 +52,7 @@ const state = reactive<ConfigState>({
       cli: '',
       default: true,
       priority: 0,
+      max_workers: 0,
     },
   ],
   dl_fields: [],

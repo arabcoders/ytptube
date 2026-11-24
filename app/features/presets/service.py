@@ -11,7 +11,8 @@ from app.library.Singleton import Singleton
 class Presets(metaclass=Singleton):
     def __init__(self, repo: PresetsRepository | None = None) -> None:
         self._repo: PresetsRepository = repo or PresetsRepository.get_instance()
-        self._cache: list[tuple[int, str, Preset]] = []
+        self._by_name: dict[str, Preset] = {}
+        self._by_id: dict[int, Preset] = {}
         Services.get_instance().add(type(self).__name__, self)
 
     @staticmethod
@@ -20,25 +21,19 @@ class Presets(metaclass=Singleton):
 
     async def refresh_cache(self, items: list[PresetModel]) -> None:
         presets = [Preset.model_validate(item) for item in items]
-        self._cache = [(preset.id if preset.id is not None else -1, preset.name, preset) for preset in presets]
+        self._by_name = {preset.name: preset for preset in presets}
+        self._by_id = {preset.id: preset for preset in presets if preset.id is not None}
 
     def get_all(self) -> list[Preset]:
-        return [preset for _, _, preset in self._cache]
+        return list(self._by_name.values())
 
     def get(self, identifier: int | str) -> Preset | None:
         if not identifier:
             return None
 
-        if isinstance(identifier, str) and not (identifier := preset_name(identifier)):
-            return None
-
-        for id, name, preset in self._cache:
-            if isinstance(identifier, int) and id == identifier:
-                return preset
-            if isinstance(identifier, str) and name == identifier:
-                return preset
-
-        return None
+        if isinstance(identifier, str):
+            return self._by_name.get(identifier) or self._by_name.get(preset_name(identifier))
+        return self._by_id.get(identifier)
 
     def has(self, identifier: int | str) -> bool:
         return self.get(identifier) is not None

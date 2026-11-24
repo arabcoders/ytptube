@@ -658,6 +658,7 @@ class TestDownloadFlow:
                 cli="--format worst",
                 default=False,
                 priority=0,
+                max_workers=0,
             )
             asyncio.run(Presets.get_instance().refresh_cache([preset]))
             return True

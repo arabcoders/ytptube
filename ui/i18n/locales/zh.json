@@ -431,6 +431,7 @@
     "validationImportParseFailed": "解析导入字符串失败。{error}",
     "validationOrderPositive": "顺序必须为正数。",
     "validationNonNegativeInteger": "{field} 必须是非负整数。",
+    "validationIntegerRange": "{field} 必须是 {min} 到 {max} 之间的整数。",
     "validationInvalidFieldType": "无效的字段类型：{kind}",
     "validationInvalidFieldFormat": "无效的字段格式，必须以 \"--\" 开头且不含空格。",
     "validationInvalidIcon": "无效的图标。请从内置图标中选择。",
@@ -1057,6 +1058,8 @@
     "cookiesConfigured": "Cookies：已配置",
     "cookiesNotSet": "Cookies：未设置",
     "priority": "优先级：{priority}",
+    "maxWorkers": "最大并发下载数",
+    "maxWorkersDesc": "0 表示不设预设上限。",
     "info1": "导出预设时，出于安全原因不会包含 cookies 字段内容。但是，某些 CLI 选项可能包含用户名或密码等敏感数据。请在分享预设前移除它们。"
   },
   "customFields": {

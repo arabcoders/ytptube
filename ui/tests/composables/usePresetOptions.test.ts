@@ -41,6 +41,7 @@ const buildPreset = (name: string, isDefault: boolean): Preset => ({
   cookies: '',
   cli: '',
   priority: 0,
+  max_workers: 0,
 });
 
 const setConfigStore = (presets: Preset[]) => {

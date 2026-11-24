@@ -42,6 +42,7 @@ const mockPreset: Preset = {
   cli: '--format best',
   default: false,
   priority: 10,
+  max_workers: 0,
 };
 
 const mockPagination: Pagination = {
@@ -160,12 +161,13 @@ describe('usePresets', () => {
 
   describe('createPreset', () => {
     it('create_preset', async () => {
+      const created = { ...mockPreset, max_workers: 2 };
       const requestSpy = spyOn(utils, 'request');
       requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
-          jsonData: mockPreset,
+          jsonData: created,
         }),
       );
 
@@ -175,12 +177,17 @@ describe('usePresets', () => {
         name: 'New Preset',
         description: 'Desc',
         cli: '--format best',
+        max_workers: 2,
       };
 
       const result = await presets.createPreset(newPreset);
 
-      expect(result).toEqual(mockPreset);
-      expect(presets.presets.value).toContainEqual(mockPreset);
+      expect(requestSpy).toHaveBeenCalledWith('/api/presets/', {
+        method: 'POST',
+        body: JSON.stringify(newPreset),
+      });
+      expect(result).toEqual(created);
+      expect(presets.presets.value).toContainEqual(created);
       expect(presets.pagination.value.total).toBeGreaterThanOrEqual(initialTotal);
       requestSpy.mockRestore();
     });
@@ -245,6 +252,28 @@ describe('usePresets', () => {
         requestSpy.mockRestore();
       }
     });
+
+    it('sends_cleared_limit', async () => {
+      const cleared = { ...mockPreset, max_workers: 0 };
+      const requestSpy = spyOn(utils, 'request').mockResolvedValueOnce(
+        createMockResponse({ ok: true, status: 200, jsonData: cleared }),
+      );
+
+      try {
+        const result = await usePresets().updatePreset(1, cleared);
+
+        expect(requestSpy).toHaveBeenCalledWith(
+          '/api/presets/1',
+          expect.objectContaining({
+            method: 'PUT',
+            body: expect.stringContaining('"max_workers":0'),
+          }),
+        );
+        expect(result?.max_workers).toBe(0);
+      } finally {
+        requestSpy.mockRestore();
+      }
+    });
   });
 
   describe('patchPreset', () => {
@@ -254,15 +283,38 @@ describe('usePresets', () => {
         createMockResponse({
           ok: true,
           status: 200,
-          jsonData: { ...mockPreset, priority: 20 },
+          jsonData: { ...mockPreset, priority: 20, max_workers: 2 },
         }),
       );
 
       const presets = usePresets();
       const result = await presets.patchPreset(1, { priority: 20 });
 
+      expect(requestSpy).toHaveBeenCalledWith('/api/presets/1', {
+        method: 'PATCH',
+        body: JSON.stringify({ priority: 20 }),
+      });
       expect(result?.priority).toBe(20);
+      expect(result?.max_workers).toBe(2);
       requestSpy.mockRestore();
+    });
+
+    it('patch_clears_limit', async () => {
+      const requestSpy = spyOn(utils, 'request').mockResolvedValueOnce(
+        createMockResponse({ ok: true, status: 200, jsonData: mockPreset }),
+      );
+
+      try {
+        const result = await usePresets().patchPreset(1, { max_workers: 0 });
+
+        expect(requestSpy).toHaveBeenCalledWith('/api/presets/1', {
+          method: 'PATCH',
+          body: JSON.stringify({ max_workers: 0 }),
+        });
+        expect(result?.max_workers).toBe(0);
+      } finally {
+        requestSpy.mockRestore();
+      }
     });
 
     it('sanitize_patch', async () => {
