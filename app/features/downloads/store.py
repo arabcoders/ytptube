@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from collections.abc import Iterable
+from email.utils import parsedate_to_datetime
 from enum import Enum
 from pathlib import Path
 
@@ -148,10 +149,15 @@ class DataStore:
             await self.put(item, no_notify=True)
             notify.emit(Events.ITEM_UPDATED, data=item.info)
 
-    async def get_many_by_ids(self, ids: Iterable[str]) -> list[tuple[str, Download]]:
+    async def get_many_by_ids(self, ids: Iterable[str], *, persisted: bool = False) -> list[tuple[str, Download]]:
         ids_list = list(ids)
         if not ids_list:
             return []
+
+        if persisted and StoreType.HISTORY == self._type:
+            await self._connection.flush()
+            loaded = await self._connection.get_many_by_ids(str(self._type), dict.fromkeys(ids_list))
+            return [(key, Download(info=info)) for key, info in loaded]
 
         items: list[tuple[str, Download]] = []
         missing_ids: list[str] = []
@@ -204,6 +210,18 @@ class DataStore:
         self._dict[value.info._id] = value
         await self._connection.enqueue_upsert(str(self._type), value.info.to_download_model(str(self._type)))
         return self._dict[value.info._id]
+
+    async def restore(self, values: list[Download]) -> list[Download]:
+        models = []
+        for value in values:
+            model = value.info.to_download_model(str(self._type))
+            model.created_at = parsedate_to_datetime(value.info.datetime)
+            models.append(model)
+
+        ids = await self._connection.restore(models)
+        restored = [value for value in values if value.info._id in ids]
+        self._dict.update((value.info._id, value) for value in restored)
+        return restored
 
     async def delete(self, key: str) -> None:
         self._dict.pop(key, None)

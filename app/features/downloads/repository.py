@@ -234,6 +234,30 @@ class DownloadsRepository(metaclass=Singleton):
     async def enqueue_upsert(self, type_value: str, model: DownloadModel) -> None:
         await self._enqueue(_Operation("upsert", type_value, model=model))
 
+    async def restore(self, models: list[DownloadModel]) -> set[str]:
+        if not models:
+            return set()
+
+        # A replacement for the same URL can already be waiting in the writer queue.
+        await self.flush()
+        async with self._lock, self.session() as session:
+            result = await session.scalars(
+                insert(DownloadModel).on_conflict_do_nothing().returning(DownloadModel.id),
+                [
+                    {
+                        "id": model.id,
+                        "type": model.type,
+                        "url": model.url,
+                        "data": model.data,
+                        "created_at": model.created_at,
+                    }
+                    for model in models
+                ],
+            )
+            restored = set(result)
+            await session.commit()
+        return restored
+
     async def enqueue_delete(self, type_value: str, key: str) -> None:
         await self._enqueue(_Operation("delete", type_value, key=key))
 

@@ -3,6 +3,7 @@ import logging
 import os
 import signal
 import time
+from datetime import UTC, datetime
 from multiprocessing.reduction import ForkingPickler
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,9 +11,13 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import app.features.downloads.runtime.bootstrap as download_runtime
 from app.features.downloads.items import Item, ItemDTO
+from app.features.downloads.models import DownloadModel
+from app.features.downloads.repository import DownloadsRepository
+from app.features.downloads.runtime import item_adder, queue_manager
 from app.features.downloads.runtime.core import Download
 from app.features.downloads.runtime.hooks import HookHandlers, NestedLogger
 from app.features.downloads.runtime.pool_manager import PoolManager
@@ -231,6 +236,104 @@ class TestRetry:
         assert events[0].args[0] == Events.LOG_INFO
         assert events[0].kwargs["data"]["items"][0]["title"] == info.title
         assert events[-1].args[0] == Events.LOG_SUCCESS
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("replacement", [False, True], ids=["no-replacement", "replacement"])
+    async def test_mixed_batch(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, replacement: bool) -> None:
+        history = StoreType.HISTORY.value
+        items = [
+            ItemDTO(
+                id=name,
+                title=name,
+                url=f"https://example.test/{name}",
+                folder="",
+                status=status,
+                error="Original failure" if status == "error" else None,
+                extras={"source_id": 4},
+                auto_start=False,
+            )
+            for name, status in (("queued", "error"), ("timed-out", "error"), ("raised", "not_live"))
+        ]
+        live = items[2]
+        live.error = "Original live error"
+        live.is_live = True
+        live.live_in = "Wed, 03 Jan 2024 00:00:00 GMT"
+        live.extras["live_in"] = live.live_in
+        live.msg = "Stream is not available yet."
+
+        async def fetch(*, url: str, **_: Any) -> tuple[dict, list]:
+            name = url.rsplit("/", 1)[-1]
+            entry = {"id": name, "title": name, "webpage_url": url, "formats": [{"format_id": "18"}]}
+            if url == items[1].url:
+                if replacement:
+                    await queue.add(Item(url=url, preset="default", requeued=True, auto_start=False), entry=entry)
+                raise TimeoutError
+            if url == items[2].url:
+                raise RuntimeError("Unexpected extraction error")
+            return entry, []
+
+        monkeypatch.setattr(item_adder, "fetch_info", fetch)
+        monkeypatch.setattr(item_adder.Presets, "get_instance", lambda: Mock(get=Mock(return_value=None)))
+        monkeypatch.setattr(Item, "get_ytdlp_opts", lambda _: Mock(get_all=Mock(return_value={})))
+        monkeypatch.setattr(Item, "get_archive_id", lambda _: None)
+        monkeypatch.setattr(Item, "get_extractor", lambda _: None)
+
+        engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'downloads.db'}")
+        repository = object.__new__(DownloadsRepository)
+        repository.__init__(session=async_sessionmaker(engine), flush_interval=0)
+        queue = object.__new__(DownloadQueue)
+        queue.done = DataStore(StoreType.HISTORY, repository)
+        queue.queue = DataStore(StoreType.QUEUE, repository)
+        queue.config = Mock(
+            download_path=str(tmp_path),
+            temp_path=str(tmp_path),
+            extract_info_timeout=70,
+            ytdlp_debug=False,
+            output_template="%(title)s.%(ext)s",
+            output_template_chapter=None,
+        )
+        queue._notify = Mock()
+        queue._retry_lock = asyncio.Lock()
+        queue._retry_limit = asyncio.Semaphore(2)
+
+        try:
+            async with asyncio.timeout(5):
+                async with engine.begin() as connection:
+                    await connection.run_sync(DownloadModel.metadata.tables[DownloadModel.__tablename__].create)
+                async with repository.session() as session:
+                    for day, info in enumerate(items, start=1):
+                        model = info.to_download_model(history)
+                        model.created_at = datetime(2024, 1, day, tzinfo=UTC)
+                        session.add(model)
+                    await session.commit()
+                original = dict(await queue.done.saved_items())
+
+                with patch.object(queue_manager, "asyncio", wraps=asyncio) as retry_asyncio:
+                    retry_asyncio.create_task = Mock()
+                    count = await queue.retry(status="!finished,!skip")
+                    await retry_asyncio.create_task.call_args.args[0]
+
+                await repository.flush()
+                assert count == 3
+                split = 2 if replacement else 1
+                original[items[1]._id].error = "TimeoutError: 70s reached Unable to extract info."
+                expected = {item._id: original[item._id] for item in items[split:]}
+                assert dict(await queue.done.saved_items()) == expected
+                queued = dict(await queue.queue.saved_items())
+                assert {item.url for item in queued.values()} == {item.url for item in items[:split]}
+                assert queued.keys().isdisjoint(original)
+
+                events = queue._notify.emit.call_args_list
+                restored = [event.kwargs["data"] for event in events if event.args[0] == Events.ITEM_MOVED]
+                assert {event["item"]._id: event["item"] for event in restored} == expected
+                assert all(event["to"] == "history" for event in restored)
+                assert events[-1].args[0] == Events.LOG_ERROR
+                assert events[-1].kwargs["data"] == {"status": "error", "succeeded": 1, "failed": 2}
+        finally:
+            try:
+                await asyncio.wait_for(repository.shutdown(), timeout=3)
+            finally:
+                await asyncio.wait_for(engine.dispose(), timeout=3)
 
     @pytest.mark.asyncio
     async def test_limit(self) -> None:
