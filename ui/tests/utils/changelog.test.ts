@@ -33,7 +33,15 @@ const logs: changelogs = [
     tag: 'v1.0.0',
     full_sha: 'fedcba987654',
     date: '2026-11-01',
-    commits: [],
+    commits: [
+      {
+        sha: '9876543',
+        full_sha: '987654321abc',
+        message: 'Improve startup',
+        author: 'Bob',
+        date: '2026-10-31',
+      },
+    ],
   },
 ];
 
@@ -60,12 +68,12 @@ describe('installed changelog', () => {
     const history = [
       logs[0]!,
       logs[1]!,
-      { tag: 'v0.9.0', full_sha: '987654321abc', date: '2026-10-01', commits: [] },
+      { tag: 'v0.9.0', full_sha: '456789abcdef', date: '2026-10-01', commits: [] },
     ];
 
     expect(getOpenReleases(history, 'fedcba9')).toEqual(['v2.0.0', 'v1.0.0']);
+    expect(getOpenReleases(history, '9876543')).toEqual(['v2.0.0', 'v1.0.0']);
     expect(getOpenReleases(history, 'abcdef1')).toEqual(['v2.0.0']);
-    expect(getOpenReleases(history, '1234567')).toEqual(['v2.0.0']);
   });
 
   it('opens newest fallback', () => {
@@ -97,11 +105,15 @@ describe('installed changelog', () => {
     expect(matchesSha('', 'abcdef1')).toBe(false);
   });
 
-  it('finds installed release', () => {
+  it('matches only tags', () => {
     expect(isInstalledRelease(logs[0]!, 'abcdef1')).toBe(true);
-    expect(isInstalledRelease(logs[0]!, '1234567')).toBe(true);
+    expect(isInstalledRelease(logs[0]!, '1234567')).toBe(false);
     expect(isInstalledRelease(logs[1]!, 'fedcba9')).toBe(true);
     expect(isInstalledRelease(logs[1]!, '')).toBe(false);
     expect(isInstalledRelease(logs[0]!, 'fedcba9')).toBe(false);
+  });
+
+  it('excludes unreleased heading', () => {
+    expect(isInstalledRelease({ ...logs[0]!, tag: 'Unreleased' }, 'abcdef1')).toBe(false);
   });
 });

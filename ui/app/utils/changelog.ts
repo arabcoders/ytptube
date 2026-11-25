@@ -33,12 +33,15 @@ export const matchesSha = (value: string, installed: string): boolean => {
 };
 
 export const isInstalledRelease = (log: changeset, installed: string): boolean =>
-  matchesSha(log.full_sha, installed) ||
-  log.commits.some(
-    (commit) => matchesSha(commit.full_sha, installed) || matchesSha(commit.sha, installed),
-  );
+  log.tag !== 'Unreleased' && matchesSha(log.full_sha, installed);
 
 export const getOpenReleases = (logs: changelogs, installed: string): string[] => {
-  const index = logs.findIndex((log) => isInstalledRelease(log, installed));
+  const index = logs.findIndex(
+    (log) =>
+      matchesSha(log.full_sha, installed) ||
+      log.commits.some(
+        (commit) => matchesSha(commit.full_sha, installed) || matchesSha(commit.sha, installed),
+      ),
+  );
   return logs.slice(0, Math.max(0, index) + 1).map((log) => log.tag);
 };
