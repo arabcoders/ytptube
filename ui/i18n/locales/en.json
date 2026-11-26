@@ -694,6 +694,7 @@
   "errors": {
     "UNKNOWN": "An unexpected error occurred.",
     "BAD_REQUEST": "The request is invalid.",
+    "REQUEST_TOO_LARGE": "The request is too large.",
     "UNAUTHORIZED": "Authentication is required.",
     "FORBIDDEN": "You do not have permission to perform this action.",
     "NOT_FOUND": "{resource} was not found.",

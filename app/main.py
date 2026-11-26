@@ -56,7 +56,7 @@ class Main:
         self._no_auto_migration = no_auto_migration
         self._config: Config = Config.get_instance(is_native=is_native)
         self._config.set_app_path(str(ROOT_PATH))
-        self._app = web.Application()
+        self._app = web.Application(client_max_size=self._config.max_request_size * 1024 * 1024)
         self._app.on_shutdown.append(self.on_shutdown)
 
         Services.get_instance().add("app", self._app)

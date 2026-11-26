@@ -694,6 +694,7 @@
   "errors": {
     "UNKNOWN": "予期しないエラーが発生しました。",
     "BAD_REQUEST": "リクエストが無効です。",
+    "REQUEST_TOO_LARGE": "リクエストのサイズが大きすぎます。",
     "UNAUTHORIZED": "認証が必要です。",
     "FORBIDDEN": "このアクションを実行する権限がありません。",
     "NOT_FOUND": "{resource} が見つかりませんでした。",

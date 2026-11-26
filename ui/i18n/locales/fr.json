@@ -694,6 +694,7 @@
   "errors": {
     "UNKNOWN": "Une erreur inattendue s'est produite.",
     "BAD_REQUEST": "La requête est invalide.",
+    "REQUEST_TOO_LARGE": "La requête est trop volumineuse.",
     "UNAUTHORIZED": "L'authentification est requise.",
     "FORBIDDEN": "Vous n'avez pas la permission d'effectuer cette action.",
     "NOT_FOUND": "{resource} est introuvable.",

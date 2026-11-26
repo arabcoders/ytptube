@@ -41,6 +41,7 @@ additional application settings.
 | YTP_TEMP_KEEP                   | Whether to keep the Individual video temp directory or remove it    | `false`               |
 | YTP_HOST                        | Which IP address to bind to                                         | `0.0.0.0`             |
 | YTP_PORT                        | Which port to bind to                                               | `8081`                |
+| YTP_MAX_REQUEST_SIZE            | Maximum HTTP request body size in MiB. Minimum is `1`               | `5`                   |
 | YTP_LOG_LEVEL                   | Log level                                                           | `info`                |
 | YTP_STREAMER_VCODEC             | The video encoding codec, default to GPU and fallback to software   | `""`                  |
 | YTP_STREAMER_ACODEC             | The audio codec to use for in-browser streaming                     | `aac`                 |

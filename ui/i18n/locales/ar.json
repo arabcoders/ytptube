@@ -694,6 +694,7 @@
   "errors": {
     "UNKNOWN": "حدث خطأ غير متوقع.",
     "BAD_REQUEST": "الطلب غير صالح.",
+    "REQUEST_TOO_LARGE": "حجم الطلب كبير جدًا.",
     "UNAUTHORIZED": "المصادقة مطلوبة.",
     "FORBIDDEN": "ليس لديك صلاحية لتنفيذ هذا الإجراء.",
     "NOT_FOUND": "لم يتم العثور على {resource}.",

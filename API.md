@@ -838,6 +838,17 @@ or an error:
     ...
   }
 ]
+
+// Or multiple URLs with shared options
+{
+  "preset": "default",
+  "folder": "my_channel/foo",
+  "cookies": "...",
+  "urls": [
+    "https://youtube.com/watch?v=...",
+    { "url": "https://youtube.com/watch?v=...", "folder": "my_channel/bar", "cookies": "" }
+  ]
+}
 ```
 **Response**:
 ```json
@@ -849,6 +860,7 @@ or an error:
 ]
 ```
 - If any item is invalid (e.g., missing `url`), returns `400 Bad Request`.
+- `413 Content Too Large` (`REQUEST_TOO_LARGE`).
 
 ---
 

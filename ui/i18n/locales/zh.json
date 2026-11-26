@@ -694,6 +694,7 @@
   "errors": {
     "UNKNOWN": "发生意外错误。",
     "BAD_REQUEST": "请求无效。",
+    "REQUEST_TOO_LARGE": "请求体过大。",
     "UNAUTHORIZED": "需要身份验证。",
     "FORBIDDEN": "您没有权限执行此操作。",
     "NOT_FOUND": "未找到 {resource}。",
