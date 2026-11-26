@@ -3,6 +3,19 @@
     <PageHeader v-bind="pageShell">
       <template #actions>
         <UButton
+          v-if="hasQueueContent"
+          color="neutral"
+          :variant="toggleFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          :aria-expanded="toggleFilter"
+          aria-controls="queue-filter"
+          @click="toggleFilter = !toggleFilter"
+        >
+          {{ t('common.filter') }}
+        </UButton>
+
+        <UButton
           v-if="false === config.paused"
           color="neutral"
           variant="outline"
@@ -50,6 +63,18 @@
         >
           <span>{{ t('common.refresh') }}</span>
         </UButton>
+
+        <UInput
+          v-if="toggleFilter && hasQueueContent"
+          id="queue-filter"
+          v-model.lazy="query"
+          type="search"
+          :placeholder="t('common.filterDisplayedContent')"
+          :aria-label="t('common.filterDisplayedContent')"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </template>
     </PageHeader>
 
@@ -100,18 +125,6 @@
                 {{ t('common.actions') }}
               </UButton>
             </UDropdownMenu>
-
-            <UButton
-              color="neutral"
-              :variant="toggleFilter ? 'soft' : 'outline'"
-              size="sm"
-              icon="i-lucide-filter"
-              :aria-expanded="toggleFilter"
-              aria-controls="queue-filter"
-              @click="toggleFilter = !toggleFilter"
-            >
-              {{ t('common.filter') }}
-            </UButton>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
@@ -134,18 +147,6 @@
             </UButton>
           </div>
         </div>
-
-        <UInput
-          v-if="toggleFilter"
-          id="queue-filter"
-          v-model.lazy="query"
-          type="search"
-          :placeholder="t('common.filterDisplayedContent')"
-          :aria-label="t('common.filterDisplayedContent')"
-          icon="i-lucide-filter"
-          size="sm"
-          class="w-full sm:w-80"
-        />
 
         <div v-if="hasItems" :aria-busy="isRefreshing" class="ytp-card divide-y divide-default">
           <LateLoader

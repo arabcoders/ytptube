@@ -10,6 +10,18 @@
       <template #actions>
         <UButton
           color="neutral"
+          :variant="showFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          :aria-expanded="showFilter"
+          aria-controls="history-filter"
+          @click="showFilter = !showFilter"
+        >
+          {{ t('common.filter') }}
+        </UButton>
+
+        <UButton
+          color="neutral"
           variant="outline"
           size="sm"
           icon="i-lucide-plus"
@@ -29,6 +41,18 @@
         >
           <span>{{ t('common.refresh') }}</span>
         </UButton>
+
+        <UInput
+          v-if="showFilter"
+          id="history-filter"
+          v-model.lazy="query"
+          type="search"
+          :placeholder="t('common.filterDisplayedContent')"
+          :aria-label="t('common.filterDisplayedContent')"
+          icon="i-lucide-filter"
+          size="sm"
+          class="order-last w-full sm:order-first sm:w-80"
+        />
       </template>
     </PageHeader>
 
@@ -61,18 +85,6 @@
               {{ t('common.actions') }}
             </UButton>
           </UDropdownMenu>
-
-          <UButton
-            color="neutral"
-            :variant="showFilter ? 'soft' : 'outline'"
-            size="sm"
-            icon="i-lucide-filter"
-            :aria-expanded="showFilter"
-            aria-controls="history-filter"
-            @click="showFilter = !showFilter"
-          >
-            {{ t('common.filter') }}
-          </UButton>
         </div>
 
         <UPagination
@@ -89,18 +101,6 @@
           "
         />
       </div>
-
-      <UInput
-        v-if="showFilter"
-        id="history-filter"
-        v-model.lazy="query"
-        type="search"
-        :placeholder="t('common.filterDisplayedContent')"
-        :aria-label="t('common.filterDisplayedContent')"
-        icon="i-lucide-filter"
-        size="sm"
-        class="w-full sm:w-80"
-      />
 
       <UAlert
         v-if="paginationInfo.isLoading && !hasItems"
