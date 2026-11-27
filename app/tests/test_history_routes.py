@@ -1,13 +1,15 @@
+import asyncio
 from types import SimpleNamespace
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from aiohttp.web import Request, Response
 
 from app.features.downloads.store import DataStore, StoreType
 from app.library.cache import Cache
-from app.features.downloads.items import ItemDTO
+from app.features.downloads.items import Item, ItemDTO
 from app.library.encoder import Encoder
 from app.routes.api import history
 from app.routes.api.history import (
@@ -53,6 +55,74 @@ def _make_download(
         ItemDTO.__post_init__ = original_post_init
 
     return SimpleNamespace(info=item)
+
+
+@pytest.mark.asyncio
+async def test_batch_shares_options(test_client) -> None:
+    queued: list[Item] = []
+    done = asyncio.Event()
+
+    async def add(item: Item) -> dict[str, str]:
+        queued.append(item)
+        if len(queued) == 8:
+            done.set()
+        return {"status": "ok"}
+
+    async def handler(request: Request) -> Response:
+        return await history.items_add(request, Mock(add=add), Encoder())
+
+    client = await test_client({"items_add": handler})
+    cookies = "# Netscape HTTP Cookie File\n" + "example.com\tFALSE\t/\tTRUE\t0\tname\t" + "x" * (160 * 1024) + "\n"
+    urls = [f"https://example.com/{i}" for i in range(7)]
+    response = await client.post(
+        url_for("items_add"),
+        json={
+            "cookies": cookies,
+            "folder": "shared",
+            "template": "%(title)s.%(ext)s",
+            "cli": "--no-download-archive",
+            "auto_start": False,
+            "extras": {"source": "picker", "variant": "default"},
+            "urls": [
+                *urls,
+                {"url": urls[0], "folder": "other", "cookies": "", "auto_start": True, "extras": {"variant": "alt"}},
+            ],
+        },
+        timeout=5,
+    )
+    assert response.status == 202, await response.text()
+    body = await response.json()
+    assert body["count"] == 8
+
+    await asyncio.wait_for(done.wait(), timeout=5)
+    queued.sort(key=lambda item: item.extras["batch_index"])
+    assert [item.url for item in queued] == [*urls, urls[0]]
+    assert [item.cookies for item in queued] == [cookies] * 7 + [""]
+    assert [item.folder for item in queued] == ["shared"] * 7 + ["other"]
+    assert [item.auto_start for item in queued] == [False] * 7 + [True]
+    assert {item.template for item in queued} == {"%(title)s.%(ext)s"}
+    assert {item.cli for item in queued} == {"--no-download-archive"}
+    assert {item.extras["source"] for item in queued} == {"picker"}
+    assert [item.extras["variant"] for item in queued] == ["default"] * 7 + ["alt"]
+    assert [item.extras["batch_index"] for item in queued] == list(range(8))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("as_list", [False, True])
+async def test_add_existing_shapes(test_client, as_list: bool) -> None:
+    queue = Mock(add=AsyncMock(return_value={"status": "ok"}))
+
+    async def handler(request: Request) -> Response:
+        return await history.items_add(request, queue, Encoder())
+
+    client = await test_client({"items_add": handler})
+    item = {"url": "https://example.com/video", "folder": "existing"}
+    response = await client.post(
+        url_for("items_add", query={"sync": "true"}), json=[item] if as_list else item, timeout=5
+    )
+
+    assert response.status == 200
+    assert queue.add.await_args.kwargs["item"].folder == "existing"
 
 
 @pytest.mark.asyncio

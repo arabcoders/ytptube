@@ -217,6 +217,9 @@ class Config(metaclass=Singleton):
     port: int = 8081
     """The port to bind the server to."""
 
+    max_request_size: int = 5
+    """Maximum buffered HTTP request body size in MiB."""
+
     log_level: str = "info"
     """The log level to use for the application."""
 
@@ -440,6 +443,7 @@ class Config(metaclass=Singleton):
 
     _int_vars: tuple = (
         "port",
+        "max_request_size",
         "max_workers",
         "max_workers_per_extractor",
         "extract_info_timeout",
@@ -648,6 +652,10 @@ class Config(metaclass=Singleton):
         except ValueError as e:
             msg = f"Invalid log level '{self.log_level}' specified."
             raise TypeError(msg) from e
+
+        if self.max_request_size < 1:
+            LOG.warning("YTP_MAX_REQUEST_SIZE=%d is below the minimum. Using 1 MiB.", self.max_request_size)
+            self.max_request_size = 1
 
         if self.debug:
             try:

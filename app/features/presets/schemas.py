@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
 
@@ -10,6 +10,8 @@ from app.features.core.utils import parse_int
 from app.features.presets.utils import preset_name
 from app.library.config import Config
 from app.library.Utils import create_cookies_file
+
+WorkerLimit = Annotated[int, Field(strict=True, ge=0, le=1000)]
 
 
 class Preset(BaseModel):
@@ -24,6 +26,7 @@ class Preset(BaseModel):
     cli: str = ""
     default: bool = False
     priority: int = 0
+    max_workers: WorkerLimit = 0
 
     _cookies_file: Path | None = PrivateAttr(default=None)
 
@@ -90,6 +93,7 @@ class PresetPatch(BaseModel):
     cli: str | None = None
     default: bool = False
     priority: int | None = None
+    max_workers: WorkerLimit = 0
 
     _normalize_name = field_validator("name", mode="before")(Preset._normalize_name)
     _normalize_priority = field_validator("priority", mode="before")(Preset._normalize_priority)

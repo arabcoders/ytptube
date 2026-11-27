@@ -79,8 +79,8 @@ const props = defineProps<{
 
 const showStacks = ref(false);
 
-const handleRetry = async (): Promise<void> => {
-  await clearError({ redirect: useRoute().fullPath });
+const handleRetry = (): void => {
+  window.location.reload();
 };
 
 onMounted(() => console.error(props.error));

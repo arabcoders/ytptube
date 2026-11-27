@@ -49,6 +49,13 @@
       "description": "Priority of the preset for sorting. Higher priority presets appear first.",
       "default": 0,
       "minimum": 0
+    },
+    "max_workers": {
+      "type": "integer",
+      "description": "Maximum concurrent downloads using this preset. Set to 0 for no preset limit.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1000
     }
   },
   "required": [

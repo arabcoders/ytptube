@@ -47,6 +47,7 @@ def _payload_data(payload: PresetModel | dict[str, Any]) -> dict[str, Any]:
         "cli": payload.cli,
         "default": payload.default,
         "priority": payload.priority,
+        "max_workers": payload.max_workers,
         "created_at": payload.created_at,
         "updated_at": payload.updated_at,
     }

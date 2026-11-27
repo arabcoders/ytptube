@@ -676,12 +676,35 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
 
     """
     data = await request.json()
+    compact = isinstance(data, dict) and "urls" in data and "url" not in data
+    shared = {}
 
-    if isinstance(data, dict):
+    if compact:
+        shared = data.copy()
+        data = shared.pop("urls")
+    elif isinstance(data, dict):
         data = [data]
 
+    if not isinstance(data, list) or not all(
+        isinstance(item, dict) or (compact and isinstance(item, str)) for item in data
+    ):
+        return api_error_response(
+            "Expected a download item, an array of items, or a batch with a urls array.",
+            code="BAD_REQUEST",
+            status=web.HTTPBadRequest.status_code,
+        )
+
     items: list[Item] = []
+    shared_extras = shared.get("extras")
     for item in data:
+        if isinstance(item, str):
+            item = {"url": item}
+
+        if shared:
+            item = shared | item
+            if isinstance(shared_extras, dict) and isinstance(extras := item.get("extras"), dict):
+                item["extras"] = shared_extras | extras
+
         try:
             items.append(Item.format(item))
         except ValueError as e:

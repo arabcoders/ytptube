@@ -431,6 +431,7 @@
     "validationImportParseFailed": "Failed to parse import string. {error}",
     "validationOrderPositive": "Order must be a positive number.",
     "validationNonNegativeInteger": "{field} must be a non-negative integer.",
+    "validationIntegerRange": "{field} must be a whole number from {min} to {max}.",
     "validationInvalidFieldType": "Invalid field type: {kind}",
     "validationInvalidFieldFormat": "Invalid field format, it must start with \"--\" and contain no spaces.",
     "validationInvalidIcon": "Invalid icon. Choose one of the bundled icons.",
@@ -693,6 +694,7 @@
   "errors": {
     "UNKNOWN": "An unexpected error occurred.",
     "BAD_REQUEST": "The request is invalid.",
+    "REQUEST_TOO_LARGE": "The request is too large.",
     "UNAUTHORIZED": "Authentication is required.",
     "FORBIDDEN": "You do not have permission to perform this action.",
     "NOT_FOUND": "{resource} was not found.",
@@ -1057,6 +1059,8 @@
     "cookiesConfigured": "Cookies: Configured",
     "cookiesNotSet": "Cookies: Not set",
     "priority": "Priority: {priority}",
+    "maxWorkers": "Max concurrent downloads",
+    "maxWorkersDesc": "0 means no preset limit.",
     "info1": "When you export preset, it doesn't include the cookies field contents for security reasons. However, there are some CLI options that could contain sensitive data like username or password. Remove them before sharing your preset."
   },
   "customFields": {

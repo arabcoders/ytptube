@@ -431,6 +431,7 @@
     "validationImportParseFailed": "Échec de l'analyse de la chaîne d'import. {error}",
     "validationOrderPositive": "L'ordre doit être un nombre positif.",
     "validationNonNegativeInteger": "{field} doit être un entier positif ou nul.",
+    "validationIntegerRange": "{field} doit être un nombre entier compris entre {min} et {max}.",
     "validationInvalidFieldType": "Type de champ invalide : {kind}",
     "validationInvalidFieldFormat": "Format de champ invalide, il doit commencer par « -- » et ne contenir aucun espace.",
     "validationInvalidIcon": "Icône invalide. Choisissez l'une des icônes intégrées.",
@@ -693,6 +694,7 @@
   "errors": {
     "UNKNOWN": "Une erreur inattendue s'est produite.",
     "BAD_REQUEST": "La requête est invalide.",
+    "REQUEST_TOO_LARGE": "La requête est trop volumineuse.",
     "UNAUTHORIZED": "L'authentification est requise.",
     "FORBIDDEN": "Vous n'avez pas la permission d'effectuer cette action.",
     "NOT_FOUND": "{resource} est introuvable.",
@@ -1057,6 +1059,8 @@
     "cookiesConfigured": "Cookies : Configurés",
     "cookiesNotSet": "Cookies : Non définis",
     "priority": "Priorité : {priority}",
+    "maxWorkers": "Nombre maximal de téléchargements simultanés",
+    "maxWorkersDesc": "0 désactive la limite du préréglage.",
     "info1": "Lorsque vous exportez un préréglage, il n'inclut pas le contenu du champ cookies pour des raisons de sécurité. Cependant, certaines options CLI pourraient contenir des données sensibles comme un nom d'utilisateur ou un mot de passe. Retirez-les avant de partager votre préréglage."
   },
   "customFields": {

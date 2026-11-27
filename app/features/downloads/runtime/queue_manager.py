@@ -144,7 +144,9 @@ class DownloadQueue(metaclass=Singleton):
 
     async def retry(self, ids: list[str] | None = None, status: str | None = None) -> int:
         async with self._retry_lock:
-            items = await (self.done.get_many_by_ids(ids) if ids else self.done.get_many_by_status(status or ""))
+            items = await (
+                self.done.get_many_by_ids(ids, persisted=True) if ids else self.done.get_many_by_status(status or "")
+            )
             if not items:
                 return 0
 
@@ -193,8 +195,28 @@ class DownloadQueue(metaclass=Singleton):
             *(add(item) for _, item in items),
             return_exceptions=True,
         )
-        ok = sum(isinstance(result, dict) and result.get("status") == "ok" for result in results)
-        failed = len(items) - ok
+        rejected = []
+        for (key, item), result in zip(items, results, strict=True):
+            if isinstance(result, dict) and result.get("status") == "ok":
+                continue
+
+            if isinstance(result, BaseException):
+                LOG.error("Failed to requeue history download '%s'.", key, exc_info=result, extra={"download_id": key})
+            if isinstance(result, dict) and (msg := result.get("msg")):
+                item.info.error = msg
+            rejected.append(item)
+
+        if rejected:
+            for item in await self.done.restore(rejected):
+                self._notify.emit(
+                    Events.ITEM_MOVED,
+                    data={"to": "history", "preset": item.info.preset, "item": item.info},
+                    title="Download History Update",
+                    message=f"Restored '{item.info.title}' to history because it could not be queued.",
+                )
+
+        failed = len(rejected)
+        ok = len(items) - failed
         self._notify.emit(
             Events.LOG_SUCCESS if failed == 0 else Events.LOG_ERROR,
             data={"status": "ok" if failed == 0 else "error", "succeeded": ok, "failed": failed},

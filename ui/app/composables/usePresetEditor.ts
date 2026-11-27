@@ -19,6 +19,7 @@ const makeEmptyPreset = (): Partial<Preset> => ({
   cookies: '',
   cli: '',
   priority: 0,
+  max_workers: 0,
 });
 
 const sanitizePreset = (item: Preset | EditablePreset): Partial<Preset> => {

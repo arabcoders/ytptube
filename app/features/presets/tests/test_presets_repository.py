@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 import pytest_asyncio
@@ -9,8 +10,10 @@ from aiohttp import web
 from aiohttp.web import Request
 
 from app.features.presets.repository import PresetsRepository
-from app.features.presets.router import presets_list
+from app.features.presets.router import presets_add, presets_list, presets_patch
+from app.features.presets.service import Presets
 from app.library.encoder import Encoder
+from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
 from app.tests.helpers import make_in_memory_db_path
 
@@ -44,6 +47,7 @@ class TestPresetsRepository:
         fetched = await repo.get(preset.id)
         assert fetched is not None
         assert fetched.name == "custom"
+        assert fetched.max_workers == 0
 
     @pytest.mark.asyncio
     async def test_create_normalizes_spaces(self, repo):
@@ -129,7 +133,55 @@ class TestPresetsRepository:
 
 
 @pytest.mark.asyncio
+async def test_preset_cache_refresh(repo: PresetsRepository, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(Services, "get_instance", Mock())
+    presets = object.__new__(Presets)
+    presets.__init__(repo)
+    async with asyncio.timeout(5):
+        proxy = await repo.create({"name": "Proxy Preset", "priority": 1, "max_workers": 1})
+        await repo.create({"name": "Home"})
+        await presets.refresh_cache(await repo.all())
+
+        assert [preset.name for preset in presets.get_all()] == ["proxy_preset", "home"]
+        cached = presets.get(" PROXY PRESET ")
+        assert cached is not None and cached.max_workers == 1
+        assert presets.get(proxy.id) is cached
+
+        await repo.update(proxy.id, {"name": "New Proxy", "max_workers": 2})
+        await presets.refresh_cache(await repo.all())
+    assert presets.get("proxy_preset") is None
+    cached = presets.get("new_proxy")
+    assert cached is not None and cached.max_workers == 2
+    assert presets.get(proxy.id) is cached
+
+
+@pytest.mark.asyncio
 class TestPresetRoutes:
+    async def test_worker_limit_roundtrip(self, repo: PresetsRepository) -> None:
+        notify = Mock()
+        request = MagicMock(spec=Request)
+        request.json = AsyncMock(return_value={"name": "Proxy", "max_workers": 1})
+        encoder = Encoder()
+
+        response = await presets_add(request, encoder, notify, repo)
+        assert response.status == web.HTTPOk.status_code
+        payload = json.loads(response.text)
+        assert payload["max_workers"] == 1
+        preset_id = payload["id"]
+        request.match_info = {"id": str(preset_id)}
+
+        for body, cap in [
+            ({"description": "Slow proxy"}, 1),
+            ({"max_workers": 1000}, 1000),
+            ({"max_workers": 0}, 0),
+        ]:
+            request.json.return_value = body
+            response = await presets_patch(request, encoder, notify, repo)
+            assert response.status == web.HTTPOk.status_code
+            assert json.loads(response.text)["max_workers"] == cap
+            fetched = await repo.get(preset_id)
+            assert fetched is not None and fetched.max_workers == cap
+
     async def test_list_route_sort(self, repo):
         await repo.create({"name": "Alpha", "priority": 1})
         await repo.create({"name": "Bravo", "priority": 1})

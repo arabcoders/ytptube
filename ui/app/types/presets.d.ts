@@ -9,6 +9,7 @@ type Preset = {
   default: boolean;
   /** Higher values sort first. */
   priority: number;
+  max_workers: number;
 };
 
 type PresetRequest = {
@@ -19,6 +20,7 @@ type PresetRequest = {
   cookies?: string;
   cli?: string;
   priority?: number;
+  max_workers?: number;
 };
 
 export type { Preset, PresetRequest };

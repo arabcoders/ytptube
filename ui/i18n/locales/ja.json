@@ -431,6 +431,7 @@
     "validationImportParseFailed": "インポート文字列の解析に失敗しました。{error}",
     "validationOrderPositive": "順序は正の数でなければなりません。",
     "validationNonNegativeInteger": "{field} は 0 以上の整数でなければなりません。",
+    "validationIntegerRange": "{field} には {min} から {max} までの整数を指定してください。",
     "validationInvalidFieldType": "無効なフィールドの種類: {kind}",
     "validationInvalidFieldFormat": "無効なフィールド形式です。\"--\" で始まり、スペースを含まない必要があります。",
     "validationInvalidIcon": "無効なアイコンです。バンドルされているアイコンから選択してください。",
@@ -693,6 +694,7 @@
   "errors": {
     "UNKNOWN": "予期しないエラーが発生しました。",
     "BAD_REQUEST": "リクエストが無効です。",
+    "REQUEST_TOO_LARGE": "リクエストのサイズが大きすぎます。",
     "UNAUTHORIZED": "認証が必要です。",
     "FORBIDDEN": "このアクションを実行する権限がありません。",
     "NOT_FOUND": "{resource} が見つかりませんでした。",
@@ -1057,6 +1059,8 @@
     "cookiesConfigured": "クッキー: 設定済み",
     "cookiesNotSet": "クッキー: 未設定",
     "priority": "優先度: {priority}",
+    "maxWorkers": "同時ダウンロード数の上限",
+    "maxWorkersDesc": "0 でプリセットの上限を解除します。",
     "info1": "プリセットをエクスポートする際、セキュリティ上の理由からクッキーフィールドの内容は含まれません。ただし、ユーザー名やパスワードのような機密データを含む可能性のある CLI オプションもあります。プリセットを共有する前にそれらを削除してください。"
   },
   "customFields": {

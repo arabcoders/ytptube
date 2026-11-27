@@ -11,6 +11,7 @@ additional application settings.
 > Most environment variables are shared between native and container deployments, but some default values differ for 
 > native builds. See [Native builds](docs/native-builds.md#files-and-settings) for the native-specific defaults.
 
+
 <details>
 <summary>Click to expand all environment variables</summary>
 
@@ -40,6 +41,7 @@ additional application settings.
 | YTP_TEMP_KEEP                   | Whether to keep the Individual video temp directory or remove it    | `false`               |
 | YTP_HOST                        | Which IP address to bind to                                         | `0.0.0.0`             |
 | YTP_PORT                        | Which port to bind to                                               | `8081`                |
+| YTP_MAX_REQUEST_SIZE            | Maximum HTTP request body size in MiB. Minimum is `1`               | `5`                   |
 | YTP_LOG_LEVEL                   | Log level                                                           | `info`                |
 | YTP_STREAMER_VCODEC             | The video encoding codec, default to GPU and fallback to software   | `""`                  |
 | YTP_STREAMER_ACODEC             | The audio codec to use for in-browser streaming                     | `aac`                 |
@@ -85,9 +87,6 @@ additional application settings.
 | YTP_THUMB_SIDECAR               | Save generated thumbnails next to media instead of temp cache.      | `false`               |
 
 > [!NOTE]
-> To raise the worker limit for a specific extractor, set an env variable using this format: `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`
-> The extractor name must be uppercase. You can find the extractor name in the download logs. This value cannot be 
-> higher than `YTP_MAX_WORKERS`; higher values are ignored.
 >
 > `YTP_SIMPLE_MODE=true` only applies when the browser has no saved layout choice yet. Users can still choose a layout in 
 > WebUI Settings. `/?simple=1` forces and saves Simple for that browser.
@@ -99,6 +98,13 @@ additional application settings.
 > `YTP_EXTRACT_INFO_KEEP_ALIVE=true` keeps yt-dlp metadata extraction worker processes alive between requests. This
 > can make playlist extraction faster, but uses more idle memory. Leave it `false` to reduce idle resource usage.
 </details>
+
+## How do I limit concurrent downloads?
+
+Set **Max concurrent downloads** on a preset. Use `0` or leave it blank for no preset cap.
+
+`YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>` is deprecated and will be removed in future undetermined version, please migrate 
+to using **max concurrent downloads** field in preset add/edit form.
 
 # Filename trimming
 

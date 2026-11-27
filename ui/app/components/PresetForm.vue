@@ -70,7 +70,7 @@
       </div>
     </details>
 
-    <div class="ytp-card-padded-lg grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+    <div class="ytp-card-padded-lg space-y-4">
       <UFormField class="w-full" :label="t('common.name')" :help="t('common.presetNameDesc')">
         <UInput
           id="name"
@@ -83,6 +83,22 @@
         />
       </UFormField>
 
+      <UFormField class="w-full" :label="t('common.description')">
+        <UTextarea
+          id="description"
+          v-model="form.description"
+          :disabled="addInProgress"
+          :placeholder="t('common.extrasInstructions')"
+          :rows="3"
+          size="lg"
+          variant="outline"
+          color="neutral"
+          class="w-full"
+        />
+      </UFormField>
+    </div>
+
+    <div class="ytp-card-padded-lg grid gap-4 sm:grid-cols-2">
       <UFormField
         class="w-full"
         :label="t('common.priority')"
@@ -100,16 +116,21 @@
         />
       </UFormField>
 
-      <UFormField class="w-full sm:col-span-2" :label="t('common.description')">
-        <UTextarea
-          id="description"
-          v-model="form.description"
-          :disabled="addInProgress"
-          :placeholder="t('common.extrasInstructions')"
-          :rows="3"
+      <UFormField
+        class="w-full"
+        :label="t('presets.maxWorkers')"
+        :help="t('presets.maxWorkersDesc')"
+      >
+        <UInput
+          id="max_workers"
+          v-model.number.optional="form.max_workers"
+          type="number"
+          min="0"
+          :max="MAX_PRESET_WORKERS"
+          step="1"
+          placeholder="0"
           size="lg"
-          variant="outline"
-          color="neutral"
+          :disabled="addInProgress"
           class="w-full"
         />
       </UFormField>
@@ -275,6 +296,7 @@ import type { ImportedItem } from '~/types';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset } from '~/types/presets';
 import { normalizePresetName } from '~/utils';
+import { isPresetWorkerLimit, MAX_PRESET_WORKERS } from '~/utils/presets';
 
 const { t } = useI18n();
 
@@ -294,7 +316,7 @@ const dialog = useDialog();
 const { presets, findPreset, selectItems } = usePresetOptions();
 const action = useFormSubmit();
 
-const form = reactive<Preset>({
+const form = reactive<Omit<Preset, 'max_workers'> & { max_workers?: number }>({
   name: '',
   description: '',
   folder: '',
@@ -304,7 +326,9 @@ const form = reactive<Preset>({
   default: false,
   priority: 0,
   ...JSON.parse(JSON.stringify(props.preset || {})),
+  max_workers: props.preset.max_workers ?? 0,
 });
+const maxWorkers = computed(() => form.max_workers ?? 0);
 
 const importString = ref('');
 const selectedPreset = ref<string>('');
@@ -323,7 +347,7 @@ const importPresetItems = computed(() => selectItems.value);
 
 const dirtySource = computed(() => ({
   reference: props.reference ?? null,
-  form: JSON.parse(JSON.stringify(form)),
+  form: JSON.parse(JSON.stringify({ ...form, max_workers: maxWorkers.value })),
   importString: importString.value,
   selectedPreset: selectedPreset.value,
 }));
@@ -342,6 +366,7 @@ watch(
       default: false,
       priority: 0,
       ...JSON.parse(JSON.stringify(value || {})),
+      max_workers: value.max_workers ?? 0,
     });
 
     importString.value = '';
@@ -387,13 +412,22 @@ const hasFormContent = computed(() => {
     form.folder ||
     form.cookies ||
     form.description ||
-    form.priority !== 0,
+    form.priority !== 0 ||
+    maxWorkers.value !== 0,
   );
 });
 
 const normalizeName = (value: string): void => {
   form.name = normalizePresetName(value);
 };
+
+const maxWorkersError = computed(() =>
+  t('common.validationIntegerRange', {
+    field: t('presets.maxWorkers'),
+    min: 0,
+    max: MAX_PRESET_WORKERS,
+  }),
+);
 
 const formError = computed(() => {
   if (!String(form.name).trim() || !normalizePresetName(String(form.name))) {
@@ -410,6 +444,10 @@ const formError = computed(() => {
 
   if (!Number.isInteger(form.priority) || form.priority < 0) {
     return t('common.validationNonNegativeInteger', { field: t('common.priority') });
+  }
+
+  if (!isPresetWorkerLimit(maxWorkers.value)) {
+    return maxWorkersError.value;
   }
 
   return '';
@@ -474,7 +512,7 @@ const checkInfo = async (): Promise<void> => {
     form.cli = form.cli.trim();
   }
 
-  const copy: Preset = JSON.parse(JSON.stringify(form));
+  const copy: Preset = JSON.parse(JSON.stringify({ ...form, max_workers: maxWorkers.value }));
   for (const key in copy) {
     const value = copy[key as keyof Preset];
     if (typeof value === 'string') {
@@ -503,7 +541,7 @@ const importItem = async (): Promise<void> => {
       return;
     }
 
-    const item = decode(value) as Preset & ImportedItem;
+    const item = decode(value) as Partial<Preset> & ImportedItem;
 
     if (!item?._type || 'preset' !== item._type) {
       showActionError(
@@ -512,6 +550,11 @@ const importItem = async (): Promise<void> => {
           type: item?._type ?? 'unknown',
         }),
       );
+      return;
+    }
+
+    if (item.max_workers !== undefined && !isPresetWorkerLimit(item.max_workers)) {
+      showActionError(maxWorkersError.value);
       return;
     }
 
@@ -532,6 +575,9 @@ const importItem = async (): Promise<void> => {
     }
     if (item.priority !== undefined) {
       form.priority = item.priority;
+    }
+    if (item.max_workers !== undefined) {
+      form.max_workers = item.max_workers;
     }
 
     importString.value = '';
@@ -577,6 +623,7 @@ const importExistingPreset = async (): Promise<void> => {
     form.cookies = preset.cookies || '';
     form.description = preset.description || '';
     form.priority = preset.priority ?? 0;
+    form.max_workers = preset.max_workers ?? 0;
 
     await nextTick();
     selectedPreset.value = '';

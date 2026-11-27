@@ -979,36 +979,31 @@ const addDownload = async () => {
     }
   }
 
-  const request_data = [] as Array<item_request>;
-
-  splitUrls(form.value.url).forEach((url: string, index: number) => {
-    const data = {
-      url: url,
-      preset: form.value.preset || config.app.default_preset,
-      folder: form.value.folder,
-      template: form.value.template,
-      cookies: form.value.cookies,
-      cli: form_cli,
-      auto_start: auto_start.value,
-    } as item_request;
-
-    const extras = {
-      ...(form.value?.extras || {}),
-      ...(pickedEntries.value[index]?.extras || {}),
-    };
-    if (Object.keys(extras).length > 0) {
-      data.extras = extras;
-    }
-
-    request_data.push(data);
+  const urls = splitUrls(form.value.url).map((url, index) => {
+    const extras = pickedEntries.value[index]?.extras;
+    return extras ? { url, extras } : url;
   });
 
   try {
     addInProgress.value = true;
     const response = await request('/api/history', {
       method: 'POST',
-      body: JSON.stringify(request_data),
+      body: JSON.stringify({
+        urls,
+        preset: form.value.preset || config.app.default_preset,
+        folder: form.value.folder,
+        template: form.value.template,
+        cookies: form.value.cookies,
+        cli: form_cli,
+        auto_start: auto_start.value,
+        extras: form.value.extras,
+      }),
     });
+
+    if (response.status === 413) {
+      submitError.value = t('errors.REQUEST_TOO_LARGE');
+      return;
+    }
 
     const data = await response.json();
     if (!response.ok) {

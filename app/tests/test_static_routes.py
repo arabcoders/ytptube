@@ -180,12 +180,12 @@ class TestServeStaticFile:
             return await _static.serve_static_file(request, config)
 
         client = await test_client({"static_fallback": handler})
-        asset_response = await client.get("/tube/assets/app.8QddckA9.js")
-        fallback_response = await client.get("/tube/docs/readme")
+        asset_response = await client.get("/tube/assets/app.8QddckA9.js", timeout=5)
+        fallback_response = await client.get("/tube/docs/readme", timeout=5)
 
         assert asset_response.headers["Cache-Control"] == "public, max-age=31536000, immutable"
         assert await fallback_response.text() == "<html>root shell</html>"
-        assert fallback_response.headers["Cache-Control"] == "public, max-age=0, must-revalidate"
+        assert fallback_response.headers["Cache-Control"] == "no-store"
 
     @pytest.mark.parametrize(
         ("name", "mime"),
@@ -213,7 +213,7 @@ class TestServeStaticFile:
         assert response.headers["Content-Type"] == mime
 
     @pytest.mark.asyncio
-    async def test_html_revalidates(self, tmp_path: Path, test_client) -> None:
+    async def test_html_not_cached(self, tmp_path: Path, test_client) -> None:
         config = Config.get_instance()
         (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
         _configure_static_root(tmp_path)
@@ -223,10 +223,10 @@ class TestServeStaticFile:
             return await _static.serve_static_file(request, config)
 
         client = await test_client({"static_fallback": handler})
-        response = await client.get(url_for("static_fallback", path="index.html"))
+        response = await client.get(url_for("static_fallback", path="index.html"), timeout=5)
 
         assert response.status == 200
-        assert response.headers["Cache-Control"] == "public, max-age=0, must-revalidate"
+        assert response.headers["Cache-Control"] == "no-store"
 
     @pytest.mark.asyncio
     async def test_nested_index_uses_root(self, tmp_path: Path, test_client) -> None:
@@ -249,7 +249,7 @@ class TestServeStaticFile:
         assert await response.text() == "<html>root shell</html>"
 
     @pytest.mark.asyncio
-    async def test_missing_asset_no_fallback(self, tmp_path: Path, test_client) -> None:
+    async def test_missing_chunk_uncached(self, tmp_path: Path, test_client) -> None:
         config = Config.get_instance()
         (tmp_path / "index.html").write_text("<html>root shell</html>", encoding="utf-8")
         assets_dir = tmp_path / "assets"
@@ -262,11 +262,13 @@ class TestServeStaticFile:
 
         client = await test_client({"static_fallback": handler})
         response = await client.get(
-            url_for("static_fallback", path="assets/missing.js"),
+            url_for("static_fallback", path="assets/CCY7lA2m.js"),
             headers={"Accept": "*/*", "Sec-Fetch-Dest": "script"},
+            timeout=5,
         )
         body = await response.read()
         assert response.status == 404
+        assert response.headers["Cache-Control"] == "no-store"
         assert b'"code": "NOT_FOUND"' in body
 
     @pytest.mark.asyncio

@@ -1,10 +1,16 @@
+import asyncio
 import os
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock, Mock
 
 import pytest
+from aiohttp import ClientTimeout, web
+from aiohttp.test_utils import TestClient, TestServer
 
-from app import _add_package_paths
+from app import _add_package_paths, main
+from app.library.config import Config
+from app.library.HttpAPI import HttpAPI
 from app.tests.helpers import set_test_env
 
 
@@ -57,3 +63,52 @@ def test_ignores_package_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     _add_package_paths()
 
     assert sys.path == ["bundled"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("setting", "limit"), [(None, 5_242_880), (1, 1_048_576), (2, 2_097_152)])
+async def test_request_size_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, setting: int | None, limit: int
+) -> None:
+    set_test_env(monkeypatch, {"config_path": tmp_path, "file_logging": False})
+    if setting is not None:
+        monkeypatch.setenv("YTP_MAX_REQUEST_SIZE", str(setting))
+    monkeypatch.setattr(Config, "app_path", Config.app_path)
+    monkeypatch.setattr(main.Main, "on_shutdown", AsyncMock())
+    monkeypatch.setattr(main, "Services", Mock())
+    monkeypatch.setattr(main, "HttpAPI", Mock())
+    monkeypatch.setattr(main, "HttpSocket", Mock())
+    Config._reset_singleton()
+    try:
+        app = main.Main()._app
+        api = HttpAPI.__new__(HttpAPI)
+
+        async def read(request: web.Request) -> web.Response:
+            await request.read()
+            return web.Response(status=204)
+
+        async def handler(request: web.Request) -> web.StreamResponse:
+            return await api._handle(read, request)
+
+        app.router.add_post("/", handler)
+        timeout = ClientTimeout(total=5)
+        async with asyncio.timeout(15), TestClient(TestServer(app)) as client:
+            assert (await client.post("/", data=b"x" * limit, timeout=timeout)).status == 204
+            response = await client.post("/", data=b"x" * (limit + 1), timeout=timeout)
+            assert response.status == 413
+            assert (await response.json())["code"] == "REQUEST_TOO_LARGE"
+    finally:
+        Config._reset_singleton()
+
+
+@pytest.mark.parametrize("setting", [-1, 0])
+def test_clamps_request_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, setting: int
+) -> None:
+    set_test_env(monkeypatch, {"config_path": tmp_path, "file_logging": False, "max_request_size": setting})
+    Config._reset_singleton()
+    try:
+        assert Config.get_instance().max_request_size == 1
+        assert f"YTP_MAX_REQUEST_SIZE={setting} is below the minimum. Using 1 MiB." in caplog.messages
+    finally:
+        Config._reset_singleton()

@@ -1,6 +1,7 @@
 """Download pool management - worker coordination and execution."""
 
 import asyncio
+from collections import Counter
 from typing import TYPE_CHECKING
 
 from app.library.Events import EventBus, Events
@@ -22,10 +23,11 @@ class PoolManager:
     """
     Manages download worker pool and execution.
 
-    Coordinates concurrent downloads with semaphore-based limits:
+    Coordinates concurrent downloads with worker limits:
     - Global worker limit (max_workers)
     - Per-extractor limits (max_workers_per_extractor)
-    - Live streams bypass all limits
+    - Optional per-preset limits across extractors
+    - Live streams and force-started downloads bypass all limits
 
     Integrates with DownloadQueue for queue access and configuration.
     """
@@ -119,6 +121,7 @@ class PoolManager:
     async def _download_pool(self) -> None:
         adaptive_sleep = 0.2
         max_sleep = 5.0
+        preset_workers: Counter[int] = Counter()
 
         while True:
             while not self.queue.queue.has_downloads():
@@ -161,16 +164,33 @@ class PoolManager:
                     if self.workers.locked() or _limit.locked():
                         continue
 
+                    preset = entry.info.get_preset()
+                    preset_id = preset.id if preset else None
+                    cap = preset.max_workers if preset else 0
+                    if preset_id is not None and cap and preset_workers[preset_id] >= cap:
+                        continue
+
                     await self.workers.acquire()
                     await _limit.acquire()
+                    # Count uncapped jobs too, so a cap added mid-download includes them.
+                    if preset_id is not None:
+                        preset_workers[preset_id] += 1
 
                     task: asyncio.Task[None] = asyncio.create_task(
                         self._download_file(_id, entry), name=f"download_file_{extractor}_{_id}"
                     )
 
-                    def _release(t: asyncio.Task, sem=_limit) -> None:
+                    def _release(
+                        t: asyncio.Task[None],
+                        sem: asyncio.Semaphore = _limit,
+                        preset_id: int | None = preset_id,
+                    ) -> None:
                         sem.release()
                         self.workers.release()
+                        if preset_id is not None:
+                            preset_workers[preset_id] -= 1
+                            if not preset_workers[preset_id]:
+                                del preset_workers[preset_id]
                         handle_task_exception(t, LOG)
 
                     task.add_done_callback(_release)

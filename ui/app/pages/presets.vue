@@ -381,6 +381,7 @@
 
 <script setup lang="ts">
 import PageHeader from '~/components/PageHeader.vue';
+import { exportPreset } from '~/utils/presets';
 import { setSelected } from '~/utils/selection';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import type { Preset } from '~/types/presets';
@@ -451,7 +452,7 @@ const itemActionGroups = (item: Preset): DropdownMenuItem[][] => [
     {
       label: t('common.exportItem'),
       icon: 'i-lucide-file-up',
-      onSelect: () => exportItem(item),
+      onSelect: () => copyText(exportPreset(item)),
     },
   ],
   [
@@ -585,20 +586,6 @@ const deleteItem = async (item: Preset): Promise<void> => {
   if (item.id) {
     await presetsStore.deletePreset(item.id);
   }
-};
-
-const exportItem = (item: Preset): void => {
-  const excludedKeys = ['id', 'default', 'raw', 'cookies', 'toggle_description'];
-  const userData = Object.fromEntries(
-    Object.entries(JSON.parse(JSON.stringify(item))).filter(
-      ([key, value]) => !excludedKeys.includes(key) && value,
-    ),
-  );
-
-  userData['_type'] = 'preset';
-  userData['_version'] = '2.6';
-
-  copyText(encode(userData));
 };
 
 const calcPath = (path?: string): string => {

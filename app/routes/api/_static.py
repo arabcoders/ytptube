@@ -187,13 +187,17 @@ async def serve_static_file(request: Request, config: Config) -> StreamResponse:
                 code="NOT_FOUND",
                 status=web.HTTPNotFound.status_code,
                 params={"resource": "api.resources.file"},
+                headers={"Cache-Control": "no-store"} if path.startswith("/assets/") else None,
             )
 
-    cache_control = IMMUTABLE if (alias is not None and alias["immutable"]) or is_fingerprinted(path) else REVALIDATE
-    if STATIC_STATE.index_file is not None and file_path == STATIC_STATE.index_file:
+    if file_path.suffix == ".html":
+        cache_control = "no-store"
+    elif (alias is not None and alias["immutable"]) or is_fingerprinted(path):
+        cache_control = IMMUTABLE
+    else:
         cache_control = REVALIDATE
 
-    headers = {"Pragma": "public", "Cache-Control": cache_control}
+    headers = {"Cache-Control": cache_control}
     content_type = EXT_TO_MIME.get(file_path.suffix)
     if content_type is not None:
         headers["Content-Type"] = content_type
