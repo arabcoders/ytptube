@@ -53,6 +53,7 @@ export default defineNuxtConfig({
     baseURL,
     buildAssetsDir: 'assets',
     head: {
+      title: 'Loading | YTPTube',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0' },
@@ -151,6 +152,10 @@ export default defineNuxtConfig({
   },
   nitro: {
     sourceMap: false === isProd,
+    prerender: {
+      // The `/` route already writes `index.html`.
+      ignore: ['/index.html'],
+    },
     output: {
       publicDir: isProd ? __dirname + '/exported' : __dirname + '/dist',
     },
